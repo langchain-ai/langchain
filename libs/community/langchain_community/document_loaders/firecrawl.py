@@ -46,12 +46,12 @@ class FireCrawlLoader(BaseLoader):
             raise ValueError(
                 f"Unrecognized mode '{mode}'. Expected one of 'crawl', 'scrape', 'search'."
             )
-        
+
         if not query and not url:
             raise ValueError("Either query or url must be provided")
         elif query and url:
             raise ValueError("Only one of query or url can be provided")
-        
+
         api_key = api_key or get_from_env("api_key", "FIREWALL_API_KEY")
         self.firecrawl = FirecrawlApp(api_key=api_key)
         self.url = url
