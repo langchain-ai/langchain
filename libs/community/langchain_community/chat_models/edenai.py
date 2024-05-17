@@ -64,29 +64,76 @@ def _message_role(type: str) -> str:
         raise ValueError(f"Unknown type: {type}")
 
 
+def _extract_edenai_tool_results_from_messages(
+    messages: List[BaseMessage],
+) -> Tuple[List[Dict[str, Any]], List[BaseMessage]]:
+    """
+    Get the last langchain tools messages to transform them into edenai tool_results
+    Returns tool_results and messages without the extracted tool messages
+    """
+    tool_results = []
+    other_messages = messages[:]
+    for msg in reversed(messages):
+        if isinstance(msg, ToolMessage):
+            tool_results = [
+                {"id": msg.tool_call_id, "result": msg.content},
+                *tool_results,
+            ]
+            other_messages.pop()
+        else:
+            break
+    return tool_results, other_messages
+
+
 def _format_edenai_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
     system = None
     formatted_messages = []
-    text = messages[-1].content
-    for i, message in enumerate(messages[:-1]):
-        if message.type == "system":
+
+    human_messages = filter(lambda msg: isinstance(msg, HumanMessage), messages)
+    text = list(human_messages)[-1].content if human_messages else ""
+
+    tool_results, other_messages = _extract_edenai_tool_results_from_messages(messages)
+    for i, message in enumerate(other_messages):
+        if isinstance(message, SystemMessage):
             if i != 0:
                 raise ValueError("System message must be at beginning of message list.")
             system = message.content
+        if isinstance(message, ToolMessage):
+            formatted_messages.append({"role": "tool", "message": message.content})
         else:
+            tool_calls = getattr(message, "tool_calls", [])
             formatted_messages.append(
                 {
                     "role": _message_role(message.type),
                     "message": message.content,
+                    "tool_calls": _format_tool_calls_to_edenai_tool_calls(tool_calls),
                 }
             )
+
     return {
         "text": text,
         "previous_history": formatted_messages,
         "chatbot_global_action": system,
+        "tool_results": tool_results,
     }
 
 
+def _format_tool_calls_to_edenai_tool_calls(tool_calls: List) -> List:
+    edenai_tool_calls = []
+    for tool_call in tool_calls:
+        tool_args = tool_call.get("args", {})
+        try:
+            arguments = json.dumps(tool_args)
+        except TypeError:
+            arguments = str(tool_args)
+        edenai_tool_calls.append(
+            {
+                "arguments": arguments,
+                "id": tool_call["id"],
+                "name": tool_call["name"],
+            }
+        )
+    return edenai_tool_calls
 
 
 def _extract_tool_calls_from_edenai_response(
