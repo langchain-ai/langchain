@@ -17,9 +17,8 @@ The Chain interface makes it easy to create apps that are:
     Chain --> <name>Chain  # Examples: LLMChain, MapReduceChain, RouterChain
 """
 
+import importlib
 from typing import Any
-
-from langchain._api import create_importer
 
 _module_lookup = {
     "APIChain": "langchain.chains.api.base",
@@ -36,17 +35,18 @@ _module_lookup = {
     "ConversationalRetrievalChain": "langchain.chains.conversational_retrieval.base",
     "generate_example": "langchain.chains.example_generator",
     "FlareChain": "langchain.chains.flare.base",
-    "ArangoGraphQAChain": "langchain_community.chains.graph_qa.arangodb",
-    "GraphQAChain": "langchain_community.chains.graph_qa.base",
-    "GraphCypherQAChain": "langchain_community.chains.graph_qa.cypher",
-    "FalkorDBQAChain": "langchain_community.chains.graph_qa.falkordb",
-    "HugeGraphQAChain": "langchain_community.chains.graph_qa.hugegraph",
-    "KuzuQAChain": "langchain_community.chains.graph_qa.kuzu",
-    "NebulaGraphQAChain": "langchain_community.chains.graph_qa.nebulagraph",
-    "NeptuneOpenCypherQAChain": "langchain_community.chains.graph_qa.neptune_cypher",
-    "NeptuneSparqlQAChain": "langchain_community.chains.graph_qa.neptune_sparql",
-    "OntotextGraphDBQAChain": "langchain_community.chains.graph_qa.ontotext_graphdb",
-    "GraphSparqlQAChain": "langchain_community.chains.graph_qa.sparql",
+    "AnzoGraphDBQAChain": "langchain.chains.graph_qa.anzograph",
+    "ArangoGraphQAChain": "langchain.chains.graph_qa.arangodb",
+    "GraphQAChain": "langchain.chains.graph_qa.base",
+    "GraphCypherQAChain": "langchain.chains.graph_qa.cypher",
+    "FalkorDBQAChain": "langchain.chains.graph_qa.falkordb",
+    "HugeGraphQAChain": "langchain.chains.graph_qa.hugegraph",
+    "KuzuQAChain": "langchain.chains.graph_qa.kuzu",
+    "NebulaGraphQAChain": "langchain.chains.graph_qa.nebulagraph",
+    "NeptuneOpenCypherQAChain": "langchain.chains.graph_qa.neptune_cypher",
+    "NeptuneSparqlQAChain": "langchain.chains.graph_qa.neptune_sparql",
+    "OntotextGraphDBQAChain": "langchain.chains.graph_qa.ontotext_graphdb",
+    "GraphSparqlQAChain": "langchain.chains.graph_qa.sparql",
     "create_history_aware_retriever": "langchain.chains.history_aware_retriever",
     "HypotheticalDocumentEmbedder": "langchain.chains.hyde.base",
     "LLMChain": "langchain.chains.llm",
@@ -85,11 +85,12 @@ _module_lookup = {
     "TransformChain": "langchain.chains.transform",
 }
 
-importer = create_importer(__package__, module_lookup=_module_lookup)
-
 
 def __getattr__(name: str) -> Any:
-    return importer(name)
+    if name in _module_lookup:
+        module = importlib.import_module(_module_lookup[name])
+        return getattr(module, name)
+    raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
 __all__ = list(_module_lookup.keys())

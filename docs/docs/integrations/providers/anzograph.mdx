@@ -1,0 +1,27 @@
+# AnzoGraph DB
+
+>[AnzoGraph DB](https://docs.cambridgesemantics.com/anzograph/v3.1/userdoc/Home.htm) is a graph database and knowledge discovery tool compliant with RDF and SPARQL 
+> that can be integrated with Apache Zeppelin third-party visualization application.
+> AnzoGraph DB is a high performance graph OLAP database that lets users perform BI-style analytics with unparalled speed and scalability. 
+> AnzoGraph DB uses standards from the W3C regarding RDF data formats and the SPARQL query language.
+> AnzoGraph DB can be deployed in cloud environments such as Amazon AWS, Google Cloud, Microsoft Azure, and IBM Cloud Pak, or on-premises on Linux bare metal and virtual machines.
+> AnzoGraph DB also supports Docker and Kubernetes deployments with data staged locally or in shared NFS, HDFS, or object storage. 
+
+
+## Dependencies
+
+Install the [rdflib](https://github.com/RDFLib/rdflib) package with
+```bash
+pip install rdflib==7.0.0
+```
+
+## Graph QA Chain
+
+Connect your AnzoGraph DB with a chat model to get insights on your data.
+
+See the notebook example [here](/docs/integrations/graphs/anzograph).
+
+```python
+from langchain_community.graphs import AnzoGraphDBGraph
+from langchain.chains import AnzoGraphDBQAChain
+```

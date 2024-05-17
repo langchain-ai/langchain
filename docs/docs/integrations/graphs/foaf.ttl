@@ -1,0 +1,309 @@
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sw-vocab-status: <http://www.w3.org/2003/06/sw-vocab-status/> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://xmlns.com/foaf/0.1/Agent> a rdfs:Class,
+        owl:Class ;
+    rdfs:label "(foaf) Agent" ;
+    rdfs:comment "An agent (eg. person, group, software or physical artifact)."^^xsd:string ;
+    rdfs:isDefinedBy <http://xmlns.com/foaf/0.1/> ;
+    owl:disjointWith <http://xmlns.com/foaf/0.1/Document>,
+        <http://xmlns.com/foaf/0.1/OnlineAccount>,
+        <http://xmlns.com/foaf/0.1/Project> ;
+    sw-vocab-status:nsterm_status "unstable"^^xsd:string .
+
+<http://xmlns.com/foaf/0.1/Document> a rdfs:Class,
+        owl:Class ;
+    rdfs:label "(foaf) Document" ;
+    rdfs:comment "A document."^^xsd:string ;
+    rdfs:isDefinedBy <http://xmlns.com/foaf/0.1/> ;
+    owl:disjointWith <http://xmlns.com/foaf/0.1/Agent>,
+        <http://xmlns.com/foaf/0.1/OnlineAccount>,
+        <http://xmlns.com/foaf/0.1/Project> ;
+    sw-vocab-status:nsterm_status "testing"^^xsd:string .
+
+<http://xmlns.com/foaf/0.1/Project> a rdfs:Class,
+        owl:Class ;
+    rdfs:label "(foaf) Project" ;
+    rdfs:comment "A project (a collective endeavour of some kind)."^^xsd:string ;
+    rdfs:isDefinedBy <http://xmlns.com/foaf/0.1/> ;
+    owl:disjointWith <http://xmlns.com/foaf/0.1/Agent>,
+        <http://xmlns.com/foaf/0.1/Document>,
+        <http://xmlns.com/foaf/0.1/OnlineAccount> ;
+    sw-vocab-status:nsterm_status "unstable"^^xsd:string .
+
+dct:contributor a owl:AnnotationProperty .
+
+dct:creator a owl:AnnotationProperty .
+
+dct:date a owl:AnnotationProperty .
+
+dct:format a owl:AnnotationProperty .
+
+dct:language a owl:AnnotationProperty .
+
+dct:publisher a owl:AnnotationProperty .
+
+dct:title a owl:AnnotationProperty .
+
+<http://purl.org/spar/foaf> a owl:Ontology ;
+    rdfs:label "FOAF Essential v. 2.0"^^xsd:string ;
+    dct:contributor "Alan Ruttenberg"^^xsd:string,
+        "Paolo Ciccarese"^^xsd:string ;
+    dct:creator <http://www.hcklab.org/foaf.rdf#me> ;
+    dct:date "October 12, 2010"^^xsd:string ;
+    dct:format "rdf/xml"^^xsd:string ;
+    dct:language "en" ;
+    dct:publisher "Mindinformatics, Massachusetts General Hospital"^^xsd:string ;
+    dct:title "FOAF Essential ontology"@en ;
+    owl:priorVersion <http://swan.mindinformatics.org/ontologies/1.2/foaf-essential.owl> ;
+    owl:versionInfo "2.0"^^xsd:string .
+
+sw-vocab-status:nsterm_status a owl:AnnotationProperty .
+
+<http://xmlns.com/foaf/0.1/aimChatID> a owl:DatatypeProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Agent> ;
+    rdfs:subPropertyOf <http://xmlns.com/foaf/0.1/nick> .
+
+<http://xmlns.com/foaf/0.1/birthday> a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> .
+
+<http://xmlns.com/foaf/0.1/currentProject> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> ;
+    rdfs:range [ a owl:Class ;
+            owl:complementOf [ a owl:Class ;
+                    owl:unionOf ( <http://xmlns.com/foaf/0.1/Agent> <http://xmlns.com/foaf/0.1/OnlineAccount> ) ] ] .
+
+<http://xmlns.com/foaf/0.1/family_name> a owl:DatatypeProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> .
+
+<http://xmlns.com/foaf/0.1/firstName> a owl:DatatypeProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> .
+
+<http://xmlns.com/foaf/0.1/fundedBy> a owl:ObjectProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range [ a owl:Class ;
+            owl:complementOf [ a owl:Class ;
+                    owl:unionOf ( <http://xmlns.com/foaf/0.1/Document> <http://xmlns.com/foaf/0.1/OnlineAccount> ) ] ] .
+
+<http://xmlns.com/foaf/0.1/geekcode> a owl:DatatypeProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> .
+
+<http://xmlns.com/foaf/0.1/gender> a owl:DatatypeProperty,
+        owl:FunctionalProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> .
+
+<http://xmlns.com/foaf/0.1/givenname> a owl:DatatypeProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> .
+
+<http://xmlns.com/foaf/0.1/homepage> a owl:InverseFunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Document> ;
+    rdfs:subPropertyOf <http://xmlns.com/foaf/0.1/page> .
+
+<http://xmlns.com/foaf/0.1/img> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Image> ;
+    rdfs:subPropertyOf <http://xmlns.com/foaf/0.1/depiction> .
+
+<http://xmlns.com/foaf/0.1/interest> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Document> .
+
+<http://xmlns.com/foaf/0.1/jabberID> a owl:DatatypeProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Agent> ;
+    rdfs:subPropertyOf <http://xmlns.com/foaf/0.1/nick> .
+
+<http://xmlns.com/foaf/0.1/knows> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Person> .
+
+<http://xmlns.com/foaf/0.1/logo> a owl:ObjectProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( <http://xmlns.com/foaf/0.1/Agent> <http://xmlns.com/foaf/0.1/Project> ) ] ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Image> .
+
+<http://xmlns.com/foaf/0.1/mbox> a owl:InverseFunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Agent> ;
+    rdfs:range [ a owl:Class ;
+            owl:complementOf [ a owl:Class ;
+                    owl:unionOf ( <http://xmlns.com/foaf/0.1/Agent> <http://xmlns.com/foaf/0.1/Project> <http://xmlns.com/foaf/0.1/Document> ) ] ] .
+
+<http://xmlns.com/foaf/0.1/member> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Group> ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Agent> .
+
+<http://xmlns.com/foaf/0.1/myersBriggs> a owl:DatatypeProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> .
+
+<http://xmlns.com/foaf/0.1/name> a owl:DatatypeProperty ;
+    rdfs:domain [ a owl:Class ;
+            owl:unionOf ( <http://xmlns.com/foaf/0.1/Agent> <http://xmlns.com/foaf/0.1/Project> <http://xmlns.com/foaf/0.1/Document> ) ] .
+
+<http://xmlns.com/foaf/0.1/pastProject> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Project> .
+
+<http://xmlns.com/foaf/0.1/phone> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Agent> ;
+    rdfs:range [ a owl:Class ;
+            owl:complementOf [ a owl:Class ;
+                    owl:unionOf ( <http://xmlns.com/foaf/0.1/Agent> <http://xmlns.com/foaf/0.1/Project> <http://xmlns.com/foaf/0.1/Document> <http://xmlns.com/foaf/0.1/OnlineAccount> ) ] ] .
+
+<http://xmlns.com/foaf/0.1/plan> a owl:DatatypeProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> .
+
+<http://xmlns.com/foaf/0.1/publications> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Document> .
+
+<http://xmlns.com/foaf/0.1/schoolHomepage> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Document> .
+
+<http://xmlns.com/foaf/0.1/sha1> a owl:DatatypeProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Document> .
+
+<http://xmlns.com/foaf/0.1/surname> a owl:DatatypeProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> .
+
+<http://xmlns.com/foaf/0.1/thumbnail> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Image> ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Image> .
+
+<http://xmlns.com/foaf/0.1/tipjar> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Agent> ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Document> ;
+    rdfs:subPropertyOf <http://xmlns.com/foaf/0.1/page> .
+
+<http://xmlns.com/foaf/0.1/title> a owl:DatatypeProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> .
+
+<http://xmlns.com/foaf/0.1/topic_interest> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> ;
+    rdfs:range owl:Thing .
+
+<http://xmlns.com/foaf/0.1/weblog> a owl:InverseFunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Agent> ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Document> ;
+    rdfs:subPropertyOf <http://xmlns.com/foaf/0.1/page> .
+
+<http://xmlns.com/foaf/0.1/workInfoHomepage> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Document> .
+
+<http://xmlns.com/foaf/0.1/workplaceHomepage> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Document> .
+
+<http://xmlns.com/foaf/0.1/yahooChatID> a owl:DatatypeProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Agent> ;
+    rdfs:subPropertyOf <http://xmlns.com/foaf/0.1/nick> .
+
+<http://swan.mindinformatics.org/ontologies/1.2/foaf-essential.owl> a owl:Ontology .
+
+<http://xmlns.com/foaf/0.1/PersonalProfileDocument> a owl:Class ;
+    rdfs:label "(foaf) PersonalProfileDocument" ;
+    rdfs:comment "A personal profile RDF document."^^xsd:string ;
+    rdfs:isDefinedBy <http://xmlns.com/foaf/0.1/> ;
+    rdfs:subClassOf <http://xmlns.com/foaf/0.1/Document> ;
+    owl:disjointWith <http://xmlns.com/foaf/0.1/Image> ;
+    sw-vocab-status:nsterm_status "testing"^^xsd:string .
+
+<http://xmlns.com/foaf/0.1/depicts> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Image> ;
+    rdfs:range owl:Thing ;
+    owl:inverseOf <http://xmlns.com/foaf/0.1/depiction> .
+
+<http://xmlns.com/foaf/0.1/isPrimaryTopicOf> a owl:InverseFunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Document> ;
+    owl:inverseOf <http://xmlns.com/foaf/0.1/primaryTopic> .
+
+<http://xmlns.com/foaf/0.1/made> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Agent> ;
+    rdfs:range [ a owl:Class ;
+            owl:complementOf <http://xmlns.com/foaf/0.1/Agent> ] ;
+    owl:inverseOf <http://xmlns.com/foaf/0.1/maker> .
+
+<http://xmlns.com/foaf/0.1/maker> a owl:ObjectProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Agent> ;
+    owl:inverseOf <http://xmlns.com/foaf/0.1/made> .
+
+<http://xmlns.com/foaf/0.1/primaryTopic> a owl:FunctionalProperty,
+        owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Document> ;
+    rdfs:range owl:Thing ;
+    owl:inverseOf <http://xmlns.com/foaf/0.1/isPrimaryTopicOf> .
+
+<http://xmlns.com/foaf/0.1/topic> a owl:ObjectProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Document> ;
+    rdfs:range owl:Thing ;
+    owl:inverseOf <http://xmlns.com/foaf/0.1/page> .
+
+<http://xmlns.com/foaf/0.1/Organization> a owl:Class ;
+    rdfs:label "(foaf) Organization" ;
+    rdfs:comment "An organization."^^xsd:string ;
+    rdfs:isDefinedBy <http://xmlns.com/foaf/0.1/> ;
+    rdfs:subClassOf <http://xmlns.com/foaf/0.1/Agent> ;
+    owl:disjointWith <http://xmlns.com/foaf/0.1/Group>,
+        <http://xmlns.com/foaf/0.1/Person> ;
+    sw-vocab-status:nsterm_status "unstable"^^xsd:string .
+
+<http://xmlns.com/foaf/0.1/depiction> a owl:ObjectProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Image> ;
+    owl:inverseOf <http://xmlns.com/foaf/0.1/depicts> .
+
+<http://xmlns.com/foaf/0.1/Group> a owl:Class ;
+    rdfs:label "(foaf) Group" ;
+    rdfs:comment "A class of Agents."^^xsd:string ;
+    rdfs:isDefinedBy <http://xmlns.com/foaf/0.1/> ;
+    rdfs:subClassOf <http://xmlns.com/foaf/0.1/Agent> ;
+    owl:disjointWith <http://xmlns.com/foaf/0.1/Organization>,
+        <http://xmlns.com/foaf/0.1/Person> ;
+    sw-vocab-status:nsterm_status "unstable"^^xsd:string .
+
+<http://xmlns.com/foaf/0.1/nick> a owl:DatatypeProperty ;
+    rdfs:domain <http://xmlns.com/foaf/0.1/Person> .
+
+<http://xmlns.com/foaf/0.1/page> a owl:ObjectProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range <http://xmlns.com/foaf/0.1/Document> ;
+    owl:inverseOf <http://xmlns.com/foaf/0.1/topic> .
+
+<http://xmlns.com/foaf/0.1/OnlineAccount> a owl:Class ;
+    rdfs:label "(foaf) OnlineAccount" ;
+    rdfs:comment "An online account."^^xsd:string ;
+    rdfs:isDefinedBy <http://xmlns.com/foaf/0.1/> ;
+    owl:disjointWith <http://xmlns.com/foaf/0.1/Agent>,
+        <http://xmlns.com/foaf/0.1/Document>,
+        <http://xmlns.com/foaf/0.1/Project> ;
+    sw-vocab-status:nsterm_status "unstable"^^xsd:string .
+
+<http://xmlns.com/foaf/0.1/Image> a owl:Class ;
+    rdfs:label "(foaf) Image" ;
+    rdfs:comment "An image."^^xsd:string ;
+    rdfs:isDefinedBy <http://xmlns.com/foaf/0.1/> ;
+    rdfs:subClassOf <http://xmlns.com/foaf/0.1/Document> ;
+    owl:disjointWith <http://xmlns.com/foaf/0.1/PersonalProfileDocument> ;
+    sw-vocab-status:nsterm_status "testing"^^xsd:string .
+
+<http://xmlns.com/foaf/0.1/Person> a owl:Class ;
+    rdfs:label "(foaf) Person" ;
+    rdfs:comment "A person."^^xsd:string ;
+    rdfs:isDefinedBy <http://xmlns.com/foaf/0.1/> ;
+    rdfs:subClassOf <http://xmlns.com/foaf/0.1/Agent> ;
+    owl:disjointWith <http://xmlns.com/foaf/0.1/Group>,
+        <http://xmlns.com/foaf/0.1/Organization> ;
+    sw-vocab-status:nsterm_status "stable"^^xsd:string .
+
