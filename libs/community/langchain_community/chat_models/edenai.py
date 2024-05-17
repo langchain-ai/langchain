@@ -1,4 +1,5 @@
 import json
+from operator import itemgetter
 from typing import (
     Any,
     AsyncIterator,
@@ -31,6 +32,14 @@ from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
     InvalidToolCall,
+    ToolMessage,
+    HumanMessage,
+    SystemMessage
+)
+from langchain_core.output_parsers.base import OutputParserLike
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import (
@@ -40,7 +49,7 @@ from langchain_core.pydantic_v1 import (
     SecretStr,
     root_validator,
 )
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -323,6 +332,39 @@ class ChatEdenAI(BaseChatModel):
         return super().bind(
             available_tools=formatted_tools, tool_choice=formatted_tool_choice, **kwargs
         )
+
+    def with_structured_output(
+        self,
+        schema: Union[Dict, Type[BaseModel]],
+        *,
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
+        llm = self.bind_tools([schema], tool_choice="required")
+        if is_pydantic_schema:
+            output_parser: OutputParserLike = PydanticToolsParser(
+                tools=[schema], first_tool_only=True
+            )
+        else:
+            key_name = convert_to_openai_tool(schema)["function"]["name"]
+            output_parser = JsonOutputKeyToolsParser(
+                key_name=key_name, first_tool_only=True
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser
 
     def _generate(
         self,
