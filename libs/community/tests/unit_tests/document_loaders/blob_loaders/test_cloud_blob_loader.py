@@ -1,4 +1,8 @@
 """Verify that file system blob loader works as expected."""
+import os
+import tempfile
+
+from typing import Generator
 from urllib.parse import urlparse
 
 import pytest
@@ -130,10 +134,6 @@ def test_file_names_exist(toy_dir: str, params: dict) -> None:
     suffixes = params["suffixes"]
     exclude = params["exclude"]
     relative_filenames = params["relative_filenames"]
-
-    from cloudpathlib import AnyPath
-    data=AnyPath("gs://ppr-langchain-test/test.txt").glob("**/*")
-    data=AnyPath("gs://ppr-langchain-test/test.txt").open().read()
 
     loader = CloudBlobLoader(
         toy_dir, glob=glob_pattern, suffixes=suffixes, exclude=exclude
