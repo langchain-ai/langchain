@@ -75,7 +75,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             indexing_policy=self.indexing_policy,
             vector_embedding_policy=self.vector_embedding_policy,
         )
-        self.embedding_key = self.vector_embedding_policy["vectorEmbeddings"][0]["path"][1:]
+        self.embedding_key = self.vector_embedding_policy["vectorEmbeddings"][0]["path"][1:]  # noqa: E501
 
     def add_texts(
         self,
@@ -198,7 +198,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         query = (
             "SELECT TOP {} c.id, c.{}, c.text, VectorDistance(c.{}, {}) AS "
             "SimilarityScore FROM c ORDER BY VectorDistance(c.{}, {})".format(
-                k, self.embedding_key, self.embedding_key, embeddings, self.embedding_key, embeddings
+                k, self.embedding_key, self.embedding_key, embeddings, self.embedding_key, embeddings  # noqa: E501
             )
         )
         docs_and_scores = []
