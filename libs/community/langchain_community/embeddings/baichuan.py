@@ -80,8 +80,8 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
             else:
                 # Log error or handle unsuccessful response appropriately
                 print(  # noqa: T201
-                    f"""Error: Received status code {response.status_code} from 
-                    embedding API"""
+                    f"Error: Received status code {response.status_code} from "
+                    "embedding API"
                 )
                 return None
         except Exception as e:
