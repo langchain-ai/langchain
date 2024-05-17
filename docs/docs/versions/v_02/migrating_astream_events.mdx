@@ -11,7 +11,8 @@ The `v2` version is a re-write of the `v1` version, and should be more efficient
 
 Below is a list of changes between the `v1` and `v2` versions of the API.
 
-### on_chat_model_end `output`
+
+### output for `on_chat_model_end`
 
 In `v1`, the outputs associated with `on_chat_model_end` changed depending on whether the
 chat model was run as a root level runnable or as part of a chain.
@@ -55,23 +56,7 @@ As of `v2`, the output will always be the simpler representation:
 Non chat models (i.e., regular LLMs) are will be consistently associated with the more verbose format for now.
 :::
 
-### Removed `on_retriever_stream`
-
-The `on_retriever_stream` event was an artifact of the implementation and has been removed.
-
-Full information associated with the event is already available in the `on_retriever_end` event.
-
-Please use `on_retriever_end` instead.
-
-### Removed `on_tool_stream`
-
-The `on_tool_stream` event was an artifact of the implementation and has been removed.
-
-Full information associated with the event is already available in the `on_tool_end` event.
-
-Please use `on_tool_end` instead.
-
-### Update output for `on_retriever_end`
+### output for `on_retriever_end`
 
 `on_retriever_end` output will always return a list of `Documents`.
 
@@ -88,6 +73,21 @@ Before:
 }
 ```
 
+### Removed `on_retriever_stream`
+
+The `on_retriever_stream` event was an artifact of the implementation and has been removed.
+
+Full information associated with the event is already available in the `on_retriever_end` event.
+
+Please use `on_retriever_end` instead.
+
+### Removed `on_tool_stream`
+
+The `on_tool_stream` event was an artifact of the implementation and has been removed.
+
+Full information associated with the event is already available in the `on_tool_end` event.
+
+Please use `on_tool_end` instead.
 
 ### Propagating Names
 
