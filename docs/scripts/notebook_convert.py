@@ -27,7 +27,9 @@ class EscapePreprocessor(Preprocessor):
                 )
             # rewrite .ipynb links to .md
             cell.source = re.sub(
-                r"\[([^\]]*)\]\(([^)]*).ipynb\)", r"[\1](\2.md)", cell.source
+                r"\[([^\]]*)\]\((?![^\)]*//)([^)]*)\.ipynb\)",
+                r"[\1](\2.md)",
+                cell.source,
             )
         return cell, resources
 
@@ -84,12 +86,8 @@ class CustomRegexRemovePreprocessor(Preprocessor):
         pattern = re.compile(r"(?s)(?:\s*\Z)|(?:.*#\s*\|\s*output:\s*false.*)")
         rtn = not pattern.match(cell.source)
         if not rtn:
-            print("--remove--")
-            print(cell.source)
             return False
         else:
-            print("--keep--")
-            print(cell.source)
             return True
 
     def preprocess(self, nb, resources):

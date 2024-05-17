@@ -7,9 +7,13 @@ sidebar_class_name: hidden
 
 Here you’ll find answers to “How do I….?” types of questions.
 These guides are *goal-oriented* and *concrete*; they're meant to help you complete a specific task.
-For conceptual explanations see [Conceptual Guides](/docs/concepts/).
+For conceptual explanations see the [Conceptual guide](/docs/concepts/).
 For end-to-end walkthroughs see [Tutorials](/docs/tutorials).
-For comprehensive descriptions of every class and function see [API Reference](https://api.python.langchain.com/en/latest/).
+For comprehensive descriptions of every class and function see the [API Reference](https://api.python.langchain.com/en/latest/).
+
+## Installation
+
+- [How to: install LangChain packages](/docs/how_to/installation/)
 
 ## Key features
 
@@ -22,7 +26,7 @@ This highlights functionality that is core to using LangChain.
 
 ## LangChain Expression Language (LCEL)
 
-LangChain Expression Language is a way to create arbitrary custom chains. It is built on the Runnable protocol.
+LangChain Expression Language is a way to create arbitrary custom chains. It is built on the [Runnable](https://api.python.langchain.com/en/latest/runnables/langchain_core.runnables.base.Runnable.html) protocol.
 
 - [How to: chain runnables](/docs/how_to/sequence)
 - [How to: stream runnables](/docs/how_to/streaming)
@@ -143,6 +147,7 @@ Retrievers are responsible for taking a query and returning relevant documents.
 - [How to: generate multiple queries to retrieve data for](/docs/how_to/MultiQueryRetriever)
 - [How to: use contextual compression to compress the data retrieved](/docs/how_to/contextual_compression)
 - [How to: write a custom retriever class](/docs/how_to/custom_retriever)
+- [How to: add similarity scores to retriever results](/docs/how_to/add_scores_retriever)
 - [How to: combine the results from multiple retrievers](/docs/how_to/ensemble_retriever)
 - [How to: reorder retrieved results to put most relevant documents not in the middle](/docs/how_to/long_context_reorder)
 - [How to: generate multiple embeddings per document](/docs/how_to/multi_vector)
@@ -161,16 +166,14 @@ Indexing is the process of keeping your vectorstore in-sync with the underlying 
 
 LangChain Tools contain a description of the tool (to pass to the language model) as well as the implementation of the function to call).
 
-- [How to: use LangChain tools](/docs/how_to/tools)
+- [How to: create custom tools](/docs/how_to/custom_tools)
+- [How to: use built-in tools and built-in toolkits](/docs/how_to/tools_builtin)
 - [How to: use a chat model to call tools](/docs/how_to/tool_calling/)
-- [How to: use LangChain toolkits](/docs/how_to/toolkits)
-- [How to: define a custom tool](/docs/how_to/custom_tools)
+- [How to: use tools with LLMs that do not support tool calling natively](/docs/how_to/tools_prompting)
 - [How to: convert LangChain tools to OpenAI functions](/docs/how_to/tools_as_openai_functions)
-- [How to: use tools without function calling](/docs/how_to/tools_prompting)
-- [How to: let the LLM choose between multiple tools](/docs/how_to/tools_multiple)
 - [How to: add a human in the loop to tool usage](/docs/how_to/tools_human)
-- [How to: do parallel tool use](/docs/how_to/tools_parallel)
 - [How to: handle errors when calling tools](/docs/how_to/tools_error)
+- [How to: call tools using multi-modal data](/docs/how_to/tool_calls_multi_modal)
 
 ### Agents
 

@@ -5,6 +5,7 @@ EXPECTED_ALL = [
     "OpenVINOReranker",
     "JinaRerank",
     "RankLLMRerank",
+    "FlashrankRerank",
 ]
 
 
