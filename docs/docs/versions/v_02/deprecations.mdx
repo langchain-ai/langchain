@@ -35,25 +35,28 @@ The following code has been removed:
 
 Behavior was changed for the following code:
 
-- `@tool` decorator now assigns the function doc-string as the tool description. Previously, the `@tool` decorator
+
+### @tool decorator
+
+`@tool` decorator now assigns the function doc-string as the tool description. Previously, the `@tool` decorator
 using to prepend the function signature.
 
-    Before 0.2.0:
+Before 0.2.0:
 
-    ```python
-    @tool
-    def my_tool(x: str) -> str:
-        """Some description."""
-        return "something"
+```python
+@tool
+def my_tool(x: str) -> str:
+    """Some description."""
+    return "something"
 
-    print(my_tool.description)
-    ```
+print(my_tool.description)
+```
 
-    Would result in: `my_tool: (x: str) -> str - Some description.`
+Would result in: `my_tool: (x: str) -> str - Some description.`
 
-    As of 0.2.0:
+As of 0.2.0:
 
-    It will result in: `Some description.`
+It will result in: `Some description.`
 
 ## Code that moved to another package
 
@@ -485,7 +488,7 @@ Removal: 0.3.0
 Alternative: langchain_core.utils.function_calling.convert_to_openai_tool()
 
 
-## langchain
+### langchain
 
 
 #### AgentType
