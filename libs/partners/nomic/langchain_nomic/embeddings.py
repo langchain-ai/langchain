@@ -1,9 +1,9 @@
 import os
 from typing import List, Optional
 
-import nomic  # type: ignore
+import nomic  # type: ignore[import]
 from langchain_core.embeddings import Embeddings
-from nomic import embed  # type: ignore
+from nomic import embed
 
 
 class NomicEmbeddings(Embeddings):
