@@ -4,50 +4,54 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from langchain_community.graphs.anzograph_graph import (
+        AnzoGraphDBGraph,  # noqa: F401
+    )
     from langchain_community.graphs.arangodb_graph import (
-        ArangoGraph,
+        ArangoGraph,  # noqa: F401
     )
     from langchain_community.graphs.falkordb_graph import (
-        FalkorDBGraph,
+        FalkorDBGraph,  # noqa: F401
     )
     from langchain_community.graphs.gremlin_graph import (
-        GremlinGraph,
+        GremlinGraph,  # noqa: F401
     )
     from langchain_community.graphs.hugegraph import (
-        HugeGraph,
+        HugeGraph,  # noqa: F401
     )
     from langchain_community.graphs.kuzu_graph import (
-        KuzuGraph,
+        KuzuGraph,  # noqa: F401
     )
     from langchain_community.graphs.memgraph_graph import (
-        MemgraphGraph,
+        MemgraphGraph,  # noqa: F401
     )
     from langchain_community.graphs.nebula_graph import (
-        NebulaGraph,
+        NebulaGraph,  # noqa: F401
     )
     from langchain_community.graphs.neo4j_graph import (
-        Neo4jGraph,
+        Neo4jGraph,  # noqa: F401
     )
     from langchain_community.graphs.neptune_graph import (
-        NeptuneGraph,
+        NeptuneGraph,  # noqa: F401
     )
     from langchain_community.graphs.neptune_rdf_graph import (
-        NeptuneRdfGraph,
+        NeptuneRdfGraph,  # noqa: F401
     )
     from langchain_community.graphs.networkx_graph import (
-        NetworkxEntityGraph,
+        NetworkxEntityGraph,  # noqa: F401
     )
     from langchain_community.graphs.ontotext_graphdb_graph import (
-        OntotextGraphDBGraph,
+        OntotextGraphDBGraph,  # noqa: F401
     )
     from langchain_community.graphs.rdf_graph import (
-        RdfGraph,
+        RdfGraph,  # noqa: F401
     )
     from langchain_community.graphs.tigergraph_graph import (
-        TigerGraph,
+        TigerGraph,  # noqa: F401
     )
 
 __all__ = [
+    "AnzoGraphDBGraph",
     "ArangoGraph",
     "FalkorDBGraph",
     "GremlinGraph",
@@ -65,6 +69,7 @@ __all__ = [
 ]
 
 _module_lookup = {
+    "AnzoGraphDBGraph": "langchain_community.graphs.anzograph_graph",
     "ArangoGraph": "langchain_community.graphs.arangodb_graph",
     "FalkorDBGraph": "langchain_community.graphs.falkordb_graph",
     "GremlinGraph": "langchain_community.graphs.gremlin_graph",
