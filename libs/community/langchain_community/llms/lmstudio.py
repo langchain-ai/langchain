@@ -18,20 +18,16 @@ llm = LMStudioLLM(base_url="http://localhost:1234/v1", api_key="lm-studio", mode
 Then either llm.invoke("your prompt")
 or use it as part of a chain and call the invoke function.
 """
-
-
 from langchain.llms import BaseLLM
 from typing import List, Optional, Dict, Any
 import requests
 
-# TODO: Need to add the embedding endpoint and also make sure that LangChain + FAISS can use it.
 
-#This worked - but wasn't a runnable
-# class LMStudioLLM(BaseModel):
 class LMStudioLLM(BaseLLM):
     base_url: str
     api_key: str
     model: str
+
     def _call(self, prompt: str, stop: Optional[List[str]] = None, temperature: float = 0.5, max_tokens: int = 1000) -> str:
         headers = {
             'Authorization': f'Bearer {self.api_key}',
@@ -70,5 +66,3 @@ class LMStudioLLM(BaseLLM):
 
     def invoke(self, prompt: str, stop: Optional[List[str]] = None, temperature: float = 0.5, max_tokens: int = 1000) -> str:
         return self._call(prompt, stop, temperature, max_tokens)
-
-
