@@ -4,6 +4,7 @@ import pytest
 from langchain_core.pydantic_v1 import SecretStr
 
 from langchain_community.chat_models import ChatJavelinAIGateway
+from typing import cast
 
 
 @pytest.mark.requires("javelin_sdk")
@@ -30,3 +31,17 @@ def test_api_key_masked_when_passed_via_constructor() -> None:
     assert str(llm.javelin_api_key) == "**********"
     assert "secret-api-key" not in repr(llm.javelin_api_key)
     assert "secret-api-key" not in repr(llm)
+
+
+@pytest.mark.requires("javelin_sdk")
+def test_api_key_alias() -> None:
+    for model in [
+        ChatJavelinAIGateway(
+            route="<javelin-ai-gateway-chat-route>",
+            javelin_api_key=SecretStr("test_key"),
+        ),
+        ChatJavelinAIGateway(
+            route="<javelin-ai-gateway-chat-route>", api_key=SecretStr("test_key")
+        ),
+    ]:
+        assert cast(SecretStr, model.javelin_api_key).get_secret_value() == "test_key"
