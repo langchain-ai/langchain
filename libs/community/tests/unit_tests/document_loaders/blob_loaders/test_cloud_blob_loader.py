@@ -42,9 +42,13 @@ from langchain_community.document_loaders.blob_loaders import CloudBlobLoader
 #
 #         yield f"file://{temp_dir}"
 
-@pytest.fixture
-def toy_dir() -> str:
-    return "gs://ppr-langchain-test/"
+# @pytest.fixture
+# def toy_dir() -> str:
+#     return "gs://ppr-langchain-test"
+#
+# @pytest.fixture
+# def toy_dir() -> str:
+#     return "s3://ppr-langchain-test/"
 
 
 _TEST_CASES = [
