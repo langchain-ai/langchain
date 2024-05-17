@@ -11,7 +11,7 @@ def update_links(doc_path, docs_link):
         content = f.read()
 
     # replace relative links
-    content = re.sub("\]\(\.\/", f"]({docs_link}", content)
+    content = re.sub(r"\]\(\.\/", f"]({docs_link}", content)
 
     with open(DOCS_DIR / doc_path, "w") as f:
         f.write(content)
