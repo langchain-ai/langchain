@@ -87,9 +87,15 @@ class TigerGraphVector(VectorStore):
             content_vertices = [(id, {"text": text, "epoch_added": cur_epoch})
                                      for id, text in zip(ids, texts)]
         else:
-            doc_vertices = [(str(i), {"epoch_added": cur_epoch}) for i in range(len(texts))]
-            doc_content_edges = [(str(i), str(i)) for i in range(len(texts))]
-            content_vertices = [(str(i), {"text": text, "epoch_added": cur_epoch})
+
+            # hash text to get unique ids
+            import hashlib
+            doc_vertices = [(str(hashlib.md5(text.encode()).hexdigest()), 
+                             {"epoch_added": cur_epoch}) 
+                                for text in texts]
+            doc_content_edges = [(ids[0], ids[0]) for ids in doc_vertices]
+            content_vertices = [(doc_vertices[i][0], {"text": text,
+                                                      "epoch_added": cur_epoch})
                                      for i, text in enumerate(texts)]
             
         documets_upserted = 0
@@ -162,7 +168,6 @@ class TigerGraphVector(VectorStore):
         query: str,
         k: int = 4,
         params: Dict[str, Any] = {},
-        **kwargs: Any,
     ) -> List[Document]:
         """Run similarity search with TigerGraph CoPilot.
 
@@ -186,8 +191,10 @@ class TigerGraphVector(VectorStore):
             
             res = self.conn.ai.searchDocuments(query,
                         method="vdb",
-                        method_parameters=method_params)
+                        method_parameters=method_params)[0]["@@final_retrieval"]
             # TODO: process the response to return Document objects
+            docs = [Document(metadata={"source": key}, page_content=val) 
+                    for key, val in res.items()]
         elif self.search_type == SearchType.HYBRID:
             method_params = {
                 "indices": self.search_index,
@@ -202,8 +209,13 @@ class TigerGraphVector(VectorStore):
                 method_params["num_seen_min"] = params["num_seen_min"]
             res = self.conn.ai.searchDocuments(query,
                             method="hnswoverlap",
-                            method_parameters = method_params)
-            # TODO: process the response to return Document objects
+                            method_parameters = method_params)[0]["@@final_retrieval"]
+            docs = []
+            for retrieved_types in list(res.keys()):
+                for key, val in res[retrieved_types].items():
+                    docs.append(Document(metadata={"source": key,
+                                                   "index_source": retrieved_types}, 
+                                        page_content=val))
         elif self.search_type == SearchType.SIBLING:
             method_params = {
                 "indices": self.search_index,
@@ -222,9 +234,10 @@ class TigerGraphVector(VectorStore):
 
             res = self.conn.ai.searchDocuments(query,
                             method="sibling",
-                            method_parameters = method_params)
-            # TODO: process the response to return Document objects
+                            method_parameters = method_params)[0]["@@sibling_set"]
+            docs = [Document(metadata={"source": key}, page_content=val) 
+                    for key, val in res.items()]
         else:
             raise ValueError("Invalid search type")
         
-        return res
+        return docs
