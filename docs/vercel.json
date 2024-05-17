@@ -14,6 +14,10 @@
       "destination": "/v0.1/docs/:path*/"
     },
     {
+      "source": "/cookbook(/?)",
+      "destination": "/v0.1/docs/cookbook/"
+    },
+    {
       "source": "(/?)",
       "destination": "/v0.1/docs/get_started/introduction/"
     },
