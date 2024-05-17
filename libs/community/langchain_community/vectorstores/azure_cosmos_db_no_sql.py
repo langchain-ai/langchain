@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Dict, Generator, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
 from azure.cosmos.container import ContainerProxy
@@ -18,13 +18,14 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
     cosmos_client: CosmosClient
     database: DatabaseProxy
     container: ContainerProxy
-    database_name: Optional[str] = None
-    container_name: Optional[str] = None
-    partition_key: Optional[str] = None
-    embedding: Embeddings = None
-    vector_embedding_policy: Optional[Dict[str, Any]] = None
-    indexing_policy: Optional[Dict[str, Any]] = None
-    cosmos_container_properties: Optional[Dict[str, Any]] = None
+    database_name: str
+    container_name: str
+    partition_key: str
+    embedding: Embeddings
+    vector_embedding_policy: Dict[str, Any]
+    indexing_policy: Dict[str, Any]
+    cosmos_container_properties: Dict[str, Any]
+    embedding_key: str
 
     def __init__(
         self,
@@ -33,8 +34,8 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         container_name: str,
         partition_key: str,
         embedding: Embeddings,
-        vector_embedding_policy: [Dict[str, Any]],
-        indexing_policy: [Dict[str, Any]],
+        vector_embedding_policy: Dict[str, Any],
+        indexing_policy: Dict[str, Any],
         cosmos_container_properties: [Dict[str, Any]],
     ):
         if (
@@ -74,6 +75,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             indexing_policy=self.indexing_policy,
             vector_embedding_policy=self.vector_embedding_policy,
         )
+        self.embedding_key = self.vector_embedding_policy["vectorEmbeddings"][0]["path"][1:]
 
     def add_texts(
         self,
@@ -90,7 +92,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        _metadatas: Union[List, Generator] = metadatas or ({} for _ in texts)
+        _metadatas = list(metadatas if metadatas is not None else ({} for _ in texts))
 
         return self._insert_texts(list(texts), _metadatas)
 
@@ -113,9 +115,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         # Embed and create the documents
         embeddings = self.embedding.embed_documents(texts)
         text_key = "text"
-        embedding_key = self.vector_embedding_policy["vectorEmbeddings"][0]["path"][1:]
+
         to_insert = [
-            {"id": str(uuid.uuid4()), text_key: t, embedding_key: embedding, **m}
+            {"id": str(uuid.uuid4()), text_key: t, self.embedding_key: embedding, **m}
             for t, m, embedding in zip(texts, metadatas, embeddings)
         ]
         # insert the documents in CosmosDB No Sql
@@ -193,11 +195,10 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         embeddings: List[float],
         k: int = 4,
     ) -> List[Tuple[Document, float]]:
-        embedding_key = self.vector_embedding_policy["vectorEmbeddings"][0]["path"][1:]
         query = (
             "SELECT TOP {} c.id, c.{}, c.text, VectorDistance(c.{}, {}) AS "
             "SimilarityScore FROM c ORDER BY VectorDistance(c.{}, {})".format(
-                k, embedding_key, embedding_key, embeddings, embedding_key, embeddings
+                k, self.embedding_key, self.embedding_key, embeddings, self.embedding_key, embeddings
             )
         )
         docs_and_scores = []
@@ -238,10 +239,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         docs = self._similarity_search_with_score(embeddings=embedding, k=fetch_k)
 
         # Re-ranks the docs using MMR
-        embedding_key = self.vector_embedding_policy["vectorEmbeddings"][0]["path"][1:]
         mmr_doc_indexes = maximal_marginal_relevance(
             np.array(embedding),
-            [doc.metadata[embedding_key] for doc, _ in docs],
+            [doc.metadata[self.embedding_key] for doc, _ in docs],
             k=k,
             lambda_mult=lambda_mult,
         )
