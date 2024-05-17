@@ -5,7 +5,15 @@ from typing import Any, Optional
 
 import pytest
 from langchain_core.callbacks import CallbackManager
-from langchain_core.messages import BaseMessage, BaseMessageChunk, HumanMessage
+from langchain_core.messages import (
+    BaseMessage,
+    BaseMessageChunk,
+    HumanMessage,
+    SystemMessage,
+    AIMessage,
+    ToolMessage,
+    ToolCall,
+)
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -240,3 +248,49 @@ def test_openai_structured_output(llm: AzureChatOpenAI) -> None:
     assert isinstance(result, MyModel)
     assert result.name == "Erick"
     assert result.age == 27
+
+
+def test_azure_openai_token_counts(llm: AzureChatOpenAI) -> None:
+    """Test token counts."""
+    messages = [
+        SystemMessage(content="You are a helpful assistant with a calculator."),
+        HumanMessage(content="What is 1+2?"),
+        AIMessage(
+            content="Hello",
+            tool_calls=[
+                ToolCall(name="adder", args={"a": 1, "b": 2}, id="tool-call-1")
+            ],
+        ),
+        ToolMessage(content="3", tool_call_id="tool-call-1"),
+        HumanMessage(content="What is 2+3?"),
+    ]
+    response = llm.invoke(messages)
+
+    print(response)
+
+    expected_prompt_tokens = 69
+    assert (
+        response.response_metadata["token_usage"]["prompt_tokens"]
+        == expected_prompt_tokens
+    )
+    completion_tokens = response.response_metadata["token_usage"]["completion_tokens"]
+    assert (
+        response.response_metadata["token_usage"]["total_tokens"]
+        == expected_prompt_tokens + completion_tokens
+    )
+
+    callback_handler = FakeCallbackHandler()
+    callback_manager = CallbackManager([callback_handler])
+
+    llm = _get_llm(
+        max_tokens=100,
+        temperature=0,
+        callback_manager=callback_manager,
+        verbose=True,
+    )
+
+    # now test streaming
+    for chunk in llm.stream(messages):
+        print(chunk)
+
+    assert False
