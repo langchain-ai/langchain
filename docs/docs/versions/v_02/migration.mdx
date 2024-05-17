@@ -1,13 +1,11 @@
 ---
 sidebar_position: 1
-sidebar_label: v0.2
+sidebar_label: Migration
 ---
 
-# LangChain v0.2
+# Migration
 
 LangChain v0.2 was released in May 2024. This release includes a number of [breaking changes and deprecations](/docs/versions/v_02/deprecations). This document contains a guide on upgrading to 0.2.x.
-
-## Migration
 
 This documentation will help you upgrade your code to LangChain `0.2.x.`. To prepare for migration, we first recommend you take the following steps:
 
@@ -18,7 +16,7 @@ This documentation will help you upgrade your code to LangChain `0.2.x.`. To pre
 5. Re-run unit tests.
 6. If you are using `astream_events`, please review how to [migrate to astream events v2](/docs/versions/v_02/migrating_astream_events).
 
-### Upgrade to new imports
+# Upgrade to new imports
 
 We created a tool to help migrate your code. This tool is still in **beta** and may not cover all cases, but
 we hope that it will help you migrate your code more quickly.
@@ -42,14 +40,14 @@ Here is an example of the import changes that the migration script can help appl
 | langchain           | langchain-text-splitters | from langchain.text_splitter import RecursiveCharacterTextSplitter | from langchain_text_splitters import RecursiveCharacterTextSplitter |
 
 
-#### Installation
+## Installation
 
 ```bash
 pip install langchain-cli
 langchain-cli --version # <-- Make sure the version is at least 0.0.22
 ```
 
-#### Usage
+## Usage
 
 Given that the migration script is not perfect, you should make sure you have a backup of your code first (e.g., using version control like `git`).
 
@@ -71,7 +69,7 @@ langchain-cli migrate [path to code] --diff # Preview
 langchain-cli migrate [path to code] # Apply
 ```
 
-#### Other options
+### Other options
 
 ```bash
 # See help menu

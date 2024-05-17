@@ -1,13 +1,13 @@
 ---
-sidebar_position: 2
-sidebar_label: Deprecations and Breaking Changes
+sidebar_position: 3
+sidebar_label: Changes
 ---
-
-# Deprecations and Breaking Changes
 
 This code contains a list of deprecations and removals in the `langchain` and `langchain-core` packages.
 
-## Breaking changes in 0.2.0
+New features and improvements are not listed here. See the [overview](/docs/versions/v_02/overview) for a summary of what's new in this release.
+
+# Breaking changes
 
 As of release 0.2.0, `langchain` is required to be integration-agnostic. This means that code in `langchain`  should not by default instantiate any specific chat models, llms, embedding models, vectorstores etc; instead, the user will be required to specify those explicitly.
 
@@ -53,14 +53,7 @@ using to prepend the function signature.
 
     It will result in: `Some description.`
 
-# Deprecations
-
-We have two main types of deprecations:
-
-1. Code that moved to another package. This usually requires only a change in the import statement and potentially installing a new package.
-2. Code that is targeted for removal because there are better alternatives available.
-
-## Code that moved to another package
+# Code that moved to another package
 
 Code that was moved from `langchain` into another package (e.g, `langchain-community`)
 
@@ -85,17 +78,17 @@ We will continue supporting the imports in `langchain` until release 0.4 as long
 However, we advise for users to not rely on these imports and instead migrate to the new imports. To help with this process, we’re releasing a migration script via the LangChain CLI. See further instructions in migration guide.
 
 
-## Code that is targeted for removal
+# Code that is targeted for removal
 
 Code that has better alternatives available and will eventually be removed, so there’s only a single way to do things. (e.g., `predict_messages` method in ChatModels has been deprecated in favor of `invoke`).
 
-### astream events V1
+## astream events V1
 
 If you are using `astream_events`, please review how to [migrate to astream events v2](/docs/versions/v_02/migrating_astream_events).
 
-### langchain_core
+## langchain_core
 
-#### try_load_from_hub
+### try_load_from_hub
 
 
 In module: `utils.loading`
@@ -106,7 +99,7 @@ Removal: 0.3.0
 Alternative: Using the hwchase17/langchain-hub repo for prompts is deprecated. Please use https://smith.langchain.com/hub instead.
 
 
-#### BaseLanguageModel.predict
+### BaseLanguageModel.predict
 
 
 In module: `language_models.base`
@@ -117,7 +110,7 @@ Removal: 0.3.0
 Alternative: invoke
 
 
-#### BaseLanguageModel.predict_messages
+### BaseLanguageModel.predict_messages
 
 
 In module: `language_models.base`
@@ -128,7 +121,7 @@ Removal: 0.3.0
 Alternative: invoke
 
 
-#### BaseLanguageModel.apredict
+### BaseLanguageModel.apredict
 
 
 In module: `language_models.base`
@@ -139,7 +132,7 @@ Removal: 0.3.0
 Alternative: ainvoke
 
 
-#### BaseLanguageModel.apredict_messages
+### BaseLanguageModel.apredict_messages
 
 
 In module: `language_models.base`
@@ -150,7 +143,7 @@ Removal: 0.3.0
 Alternative: ainvoke
 
 
-#### RunTypeEnum
+### RunTypeEnum
 
 
 In module: `tracers.schemas`
@@ -161,7 +154,7 @@ Removal: 0.3.0
 Alternative: Use string instead.
 
 
-#### TracerSessionV1Base
+### TracerSessionV1Base
 
 
 In module: `tracers.schemas`
@@ -172,7 +165,7 @@ Removal: 0.3.0
 Alternative:
 
 
-#### TracerSessionV1Create
+### TracerSessionV1Create
 
 
 In module: `tracers.schemas`
@@ -183,7 +176,7 @@ Removal: 0.3.0
 Alternative:
 
 
-#### TracerSessionV1
+### TracerSessionV1
 
 
 In module: `tracers.schemas`
@@ -194,7 +187,7 @@ Removal: 0.3.0
 Alternative:
 
 
-#### TracerSessionBase
+### TracerSessionBase
 
 
 In module: `tracers.schemas`
@@ -205,7 +198,7 @@ Removal: 0.3.0
 Alternative:
 
 
-#### TracerSession
+### TracerSession
 
 
 In module: `tracers.schemas`
@@ -216,7 +209,7 @@ Removal: 0.3.0
 Alternative:
 
 
-#### BaseRun
+### BaseRun
 
 
 In module: `tracers.schemas`
@@ -227,7 +220,7 @@ Removal: 0.3.0
 Alternative: Run
 
 
-#### LLMRun
+### LLMRun
 
 
 In module: `tracers.schemas`
@@ -238,7 +231,7 @@ Removal: 0.3.0
 Alternative: Run
 
 
-#### ChainRun
+### ChainRun
 
 
 In module: `tracers.schemas`
@@ -249,7 +242,7 @@ Removal: 0.3.0
 Alternative: Run
 
 
-#### ToolRun
+### ToolRun
 
 
 In module: `tracers.schemas`
@@ -260,7 +253,7 @@ Removal: 0.3.0
 Alternative: Run
 
 
-#### BaseChatModel.__call__
+### BaseChatModel.__call__
 
 
 In module: `language_models.chat_models`
@@ -271,7 +264,7 @@ Removal: 0.3.0
 Alternative: invoke
 
 
-#### BaseChatModel.call_as_llm
+### BaseChatModel.call_as_llm
 
 
 In module: `language_models.chat_models`
@@ -282,7 +275,7 @@ Removal: 0.3.0
 Alternative: invoke
 
 
-#### BaseChatModel.predict
+### BaseChatModel.predict
 
 
 In module: `language_models.chat_models`
@@ -293,7 +286,7 @@ Removal: 0.3.0
 Alternative: invoke
 
 
-#### BaseChatModel.predict_messages
+### BaseChatModel.predict_messages
 
 
 In module: `language_models.chat_models`
@@ -304,18 +297,7 @@ Removal: 0.3.0
 Alternative: invoke
 
 
-#### BaseChatModel.apredict
-
-
-In module: `language_models.chat_models`
-Deprecated: 0.1.7
-Removal: 0.3.0
-
-
-Alternative: ainvoke
-
-
-#### BaseChatModel.apredict_messages
+### BaseChatModel.apredict
 
 
 In module: `language_models.chat_models`
@@ -326,7 +308,18 @@ Removal: 0.3.0
 Alternative: ainvoke
 
 
-#### BaseLLM.__call__
+### BaseChatModel.apredict_messages
+
+
+In module: `language_models.chat_models`
+Deprecated: 0.1.7
+Removal: 0.3.0
+
+
+Alternative: ainvoke
+
+
+### BaseLLM.__call__
 
 
 In module: `language_models.llms`
@@ -337,7 +330,7 @@ Removal: 0.3.0
 Alternative: invoke
 
 
-#### BaseLLM.predict
+### BaseLLM.predict
 
 
 In module: `language_models.llms`
@@ -348,7 +341,7 @@ Removal: 0.3.0
 Alternative: invoke
 
 
-#### BaseLLM.predict_messages
+### BaseLLM.predict_messages
 
 
 In module: `language_models.llms`
@@ -359,7 +352,7 @@ Removal: 0.3.0
 Alternative: invoke
 
 
-#### BaseLLM.apredict
+### BaseLLM.apredict
 
 
 In module: `language_models.llms`
@@ -370,7 +363,7 @@ Removal: 0.3.0
 Alternative: ainvoke
 
 
-#### BaseLLM.apredict_messages
+### BaseLLM.apredict_messages
 
 
 In module: `language_models.llms`
@@ -381,7 +374,7 @@ Removal: 0.3.0
 Alternative: ainvoke
 
 
-#### BaseRetriever.get_relevant_documents
+### BaseRetriever.get_relevant_documents
 
 
 In module: `retrievers`
@@ -392,7 +385,7 @@ Removal: 0.3.0
 Alternative: invoke
 
 
-#### BaseRetriever.aget_relevant_documents
+### BaseRetriever.aget_relevant_documents
 
 
 In module: `retrievers`
@@ -403,7 +396,7 @@ Removal: 0.3.0
 Alternative: ainvoke
 
 
-#### ChatPromptTemplate.from_role_strings
+### ChatPromptTemplate.from_role_strings
 
 
 In module: `prompts.chat`
@@ -414,7 +407,7 @@ Removal:
 Alternative: from_messages classmethod
 
 
-#### ChatPromptTemplate.from_strings
+### ChatPromptTemplate.from_strings
 
 
 In module: `prompts.chat`
@@ -425,7 +418,7 @@ Removal:
 Alternative: from_messages classmethod
 
 
-#### BaseTool.__call__
+### BaseTool.__call__
 
 
 In module: `tools`
@@ -436,7 +429,7 @@ Removal: 0.3.0
 Alternative: invoke
 
 
-#### convert_pydantic_to_openai_function
+### convert_pydantic_to_openai_function
 
 
 In module: `utils.function_calling`
@@ -447,7 +440,7 @@ Removal: 0.3.0
 Alternative: langchain_core.utils.function_calling.convert_to_openai_function()
 
 
-#### convert_pydantic_to_openai_tool
+### convert_pydantic_to_openai_tool
 
 
 In module: `utils.function_calling`
@@ -458,7 +451,7 @@ Removal: 0.3.0
 Alternative: langchain_core.utils.function_calling.convert_to_openai_tool()
 
 
-#### convert_python_function_to_openai_function
+### convert_python_function_to_openai_function
 
 
 In module: `utils.function_calling`
@@ -469,7 +462,7 @@ Removal: 0.3.0
 Alternative: langchain_core.utils.function_calling.convert_to_openai_function()
 
 
-#### format_tool_to_openai_function
+### format_tool_to_openai_function
 
 
 In module: `utils.function_calling`
@@ -480,7 +473,7 @@ Removal: 0.3.0
 Alternative: langchain_core.utils.function_calling.convert_to_openai_function()
 
 
-#### format_tool_to_openai_tool
+### format_tool_to_openai_tool
 
 
 In module: `utils.function_calling`
@@ -491,10 +484,10 @@ Removal: 0.3.0
 Alternative: langchain_core.utils.function_calling.convert_to_openai_tool()
 
 
-### langchain
+## langchain
 
 
-#### AgentType
+### AgentType
 
 
 In module: `agents.agent_types`
@@ -505,7 +498,7 @@ Removal: 0.3.0
 Alternative: Use new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
 
 
-#### Chain.__call__
+### Chain.__call__
 
 
 In module: `chains.base`
@@ -516,7 +509,7 @@ Removal: 0.3.0
 Alternative: invoke
 
 
-#### Chain.acall
+### Chain.acall
 
 
 In module: `chains.base`
@@ -527,7 +520,7 @@ Removal: 0.3.0
 Alternative: ainvoke
 
 
-#### Chain.run
+### Chain.run
 
 
 In module: `chains.base`
@@ -538,7 +531,7 @@ Removal: 0.3.0
 Alternative: invoke
 
 
-#### Chain.arun
+### Chain.arun
 
 
 In module: `chains.base`
@@ -549,7 +542,7 @@ Removal: 0.3.0
 Alternative: ainvoke
 
 
-#### Chain.apply
+### Chain.apply
 
 
 In module: `chains.base`
@@ -560,7 +553,7 @@ Removal: 0.3.0
 Alternative: batch
 
 
-#### LLMChain
+### LLMChain
 
 
 In module: `chains.llm`
@@ -571,7 +564,7 @@ Removal: 0.3.0
 Alternative: RunnableSequence, e.g., `prompt | llm`
 
 
-#### LLMSingleActionAgent
+### LLMSingleActionAgent
 
 
 In module: `agents.agent`
@@ -582,7 +575,7 @@ Removal: 0.3.0
 Alternative: Use new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
 
 
-#### Agent
+### Agent
 
 
 In module: `agents.agent`
@@ -593,7 +586,7 @@ Removal: 0.3.0
 Alternative: Use new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
 
 
-#### OpenAIFunctionsAgent
+### OpenAIFunctionsAgent
 
 
 In module: `agents.openai_functions_agent.base`
@@ -604,7 +597,7 @@ Removal: 0.3.0
 Alternative: create_openai_functions_agent
 
 
-#### ZeroShotAgent
+### ZeroShotAgent
 
 
 In module: `agents.mrkl.base`
@@ -615,7 +608,7 @@ Removal: 0.3.0
 Alternative: create_react_agent
 
 
-#### MRKLChain
+### MRKLChain
 
 
 In module: `agents.mrkl.base`
@@ -626,7 +619,7 @@ Removal: 0.3.0
 Alternative:
 
 
-#### ConversationalAgent
+### ConversationalAgent
 
 
 In module: `agents.conversational.base`
@@ -637,7 +630,7 @@ Removal: 0.3.0
 Alternative: create_react_agent
 
 
-#### ConversationalChatAgent
+### ConversationalChatAgent
 
 
 In module: `agents.conversational_chat.base`
@@ -648,7 +641,7 @@ Removal: 0.3.0
 Alternative: create_json_chat_agent
 
 
-#### ChatAgent
+### ChatAgent
 
 
 In module: `agents.chat.base`
@@ -659,7 +652,7 @@ Removal: 0.3.0
 Alternative: create_react_agent
 
 
-#### OpenAIMultiFunctionsAgent
+### OpenAIMultiFunctionsAgent
 
 
 In module: `agents.openai_functions_multi_agent.base`
@@ -670,7 +663,7 @@ Removal: 0.3.0
 Alternative: create_openai_tools_agent
 
 
-#### ReActDocstoreAgent
+### ReActDocstoreAgent
 
 
 In module: `agents.react.base`
@@ -681,7 +674,7 @@ Removal: 0.3.0
 Alternative:
 
 
-#### DocstoreExplorer
+### DocstoreExplorer
 
 
 In module: `agents.react.base`
@@ -692,7 +685,7 @@ Removal: 0.3.0
 Alternative:
 
 
-#### ReActTextWorldAgent
+### ReActTextWorldAgent
 
 
 In module: `agents.react.base`
@@ -703,7 +696,7 @@ Removal: 0.3.0
 Alternative:
 
 
-#### ReActChain
+### ReActChain
 
 
 In module: `agents.react.base`
@@ -714,7 +707,7 @@ Removal: 0.3.0
 Alternative:
 
 
-#### SelfAskWithSearchAgent
+### SelfAskWithSearchAgent
 
 
 In module: `agents.self_ask_with_search.base`
@@ -725,7 +718,7 @@ Removal: 0.3.0
 Alternative: create_self_ask_with_search
 
 
-#### SelfAskWithSearchChain
+### SelfAskWithSearchChain
 
 
 In module: `agents.self_ask_with_search.base`
@@ -736,7 +729,7 @@ Removal: 0.3.0
 Alternative:
 
 
-#### StructuredChatAgent
+### StructuredChatAgent
 
 
 In module: `agents.structured_chat.base`
@@ -747,7 +740,7 @@ Removal: 0.3.0
 Alternative: create_structured_chat_agent
 
 
-#### RetrievalQA
+### RetrievalQA
 
 
 In module: `chains.retrieval_qa.base`
@@ -758,7 +751,7 @@ Removal: 0.3.0
 Alternative: create_retrieval_chain
 
 
-#### load_agent_from_config
+### load_agent_from_config
 
 
 In module: `agents.loading`
@@ -769,7 +762,7 @@ Removal: 0.3.0
 Alternative:
 
 
-#### load_agent
+### load_agent
 
 
 In module: `agents.loading`
@@ -780,7 +773,7 @@ Removal: 0.3.0
 Alternative:
 
 
-#### initialize_agent
+### initialize_agent
 
 
 In module: `agents.initialize`
@@ -791,7 +784,7 @@ Removal: 0.3.0
 Alternative: Use new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
 
 
-#### XMLAgent
+### XMLAgent
 
 
 In module: `agents.xml.base`
@@ -802,7 +795,7 @@ Removal: 0.3.0
 Alternative: create_xml_agent
 
 
-#### CohereRerank
+### CohereRerank
 
 
 In module: `retrievers.document_compressors.cohere_rerank`
@@ -813,7 +806,7 @@ Removal: 0.3.0
 Alternative: langchain_cohere.CohereRerank
 
 
-#### ConversationalRetrievalChain
+### ConversationalRetrievalChain
 
 
 In module: `chains.conversational_retrieval.base`
@@ -824,7 +817,7 @@ Removal: 0.3.0
 Alternative: create_history_aware_retriever together with create_retrieval_chain (see example in docstring)
 
 
-#### create_extraction_chain_pydantic
+### create_extraction_chain_pydantic
 
 
 In module: `chains.openai_tools.extraction`
@@ -835,7 +828,7 @@ Removal: 0.3.0
 Alternative: with_structured_output method on chat models that support tool calling.
 
 
-#### create_openai_fn_runnable
+### create_openai_fn_runnable
 
 
 In module: `chains.structured_output.base`
@@ -846,7 +839,7 @@ Removal: 0.3.0
 Alternative: with_structured_output method on chat models that support tool calling.
 
 
-#### create_structured_output_runnable
+### create_structured_output_runnable
 
 
 In module: `chains.structured_output.base`
@@ -857,7 +850,7 @@ Removal: 0.3.0
 Alternative: with_structured_output method on chat models that support tool calling.
 
 
-#### create_openai_fn_chain
+### create_openai_fn_chain
 
 
 In module: `chains.openai_functions.base`
@@ -868,7 +861,7 @@ Removal: 0.3.0
 Alternative: create_openai_fn_runnable
 
 
-#### create_structured_output_chain
+### create_structured_output_chain
 
 
 In module: `chains.openai_functions.base`
@@ -879,7 +872,7 @@ Removal: 0.3.0
 Alternative: ChatOpenAI.with_structured_output
 
 
-#### create_extraction_chain
+### create_extraction_chain
 
 
 In module: `chains.openai_functions.extraction`
@@ -890,7 +883,7 @@ Removal: 0.3.0
 Alternative: with_structured_output method on chat models that support tool calling.
 
 
-#### create_extraction_chain_pydantic
+### create_extraction_chain_pydantic
 
 
 In module: `chains.openai_functions.extraction`
