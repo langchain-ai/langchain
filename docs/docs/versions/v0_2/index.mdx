@@ -1,11 +1,20 @@
 ---
 sidebar_position: 1
-sidebar_label: Migration
 ---
 
-# Migration
+# LangChain v0.2
 
-LangChain v0.2 was released in May 2024. This release includes a number of [breaking changes and deprecations](/docs/versions/v_02/deprecations). This document contains a guide on upgrading to 0.2.x.
+
+
+LangChain v0.2 was released in May 2024. This release includes a number of [breaking changes and deprecations](/docs/versions/v0_2/deprecations). This document contains a guide on upgrading to 0.2.x.
+
+:::note Reference
+
+- [Breaking Changes & Deprecations](/docs/versions/v0_2/deprecations)
+
+:::
+
+# Migration
 
 This documentation will help you upgrade your code to LangChain `0.2.x.`. To prepare for migration, we first recommend you take the following steps:
 
@@ -14,7 +23,6 @@ This documentation will help you upgrade your code to LangChain `0.2.x.`. To pre
 3. Install a recent version of `langchain-cli` , and use the tool to replace old imports used by your code with the new imports. (See instructions below.)
 4. Manually resolve any remaining deprecation warnings.
 5. Re-run unit tests.
-6. If you are using `astream_events`, please review how to [migrate to astream events v2](/docs/versions/v_02/migrating_astream_events).
 
 ## Upgrade to new imports
 
