@@ -24,8 +24,8 @@ DEFAULT_MILVUS_CONNECTION = {
 
 
 @deprecated(
-    since="0.0.35",
-    removal="0.2.0",
+    since="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_milvus.MilvusVectorStore",
 )
 class Milvus(VectorStore):
