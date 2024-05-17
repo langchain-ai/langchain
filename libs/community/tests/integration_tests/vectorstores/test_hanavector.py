@@ -86,7 +86,7 @@ def setup_module(module):  # type: ignore[no-untyped-def]
         password=os.environ.get("HANA_DB_PASSWORD"),
         autocommit=True,
         sslValidateCertificate=False,
-        encrypt=True
+        # encrypt=True
     )
     try:
         cur = test_setup.conn.cursor()
@@ -124,8 +124,8 @@ def metadatas() -> List[str]:
         {"start": 0, "end": 100, "quality": "good", "ready": True},  # type: ignore[list-item]
         {"start": 100, "end": 200, "quality": "bad", "ready": False},  # type: ignore[list-item]
         {"start": 200, "end": 300, "quality": "ugly", "ready": True},  # type: ignore[list-item]
-        {"start": 200, "quality": "ugly", "ready": True, "owner": "Steve"},  # type: ignore[list-item]
-        {"start": 300, "quality": "ugly", "owner": "Steve"},  # type: ignore[list-item]
+        {"start": 200, "quality": "ugly", "ready": True, "Owner": "Steve"},  # type: ignore[list-item]
+        {"start": 300, "quality": "ugly", "Owner": "Steve"},  # type: ignore[list-item]
     ]
 
 
@@ -1101,7 +1101,7 @@ def test_pgvector_with_with_metadata_filters_5(
     assert set(ids).issubset(expected_ids), test_filter
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
-def test_preexisting_specific_columns_for_metadata(
+def test_preexisting_specific_columns_for_metadata_fill(
     texts: List[str], metadatas: List[dict]
 ) -> None:
 
@@ -1113,7 +1113,7 @@ def test_preexisting_specific_columns_for_metadata(
         f'"VEC_TEXT" NCLOB, '
         f'"VEC_META" NCLOB, '
         f'"VEC_VECTOR" REAL_VECTOR, '
-        f'"owner" NVARCHAR(100), '
+        f'"Owner" NVARCHAR(100), '
         f'"quality" NVARCHAR(100));'
     )
     try:
@@ -1128,7 +1128,7 @@ def test_preexisting_specific_columns_for_metadata(
         metadatas=metadatas,
         embedding=embedding,
         table_name=table_name,
-        specific_metadata_columns=["owner", "quality"]
+        specific_metadata_columns=["Owner", "quality"]
     )
 
     c = 0
@@ -1174,7 +1174,7 @@ def test_preexisting_specific_columns_for_metadata_via_array(
         f'"VEC_TEXT" NCLOB, '
         f'"VEC_META" NCLOB, '
         f'"VEC_VECTOR" REAL_VECTOR, '
-        f'"owner" NVARCHAR(100), '
+        f'"Owner" NVARCHAR(100), '
         f'"quality" NVARCHAR(100));'
     )
     try:
@@ -1209,7 +1209,7 @@ def test_preexisting_specific_columns_for_metadata_via_array(
 
     try: 
         sql_str = (
-            f'SELECT COUNT(*) FROM {table_name} WHERE "owner"='
+            f'SELECT COUNT(*) FROM {table_name} WHERE "Owner"='
             f"'Steve'"
         )
         cur = test_setup.conn.cursor()
@@ -1296,7 +1296,7 @@ def test_preexisting_specific_columns_for_metadata_empty_columns(
         f'"VEC_META" NCLOB, '
         f'"VEC_VECTOR" REAL_VECTOR, '
         f'"quality" NVARCHAR(100), '
-        f'"owner" NVARCHAR(100), '
+        f'"ready" BOOLEAN, '
         f'"start" INTEGER);'
     )
     try:
@@ -1311,7 +1311,7 @@ def test_preexisting_specific_columns_for_metadata_empty_columns(
         metadatas=metadatas,
         embedding=embedding,
         table_name=table_name,            
-        specific_metadata_columns=["quality", "owner", "start"]
+        specific_metadata_columns=["quality", "ready", "start"]
     )
  
     docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
@@ -1329,8 +1329,8 @@ def test_preexisting_specific_columns_for_metadata_empty_columns(
     assert len(docs) == 1
     assert docs[0].page_content == "foo"
 
-    docs = vectorDB.similarity_search("hello", k=5, filter={"owner": "Steve"})
-    assert len(docs) == 2
+    docs = vectorDB.similarity_search("hello", k=5, filter={"ready": True})
+    assert len(docs) == 3
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_preexisting_specific_columns_for_metadata_wrong_type(
