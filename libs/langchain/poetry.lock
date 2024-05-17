@@ -3511,7 +3511,7 @@ url = "../partners/openai"
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.0.2"
+version = "0.2.0"
 description = "LangChain text splitting utilities"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3519,7 +3519,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = ">=0.1.28,<0.3"
+langchain-core = "^0.2.0"
 
 [package.extras]
 extended-testing = ["beautifulsoup4 (>=4.12.3,<5.0.0)", "lxml (>=4.9.3,<6.0)"]
@@ -9378,4 +9378,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "59e9c89f607a0a27418f24342dc964e8f07f4f274d796b253a5fe378fcce5e42"
+content-hash = "83762b3ce33babfb666f7f21e95a8c98397b38bbc4f4f93a1d4d3ae3be6cbd7b"
