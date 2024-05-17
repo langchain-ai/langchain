@@ -195,13 +195,28 @@ const config = {
               {
                 type: "doc",
                 docId: "additional_resources/tutorials",
-                label: "Tutorials"
+                label: "3rd party tutorials"
               },
               {
                 type: "doc",
                 docId: "additional_resources/youtube",
                 label: "YouTube"
               },
+            ]
+          },
+          {
+            type: "dropdown",
+            label: "v0.2",
+            position: "right",
+            items: [
+              {
+                label: "v0.2",
+                href: "/docs/introduction"
+              },
+              {
+                label: "v0.1",
+                href: "https://python.langchain.com/v0.1/docs/get_started/introduction"
+              }
             ]
           },
           {
