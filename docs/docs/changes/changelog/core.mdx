@@ -1,0 +1,10 @@
+# langchain-core
+
+## 0.1.x
+
+#### Deprecated
+
+- `BaseChatModel` methods `__call__`, `call_as_llm`, `predict`, `predict_messages`. Will be removed in 0.2.0. Use `BaseChatModel.invoke` instead.
+- `BaseChatModel` methods `apredict`, `apredict_messages`. Will be removed in 0.2.0. Use `BaseChatModel.ainvoke` instead.
+- `BaseLLM` methods `__call__, `predict`, `predict_messages`. Will be removed in 0.2.0. Use `BaseLLM.invoke` instead.
+- `BaseLLM` methods `apredict`, `apredict_messages`. Will be removed in 0.2.0. Use `BaseLLM.ainvoke` instead.
