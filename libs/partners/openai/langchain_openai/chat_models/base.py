@@ -475,12 +475,7 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {
-            "stream_options": {"include_usage": True},
-            **params,
-            **kwargs,
-            "stream": True,
-        }
+        params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
         with self.client.create(messages=message_dicts, **params) as response:
@@ -587,12 +582,7 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {
-            "stream_options": {"include_usage": True},
-            **params,
-            **kwargs,
-            "stream": True,
-        }
+        params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
         response = await self.async_client.create(messages=message_dicts, **params)
@@ -1154,6 +1144,29 @@ class ChatOpenAI(BaseChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
         return True
+
+    def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
+        """Set default stream_options."""
+        default_stream_options = {"include_usage": True}
+        stream_options = kwargs.get("stream_options", {})
+        merged_stream_options = {**default_stream_options, **stream_options}
+        kwargs["stream_options"] = merged_stream_options
+
+        return super()._stream(*args, **kwargs)
+
+    async def _astream(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        """Set default stream_options."""
+        default_stream_options = {"include_usage": True}
+        stream_options = kwargs.get("stream_options", {})
+        merged_stream_options = {**default_stream_options, **stream_options}
+        kwargs["stream_options"] = merged_stream_options
+
+        async for chunk in super()._astream(*args, **kwargs):
+            yield chunk
 
 
 def _is_pydantic_class(obj: Any) -> bool:
