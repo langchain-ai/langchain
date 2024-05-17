@@ -151,7 +151,15 @@ class SupabaseVectorStore(VectorStore):
         embeddings = embedding.embed_documents(texts)
         ids = [str(uuid.uuid4()) for _ in texts]
         docs = cls._texts_to_documents(texts, metadatas)
-        cls._add_vectors(client, table_name, embeddings, docs, ids, chunk_size, **kwargs)
+        cls._add_vectors(
+            client,
+            table_name,
+            embeddings,
+            docs,
+            ids,
+            chunk_size,
+            **kwargs
+        )
 
         return cls(
             client=client,
