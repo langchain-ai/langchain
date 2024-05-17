@@ -260,34 +260,38 @@ class HanaDB(VectorStore):
         if embeddings is None:
             embeddings = self.embedding.embed_documents(list(texts))
 
+        # Create sql parameters array 
+        sql_params = []
+        for i, text in enumerate(texts):
+            metadata = metadatas[i] if metadatas else {}
+            metadata, extracted_special_metadata = self._split_off_special_metadata(metadata)
+            embedding = (
+                embeddings[i]
+                if embeddings
+                else self.embedding.embed_documents([text])[0]
+            )
+            sql_params.append((
+                text,
+                json.dumps(HanaDB._sanitize_metadata_keys(metadata)),
+                f"[{','.join(map(str, embedding))}]",
+                *extracted_special_metadata 
+            ))
+
+        # Insert data into the table
         cur = self.connection.cursor()
         try:
-            # Insert data into the table
-            for i, text in enumerate(texts):
-                metadata = metadatas[i] if metadatas else {}
-                metadata, extracted_special_metadata = self._split_off_special_metadata(metadata)
-                embedding = (
-                    embeddings[i]
-                    if embeddings
-                    else self.embedding.embed_documents([text])[0]
-                )
-                specific_metadata_columns_string = '", "'.join(self.specific_metadata_columns)
-                if specific_metadata_columns_string:
-                    specific_metadata_columns_string = ', "' + specific_metadata_columns_string + '"'
-                sql_str = (
-                    f'INSERT INTO "{self.table_name}" ("{self.content_column}", '
-                    f'"{self.metadata_column}", "{self.vector_column}"{specific_metadata_columns_string}) '
-                    f"VALUES (?, ?, TO_REAL_VECTOR (?){', ?' * len(self.specific_metadata_columns)});"
-                )
-                cur.execute(
-                    sql_str,
-                    (
-                        text,
-                        json.dumps(HanaDB._sanitize_metadata_keys(metadata)),
-                        f"[{','.join(map(str, embedding))}]",
-                        *extracted_special_metadata
-                    ),
-                )
+            specific_metadata_columns_string = '", "'.join(self.specific_metadata_columns)
+            if specific_metadata_columns_string:
+                specific_metadata_columns_string = ', "' + specific_metadata_columns_string + '"'
+            sql_str = (
+                f'INSERT INTO "{self.table_name}" ("{self.content_column}", '
+                f'"{self.metadata_column}", "{self.vector_column}"{specific_metadata_columns_string}) '
+                f"VALUES (?, ?, TO_REAL_VECTOR (?){', ?' * len(self.specific_metadata_columns)});"
+            )
+            cur.executemany(
+                sql_str,
+                sql_params
+            )
         finally:
             cur.close()
         return []
