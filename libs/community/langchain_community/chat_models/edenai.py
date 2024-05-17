@@ -1,11 +1,26 @@
 import json
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from aiohttp import ClientSession
+from langchain_community.utilities.requests import Requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -15,12 +30,20 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    InvalidToolCall,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    SecretStr,
+    root_validator,
+)
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-
-from langchain_community.utilities.requests import Requests
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 
 def _message_role(type: str) -> str:
@@ -53,6 +76,39 @@ def _format_edenai_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
         "previous_history": formatted_messages,
         "chatbot_global_action": system,
     }
+
+
+
+
+def _extract_tool_calls_from_edenai_response(
+    provider_response: Dict[str, Any]
+) -> Tuple[List[Dict[str, Any]], List[InvalidToolCall]]:
+    tool_calls = []
+    invalid_tool_calls = []
+
+    message = provider_response.get("message", {})[1]
+
+    if raw_tool_calls := message.get("tool_calls"):
+        for raw_tool_call in raw_tool_calls:
+            try:
+                tool_calls.append(
+                    {
+                        "name": raw_tool_call["name"],
+                        "args": json.loads(raw_tool_call["arguments"]),
+                        "id": raw_tool_call["id"],
+                    }
+                )
+            except json.JSONDecodeError as exc:
+                invalid_tool_calls.append(
+                    InvalidToolCall(
+                        name=raw_tool_call.get("name"),
+                        args=raw_tool_call.get("arguments"),
+                        id=raw_tool_call.get("id"),
+                        error=f"Received JSONDecodeError {exc}",
+                    )
+                )
+
+    return tool_calls, invalid_tool_calls
 
 
 class ChatEdenAI(BaseChatModel):
@@ -253,6 +309,21 @@ class ChatEdenAI(BaseChatModel):
                         )
                     yield cg_chunk
 
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        formatted_tools = [convert_to_openai_tool(tool)["function"] for tool in tools]
+        formatted_tool_choice = "required" if tool_choice == "any" else tool_choice
+        return super().bind(
+            available_tools=formatted_tools, tool_choice=formatted_tool_choice, **kwargs
+        )
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -273,6 +344,7 @@ class ChatEdenAI(BaseChatModel):
             "User-Agent": self.get_user_agent(),
         }
         formatted_data = _format_edenai_messages(messages=messages)
+
         payload: Dict[str, Any] = {
             "providers": self.provider,
             "max_tokens": self.max_tokens,
@@ -303,10 +375,18 @@ class ChatEdenAI(BaseChatModel):
             err_msg = provider_response.get("error", {}).get("message")
             raise Exception(err_msg)
 
+        tool_calls, invalid_tool_calls = _extract_tool_calls_from_edenai_response(
+            provider_response
+        )
+
         return ChatResult(
             generations=[
                 ChatGeneration(
-                    message=AIMessage(content=provider_response["generated_text"])
+                    message=AIMessage(
+                        content=provider_response["generated_text"] or "",
+                        tool_calls=tool_calls,
+                        invalid_tool_calls=invalid_tool_calls,
+                    )
                 )
             ],
             llm_output=data,
