@@ -1,4 +1,4 @@
--2 ../libs/core
+-e ../libs/core
 -e ../libs/langchain
 -e ../libs/community
 -e ../libs/experimental
