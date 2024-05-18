@@ -1,8 +1,7 @@
 from __future__ import annotations
-import tempfile
+
 import os
-import rdflib
-from SPARQLWrapper import SPARQLWrapper, TURTLE
+import tempfile
 from typing import (
     TYPE_CHECKING,
     Dict,
@@ -10,8 +9,11 @@ from typing import (
     Optional,
 )
 
+import rdflib
+from SPARQLWrapper import TURTLE, SPARQLWrapper
+
 if TYPE_CHECKING:
-	from rdflib import Graph
+    from rdflib import Graph
 
 prefixes = {
     "owl": """PREFIX owl: <http://www.w3.org/2002/07/owl#>\n""",
@@ -125,7 +127,7 @@ class AnzoGraphDBGraph:
         self.local_copy = local_copy
         self.graph = rdflib.Graph(**(graph_kwargs or {}))
         self.schema = None
-        
+
         if self.source_file:
             self.load_local_file()
         elif self.query_endpoint and self.query_ontology:
@@ -156,9 +158,9 @@ class AnzoGraphDBGraph:
         """
         temp_graph = rdflib.Graph()
         temp_graph.parse(data=query_result, format="turtle")
-        g = temp_graph.serialize(format='turtle')
+        g = temp_graph.serialize(format="turtle")
 
-        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp:
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp:
             temp.write(g)
             temp_file_path = temp.name
 
@@ -166,8 +168,8 @@ class AnzoGraphDBGraph:
             self.graph = rdflib.Graph()
             self.graph.parse(temp_file_path, format=self.serialization)
         finally:
-            os.unlink(temp_file_path)              
-                    
+            os.unlink(temp_file_path)
+
     @property
     def get_schema(self) -> str:
         """

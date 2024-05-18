@@ -455,7 +455,8 @@ Do not include any text except the SPARQL query generated.
 The question is:
 {prompt}"""
 ANZOGRAPHDB_GENERATION_SELECT_PROMPT = PromptTemplate(
-    input_variables=["schema", "prompt"], template=ANZOGRAPHDB_GENERATION_SELECT_TEMPLATE
+    input_variables=["schema", "prompt"],
+    template=ANZOGRAPHDB_GENERATION_SELECT_TEMPLATE,
 )
 
 ANZOGRAPHDB_GENERATION_UPDATE_TEMPLATE = """Task: Generate a SPARQL UPDATE statement for updating a graph database.
@@ -485,7 +486,8 @@ Return only the generated SPARQL query, nothing else.
 The information to be inserted is:
 {prompt}"""
 ANZOGRAPHDB_GENERATION_UPDATE_PROMPT = PromptTemplate(
-    input_variables=["schema", "prompt"], template=ANZOGRAPHDB_GENERATION_UPDATE_TEMPLATE
+    input_variables=["schema", "prompt"],
+    template=ANZOGRAPHDB_GENERATION_UPDATE_TEMPLATE,
 )
 
 ANZOGRAPHDB_QA_TEMPLATE = """Task: Generate a natural language response from the results of a SPARQL query.
@@ -525,6 +527,5 @@ The ontology schema delimited by triple backticks in Turtle format is:
 """
 ANZOGRAPHDB_QA_FIX_PROMPT = PromptTemplate(
     input_variables=["error_message", "generated_sparql", "schema"],
-    template=ANZOGRAPHDB_QA_FIX_TEMPLATE
+    template=ANZOGRAPHDB_QA_FIX_TEMPLATE,
 )
-
