@@ -1650,27 +1650,22 @@ EXPECTED_EVENTS = [
 ]
 
 
-@pytest.mark.xfail(
-    reason="This test is failing due to missing functionality."
-    "Need to implement logic in _transform_stream_with_config that mimics the async "
-    "variant that uses tap_output_iter"
-)
 async def test_sync_in_async_stream_lambdas() -> None:
     """Test invoking nested runnable lambda."""
 
-    def add_one_(x: int) -> int:
+    def add_one(x: int) -> int:
         return x + 1
 
-    add_one = RunnableLambda(add_one_)
+    add_one_ = RunnableLambda(add_one)
 
-    async def add_one_proxy_(x: int, config: RunnableConfig) -> int:
-        streaming = add_one.stream(x, config)
+    async def add_one_proxy(x: int, config: RunnableConfig) -> int:
+        streaming = add_one_.stream(x, config)
         results = [result for result in streaming]
         return results[0]
 
-    add_one_proxy = RunnableLambda(add_one_proxy_)  # type: ignore
+    add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore
 
-    events = await _collect_events(add_one_proxy.astream_events(1, version="v2"))
+    events = await _collect_events(add_one_proxy_.astream_events(1, version="v2"))
     assert events == EXPECTED_EVENTS
 
 
@@ -1694,11 +1689,6 @@ async def test_async_in_async_stream_lambdas() -> None:
     assert events == EXPECTED_EVENTS
 
 
-@pytest.mark.xfail(
-    reason="This test is failing due to missing functionality."
-    "Need to implement logic in _transform_stream_with_config that mimics the async "
-    "variant that uses tap_output_iter"
-)
 async def test_sync_in_sync_lambdas() -> None:
     """Test invoking nested runnable lambda."""
 
