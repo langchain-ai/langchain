@@ -288,7 +288,7 @@ class TigerGraphVector(VectorStore):
     @classmethod
     def from_texts(
         cls,
-        conn: TigerGraphConnection,
+        conn: Any,
         texts: Iterable[str],
         ids: Optional[List[str]] = None,
         upsert_size: int = 1000,
@@ -301,7 +301,7 @@ class TigerGraphVector(VectorStore):
     @classmethod
     def from_documents(
         cls,
-        conn: TigerGraphConnection,
+        conn: Any,
         documents: List[Document],
         ids: Optional[List[str]] = None,
         upsert_size: int = 1000,
