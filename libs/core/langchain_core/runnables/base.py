@@ -95,7 +95,6 @@ if TYPE_CHECKING:
         RunLog,
         RunLogPatch,
     )
-    from langchain_core.tracers.root_listeners import Listener
     from langchain_core.tracers.schemas import Run
 
 
@@ -1259,9 +1258,15 @@ class Runnable(Generic[Input, Output], ABC):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]] = None,
-        on_end: Optional[Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]] = None,
-        on_error: Optional[Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]] = None,
+        on_start: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_end: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_error: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
     ) -> Runnable[Input, Output]:
         """
         Bind lifecycle listeners to a Runnable, returning a new Runnable.
@@ -4231,9 +4236,15 @@ class RunnableEach(RunnableEachBase[Input, Output]):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]] = None,
-        on_end: Optional[Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]] = None,
-        on_error: Optional[Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]] = None,
+        on_start: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_end: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_error: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
     ) -> RunnableEach[Input, Output]:
         """
         Bind lifecycle listeners to a Runnable, returning a new Runnable.
@@ -4721,9 +4732,15 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]] = None,
-        on_end: Optional[Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]] = None,
-        on_error: Optional[Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]] = None,
+        on_start: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_end: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_error: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
     ) -> Runnable[Input, Output]:
         """Bind lifecycle listeners to a Runnable, returning a new Runnable.
 
