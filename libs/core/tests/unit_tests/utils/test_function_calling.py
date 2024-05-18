@@ -92,7 +92,7 @@ class DummyWithClassMethod:
             arg2: one of 'bar', 'baz'
         """
         pass
-
+ 
 
 def test_convert_to_openai_function(
     pydantic: Type[BaseModel],
@@ -144,6 +144,16 @@ def test_function_optional_param() -> None:
     func = convert_to_openai_function(func5)
     req = func["parameters"]["required"]
     assert set(req) == {"b"}
+
+def test_function_no_params() -> None:
+    def nullary_function() -> None:
+        """nullary function
+        """
+        pass
+
+    func = convert_to_openai_function(nullary_function)
+    req = func["parameters"]["required"]
+    assert not req
 
 
 class FakeCall(BaseModel):
