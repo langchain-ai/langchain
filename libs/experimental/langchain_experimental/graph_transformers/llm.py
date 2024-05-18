@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
 
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_core.documents import Document
-from langchain_core.language_models import BaseChatModel
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import SystemMessage
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import (
@@ -547,7 +547,7 @@ class LLMGraphTransformer:
 
     def __init__(
         self,
-        llm: BaseChatModel,
+        llm: BaseLanguageModel,
         allowed_nodes: List[str] = [],
         allowed_relationships: List[str] = [],
         prompt: Optional[ChatPromptTemplate] = None,
@@ -585,8 +585,12 @@ class LLMGraphTransformer:
             self.chain = prompt | llm
         else:
             # Define chain
+            try:
+                llm_type = llm._llm_type # type: ignore
+            except AttributeError:
+                llm_type = None
             schema = create_simple_model(
-                allowed_nodes, allowed_relationships, node_properties, llm._llm_type
+                allowed_nodes, allowed_relationships, node_properties, llm_type
             )
             structured_llm = llm.with_structured_output(schema, include_raw=True)
             prompt = prompt or default_prompt
