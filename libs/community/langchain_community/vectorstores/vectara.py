@@ -34,10 +34,10 @@ class SummaryConfig:
     """
 
     is_enabled: bool = False
-    max_results: int = 7
+    max_results: int = 5
     response_lang: str = "eng"
     stream: bool = True
-    prompt_name: str = "vectara-experimental-summary-ext-2023-12-11-sml"
+    prompt_name: str = "vectara-summary-ext-24-05-sml"
 
 
 @dataclass
