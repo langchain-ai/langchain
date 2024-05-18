@@ -586,7 +586,7 @@ class LLMGraphTransformer:
         else:
             # Define chain
             try:
-                llm_type = llm._llm_type # type: ignore
+                llm_type = llm._llm_type  # type: ignore
             except AttributeError:
                 llm_type = None
             schema = create_simple_model(
