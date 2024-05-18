@@ -3,17 +3,17 @@ from __future__ import annotations
 import os
 import tempfile
 from typing import (
-    TYPE_CHECKING,
-    Dict,
-    List,
-    Optional,
+	TYPE_CHECKING,
+	Dict,
+	List,
+	Optional,
 )
 
 import rdflib
 from SPARQLWrapper import TURTLE, SPARQLWrapper
 
 if TYPE_CHECKING:
-    from rdflib import Graph
+	pass
 
 prefixes = {
     "owl": """PREFIX owl: <http://www.w3.org/2002/07/owl#>\n""",
@@ -113,7 +113,7 @@ class AnzoGraphDBGraph:
         :param update_endpoint: SPARQL endpoint for UPDATE queries, write access
         :param standard: RDF, RDFS, or OWL
         :param local_copy: new local copy for storing changes
-        :param query_ontology: SPARQL CONSTRUCT user query against the AnzoGraph database endpoint
+        :param query_ontology: SPARQL CONSTRUCT query against the AnzoGraph DB endpoint
         :param graph_kwargs: Additional AnzoGraph SPARQL graph specific kwargs
         that will be used to initialize it,
         if query_endpoint is provided.
@@ -127,7 +127,7 @@ class AnzoGraphDBGraph:
         self.local_copy = local_copy
         self.graph = rdflib.Graph(**(graph_kwargs or {}))
         self.schema = None
-
+        
         if self.source_file:
             self.load_local_file()
         elif self.query_endpoint and self.query_ontology:
@@ -158,9 +158,9 @@ class AnzoGraphDBGraph:
         """
         temp_graph = rdflib.Graph()
         temp_graph.parse(data=query_result, format="turtle")
-        g = temp_graph.serialize(format="turtle")
+        g = temp_graph.serialize(format='turtle')
 
-        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp:
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp:
             temp.write(g)
             temp_file_path = temp.name
 
@@ -168,8 +168,8 @@ class AnzoGraphDBGraph:
             self.graph = rdflib.Graph()
             self.graph.parse(temp_file_path, format=self.serialization)
         finally:
-            os.unlink(temp_file_path)
-
+            os.unlink(temp_file_path)              
+                    
     @property
     def get_schema(self) -> str:
         """
@@ -239,7 +239,8 @@ class AnzoGraphDBGraph:
         Constructs a schema description from given classes and relationships.
         """
         return (
-            f"In the following, each IRI is followed by the local name and optionally its description in parentheses. \n"
+            f"In the following, each IRI is followed by the local name and "
+            f"optionally its description in parentheses. \n"
             f"The RDF graph supports the following node types:\n"
             f'{", ".join([self._res_to_str(cls, "cls") for cls in classes])}\n'
             f"The RDF graph supports the following relationships:\n"
@@ -262,7 +263,6 @@ class AnzoGraphDBGraph:
                 dps = self.query(dp_query_owl)
                 self.schema = self._rdf_s_schema(clss, ops + dps)
             else:
-                raise ValueError(f"Mode '{self.standard}' is currently not supported.")
+                raise ValueError(f"Mode '{self.standard}' currently not supported.")
         else:
             self.schema = None
-            print("No SPARQL endpoint available. Schema could not be loaded.")
