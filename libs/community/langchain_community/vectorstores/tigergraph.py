@@ -288,10 +288,10 @@ class TigerGraphVector(VectorStore):
     @classmethod
     def from_texts(
         cls,
-        conn: Any,
         texts: Iterable[str],
         ids: Optional[List[str]] = None,
         upsert_size: int = 1000,
+        conn: Any = None
     ) -> TigerGraphVector:
         """Create a TigerGraphVector from a list of texts."""
         tg = cls(conn)
@@ -301,10 +301,10 @@ class TigerGraphVector(VectorStore):
     @classmethod
     def from_documents(
         cls,
-        conn: Any,
         documents: List[Document],
         ids: Optional[List[str]] = None,
         upsert_size: int = 1000,
+        conn: Any = None
     ) -> TigerGraphVector:
         """Create a TigerGraphVector from a list of Documents."""
         tg = cls(conn)
