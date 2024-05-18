@@ -54,7 +54,8 @@ class TigerGraph(GraphStore):
         if conn.ai.nlqs_host is None:
             msg = """**conn** parameter does not have nlqs_host parameter defined.
                      Define hostname of CoPilot service.
-                     Use `conn.ai.configureCoPilotHost()` to set the hostname of the CoPilot"""
+                     Use `conn.ai.configureCoPilotHost()` 
+                     to set the hostname of the CoPilot"""
             raise ConnectionError(msg)
 
         self._conn: TigerGraphConnection = conn
@@ -97,7 +98,7 @@ class TigerGraph(GraphStore):
         descriptions, as described here: https://docs.tigergraph.com/gsql-ref/current/querying/query-descriptions.
 
         If using TigerGraph 3.x, the `description`, `docstring`, and `param_types` parameters are required.
-        """
+        """  # noqa: E501
         return self._conn.ai.updateCustomQuery(
             function_header, description, docstring, param_types
         )

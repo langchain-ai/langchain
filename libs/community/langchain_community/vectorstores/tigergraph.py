@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import enum
-import logging
 import warnings
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 from langchain_core.documents import Document
 from langchain_core.vectorstores import VectorStore
@@ -19,6 +18,7 @@ class SearchType(str, enum.Enum):
 
 
 DEFAULT_SEARCH_TYPE = SearchType.HYBRID
+
 
 class TigerGraphVector(VectorStore):
     """`TigerGraph` vector index.
@@ -39,35 +39,48 @@ class TigerGraphVector(VectorStore):
         self,
         conn: TigerGraphConnection,
         search_type: SearchType = SearchType.HYBRID,
-        search_index: Union[str, list[str]] = ["Entity", "Relationship",
-                                               "Document", "DocumentChunk"],
+        search_index: Union[str, list[str]] = [
+            "Entity",
+            "Relationship",
+            "Document",
+            "DocumentChunk",
+        ],
     ) -> None:
         try:
-            import pyTigerGraph
+            from pyTigerGraph import TigerGraphConnection
         except ImportError:
             raise ImportError(
-                "Could not import pyTigerGraph package. "
+                "Could not import pyTigerGraph python package. "
                 "Please install it with `pip install pyTigerGraph`."
             )
+
+        if not isinstance(conn, TigerGraphConnection):
+            msg = "**conn** parameter must inherit from TigerGraphConnection"
+            raise TypeError(msg)
 
         self.search_index = search_index
         self.search_type = search_type
         self.conn = conn
 
-        '''Check if SupportAI is initialized'''
+        """Check if SupportAI is initialized"""
         v_types = self.conn.getVertexTypes()
-        if ("Document" not in v_types and "DocumentChunk" not in v_types
-            and "Entity" not in v_types and "Relationship" not in v_types):
-            warnings.warn("""SupportAI is not initialized for graph {}.
-                            Initializing SupportAI.""".format(self.conn.graphname))
+        if (
+            "Document" not in v_types
+            and "DocumentChunk" not in v_types
+            and "Entity" not in v_types
+            and "Relationship" not in v_types
+        ):
+            warnings.warn(
+                """SupportAI is not initialized for graph {}.
+                            Initializing SupportAI.""".format(self.conn.graphname)
+            )
             self.conn.ai.initializeSupportAI()
-
 
     def add_texts(
         self,
         texts: Iterable[str],
         ids: Optional[List[str]] = None,
-        upsert_size: int = 1000
+        upsert_size: int = 1000,
     ) -> List[str]:
         """Add texts to the TigerGraph CoPilot SupportAI.
 
@@ -77,28 +90,36 @@ class TigerGraphVector(VectorStore):
             Counts of documents, content edges, and content upserted.
         """
         import time
+
         cur_epoch = int(time.time())
         if ids:
             doc_vertices = [(id, {"epoch_added": cur_epoch}) for id in ids]
             doc_content_edges = [(id, id) for id in ids]
-            content_vertices = [(id, {"text": text, "epoch_added": cur_epoch})
-                                     for id, text in zip(ids, texts)]
+            content_vertices = [
+                (id, {"text": text, "epoch_added": cur_epoch})
+                for id, text in zip(ids, texts)
+            ]
         else:
-
             # hash text to get unique ids
             import hashlib
-            doc_vertices = [(str(hashlib.md5(text.encode()).hexdigest()), 
-                             {"epoch_added": cur_epoch}) 
-                                for text in texts]
+
+            doc_vertices = [
+                (
+                    str(hashlib.md5(text.encode()).hexdigest()),
+                    {"epoch_added": cur_epoch},
+                )
+                for text in texts
+            ]
             doc_content_edges = [(ids[0], ids[0]) for ids in doc_vertices]
-            content_vertices = [(doc_vertices[i][0], {"text": text,
-                                                      "epoch_added": cur_epoch})
-                                     for i, text in enumerate(texts)]
-            
+            content_vertices = [
+                (doc_vertices[i][0], {"text": text, "epoch_added": cur_epoch})
+                for i, text in enumerate(texts)
+            ]
+
         documets_upserted = 0
         has_content_edges_upserted = 0
         content_upserted = 0
-        
+
         if len(doc_vertices) < upsert_size:
             documets_upserted += self.conn.upsertVertices("Document", doc_vertices)
             has_content_edges_upserted += self.conn.upsertEdges(
@@ -108,31 +129,31 @@ class TigerGraphVector(VectorStore):
         else:
             for i in range(0, len(doc_vertices), upsert_size):
                 documets_upserted += self.conn.upsertVertices(
-                    "Document", 
-                    doc_vertices[i:i+upsert_size]
+                    "Document", doc_vertices[i : i + upsert_size]
                 )
                 has_content_edges_upserted += self.conn.upsertEdges(
-                    "Document", "HAS_CONTENT", "Content", 
-                    doc_content_edges[i:i+upsert_size]
+                    "Document",
+                    "HAS_CONTENT",
+                    "Content",
+                    doc_content_edges[i : i + upsert_size],
                 )
                 content_upserted += self.conn.upsertVertices(
-                    "Content",
-                    content_vertices[i:i+upsert_size]
+                    "Content", content_vertices[i : i + upsert_size]
                 )
 
         return {
             "documents_upserted": documets_upserted,
             "has_content_edges_upserted": has_content_edges_upserted,
-            "content_upserted": content_upserted
+            "content_upserted": content_upserted,
         }
-    
+
     def add_documents_from_blob(
-            self,
-            data_source: str,
-            data_source_config: Dict[str, Any],
-            loader_config: Dict[str, Any],
-            data_path: str,
-            file_format: str = "json"
+        self,
+        data_source: str,
+        data_source_config: Dict[str, Any],
+        loader_config: Dict[str, Any],
+        data_path: str,
+        file_format: str = "json",
     ):
         """
         Add documents from a blob data source to the TigerGraph CoPilot SupportAI.
@@ -151,26 +172,23 @@ class TigerGraphVector(VectorStore):
             data_source=data_source,
             data_source_config=data_source_config,
             loader_config=loader_config,
-            file_format=file_format
+            file_format=file_format,
         )
 
         return self.conn.ai.runDocumentIngest(
-                    res["load_job_id"],
-                    res["data_source_id"],
-                    data_path
-                )
-    
-    def search(self,
-               query: str,
-               k: int = 4,
-               params: Dict[str, Any] = {}) -> List[Document]:
+            res["load_job_id"], res["data_source_id"], data_path
+        )
+
+    def search(
+        self, query: str, k: int = 4, params: Dict[str, Any] = {}
+    ) -> List[Document]:
         """Run similarity search with TigerGraph CoPilot.
 
         Args:
             query (str): Query text to search for.
             k (int): Number of results to return. Defaults to 4.
             params (Dict[str, Any]): Additional parameters for the search.
-        
+
         Returns:
             List of Documents most similar to the query.
         """
@@ -193,49 +211,50 @@ class TigerGraphVector(VectorStore):
         """
 
         if self.search_type == SearchType.VECTOR:
-            method_params = {
-                "index": self.search_index,
-                "top_k": k,
-                "withHyDE": False
-            }
+            method_params = {"index": self.search_index, "top_k": k, "withHyDE": False}
 
             if params.get("withHyDE"):
                 method_params["withHyDE"] = params["withHyDE"]
 
-            res = self.conn.ai.searchDocuments(query,
-                        method="vdb",
-                        method_parameters=method_params)[0]["@@final_retrieval"]
-            
-            docs = [Document(metadata={"source": key}, page_content=val) 
-                    for key, val in res.items()]
+            res = self.conn.ai.searchDocuments(
+                query, method="vdb", method_parameters=method_params
+            )[0]["@@final_retrieval"]
+
+            docs = [
+                Document(metadata={"source": key}, page_content=val)
+                for key, val in res.items()
+            ]
         elif self.search_type == SearchType.HYBRID:
             method_params = {
                 "indices": self.search_index,
                 "top_k": k,
                 "num_hops": 2,
-                "num_seen_min": 2
+                "num_seen_min": 2,
             }
 
             if params.get("num_hops"):
                 method_params["num_hops"] = params["num_hops"]
             if params.get("num_seen_min"):
                 method_params["num_seen_min"] = params["num_seen_min"]
-            res = self.conn.ai.searchDocuments(query,
-                            method="hnswoverlap",
-                            method_parameters = method_params)[0]["@@final_retrieval"]
+            res = self.conn.ai.searchDocuments(
+                query, method="hnswoverlap", method_parameters=method_params
+            )[0]["@@final_retrieval"]
             docs = []
             for retrieved_types in list(res.keys()):
                 for key, val in res[retrieved_types].items():
-                    docs.append(Document(metadata={"source": key,
-                                                   "index_source": retrieved_types}, 
-                                        page_content=val))
+                    docs.append(
+                        Document(
+                            metadata={"source": key, "index_source": retrieved_types},
+                            page_content=val,
+                        )
+                    )
         elif self.search_type == SearchType.SIBLING:
             method_params = {
                 "index": self.search_index,
                 "top_k": k,
                 "lookahead": 3,
                 "lookback": 3,
-                "withHyDE": False
+                "withHyDE": False,
             }
 
             if params.get("lookahead"):
@@ -245,52 +264,50 @@ class TigerGraphVector(VectorStore):
             if params.get("withHyDE"):
                 method_params["withHyDE"] = params["withHyDE"]
 
-            res = self.conn.ai.searchDocuments(query,
-                            method="sibling",
-                            method_parameters = method_params)[0]["@@sibling_set"]
-            
+            res = self.conn.ai.searchDocuments(
+                query, method="sibling", method_parameters=method_params
+            )[0]["@@sibling_set"]
+
             docs = []
             for root_doc, sibling_docs in res.items():
                 for sibling_doc_id, sibling_doc_data in sibling_docs.items():
                     docs.append(
                         Document(
                             metadata={
-                                "source": sibling_doc_id, 
-                                "root": root_doc, 
-                                "sibling_distance": sibling_doc_data["distance"]
-                            }, 
-                            page_content=sibling_doc_data["content"]
+                                "source": sibling_doc_id,
+                                "root": root_doc,
+                                "sibling_distance": sibling_doc_data["distance"],
+                            },
+                            page_content=sibling_doc_data["content"],
                         )
                     )
         else:
             raise ValueError("Invalid search type")
-        
+
         return docs
-    
+
     @classmethod
     def from_texts(
         cls,
         conn: TigerGraphConnection,
         texts: Iterable[str],
         ids: Optional[List[str]] = None,
-        upsert_size: int = 1000
+        upsert_size: int = 1000,
     ) -> TigerGraphVector:
         """Create a TigerGraphVector from a list of texts."""
         tg = cls(conn)
         tg.add_texts(texts, ids, upsert_size)
         return tg
-    
+
     @classmethod
     def from_documents(
         cls,
         conn: TigerGraphConnection,
         documents: List[Document],
         ids: Optional[List[str]] = None,
-        upsert_size: int = 1000
+        upsert_size: int = 1000,
     ) -> TigerGraphVector:
         """Create a TigerGraphVector from a list of Documents."""
         tg = cls(conn)
-        tg.add_texts([doc.page_content for doc in documents], 
-                     ids, 
-                     upsert_size)
+        tg.add_texts([doc.page_content for doc in documents], ids, upsert_size)
         return tg
