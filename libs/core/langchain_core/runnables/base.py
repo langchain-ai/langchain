@@ -1716,6 +1716,9 @@ class Runnable(Generic[Input, Output], ABC):
         """Helper method to transform an Iterator of Input values into an Iterator of
         Output values, with callbacks.
         Use this to implement `stream()` or `transform()` in Runnable subclasses."""
+        # Mixin that is used by both astream log and astream events implementation
+        from langchain_core.tracers._streaming import _StreamingCallbackHandler
+
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = tee(input, 2)
         # Start the input iterator to ensure the input runnable starts before this one
@@ -1742,6 +1745,17 @@ class Runnable(Generic[Input, Output], ABC):
             context = copy_context()
             context.run(var_child_runnable_config.set, child_config)
             iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
+            if stream_handler := next(
+                (
+                    cast(_StreamingCallbackHandler, h)
+                    for h in run_manager.handlers
+                    # instance check OK here, it's a mixin
+                    if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
+                ),
+                None,
+            ):
+                # populates streamed_output in astream_log() output if needed
+                iterator = stream_handler.tap_output_iter(run_manager.run_id, iterator)
             try:
                 while True:
                     chunk: Output = context.run(next, iterator)  # type: ignore
