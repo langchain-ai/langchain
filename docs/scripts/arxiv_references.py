@@ -377,7 +377,10 @@ class ArxivAPIWrapper(BaseModel):
 
 
 def _format_doc_link(doc_paths: list[str]) -> list[str]:
-    return [f"[{doc_path}](/{doc_path})" for doc_path in doc_paths]
+    return [
+        f"[{doc_path}](https://python.langchain.com/{doc_path})"
+        for doc_path in doc_paths
+    ]
 
 
 def _format_api_ref_link(
@@ -400,7 +403,7 @@ def _format_api_ref_link(
 
 def _format_template_link(template_names: list[str]) -> list[str]:
     return [
-        f"[{template_name}](/docs/templates/{template_name})"
+        f"[{template_name}](https://python.langchain.com/docs/templates/{template_name})"
         for template_name in template_names
     ]
 
