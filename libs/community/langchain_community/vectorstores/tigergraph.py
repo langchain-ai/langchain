@@ -6,7 +6,6 @@ from typing import Any, Dict, Iterable, List, Optional, Union
 
 from langchain_core.documents import Document
 from langchain_core.vectorstores import VectorStore
-from pyTigerGraph import TigerGraphConnection
 
 
 class SearchType(str, enum.Enum):
@@ -37,7 +36,7 @@ class TigerGraphVector(VectorStore):
 
     def __init__(
         self,
-        conn: TigerGraphConnection,
+        conn: Any,
         search_type: SearchType = SearchType.HYBRID,
         search_index: Union[str, list[str]] = [
             "Entity",
