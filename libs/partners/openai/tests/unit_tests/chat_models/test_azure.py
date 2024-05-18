@@ -28,3 +28,7 @@ def test_initialize_more() -> None:
     assert llm.deployment_name == "35-turbo-dev"
     assert llm.openai_api_version == "2023-05-15"
     assert llm.temperature == 0
+
+    ls_params = llm._get_ls_params()
+    assert ls_params["ls_provider"] == "azure"
+    assert ls_params["ls_model_name"] == "35-turbo-dev"
