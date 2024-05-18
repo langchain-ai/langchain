@@ -6,11 +6,8 @@ import warnings
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from pyTigerGraph import TigerGraphConnection
-
-from langchain_community.graphs import TigerGraph
 
 
 class SearchType(str, enum.Enum):
@@ -162,6 +159,22 @@ class TigerGraphVector(VectorStore):
                     res["data_source_id"],
                     data_path
                 )
+    
+    def search(self,
+               query: str,
+               k: int = 4,
+               params: Dict[str, Any] = {}) -> List[Document]:
+        """Run similarity search with TigerGraph CoPilot.
+
+        Args:
+            query (str): Query text to search for.
+            k (int): Number of results to return. Defaults to 4.
+            params (Dict[str, Any]): Additional parameters for the search.
+        
+        Returns:
+            List of Documents most similar to the query.
+        """
+        return self.similarity_search(query, k, params)
 
     def similarity_search(
         self,
@@ -188,11 +201,11 @@ class TigerGraphVector(VectorStore):
 
             if params.get("withHyDE"):
                 method_params["withHyDE"] = params["withHyDE"]
-            
+
             res = self.conn.ai.searchDocuments(query,
                         method="vdb",
                         method_parameters=method_params)[0]["@@final_retrieval"]
-            # TODO: process the response to return Document objects
+            
             docs = [Document(metadata={"source": key}, page_content=val) 
                     for key, val in res.items()]
         elif self.search_type == SearchType.HYBRID:
@@ -218,7 +231,7 @@ class TigerGraphVector(VectorStore):
                                         page_content=val))
         elif self.search_type == SearchType.SIBLING:
             method_params = {
-                "indices": self.search_index,
+                "index": self.search_index,
                 "top_k": k,
                 "lookahead": 3,
                 "lookback": 3,
@@ -235,9 +248,49 @@ class TigerGraphVector(VectorStore):
             res = self.conn.ai.searchDocuments(query,
                             method="sibling",
                             method_parameters = method_params)[0]["@@sibling_set"]
-            docs = [Document(metadata={"source": key}, page_content=val) 
-                    for key, val in res.items()]
+            
+            docs = []
+            for root_doc, sibling_docs in res.items():
+                for sibling_doc_id, sibling_doc_data in sibling_docs.items():
+                    docs.append(
+                        Document(
+                            metadata={
+                                "source": sibling_doc_id, 
+                                "root": root_doc, 
+                                "sibling_distance": sibling_doc_data["distance"]
+                            }, 
+                            page_content=sibling_doc_data["content"]
+                        )
+                    )
         else:
             raise ValueError("Invalid search type")
         
         return docs
+    
+    @classmethod
+    def from_texts(
+        cls,
+        conn: TigerGraphConnection,
+        texts: Iterable[str],
+        ids: Optional[List[str]] = None,
+        upsert_size: int = 1000
+    ) -> TigerGraphVector:
+        """Create a TigerGraphVector from a list of texts."""
+        tg = cls(conn)
+        tg.add_texts(texts, ids, upsert_size)
+        return tg
+    
+    @classmethod
+    def from_documents(
+        cls,
+        conn: TigerGraphConnection,
+        documents: List[Document],
+        ids: Optional[List[str]] = None,
+        upsert_size: int = 1000
+    ) -> TigerGraphVector:
+        """Create a TigerGraphVector from a list of Documents."""
+        tg = cls(conn)
+        tg.add_texts([doc.page_content for doc in documents], 
+                     ids, 
+                     upsert_size)
+        return tg

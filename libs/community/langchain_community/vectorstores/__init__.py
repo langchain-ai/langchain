@@ -242,6 +242,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.tidb_vector import (
         TiDBVectorStore,
     )
+    from langchain_community.vectorstores.tigergraph import (
+        TigerGraphVector
+    )
     from langchain_community.vectorstores.tigris import (
         Tigris,
     )
@@ -369,6 +372,7 @@ __all__ = [
     "Tair",
     "TencentVectorDB",
     "TiDBVectorStore",
+    "TigerGraphVector",
     "Tigris",
     "TileDB",
     "TimescaleVector",
@@ -466,6 +470,7 @@ _module_lookup = {
     "Tair": "langchain_community.vectorstores.tair",
     "TencentVectorDB": "langchain_community.vectorstores.tencentvectordb",
     "TiDBVectorStore": "langchain_community.vectorstores.tidb_vector",
+    "TigerGraphVector": "langchain_community.vectorstores.tigergraph",
     "Tigris": "langchain_community.vectorstores.tigris",
     "TileDB": "langchain_community.vectorstores.tiledb",
     "TimescaleVector": "langchain_community.vectorstores.timescalevector",
