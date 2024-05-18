@@ -517,7 +517,7 @@ class LLMGraphTransformer:
     relationship properties
 
     Args:
-        llm (BaseChatModel): An instance of a language model supporting structured
+        llm (BaseLanguageModel): An instance of a language model supporting structured
           output.
         allowed_nodes (List[str], optional): Specifies which node types are
           allowed in the graph. Defaults to an empty list, allowing all node types.
