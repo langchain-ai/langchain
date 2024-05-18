@@ -4,6 +4,11 @@ from langchain._api import create_importer
 
 if TYPE_CHECKING:
     from langchain_community.chains.graph_qa.prompts import (
+        ANZOGRAPHDB_GENERATION_SELECT_TEMPLATE,
+        ANZOGRAPHDB_GENERATION_UPDATE_TEMPLATE,
+        ANZOGRAPHDB_INTENT_TEMPLATE,
+        ANZOGRAPHDB_QA_TEMPLATE,
+        ANZOGRAPHDB_QA_FIX_TEMPLATE,
         AQL_FIX_TEMPLATE,
         AQL_GENERATION_TEMPLATE,
         AQL_QA_TEMPLATE,
@@ -32,6 +37,11 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
+    "ANZOGRAPHDB_GENERATION_SELECT_TEMPLATE": "langchain_community.chains.graph_qa.prompts",
+    "ANZOGRAPHDB_GENERATION_UPDATE_TEMPLATE": "langchain_community.chains.graph_qa.prompts",
+    "ANZOGRAPHDB_INTENT_TEMPLATE": "langchain_community.chains.graph_qa.prompts",
+    "ANZOGRAPHDB_QA_TEMPLATE": "langchain_community.chains.graph_qa.prompts",
+    "ANZOGRAPHDB_QA_FIX_TEMPLATE": "langchain_community.chains.graph_qa.prompts",
     "AQL_FIX_TEMPLATE": "langchain_community.chains.graph_qa.prompts",
     "AQL_GENERATION_TEMPLATE": "langchain_community.chains.graph_qa.prompts",
     "AQL_QA_TEMPLATE": "langchain_community.chains.graph_qa.prompts",
@@ -71,6 +81,11 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "ANZOGRAPHDB_GENERATION_SELECT_TEMPLATE",
+    "ANZOGRAPHDB_GENERATION_UPDATE_TEMPLATE",
+    "ANZOGRAPHDB_INTENT_TEMPLATE",
+    "ANZOGRAPHDB_QA_TEMPLATE",
+    "ANZOGRAPHDB_QA_FIX_TEMPLATE",
     "AQL_FIX_TEMPLATE",
     "AQL_GENERATION_TEMPLATE",
     "AQL_QA_TEMPLATE",

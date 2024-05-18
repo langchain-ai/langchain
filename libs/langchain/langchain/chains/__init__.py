@@ -36,6 +36,7 @@ _module_lookup = {
     "ConversationalRetrievalChain": "langchain.chains.conversational_retrieval.base",
     "generate_example": "langchain.chains.example_generator",
     "FlareChain": "langchain.chains.flare.base",
+    "AnzoGraphDBQAChain": "langchain.chains.graph_qa.anzograph",
     "ArangoGraphQAChain": "langchain_community.chains.graph_qa.arangodb",
     "GraphQAChain": "langchain_community.chains.graph_qa.base",
     "GraphCypherQAChain": "langchain_community.chains.graph_qa.cypher",
