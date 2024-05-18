@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
 
 from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 from langchain_core.documents import Document
-from langchain_core.language_models import BaseLanguageModel
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import SystemMessage
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import (
@@ -517,7 +517,7 @@ class LLMGraphTransformer:
     relationship properties
 
     Args:
-        llm (BaseLanguageModel): An instance of a language model supporting structured
+        llm (BaseChatModel): An instance of a language model supporting structured
           output.
         allowed_nodes (List[str], optional): Specifies which node types are
           allowed in the graph. Defaults to an empty list, allowing all node types.
@@ -547,7 +547,7 @@ class LLMGraphTransformer:
 
     def __init__(
         self,
-        llm: BaseLanguageModel,
+        llm: BaseChatModel,
         allowed_nodes: List[str] = [],
         allowed_relationships: List[str] = [],
         prompt: Optional[ChatPromptTemplate] = None,
