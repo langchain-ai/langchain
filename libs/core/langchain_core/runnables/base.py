@@ -1994,7 +1994,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             # uses the default model ChatAnthropic
             print(model.invoke("which organization created you?").content)
 
-            # uses ChatOpenaAI
+            # uses ChatOpenAI
             print(
                 model.with_config(
                     configurable={"llm": "openai"}
