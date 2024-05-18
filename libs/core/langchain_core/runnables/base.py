@@ -95,7 +95,7 @@ if TYPE_CHECKING:
         RunLog,
         RunLogPatch,
     )
-    from langchain_core.tracers.root_listeners import Listener
+    from langchain_core.tracers.schemas import Run
 
 
 Other = TypeVar("Other")
@@ -1258,9 +1258,15 @@ class Runnable(Generic[Input, Output], ABC):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Listener] = None,
-        on_end: Optional[Listener] = None,
-        on_error: Optional[Listener] = None,
+        on_start: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_end: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_error: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
     ) -> Runnable[Input, Output]:
         """
         Bind lifecycle listeners to a Runnable, returning a new Runnable.
@@ -1276,22 +1282,26 @@ class Runnable(Generic[Input, Output], ABC):
         Example:
 
         .. code-block:: python
+
             from langchain_core.runnables import RunnableLambda
+            from langchain_core.tracers.schemas import Run
+
             import time
 
             def test_runnable(time_to_sleep : int):
                 time.sleep(time_to_sleep)
 
-            def fn_start(run_obj : Runnable):
+            def fn_start(run_obj: Run):
                 print("start_time:", run_obj.start_time)
 
-            def fn_end(run_obj : Runnable):
+            def fn_end(run_obj: Run):
                 print("end_time:", run_obj.end_time)
 
-            RunnableLambda(test_runnable).with_listeners(
+            chain = RunnableLambda(test_runnable).with_listeners(
                 on_start=fn_start,
                 on_end=fn_end
-                ).invoke(2)
+            )
+            chain.invoke(2)
         """
         from langchain_core.tracers.root_listeners import RootListenersTracer
 
@@ -1339,6 +1349,7 @@ class Runnable(Generic[Input, Output], ABC):
         Example:
 
         .. code-block:: python
+
             from langchain_core.runnables import RunnableLambda
 
             count = 0
@@ -4239,9 +4250,15 @@ class RunnableEach(RunnableEachBase[Input, Output]):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Listener] = None,
-        on_end: Optional[Listener] = None,
-        on_error: Optional[Listener] = None,
+        on_start: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_end: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_error: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
     ) -> RunnableEach[Input, Output]:
         """
         Bind lifecycle listeners to a Runnable, returning a new Runnable.
@@ -4729,9 +4746,15 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Listener] = None,
-        on_end: Optional[Listener] = None,
-        on_error: Optional[Listener] = None,
+        on_start: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_end: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_error: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
     ) -> Runnable[Input, Output]:
         """Bind lifecycle listeners to a Runnable, returning a new Runnable.
 
