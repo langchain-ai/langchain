@@ -1043,6 +1043,14 @@ class Neo4jVector(VectorStore):
 
         results = self.query(read_query, params=parameters)
 
+        if any(result["text"] is None for result in results):
+            raise ValueError(
+                "If you are using `text_node_property`, make sure it is not null "
+                "for any of the indexed nodes. If using `from_existing_graph` or "
+                "`retrieval_query`, ensure it doesn't return None for "
+                "the `text` column."
+            )
+
         docs = [
             (
                 Document(
