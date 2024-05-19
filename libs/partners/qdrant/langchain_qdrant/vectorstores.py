@@ -1353,7 +1353,6 @@ class Qdrant(VectorStore):
     def from_existing_collection(
         cls: Type[Qdrant],
         embedding: Embeddings,
-        path: str,
         collection_name: str,
         location: Optional[str] = None,
         url: Optional[str] = None,
@@ -1365,6 +1364,7 @@ class Qdrant(VectorStore):
         prefix: Optional[str] = None,
         timeout: Optional[int] = None,
         host: Optional[str] = None,
+        path: Optional[str] = None,
         content_payload_key: str = CONTENT_KEY,
         metadata_payload_key: str = METADATA_KEY,
         distance_strategy: str = "COSINE",
