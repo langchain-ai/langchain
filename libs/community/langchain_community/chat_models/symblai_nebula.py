@@ -46,12 +46,7 @@ def _format_nebula_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
                     "text": message.content,
                 }
             )
-            """
-            The first message in formatted_messages must be "human"
-            """
-            if formatted_messages[0]["role"] != "human":
-                print("The first message after system prompt must be a human message")
-                exit()
+                
     text = messages[-1].content
     formatted_messages.append({"role": "human", "text": text})
     return {
@@ -61,20 +56,31 @@ def _format_nebula_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
 
 
 class ChatNebula(BaseChatModel):
-    """`Nebula` chat large language models.
+    """`Nebula` chat large language model - https://docs.symbl.ai/docs/nebula-llm
+
+    API Reference: https://docs.symbl.ai/reference/nebula-chat
 
     To use, you should have the environment variable ``NEBULA_API_KEY`` set with your API key, 
     or pass it as a named parameter to the constructor.
+    To request an API key, visit https://platform.symbl.ai/#/login
+
 
     Example:
         .. code-block:: python
 
             from langchain_community.chat_models import ChatNebula
-            from langchain_core.messages import HumanMessage
+            from langchain_core.messages import SystemMessage, HumanMessage
 
-            chat = ChatNebula(model="command", max_new_tokens=256, temperature=0.75)
+            chat = ChatNebula(max_new_tokens=1024, temperature=0.5)
 
-            messages = [HumanMessage(content="knock knock")]
+            messages = [
+            SystemMessage(
+                content="You are a helpful assistant that answers general knowledge questions."
+            ),
+            HumanMessage(
+                content="Answer the following question. How can I help save the world."
+            ),
+            ]
             chat.invoke(messages)
     """
     max_new_tokens: int = 1024
