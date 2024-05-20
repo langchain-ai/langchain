@@ -5,6 +5,7 @@ import warnings
 from typing import Any, Dict, Iterable, List, Optional, Union
 
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
 
@@ -38,12 +39,7 @@ class TigerGraphVector(VectorStore):
         self,
         conn: Any,
         search_type: SearchType = SearchType.HYBRID,
-        search_index: Union[str, list[str]] = [
-            "Entity",
-            "Relationship",
-            "Document",
-            "DocumentChunk",
-        ],
+        search_index: Union[str, List[str], None] = None,
     ) -> None:
         try:
             from pyTigerGraph import TigerGraphConnection
@@ -52,6 +48,17 @@ class TigerGraphVector(VectorStore):
                 "Could not import pyTigerGraph python package. "
                 "Please install it with `pip install pyTigerGraph`."
             )
+
+        search_index = (
+            search_index
+            if search_index is not None
+            else [
+                "Entity",
+                "Relationship",
+                "Document",
+                "DocumentChunk",
+            ]
+        )
 
         if not isinstance(conn, TigerGraphConnection):
             msg = "**conn** parameter must inherit from TigerGraphConnection"
@@ -78,8 +85,11 @@ class TigerGraphVector(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        *,
         ids: Optional[List[str]] = None,
         upsert_size: int = 1000,
+        **kwargs: Any,
     ) -> List[str]:
         """Add texts to the TigerGraph CoPilot SupportAI.
 
@@ -115,19 +125,19 @@ class TigerGraphVector(VectorStore):
                 for i, text in enumerate(texts)
             ]
 
-        documets_upserted = 0
+        documents_upserted = 0
         has_content_edges_upserted = 0
         content_upserted = 0
 
         if len(doc_vertices) < upsert_size:
-            documets_upserted += self.conn.upsertVertices("Document", doc_vertices)
+            documents_upserted += self.conn.upsertVertices("Document", doc_vertices)
             has_content_edges_upserted += self.conn.upsertEdges(
                 "Document", "HAS_CONTENT", "Content", doc_content_edges
             )
             content_upserted += self.conn.upsertVertices("Content", content_vertices)
         else:
             for i in range(0, len(doc_vertices), upsert_size):
-                documets_upserted += self.conn.upsertVertices(
+                documents_upserted += self.conn.upsertVertices(
                     "Document", doc_vertices[i : i + upsert_size]
                 )
                 has_content_edges_upserted += self.conn.upsertEdges(
@@ -141,7 +151,7 @@ class TigerGraphVector(VectorStore):
                 )
 
         return {
-            "documents_upserted": documets_upserted,
+            "documents_upserted": documents_upserted,
             "has_content_edges_upserted": has_content_edges_upserted,
             "content_upserted": content_upserted,
         }
@@ -179,7 +189,7 @@ class TigerGraphVector(VectorStore):
         )
 
     def search(
-        self, query: str, k: int = 4, params: Dict[str, Any] = {}
+        self, query: str, k: int = 4, *, params: Optional[Dict[str, Any]] = None
     ) -> List[Document]:
         """Run similarity search with TigerGraph CoPilot.
 
@@ -191,13 +201,14 @@ class TigerGraphVector(VectorStore):
         Returns:
             List of Documents most similar to the query.
         """
-        return self.similarity_search(query, k, params)
+        return self.similarity_search(query, k, params=params)
 
     def similarity_search(
         self,
         query: str,
         k: int = 4,
-        params: Dict[str, Any] = {},
+        *,
+        params: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         """Run similarity search with TigerGraph CoPilot.
 
@@ -209,6 +220,7 @@ class TigerGraphVector(VectorStore):
             List of Documents most similar to the query.
         """
 
+        params = params or {}
         if self.search_type == SearchType.VECTOR:
             method_params = {"index": self.search_index, "top_k": k, "withHyDE": False}
 
@@ -288,25 +300,16 @@ class TigerGraphVector(VectorStore):
     @classmethod
     def from_texts(
         cls,
-        texts: Iterable[str],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        *,
         ids: Optional[List[str]] = None,
         upsert_size: int = 1000,
-        conn: Any = None
+        conn: Any = None,
+        **kwargs: Any,
     ) -> TigerGraphVector:
         """Create a TigerGraphVector from a list of texts."""
         tg = cls(conn)
-        tg.add_texts(texts, ids, upsert_size)
-        return tg
-
-    @classmethod
-    def from_documents(
-        cls,
-        documents: List[Document],
-        ids: Optional[List[str]] = None,
-        upsert_size: int = 1000,
-        conn: Any = None
-    ) -> TigerGraphVector:
-        """Create a TigerGraphVector from a list of Documents."""
-        tg = cls(conn)
-        tg.add_texts([doc.page_content for doc in documents], ids, upsert_size)
+        tg.add_texts(texts, ids=ids, upsert_size=upsert_size)
         return tg

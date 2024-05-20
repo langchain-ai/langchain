@@ -87,9 +87,9 @@ class TigerGraph(GraphStore):
     def register_query(
         self,
         function_header: str,
-        description: str = None,
-        docstring: str = None,
-        param_types: dict = None,
+        description: Optional[str] = None,
+        docstring: Optional[str] = None,
+        param_types: Optional[dict] = None,
     ) -> List[str]:
         """
         Wrapper function to register a custom GSQL query to the TigerGraph CoPilot.
