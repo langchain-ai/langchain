@@ -136,7 +136,8 @@ def test_vectara_from_files(vectara2) -> None:
         n_sentence_after=0,
         filter="doc.test_num = 2",
     )
-    assert "By the commonly adopted machine learning tradition" in output[0].page_content
+    assert ("By the commonly adopted machine learning tradition" 
+            in output[0].page_content)
 
     # another similarity search, this time with n_sentences_before/after = 1
     output = vectara2.similarity_search(
@@ -206,7 +207,8 @@ def test_vectara_mmr(vectara3) -> None:  # type: ignore[no-untyped-def]
         n_sentence_after=0,
     )
     assert len(output1) == 2
-    assert "This is why today we're adding a fundamental capability to our" in output1[1].page_content
+    assert ("This is why today we're adding a fundamental capability to our" 
+            in output1[1].page_content)
 
     output2 = vectara3.max_marginal_relevance_search(
         "generative AI",
@@ -217,7 +219,8 @@ def test_vectara_mmr(vectara3) -> None:  # type: ignore[no-untyped-def]
         n_sentence_after=0,
     )
     assert len(output2) == 2
-    assert "Neural LLM systems are excellent at understanding the context" in output2[1].page_content
+    assert ("Neural LLM systems are excellent at understanding the context" 
+            in output2[1].page_content)
 
 
 def test_vectara_with_summary(vectara3) -> None:  # type: ignore[no-untyped-def]

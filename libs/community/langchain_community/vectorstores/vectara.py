@@ -5,22 +5,22 @@ import logging
 import os
 from dataclasses import dataclass, field
 from hashlib import md5
-from typing import Any, Iterable, List, Optional, Tuple, Type, Dict
+from typing import Any, Iterable, List, Optional, Tuple, Type
 
 import requests
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
 from langchain_core.runnables.utils import Input, Output
-from langchain_core.retrievers import BaseRetriever
-
-from langchain_core.callbacks.manager import (
-        AsyncCallbackManagerForRetrieverRun,
-        CallbackManagerForRetrieverRun,
-    )
+from langchain_core.vectorstores import VectorStore
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class SummaryConfig:
@@ -90,25 +90,26 @@ class VectaraQueryConfig:
     mmr_config: MMRConfig = field(default_factory=MMRConfig)
     summary_config: SummaryConfig = field(default_factory=SummaryConfig)
 
+
 def create_vectara_query_config(search_kwargs):
     # Extracting nested MMRConfig if present
-    mmr_config_kwargs = search_kwargs.get('mmr_config', {})
+    mmr_config_kwargs = search_kwargs.get("mmr_config", {})
     mmr_config = MMRConfig(**mmr_config_kwargs)
-    
+
     # Extracting nested SummaryConfig if present
-    summary_config_kwargs = search_kwargs.get('summary_config', {})
+    summary_config_kwargs = search_kwargs.get("summary_config", {})
     summary_config = SummaryConfig(**summary_config_kwargs)
-    
+
     # Creating the main VectaraQueryConfig
     config = VectaraQueryConfig(
-        k = search_kwargs.get('k', 10),
-        lambda_val = search_kwargs.get('lambda_val', 0.0),
-        filter = search_kwargs.get('filter', ""),
-        score_threshold = search_kwargs.get('score_threshold', None),
-        n_sentence_before = search_kwargs.get('n_sentence_before', 2),
-        n_sentence_after = search_kwargs.get('n_sentence_after', 2),
-        mmr_config = mmr_config,
-        summary_config = summary_config
+        k=search_kwargs.get("k", 10),
+        lambda_val=search_kwargs.get("lambda_val", 0.0),
+        filter=search_kwargs.get("filter", ""),
+        score_threshold=search_kwargs.get("score_threshold", None),
+        n_sentence_before=search_kwargs.get("n_sentence_before", 2),
+        n_sentence_after=search_kwargs.get("n_sentence_after", 2),
+        mmr_config=mmr_config,
+        summary_config=summary_config,
     )
     return config
 
@@ -405,7 +406,9 @@ class Vectara(VectorStore):
             ]
         }
         if config.lambda_val > 0:
-            body["query"][0]["corpusKey"][0]["lexicalInterpolationConfig"] = {"lambda": config.lambda_val}
+            body["query"][0]["corpusKey"][0]["lexicalInterpolationConfig"] = {
+                "lambda": config.lambda_val
+            }
 
         if config.mmr_config.is_enabled:
             body["query"][0]["rerankingConfig"] = {
@@ -426,7 +429,7 @@ class Vectara(VectorStore):
                 "conversationId": chat_conv_id,
             }
         return body
-    
+
     def vectara_query(
         self,
         query: str,
@@ -497,7 +500,12 @@ class Vectara(VectorStore):
             summary = result["responseSet"][0]["summary"][0]["text"]
             fcs = result["responseSet"][0]["summary"][0]["factualConsistency"]["score"]
             res.append(
-                (Document(page_content=summary, metadata={"summary": True, "fcs": fcs}), 0.0)
+                (
+                    Document(
+                        page_content=summary, metadata={"summary": True, "fcs": fcs}
+                    ),
+                    0.0,
+                )
             )
         return res
 
@@ -638,11 +646,11 @@ class Vectara(VectorStore):
     def as_rag(self, config: VectaraQueryConfig) -> VectaraRAG:
         """Return a Vectara RAG runnable."""
         return VectaraRAG(self, config)
-    
+
     def as_chat(self, config: VectaraQueryConfig) -> VectaraRAG:
         """Return a Vectara RAG runnable for chat."""
         return VectaraRAG(self, config, chat=True)
-    
+
     def as_retriever(self, config: VectaraQueryConfig) -> VectaraRetriever:
         """return a retriever object."""
         return VectaraRetriever(vectorstore=self, config=config)
@@ -653,12 +661,13 @@ class VectaraRetriever(BaseRetriever):
 
     vectorstore: VectorStore
     """VectorStore to use for retrieval."""
-    
+
     config: VectaraQueryConfig
     """Configuration for this retriever."""
 
     class Config:
         """Configuration for this pydantic object."""
+
         arbitrary_types_allowed = True
 
     def _get_relevant_documents(
@@ -683,9 +692,11 @@ class VectaraRetriever(BaseRetriever):
         """Add documents to vectorstore."""
         return await self.vectorstore.aadd_documents(documents, **kwargs)
 
-class VectaraRAG(Runnable):
 
-    def __init__(self, vectara: Vectara, config: VectaraQueryConfig, chat: bool = False):
+class VectaraRAG(Runnable):
+    def __init__(
+        self, vectara: Vectara, config: VectaraQueryConfig, chat: bool = False
+    ):
         self.vectara = vectara
         self.config = config
         self.chat = chat
@@ -701,17 +712,17 @@ class VectaraRAG(Runnable):
             The output dictionary with question, answer and context
         """
         if not isinstance(question, str):
-            question = question.get('question', '')
+            question = question.get("question", "")
 
         config = self.config
         body = self.vectara._get_query_body(question, config, self.chat, self.conv_id)
 
         response = self.vectara._session.post(
-            headers = self.vectara._get_post_headers(),
+            headers=self.vectara._get_post_headers(),
             url="https://api.vectara.io/v1/stream-query",
             data=json.dumps(body),
             timeout=self.vectara.vectara_api_timeout,
-            stream=True
+            stream=True,
         )
 
         if response.status_code != 200:
@@ -725,46 +736,50 @@ class VectaraRAG(Runnable):
         responses = []
         documents = []
 
-        yield { 'question': question }     # First chunk is the question
+        yield {"question": question}  # First chunk is the question
 
         for line in response.iter_lines():
             if line:  # filter out keep-alive new lines
-                data = json.loads(line.decode('utf-8'))
-                result = data['result']
-                response_set = result['responseSet']
+                data = json.loads(line.decode("utf-8"))
+                result = data["result"]
+                response_set = result["responseSet"]
                 if response_set is None:
-                    summary = result.get('summary', None)
+                    summary = result.get("summary", None)
                     if summary is None:
                         continue
-                    if len(summary.get("status"))>0:
+                    if len(summary.get("status")) > 0:
                         logger.error(
-                            f"Summary generation failed with status {summary.get('status')[0].get('statusDetail')}"
+                            f"Summary generation failed with status "
+                            f"{summary.get('status')[0].get('statusDetail')}"
                         )
                         continue
 
                     # Store conversation ID for chat, if applicable
-                    chat = summary.get('chat', None)
-                    if chat and chat.get('status', None):
-                        st_code = chat['status']
-                        print(f"Chat query failed with code {st_code}")
-                        if st_code == 'RESOURCE_EXHAUSTED':
+                    chat = summary.get("chat", None)
+                    if chat and chat.get("status", None):
+                        st_code = chat["status"]
+                        logger.info(f"Chat query failed with code {st_code}")
+                        if st_code == "RESOURCE_EXHAUSTED":
                             self.conv_id = None
-                            logger.error('Sorry, Vectara chat turns exceeds plan limit.')
+                            logger.error(
+                                "Sorry, Vectara chat turns exceeds plan limit."
+                            )
                             continue
 
-                    conv_id = chat.get('conversationId', None) if chat else None
+                    conv_id = chat.get("conversationId", None) if chat else None
                     if conv_id:
                         self.conv_id = conv_id
 
-                    # if factual consistency score is provided, pull that from the JSON response
-                    if summary.get('factualConsistency', None):
-                        fcs = summary.get('factualConsistency', {}).get('score', None)
-                        yield { 'fcs': fcs }
+                    # if factual consistency score is provided, pull that from 
+                    # the JSON response
+                    if summary.get("factualConsistency", None):
+                        fcs = summary.get("factualConsistency", {}).get("score", None)
+                        yield {"fcs": fcs}
                         continue
 
                     # Yield the summary chunk
-                    chunk = summary['text']
-                    yield { 'answer': chunk }
+                    chunk = summary["text"]
+                    yield {"answer": chunk}
                 else:
                     if config.score_threshold:
                         responses = [
@@ -779,7 +794,10 @@ class VectaraRAG(Runnable):
                     for x in responses:
                         md = {m["name"]: m["value"] for m in x["metadata"]}
                         doc_num = x["documentIndex"]
-                        doc_md = {m["name"]: m["value"] for m in documents[doc_num]["metadata"]}
+                        doc_md = {
+                            m["name"]: m["value"]
+                            for m in documents[doc_num]["metadata"]
+                        }
                         if "source" not in doc_md:
                             doc_md["source"] = "vectara"
                         md.update(doc_md)
@@ -796,20 +814,20 @@ class VectaraRAG(Runnable):
                     ]
                     if config.mmr_config.is_enabled:
                         res = res[: config.k]
-                    yield {'context': res}
+                    yield {"context": res}
         return
 
     def invoke(self, question: Input) -> Output:
-        res = {'answer': ''}
+        res = {"answer": ""}
         for chunk in self.stream(question):
-            if 'context' in chunk:
-                res['context'] = chunk['context']
-            elif 'question' in chunk:
-                res['question'] = chunk['question']
-            elif 'answer' in chunk:
-                res['answer'] += chunk['answer']
-            elif 'fcs' in chunk:
-                res['fcs'] = chunk['fcs']
+            if "context" in chunk:
+                res["context"] = chunk["context"]
+            elif "question" in chunk:
+                res["question"] = chunk["question"]
+            elif "answer" in chunk:
+                res["answer"] += chunk["answer"]
+            elif "fcs" in chunk:
+                res["fcs"] = chunk["fcs"]
             else:
                 logger.error(f"Unknown chunk type: {chunk}")
         return res
