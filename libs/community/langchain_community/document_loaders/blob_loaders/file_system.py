@@ -1,17 +1,7 @@
 """Use to load blobs from the local file system."""
 
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-)
+from typing import Callable, Iterable, Iterator, Optional, Sequence, TypeVar, Union
 
 from langchain_community.document_loaders.blob_loaders.schema import Blob, BlobLoader
 
@@ -68,7 +58,6 @@ class FileSystemBlobLoader(BlobLoader):
         glob: str = "**/[!.]*",
         exclude: Sequence[str] = (),
         suffixes: Optional[Sequence[str]] = None,
-        metadata_dict: Optional[Dict[str, Dict[str, Any]]] = None,
         show_progress: bool = False,
     ) -> None:
         """Initialize with a path to directory and how to glob over it.
@@ -82,13 +71,6 @@ class FileSystemBlobLoader(BlobLoader):
             suffixes: Provide to keep only files with these suffixes
                       Useful when wanting to keep files with different suffixes
                       Suffixes must include the dot, e.g. ".txt"
-            metadata_dict: Dictionary [filename:str -> metadata:dict] with additional metadata.
-                           `metadata` will be passed to base Blob loader.
-                           If `metadata["mime_type"]` exits, it will be also passed in.
-                           Use example: o365 loader downloads documents from azure to temp folder
-                           and then utilizes FileSystemBlobLoader() to load them. Information
-                           about document's url and mime_type are lost in this process.
-                           This argument allows for preserving this metadata.
             show_progress: If true, will show a progress bar as the files are loaded.
                            This forces an iteration through all matching files
                            to count them prior to loading them.
@@ -129,7 +111,6 @@ class FileSystemBlobLoader(BlobLoader):
         self.suffixes = set(suffixes or [])
         self.show_progress = show_progress
         self.exclude = exclude
-        self.metadata_dict = metadata_dict or {}
 
     def yield_blobs(
         self,
@@ -140,9 +121,7 @@ class FileSystemBlobLoader(BlobLoader):
         )
 
         for path in iterator(self._yield_paths()):
-            metadata = self.metadata_dict.get(path.name)
-            mime_type = metadata.get("mime_type") if metadata else None
-            yield Blob.from_path(path, mime_type=mime_type, metadata=metadata)
+            yield Blob.from_path(path)
 
     def _yield_paths(self) -> Iterable[Path]:
         """Yield paths that match the requested pattern."""
