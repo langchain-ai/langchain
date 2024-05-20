@@ -103,6 +103,8 @@ class ActionServerToolkit(BaseModel):
     """Action Server URL"""
     api_key: str = Field(exclude=True, default="")
     """Action Server request API key"""
+    additional_headers: dict = Field(exclude=True, default_factory=dict)
+    """Additional headers to be passed to the Action Server"""
     report_trace: bool = Field(exclude=True, default=False)
     """Enable reporting Langsmith trace to Action Server runs"""
     _run_details: dict = PrivateAttr({})
@@ -226,6 +228,7 @@ class ActionServerToolkit(BaseModel):
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
+            **self.additional_headers,
         }
 
         try:
