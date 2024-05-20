@@ -55,11 +55,15 @@ module.exports = {
       collapsible: false,
       items: [
         {
-          type: "doc",
-          label: "🦜🛠️ LangSmith",
-          id: "langsmith/index",
+          type: "link",
+          href: "https://docs.smith.langchain.com/",
+          label: "🦜🛠️ LangSmith"
         },
-        "langgraph",
+        {
+          type: "link",
+          href: "https://langchain-ai.github.io/langgraph/",
+          label: "🦜🕸️ LangGraph"
+        },
         "langserve",
       ],
     },

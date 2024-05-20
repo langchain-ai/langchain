@@ -33,7 +33,7 @@ Key partner packages are separated out (see below).
 This contains all integrations for various components (LLMs, vectorstores, retrievers).
 All dependencies in this package are optional to keep the package as lightweight as possible.
 
-### [`langgraph`](/docs/langgraph)
+### [`langgraph`](https://langchain-ai.github.io/langgraph)
 
 `langgraph` is an extension of `langchain` aimed at
 building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
@@ -44,7 +44,7 @@ LangGraph exposes high level interfaces for creating common types of agents, as 
 
 A package to deploy LangChain chains as REST APIs. Makes it easy to get a production ready API up and running.
 
-### [LangSmith](/docs/langsmith)
+### [LangSmith](https://docs.smith.langchain.com)
 
 A developer platform that lets you debug, test, evaluate, and monitor LLM applications.
 
@@ -66,7 +66,7 @@ LCEL was designed from day 1 to **support putting prototypes in production, with
 When you build your chains with LCEL you get the best possible time-to-first-token (time elapsed until the first chunk of output comes out). For some chains this means eg. we stream tokens straight from an LLM to a streaming output parser, and you get back parsed, incremental chunks of output at the same rate as the LLM provider outputs the raw tokens.
 
 **Async support**
-Any chain built with LCEL can be called both with the synchronous API (eg. in your Jupyter notebook while prototyping) as well as with the asynchronous API (eg. in a [LangServe](/docs/langsmith) server). This enables using the same code for prototypes and in production, with great performance, and the ability to handle many concurrent requests in the same server.
+Any chain built with LCEL can be called both with the synchronous API (eg. in your Jupyter notebook while prototyping) as well as with the asynchronous API (eg. in a [LangServe](https://docs.smith.langchain.com) server). This enables using the same code for prototypes and in production, with great performance, and the ability to handle many concurrent requests in the same server.
 
 **Optimized parallel execution**
 Whenever your LCEL chains have steps that can be executed in parallel (eg if you fetch documents from multiple retrievers) we automatically do it, both in the sync and the async interfaces, for the smallest possible latency.
@@ -80,9 +80,9 @@ For more complex chains it’s often very useful to access the results of interm
 **Input and output schemas**
 Input and output schemas give every LCEL chain Pydantic and JSONSchema schemas inferred from the structure of your chain. This can be used for validation of inputs and outputs, and is an integral part of LangServe.
 
-[**Seamless LangSmith tracing**](/docs/langsmith)
+[**Seamless LangSmith tracing**](https://docs.smith.langchain.com)
 As your chains get more and more complex, it becomes increasingly important to understand what exactly is happening at every step.
-With LCEL, **all** steps are automatically logged to [LangSmith](/docs/langsmith/) for maximum observability and debuggability.
+With LCEL, **all** steps are automatically logged to [LangSmith](https://docs.smith.langchain.com/) for maximum observability and debuggability.
 
 [**Seamless LangServe deployment**](/docs/langserve)
 Any chain created with LCEL can be easily deployed using [LangServe](/docs/langserve).

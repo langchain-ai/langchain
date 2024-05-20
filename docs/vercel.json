@@ -10,6 +10,14 @@
   ],
   "redirects": [
     {
+      "source": "/v0.2/docs/langsmith(/?)",
+      "destination": "https://docs.smith.langchain.com/"
+    },
+    {
+      "source": "/v0.2/docs/langgraph(/?)",
+      "destination": "https://langchain-ai.github.io/langgraph"
+    },
+    {
       "source": "/",
       "destination": "/v0.2/docs/introduction/"
     },
