@@ -4,6 +4,10 @@ version = "0.1.5"
 description = "An integration package connecting AI21 and LangChain"
 authors = []
 readme = "README.md"
+repository = "https://github.com/langchain-ai/langchain"
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/ai21"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
