@@ -331,7 +331,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             None, self._call, inputs, run_manager.get_sync() if run_manager else None
         )
 
-    @deprecated("0.1.0", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.0", alternative="invoke", removal="0.3.0")
     def __call__(
         self,
         inputs: Union[Dict[str, Any], Any],
@@ -382,7 +382,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             include_run_info=include_run_info,
         )
 
-    @deprecated("0.1.0", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.0", alternative="ainvoke", removal="0.3.0")
     async def acall(
         self,
         inputs: Union[Dict[str, Any], Any],
@@ -541,7 +541,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
             )
         return self.output_keys[0]
 
-    @deprecated("0.1.0", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.0", alternative="invoke", removal="0.3.0")
     def run(
         self,
         *args: Any,
@@ -612,7 +612,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
                 f" but not both. Got args: {args} and kwargs: {kwargs}."
             )
 
-    @deprecated("0.1.0", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.0", alternative="ainvoke", removal="0.3.0")
     async def arun(
         self,
         *args: Any,
@@ -750,7 +750,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         else:
             raise ValueError(f"{save_path} must be json or yaml")
 
-    @deprecated("0.1.0", alternative="batch", removal="0.2.0")
+    @deprecated("0.1.0", alternative="batch", removal="0.3.0")
     def apply(
         self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
     ) -> List[Dict[str, str]]:

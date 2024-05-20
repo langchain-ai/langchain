@@ -22,7 +22,7 @@ SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 @deprecated(
     since="0.0.32",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_google_community.GoogleDriveLoader",
 )
 class GoogleDriveLoader(BaseLoader, BaseModel):

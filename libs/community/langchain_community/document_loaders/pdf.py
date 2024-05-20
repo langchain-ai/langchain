@@ -632,7 +632,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         super().__init__(file_path, headers=headers)
 
         try:
-            import textractcaller as tc  # noqa: F401
+            import textractcaller as tc
         except ImportError:
             raise ImportError(
                 "Could not import amazon-textract-caller python package. "
@@ -731,7 +731,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
 
 
 class DocumentIntelligenceLoader(BasePDFLoader):
-    """Loads a PDF with Azure Document Intelligence"""
+    """Load a PDF with Azure Document Intelligence"""
 
     def __init__(
         self,
