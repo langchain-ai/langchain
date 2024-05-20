@@ -179,9 +179,6 @@ class HuggingFaceEndpoint(LLM):
         )
         if huggingfacehub_api_token is not None:
             try:
-                huggingfacehub_api_token = get_from_dict_or_env(
-                    values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
-                )
                 login(token=huggingfacehub_api_token)
             except Exception as e:
                 raise ValueError(
