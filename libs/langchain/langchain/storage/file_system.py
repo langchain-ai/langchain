@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import time
 from pathlib import Path
 from typing import Iterator, List, Optional, Sequence, Tuple, Union
@@ -121,7 +122,23 @@ class LocalFileStore(ByteStore):
                 values.append(value)
                 if self.update_atime:
                     # update access time only; preserve modified time
-                    os.utime(full_path, (time.time(), os.stat(full_path).st_mtime))
+                    mtime = os.stat(full_path).st_mtime
+                    try:
+                        os.utime(full_path, (time.time(), mtime))
+                    except (OSError, PermissionError):
+                        # might be owned by someone else - try copy-then-modify
+                        temp_path = full_path.parent / (full_path.name + '.temp')
+                        try:
+                            os.rename(full_path, temp_path)
+                            shutil.copy(temp_path, full_path)
+                            os.utime(full_path, (time.time(), mtime))
+                            os.remove(temp_path)
+                        except (OSError, PermissionError):
+                            # workaround didn't work; restore the original state
+                            if os.path.isfile(temp_path):
+                                if os.path.isfile(full_path):
+                                    os.remove(full_path)
+                                os.rename(temp_path, full_path)
             else:
                 values.append(None)
         return values
