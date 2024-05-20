@@ -1,7 +1,7 @@
 import json
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
-
+import os
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -76,9 +76,6 @@ class HuggingFaceEndpoint(LLM):
     repo_id: Optional[str] = None
     """Repo to use."""
     huggingfacehub_api_token: Optional[str] = None
-    huggingfacehub_skip_login: bool = False
-    """Whether to skip the login to huggingfacehub. Defaults to False.
-    Set this to True when using custom endpoint not on HuggingFaceHub."""
     max_new_tokens: int = 512
     """Maximum number of generated tokens"""
     top_k: Optional[int] = None
@@ -176,9 +173,8 @@ class HuggingFaceEndpoint(LLM):
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
-        if values.get("huggingfacehub_skip_login"):
-            huggingfacehub_api_token = "not_needed"
-        else:
+        huggingfacehub_api_token = values["huggingfacehub_api_token"] or os.getenv("HUGGINGFACEHUB_API_TOKEN")
+        if huggingfacehub_api_token is not None:
             try:
                 huggingfacehub_api_token = get_from_dict_or_env(
                     values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
