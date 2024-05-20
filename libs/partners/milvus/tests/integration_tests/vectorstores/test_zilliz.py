@@ -1,4 +1,5 @@
 """Test Zilliz functionality."""
+import os
 from typing import List, Optional
 
 from langchain_core.documents import Document
@@ -10,6 +11,11 @@ from tests.integration_tests.utils import (
     fake_texts,
 )
 
+#
+# To run this test properly, you need to log in [Zilliz](https://zilliz.com/cloud),
+# and set `ZILLIZ_CLOUD_URI` and `ZILLIZ_CLOUD_API_KEY` environment variables.
+#
+
 
 def _zilliz_from_texts(
     metadatas: Optional[List[dict]] = None, drop: bool = True
@@ -19,9 +25,8 @@ def _zilliz_from_texts(
         FakeEmbeddings(),
         metadatas=metadatas,
         connection_args={
-            "uri": "",
-            "user": "",
-            "password": "",
+            "uri": os.getenv("ZILLIZ_CLOUD_URI"),
+            "token": os.getenv("ZILLIZ_CLOUD_API_KEY"),
             "secure": True,
         },
         drop_old=drop,

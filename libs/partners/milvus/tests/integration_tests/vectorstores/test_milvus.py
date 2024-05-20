@@ -10,6 +10,18 @@ from tests.integration_tests.utils import (
     fake_texts,
 )
 
+#
+# To run this test properly, please start a Milvus server with the following command:
+#
+# ```shell
+# wget https://raw.githubusercontent.com/milvus-io/milvus/master/scripts/standalone_embed.sh
+# bash standalone_embed.sh start
+# ```
+#
+# Here is the reference:
+# https://milvus.io/docs/install_standalone-docker.md
+#
+
 
 def _milvus_from_texts(
     metadatas: Optional[List[dict]] = None,
