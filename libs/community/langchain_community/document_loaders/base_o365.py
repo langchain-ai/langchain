@@ -1,4 +1,5 @@
 """Base class for all loaders that uses O365 Package"""
+
 from __future__ import annotations
 
 import logging
@@ -59,9 +60,9 @@ def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
         if file_type.value == "doc":
             mime_types_mapping[file_type.value] = "application/msword"
         elif file_type.value == "docx":
-            mime_types_mapping[
-                file_type.value
-            ] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"  # noqa: E501
+            mime_types_mapping[file_type.value] = (
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"  # noqa: E501
+            )
         elif file_type.value == "pdf":
             mime_types_mapping[file_type.value] = "application/pdf"
     return mime_types_mapping
@@ -118,8 +119,16 @@ class O365BaseLoader(BaseLoader, BaseModel):
                         metadata_dict[file.name] = {}
                         metadata_dict[file.name]["source"] = file.web_url
                         metadata_dict[file.name]["mime_type"] = file.mime_type
-            loader = FileSystemBlobLoader(path=temp_dir, metadata_dict=metadata_dict)
-            yield from loader.yield_blobs()
+                        metadata_dict[file.name]["created"] = file.created
+                        metadata_dict[file.name]["modified"] = file.modified
+                        metadata_dict[file.name]["created_by"] = str(file.created_by)
+                        metadata_dict[file.name]["modified_by"] = str(file.modified_by)
+                        metadata_dict[file.name]["description"] = file.description
+
+            loader = FileSystemBlobLoader(path=temp_dir)
+            for document in loader.yield_blobs():
+                document.metadata.update(metadata_dict.get(document.path.name))
+                yield document
         if self.recursive:
             for subfolder in folder.get_child_folders():
                 yield from self._load_from_folder(subfolder)
