@@ -43,6 +43,7 @@ _module_lookup = {
     "ChatMLflowAIGateway": "langchain_community.chat_models.mlflow_ai_gateway",
     "ChatMaritalk": "langchain_community.chat_models.maritalk",
     "ChatMlflow": "langchain_community.chat_models.mlflow",
+    "ChatNebula": "langchain_community.chat_models.symblai_nebula",
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",
     "ChatPerplexity": "langchain_community.chat_models.perplexity",

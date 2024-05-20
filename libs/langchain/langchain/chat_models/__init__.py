@@ -53,6 +53,7 @@ __all__ = [
     "ChatGooglePalm",
     "ChatMlflow",
     "ChatMLflowAIGateway",
+    "ChatNebula",
     "ChatOllama",
     "ChatVertexAI",
     "JinaChat",

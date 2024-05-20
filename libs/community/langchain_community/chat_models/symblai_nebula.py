@@ -25,41 +25,38 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
-def _message_role(type: str) -> str:
-    role_mapping = {"ai": "assistant", "human": "user", "chat": "user"}
-
-    if type in role_mapping:
-        return role_mapping[type]
+def _convert_role(role: str) -> str:
+    map = {"ai": "assistant", "human": "human", "chat": "human"}
+    if role in map:
+        return map[role]
     else:
-        raise ValueError(f"Unknown type: {type}")
+        raise ValueError(f"Unknown role type: {role}")
 
 
 def _format_nebula_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
-    # print("message: ", messages)
-    system = None
+    system = ""
     formatted_messages = []
-    text = messages[-1].content
-    # print(text)
-    for i, message in enumerate(messages[:-1]):
+    for message in messages[:-1]:
         if message.type == "system":
-            if i != 0:
-                raise ValueError("System message must be at beginning of message list.")
             system = message.content
-        else:
+        else: 
             formatted_messages.append(
                 {
-                    "role": _message_role(message.type),
-                    "message": message.content,
+                    "role": _convert_role(message.type),
+                    "text": message.content,
                 }
             )
+            """
+            The first message in formatted_messages must be "human"
+            """
+            if formatted_messages[0]["role"] != "human":
+                print("The first message after system prompt must be a human message")
+                exit()
+    text = messages[-1].content
+    formatted_messages.append({"role": "human", "text": text})
     return {
         "system_prompt": system,
-        "messages" : [
-            {
-                "role": "human",
-                "text": text
-            }
-        ]
+        "messages" : formatted_messages
     }
 
 
@@ -80,23 +77,11 @@ class ChatNebula(BaseChatModel):
             messages = [HumanMessage(content="knock knock")]
             chat.invoke(messages)
     """
-
-    model: Optional[str] = None
-    """
-    model name for above provider
-    """
-
     max_new_tokens: int = 1024
     """Denotes the number of tokens to predict per generation."""
 
     temperature: Optional[float] = 0
     """A non-negative float that tunes the degree of randomness in generation."""
-
-    streaming: bool = False
-    """Whether to stream the results."""
-
-    fallback_providers: Optional[str] = None
-    """Providers in this will be used as fallback if the call to provider fails."""
 
     nebula_api_url: str = "https://api-nebula.symbl.ai"
 
@@ -143,7 +128,6 @@ class ChatNebula(BaseChatModel):
         payload: Dict[str, Any] = {
             "max_new_tokens": self.max_new_tokens,
             "temperature": self.temperature,
-            "fallback_providers": self.fallback_providers,
             **formatted_data,
             **kwargs,
         }
@@ -151,11 +135,10 @@ class ChatNebula(BaseChatModel):
         payload = {k: v for k, v in payload.items() if v is not None}
         payload = json.dumps(payload)
         
-        response = requests.request("POST", url, headers=headers, data=payload)
+        response = requests.request("POST", url, headers=headers, data=payload, stream=True)
         response.raise_for_status()
 
         for chunk_response in response.iter_lines():
-            # print("CHUNK RESPONSEEEEEEEE", chunk_response)
             chunk_decoded = chunk_response.decode()[6:]
             try:
                 chunk = json.loads(chunk_decoded)
@@ -183,7 +166,6 @@ class ChatNebula(BaseChatModel):
         payload: Dict[str, Any] = {
             "max_new_tokens": self.max_new_tokens,
             "temperature": self.temperature,
-            "fallback_providers": self.fallback_providers,
             **formatted_data,
             **kwargs,
         }
@@ -192,18 +174,18 @@ class ChatNebula(BaseChatModel):
         payload = json.dumps(payload)
 
         async with ClientSession() as session:
-            async with session.post(url, data=payload, headers=headers) as response:
+            async with session.post(url, data=payload, headers=headers, stream = True) as response:
                 response.raise_for_status()
                 async for chunk_response in response.content:
-                    chunk = json.loads(chunk_response.decode())
-                    token = chunk["text"]
-                    cg_chunk = ChatGenerationChunk(
-                        message=AIMessageChunk(content=token)
-                    )
+                    chunk_decoded = chunk_response.decode()[6:]
+                    try:
+                        chunk = json.loads(chunk_decoded)
+                    except:
+                        continue
+                    token = chunk["delta"]
+                    cg_chunk = ChatGenerationChunk(message=AIMessageChunk(content=token))
                     if run_manager:
-                        await run_manager.on_llm_new_token(
-                            token=chunk["text"], chunk=cg_chunk
-                        )
+                        await run_manager.on_llm_new_token(token, chunk=cg_chunk)
                     yield cg_chunk
 
     def _generate(
@@ -213,7 +195,7 @@ class ChatNebula(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
+        if self.stream:
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -228,7 +210,6 @@ class ChatNebula(BaseChatModel):
         payload: Dict[str, Any] = {
             "max_new_tokens": self.max_new_tokens,
             "temperature": self.temperature,
-            "fallback_providers": self.fallback_providers,
             **formatted_data,
             **kwargs,
         }
@@ -256,7 +237,7 @@ class ChatNebula(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.streaming:
+        if self.stream:
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -271,7 +252,6 @@ class ChatNebula(BaseChatModel):
         payload: Dict[str, Any] = {
             "max_new_tokens": self.max_new_tokens,
             "temperature": self.temperature,
-            "fallback_providers": self.fallback_providers,
             **formatted_data,
             **kwargs,
         }
