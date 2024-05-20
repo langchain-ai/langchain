@@ -1,4 +1,5 @@
 """Test SingleStoreDB functionality."""
+
 import math
 import os
 import tempfile

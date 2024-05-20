@@ -3,7 +3,16 @@ from __future__ import annotations
 import json
 import logging
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, Iterator, List, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+)
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -17,6 +26,7 @@ from langchain_core.pydantic_v1 import root_validator
 if TYPE_CHECKING:
     import gigachat
     import gigachat.models as gm
+    from gigachat._types import FileTypes
 
 logger = logging.getLogger(__name__)
 
@@ -183,6 +193,16 @@ class _BaseGigaChat(Serializable):
             return self.tokens_count([text])[0].tokens  # type: ignore
         else:
             return round(len(text) / 4.6)
+
+    def upload_file(
+        self, file: FileTypes, purpose: Literal["general", "assistant"] = "general"
+    ) -> gm.UploadedFile:
+        return self._client.upload_file(file, purpose)
+
+    async def aupload_file(
+        self, file: FileTypes, purpose: Literal["general", "assistant"] = "general"
+    ) -> gm.UploadedFile:
+        return await self._client.aupload_file(file, purpose)
 
 
 class GigaChat(_BaseGigaChat, BaseLLM):

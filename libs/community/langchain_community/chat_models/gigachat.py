@@ -48,6 +48,7 @@ from langchain_core.messages import (
     SystemMessage,
     SystemMessageChunk,
     ToolCall,
+    ToolCallChunk,
     ToolMessage,
 )
 from langchain_core.output_parsers.base import OutputParserLike
@@ -108,10 +109,18 @@ def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
 def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
     from gigachat.models import Messages, MessagesRole
 
+    kwargs = {}
+
+    attachments = message.additional_kwargs.get("attachments", None)
+    if attachments:
+        kwargs["attachments"] = attachments
+
     if isinstance(message, SystemMessage):
-        return Messages(role=MessagesRole.SYSTEM, content=message.content)
+        kwargs["role"] = MessagesRole.SYSTEM
+        kwargs["content"] = message.content
     elif isinstance(message, HumanMessage):
-        return Messages(role=MessagesRole.USER, content=message.content)
+        kwargs["role"] = MessagesRole.USER
+        kwargs["content"] = message.content
     elif isinstance(message, AIMessage):
         function_call = message.additional_kwargs.get("function_call", None)
         if isinstance(function_call, list):
@@ -119,19 +128,21 @@ def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
                 function_call = function_call[0]
             else:
                 function_call = None
-        return Messages(
-            role=MessagesRole.ASSISTANT,
-            content=message.content,
-            function_call=function_call,
-        )
+        kwargs["role"] = MessagesRole.ASSISTANT
+        kwargs["content"] = message.content
+        kwargs["function_call"] = function_call
     elif isinstance(message, ChatMessage):
-        return Messages(role=MessagesRole(message.role), content=message.content)
+        kwargs["role"] = message.role
+        kwargs["content"] = message.content
     elif isinstance(message, FunctionMessage):
-        return Messages(role=MessagesRole.FUNCTION, content=message.content)
+        kwargs["role"] = MessagesRole.FUNCTION
+        kwargs["content"] = message.content
     elif isinstance(message, ToolMessage):
-        return Messages(role=MessagesRole.FUNCTION, content=message.content)
+        kwargs["role"] = MessagesRole.FUNCTION
+        kwargs["content"] = message.content
     else:
         raise TypeError(f"Got unknown type {message}")
+    return Messages(**kwargs)
 
 
 def _convert_delta_to_message_chunk(
@@ -140,16 +151,30 @@ def _convert_delta_to_message_chunk(
     role = _dict.get("role")
     content = _dict.get("content") or ""
     additional_kwargs: Dict = {}
+    tool_call_chunks = []
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
+        if additional_kwargs.get("function_call") is not None:
+            tool_call_chunks = [
+                ToolCallChunk(
+                    name=additional_kwargs["function_call"]["name"],
+                    args=json.dumps(additional_kwargs["function_call"]["arguments"]),
+                    id=str(uuid4()),
+                    index=0,
+                )
+            ]
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_call_chunks=tool_call_chunks,
+        )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:
