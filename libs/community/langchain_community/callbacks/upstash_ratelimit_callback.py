@@ -49,7 +49,7 @@ class UpstashRatelimitHandler(BaseCallbackHandler):
     Should not be passed to the chain when initialising the chain.
     This is because the handler has a state which should be fresh
     every time invoke is called. Instead, initialise and pass a handler
-    everytime you invoke.
+    every time you invoke.
     """
 
     raise_error = True
