@@ -174,9 +174,8 @@ class HuggingFaceEndpoint(LLM):
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
-        huggingfacehub_api_token = (
-                values["huggingfacehub_api_token"] or
-                os.getenv("HUGGINGFACEHUB_API_TOKEN")
+        huggingfacehub_api_token = values["huggingfacehub_api_token"] or os.getenv(
+            "HUGGINGFACEHUB_API_TOKEN"
         )
         if huggingfacehub_api_token is not None:
             try:
