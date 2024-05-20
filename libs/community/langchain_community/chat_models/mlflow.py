@@ -233,8 +233,7 @@ class ChatMlflow(BaseChatModel):
 
     @staticmethod
     def _convert_delta_to_message_chunk(
-        _dict: Mapping[str, Any],
-        default_role: str
+        _dict: Mapping[str, Any], default_role: str
     ) -> BaseMessageChunk:
         role = _dict.get("role", default_role)
         content = _dict["content"]
