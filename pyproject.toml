@@ -28,7 +28,7 @@ myst-nb = "^0.17.1"
 linkchecker = "^10.2.1"
 sphinx-copybutton = "^0.5.1"
 nbdoc = "^0.0.82"
-gigachat = "^0.1.23"
+gigachat = "^0.1.25"
 
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.4.0"

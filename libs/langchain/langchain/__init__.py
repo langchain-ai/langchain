@@ -18,7 +18,7 @@ _check_gigachain_community_version()
 
 
 try:
-    __version__ = metadata.version(__package__)
+    __version__ = metadata.version("gigachain")
 except metadata.PackageNotFoundError:
     # Case where package metadata is not available.
     __version__ = ""

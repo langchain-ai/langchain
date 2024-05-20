@@ -6,6 +6,7 @@ You'll then need to set SAMBAVERSE_API_KEY, SAMBASTUDIO_BASE_URL,
 SAMBASTUDIO_PROJECT_ID, SAMBASTUDIO_ENDPOINT_ID, and SAMBASTUDIO_API_KEY
 environment variables.
 """
+
 from langchain_community.llms.sambanova import SambaStudio, Sambaverse
 
 

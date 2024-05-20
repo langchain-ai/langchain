@@ -1,4 +1,5 @@
 """Test Cassandra functionality."""
+
 import asyncio
 import time
 from typing import List, Optional, Type

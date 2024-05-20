@@ -1,4 +1,5 @@
 """Test Alibaba Tongyi Chat Model."""
+
 from typing import Any, cast
 
 from langchain_core.callbacks import CallbackManager
