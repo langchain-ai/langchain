@@ -136,7 +136,7 @@ def create_sql_agent(
             "Must provide exactly one of 'toolkit' or 'db'. Received both."
         )
 
-    toolkit = toolkit or SQLDatabaseToolkit(llm=llm, db=db)
+    toolkit = toolkit or SQLDatabaseToolkit(llm=llm, db=db)  # type: ignore[arg-type]
     agent_type = agent_type or AgentType.ZERO_SHOT_REACT_DESCRIPTION
     tools = toolkit.get_tools() + list(extra_tools)
     if prompt is None:
@@ -193,7 +193,7 @@ def create_sql_agent(
             ]
             prompt = ChatPromptTemplate.from_messages(messages)
         agent = RunnableAgent(
-            runnable=create_openai_functions_agent(llm, tools, prompt),
+            runnable=create_openai_functions_agent(llm, tools, prompt),  # type: ignore
             input_keys_arg=["input"],
             return_keys_arg=["output"],
             **kwargs,
@@ -208,10 +208,10 @@ def create_sql_agent(
             ]
             prompt = ChatPromptTemplate.from_messages(messages)
         if agent_type == "openai-tools":
-            runnable = create_openai_tools_agent(llm, tools, prompt)
+            runnable = create_openai_tools_agent(llm, tools, prompt)  # type: ignore
         else:
-            runnable = create_tool_calling_agent(llm, tools, prompt)
-        agent = RunnableMultiActionAgent(
+            runnable = create_tool_calling_agent(llm, tools, prompt)  # type: ignore
+        agent = RunnableMultiActionAgent(  # type: ignore[assignment]
             runnable=runnable,
             input_keys_arg=["input"],
             return_keys_arg=["output"],

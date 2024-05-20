@@ -7,15 +7,16 @@ from typing import (
 )
 
 import openai
+from langchain_core.language_models.chat_models import LangSmithParams
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,
 )
-from langchain_openai import ChatOpenAI
+from langchain_openai.chat_models.base import BaseChatOpenAI
 
 
-class ChatUpstage(ChatOpenAI):
+class ChatUpstage(BaseChatOpenAI):
     """ChatUpstage chat model.
 
     To use, you should have the environment variable `UPSTAGE_API_KEY`
@@ -52,6 +53,14 @@ class ChatUpstage(ChatOpenAI):
         """Return type of chat model."""
         return "upstage-chat"
 
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get the parameters used to invoke the model."""
+        params = super()._get_ls_params(stop=stop, **kwargs)
+        params["ls_provider"] = "upstage"
+        return params
+
     model_name: str = Field(default="solar-1-mini-chat", alias="model")
     """Model name to use."""
     upstage_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
@@ -59,6 +68,16 @@ class ChatUpstage(ChatOpenAI):
     upstage_api_base: Optional[str] = Field(
         default="https://api.upstage.ai/v1/solar", alias="base_url"
     )
+    """Base URL path for API requests, leave blank if not using a proxy or service 
+    emulator."""
+    openai_api_key: Optional[SecretStr] = Field(default=None)
+    """openai api key is not supported for upstage. use `upstage_api_key` instead."""
+    openai_api_base: Optional[str] = Field(default=None)
+    """openai api base is not supported for upstage. use `upstage_api_base` instead."""
+    openai_organization: Optional[str] = Field(default=None)
+    """openai organization is not supported for upstage."""
+    tiktoken_model_name: Optional[str] = None
+    """tiktoken is not supported for upstage."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

@@ -71,7 +71,7 @@ def acompletion_with_retry(llm: Cohere, **kwargs: Any) -> Any:
 
 
 @deprecated(
-    since="0.0.30", removal="0.2.0", alternative_import="langchain_cohere.BaseCohere"
+    since="0.0.30", removal="0.3.0", alternative_import="langchain_cohere.BaseCohere"
 )
 class BaseCohere(Serializable):
     """Base class for Cohere models."""
@@ -122,7 +122,7 @@ class BaseCohere(Serializable):
 
 
 @deprecated(
-    since="0.1.14", removal="0.2.0", alternative_import="langchain_cohere.Cohere"
+    since="0.1.14", removal="0.3.0", alternative_import="langchain_cohere.Cohere"
 )
 class Cohere(LLM, BaseCohere):
     """Cohere large language models.

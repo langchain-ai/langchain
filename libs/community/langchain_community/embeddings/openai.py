@@ -140,7 +140,7 @@ async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) ->
 
 @deprecated(
     since="0.0.9",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_openai.OpenAIEmbeddings",
 )
 class OpenAIEmbeddings(BaseModel, Embeddings):

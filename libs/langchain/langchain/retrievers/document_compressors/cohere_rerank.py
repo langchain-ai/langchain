@@ -13,7 +13,7 @@ from langchain.retrievers.document_compressors.base import BaseDocumentCompresso
 
 
 @deprecated(
-    since="0.0.30", removal="0.2.0", alternative_import="langchain_cohere.CohereRerank"
+    since="0.0.30", removal="0.3.0", alternative_import="langchain_cohere.CohereRerank"
 )
 class CohereRerank(BaseDocumentCompressor):
     """Document compressor that uses `Cohere Rerank API`."""

@@ -67,6 +67,7 @@ def test_tracer_with_run_tree_parent() -> None:
     parent = RunTree(name="parent", inputs={"input": "foo"}, client=client)
     run_id = uuid.uuid4()
     tracer = LangChainTracer(client=client)
+    tracer.order_map[parent.id] = (parent.trace_id, parent.dotted_order)
     tracer.run_map[str(parent.id)] = parent  # type: ignore
     tracer.on_chain_start(
         {"name": "child"}, {"input": "bar"}, run_id=run_id, parent_run_id=parent.id
