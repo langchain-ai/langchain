@@ -127,7 +127,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
 
             loader = FileSystemBlobLoader(path=temp_dir)
             for document in loader.yield_blobs():
-                document.metadata.update(metadata_dict.get(document.path.name))
+                document.metadata.update(metadata_dict.get(document.path.name, {}))
                 yield document
         if self.recursive:
             for subfolder in folder.get_child_folders():
