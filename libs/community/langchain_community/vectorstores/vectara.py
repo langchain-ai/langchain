@@ -456,7 +456,7 @@ class Vectara(VectorStore):
                 f"(code {response.status_code}, reason {response.reason}, details "
                 f"{response.text})",
             )
-            return [], ""  # type: ignore[return-value]
+            return []
 
         result = response.json()
 
@@ -720,7 +720,7 @@ class VectaraRAG(Runnable):
                 f"(code {response.status_code}, reason {response.reason}, details "
                 f"{response.text})",
             )
-            return [], ""  # type: ignore[return-value]
+            return
 
         responses = []
         documents = []

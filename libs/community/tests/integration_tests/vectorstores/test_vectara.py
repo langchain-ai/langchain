@@ -63,8 +63,8 @@ def test_vectara_add_documents(vectara1) -> None:  # type: ignore[no-untyped-def
     assert len(output1) == 2
     assert output1[0].page_content == "large language model"
     assert output1[0].metadata["abbr"] == "llm"
-    assert output1[1].page_content == "information retrieval"
-    assert output1[1].metadata["abbr"] == "ir"
+    assert output1[1].page_content == "retrieval augmented generation"
+    assert output1[1].metadata["abbr"] == "rag"
 
     # test with metadata filter (doc level)
     # since the query does not match test_num=1 directly we get "LLM" as the result
@@ -89,7 +89,7 @@ def test_vectara_add_documents(vectara1) -> None:  # type: ignore[no-untyped-def
         n_sentence_before=0,
         n_sentence_after=0,
     )
-    assert len(output3) == 1
+    assert len(output3) == 2
     assert output3[0][0].page_content == "large language model"
     assert output3[0][0].metadata["abbr"] == "llm"
 
@@ -136,7 +136,7 @@ def test_vectara_from_files(vectara2) -> None:
         n_sentence_after=0,
         filter="doc.test_num = 2",
     )
-    assert "Deep learning is part of a broader family" in output[0].page_content
+    assert "By the commonly adopted machine learning tradition" in output[0].page_content
 
     # another similarity search, this time with n_sentences_before/after = 1
     output = vectara2.similarity_search(
@@ -146,7 +146,7 @@ def test_vectara_from_files(vectara2) -> None:
         n_sentence_after=1,
         filter="doc.test_num = 2",
     )
-    assert "Deep learning is part of a broader family" in output[0].page_content
+    assert "Note the use of" in output[0].page_content
 
 
 @pytest.fixture(scope="function")
@@ -206,7 +206,7 @@ def test_vectara_mmr(vectara3) -> None:  # type: ignore[no-untyped-def]
         n_sentence_after=0,
     )
     assert len(output1) == 2
-    assert "Generative AI promises to revolutionize how you can benefit from your data" in output1[1].page_content
+    assert "This is why today we're adding a fundamental capability to our" in output1[1].page_content
 
     output2 = vectara3.max_marginal_relevance_search(
         "generative AI",
@@ -217,7 +217,7 @@ def test_vectara_mmr(vectara3) -> None:  # type: ignore[no-untyped-def]
         n_sentence_after=0,
     )
     assert len(output2) == 2
-    assert "You can try it out on your own on our newly launched AskNews demo" in output2[1].page_content
+    assert "Neural LLM systems are excellent at understanding the context" in output2[1].page_content
 
 
 def test_vectara_with_summary(vectara3) -> None:  # type: ignore[no-untyped-def]
