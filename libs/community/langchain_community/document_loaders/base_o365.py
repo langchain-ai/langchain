@@ -127,7 +127,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
 
             loader = FileSystemBlobLoader(path=temp_dir)
             for document in loader.yield_blobs():
-                if document.path and hasattr(document.path, 'name'):
+                if document.path and hasattr(document.path, "name"):
                     document.metadata.update(metadata_dict.get(document.path.name, {}))
                 yield document
         if self.recursive:
