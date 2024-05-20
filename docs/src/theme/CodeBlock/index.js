@@ -21,10 +21,11 @@ function Imports({ imports }) {
       </h4>
       <ul style={{ paddingBottom: "1rem" }}>
         {imports.map(({ imported, source, docs }) => (
-          <li key={imported}>
+          <li>
             <a href={docs}>
               <span>{imported}</span>
-            </a>
+            </a>{" "}
+            from <code>{source}</code>
           </li>
         ))}
       </ul>
@@ -33,25 +34,14 @@ function Imports({ imports }) {
 }
 
 export default function CodeBlockWrapper({ children, ...props }) {
-  // Initialize imports as an empty array
-  let imports = [];
-
-  // Check if children is a string
   if (typeof children === "string") {
-    // Search for an IMPORTS comment in the code
-    const match = /<!--IMPORTS:(.*?)-->\n/.exec(children);
-    if (match) {
-      imports = JSON.parse(match[1]);
-      children = children.replace(match[0], "");
-    }
-  } else if (children.imports) {
-    imports = children.imports;
+    return <CodeBlock {...props}>{children}</CodeBlock>;
   }
 
   return (
     <>
-      <CodeBlock {...props}>{children}</CodeBlock>
-      {imports.length > 0 && <Imports imports={imports} />}
+      <CodeBlock {...props}>{children.content}</CodeBlock>
+      <Imports imports={children.imports} />
     </>
   );
 }

@@ -98,7 +98,7 @@ function SvgThumbsDown() {
 
 const FEEDBACK_COOKIE_PREFIX = "feedbackSent";
 /** @type {Database["public"]["Enums"]["project_type"]} */
-const LANGCHAIN_PROJECT_NAME = "langchain_py_docs";
+const LANGCHAIN_PROJECT_NAME = "langsmith_docs";
 
 /**
  * @returns {Promise<string>}
@@ -112,7 +112,6 @@ export default function Feedback() {
   const { setCookie, checkCookie } = useCookie();
   const [feedbackSent, setFeedbackSent] = useState(false);
   const { siteConfig } = useDocusaurusContext();
-  const [pathname, setPathname] = useState("");
 
   /** @param {"good" | "bad"} feedback */
   const handleFeedback = async (feedback) => {
@@ -168,7 +167,6 @@ export default function Feedback() {
       // (cookies exp in 24hrs)
       const cookieName = `${FEEDBACK_COOKIE_PREFIX}_${window.location.pathname}`;
       setFeedbackSent(checkCookie(cookieName));
-      setPathname(window.location.pathname);
     }
   }, []);
 
@@ -180,23 +178,25 @@ export default function Feedback() {
       paddingBottom: "10px",
       paddingLeft: "22px",
       paddingRight: "22px",
-      border: "1px solid gray",
+      border: "1px solid var(--joy-palette-background-level2)",
       borderRadius: "6px",
       gap: "10px",
       cursor: "pointer",
       fontSize: "16px",
       fontWeight: "600",
     },
-    onMouseEnter: (e) => (e.currentTarget.style.backgroundColor = "#f0f0f0"),
+    onMouseEnter: (e) =>
+      (e.currentTarget.style.backgroundColor =
+        "var(--joy-palette-background-level1)"),
     onMouseLeave: (e) =>
       (e.currentTarget.style.backgroundColor = "transparent"),
-    onMouseDown: (e) => (e.currentTarget.style.backgroundColor = "#d0d0d0"),
-    onMouseUp: (e) => (e.currentTarget.style.backgroundColor = "#f0f0f0"),
+    onMouseDown: (e) =>
+      (e.currentTarget.style.backgroundColor =
+        "var(--joy-palette-background-level2)"),
+    onMouseUp: (e) =>
+      (e.currentTarget.style.backgroundColor =
+        "var(--joy-palette-background-level1)"),
   };
-
-  const newGithubIssueURL = pathname
-    ? `https://github.com/langchain-ai/langchain/issues/new?assignees=&labels=03+-+Documentation&projects=&template=documentation.yml&title=DOC%3A+%3CIssue+related+to+${pathname}%3E`
-    : "https://github.com/langchain-ai/langchain/issues/new?assignees=&labels=03+-+Documentation&projects=&template=documentation.yml&title=DOC%3A+%3CPlease+write+a+comprehensive+title+after+the+%27DOC%3A+%27+prefix%3E";
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -246,14 +246,6 @@ export default function Feedback() {
           </div>
         </>
       )}
-      <br />
-      <h4>
-        You can leave detailed feedback{" "}
-        <a target="_blank" href={newGithubIssueURL}>
-          on GitHub
-        </a>
-        .
-      </h4>
     </div>
   );
 }
