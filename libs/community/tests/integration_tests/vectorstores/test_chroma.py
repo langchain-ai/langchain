@@ -1,4 +1,5 @@
 """Test Chroma functionality."""
+
 import uuid
 
 import pytest
@@ -248,6 +249,46 @@ def test_chroma_with_relevance_score() -> None:
         (Document(page_content="foo", metadata={"page": "0"}), 1.0),
         (Document(page_content="bar", metadata={"page": "1"}), 0.8),
         (Document(page_content="baz", metadata={"page": "2"}), 0.5),
+    ]
+
+
+@pytest.mark.parametrize(
+    "texts,distance_metric,query,expceted_score",
+    [
+        (
+            ["foo", "bar", "baz"],
+            "l2",
+            "foo",
+            [1.0, 0.29289321881345254, -1.8284271247461898],
+        ),
+        (
+            ["foo", "bar", "baz"],
+            "cosine",
+            "foo",
+            [1.0000001192092896, 0.9486833214759827, 0.8320503234863281],
+        ),
+        (["foo", "bar", "baz"], "ip", "foo", [8.0, 8.0, 8.0]),
+    ],
+)
+def test_chroma_with_relevance_score_distance_metrics(
+    texts, distance_metric, query, expceted_score
+) -> None:
+    """Test to make sure that all available distance metrics are supported."""
+    docsearch = Chroma.from_texts(
+        collection_name="test_collection",
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        collection_metadata={"hnsw:space": distance_metric},
+    )
+    output = docsearch.similarity_search_with_relevance_scores(query, k=3)
+    # delete collection, because in parametrized test it is created once again with every test.
+    # in results, duplicates are added with every new parametrized test
+    docsearch.delete_collection()
+
+    assert output == [
+        (Document(page_content=texts[0]), expceted_score[0]),
+        (Document(page_content=texts[1]), expceted_score[1]),
+        (Document(page_content=texts[2]), expceted_score[2]),
     ]
 
 

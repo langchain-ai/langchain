@@ -446,7 +446,9 @@ class Chroma(VectorStore):
 
         return _results_to_docs_and_scores(results)
 
-    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+    def _select_relevance_score_fn(
+        self, distance: str = "l2"
+    ) -> Callable[[float], float]:
         """
         The 'correct' relevance function
         may differ depending on a few things, including:
@@ -455,10 +457,10 @@ class Chroma(VectorStore):
         - embedding dimensionality
         - etc.
         """
+
         if self.override_relevance_score_fn:
             return self.override_relevance_score_fn
 
-        distance = "l2"
         distance_key = "hnsw:space"
         metadata = self._collection.metadata
 
