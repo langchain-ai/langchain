@@ -181,7 +181,9 @@ class ChatMlflow(BaseChatModel):
             chunk_delta = choice["delta"]
             if first_chunk_role is None:
                 first_chunk_role = chunk_delta["role"]
-            chunk = ChatMlflow._convert_delta_to_message_chunk(chunk_delta, first_chunk_role)
+            chunk = ChatMlflow._convert_delta_to_message_chunk(
+                chunk_delta, first_chunk_role
+            )
 
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
@@ -230,7 +232,10 @@ class ChatMlflow(BaseChatModel):
             return ChatMessage(content=content, role=role)
 
     @staticmethod
-    def _convert_delta_to_message_chunk(_dict: Mapping[str, Any], default_role: str) -> BaseMessageChunk:
+    def _convert_delta_to_message_chunk(
+        _dict: Mapping[str, Any],
+        default_role: str
+    ) -> BaseMessageChunk:
         role = _dict.get("role", default_role)
         content = _dict["content"]
         if role == "user":
