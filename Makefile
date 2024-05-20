@@ -3,7 +3,7 @@
 ## help: Show this help info.
 help: Makefile
 	@printf "\n\033[1mUsage: make <TARGETS> ...\033[0m\n\n\033[1mTargets:\033[0m\n\n"
-	@sed -n 's/^##//p' $< | awk -F':' '{printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' | sort | sed -e 's/^/ /'
+	@sed -n 's/^## //p' $< | awk -F':' '{printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' | sort | sed -e 's/^/  /'
 
 ## all: Default target, shows help.
 all: help
@@ -17,7 +17,7 @@ clean: docs_clean api_docs_clean
 
 ## docs_build: Build the documentation.
 docs_build:
-	cd docs && make build-local
+	cd docs && make build
 
 ## docs_clean: Clean the documentation build artifacts.
 docs_clean:

@@ -7,7 +7,7 @@ from typing import Iterable, Tuple
 
 import nbformat
 from nbconvert.exporters import MarkdownExporter
-from nbconvert.preprocessors import Preprocessor, RegexRemovePreprocessor
+from nbconvert.preprocessors import Preprocessor
 
 
 class EscapePreprocessor(Preprocessor):
@@ -27,7 +27,9 @@ class EscapePreprocessor(Preprocessor):
                 )
             # rewrite .ipynb links to .md
             cell.source = re.sub(
-                r"\[([^\]]*)\]\(([^)]*).ipynb\)", r"[\1](\2.md)", cell.source
+                r"\[([^\]]*)\]\((?![^\)]*//)([^)]*)\.ipynb\)",
+                r"[\1](\2.md)",
+                cell.source,
             )
         return cell, resources
 
@@ -79,11 +81,26 @@ class ExtractAttachmentsPreprocessor(Preprocessor):
         return cell, resources
 
 
+class CustomRegexRemovePreprocessor(Preprocessor):
+    def check_conditions(self, cell):
+        pattern = re.compile(r"(?s)(?:\s*\Z)|(?:.*#\s*\|\s*output:\s*false.*)")
+        rtn = not pattern.match(cell.source)
+        if not rtn:
+            return False
+        else:
+            return True
+
+    def preprocess(self, nb, resources):
+        nb.cells = [cell for cell in nb.cells if self.check_conditions(cell)]
+
+        return nb, resources
+
+
 exporter = MarkdownExporter(
     preprocessors=[
         EscapePreprocessor,
         ExtractAttachmentsPreprocessor,
-        RegexRemovePreprocessor(patterns=[r"^\s*$"]),
+        CustomRegexRemovePreprocessor,
     ],
     template_name="mdoutput",
     extra_template_basedirs=["./scripts/notebook_convert_templates"],
