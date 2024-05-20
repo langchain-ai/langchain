@@ -12,7 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.46,<0.3"
+langchain-core = ">=0.2.0,<0.3"
 openai = "^1.24.0"
 tiktoken = ">=0.7,<1"
 
