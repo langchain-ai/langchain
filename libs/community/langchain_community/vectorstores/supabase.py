@@ -152,13 +152,7 @@ class SupabaseVectorStore(VectorStore):
         ids = [str(uuid.uuid4()) for _ in texts]
         docs = cls._texts_to_documents(texts, metadatas)
         cls._add_vectors(
-            client,
-            table_name,
-            embeddings,
-            docs,
-            ids,
-            chunk_size,
-            **kwargs
+            client, table_name, embeddings, docs, ids, chunk_size, **kwargs
         )
 
         return cls(
@@ -332,7 +326,7 @@ class SupabaseVectorStore(VectorStore):
         documents: List[Document],
         ids: List[str],
         chunk_size: int,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> List[str]:
         """Add vectors to Supabase table."""
 
@@ -342,7 +336,7 @@ class SupabaseVectorStore(VectorStore):
                 "content": documents[idx].page_content,
                 "embedding": embedding,
                 "metadata": documents[idx].metadata,  # type: ignore
-                **kwargs
+                **kwargs,
             }
             for idx, embedding in enumerate(vectors)
         ]
