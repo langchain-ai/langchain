@@ -60,7 +60,11 @@ class ApifyDatasetLoader(BaseLoader, BaseModel):
         try:
             from apify_client import ApifyClient
 
-            values["apify_client"] = ApifyClient()
+            client = ApifyClient()
+            if httpx_client := getattr(client.http_client, "httpx_client"):
+                httpx_client.headers["user-agent"] += "; Origin/langchain"
+
+            values["apify_client"] = client
         except ImportError:
             raise ImportError(
                 "Could not import apify-client Python package. "
