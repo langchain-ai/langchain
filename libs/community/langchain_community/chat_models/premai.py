@@ -34,7 +34,13 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.utils import get_from_dict_or_env
 
 if TYPE_CHECKING:
@@ -130,7 +136,7 @@ def _convert_delta_response_to_message_chunk(
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role), finish_reasons
     else:
-        return default_class(content=content), finish_reasons
+        return default_class(content=content), finish_reasons  # type: ignore[call-arg]
 
 
 def _messages_to_prompt_dict(
@@ -159,7 +165,7 @@ def _messages_to_prompt_dict(
 
 
 class ChatPremAI(BaseChatModel, BaseModel):
-    """Use any LLM provider with Prem and Langchain.
+    """PremAI Chat models.
 
     To use, you will need to have an API key. You can find your existing API Key
     or generate a new one here: https://app.premai.io/api_keys/
@@ -170,10 +176,10 @@ class ChatPremAI(BaseChatModel, BaseModel):
     project_id: int
     """The project ID in which the experiments or deployments are carried out. 
     You can find all your projects here: https://app.premai.io/projects/"""
-    premai_api_key: Optional[SecretStr] = None
+    premai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Prem AI API Key. Get it here: https://app.premai.io/api_keys/"""
 
-    model: Optional[str] = None
+    model: Optional[str] = Field(default=None, alias="model_name")
     """Name of the model. This is an optional parameter. 
     The default model is the one deployed from Prem's LaunchPad: https://app.premai.io/projects/8/launchpad
     If model name is other than default model then it will override the calls 
@@ -233,6 +239,8 @@ class ChatPremAI(BaseChatModel, BaseModel):
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
 
     @root_validator()
     def validate_environments(cls, values: Dict) -> Dict:
@@ -357,6 +365,7 @@ def create_prem_retry_decorator(
     max_retries: int = 1,
     run_manager: Optional[Union[CallbackManagerForLLMRun]] = None,
 ) -> Callable[[Any], Any]:
+    """Create a retry decorator for PremAI API errors."""
     import premai.models
 
     errors = [

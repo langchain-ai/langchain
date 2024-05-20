@@ -48,7 +48,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
         try:
             import unstructured  # noqa:F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )
@@ -213,7 +213,7 @@ def get_elements_from_api(
         from unstructured.partition.api import partition_via_api
 
         return partition_via_api(
-            filename=str(file_path),
+            filename=str(file_path) if file_path is not None else None,
             file=file,
             api_key=api_key,
             api_url=api_url,

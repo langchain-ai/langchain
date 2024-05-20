@@ -51,7 +51,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
         try:
             from optimum.intel.openvino import OVModelForFeatureExtraction
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 "Could not import optimum-intel python package. "
                 "Please install it with: "
                 "pip install -U 'optimum[openvino,nncf]'"
@@ -60,7 +60,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
         try:
             from huggingface_hub import HfApi
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 "Could not import huggingface_hub python package. "
                 "Please install it with: "
                 "`pip install -U huggingface_hub`."
@@ -276,6 +276,15 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
         """
         return self.embed_documents([text])[0]
 
+    def save_model(
+        self,
+        model_path: str,
+    ) -> bool:
+        self.ov_model.half()
+        self.ov_model.save_pretrained(model_path)
+        self.tokenizer.save_pretrained(model_path)
+        return True
+
 
 class OpenVINOBgeEmbeddings(OpenVINOEmbeddings):
     """OpenVNO BGE embedding models.
@@ -285,7 +294,7 @@ class OpenVINOBgeEmbeddings(OpenVINOEmbeddings):
 
             from langchain_community.embeddings import OpenVINOBgeEmbeddings
 
-            model_name_or_path = "BAAI/bge-large-en"
+            model_name = "BAAI/bge-large-en"
             model_kwargs = {'device': 'CPU'}
             encode_kwargs = {'normalize_embeddings': True}
             ov = OpenVINOBgeEmbeddings(
@@ -295,14 +304,6 @@ class OpenVINOBgeEmbeddings(OpenVINOEmbeddings):
             )
     """
 
-    model_name_or_path: str
-    """HuggingFace model id."""
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Keyword arguments to pass to the model."""
-    encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Keyword arguments to pass when calling the `encode` method of the model."""
-    show_progress: bool = False
-    """Whether to show a progress bar."""
     query_instruction: str = DEFAULT_QUERY_BGE_INSTRUCTION_EN
     """Instruction to use for embedding query."""
     embed_instruction: str = ""

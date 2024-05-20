@@ -53,7 +53,7 @@ class Jaguar(VectorStore):
         try:
             from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import jaguardb-http-client python package. "
                 "Please install it with `pip install -U jaguardb-http-client`"
             )

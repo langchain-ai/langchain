@@ -6,7 +6,7 @@ from langchain_community.embeddings.baidu_qianfan_endpoint import (
 
 def test_embedding_multiple_documents() -> None:
     documents = ["foo", "bar"]
-    embedding = QianfanEmbeddingsEndpoint()
+    embedding = QianfanEmbeddingsEndpoint()  # type: ignore[call-arg]
     output = embedding.embed_documents(documents)
     assert len(output) == 2
     assert len(output[0]) == 384
@@ -15,20 +15,20 @@ def test_embedding_multiple_documents() -> None:
 
 def test_embedding_query() -> None:
     query = "foo"
-    embedding = QianfanEmbeddingsEndpoint()
+    embedding = QianfanEmbeddingsEndpoint()  # type: ignore[call-arg]
     output = embedding.embed_query(query)
     assert len(output) == 384
 
 
 def test_model() -> None:
     documents = ["hi", "qianfan"]
-    embedding = QianfanEmbeddingsEndpoint(model="Embedding-V1")
+    embedding = QianfanEmbeddingsEndpoint(model="Embedding-V1")  # type: ignore[call-arg]
     output = embedding.embed_documents(documents)
     assert len(output) == 2
 
 
 def test_rate_limit() -> None:
-    llm = QianfanEmbeddingsEndpoint(
+    llm = QianfanEmbeddingsEndpoint(  # type: ignore[call-arg]
         model="Embedding-V1", init_kwargs={"query_per_second": 2}
     )
     assert llm.client._client._rate_limiter._sync_limiter._query_per_second == 2
