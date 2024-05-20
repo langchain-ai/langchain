@@ -34,6 +34,7 @@
     "@scalar/docusaurus": "^0.2.26",
     "@supabase/supabase-js": "^2.39.7",
     "clsx": "^1.2.1",
+    "cookie": "^0.6.0",
     "dedent": "^1.5.3",
     "dompurify": "^3.1.0",
     "isomorphic-dompurify": "^2.9.0",
@@ -43,11 +44,13 @@
     "process": "^0.11.10",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "typescript": "^5.1.3",
     "webpack": "^5.75.0"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.18.2",
     "@docusaurus/module-type-aliases": "^2.4.1",
+    "@langchain/scripts": "^0.0.10",
     "@tsconfig/docusaurus": "^1.0.7",
     "@types/jest": "^29.5.3",
     "docusaurus-plugin-typedoc": "next",
@@ -61,13 +64,16 @@
     "eslint-plugin-react": "^7.30.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "jest": "^29.6.2",
+    "marked": "^12.0.1",
     "langchain": "^0.0.179",
     "langsmith": "^0.0.47",
+    "prettier": "^2.7.1",
     "supabase": "^1.148.6",
     "ts-jest": "^29.1.1",
     "typedoc": "^0.24.4",
     "typedoc-plugin-markdown": "next",
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "yaml-loader": "^0.8.0"
   },
 "resolutions": {
     "cytoscape": "3.28.1"
