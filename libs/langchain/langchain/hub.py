@@ -33,14 +33,14 @@ def push(
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,
     parent_commit_hash: Optional[str] = "latest",
-    new_repo_is_public: bool = True,
+    new_repo_is_public: bool = False,
     new_repo_description: str = "",
 ) -> str:
     """
     Push an object to the hub and returns the URL it can be viewed at in a browser.
 
     :param repo_full_name: The full name of the repo to push to in the format of
-        `owner/repo`.
+        `owner/repo` or `repo`.
     :param object: The LangChain to serialize and push to the hub.
     :param api_url: The URL of the LangChain Hub API. Defaults to the hosted API service
         if you have an api key set, or a localhost instance if not.
@@ -74,7 +74,7 @@ def pull(
     Pull an object from the hub and returns it as a LangChain object.
 
     :param owner_repo_commit: The full name of the repo to pull from in the format of
-        `owner/repo:commit_hash`.
+        `owner/repo:commit_hash`, `owner/repo` or `repo` if it is a private prompt.
     :param api_url: The URL of the LangChain Hub API. Defaults to the hosted API service
         if you have an api key set, or a localhost instance if not.
     :param api_key: The API key to use to authenticate with the LangChain Hub API.
