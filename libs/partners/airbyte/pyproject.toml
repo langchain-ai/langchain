@@ -12,8 +12,9 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-langchain-core = "^0.1.5"
+langchain-core = ">=0.1.5,<0.3"
 airbyte = "^0.7.3"
+pydantic = ">=1.10.8,<2"
 
 [tool.poetry.group.test]
 optional = true
@@ -44,7 +45,7 @@ ruff = "^0.1.8"
 mypy = "^1.7.1"
 langchain-core = { path = "../../core", develop = true }
 langchain-text-splitters = { path = "../../text-splitters", develop = true }
-langchain = "^0.1.9"
+langchain = { path = "../../langchain", develop = true }
 
 [tool.poetry.group.dev]
 optional = true

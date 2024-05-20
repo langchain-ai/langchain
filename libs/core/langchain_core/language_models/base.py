@@ -204,7 +204,9 @@ class BaseLanguageModel(
     def with_structured_output(
         self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
-        """Implement this if there is a way of steering the model to generate responses that match a given schema."""  # noqa: E501
+        """Not implemented on this class."""
+        # Implement this on child class if there is a way of steering the model to
+        # generate responses that match a given schema.
         raise NotImplementedError()
 
     @deprecated("0.1.7", alternative="invoke", removal="0.3.0")

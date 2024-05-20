@@ -7,29 +7,13 @@ This section contains introductions to key parts of LangChain.
 
 ## Architecture
 
-LangChain as a framework consists of several pieces. The below diagram shows how they relate.
-
-<ThemedImage
-  alt="Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers."
-  sources={{
-    light: useBaseUrl('/svg/langchain_stack.svg'),
-    dark: useBaseUrl('/svg/langchain_stack_dark.svg'),
-  }}
-  title="LangChain Framework Overview"
-/>
+LangChain as a framework consists of a number of packages.
 
 ### `langchain-core`
 This package contains base abstractions of different components and ways to compose them together.
 The interfaces for core components like LLMs, vectorstores, retrievers and more are defined here.
 No third party integrations are defined here.
 The dependencies are kept purposefully very lightweight.
-
-### `langchain-community`
-
-This package contains third party integrations that are maintained by the LangChain community.
-Key partner packages are separated out (see below).
-This contains all integrations for various components (LLMs, vectorstores, retrievers).
-All dependencies in this package are optional to keep the package as lightweight as possible.
 
 ### Partner packages
 
@@ -42,50 +26,47 @@ The main `langchain` package contains chains, agents, and retrieval strategies t
 These are NOT third party integrations.
 All chains, agents, and retrieval strategies here are NOT specific to any one integration, but rather generic across all integrations.
 
-### [LangGraph](/docs/langgraph)
+### `langchain-community`
 
-Not currently in this repo, `langgraph` is an extension of `langchain` aimed at
+This package contains third party integrations that are maintained by the LangChain community.
+Key partner packages are separated out (see below).
+This contains all integrations for various components (LLMs, vectorstores, retrievers).
+All dependencies in this package are optional to keep the package as lightweight as possible.
+
+### [`langgraph`](https://langchain-ai.github.io/langgraph)
+
+`langgraph` is an extension of `langchain` aimed at
 building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
 
 LangGraph exposes high level interfaces for creating common types of agents, as well as a low-level API for constructing more contr
 
-### [langserve](/docs/langserve)
+### [`langserve`](/docs/langserve)
 
 A package to deploy LangChain chains as REST APIs. Makes it easy to get a production ready API up and running.
 
-### [LangSmith](/docs/langsmith)
+### [LangSmith](https://docs.smith.langchain.com)
 
 A developer platform that lets you debug, test, evaluate, and monitor LLM applications.
 
-## Installation
+<ThemedImage
+  alt="Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers."
+  sources={{
+    light: useBaseUrl('/svg/langchain_stack.svg'),
+    dark: useBaseUrl('/svg/langchain_stack_dark.svg'),
+  }}
+  title="LangChain Framework Overview"
+/>
 
-If you want to work with high level abstractions, you should install the `langchain` package.
+## LangChain Expression Language (LCEL)
 
-```shell
-pip install langchain
-```
-
-If you want to work with specific integrations, you will need to install them separately.
-See [here](/docs/integrations/platforms/) for a list of integrations and how to install them.
-
-For working with LangSmith, you will need to set up a LangSmith developer account [here](https://smith.langchain.com) and get an API key.
-After that, you can enable it by setting environment variables:
-
-```shell
-export LANGCHAIN_TRACING_V2=true
-export LANGCHAIN_API_KEY=ls__...
-```
-
-## LangChain Expression Language
-
-LangChain Expression Language, or LCEL, is a declarative way to easily compose chains together.
+LangChain Expression Language, or LCEL, is a declarative way to chain LangChain components.
 LCEL was designed from day 1 to **support putting prototypes in production, with no code changes**, from the simplest “prompt + LLM” chain to the most complex chains (we’ve seen folks successfully run LCEL chains with 100s of steps in production). To highlight a few of the reasons you might want to use LCEL:
 
 **First-class streaming support**
 When you build your chains with LCEL you get the best possible time-to-first-token (time elapsed until the first chunk of output comes out). For some chains this means eg. we stream tokens straight from an LLM to a streaming output parser, and you get back parsed, incremental chunks of output at the same rate as the LLM provider outputs the raw tokens.
 
 **Async support**
-Any chain built with LCEL can be called both with the synchronous API (eg. in your Jupyter notebook while prototyping) as well as with the asynchronous API (eg. in a [LangServe](/docs/langsmith) server). This enables using the same code for prototypes and in production, with great performance, and the ability to handle many concurrent requests in the same server.
+Any chain built with LCEL can be called both with the synchronous API (eg. in your Jupyter notebook while prototyping) as well as with the asynchronous API (eg. in a [LangServe](/docs/langserve/) server). This enables using the same code for prototypes and in production, with great performance, and the ability to handle many concurrent requests in the same server.
 
 **Optimized parallel execution**
 Whenever your LCEL chains have steps that can be executed in parallel (eg if you fetch documents from multiple retrievers) we automatically do it, both in the sync and the async interfaces, for the smallest possible latency.
@@ -99,14 +80,14 @@ For more complex chains it’s often very useful to access the results of interm
 **Input and output schemas**
 Input and output schemas give every LCEL chain Pydantic and JSONSchema schemas inferred from the structure of your chain. This can be used for validation of inputs and outputs, and is an integral part of LangServe.
 
-[**Seamless LangSmith tracing**](/docs/langsmith)
+[**Seamless LangSmith tracing**](https://docs.smith.langchain.com)
 As your chains get more and more complex, it becomes increasingly important to understand what exactly is happening at every step.
-With LCEL, **all** steps are automatically logged to [LangSmith](/docs/langsmith/) for maximum observability and debuggability.
+With LCEL, **all** steps are automatically logged to [LangSmith](https://docs.smith.langchain.com/) for maximum observability and debuggability.
 
 [**Seamless LangServe deployment**](/docs/langserve)
 Any chain created with LCEL can be easily deployed using [LangServe](/docs/langserve).
 
-### Interface
+### Runnable interface
 
 To make it as easy as possible to create custom chains, we've implemented a ["Runnable"](https://api.python.langchain.com/en/stable/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) protocol. Many LangChain components implement the `Runnable` protocol, including chat models, LLMs, output parsers, retrievers, prompt templates, and more. There are also several useful primitives for working with runnables, which you can read about below.
 
@@ -146,7 +127,31 @@ All runnables expose input and output **schemas** to inspect the inputs and outp
 LangChain provides standard, extendable interfaces and external integrations for various components useful for building with LLMs.
 Some components LangChain implements, some components we rely on third-party integrations for, and others are a mix.
 
+### Chat models
+
+Language models that use a sequence of messages as inputs and return chat messages as outputs (as opposed to using plain text).
+These are traditionally newer models (older models are generally `LLMs`, see above).
+Chat models support the assignment of distinct roles to conversation messages, helping to distinguish messages from the AI, users, and instructions such as system messages.
+
+Although the underlying models are messages in, message out, the LangChain wrappers also allow these models to take a string as input. This means you can easily use chat models in place of LLMs.
+
+When a string is passed in as input, it is converted to a HumanMessage and then passed to the underlying model.
+
+LangChain does not provide any ChatModels, rather we rely on third party integrations.
+
+We have some standardized parameters when constructing ChatModels:
+- `model`: the name of the model
+
+ChatModels also accept other parameters that are specific to that integration.
+
+:::important
+**Tool Calling** Some chat models have been fine-tuned for tool calling and provide a dedicated API for tool calling.
+Generally, such models are better at tool calling than non-fine-tuned models, and are recommended for use cases that require tool calling.
+Please see the [tool calling section](/docs/concepts/#functiontool-calling) for more information.
+:::
+
 ### LLMs
+
 Language models that takes a string as input and returns a string.
 These are traditionally older models (newer models generally are `ChatModels`, see below).
 
@@ -156,61 +161,7 @@ When messages are passed in as input, they will be formatted into a string under
 
 LangChain does not provide any LLMs, rather we rely on third party integrations.
 
-### Chat models
-Language models that use a sequence of messages as inputs and return chat messages as outputs (as opposed to using plain text).
-These are traditionally newer models (older models are generally `LLMs`, see above).
-Chat models support the assignment of distinct roles to conversation messages, helping to distinguish messages from the AI, users, and instructions such as system messages.
-
-Although the underlying models are messages in, message out, the LangChain wrappers also allow these models to take a string as input.
-This makes them interchangeable with LLMs (and simpler to use).
-When a string is passed in as input, it will be converted to a HumanMessage under the hood before being passed to the underlying model.
-
-LangChain does not provide any ChatModels, rather we rely on third party integrations.
-
-We have some standardized parameters when constructing ChatModels:
-- `model`: the name of the model
-
-ChatModels also accept other parameters that are specific to that integration.
-
-### Function/Tool Calling
-
-:::info
-We use the term tool calling interchangeably with function calling. Although
-function calling is sometimes meant to refer to invocations of a single function,
-we treat all models as though they can return multiple tool or function calls in
-each message.
-:::
-
-Tool calling allows a model to respond to a given prompt by generating output that
-matches a user-defined schema. While the name implies that the model is performing
-some action, this is actually not the case! The model is coming up with the
-arguments to a tool, and actually running the tool (or not) is up to the user -
-for example, if you want to [extract output matching some schema](/docs/tutorials/extraction)
-from unstructured text, you could give the model an "extraction" tool that takes
-parameters matching the desired schema, then treat the generated output as your final
-result.
-
-A tool call includes a name, arguments dict, and an optional identifier. The
-arguments dict is structured `{argument_name: argument_value}`.
-
-Many LLM providers, including [Anthropic](https://www.anthropic.com/),
-[Cohere](https://cohere.com/), [Google](https://cloud.google.com/vertex-ai),
-[Mistral](https://mistral.ai/), [OpenAI](https://openai.com/), and others,
-support variants of a tool calling feature. These features typically allow requests
-to the LLM to include available tools and their schemas, and for responses to include
-calls to these tools. For instance, given a search engine tool, an LLM might handle a
-query by first issuing a call to the search engine. The system calling the LLM can
-receive the tool call, execute it, and return the output to the LLM to inform its
-response. LangChain includes a suite of [built-in tools](/docs/integrations/tools/)
-and supports several methods for defining your own [custom tools](/docs/how_to/custom_tools).
-
-There are two main use cases for function/tool calling:
-
-- [How to return structured data from an LLM](/docs/how_to/structured_output/)
-- [How to use a model to call tools](/docs/how_to/tool_calling/)
-
-
-### Message types
+### Messages
 
 Some language models take a list of messages as input and return a message.
 There are a few different types of messages.
@@ -296,7 +247,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 prompt_template = ChatPromptTemplate.from_messages([
     ("system", "You are a helpful assistant"),
-    ("user", "Tell me a joke about {topic}"
+    ("user", "Tell me a joke about {topic}")
 ])
 
 prompt_template.invoke({"topic": "cats"})
@@ -338,7 +289,7 @@ prompt_template = ChatPromptTemplate.from_messages([
 ])
 ```
 
-### Example Selectors
+### Example selectors
 One common prompting technique for achieving better performance is to include examples as part of the prompt.
 This gives the language model concrete examples of how it should behave.
 Sometimes these examples are hardcoded into the prompt, but for more advanced situations it may be nice to dynamically select them.
@@ -389,7 +340,7 @@ LangChain has lots of different types of output parsers. This is a list of outpu
 | [Datetime](https://api.python.langchain.com/en/latest/output_parsers/langchain.output_parsers.datetime.DatetimeOutputParser.html#langchain.output_parsers.datetime.DatetimeOutputParser)        |                    | ✅                             |           | `str` \| `Message`                 | `datetime.datetime`  | Parses response into a datetime string.                                                                                                                                                                                                                  |
 | [Structured](https://api.python.langchain.com/en/latest/output_parsers/langchain.output_parsers.structured.StructuredOutputParser.html#langchain.output_parsers.structured.StructuredOutputParser)      |                    | ✅                             |           | `str` \| `Message`                 | `Dict[str, str]`     | An output parser that returns structured information. It is less powerful than other output parsers since it only allows for fields to be strings. This can be useful when you are working with smaller LLMs.                                            |
 
-### Chat History
+### Chat history
 Most LLM applications have a conversational interface.
 An essential component of a conversation is being able to refer to information introduced earlier in the conversation.
 At bare minimum, a conversational system should be able to access some window of past messages directly.
@@ -398,7 +349,7 @@ The concept of `ChatHistory` refers to a class in LangChain which can be used to
 This `ChatHistory` will keep track of inputs and outputs of the underlying chain, and append them as messages to a message database
 Future interactions will then load those messages and pass them into the chain as part of the input.
 
-### Document
+### Documents
 
 A Document object in LangChain contains information about some data. It has two attributes:
 
@@ -445,12 +396,12 @@ Embeddings create a vector representation of a piece of text. This is useful bec
 
 The base Embeddings class in LangChain provides two methods: one for embedding documents and one for embedding a query. The former takes as input multiple texts, while the latter takes a single text. The reason for having these as two separate methods is that some embedding providers have different embedding methods for documents (to be searched over) vs queries (the search query itself).
 
-### Vectorstores
+### Vector stores
 One of the most common ways to store and search over unstructured data is to embed it and store the resulting embedding vectors,
 and then at query time to embed the unstructured query and retrieve the embedding vectors that are 'most similar' to the embedded query.
 A vector store takes care of storing embedded data and performing vector search for you.
 
-Vectorstores can be converted to the retriever interface by doing:
+Vector stores can be converted to the retriever interface by doing:
 
 ```python
 vectorstore = MyVectorStore()
@@ -465,48 +416,31 @@ Retrievers can be created from vectorstores, but are also broad enough to includ
 
 Retrievers accept a string query as input and return a list of Document's as output.
 
-### Advanced Retrieval Types
-
-LangChain provides several advanced retrieval types. A full list is below, along with the following information:
-
-**Name**: Name of the retrieval algorithm.
-
-**Index Type**: Which index type (if any) this relies on.
-
-**Uses an LLM**: Whether this retrieval method uses an LLM.
-
-**When to Use**: Our commentary on when you should considering using this retrieval method.
-
-**Description**: Description of what this retrieval algorithm is doing.
-
-| Name                      | Index Type                   | Uses an LLM               | When to Use                                                                                                                                   | Description                                                                                                                                                                                                                                                                                      |
-|---------------------------|------------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [Vectorstore](https://api.python.langchain.com/en/latest/vectorstores/langchain_core.vectorstores.VectorStoreRetriever.html#langchain_core.vectorstores.VectorStoreRetriever)               | Vectorstore                  | No                        | If you are just getting started and looking for something quick and easy.                                                                     | This is the simplest method and the one that is easiest to get started with. It involves creating embeddings for each piece of text.                                                                                                                                                             |
-| [ParentDocument](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.parent_document_retriever.ParentDocumentRetriever.html#langchain.retrievers.parent_document_retriever.ParentDocumentRetriever)            | Vectorstore + Document Store | No                        | If your pages have lots of smaller pieces of distinct information that are best indexed by themselves, but best retrieved all together.       | This involves indexing multiple chunks for each document. Then you find the chunks that are most similar in embedding space, but you retrieve the whole parent document and return that (rather than individual chunks).                                                                         |
-| [Multi Vector](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.multi_vector.MultiVectorRetriever.html#langchain.retrievers.multi_vector.MultiVectorRetriever)              | Vectorstore + Document Store | Sometimes during indexing | If you are able to extract information from documents that you think is more relevant to index than the text itself.                          | This involves creating multiple vectors for each document. Each vector could be created in a myriad of ways - examples include summaries of the text and hypothetical questions.                                                                                                                 |
-| [Self Query](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.self_query.base.SelfQueryRetriever.html#langchain.retrievers.self_query.base.SelfQueryRetriever)               | Vectorstore                  | Yes                       | If users are asking questions that are better answered by fetching documents based on metadata rather than similarity with the text.          | This uses an LLM to transform user input into two things: (1) a string to look up semantically, (2) a metadata filer to go along with it. This is useful because oftentimes questions are about the METADATA of documents (not the content itself).                                              |
-| [Contextual Compression](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.contextual_compression.ContextualCompressionRetriever.html#langchain.retrievers.contextual_compression.ContextualCompressionRetriever)    | Any                          | Sometimes                 | If you are finding that your retrieved documents contain too much irrelevant information and are distracting the LLM.                         | This puts a post-processing step on top of another retriever and extracts only the most relevant information from retrieved documents. This can be done with embeddings or an LLM.                                                                                                               |
-| [Time-Weighted Vectorstore](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.time_weighted_retriever.TimeWeightedVectorStoreRetriever.html#langchain.retrievers.time_weighted_retriever.TimeWeightedVectorStoreRetriever) | Vectorstore                  | No                        | If you have timestamps associated with your documents, and you want to retrieve the most recent ones                                          | This fetches documents based on a combination of semantic similarity (as in normal vector retrieval) and recency (looking at timestamps of indexed documents)                                                                                                                                    |
-| [Multi-Query Retriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.multi_query.MultiQueryRetriever.html#langchain.retrievers.multi_query.MultiQueryRetriever)     | Any                          | Yes                       | If users are asking questions that are complex and require multiple pieces of distinct information to respond                                 | This uses an LLM to generate multiple queries from the original one. This is useful when the original query needs pieces of information about multiple topics to be properly answered. By generating multiple queries, we can then fetch documents for each of them.                             |
-| [Ensemble](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.ensemble.EnsembleRetriever.html#langchain.retrievers.ensemble.EnsembleRetriever)                  | Any                          | No                        | If you have multiple retrieval methods and want to try combining them.                                                                        | This fetches documents from multiple retrievers and then combines them.                                                                                                                                                                                                                          |
-
 ### Tools
-Tools are interfaces that an agent, chain, or LLM can use to interact with the world.
-They combine a few things:
+
+Tools are interfaces that an agent, a chain, or a chat model / LLM can use to interact with the world.
+
+A tool consists of the following components:
 
 1. The name of the tool
-2. A description of what the tool is
+2. A description of what the tool does
 3. JSON schema of what the inputs to the tool are
 4. The function to call
-5. Whether the result of a tool should be returned directly to the user
+5. Whether the result of a tool should be returned directly to the user (only relevant for agents)
 
-It is useful to have all this information because this information can be used to build action-taking systems! The name, description, and JSON schema can be used to prompt the LLM so it knows how to specify what action to take, and then the function to call is equivalent to taking that action.
+The name, description and JSON schema are provided as context
+to the LLM, allowing the LLM to determine how to use the tool
+appropriately.
 
-The simpler the input to a tool is, the easier it is for an LLM to be able to use it.
-Many agents will only work with tools that have a single string input.
+Given a list of available tools and a prompt, an LLM can request
+that one or more tools be invoked with appropriate arguments.
 
-Importantly, the name, description, and JSON schema (if used) are all used in the prompt. Therefore, it is really important that they are clear and describe exactly how the tool should be used. You may need to change the default name, description, or JSON schema if the LLM is not understanding how to use the tool.
+Generally, when designing tools to be used by a chat model or LLM, it is important to keep in mind the following:
 
+- Chat models that have been fine-tuned for tool calling will be better at tool calling than non-fine-tuned models.
+- Non fine-tuned models may not be able to use tools at all, especially if the tools are complex or require multiple tool calls.
+- Models will perform better if the tools have well-chosen names, descriptions, and JSON schemas.
+- Simpler tools are generally easier for models to use than more complex tools.
 
 ### Toolkits
 
@@ -541,3 +475,181 @@ In order to solve that we built LangGraph to be this flexible, highly-controllab
 If you are still using AgentExecutor, do not fear: we still have a guide on [how to use AgentExecutor](/docs/how_to/agent_executor).
 It is recommended, however, that you start to transition to LangGraph.
 In order to assist in this we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent)
+
+### Callbacks
+
+LangChain provides a callbacks system that allows you to hook into the various stages of your LLM application. This is useful for logging, monitoring, streaming, and other tasks.
+
+You can subscribe to these events by using the `callbacks` argument available throughout the API. This argument is list of handler objects, which are expected to implement one or more of the methods described below in more detail.
+
+#### Callback handlers
+
+`CallbackHandlers` are objects that implement the [`CallbackHandler`](https://api.python.langchain.com/en/latest/callbacks/langchain_core.callbacks.base.BaseCallbackHandler.html#langchain-core-callbacks-base-basecallbackhandler) interface, which has a method for each event that can be subscribed to.
+The `CallbackManager` will call the appropriate method on each handler when the event is triggered.
+
+```python
+class BaseCallbackHandler:
+    """Base callback handler that can be used to handle callbacks from langchain."""
+
+    def on_llm_start(
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+    ) -> Any:
+        """Run when LLM starts running."""
+
+    def on_chat_model_start(
+        self, serialized: Dict[str, Any], messages: List[List[BaseMessage]], **kwargs: Any
+    ) -> Any:
+        """Run when Chat Model starts running."""
+
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> Any:
+        """Run on new LLM token. Only available when streaming is enabled."""
+
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> Any:
+        """Run when LLM ends running."""
+
+    def on_llm_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> Any:
+        """Run when LLM errors."""
+
+    def on_chain_start(
+        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
+    ) -> Any:
+        """Run when chain starts running."""
+
+    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> Any:
+        """Run when chain ends running."""
+
+    def on_chain_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> Any:
+        """Run when chain errors."""
+
+    def on_tool_start(
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
+    ) -> Any:
+        """Run when tool starts running."""
+
+    def on_tool_end(self, output: Any, **kwargs: Any) -> Any:
+        """Run when tool ends running."""
+
+    def on_tool_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> Any:
+        """Run when tool errors."""
+
+    def on_text(self, text: str, **kwargs: Any) -> Any:
+        """Run on arbitrary text."""
+
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+        """Run on agent action."""
+
+    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
+        """Run on agent end."""
+```
+
+#### Passing callbacks
+
+The `callbacks` property is available on most objects throughout the API (Models, Tools, Agents, etc.) in two different places:
+
+- **Constructor callbacks**: defined in the constructor, e.g. `ChatAnthropic(callbacks=[handler], tags=['a-tag'])`. In this case, the callbacks will be used for all calls made on that object, and will be scoped to that object only.
+  For example, if you initialize a chat model with constructor callbacks, then use it within a chain, the callbacks will only be invoked for calls to that model.
+- **Request callbacks**: passed into the `invoke` method used for issuing a request. In this case, the callbacks will be used for that specific request only, and all sub-requests that it contains (e.g. a call to a sequence that triggers a call to a model, which uses the same handler passed in the `invoke()` method).
+  In the `invoke()` method, callbacks are passed through the `config` parameter.
+
+## Techniques
+
+### Function/tool calling
+
+:::info
+We use the term tool calling interchangeably with function calling. Although
+function calling is sometimes meant to refer to invocations of a single function,
+we treat all models as though they can return multiple tool or function calls in
+each message.
+:::
+
+Tool calling allows a model to respond to a given prompt by generating output that
+matches a user-defined schema. While the name implies that the model is performing
+some action, this is actually not the case! The model is coming up with the
+arguments to a tool, and actually running the tool (or not) is up to the user -
+for example, if you want to [extract output matching some schema](/docs/tutorials/extraction)
+from unstructured text, you could give the model an "extraction" tool that takes
+parameters matching the desired schema, then treat the generated output as your final
+result.
+
+A tool call includes a name, arguments dict, and an optional identifier. The
+arguments dict is structured `{argument_name: argument_value}`.
+
+Many LLM providers, including [Anthropic](https://www.anthropic.com/),
+[Cohere](https://cohere.com/), [Google](https://cloud.google.com/vertex-ai),
+[Mistral](https://mistral.ai/), [OpenAI](https://openai.com/), and others,
+support variants of a tool calling feature. These features typically allow requests
+to the LLM to include available tools and their schemas, and for responses to include
+calls to these tools. For instance, given a search engine tool, an LLM might handle a
+query by first issuing a call to the search engine. The system calling the LLM can
+receive the tool call, execute it, and return the output to the LLM to inform its
+response. LangChain includes a suite of [built-in tools](/docs/integrations/tools/)
+and supports several methods for defining your own [custom tools](/docs/how_to/custom_tools).
+
+LangChain provides a standardized interface for tool calling that is consistent across different models.
+
+The standard interface consists of:
+
+* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call.
+* `AIMessage.tool_calls`: an attribute on the `AIMessage` returned from the model for accessing the tool calls requested by the model.
+
+There are two main use cases for function/tool calling:
+
+- [How to return structured data from an LLM](/docs/how_to/structured_output/)
+- [How to use a model to call tools](/docs/how_to/tool_calling/)
+
+### Retrieval
+
+LangChain provides several advanced retrieval types. A full list is below, along with the following information:
+
+**Name**: Name of the retrieval algorithm.
+
+**Index Type**: Which index type (if any) this relies on.
+
+**Uses an LLM**: Whether this retrieval method uses an LLM.
+
+**When to Use**: Our commentary on when you should considering using this retrieval method.
+
+**Description**: Description of what this retrieval algorithm is doing.
+
+| Name                      | Index Type                   | Uses an LLM               | When to Use                                                                                                                                   | Description                                                                                                                                                                                                                                                                                      |
+|---------------------------|------------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Vectorstore](/docs/how_to/vectorstore_retriever/)               | Vectorstore                  | No                        | If you are just getting started and looking for something quick and easy.                                                                     | This is the simplest method and the one that is easiest to get started with. It involves creating embeddings for each piece of text.                                                                                                                                                             |
+| [ParentDocument](/docs/how_to/parent_document_retriever/)            | Vectorstore + Document Store | No                        | If your pages have lots of smaller pieces of distinct information that are best indexed by themselves, but best retrieved all together.       | This involves indexing multiple chunks for each document. Then you find the chunks that are most similar in embedding space, but you retrieve the whole parent document and return that (rather than individual chunks).                                                                         |
+| [Multi Vector](/docs/how_to/multi_vector/)              | Vectorstore + Document Store | Sometimes during indexing | If you are able to extract information from documents that you think is more relevant to index than the text itself.                          | This involves creating multiple vectors for each document. Each vector could be created in a myriad of ways - examples include summaries of the text and hypothetical questions.                                                                                                                 |
+| [Self Query](/docs/how_to/self_query/)               | Vectorstore                  | Yes                       | If users are asking questions that are better answered by fetching documents based on metadata rather than similarity with the text.          | This uses an LLM to transform user input into two things: (1) a string to look up semantically, (2) a metadata filer to go along with it. This is useful because oftentimes questions are about the METADATA of documents (not the content itself).                                              |
+| [Contextual Compression](/docs/how_to/contextual_compression/)    | Any                          | Sometimes                 | If you are finding that your retrieved documents contain too much irrelevant information and are distracting the LLM.                         | This puts a post-processing step on top of another retriever and extracts only the most relevant information from retrieved documents. This can be done with embeddings or an LLM.                                                                                                               |
+| [Time-Weighted Vectorstore](/docs/how_to/time_weighted_vectorstore/) | Vectorstore                  | No                        | If you have timestamps associated with your documents, and you want to retrieve the most recent ones                                          | This fetches documents based on a combination of semantic similarity (as in normal vector retrieval) and recency (looking at timestamps of indexed documents)                                                                                                                                    |
+| [Multi-Query Retriever](/docs/how_to/MultiQueryRetriever/)     | Any                          | Yes                       | If users are asking questions that are complex and require multiple pieces of distinct information to respond                                 | This uses an LLM to generate multiple queries from the original one. This is useful when the original query needs pieces of information about multiple topics to be properly answered. By generating multiple queries, we can then fetch documents for each of them.                             |
+| [Ensemble](/docs/how_to/ensemble_retriever/)                  | Any                          | No                        | If you have multiple retrieval methods and want to try combining them.                                                                        | This fetches documents from multiple retrievers and then combines them.                                                                                                                                                                                                                          |
+
+
+### Text splitting
+
+LangChain offers many different types of `text splitters`.
+These all live in the `langchain-text-splitters` package.
+
+Table columns:
+
+- **Name**: Name of the text splitter
+- **Classes**: Classes that implement this text splitter
+- **Splits On**: How this text splitter splits text
+- **Adds Metadata**: Whether or not this text splitter adds metadata about where each chunk came from.
+- **Description**: Description of the splitter, including recommendation on when to use it.
+
+
+| Name     | Classes                                                                                                                                                                                                             | Splits On                                                   | Adds Metadata | Description                                                                                                                                                                                                                                                                  |
+|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Recursive | [RecursiveCharacterTextSplitter](/docs/how_to/recursive_text_splitter/), [RecursiveJsonSplitter](/docs/how_to/recursive_json_splitter/) | A list of user defined characters     |               | Recursively splits text. This splitting is trying to keep related pieces of text next to each other. This is the `recommended way` to start splitting text.                                                                                                                    |
+| HTML      | [HTMLHeaderTextSplitter](/docs/how_to/HTML_header_metadata_splitter/), [HTMLSectionSplitter](/docs/how_to/HTML_section_aware_splitter/)          | HTML specific characters                                                                                                 | ✅             | Splits text based on HTML-specific characters. Notably, this adds in relevant information about where that chunk came from (based on the HTML)                                                                                                                               |
+| Markdown  | [MarkdownHeaderTextSplitter](/docs/how_to/markdown_header_metadata_splitter/),                                                                                                           | Markdown specific characters                                                                                    | ✅             | Splits text based on Markdown-specific characters. Notably, this adds in relevant information about where that chunk came from (based on the Markdown)                                                                                                                       |
+| Code      | [many languages](/docs/how_to/code_splitter/)                                                                                                                                 | Code (Python, JS) specific characters                                                                           |               | Splits text based on characters specific to coding languages. 15 different languages are available to choose from.                                                                                                                                                           |
+| Token    | [many classes](/docs/how_to/split_by_token/)                                                                                                                                  | Tokens                                                                                                          |               | Splits text on tokens. There exist a few different ways to measure tokens.                                                                                                                                                                                                   |
+| Character  | [CharacterTextSplitter](/docs/how_to/character_text_splitter/)                                                                                                                | A user defined character                                                                                        |               | Splits text based on a user defined character. One of the simpler methods.                                                                                                                                                                                                   |
+| Semantic Chunker (Experimental) | [SemanticChunker](/docs/how_to/semantic-chunker/)                                                                                                                             | Sentences                                                                                                       |               | First splits on sentences. Then combines ones next to each other if they are semantically similar enough. Taken from [Greg Kamradt](https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/tutorials/LevelsOfTextSplitting/5_Levels_Of_Text_Splitting.ipynb) |
+| Integration: AI21 Semantic | [AI21SemanticTextSplitter](/docs/integrations/document_transformers/ai21_semantic_text_splitter/)                                                                                                                    |    ✅           | Identifies distinct topics that form coherent pieces of text and splits along those.                                                                                                                                                                                         |
