@@ -476,6 +476,87 @@ If you are still using AgentExecutor, do not fear: we still have a guide on [how
 It is recommended, however, that you start to transition to LangGraph.
 In order to assist in this we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent)
 
+### Callbacks
+
+LangChain provides a callbacks system that allows you to hook into the various stages of your LLM application. This is useful for logging, monitoring, streaming, and other tasks.
+
+You can subscribe to these events by using the `callbacks` argument available throughout the API. This argument is list of handler objects, which are expected to implement one or more of the methods described below in more detail.
+
+#### Callback handlers
+
+`CallbackHandlers` are objects that implement the [`CallbackHandler`](https://api.python.langchain.com/en/latest/callbacks/langchain_core.callbacks.base.BaseCallbackHandler.html#langchain-core-callbacks-base-basecallbackhandler) interface, which has a method for each event that can be subscribed to.
+The `CallbackManager` will call the appropriate method on each handler when the event is triggered.
+
+```python
+class BaseCallbackHandler:
+    """Base callback handler that can be used to handle callbacks from langchain."""
+
+    def on_llm_start(
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+    ) -> Any:
+        """Run when LLM starts running."""
+
+    def on_chat_model_start(
+        self, serialized: Dict[str, Any], messages: List[List[BaseMessage]], **kwargs: Any
+    ) -> Any:
+        """Run when Chat Model starts running."""
+
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> Any:
+        """Run on new LLM token. Only available when streaming is enabled."""
+
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> Any:
+        """Run when LLM ends running."""
+
+    def on_llm_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> Any:
+        """Run when LLM errors."""
+
+    def on_chain_start(
+        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
+    ) -> Any:
+        """Run when chain starts running."""
+
+    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> Any:
+        """Run when chain ends running."""
+
+    def on_chain_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> Any:
+        """Run when chain errors."""
+
+    def on_tool_start(
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
+    ) -> Any:
+        """Run when tool starts running."""
+
+    def on_tool_end(self, output: Any, **kwargs: Any) -> Any:
+        """Run when tool ends running."""
+
+    def on_tool_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> Any:
+        """Run when tool errors."""
+
+    def on_text(self, text: str, **kwargs: Any) -> Any:
+        """Run on arbitrary text."""
+
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+        """Run on agent action."""
+
+    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
+        """Run on agent end."""
+```
+
+#### Passing callbacks
+
+The `callbacks` property is available on most objects throughout the API (Models, Tools, Agents, etc.) in two different places:
+
+- **Constructor callbacks**: defined in the constructor, e.g. `ChatAnthropic(callbacks=[handler], tags=['a-tag'])`. In this case, the callbacks will be used for all calls made on that object, and will be scoped to that object only.
+  For example, if you initialize a chat model with constructor callbacks, then use it within a chain, the callbacks will only be invoked for calls to that model.
+- **Request callbacks**: passed into the `invoke` method used for issuing a request. In this case, the callbacks will be used for that specific request only, and all sub-requests that it contains (e.g. a call to a sequence that triggers a call to a model, which uses the same handler passed in the `invoke()` method).
+  In the `invoke()` method, callbacks are passed through the `config` parameter.
+
 ## Techniques
 
 ### Function/tool calling
