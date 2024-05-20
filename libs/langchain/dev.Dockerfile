@@ -54,7 +54,7 @@ COPY libs/community/ ../community/
 COPY libs/text-splitters/ ../text-splitters/
 
 # Copy the partners library for installation
-COPY libs/partners/ ../partners/
+COPY libs/partners ../partners/
 
 # Install the Poetry dependencies (this layer will be cached as long as the dependencies don't change)
 RUN poetry install --no-interaction --no-ansi --with dev,test,docs
