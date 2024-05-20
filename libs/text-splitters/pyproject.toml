@@ -75,7 +75,7 @@ select = [
 disallow_untyped_defs = "True"
 
 [[tool.mypy.overrides]]
-module = ["transformers", "sentence_transformers", "nltk.tokenize", "konlpy.tag", "bs4"]
+module = ["transformers", "sentence_transformers", "nltk.tokenize", "konlpy.tag", "bs4", "pytest"]
 ignore_missing_imports = "True"
 
 [tool.coverage.run]
