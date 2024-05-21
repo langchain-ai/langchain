@@ -11,15 +11,14 @@ from typing import Any, Dict, List, Set
 
 from pydantic.v1 import BaseModel, root_validator
 
-# TODO parse docstrings for arXiv references
-# TODO Generate a page with a table of the references with correspondent modules/classes/functions.
-
 logger = logging.getLogger(__name__)
 
 _ROOT_DIR = Path(os.path.abspath(__file__)).parents[2]
 DOCS_DIR = _ROOT_DIR / "docs" / "docs"
 CODE_DIR = _ROOT_DIR / "libs"
+TEMPLATES_DIR = _ROOT_DIR / "templates"
 ARXIV_ID_PATTERN = r"https://arxiv\.org/(abs|pdf)/(\d+\.\d+)"
+LANGCHAIN_PYTHON_URL = "python.langchain.com"
 
 
 @dataclass
@@ -27,8 +26,9 @@ class ArxivPaper:
     """ArXiv paper information."""
 
     arxiv_id: str
-    referencing_docs: list[str]  # TODO: Add the referencing docs
-    referencing_api_refs: list[str]  # TODO: Add the referencing docs
+    referencing_doc2url: dict[str, str]
+    referencing_api_ref2url: dict[str, str]
+    referencing_template2url: dict[str, str]
     title: str
     authors: list[str]
     abstract: str
@@ -218,6 +218,35 @@ def search_code_for_arxiv_references(code_dir: Path) -> dict[str, set[str]]:
     return arxiv_id2module_name_and_members_reduced
 
 
+def search_templates_for_arxiv_references(templates_dir: Path) -> dict[str, set[str]]:
+    arxiv_url_pattern = re.compile(ARXIV_ID_PATTERN)
+    # exclude_strings = {"file_path", "metadata", "link", "loader", "PyPDFLoader"}
+
+    # loop all the Readme.md files since they are parsed into LangChain documentation
+    # exclude the Readme.md in the root folder
+    files = (
+        p.resolve()
+        for p in Path(templates_dir).glob("**/*")
+        if p.name.lower() in {"readme.md"} and p.parent.name != "templates"
+    )
+    arxiv_id2template_names: dict[str, set[str]] = {}
+    for file in files:
+        with open(file, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            for line in lines:
+                # if any(exclude_string in line for exclude_string in exclude_strings):
+                #     continue
+                matches = arxiv_url_pattern.search(line)
+                if matches:
+                    arxiv_id = matches.group(2)
+                    template_name = file.parent.name
+                    if arxiv_id not in arxiv_id2template_names:
+                        arxiv_id2template_names[arxiv_id] = {template_name}
+                    else:
+                        arxiv_id2template_names[arxiv_id].add(template_name)
+    return arxiv_id2template_names
+
+
 def _get_doc_path(file_parts: tuple[str, ...], file_extension) -> str:
     """Get the relative path to the documentation page
     from the absolute path of the file.
@@ -257,58 +286,70 @@ def _get_module_name(file_parts: tuple[str, ...]) -> str:
 
 
 def compound_urls(
-    arxiv_id2file_names: dict[str, set[str]], arxiv_id2code_urls: dict[str, set[str]]
+    arxiv_id2file_names: dict[str, set[str]],
+    arxiv_id2code_urls: dict[str, set[str]],
+    arxiv_id2templates: dict[str, set[str]],
 ) -> dict[str, dict[str, set[str]]]:
-    arxiv_id2urls = dict()
-    for arxiv_id, code_urls in arxiv_id2code_urls.items():
-        arxiv_id2urls[arxiv_id] = {"api": code_urls}
-        # intersection of the two sets
-        if arxiv_id in arxiv_id2file_names:
-            arxiv_id2urls[arxiv_id]["docs"] = arxiv_id2file_names[arxiv_id]
+    # format urls and verify that the urls are correct
+    arxiv_id2file_names_new = {}
     for arxiv_id, file_names in arxiv_id2file_names.items():
-        if arxiv_id not in arxiv_id2code_urls:
-            arxiv_id2urls[arxiv_id] = {"docs": file_names}
-    # reverse sort by the arxiv_id (the newest papers first)
-    ret = dict(sorted(arxiv_id2urls.items(), key=lambda item: item[0], reverse=True))
-    return ret
+        key2urls = {
+            key: _format_doc_url(key)
+            for key in file_names
+            if _is_url_ok(_format_doc_url(key))
+        }
+        if key2urls:
+            arxiv_id2file_names_new[arxiv_id] = key2urls
 
+    arxiv_id2code_urls_new = {}
+    for arxiv_id, code_urls in arxiv_id2code_urls.items():
+        key2urls = {
+            key: _format_api_ref_url(key)
+            for key in code_urls
+            if _is_url_ok(_format_api_ref_url(key))
+        }
+        if key2urls:
+            arxiv_id2code_urls_new[arxiv_id] = key2urls
 
-def _format_doc_link(doc_paths: list[str]) -> list[str]:
-    return [
-        f"[{doc_path}](https://python.langchain.com/{doc_path})"
-        for doc_path in doc_paths
-    ]
+    arxiv_id2templates_new = {}
+    for arxiv_id, templates in arxiv_id2templates.items():
+        key2urls = {
+            key: _format_template_url(key)
+            for key in templates
+            if _is_url_ok(_format_template_url(key))
+        }
+        if key2urls:
+            arxiv_id2templates_new[arxiv_id] = key2urls
 
-
-def _format_api_ref_link(
-    doc_paths: list[str], compact: bool = False
-) -> list[str]:  # TODO
-    # agents/langchain_core.agents.AgentAction.html#langchain_core.agents.AgentAction
-    ret = []
-    for doc_path in doc_paths:
-        module = doc_path.split("#")[1].replace("module-", "")
-        if compact and module.count(".") > 2:
-            # langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI
-            # -> langchain_community.llms...OCIModelDeploymentTGI
-            module_parts = module.split(".")
-            module = f"{module_parts[0]}.{module_parts[1]}...{module_parts[-1]}"
-        ret.append(
-            f"[{module}](https://api.python.langchain.com/en/latest/{doc_path.split('langchain.com/')[-1]})"
-        )
-    return ret
-
-
-def log_results(arxiv_id2urls):
-    arxiv_ids = arxiv_id2urls.keys()
-    doc_number, api_number = 0, 0
-    for urls in arxiv_id2urls.values():
-        if "docs" in urls:
-            doc_number += len(urls["docs"])
-        if "api" in urls:
-            api_number += len(urls["api"])
-    logger.info(
-        f"Found {len(arxiv_ids)} arXiv references in the {doc_number} docs and in {api_number} API Refs."
+    arxiv_id2type2key2urls = dict.fromkeys(
+        arxiv_id2file_names_new | arxiv_id2code_urls_new | arxiv_id2templates_new
     )
+    arxiv_id2type2key2urls = {k: {} for k in arxiv_id2type2key2urls}
+    for arxiv_id, key2urls in arxiv_id2file_names_new.items():
+        arxiv_id2type2key2urls[arxiv_id]["docs"] = key2urls
+    for arxiv_id, key2urls in arxiv_id2code_urls_new.items():
+        arxiv_id2type2key2urls[arxiv_id]["apis"] = key2urls
+    for arxiv_id, key2urls in arxiv_id2templates_new.items():
+        arxiv_id2type2key2urls[arxiv_id]["templates"] = key2urls
+
+    # reverse sort by the arxiv_id (the newest papers first)
+    ret = dict(
+        sorted(arxiv_id2type2key2urls.items(), key=lambda item: item[0], reverse=True)
+    )
+    return ret
+
+
+def _is_url_ok(url: str) -> bool:
+    """Check if the url page is open without error."""
+    import requests
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as ex:
+        logger.warning(f"Could not open the {url}.")
+        return False
+    return True
 
 
 class ArxivAPIWrapper(BaseModel):
@@ -335,7 +376,7 @@ class ArxivAPIWrapper(BaseModel):
         return values
 
     def get_papers(
-        self, arxiv_id2urls: dict[str, dict[str, set[str]]]
+        self, arxiv_id2type2key2urls: dict[str, dict[str, dict[str, str]]]
     ) -> list[ArxivPaper]:
         """
         Performs an arxiv search and returns information about the papers found.
@@ -343,8 +384,8 @@ class ArxivAPIWrapper(BaseModel):
         If an error occurs or no documents found, error text
         is returned instead.
         Args:
-            arxiv_id2urls: Dictionary with arxiv_id as key and dictionary
-             with sets of doc file names and API Ref urls.
+            arxiv_id2type2key2urls: Dictionary with arxiv_id as key and dictionary
+             with dicts of doc file names/API objects/templates to urls.
 
         Returns:
             List of ArxivPaper objects.
@@ -356,10 +397,10 @@ class ArxivAPIWrapper(BaseModel):
             else:
                 return [str(a) for a in authors]
 
-        if not arxiv_id2urls:
+        if not arxiv_id2type2key2urls:
             return []
         try:
-            arxiv_ids = list(arxiv_id2urls.keys())
+            arxiv_ids = list(arxiv_id2type2key2urls.keys())
             results = self.arxiv_search(
                 id_list=arxiv_ids,
                 max_results=len(arxiv_ids),
@@ -374,38 +415,99 @@ class ArxivAPIWrapper(BaseModel):
                 abstract=result.summary,
                 url=result.entry_id,
                 published_date=str(result.published.date()),
-                referencing_docs=urls["docs"] if "docs" in urls else [],
-                referencing_api_refs=urls["api"] if "api" in urls else [],
+                referencing_doc2url=type2key2urls["docs"]
+                if "docs" in type2key2urls
+                else {},
+                referencing_api_ref2url=type2key2urls["apis"]
+                if "apis" in type2key2urls
+                else {},
+                referencing_template2url=type2key2urls["templates"]
+                if "templates" in type2key2urls
+                else {},
             )
-            for result, urls in zip(results, arxiv_id2urls.values())
+            for result, type2key2urls in zip(results, arxiv_id2type2key2urls.values())
         ]
         return papers
 
 
-def generate_arxiv_references_page(file_name: str, papers: list[ArxivPaper]) -> None:
+def _format_doc_url(doc_path: str) -> str:
+    return f"https://{LANGCHAIN_PYTHON_URL}/{doc_path}"
+
+
+def _format_api_ref_url(doc_path: str, compact: bool = False) -> str:
+    # agents/langchain_core.agents.AgentAction.html#langchain_core.agents.AgentAction
+    return f"https://api.{LANGCHAIN_PYTHON_URL}/en/latest/{doc_path.split('langchain.com/')[-1]}"
+
+
+def _format_template_url(template_name: str) -> str:
+    return f"https://{LANGCHAIN_PYTHON_URL}/docs/templates/{template_name}"
+
+
+def _compact_module_full_name(doc_path: str) -> str:
+    # agents/langchain_core.agents.AgentAction.html#langchain_core.agents.AgentAction
+    module = doc_path.split("#")[1].replace("module-", "")
+    if module.count(".") > 2:
+        # langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI
+        # -> langchain_community.llms...OCIModelDeploymentTGI
+        module_parts = module.split(".")
+        module = f"{module_parts[0]}.{module_parts[1]}...{module_parts[-1]}"
+    return module
+
+
+def log_results(arxiv_id2type2key2urls):
+    arxiv_ids = arxiv_id2type2key2urls.keys()
+    doc_number, api_number, templates_number = 0, 0, 0
+    for type2key2url in arxiv_id2type2key2urls.values():
+        if "docs" in type2key2url:
+            doc_number += len(type2key2url["docs"])
+        if "apis" in type2key2url:
+            api_number += len(type2key2url["apis"])
+        if "templates" in type2key2url:
+            templates_number += len(type2key2url["templates"])
+    logger.warning(
+        f"Found {len(arxiv_ids)} arXiv references in the {doc_number} docs, {api_number} API Refs,"
+        f" and {templates_number} Templates."
+    )
+
+
+def generate_arxiv_references_page(file_name: Path, papers: list[ArxivPaper]) -> None:
     with open(file_name, "w") as f:
         # Write the table headers
         f.write("""# arXiv
             
 LangChain implements the latest research in the field of Natural Language Processing.
-This page contains `arXiv` papers referenced in the LangChain Documentation and API Reference.
+This page contains `arXiv` papers referenced in the LangChain Documentation, API Reference,
+and Templates.
 
 ## Summary
 
-| arXiv id / Title | Authors | Published date 🔻 | LangChain Documentation and API Reference |
-|------------------|---------|-------------------|-------------------------|
+| arXiv id / Title | Authors | Published date 🔻 | LangChain Documentation|
+|------------------|---------|-------------------|------------------------|
 """)
         for paper in papers:
             refs = []
-            if paper.referencing_docs:
+            if paper.referencing_doc2url:
                 refs += [
-                    "`Docs:` " + ", ".join(_format_doc_link(paper.referencing_docs))
+                    "`Docs:` "
+                    + ", ".join(
+                        f"[{key}]({url})"
+                        for key, url in paper.referencing_doc2url.items()
+                    )
                 ]
-            if paper.referencing_api_refs:
+            if paper.referencing_api_ref2url:
                 refs += [
                     "`API:` "
                     + ", ".join(
-                        _format_api_ref_link(paper.referencing_api_refs, compact=True)
+                        f"[{_compact_module_full_name(key)}]({url})"
+                        for key, url in paper.referencing_api_ref2url.items()
+                    )
+                ]
+            if paper.referencing_template2url:
+                refs += [
+                    "`Template:` "
+                    + ", ".join(
+                        f"[{key}]({url})"
+                        for key, url in paper.referencing_template2url.items()
                     )
                 ]
             refs_str = ", ".join(refs)
@@ -417,14 +519,22 @@ This page contains `arXiv` papers referenced in the LangChain Documentation and 
 
         for paper in papers:
             docs_refs = (
-                f"- **LangChain Documentation:** {', '.join(_format_doc_link(paper.referencing_docs))}"
-                if paper.referencing_docs
+                f"   - **Documentation:** {', '.join(f'[{key}]({url})' for key, url in paper.referencing_doc2url.items())}"
+                if paper.referencing_doc2url
                 else ""
             )
             api_ref_refs = (
-                f"- **LangChain API Reference:** {', '.join(_format_api_ref_link(paper.referencing_api_refs))}"
-                if paper.referencing_api_refs
+                f"   - **API Reference:** {', '.join(f'[{_compact_module_full_name(key)}]({url})' for key, url in paper.referencing_api_ref2url.items())}"
+                if paper.referencing_api_ref2url
                 else ""
+            )
+            template_refs = (
+                f"   - **Template:** {', '.join(f'[{key}]({url})' for key, url in paper.referencing_template2url.items())}"
+                if paper.referencing_template2url
+                else ""
+            )
+            refs = "\n".join(
+                [el for el in [docs_refs, api_ref_refs, template_refs] if el]
             )
             f.write(f"""
 ## {paper.title}
@@ -434,13 +544,14 @@ This page contains `arXiv` papers referenced in the LangChain Documentation and 
 - **Authors:** {', '.join(paper.authors)}
 - **Published Date:** {paper.published_date}
 - **URL:** {paper.url}
-{docs_refs}
-{api_ref_refs}
+- **LangChain:**
+
+{refs}
 
 **Abstract:** {paper.abstract}
                 """)
 
-    logger.info(f"Created the {file_name} file with {len(papers)} arXiv references.")
+    logger.warning(f"Created the {file_name} file with {len(papers)} arXiv references.")
 
 
 def main():
@@ -450,14 +561,17 @@ def main():
         arxiv_id2module_name_and_members
     )
     arxiv_id2file_names = search_documentation_for_arxiv_references(DOCS_DIR)
-    arxiv_id2urls = compound_urls(arxiv_id2file_names, arxiv_id2code_urls)
-    log_results(arxiv_id2urls)
+    arxiv_id2templates = search_templates_for_arxiv_references(TEMPLATES_DIR)
+    arxiv_id2type2key2urls = compound_urls(
+        arxiv_id2file_names, arxiv_id2code_urls, arxiv_id2templates
+    )
+    log_results(arxiv_id2type2key2urls)
 
     # get the arXiv paper information
-    papers = ArxivAPIWrapper().get_papers(arxiv_id2urls)
+    papers = ArxivAPIWrapper().get_papers(arxiv_id2type2key2urls)
 
     # generate the arXiv references page
-    output_file = str(DOCS_DIR / "additional_resources" / "arxiv_references.mdx")
+    output_file = DOCS_DIR / "additional_resources" / "arxiv_references.mdx"
     generate_arxiv_references_page(output_file, papers)
 
 
