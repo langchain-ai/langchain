@@ -13,12 +13,20 @@ ROOT = HERE.parent.parent
 
 def test_importable_all() -> None:
     for path in glob.glob(ALL_COMMUNITY_GLOB):
-        relative_path = Path(path).parts[-1]
-        if relative_path.endswith(".typed"):
-            continue
-        module_name = relative_path.split(".")[0]
+        # Relative to community root
+        relative_path = Path(path).relative_to(COMMUNITY_ROOT)
+        str_path = str(relative_path)
+        if str_path.endswith("__init__.py"):
+            module_name = str(relative_path.parent).replace("/", ".")
+        else:
+            module_name = str(relative_path.with_suffix("")).replace("/", ".")
 
-        module = importlib.import_module("langchain_community." + module_name)
+        try:
+            module = importlib.import_module("langchain_community." + module_name)
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
+                f"Could not import `{module_name}`. Defined in path: {path}"
+            ) from e
         all_ = getattr(module, "__all__", [])
         for cls_ in all_:
             getattr(module, cls_)
