@@ -215,12 +215,29 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             else:
                 tool_call_chunks = []
 
+            # Token usage
+            if self.token_usage or other.token_usage:
+                left: TokenUsage = self.token_usage or TokenUsage(
+                    input_tokens=0, output_tokens=0, total_tokens=0
+                )
+                right: TokenUsage = other.token_usage or TokenUsage(
+                    input_tokens=0, output_tokens=0, total_tokens=0
+                )
+                token_usage: Optional[TokenUsage] = {
+                    "input_tokens": left["input_tokens"] + right["input_tokens"],
+                    "output_tokens": left["output_tokens"] + right["output_tokens"],
+                    "total_tokens": left["total_tokens"] + right["total_tokens"],
+                }
+            else:
+                token_usage = None
+
             return self.__class__(
                 example=self.example,
                 content=content,
                 additional_kwargs=additional_kwargs,
                 tool_call_chunks=tool_call_chunks,
                 response_metadata=response_metadata,
+                token_usage=token_usage,
                 id=self.id,
             )
 

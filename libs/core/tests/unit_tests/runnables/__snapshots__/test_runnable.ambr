@@ -5269,6 +5269,9 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'token_usage': dict({
+            '$ref': '#/definitions/TokenUsage',
+          }),
           'tool_calls': dict({
             'default': list([
             ]),
@@ -5622,6 +5625,29 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'TokenUsage': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'TokenUsage',
         'type': 'object',
       }),
       'ToolCall': dict({
@@ -5804,6 +5830,9 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'token_usage': dict({
+            '$ref': '#/definitions/TokenUsage',
+          }),
           'tool_calls': dict({
             'default': list([
             ]),
@@ -6157,6 +6186,29 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'TokenUsage': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'TokenUsage',
         'type': 'object',
       }),
       'ToolCall': dict({
@@ -6323,6 +6375,9 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'token_usage': dict({
+            '$ref': '#/definitions/TokenUsage',
+          }),
           'tool_calls': dict({
             'default': list([
             ]),
@@ -6607,6 +6662,29 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'TokenUsage': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'TokenUsage',
         'type': 'object',
       }),
       'ToolCall': dict({
@@ -6761,6 +6839,9 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'token_usage': dict({
+            '$ref': '#/definitions/TokenUsage',
+          }),
           'tool_calls': dict({
             'default': list([
             ]),
@@ -7114,6 +7195,29 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'TokenUsage': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'TokenUsage',
         'type': 'object',
       }),
       'ToolCall': dict({
@@ -7268,6 +7372,9 @@
             'title': 'Response Metadata',
             'type': 'object',
           }),
+          'token_usage': dict({
+            '$ref': '#/definitions/TokenUsage',
+          }),
           'tool_calls': dict({
             'default': list([
             ]),
@@ -7623,6 +7730,29 @@
         'title': 'SystemMessage',
         'type': 'object',
       }),
+      'TokenUsage': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'TokenUsage',
+        'type': 'object',
+      }),
       'ToolCall': dict({
         'properties': dict({
           'args': dict({
@@ -7766,6 +7896,9 @@
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
+          }),
+          'token_usage': dict({
+            '$ref': '#/definitions/TokenUsage',
           }),
           'tool_calls': dict({
             'default': list([
@@ -8133,6 +8266,29 @@
         'title': 'SystemMessage',
         'type': 'object',
       }),
+      'TokenUsage': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'TokenUsage',
+        'type': 'object',
+      }),
       'ToolCall': dict({
         'properties': dict({
           'args': dict({
@@ -8303,6 +8459,9 @@
           'response_metadata': dict({
             'title': 'Response Metadata',
             'type': 'object',
+          }),
+          'token_usage': dict({
+            '$ref': '#/definitions/TokenUsage',
           }),
           'tool_calls': dict({
             'default': list([
@@ -8588,6 +8747,29 @@
           'content',
         ]),
         'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'TokenUsage': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'TokenUsage',
         'type': 'object',
       }),
       'ToolCall': dict({
