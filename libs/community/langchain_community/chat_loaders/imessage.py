@@ -148,7 +148,7 @@ class IMessageChatLoader(BaseChatLoader):
                 continue
 
             results.append(
-                HumanMessage(
+                HumanMessage(  # type: ignore[call-arg]
                     role=sender,
                     content=content,
                     additional_kwargs={

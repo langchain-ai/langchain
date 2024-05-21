@@ -3,6 +3,7 @@
 Other LangChain classes use **Utilities** to interact with third-part systems
 and packages.
 """
+
 import importlib
 from typing import TYPE_CHECKING, Any
 
@@ -18,6 +19,9 @@ if TYPE_CHECKING:
     )
     from langchain_community.utilities.arxiv import (
         ArxivAPIWrapper,
+    )
+    from langchain_community.utilities.asknews import (
+        AskNewsAPIWrapper,
     )
     from langchain_community.utilities.awslambda import (
         LambdaWrapper,
@@ -99,6 +103,9 @@ if TYPE_CHECKING:
     from langchain_community.utilities.openweathermap import (
         OpenWeatherMapAPIWrapper,
     )
+    from langchain_community.utilities.oracleai import (
+        OracleSummary,  # noqa: F401
+    )
     from langchain_community.utilities.outline import (
         OutlineAPIWrapper,
     )
@@ -170,6 +177,7 @@ __all__ = [
     "ApifyWrapper",
     "ArceeWrapper",
     "ArxivAPIWrapper",
+    "AskNewsAPIWrapper",
     "AudioStream",
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
@@ -199,6 +207,7 @@ __all__ = [
     "NasaAPIWrapper",
     "NutritionAIAPI",
     "OpenWeatherMapAPIWrapper",
+    "OracleSummary",
     "OutlineAPIWrapper",
     "Portkey",
     "PowerBIDataset",
@@ -230,6 +239,7 @@ _module_lookup = {
     "ApifyWrapper": "langchain_community.utilities.apify",
     "ArceeWrapper": "langchain_community.utilities.arcee",
     "ArxivAPIWrapper": "langchain_community.utilities.arxiv",
+    "AskNewsAPIWrapper": "langchain_community.utilities.asknews",
     "AudioStream": "langchain_community.utilities.nvidia_riva",
     "BibtexparserWrapper": "langchain_community.utilities.bibtex",
     "BingSearchAPIWrapper": "langchain_community.utilities.bing_search",
@@ -260,11 +270,13 @@ _module_lookup = {
     "NasaAPIWrapper": "langchain_community.utilities.nasa",
     "NutritionAIAPI": "langchain_community.utilities.passio_nutrition_ai",
     "OpenWeatherMapAPIWrapper": "langchain_community.utilities.openweathermap",
+    "OracleSummary": "langchain_community.utilities.oracleai",
     "OutlineAPIWrapper": "langchain_community.utilities.outline",
     "Portkey": "langchain_community.utilities.portkey",
     "PowerBIDataset": "langchain_community.utilities.powerbi",
     "PubMedAPIWrapper": "langchain_community.utilities.pubmed",
     "PythonREPL": "langchain_community.utilities.python",
+    "RememberizerAPIWrapper": "langchain_community.utilities.rememberizer",
     "Requests": "langchain_community.utilities.requests",
     "RequestsWrapper": "langchain_community.utilities.requests",
     "RivaASR": "langchain_community.utilities.nvidia_riva",

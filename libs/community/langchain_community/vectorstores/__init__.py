@@ -27,6 +27,9 @@ if TYPE_CHECKING:
         VectorStore,
     )
 
+    from langchain_community.vectorstores.aerospike import (
+        Aerospike,
+    )
     from langchain_community.vectorstores.alibabacloud_opensearch import (
         AlibabaCloudOpenSearch,
         AlibabaCloudOpenSearchSettings,
@@ -55,7 +58,7 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.azuresearch import (
         AzureSearch,
     )
-    from langchain_community.vectorstores.bageldb import (
+    from langchain_community.vectorstores.bagel import (
         Bagel,
     )
     from langchain_community.vectorstores.baiducloud_vector_search import (
@@ -178,6 +181,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.opensearch_vector_search import (
         OpenSearchVectorSearch,
     )
+    from langchain_community.vectorstores.oraclevs import (
+        OracleVS,  # noqa: F401
+    )
     from langchain_community.vectorstores.pathway import (
         PathwayVectorClient,
     )
@@ -233,6 +239,7 @@ if TYPE_CHECKING:
         TencentVectorDB,
     )
     from langchain_community.vectorstores.thirdai_neuraldb import (
+        NeuralDBClientVectorStore,
         NeuralDBVectorStore,
     )
     from langchain_community.vectorstores.tidb_vector import (
@@ -288,6 +295,7 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "Aerospike",
     "AlibabaCloudOpenSearch",
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
@@ -342,7 +350,9 @@ __all__ = [
     "MyScale",
     "MyScaleSettings",
     "Neo4jVector",
+    "NeuralDBClientVectorStore",
     "NeuralDBVectorStore",
+    "OracleVS",
     "OpenSearchVectorSearch",
     "PGEmbedding",
     "PGVector",
@@ -383,6 +393,7 @@ __all__ = [
 ]
 
 _module_lookup = {
+    "Aerospike": "langchain_community.vectorstores.aerospike",
     "AlibabaCloudOpenSearch": "langchain_community.vectorstores.alibabacloud_opensearch",  # noqa: E501
     "AlibabaCloudOpenSearchSettings": "langchain_community.vectorstores.alibabacloud_opensearch",  # noqa: E501
     "AnalyticDB": "langchain_community.vectorstores.analyticdb",
@@ -437,8 +448,10 @@ _module_lookup = {
     "MyScale": "langchain_community.vectorstores.myscale",
     "MyScaleSettings": "langchain_community.vectorstores.myscale",
     "Neo4jVector": "langchain_community.vectorstores.neo4j_vector",
+    "NeuralDBClientVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",  # noqa: E501
     "NeuralDBVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",
     "OpenSearchVectorSearch": "langchain_community.vectorstores.opensearch_vector_search",  # noqa: E501
+    "OracleVS": "langchain_community.vectorstores.oraclevs",
     "PathwayVectorClient": "langchain_community.vectorstores.pathway",
     "PGEmbedding": "langchain_community.vectorstores.pgembedding",
     "PGVector": "langchain_community.vectorstores.pgvector",
