@@ -8,6 +8,7 @@ import pytest
 
 from langchain_community.document_loaders.blob_loaders import CloudBlobLoader
 
+
 @pytest.fixture
 def toy_dir() -> Generator[str, None, None]:
     """Yield a pre-populated directory to test the blob loader."""
