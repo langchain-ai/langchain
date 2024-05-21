@@ -48,6 +48,7 @@ class AIMessage(BaseMessage):
     invalid_tool_calls: List[InvalidToolCall] = []
     """If provided, tool calls with parsing errors associated with the message."""
     token_usage: Optional[TokenUsage] = None
+    """If provided, token usage information associated with the message."""
 
     type: Literal["ai"] = "ai"
 
