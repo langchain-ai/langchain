@@ -176,11 +176,10 @@ class TigerGraphVector(VectorStore):
                     "Content", content_vertices[i : i + upsert_size]
                 )
 
-        return {
-            "documents_upserted": documents_upserted,
-            "has_content_edges_upserted": has_content_edges_upserted,
-            "content_upserted": content_upserted,
-        }
+        if ids:
+            return ids
+        else:
+            return [doc[0] for doc in doc_vertices]
 
     def add_documents_from_blob(
         self,
@@ -189,7 +188,7 @@ class TigerGraphVector(VectorStore):
         loader_config: Dict[str, Any],
         data_path: str,
         file_format: str = "json",
-    ):
+    ) -> Dict[str, str]:
         """
         Add documents from a blob data source to the TigerGraph CoPilot SupportAI.
 
