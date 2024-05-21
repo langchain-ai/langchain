@@ -60,7 +60,8 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
     Y = np.array(Y)
     if X.shape[1] != Y.shape[1]:
         raise ValueError(
-            f"Number of columns in X and Y must be the same. X has shape {X.shape} "
+            "Number of columns in X and Y must be the same. X has shape"
+            f"{X.shape} "
             f"and Y has shape {Y.shape}."
         )
 
@@ -115,8 +116,8 @@ class Chroma(VectorStore):
     Example:
         .. code-block:: python
 
-                from langchain_community.vectorstores import Chroma
-                from langchain_community.embeddings.openai import OpenAIEmbeddings
+                from langchain_chroma import Chroma
+                from langchain_openai import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
                 vectorstore = Chroma("langchain_store", embeddings)
@@ -133,6 +134,7 @@ class Chroma(VectorStore):
         collection_metadata: Optional[Dict] = None,
         client: Optional[chromadb.ClientAPI] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
+        create_collection_if_not_exists: Optional[bool] = True,
     ) -> None:
         """Initialize with a Chroma client."""
 
@@ -161,12 +163,32 @@ class Chroma(VectorStore):
             )
 
         self._embedding_function = embedding_function
-        self._collection = self._client.get_or_create_collection(
-            name=collection_name,
-            embedding_function=None,
-            metadata=collection_metadata,
-        )
+        self._chroma_collection: Optional[chromadb.Collection] = None
+        self._collection_name = collection_name
+        self._collection_metadata = collection_metadata
+        if create_collection_if_not_exists:
+            self.__ensure_collection()
+        else:
+            self._chroma_collection = self._client.get_collection(name=collection_name)
         self.override_relevance_score_fn = relevance_score_fn
+
+    def __ensure_collection(self) -> None:
+        """Ensure that the collection exists or create it."""
+        self._chroma_collection = self._client.get_or_create_collection(
+            name=self._collection_name,
+            embedding_function=None,
+            metadata=self._collection_metadata,
+        )
+
+    @property
+    def _collection(self) -> chromadb.Collection:
+        """Returns the underlying Chroma collection or throws an exception."""
+        if self._chroma_collection is None:
+            raise ValueError(
+                "Chroma collection not initialized. "
+                "Use `reset_collection` to re-create and initialize the collection. "
+            )
+        return self._chroma_collection
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -602,6 +624,13 @@ class Chroma(VectorStore):
     def delete_collection(self) -> None:
         """Delete the collection."""
         self._client.delete_collection(self._collection.name)
+        self._chroma_collection = None
+
+    def reset_collection(self) -> None:
+        """Resets the collection by deleting the collection
+        and recreating an empty one."""
+        self.delete_collection()
+        self.__ensure_collection()
 
     def get(
         self,
@@ -650,7 +679,8 @@ class Chroma(VectorStore):
         """
         return self.update_documents([document_id], [document])
 
-    def update_documents(self, ids: List[str], documents: List[Document]) -> None:  # type: ignore
+    # type: ignore
+    def update_documents(self, ids: List[str], documents: List[Document]) -> None:
         """Update a document in the collection.
 
         Args:

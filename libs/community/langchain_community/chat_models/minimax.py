@@ -82,7 +82,7 @@ class MiniMaxChat(MinimaxCommon, BaseChatModel):
 
         # This is required since the stop are not enforced by the model parameters
         text = text if stop is None else enforce_stop_tokens(text, stop)
-        return ChatResult(generations=[ChatGeneration(message=AIMessage(text))])
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(text))])  # type: ignore[misc]
 
     async def _agenerate(
         self,

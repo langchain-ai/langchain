@@ -1,4 +1,5 @@
 """Vector Store in Google Cloud BigQuery."""
+
 from __future__ import annotations
 
 import asyncio
@@ -12,6 +13,7 @@ from threading import Lock, Thread
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -34,6 +36,11 @@ _INDEX_CHECK_PERIOD_SECONDS = 60  # Do not check for index more often that this.
 _vector_table_lock = Lock()  # process-wide BigQueryVectorSearch table lock
 
 
+@deprecated(
+    since="0.0.33",
+    removal="0.3.0",
+    alternative_import="langchain_google_community.BigQueryVectorSearch",
+)
 class BigQueryVectorSearch(VectorStore):
     """Google Cloud BigQuery vector store.
 
