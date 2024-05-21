@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Optional, Union
+
+from typing_extensions import TypedDict
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -19,6 +21,20 @@ from langchain_core.utils.json import (
 )
 
 
+class TokenUsage(TypedDict):
+    """Token usage information for a message.
+
+    Attributes:
+        input_tokens: (int) count of input (or prompt) tokens
+        output_tokens: (int) count of output (or completion) tokens
+        total_tokens: (int) total token count
+    """
+
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+
+
 class AIMessage(BaseMessage):
     """Message from an AI."""
 
@@ -31,6 +47,7 @@ class AIMessage(BaseMessage):
     """If provided, tool calls associated with the message."""
     invalid_tool_calls: List[InvalidToolCall] = []
     """If provided, tool calls with parsing errors associated with the message."""
+    token_usage: Optional[TokenUsage] = None
 
     type: Literal["ai"] = "ai"
 
