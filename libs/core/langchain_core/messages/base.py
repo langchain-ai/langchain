@@ -120,6 +120,13 @@ def merge_content(
                     "starting with index 0.",
                 )
             final_content = [first_content]
+        else: 
+            raise Exception(
+                "Failed to concatenate onto a chunk with no index",
+                f"{first_content}.\n"
+                "You must concatenate message content chunks in order, ",
+                "starting with index 0.",
+            )
         if second_index == len(final_content):
             return final_content + [second_content]
         else:
