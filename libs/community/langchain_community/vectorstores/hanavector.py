@@ -220,14 +220,14 @@ class HanaDB(VectorStore):
 
         return metadata
 
-    def _sanitize_specific_metadata_columns(specific_metadata_columns):
+    def _sanitize_specific_metadata_columns(specific_metadata_columns) -> List[str]:
         metadata_columns = []
         for c in specific_metadata_columns:
             sanitized_name = HanaDB._sanitize_name(c)
             metadata_columns.append(sanitized_name)
         return metadata_columns
 
-    def _split_off_special_metadata(self, metadata):
+    def _split_off_special_metadata(self, metadata) -> Tuple[dict, list]:
         # Use provided values by default or fallback
         special_metadata = []
 
