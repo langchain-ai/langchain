@@ -281,7 +281,10 @@ class ChatTongyi(BaseChatModel):
                 "Please install it with `pip install dashscope --upgrade`."
             )
         try:
-            values["client"] = dashscope.Generation
+            if "vl" in values["model_name"]:
+                values["client"] = dashscope.MultiModalConversation
+            else:
+                values["client"] = dashscope.Generation
         except AttributeError:
             raise ValueError(
                 "`dashscope` has no `Generation` attribute, this is likely "
