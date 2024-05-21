@@ -28,9 +28,9 @@ def test_glob_correct() -> None:
     """Verify that the glob pattern is correct."""
     paths = list(glob.glob(ALL_COMMUNITY_GLOB))
     # Get paths relative to community root
-    paths = [Path(path).relative_to(COMMUNITY_ROOT) for path in paths]
+    paths_ = [Path(path).relative_to(COMMUNITY_ROOT) for path in paths]
     # Assert there's a callback paths
-    assert Path("callbacks/__init__.py") in paths
+    assert Path("callbacks/__init__.py") in paths_
 
 
 def _check_correct_or_not_defined__all__(code: str) -> bool:
