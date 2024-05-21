@@ -7,7 +7,10 @@ from typing import Any
 import pytest
 
 from langchain_community.embeddings import TitanTakeoffEmbed
-from langchain_community.embeddings.titan_takeoff import MissingConsumerGroup
+from langchain_community.embeddings.titan_takeoff import (
+    MissingConsumerGroup,
+    ReaderConfig,
+)
 
 
 @pytest.mark.requires("pytest_httpx")
@@ -70,14 +73,16 @@ def test_takeoff_initialization(httpx_mock: Any) -> None:
     inf_port = 46253
     mgnt_url = f"http://localhost:{mgnt_port}/reader"
     embed_url = f"http://localhost:{inf_port}/embed"
-    reader_1 = {
-        "model_name": "test",
-        "device": "cpu",
-        "consumer_group": "embed",
-    }
-    reader_2 = reader_1.copy()
-    reader_2["model_name"] = "test2"
-    reader_2["device"] = "cuda"
+    reader_1 = ReaderConfig(
+        model_name="test",
+        device="cpu",
+        consumer_group="embed",
+    )
+    reader_2 = ReaderConfig(
+        model_name="test2",
+        device="cuda",
+        consumer_group="embed",
+    )
 
     httpx_mock.add_response(
         method="POST", url=mgnt_url, json={"key": "value"}, status_code=201
@@ -126,15 +131,16 @@ def test_takeoff_initialization_with_more_than_one_consumer_group(
     inf_port = 46253
     mgnt_url = f"http://localhost:{mgnt_port}/reader"
     embed_url = f"http://localhost:{inf_port}/embed"
-    reader_1 = {
-        "model_name": "test",
-        "device": "cpu",
-        "consumer_group": "embed",
-    }
-    reader_2 = reader_1.copy()
-    reader_2["model_name"] = "test2"
-    reader_2["device"] = "cuda"
-    reader_2["consumer_group"] = "embed2"
+    reader_1 = ReaderConfig(
+        model_name="test",
+        device="cpu",
+        consumer_group="embed",
+    )
+    reader_2 = ReaderConfig(
+        model_name="test2",
+        device="cuda",
+        consumer_group="embed2",
+    )
 
     httpx_mock.add_response(
         method="POST", url=mgnt_url, json={"key": "value"}, status_code=201
