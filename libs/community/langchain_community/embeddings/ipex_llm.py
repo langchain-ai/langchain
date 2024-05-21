@@ -59,14 +59,10 @@ class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
         )
 
         # Add ipex-llm optimizations
+        self.client = _optimize_pre(self.client)
+        self.client = _optimize_post(self.client)
         if self.model_kwargs["device"] == "xpu":
-            self.client = optimize_model(self.client,
-                                        low_bit="fp16",
-                                        optimize_model=True)
-            self.client = self.client.to('xpu')
-        else:
-            self.client = _optimize_pre(self.client)
-            self.client = _optimize_post(self.client)
+            self.client = self.client.half().to('xpu')
 
         if "-zh" in self.model_name:
             self.query_instruction = DEFAULT_QUERY_BGE_INSTRUCTION_ZH
