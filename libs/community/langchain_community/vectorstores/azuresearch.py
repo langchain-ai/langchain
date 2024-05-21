@@ -239,6 +239,7 @@ class AzureSearch(VectorStore):
         scoring_profiles: Optional[List[ScoringProfile]] = None,
         default_scoring_profile: Optional[str] = None,
         cors_options: Optional[CorsOptions] = None,
+        *,
         vector_search_dimensions: Optional[int] = None,
         **kwargs: Any,
     ):
@@ -330,16 +331,15 @@ class AzureSearch(VectorStore):
             logger.debug("Nothing to insert, skipping.")
             return []
 
-        return self.add_embeddings(
-            zip(texts, embeddings), metadatas=metadatas, keys=keys
-        )
+        return self.add_embeddings(zip(texts, embeddings), metadatas, keys=keys)
 
     def add_embeddings(
         self,
-        text_embeddings: Iterable[tuple[str, list[float]]],
-        metadatas: Optional[list[dict]] = None,
-        keys: Optional[list[str]] = None,
-    ) -> list[str]:
+        text_embeddings: Iterable[Tuple[str, List[float]]],
+        metadatas: Optional[List[dict]] = None,
+        *,
+        keys: Optional[List[str]] = None,
+    ) -> List[str]:
         """Add embeddings to an existing index."""
         ids = []
 
@@ -448,7 +448,11 @@ class AzureSearch(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def vector_search_with_score(
-        self, query: str, k: int = 4, filters: Optional[str] = None
+        self,
+        query: str,
+        k: int = 4,
+        filters: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -458,11 +462,11 @@ class AzureSearch(VectorStore):
             filters (str, optional): Filtering expression. Defaults to None.
 
         Returns:
-            list[tuple[Document, float]]: List of Documents most similar
+            List[Tuple[Document, float]]: List of Documents most similar
                 to the query and score for each
         """
         embedding = self.embed_query(query)
-        results = self._simple_search(embedding, "", k, filters)
+        results = self._simple_search(embedding, "", k, filters=filters, **kwargs)
 
         return _results_to_documents(results)
 
@@ -472,8 +476,10 @@ class AzureSearch(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        *,
         filters: Optional[str] = None,
-    ) -> list[tuple[Document, float]]:
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float]]:
         """Perform a search and return results that are reordered by MMR.
 
         Args:
@@ -488,11 +494,11 @@ class AzureSearch(VectorStore):
             filters (str, optional): Filtering expression. Defaults to None.
 
         Returns:
-            list[tuple[Document, float]]: List of Documents most similar
+            List[Tuple[Document, float]]: List of Documents most similar
                 to the query and score for each
         """
         embedding = self.embed_query(query)
-        results = self._simple_search(embedding, "", fetch_k, filters)
+        results = self._simple_search(embedding, "", fetch_k, filters=filters, **kwargs)
 
         return _reorder_results_with_maximal_marginal_relevance(
             results, query_embedding=np.array(embedding), lambda_mult=lambda_mult, k=k
@@ -509,13 +515,15 @@ class AzureSearch(VectorStore):
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
         """
-        docs_and_scores = self.hybrid_search_with_score(
-            query, k=k, filters=kwargs.get("filters", None)
-        )
+        docs_and_scores = self.hybrid_search_with_score(query, k=k, **kwargs)
         return [doc for doc, _ in docs_and_scores]
 
     def hybrid_search_with_score(
-        self, query: str, k: int = 4, filters: Optional[str] = None
+        self,
+        query: str,
+        k: int = 4,
+        filters: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query with a hybrid query.
 
@@ -528,7 +536,7 @@ class AzureSearch(VectorStore):
         """
 
         embedding = self.embed_query(query)
-        results = self._simple_search(embedding, query, k, filters)
+        results = self._simple_search(embedding, query, k, filters=filters, **kwargs)
 
         return _results_to_documents(results)
 
@@ -550,6 +558,7 @@ class AzureSearch(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filters: Optional[str] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query with a hybrid query
             and reorder results by MMR.
@@ -570,7 +579,9 @@ class AzureSearch(VectorStore):
         """
 
         embedding = self.embed_query(query)
-        results = self._simple_search(embedding, query, fetch_k, filters)
+        results = self._simple_search(
+            embedding, query, fetch_k, filters=filters, **kwargs
+        )
 
         return _reorder_results_with_maximal_marginal_relevance(
             results, query_embedding=np.array(embedding), lambda_mult=lambda_mult, k=k
@@ -578,10 +589,12 @@ class AzureSearch(VectorStore):
 
     def _simple_search(
         self,
-        embedding: list[float],
+        embedding: List[float],
         text_query: str,
         k: int,
+        *,
         filters: Optional[str] = None,
+        **kwargs: Any,
     ) -> SearchItemPaged[dict]:
         """Perform vector or hybrid search in the Azure search index.
 
@@ -607,6 +620,7 @@ class AzureSearch(VectorStore):
             ],
             filter=filters,
             top=k,
+            **kwargs,
         )
 
     def semantic_hybrid_search(
@@ -618,12 +632,13 @@ class AzureSearch(VectorStore):
         Args:
             query (str): The query text for which to find similar documents.
             k (int): The number of documents to return. Default is 4.
+            filters: Filtering expression.
 
         Returns:
             List[Document]: A list of documents that are most similar to the query text.
         """
         docs_and_scores = self.semantic_hybrid_search_with_score_and_rerank(
-            query, k=k, filters=kwargs.get("filters", None)
+            query, k=k, **kwargs
         )
         return [doc for doc, _, _ in docs_and_scores]
 
@@ -642,6 +657,7 @@ class AzureSearch(VectorStore):
             k (int): The number of documents to return. Default is 4.
             score_type: Must either be "score" or "reranker_score".
                 Defaulted to "score".
+            filters: Filtering expression.
 
         Returns:
             List[Tuple[Document, float]]: A list of documents and their
@@ -649,7 +665,7 @@ class AzureSearch(VectorStore):
         """
         score_threshold = kwargs.pop("score_threshold", None)
         docs_and_scores = self.semantic_hybrid_search_with_score_and_rerank(
-            query, k=k, filters=kwargs.get("filters", None)
+            query, k=k, **kwargs
         )
         if score_type == "score":
             return [
@@ -665,13 +681,14 @@ class AzureSearch(VectorStore):
             ]
 
     def semantic_hybrid_search_with_score_and_rerank(
-        self, query: str, k: int = 4, filters: Optional[str] = None
+        self, query: str, k: int = 4, *, filters: Optional[str] = None, **kwargs: Any
     ) -> List[Tuple[Document, float, float]]:
         """Return docs most similar to query with a hybrid query.
 
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
+            filters: Filtering expression.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -693,6 +710,7 @@ class AzureSearch(VectorStore):
             query_caption="extractive",
             query_answer="extractive",
             top=k,
+            **kwargs,
         )
         # Get Semantic Answers
         semantic_answers = results.get_answers() or []
@@ -954,7 +972,7 @@ def _reorder_results_with_maximal_marginal_relevance(
     )
 
     # Reorder the values and return.
-    ret = List[Tuple[Document, float]]()
+    ret: List[Tuple[Document, float]] = []
     for x in new_ordering:
         # Function can return -1 index
         if x == -1:
