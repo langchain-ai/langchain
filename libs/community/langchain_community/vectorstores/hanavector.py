@@ -86,7 +86,8 @@ class HanaDB(VectorStore):
         metadata_column: str = default_metadata_column,
         vector_column: str = default_vector_column,
         vector_column_length: int = default_vector_column_length,
-        specific_metadata_columns: List[str] = [],
+        *,
+        specific_metadata_columns: Optional[List[str]] = None,
     ):
         # Check if the hdbcli package is installed
         if importlib.util.find_spec("hdbcli") is None:
@@ -113,7 +114,7 @@ class HanaDB(VectorStore):
         self.vector_column = HanaDB._sanitize_name(vector_column)
         self.vector_column_length = HanaDB._sanitize_int(vector_column_length)
         self.specific_metadata_columns = HanaDB._sanitize_specific_metadata_columns(
-            specific_metadata_columns
+            specific_metadata_columns or []
         )
 
         # Check if the table exists, and eventually create it
@@ -194,17 +195,20 @@ class HanaDB(VectorStore):
     def embeddings(self) -> Embeddings:
         return self.embedding
 
+    @staticmethod
     def _sanitize_name(input_str: str) -> str:  # type: ignore[misc]
         # Remove characters that are not alphanumeric or underscores
         return re.sub(r"[^a-zA-Z0-9_]", "", input_str)
 
+    @staticmethod
     def _sanitize_int(input_int: any) -> int:  # type: ignore[valid-type]
         value = int(str(input_int))
         if value < -1:
             raise ValueError(f"Value ({value}) must not be smaller than -1")
         return int(str(input_int))
 
-    def _sanitize_list_float(embedding: List[float]) -> List[float]:  # type: ignore[misc]
+    @staticmethod
+    def _sanitize_list_float(embedding: List[float]) -> List[float]:
         for value in embedding:
             if not isinstance(value, float):
                 raise ValueError(f"Value ({value}) does not have type float")
@@ -213,14 +217,16 @@ class HanaDB(VectorStore):
     # Compile pattern only once, for better performance
     _compiled_pattern = re.compile("^[_a-zA-Z][_a-zA-Z0-9]*$")
 
-    def _sanitize_metadata_keys(metadata: dict) -> dict:  # type: ignore[misc]
+    @staticmethod
+    def _sanitize_metadata_keys(metadata: dict) -> dict:
         for key in metadata.keys():
             if not HanaDB._compiled_pattern.match(key):
                 raise ValueError(f"Invalid metadata key {key}")
 
         return metadata
 
-    def _sanitize_specific_metadata_columns(  # type: ignore[misc]
+    @staticmethod
+    def _sanitize_specific_metadata_columns(
         specific_metadata_columns: List[str],
     ) -> List[str]:
         metadata_columns = []
@@ -320,7 +326,8 @@ class HanaDB(VectorStore):
         metadata_column: str = default_metadata_column,
         vector_column: str = default_vector_column,
         vector_column_length: int = default_vector_column_length,
-        specific_metadata_columns: List[str] = [],
+        *,
+        specific_metadata_columns: Optional[List[str]] = None,
     ):
         """Create a HanaDB instance from raw documents.
         This is a user-friendly interface that:
