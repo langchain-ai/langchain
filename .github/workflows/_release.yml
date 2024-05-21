@@ -308,3 +308,4 @@ jobs:
           tag: ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}
           body: "# Release ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}\n\nPackage-specific release note generation coming soon."
           commit: ${{ github.sha }}
+          makeLatest: ${{ needs.build.outputs.pkg-name == 'langchain-core'}}
