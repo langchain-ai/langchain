@@ -31,9 +31,11 @@ install-py-deps:
 	$(PYTHON) -m uv pip install -r vercel_requirements.txt
 	$(PYTHON) -m uv pip install --editable $(PARTNER_DEPS_LIST)
 
-generate-files:
+_generate-files-internal:
 	mkdir -p $(INTERMEDIATE_DIR)
-	cp -r $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
+	rsync -avm --delete $(SOURCE_DIR) $(INTERMEDIATE_DIR)
+
+generate-files: _generate-files-internal
 	mkdir -p $(INTERMEDIATE_DIR)/templates
 	cp ../templates/docs/INDEX.md $(INTERMEDIATE_DIR)/templates/index.md
 	cp ../cookbook/README.md $(INTERMEDIATE_DIR)/cookbook.mdx
