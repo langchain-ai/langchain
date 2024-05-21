@@ -30,7 +30,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         embedding: Embeddings,
         vector_embedding_policy: Dict[str, Any],
         indexing_policy: Dict[str, Any],
-        cosmos_container_properties: [Dict[str, Any]],
+        cosmos_container_properties: Dict[str, Any],
     ):
         """
         Constructor for AzureCosmosDBNoSqlVectorSearch
@@ -169,14 +169,14 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             )
 
         vectorstore = cls(
-            cosmos_client,
-            database_name,
-            container_name,
-            partition_key,
-            embedding,
-            vector_embedding_policy,
-            indexing_policy,
-            cosmos_container_properties,
+            cosmos_client=cosmos_client,
+            database_name=database_name,
+            container_name=container_name,
+            partition_key=partition_key,
+            embedding=embedding,
+            vector_embedding_policy=vector_embedding_policy,
+            indexing_policy=indexing_policy,
+            cosmos_container_properties=cosmos_container_properties,
         )
         vectorstore.add_texts(texts, metadatas=metadatas)
         return vectorstore
