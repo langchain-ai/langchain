@@ -48,7 +48,10 @@ class AIMessage(BaseMessage):
     invalid_tool_calls: List[InvalidToolCall] = []
     """If provided, tool calls with parsing errors associated with the message."""
     token_usage: Optional[TokenUsage] = None
-    """If provided, token usage information associated with the message."""
+    """If provided, token usage information associated with the message.
+
+    This is a standard representation of token usage that is consistent across models.
+    """
 
     type: Literal["ai"] = "ai"
 
