@@ -220,7 +220,9 @@ class HanaDB(VectorStore):
 
         return metadata
 
-    def _sanitize_specific_metadata_columns(specific_metadata_columns: List[str]) -> List[str]:
+    def _sanitize_specific_metadata_columns(  # type: ignore[misc]
+        specific_metadata_columns: List[str],
+    ) -> List[str]:
         metadata_columns = []
         for c in specific_metadata_columns:
             sanitized_name = HanaDB._sanitize_name(c)
@@ -295,7 +297,7 @@ class HanaDB(VectorStore):
                 )
             sql_str = (
                 f'INSERT INTO "{self.table_name}" ("{self.content_column}", '
-                f'"{self.metadata_column}", ' 
+                f'"{self.metadata_column}", '
                 f'"{self.vector_column}"{specific_metadata_columns_string}) '
                 f"VALUES (?, ?, TO_REAL_VECTOR (?)"
                 f"{', ?' * len(self.specific_metadata_columns)});"
