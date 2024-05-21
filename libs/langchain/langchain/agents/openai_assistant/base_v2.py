@@ -11,6 +11,7 @@ from typing import (
     Union,
 )
 
+from langchain_core._api import beta
 from langchain_core.callbacks import CallbackManager
 from langchain_core.load import dumpd
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
@@ -100,6 +101,7 @@ def _get_assistants_tool(
         return convert_to_openai_tool(tool)
 
 
+@beta()
 class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
     """Run an OpenAI Assistant.
 
