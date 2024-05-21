@@ -147,6 +147,7 @@ RULE_TO_PATHS = {
         "ibm.json",
         "openai.json",
         "pinecone.json",
+        "astradb.json",
     ],
 }
 
