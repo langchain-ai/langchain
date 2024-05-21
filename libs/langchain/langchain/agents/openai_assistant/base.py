@@ -26,9 +26,9 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 
 if TYPE_CHECKING:
     import openai
-    from openai._types import NotGiven, NOT_GIVEN
-    from openai.types.beta.threads import ThreadMessage
+    from openai._types import NotGiven
     from openai.types.beta.assistant import ToolResources as AssistantToolResources
+    from openai.types.beta.threads import ThreadMessage
     from openai.types.beta.threads.required_action_function_tool_call import (
         RequiredActionFunctionToolCall,
     )
@@ -100,22 +100,23 @@ def _is_assistants_builtin_tool(
         and (tool["type"] in assistants_builtin_tools)
     )
 
+
 def _convert_file_ids_into_attachments(file_ids: list) -> list:
     """
     Convert file_ids into attachments
-    
+
     File search and Code interpreter will be turned on by default
     """
     attachments = []
     for id in file_ids:
-        attachments.append({
-            'file_id': id,
-            'tools': [
-                {'type': 'file_search'},
-                {'type': 'code_interpreter'}
-            ]
-        })
+        attachments.append(
+            {
+                "file_id": id,
+                "tools": [{"type": "file_search"}, {"type": "code_interpreter"}],
+            }
+        )
     return attachments
+
 
 def _get_assistants_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
@@ -243,10 +244,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         name: str,
         instructions: str,
         tools: Sequence[Union[BaseTool, dict]],
-        tool_resources: Optional[Union[AssistantToolResources, dict]] | NotGiven = NOT_GIVEN,
         model: str,
         *,
         client: Optional[Union[openai.OpenAI, openai.AzureOpenAI]] = None,
+        tool_resources: Optional[Union[AssistantToolResources, dict, NotGiven]] = None,
         **kwargs: Any,
     ) -> OpenAIAssistantRunnable:
         """Create an OpenAI Assistant and instantiate the Runnable.
@@ -265,6 +266,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         """
 
         client = client or _get_openai_client()
+        if tool_resources is None:
+            from openai._types import NOT_GIVEN
+
+            tool_resources = NOT_GIVEN
         assistant = client.beta.assistants.create(
             name=name,
             instructions=instructions,
@@ -275,7 +280,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         return cls(assistant_id=assistant.id, client=client, **kwargs)
 
     def invoke(
-        self, input: dict, config: Optional[RunnableConfig] = None
+        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> OutputType:
         """Invoke assistant.
 
@@ -316,7 +321,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
 
         files = _convert_file_ids_into_attachments(kwargs.get("file_ids", []))
         attachments = kwargs.get("attachments", []) + files
-        
+
         try:
             # Being run within AgentExecutor and there are tool outputs to submit.
             if self.as_agent and input.get("intermediate_steps"):
@@ -371,12 +376,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
         name: str,
         instructions: str,
         tools: Sequence[Union[BaseTool, dict]],
-        tool_resources: Optional[Union[AssistantToolResources, dict]] | NotGiven = NOT_GIVEN,
         model: str,
         *,
         async_client: Optional[
             Union[openai.AsyncOpenAI, openai.AsyncAzureOpenAI]
         ] = None,
+        tool_resources: Optional[Union[AssistantToolResources, dict, NotGiven]] = None,
         **kwargs: Any,
     ) -> OpenAIAssistantRunnable:
         """Create an AsyncOpenAI Assistant and instantiate the Runnable.
@@ -394,6 +399,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             AsyncOpenAIAssistantRunnable configured to run using the created assistant.
         """
         async_client = async_client or _get_openai_async_client()
+        if tool_resources is None:
+            from openai._types import NOT_GIVEN
+
+            tool_resources = NOT_GIVEN
         openai_tools = [_get_assistants_tool(tool) for tool in tools]
 
         assistant = await async_client.beta.assistants.create(
