@@ -180,7 +180,7 @@ class ChatMlflow(BaseChatModel):
 
             chunk_delta = choice["delta"]
             if first_chunk_role is None:
-                first_chunk_role = chunk_delta["role"]
+                first_chunk_role = chunk_delta.get("role")
             chunk = ChatMlflow._convert_delta_to_message_chunk(
                 chunk_delta, first_chunk_role
             )
