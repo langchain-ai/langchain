@@ -20,3 +20,14 @@ class TestMistralStandard(ChatModelIntegrationTests):
             "model": "mistral-large-latest",
             "temperature": 0,
         }
+
+    @pytest.mark.xfail(reason="Not implemented.")
+    def test_token_usage(
+        self,
+        chat_model_class: Type[BaseChatModel],
+        chat_model_params: dict,
+    ) -> None:
+        super().test_token_usage(
+            chat_model_class,
+            chat_model_params,
+        )

@@ -41,6 +41,17 @@ class TestAI21J2(ChatModelIntegrationTests):
             chat_model_params,
         )
 
+    @pytest.mark.xfail(reason="Not implemented.")
+    def test_token_usage(
+        self,
+        chat_model_class: Type[BaseChatModel],
+        chat_model_params: dict,
+    ) -> None:
+        super().test_token_usage(
+            chat_model_class,
+            chat_model_params,
+        )
+
     @pytest.fixture
     def chat_model_params(self) -> dict:
         return {
@@ -75,6 +86,17 @@ class TestAI21Jamba(ChatModelIntegrationTests):
         chat_model_params: dict,
     ) -> None:
         await super().test_astream(
+            chat_model_class,
+            chat_model_params,
+        )
+
+    @pytest.mark.xfail(reason="Not implemented.")
+    def test_token_usage(
+        self,
+        chat_model_class: Type[BaseChatModel],
+        chat_model_params: dict,
+    ) -> None:
+        super().test_token_usage(
             chat_model_class,
             chat_model_params,
         )
