@@ -82,7 +82,7 @@ class VectaraQueryConfig:
     """
 
     k: int = 10
-    lambda_val: float = 0.0
+    lambda_val: float = 0.005
     filter: str = ""
     score_threshold: Optional[float] = None
     n_sentence_before: int = 2
@@ -103,7 +103,7 @@ def create_vectara_query_config(search_kwargs):
     # Creating the main VectaraQueryConfig
     config = VectaraQueryConfig(
         k=search_kwargs.get("k", 10),
-        lambda_val=search_kwargs.get("lambda_val", 0.0),
+        lambda_val=search_kwargs.get("lambda_val", 0.005),
         filter=search_kwargs.get("filter", ""),
         score_threshold=search_kwargs.get("score_threshold", None),
         n_sentence_before=search_kwargs.get("n_sentence_before", 2),

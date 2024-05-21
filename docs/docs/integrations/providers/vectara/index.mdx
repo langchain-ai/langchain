@@ -112,7 +112,7 @@ For example:
 ```python
 summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang='eng')
 mmr_config = MMRConfig(is_enabled=True, mmr_k=50, diversity_bias=0.2)
-config = VectaraQueryConfig(k=10, lambda_val=0.025, mmr_config=mmr_config, summary_config=summary_config)
+config = VectaraQueryConfig(k=10, lambda_val=0.005, mmr_config=mmr_config, summary_config=summary_config)
 ```
 Then you can use the `as_rag` method to create a RAG pipeline:
 
@@ -132,7 +132,7 @@ The RAG functionality can be used to create a chatbot. For example, you can crea
 ```python
 summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang='eng')
 mmr_config = MMRConfig(is_enabled=True, mmr_k=50, diversity_bias=0.2)
-config = VectaraQueryConfig(k=10, lambda_val=0.025, mmr_config=mmr_config, summary_config=summary_config)
+config = VectaraQueryConfig(k=10, lambda_val=0.005, mmr_config=mmr_config, summary_config=summary_config)
 
 query_str = "what did Biden say?"
 bot = vectara.as_chat(config)
@@ -164,7 +164,7 @@ This is automatically included in the output of the RAG pipeline
 ```python
 summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang='eng')
 mmr_config = MMRConfig(is_enabled=True, mmr_k=50, diversity_bias=0.2)
-config = VectaraQueryConfig(k=10, lambda_val=0.025, mmr_config=mmr_config, summary_config=summary_config)
+config = VectaraQueryConfig(k=10, lambda_val=0.005, mmr_config=mmr_config, summary_config=summary_config)
 
 rag = vectara.as_rag(config)
 resp = rag.invoke(query_str)

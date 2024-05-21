@@ -16,7 +16,7 @@ vectara = Vectara()
 
 # Define the query configuration:
 summary_config = SummaryConfig(is_enabled=True, max_results=5, response_lang="eng")
-config = VectaraQueryConfig(k=10, lambda_val=0.025, summary_config=summary_config)
+config = VectaraQueryConfig(k=10, lambda_val=0.005, summary_config=summary_config)
 
 rag = Vectara().as_rag(config)
 
