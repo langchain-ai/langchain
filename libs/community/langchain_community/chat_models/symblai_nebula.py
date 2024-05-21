@@ -89,6 +89,8 @@ class ChatNebula(BaseChatModel):
     temperature: Optional[float] = 0
     """A non-negative float that tunes the degree of randomness in generation."""
 
+    streaming: bool = False
+
     nebula_api_url: str = "https://api-nebula.symbl.ai"
 
     nebula_api_key: Optional[SecretStr] = Field(None, description="Nebula API Token")
@@ -201,7 +203,7 @@ class ChatNebula(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.stream:
+        if self.streaming:
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -243,7 +245,7 @@ class ChatNebula(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        if self.stream:
+        if self.streaming:
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -268,7 +270,6 @@ class ChatNebula(BaseChatModel):
         async with ClientSession() as session:
             async with session.post(url, data=payload, headers=headers) as response:
                 response.raise_for_status()
-                response = requests.request("POST", url, headers=headers, data=payload)
                 data = await response.json()
 
                 return ChatResult(
