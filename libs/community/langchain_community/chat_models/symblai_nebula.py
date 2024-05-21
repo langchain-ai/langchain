@@ -1,8 +1,8 @@
 import json
-import requests
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
-from aiohttp import ClientSession
 
+import requests
+from aiohttp import ClientSession
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -20,10 +20,10 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+
 
 def _convert_role(role: str) -> str:
     map = {"ai": "assistant", "human": "human", "chat": "human"}
@@ -39,20 +39,17 @@ def _format_nebula_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
     for message in messages[:-1]:
         if message.type == "system":
             system = message.content
-        else: 
+        else:
             formatted_messages.append(
                 {
                     "role": _convert_role(message.type),
                     "text": message.content,
                 }
             )
-                
+
     text = messages[-1].content
     formatted_messages.append({"role": "human", "text": text})
-    return {
-        "system_prompt": system,
-        "messages" : formatted_messages
-    }
+    return {"system_prompt": system, "messages": formatted_messages}
 
 
 class ChatNebula(BaseChatModel):
@@ -60,7 +57,7 @@ class ChatNebula(BaseChatModel):
 
     API Reference: https://docs.symbl.ai/reference/nebula-chat
 
-    To use, you should have the environment variable ``NEBULA_API_KEY`` set with your API key, 
+    To use, you should have the environment variable ``NEBULA_API_KEY`` set with your API key,
     or pass it as a named parameter to the constructor.
     To request an API key, visit https://platform.symbl.ai/#/login
 
@@ -83,6 +80,7 @@ class ChatNebula(BaseChatModel):
             ]
             chat.invoke(messages)
     """
+
     max_new_tokens: int = 1024
     """Denotes the number of tokens to predict per generation."""
 
@@ -97,6 +95,7 @@ class ChatNebula(BaseChatModel):
 
     class Config:
         """Configuration for this pydantic object."""
+
         allow_population_by_field_name = True
         arbitrary_types_allowed = True
 
@@ -112,7 +111,7 @@ class ChatNebula(BaseChatModel):
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "nebula-chat"
-    
+
     @property
     def _api_key(self) -> str:
         if self.nebula_api_key:
@@ -130,7 +129,7 @@ class ChatNebula(BaseChatModel):
         url = f"{self.nebula_api_url}/v1/model/chat/streaming"
         headers = {
             "ApiKey": self._api_key,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         }
         formatted_data = _format_nebula_messages(messages=messages)
         payload: Dict[str, Any] = {
@@ -142,8 +141,10 @@ class ChatNebula(BaseChatModel):
 
         payload = {k: v for k, v in payload.items() if v is not None}
         payload = json.dumps(payload)
-        
-        response = requests.request("POST", url, headers=headers, data=payload, stream=True)
+
+        response = requests.request(
+            "POST", url, headers=headers, data=payload, stream=True
+        )
         response.raise_for_status()
 
         for chunk_response in response.iter_lines():
@@ -166,10 +167,7 @@ class ChatNebula(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         url = f"{self.nebula_api_url}/v1/model/chat/streaming"
-        headers = {
-            "ApiKey": self._api_key,
-            'Content-Type': 'application/json'
-        }
+        headers = {"ApiKey": self._api_key, "Content-Type": "application/json"}
         formatted_data = _format_nebula_messages(messages=messages)
         payload: Dict[str, Any] = {
             "max_new_tokens": self.max_new_tokens,
@@ -182,7 +180,9 @@ class ChatNebula(BaseChatModel):
         payload = json.dumps(payload)
 
         async with ClientSession() as session:
-            async with session.post(url, data=payload, headers=headers, stream = True) as response:
+            async with session.post(
+                url, data=payload, headers=headers, stream=True
+            ) as response:
                 response.raise_for_status()
                 async for chunk_response in response.content:
                     chunk_decoded = chunk_response.decode()[6:]
@@ -191,7 +191,9 @@ class ChatNebula(BaseChatModel):
                     except:
                         continue
                     token = chunk["delta"]
-                    cg_chunk = ChatGenerationChunk(message=AIMessageChunk(content=token))
+                    cg_chunk = ChatGenerationChunk(
+                        message=AIMessageChunk(content=token)
+                    )
                     if run_manager:
                         await run_manager.on_llm_new_token(token, chunk=cg_chunk)
                     yield cg_chunk
@@ -210,10 +212,7 @@ class ChatNebula(BaseChatModel):
             return generate_from_stream(stream_iter)
 
         url = f"{self.nebula_api_url}/v1/model/chat"
-        headers = {
-            "ApiKey": self._api_key,
-            'Content-Type': 'application/json'
-        }
+        headers = {"ApiKey": self._api_key, "Content-Type": "application/json"}
         formatted_data = _format_nebula_messages(messages=messages)
         payload: Dict[str, Any] = {
             "max_new_tokens": self.max_new_tokens,
@@ -224,17 +223,13 @@ class ChatNebula(BaseChatModel):
 
         payload = {k: v for k, v in payload.items() if v is not None}
         payload = json.dumps(payload)
-            
+
         response = requests.request("POST", url, headers=headers, data=payload)
         response.raise_for_status()
         data = response.json()
 
         return ChatResult(
-            generations=[
-                ChatGeneration(
-                    message=AIMessage(content=data["messages"])
-                )
-            ],
+            generations=[ChatGeneration(message=AIMessage(content=data["messages"]))],
             llm_output=data,
         )
 
@@ -252,10 +247,7 @@ class ChatNebula(BaseChatModel):
             return await agenerate_from_stream(stream_iter)
 
         url = f"{self.nebula_api_url}/v1/model/chat"
-        headers = {
-            "ApiKey": self._api_key,
-            'Content-Type': 'application/json'
-        }
+        headers = {"ApiKey": self._api_key, "Content-Type": "application/json"}
         formatted_data = _format_nebula_messages(messages=messages)
         payload: Dict[str, Any] = {
             "max_new_tokens": self.max_new_tokens,
@@ -274,11 +266,7 @@ class ChatNebula(BaseChatModel):
 
                 return ChatResult(
                     generations=[
-                        ChatGeneration(
-                            message=AIMessage(
-                                content=data["messages"]
-                            )
-                        )
+                        ChatGeneration(message=AIMessage(content=data["messages"]))
                     ],
                     llm_output=data,
                 )
