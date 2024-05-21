@@ -8,7 +8,7 @@ from langchain_core.pydantic_v1 import BaseModel, Extra, Field
 from ipex_llm.transformers.convert import _optimize_pre, _optimize_post
 from ipex_llm import optimize_model
 
-DEFAULT_BGE_MODEL = "BAAI/bge-large-en"
+DEFAULT_BGE_MODEL = "BAAI/bge-small-en-v1.5"
 DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
     "Represent this question for searching relevant passages: "
 )
