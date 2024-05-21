@@ -203,6 +203,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.tensorflow_hub import (
         TensorflowHubEmbeddings,
     )
+    from langchain_community.embeddings.titan_takeoff import (
+        TitanTakeoffEmbed,
+    )
     from langchain_community.embeddings.vertexai import (
         VertexAIEmbeddings,
     )
@@ -287,6 +290,7 @@ __all__ = [
     "SolarEmbeddings",
     "SpacyEmbeddings",
     "SparkLLMTextEmbeddings",
+    "TitanTakeoffEmbed",
     "TensorflowHubEmbeddings",
     "VertexAIEmbeddings",
     "VolcanoEmbeddings",
