@@ -320,7 +320,7 @@ class HanaDB(VectorStore):
         metadata_column: str = default_metadata_column,
         vector_column: str = default_vector_column,
         vector_column_length: int = default_vector_column_length,
-        specific_metadata_columns=[],
+        specific_metadata_columns: List[str] = [],
     ):
         """Create a HanaDB instance from raw documents.
         This is a user-friendly interface that:
