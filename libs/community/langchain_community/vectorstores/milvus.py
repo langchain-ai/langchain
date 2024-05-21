@@ -133,12 +133,13 @@ class Milvus(VectorStore):
         partition_names: Optional[list] = None,
         replica_number: int = 1,
         timeout: Optional[float] = None,
+        num_shards: Optional[int] = None,
     ):
         """Initialize the Milvus vector store."""
         try:
             from pymilvus import Collection, utility
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import pymilvus python package. "
                 "Please install it with `pip install pymilvus`."
             )
@@ -156,6 +157,18 @@ class Milvus(VectorStore):
             "ANNOY": {"metric_type": "L2", "params": {"search_k": 10}},
             "SCANN": {"metric_type": "L2", "params": {"search_k": 10}},
             "AUTOINDEX": {"metric_type": "L2", "params": {}},
+            "GPU_CAGRA": {
+                "metric_type": "L2",
+                "params": {
+                    "itopk_size": 128,
+                    "search_width": 4,
+                    "min_iterations": 0,
+                    "max_iterations": 0,
+                    "team_size": 0,
+                },
+            },
+            "GPU_IVF_FLAT": {"metric_type": "L2", "params": {"nprobe": 10}},
+            "GPU_IVF_PQ": {"metric_type": "L2", "params": {"nprobe": 10}},
         }
 
         self.embedding_func = embedding_function
@@ -179,6 +192,7 @@ class Milvus(VectorStore):
         self.partition_names = partition_names
         self.replica_number = replica_number
         self.timeout = timeout
+        self.num_shards = num_shards
 
         # Create the connection to the server
         if connection_args is None:
@@ -364,12 +378,23 @@ class Milvus(VectorStore):
 
         # Create the collection
         try:
-            self.col = Collection(
-                name=self.collection_name,
-                schema=schema,
-                consistency_level=self.consistency_level,
-                using=self.alias,
-            )
+            if self.num_shards is not None:
+                # Issue with defaults:
+                # https://github.com/milvus-io/pymilvus/blob/59bf5e811ad56e20946559317fed855330758d9c/pymilvus/client/prepare.py#L82-L85
+                self.col = Collection(
+                    name=self.collection_name,
+                    schema=schema,
+                    consistency_level=self.consistency_level,
+                    using=self.alias,
+                    num_shards=self.num_shards,
+                )
+            else:
+                self.col = Collection(
+                    name=self.collection_name,
+                    schema=schema,
+                    consistency_level=self.consistency_level,
+                    using=self.alias,
+                )
             # Set the collection properties if they exist
             if self.collection_properties is not None:
                 self.col.set_properties(self.collection_properties)
@@ -599,7 +624,6 @@ class Milvus(VectorStore):
                     "Failed to insert batch starting at entity: %s/%s", i, total_count
                 )
                 raise e
-        self.col.flush()
         return pks
 
     def similarity_search(
@@ -921,11 +945,11 @@ class Milvus(VectorStore):
             kwargs: Other parameters in Milvus delete api.
         """
         if isinstance(ids, list) and len(ids) > 0:
-            expr = f"{self._primary_field} in {ids}"
             if expr is not None:
                 logger.warning(
                     "Both ids and expr are provided. " "Ignore expr and delete by ids."
                 )
+            expr = f"{self._primary_field} in {ids}"
         else:
             assert isinstance(
                 expr, str

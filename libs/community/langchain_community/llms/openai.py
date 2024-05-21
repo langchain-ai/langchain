@@ -391,7 +391,6 @@ class BaseOpenAI(BaseLLM):
             if not isinstance(stream_resp, dict):
                 stream_resp = stream_resp.dict()
             chunk = _stream_response_to_generation_chunk(stream_resp)
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(
                     chunk.text,
@@ -401,6 +400,7 @@ class BaseOpenAI(BaseLLM):
                     if chunk.generation_info
                     else None,
                 )
+            yield chunk
 
     def _generate(
         self,
@@ -661,6 +661,8 @@ class BaseOpenAI(BaseLLM):
                 max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
         """
         model_token_mapping = {
+            "gpt-4o": 128_000,
+            "gpt-4o-2024-05-13": 128_000,
             "gpt-4": 8192,
             "gpt-4-0314": 8192,
             "gpt-4-0613": 8192,
@@ -726,7 +728,7 @@ class BaseOpenAI(BaseLLM):
 
 
 @deprecated(
-    since="0.0.10", removal="0.2.0", alternative_import="langchain_openai.OpenAI"
+    since="0.0.10", removal="0.3.0", alternative_import="langchain_openai.OpenAI"
 )
 class OpenAI(BaseOpenAI):
     """OpenAI large language models.
@@ -755,7 +757,7 @@ class OpenAI(BaseOpenAI):
 
 
 @deprecated(
-    since="0.0.10", removal="0.2.0", alternative_import="langchain_openai.AzureOpenAI"
+    since="0.0.10", removal="0.3.0", alternative_import="langchain_openai.AzureOpenAI"
 )
 class AzureOpenAI(BaseOpenAI):
     """Azure-specific OpenAI large language models.
@@ -963,7 +965,7 @@ class AzureOpenAI(BaseOpenAI):
 
 @deprecated(
     since="0.0.1",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_openai.ChatOpenAI",
 )
 class OpenAIChat(BaseLLM):
@@ -1113,9 +1115,9 @@ class OpenAIChat(BaseLLM):
                 stream_resp = stream_resp.dict()
             token = stream_resp["choices"][0]["delta"].get("content", "")
             chunk = GenerationChunk(text=token)
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(token, chunk=chunk)
+            yield chunk
 
     async def _astream(
         self,
@@ -1133,9 +1135,9 @@ class OpenAIChat(BaseLLM):
                 stream_resp = stream_resp.dict()
             token = stream_resp["choices"][0]["delta"].get("content", "")
             chunk = GenerationChunk(text=token)
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(token, chunk=chunk)
+            yield chunk
 
     def _generate(
         self,

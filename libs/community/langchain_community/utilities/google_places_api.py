@@ -1,13 +1,18 @@
-"""Chain that calls Google Places API.
-"""
+"""Chain that calls Google Places API."""
 
 import logging
 from typing import Any, Dict, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
+@deprecated(
+    since="0.0.33",
+    removal="0.3.0",
+    alternative_import="langchain_google_community.GooglePlacesAPIWrapper",
+)
 class GooglePlacesAPIWrapper(BaseModel):
     """Wrapper around Google Places API.
 

@@ -1,4 +1,5 @@
 """Utility code for runnables."""
+
 from __future__ import annotations
 
 import ast
@@ -11,6 +12,8 @@ from itertools import groupby
 from typing import (
     Any,
     AsyncIterable,
+    AsyncIterator,
+    Awaitable,
     Callable,
     Coroutine,
     Dict,
@@ -26,6 +29,8 @@ from typing import (
     TypeVar,
     Union,
 )
+
+from typing_extensions import TypeGuard
 
 from langchain_core.pydantic_v1 import BaseConfig, BaseModel
 from langchain_core.pydantic_v1 import create_model as _create_model_base
@@ -218,7 +223,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
         visitor = IsFunctionArgDict()
         visitor.visit(tree)
         return list(visitor.keys) if visitor.keys else None
-    except (SyntaxError, TypeError, OSError):
+    except (SyntaxError, TypeError, OSError, SystemError):
         return None
 
 
@@ -241,7 +246,7 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         visitor = GetLambdaSource()
         visitor.visit(tree)
         return visitor.source if visitor.count == 1 else name
-    except (SyntaxError, TypeError, OSError):
+    except (SyntaxError, TypeError, OSError, SystemError):
         return name
 
 
@@ -263,11 +268,14 @@ def get_function_nonlocals(func: Callable) -> List[Any]:
                         if vv is None:
                             break
                         else:
-                            vv = getattr(vv, part)
+                            try:
+                                vv = getattr(vv, part)
+                            except AttributeError:
+                                break
                     else:
                         values.append(vv)
         return values
-    except (SyntaxError, TypeError, OSError):
+    except (SyntaxError, TypeError, OSError, SystemError):
         return []
 
 
@@ -504,6 +512,15 @@ def create_model(
     __model_name: str,
     **field_definitions: Any,
 ) -> Type[BaseModel]:
+    """Create a pydantic model with the given field definitions.
+
+    Args:
+        __model_name: The name of the model.
+        **field_definitions: The field definitions for the model.
+
+    Returns:
+        Type[BaseModel]: The created model.
+    """
     try:
         return _create_model_cached(__model_name, **field_definitions)
     except TypeError:
@@ -523,9 +540,23 @@ def _create_model_cached(
     )
 
 
-def adapt_first_streaming_chunk(chunk: Any) -> Any:
-    """This might transform the first chunk of a stream into an AddableDict."""
-    if isinstance(chunk, dict) and not isinstance(chunk, AddableDict):
-        return AddableDict(chunk)
-    else:
-        return chunk
+def is_async_generator(
+    func: Any,
+) -> TypeGuard[Callable[..., AsyncIterator]]:
+    """Check if a function is an async generator."""
+    return (
+        inspect.isasyncgenfunction(func)
+        or hasattr(func, "__call__")
+        and inspect.isasyncgenfunction(func.__call__)
+    )
+
+
+def is_async_callable(
+    func: Any,
+) -> TypeGuard[Callable[..., Awaitable]]:
+    """Check if a function is async."""
+    return (
+        asyncio.iscoroutinefunction(func)
+        or hasattr(func, "__call__")
+        and asyncio.iscoroutinefunction(func.__call__)
+    )

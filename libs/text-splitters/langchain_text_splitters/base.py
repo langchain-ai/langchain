@@ -291,6 +291,7 @@ class Language(str, Enum):
     C = "c"
     LUA = "lua"
     PERL = "perl"
+    HASKELL = "haskell"
 
 
 @dataclass(frozen=True)

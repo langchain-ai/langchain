@@ -1,5 +1,6 @@
 """Test base chat model."""
 
+import uuid
 from typing import Any, AsyncIterator, Iterator, List, Optional
 
 import pytest
@@ -15,12 +16,15 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.outputs.llm_result import LLMResult
+from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
+from langchain_core.tracers.schemas import Run
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
+from tests.unit_tests.stubs import AnyStr
 
 
 @pytest.fixture
@@ -140,10 +144,10 @@ async def test_astream_fallback_to_ainvoke() -> None:
 
     model = ModelWithGenerate()
     chunks = [chunk for chunk in model.stream("anything")]
-    assert chunks == [AIMessage(content="hello")]
+    assert chunks == [AIMessage(content="hello", id=AnyStr())]
 
     chunks = [chunk async for chunk in model.astream("anything")]
-    assert chunks == [AIMessage(content="hello")]
+    assert chunks == [AIMessage(content="hello", id=AnyStr())]
 
 
 async def test_astream_implementation_fallback_to_stream() -> None:
@@ -178,15 +182,17 @@ async def test_astream_implementation_fallback_to_stream() -> None:
     model = ModelWithSyncStream()
     chunks = [chunk for chunk in model.stream("anything")]
     assert chunks == [
-        AIMessageChunk(content="a"),
-        AIMessageChunk(content="b"),
+        AIMessageChunk(content="a", id=AnyStr()),
+        AIMessageChunk(content="b", id=AnyStr()),
     ]
+    assert len({chunk.id for chunk in chunks}) == 1
     assert type(model)._astream == BaseChatModel._astream
     astream_chunks = [chunk async for chunk in model.astream("anything")]
     assert astream_chunks == [
-        AIMessageChunk(content="a"),
-        AIMessageChunk(content="b"),
+        AIMessageChunk(content="a", id=AnyStr()),
+        AIMessageChunk(content="b", id=AnyStr()),
     ]
+    assert len({chunk.id for chunk in astream_chunks}) == 1
 
 
 async def test_astream_implementation_uses_astream() -> None:
@@ -221,6 +227,48 @@ async def test_astream_implementation_uses_astream() -> None:
     model = ModelWithAsyncStream()
     chunks = [chunk async for chunk in model.astream("anything")]
     assert chunks == [
-        AIMessageChunk(content="a"),
-        AIMessageChunk(content="b"),
+        AIMessageChunk(content="a", id=AnyStr()),
+        AIMessageChunk(content="b", id=AnyStr()),
     ]
+    assert len({chunk.id for chunk in chunks}) == 1
+
+
+class FakeTracer(BaseTracer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.traced_run_ids: list = []
+
+    def _persist_run(self, run: Run) -> None:
+        """Persist a run."""
+
+        self.traced_run_ids.append(run.id)
+
+
+def test_pass_run_id() -> None:
+    llm = FakeListChatModel(responses=["a", "b", "c"])
+    cb = FakeTracer()
+    uid1 = uuid.uuid4()
+    llm.invoke("Dummy message", {"callbacks": [cb], "run_id": uid1})
+    assert cb.traced_run_ids == [uid1]
+    uid2 = uuid.uuid4()
+    list(llm.stream("Dummy message", {"callbacks": [cb], "run_id": uid2}))
+    assert cb.traced_run_ids == [uid1, uid2]
+    uid3 = uuid.uuid4()
+    llm.batch([["Dummy message"]], {"callbacks": [cb], "run_id": uid3})
+    assert cb.traced_run_ids == [uid1, uid2, uid3]
+
+
+async def test_async_pass_run_id() -> None:
+    llm = FakeListChatModel(responses=["a", "b", "c"])
+    cb = FakeTracer()
+    uid1 = uuid.uuid4()
+    await llm.ainvoke("Dummy message", {"callbacks": [cb], "run_id": uid1})
+    assert cb.traced_run_ids == [uid1]
+    uid2 = uuid.uuid4()
+    async for _ in llm.astream("Dummy message", {"callbacks": [cb], "run_id": uid2}):
+        pass
+    assert cb.traced_run_ids == [uid1, uid2]
+
+    uid3 = uuid.uuid4()
+    await llm.abatch([["Dummy message"]], {"callbacks": [cb], "run_id": uid3})
+    assert cb.traced_run_ids == [uid1, uid2, uid3]

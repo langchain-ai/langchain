@@ -1,6 +1,6 @@
 from typing import Any, AsyncIterator, Iterator, List
 
-from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.messages import AIMessageChunk, BaseMessage, ToolCallChunk
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     JsonOutputToolsParser,
@@ -300,6 +300,28 @@ STREAMED_MESSAGES: list = [
 ]
 
 
+STREAMED_MESSAGES_WITH_TOOL_CALLS = []
+for message in STREAMED_MESSAGES:
+    if message.additional_kwargs:
+        STREAMED_MESSAGES_WITH_TOOL_CALLS.append(
+            AIMessageChunk(
+                content=message.content,
+                additional_kwargs=message.additional_kwargs,
+                tool_call_chunks=[
+                    ToolCallChunk(
+                        name=chunk["function"].get("name"),
+                        args=chunk["function"].get("arguments"),
+                        id=chunk.get("id"),
+                        index=chunk["index"],
+                    )
+                    for chunk in message.additional_kwargs["tool_calls"]
+                ],
+            )
+        )
+    else:
+        STREAMED_MESSAGES_WITH_TOOL_CALLS.append(message)
+
+
 EXPECTED_STREAMED_JSON = [
     {},
     {"names": ["suz"]},
@@ -330,101 +352,118 @@ EXPECTED_STREAMED_JSON = [
 ]
 
 
-def test_partial_json_output_parser() -> None:
+def _get_iter(use_tool_calls: bool = False) -> Any:
+    if use_tool_calls:
+        list_to_iter = STREAMED_MESSAGES_WITH_TOOL_CALLS
+    else:
+        list_to_iter = STREAMED_MESSAGES
+
     def input_iter(_: Any) -> Iterator[BaseMessage]:
-        for msg in STREAMED_MESSAGES:
+        for msg in list_to_iter:
             yield msg
 
-    chain = input_iter | JsonOutputToolsParser()
+    return input_iter
 
-    actual = list(chain.stream(None))
-    expected: list = [[]] + [
-        [{"type": "NameCollector", "args": chunk}] for chunk in EXPECTED_STREAMED_JSON
-    ]
-    assert actual == expected
+
+def _get_aiter(use_tool_calls: bool = False) -> Any:
+    if use_tool_calls:
+        list_to_iter = STREAMED_MESSAGES_WITH_TOOL_CALLS
+    else:
+        list_to_iter = STREAMED_MESSAGES
+
+    async def input_iter(_: Any) -> AsyncIterator[BaseMessage]:
+        for msg in list_to_iter:
+            yield msg
+
+    return input_iter
+
+
+def test_partial_json_output_parser() -> None:
+    for use_tool_calls in [False, True]:
+        input_iter = _get_iter(use_tool_calls)
+        chain = input_iter | JsonOutputToolsParser()
+
+        actual = list(chain.stream(None))
+        expected: list = [[]] + [
+            [{"type": "NameCollector", "args": chunk}]
+            for chunk in EXPECTED_STREAMED_JSON
+        ]
+        assert actual == expected
 
 
 async def test_partial_json_output_parser_async() -> None:
-    async def input_iter(_: Any) -> AsyncIterator[BaseMessage]:
-        for token in STREAMED_MESSAGES:
-            yield token
+    for use_tool_calls in [False, True]:
+        input_iter = _get_aiter(use_tool_calls)
+        chain = input_iter | JsonOutputToolsParser()
 
-    chain = input_iter | JsonOutputToolsParser()
-
-    actual = [p async for p in chain.astream(None)]
-    expected: list = [[]] + [
-        [{"type": "NameCollector", "args": chunk}] for chunk in EXPECTED_STREAMED_JSON
-    ]
-    assert actual == expected
+        actual = [p async for p in chain.astream(None)]
+        expected: list = [[]] + [
+            [{"type": "NameCollector", "args": chunk}]
+            for chunk in EXPECTED_STREAMED_JSON
+        ]
+        assert actual == expected
 
 
 def test_partial_json_output_parser_return_id() -> None:
-    def input_iter(_: Any) -> Iterator[BaseMessage]:
-        for msg in STREAMED_MESSAGES:
-            yield msg
+    for use_tool_calls in [False, True]:
+        input_iter = _get_iter(use_tool_calls)
+        chain = input_iter | JsonOutputToolsParser(return_id=True)
 
-    chain = input_iter | JsonOutputToolsParser(return_id=True)
-
-    actual = list(chain.stream(None))
-    expected: list = [[]] + [
-        [
-            {
-                "type": "NameCollector",
-                "args": chunk,
-                "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
-            }
+        actual = list(chain.stream(None))
+        expected: list = [[]] + [
+            [
+                {
+                    "type": "NameCollector",
+                    "args": chunk,
+                    "id": "call_OwL7f5PEPJTYzw9sQlNJtCZl",
+                }
+            ]
+            for chunk in EXPECTED_STREAMED_JSON
         ]
-        for chunk in EXPECTED_STREAMED_JSON
-    ]
-    assert actual == expected
+        assert actual == expected
 
 
 def test_partial_json_output_key_parser() -> None:
-    def input_iter(_: Any) -> Iterator[BaseMessage]:
-        for msg in STREAMED_MESSAGES:
-            yield msg
+    for use_tool_calls in [False, True]:
+        input_iter = _get_iter(use_tool_calls)
+        chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
 
-    chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
-
-    actual = list(chain.stream(None))
-    expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
-    assert actual == expected
+        actual = list(chain.stream(None))
+        expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
+        assert actual == expected
 
 
 async def test_partial_json_output_parser_key_async() -> None:
-    async def input_iter(_: Any) -> AsyncIterator[BaseMessage]:
-        for token in STREAMED_MESSAGES:
-            yield token
+    for use_tool_calls in [False, True]:
+        input_iter = _get_aiter(use_tool_calls)
 
-    chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
+        chain = input_iter | JsonOutputKeyToolsParser(key_name="NameCollector")
 
-    actual = [p async for p in chain.astream(None)]
-    expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
-    assert actual == expected
+        actual = [p async for p in chain.astream(None)]
+        expected: list = [[]] + [[chunk] for chunk in EXPECTED_STREAMED_JSON]
+        assert actual == expected
 
 
 def test_partial_json_output_key_parser_first_only() -> None:
-    def input_iter(_: Any) -> Iterator[BaseMessage]:
-        for msg in STREAMED_MESSAGES:
-            yield msg
+    for use_tool_calls in [False, True]:
+        input_iter = _get_iter(use_tool_calls)
 
-    chain = input_iter | JsonOutputKeyToolsParser(
-        key_name="NameCollector", first_tool_only=True
-    )
+        chain = input_iter | JsonOutputKeyToolsParser(
+            key_name="NameCollector", first_tool_only=True
+        )
 
-    assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON
+        assert list(chain.stream(None)) == EXPECTED_STREAMED_JSON
 
 
 async def test_partial_json_output_parser_key_async_first_only() -> None:
-    async def input_iter(_: Any) -> AsyncIterator[BaseMessage]:
-        for token in STREAMED_MESSAGES:
-            yield token
+    for use_tool_calls in [False, True]:
+        input_iter = _get_aiter(use_tool_calls)
 
-    chain = input_iter | JsonOutputKeyToolsParser(
-        key_name="NameCollector", first_tool_only=True
-    )
+        chain = input_iter | JsonOutputKeyToolsParser(
+            key_name="NameCollector", first_tool_only=True
+        )
 
-    assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
+        assert [p async for p in chain.astream(None)] == EXPECTED_STREAMED_JSON
 
 
 class Person(BaseModel):
@@ -458,26 +497,24 @@ EXPECTED_STREAMED_PYDANTIC = [
 
 
 def test_partial_pydantic_output_parser() -> None:
-    def input_iter(_: Any) -> Iterator[BaseMessage]:
-        for msg in STREAMED_MESSAGES:
-            yield msg
+    for use_tool_calls in [False, True]:
+        input_iter = _get_iter(use_tool_calls)
 
-    chain = input_iter | PydanticToolsParser(
-        tools=[NameCollector], first_tool_only=True
-    )
+        chain = input_iter | PydanticToolsParser(
+            tools=[NameCollector], first_tool_only=True
+        )
 
-    actual = list(chain.stream(None))
-    assert actual == EXPECTED_STREAMED_PYDANTIC
+        actual = list(chain.stream(None))
+        assert actual == EXPECTED_STREAMED_PYDANTIC
 
 
 async def test_partial_pydantic_output_parser_async() -> None:
-    async def input_iter(_: Any) -> AsyncIterator[BaseMessage]:
-        for token in STREAMED_MESSAGES:
-            yield token
+    for use_tool_calls in [False, True]:
+        input_iter = _get_aiter(use_tool_calls)
 
-    chain = input_iter | PydanticToolsParser(
-        tools=[NameCollector], first_tool_only=True
-    )
+        chain = input_iter | PydanticToolsParser(
+            tools=[NameCollector], first_tool_only=True
+        )
 
-    actual = [p async for p in chain.astream(None)]
-    assert actual == EXPECTED_STREAMED_PYDANTIC
+        actual = [p async for p in chain.astream(None)]
+        assert actual == EXPECTED_STREAMED_PYDANTIC

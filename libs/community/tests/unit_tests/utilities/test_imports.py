@@ -1,14 +1,17 @@
-from langchain_community.utilities import __all__
+from langchain_community.utilities import __all__, _module_lookup
 
 EXPECTED_ALL = [
     "AlphaVantageAPIWrapper",
     "ApifyWrapper",
     "ArceeWrapper",
     "ArxivAPIWrapper",
+    "AskNewsAPIWrapper",
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
+    "DataheraldAPIWrapper",
     "DuckDuckGoSearchAPIWrapper",
+    "DriaAPIWrapper",
     "GoldenQueryAPIWrapper",
     "GoogleFinanceAPIWrapper",
     "GoogleJobsAPIWrapper",
@@ -19,6 +22,7 @@ EXPECTED_ALL = [
     "GoogleSerperAPIWrapper",
     "GoogleTrendsAPIWrapper",
     "GraphQLAPIWrapper",
+    "InfobipAPIWrapper",
     "JiraAPIWrapper",
     "LambdaWrapper",
     "MaxComputeAPIWrapper",
@@ -31,6 +35,7 @@ EXPECTED_ALL = [
     "NVIDIARivaTTS",
     "NVIDIARivaStream",
     "OpenWeatherMapAPIWrapper",
+    "OracleSummary",
     "OutlineAPIWrapper",
     "NutritionAIAPI",
     "Portkey",
@@ -39,6 +44,7 @@ EXPECTED_ALL = [
     "PythonREPL",
     "Requests",
     "RequestsWrapper",
+    "RememberizerAPIWrapper",
     "SQLDatabase",
     "SceneXplainAPIWrapper",
     "SearchApiAPIWrapper",
@@ -55,8 +61,10 @@ EXPECTED_ALL = [
     "YouSearchAPIWrapper",
     "ZapierNLAWrapper",
     "MerriamWebsterAPIWrapper",
+    "MojeekSearchAPIWrapper",
 ]
 
 
 def test_all_imports() -> None:
     assert set(__all__) == set(EXPECTED_ALL)
+    assert set(__all__) == set(_module_lookup.keys())
