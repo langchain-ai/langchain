@@ -259,7 +259,7 @@ class ChatAnthropic(BaseChatModel):
     _client: anthropic.Client = Field(default=None)
     _async_client: anthropic.AsyncClient = Field(default=None)
 
-    model: str = Field(alias="model_name")
+    model: str = Field(default="claude-3-haiku-20240307", alias="model_name")
     """Model name to use."""
 
     max_tokens: int = Field(default=1024, alias="max_tokens_to_sample")
