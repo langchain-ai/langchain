@@ -653,7 +653,8 @@ class Vectara(VectorStore):
 
     def as_retriever(self, **kwargs) -> VectaraRetriever:
         """return a retriever object."""
-        return VectaraRetriever(vectorstore=self, config=kwargs.get('config', VectaraQueryConfig()))
+        return VectaraRetriever(vectorstore=self, 
+                                config=kwargs.get('config', VectaraQueryConfig()))
 
 
 class VectaraRetriever(BaseRetriever):
