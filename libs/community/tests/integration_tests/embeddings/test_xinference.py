@@ -73,3 +73,13 @@ def test_xinference_embedding_query(setup: Tuple[str, str]) -> None:
     document = "foo bar"
     output = xinference.embed_query(document)
     assert len(output) == 4096
+
+
+def test_xinference_embedding() -> None:
+    embedding_model = XinferenceEmbeddings(
+        server_url="http://xinference-hostname:9997", model_uid="foo"
+    )
+
+    embedding_model.embed_documents(
+        texts=["hello", "i'm trying to upgrade xinference embedding"]
+    )
