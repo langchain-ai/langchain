@@ -564,7 +564,8 @@ class Aerospike(VectorStore):
 
         Example:
             .. code-block:: python
-                from langchain_community import Aerospike
+
+                from langchain_community.vectorstores import Aerospike
                 from langchain_openai import OpenAIEmbeddings
                 from aerospike_vector_search import Client, HostPort
 
