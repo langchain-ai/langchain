@@ -87,16 +87,16 @@ def maximal_marginal_relevance(
     """Calculate maximal marginal relevance.
 
     Args:
-        query_embedding: Query embedding.
-        embedding_list: List of embeddings to select from.
-        lambda_mult: Number between 0 and 1 that determines the degree
+        query_embedding (np.ndarray): Query embedding.
+        embedding_list (list): List of embeddings to select from.
+        lambda_mult (float): Number between 0 and 1 that determines the degree
                 of diversity among the results with 0 corresponding
                 to maximum diversity and 1 to minimum diversity.
                 Defaults to 0.5.
-        k: Number of Documents to return. Defaults to 4.
+        k (int): Number of Documents to return. Defaults to 4.
 
     Returns:
-        List of indices of embeddings selected by maximal marginal relevance.
+        List[int]: List of indices of embeddings selected by maximal marginal relevance.
     """
 
     if min(k, len(embedding_list)) <= 0:
@@ -157,17 +157,18 @@ class Chroma(VectorStore):
         """Initialize with a Chroma client.
 
         Args:
-            collection_name: Name of the collection to create.
-            embedding_function: Embedding class object. Used to embed texts.
-            persist_director: Directory to persist the collection.
-            client_settings: Chroma client settings
-            collection_metadata: Collection configurations.
-            client: Chroma client. Documentation:
-                    https://docs.trychroma.com/reference/js-client#class:-chromaclient
-            relevance_score_fn: Function to calculate relevance score from distance.
+            collection_name (str): Name of the collection to create.
+            embedding_function (Optional[Embeddings]): Embedding class object. Used to embed texts.
+            persist_director (Optional[str]): Directory to persist the collection.
+            client_settings (Optional[chromadb.config.Settings]): Chroma client settings
+            collection_metadata (Optional[Dict]): Collection configurations.
+            client (Optional[chromadb.ClientAPI]): Chroma client. 
+                    Documentation: https://docs.trychroma.com/reference/js-client#class:-chromaclient
+            relevance_score_fn (Optional[Callable[[float], float]]): 
+                    Fuction to calculate relevance score from distance. 
                     Used only in `similarity_search_with_relevance_scores`
-            create_collection_if_not_exists: Whether to create collection
-                    if it doesn't exist. Defaults to True.
+            create_collection_if_not_exists (Optional[bool]):  
+                    Whether to create collection if it doesn't exist. Defaults to True.
         """
         if client is not None:
             self._client_settings = client_settings
@@ -238,17 +239,16 @@ class Chroma(VectorStore):
         """Query the chroma collection.
 
         Args:
-            query_texts: List of query texts.
-            query_embeddings: List of query embeddings.
-            n_results: Number of results to return. Defaults to 4.
-            where: dict used to filter results by
+            query_texts (Optional[List[str]]): List of query texts.
+            query_embeddings (Optional[List[List[float]]]): List of query embeddings.
+            n_results (int): Number of results to return. Defaults to 4.
+            where (Optional[Dict[str, str]]): dict used to filter results by 
                     e.g. {"color" : "red", "price": 4.20}.
-            where_document: dict used to filter by the documents.
+            where_document (Optional[Dict[str, str]]): dict used to filter by the documents. 
                     E.g. {$contains: {"text": "hello"}}.
 
         Returns:
-            List of `n_results` nearest neighbor embeddings for provided
-            query_embeddings or query_texts.
+            List of `n_results` nearest neighbor embeddings for provided query_embeddings or query_texts.
 
         See more: https://docs.trychroma.com/reference/py-collection#query
         """
@@ -276,16 +276,16 @@ class Chroma(VectorStore):
         """Run more images through the embeddings and add to the vectorstore.
 
         Args:
-            uris: File path to the image.
-            metadatas: Optional list of metadatas.
+            uris (List[str]): File path to the image.
+            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
                     When querying, you can filter on this metadata.
-            ids: Optional list of IDs.
+            ids (Optional[List[str]], optional): Optional list of IDs.
 
         Returns:
-            List of IDs of the added images.
+            List[str]: List of IDs of the added images.
 
         Raises:
-            ValueError: When metadata is incorrect.
+            ValueError: When matadata is incorrect.
         """
         # Map from uris to b64 encoded strings
         b64_texts = [self.encode_image(uri=uri) for uri in uris]
@@ -363,16 +363,16 @@ class Chroma(VectorStore):
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
-            texts: Texts to add to the vectorstore.
-            metadatas: Optional list of metadatas.
+            texts (Iterable[str]): Texts to add to the vectorstore.
+            metadatas (Optional[List[dict]], optional): Optional list of metadatas.
                     When querying, you can filter on this metadata.
-            ids: Optional list of IDs.
+            ids (Optional[List[str]], optional): Optional list of IDs.
 
         Returns:
-            List of IDs of the added texts.
+            List[str]: List of IDs of the added texts.
 
         Raises:
-            ValueError: When metadata is incorrect.
+            ValueError: When matadata is incorrect.
         """
 
         if ids is None:
@@ -469,10 +469,10 @@ class Chroma(VectorStore):
         """Return docs most similar to embedding vector.
 
         Args:
-            embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
-            where_document: dict used to filter by the documents.
+            embedding (List[float]): Embedding to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            where_document (Optional[Dict[str, str]]): dict used to filter by the documents. 
                     E.g. {$contains: {"text": "hello"}}.
 
         Returns:
@@ -500,9 +500,9 @@ class Chroma(VectorStore):
 
         Args:
             embedding (List[float]): Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
-            where_document: dict used to filter by the documents.
+            k (int): Number of Documents to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            where_document (Optional[Dict[str, str]]): dict used to filter by the documents. 
                     E.g. {$contains: {"text": "hello"}}.
 
         Returns:
@@ -529,15 +529,16 @@ class Chroma(VectorStore):
         """Run similarity search with Chroma with distance.
 
         Args:
-            query: Query text to search for.
-            k: Number of results to return. Defaults to 4.
-            filter: Filter by metadata. Defaults to None.
-            where_document: dict used to filter by the documents.
+            query (str): Query text to search for.
+            k (int): Number of results to return. Defaults to 4.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            where_document (Optional[Dict[str, str]]): dict used to filter by the documents. 
                     E.g. {$contains: {"text": "hello"}}.
 
         Returns:
-            List of documents most similar to the query text and
-            distance in float for each. Lower score represents more similarity.
+            List[Tuple[Document, float]]: List of documents most similar to
+            the query text and distance in float for each.
+            Lower score represents more similarity.
         """
         if self._embedding_function is None:
             results = self.__query_collection(
@@ -570,6 +571,19 @@ class Chroma(VectorStore):
 
         Returns:
             The relevance score function.
+
+        Raises:
+            ValueError: If the distance metric is not supported.
+        """
+        Select the relevance score function based on the distance metric used by the VectorStore.
+        The most similar documents will have the lowest relevance score.
+        Default relevance score function is euclidean distance.
+        Distance metric must be provided in `collection_metadata` during initizalition of Chroma object .
+        Example: collection_metadata={"hnsw:space": "cosine"}
+        Available distance metrics are: 'cosine', 'l2' and 'ip'.
+
+        Returns:
+            Callable[[float], float]: The relevance score function.
 
         Raises:
             ValueError: If the distance metric is not supported.
@@ -614,15 +628,14 @@ class Chroma(VectorStore):
         among selected documents.
 
         Args:
-            embedding: Embedding to look up documents similar to.
-            k: Number of Documents to return. Defaults to 4.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm. Defaults to
-                20.
-            lambda_mult: Number between 0 and 1 that determines the degree
-                of diversity among the results with 0 corresponding
-                to maximum diversity and 1 to minimum diversity.
-                Defaults to 0.5.
-            filter: Filter by metadata. Defaults to None.
+            embedding (List[float]): Embedding to look up documents similar to.
+            k (int): Number of Documents to return. Defaults to 4.
+            fetch_k (int): Number of Documents to fetch to pass to MMR algorithm. Defaults to 20.
+            lambda_mult (float): Number between 0 and 1 that determines the degree
+                        of diversity among the results with 0 corresponding
+                        to maximum diversity and 1 to minimum diversity.
+                        Defaults to 0.5.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -670,9 +683,8 @@ class Chroma(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
-            filter: Filter by metadata. Defaults to None.
-            where_document: dict used to filter by the documents.
-                    E.g. {$contains: {"text": "hello"}}.
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
+            where_document (Optional[Dict[str, str]]): dict used to filter by the documents. E.g. {$contains: {"text": "hello"}}.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -761,8 +773,8 @@ class Chroma(VectorStore):
         """Update a document in the collection.
 
         Args:
-            ids: List of ids of the document to update.
-            documents: List of documents to update.
+            ids (List[str]): List of ids of the document to update.
+            documents (List[Document]): List of documents to update.
 
         Raises:
             ValueError: If the embedding function is not provided.
