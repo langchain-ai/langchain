@@ -1836,7 +1836,7 @@ async def test_astream_events_from_custom_runnable() -> None:
 async def test_runnable_generator() -> None:
     """Test async events from sync lambda."""
 
-    async def generator(inputs: Iterator[str]) -> Iterator[str]:
+    async def generator(inputs: AsyncIterator[str]) -> AsyncIterator[str]:
         yield "1"
         yield "2"
 
