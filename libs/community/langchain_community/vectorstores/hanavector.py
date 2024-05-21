@@ -1,4 +1,5 @@
 """SAP HANA Cloud Vector Engine"""
+
 from __future__ import annotations
 
 import importlib.util
@@ -85,7 +86,7 @@ class HanaDB(VectorStore):
         metadata_column: str = default_metadata_column,
         vector_column: str = default_vector_column,
         vector_column_length: int = default_vector_column_length,
-        specific_metadata_columns: List[str] = []
+        specific_metadata_columns: List[str] = [],
     ):
         # Check if the hdbcli package is installed
         if importlib.util.find_spec("hdbcli") is None:
@@ -111,7 +112,9 @@ class HanaDB(VectorStore):
         self.metadata_column = HanaDB._sanitize_name(metadata_column)
         self.vector_column = HanaDB._sanitize_name(vector_column)
         self.vector_column_length = HanaDB._sanitize_int(vector_column_length)
-        self.specific_metadata_columns = HanaDB._sanitize_specific_metadata_columns(specific_metadata_columns)
+        self.specific_metadata_columns = HanaDB._sanitize_specific_metadata_columns(
+            specific_metadata_columns
+        )
 
         # Check if the table exists, and eventually create it
         if not self._table_exists(self.table_name):
@@ -141,7 +144,6 @@ class HanaDB(VectorStore):
             ["REAL_VECTOR"],
             self.vector_column_length,
         )
-
 
     def _table_exists(self, table_name) -> bool:  # type: ignore[no-untyped-def]
         sql_str = (
@@ -231,9 +233,9 @@ class HanaDB(VectorStore):
 
         if not metadata:
             return {}, []
-        
+
         for column_name in self.specific_metadata_columns:
-                special_metadata.append(metadata.pop(column_name, None))
+            special_metadata.append(metadata.pop(column_name, None))
 
         return metadata, special_metadata
 
@@ -260,38 +262,45 @@ class HanaDB(VectorStore):
         if embeddings is None:
             embeddings = self.embedding.embed_documents(list(texts))
 
-        # Create sql parameters array 
+        # Create sql parameters array
         sql_params = []
         for i, text in enumerate(texts):
             metadata = metadatas[i] if metadatas else {}
-            metadata, extracted_special_metadata = self._split_off_special_metadata(metadata)
+            metadata, extracted_special_metadata = self._split_off_special_metadata(
+                metadata
+            )
             embedding = (
                 embeddings[i]
                 if embeddings
                 else self.embedding.embed_documents([text])[0]
             )
-            sql_params.append((
-                text,
-                json.dumps(HanaDB._sanitize_metadata_keys(metadata)),
-                f"[{','.join(map(str, embedding))}]",
-                *extracted_special_metadata 
-            ))
+            sql_params.append(
+                (
+                    text,
+                    json.dumps(HanaDB._sanitize_metadata_keys(metadata)),
+                    f"[{','.join(map(str, embedding))}]",
+                    *extracted_special_metadata,
+                )
+            )
 
         # Insert data into the table
         cur = self.connection.cursor()
         try:
-            specific_metadata_columns_string = '", "'.join(self.specific_metadata_columns)
+            specific_metadata_columns_string = '", "'.join(
+                self.specific_metadata_columns
+            )
             if specific_metadata_columns_string:
-                specific_metadata_columns_string = ', "' + specific_metadata_columns_string + '"'
+                specific_metadata_columns_string = (
+                    ', "' + specific_metadata_columns_string + '"'
+                )
             sql_str = (
                 f'INSERT INTO "{self.table_name}" ("{self.content_column}", '
-                f'"{self.metadata_column}", "{self.vector_column}"{specific_metadata_columns_string}) '
-                f"VALUES (?, ?, TO_REAL_VECTOR (?){', ?' * len(self.specific_metadata_columns)});"
+                f'"{self.metadata_column}", ' 
+                f'"{self.vector_column}"{specific_metadata_columns_string}) '
+                f"VALUES (?, ?, TO_REAL_VECTOR (?)"
+                f"{', ?' * len(self.specific_metadata_columns)});"
             )
-            cur.executemany(
-                sql_str,
-                sql_params
-            )
+            cur.executemany(sql_str, sql_params)
         finally:
             cur.close()
         return []
@@ -309,7 +318,7 @@ class HanaDB(VectorStore):
         metadata_column: str = default_metadata_column,
         vector_column: str = default_vector_column,
         vector_column_length: int = default_vector_column_length,
-        specific_metadata_columns = []
+        specific_metadata_columns=[],
     ):
         """Create a HanaDB instance from raw documents.
         This is a user-friendly interface that:
@@ -328,7 +337,7 @@ class HanaDB(VectorStore):
             metadata_column=metadata_column,
             vector_column=vector_column,
             vector_column_length=vector_column_length,  # -1 means dynamic length
-            specific_metadata_columns=specific_metadata_columns
+            specific_metadata_columns=specific_metadata_columns,
         )
         instance.add_texts(texts, metadatas)
         return instance
@@ -546,11 +555,12 @@ class HanaDB(VectorStore):
                         f"Unsupported filter data-type: {type(filter_value)}"
                     )
 
-                selector = f' "{key}"' if key in self.specific_metadata_columns else f"JSON_VALUE({self.metadata_column}, '$.{key}')"
-                where_str += (
-                    f"{selector} "
-                    f"{operator} {sql_param}"
-                )   
+                selector = (
+                    f' "{key}"'
+                    if key in self.specific_metadata_columns
+                    else f"JSON_VALUE({self.metadata_column}, '$.{key}')"
+                )
+                where_str += f"{selector} " f"{operator} {sql_param}"
 
         return where_str, query_tuple
 

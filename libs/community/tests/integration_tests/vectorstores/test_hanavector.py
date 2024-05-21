@@ -646,7 +646,7 @@ def test_hanavector_delete_with_filter(texts: List[str], metadatas: List[dict]) 
     )
 
     search_result = vectorDB.similarity_search(texts[0], 10)
-    assert len(search_result) == 5  
+    assert len(search_result) == 5
 
     # Delete one of the three entries
     assert vectorDB.delete(filter={"start": 100, "end": 200})
@@ -1100,13 +1100,13 @@ def test_pgvector_with_with_metadata_filters_5(
     assert len(ids) == len(expected_ids), test_filter
     assert set(ids).issubset(expected_ids), test_filter
 
+
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_preexisting_specific_columns_for_metadata_fill(
     texts: List[str], metadatas: List[dict]
 ) -> None:
-
     table_name = "PREEXISTING_FILTER_COLUMNS"
-   # drop_table(test_setup.conn, table_name)
+    # drop_table(test_setup.conn, table_name)
 
     sql_str = (
         f'CREATE TABLE "{table_name}" ('
@@ -1128,15 +1128,12 @@ def test_preexisting_specific_columns_for_metadata_fill(
         metadatas=metadatas,
         embedding=embedding,
         table_name=table_name,
-        specific_metadata_columns=["Owner", "quality"]
+        specific_metadata_columns=["Owner", "quality"],
     )
 
     c = 0
-    try: 
-        sql_str = (
-            f'SELECT COUNT(*) FROM {table_name} WHERE "quality"='
-            f"'ugly'"
-        )
+    try:
+        sql_str = f'SELECT COUNT(*) FROM {table_name} WHERE "quality"=' f"'ugly'"
         cur = test_setup.conn.cursor()
         cur.execute(sql_str)
         if cur.has_result_set():
@@ -1145,7 +1142,7 @@ def test_preexisting_specific_columns_for_metadata_fill(
     finally:
         cur.close()
     assert c == 3
- 
+
     docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
     assert len(docs) == 1
     assert docs[0].page_content == "foo"
@@ -1154,20 +1151,24 @@ def test_preexisting_specific_columns_for_metadata_fill(
     assert len(docs) == 1
     assert docs[0].page_content == "bar"
 
-    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 100, "quality": "good"})
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 100, "quality": "good"}
+    )
     assert len(docs) == 0
 
-    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 0, "quality": "good"})
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 0, "quality": "good"}
+    )
     assert len(docs) == 1
     assert docs[0].page_content == "foo"
+
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_preexisting_specific_columns_for_metadata_via_array(
     texts: List[str], metadatas: List[dict]
 ) -> None:
-
     table_name = "PREEXISTING_FILTER_COLUMNS_VIA_ARRAY"
-   # drop_table(test_setup.conn, table_name)
+    # drop_table(test_setup.conn, table_name)
 
     sql_str = (
         f'CREATE TABLE "{table_name}" ('
@@ -1189,15 +1190,12 @@ def test_preexisting_specific_columns_for_metadata_via_array(
         metadatas=metadatas,
         embedding=embedding,
         table_name=table_name,
-        specific_metadata_columns=["quality"]
+        specific_metadata_columns=["quality"],
     )
 
     c = 0
-    try: 
-        sql_str = (
-            f'SELECT COUNT(*) FROM {table_name} WHERE "quality"='
-            f"'ugly'"
-        )
+    try:
+        sql_str = f'SELECT COUNT(*) FROM {table_name} WHERE "quality"=' f"'ugly'"
         cur = test_setup.conn.cursor()
         cur.execute(sql_str)
         if cur.has_result_set():
@@ -1207,11 +1205,8 @@ def test_preexisting_specific_columns_for_metadata_via_array(
         cur.close()
     assert c == 3
 
-    try: 
-        sql_str = (
-            f'SELECT COUNT(*) FROM {table_name} WHERE "Owner"='
-            f"'Steve'"
-        )
+    try:
+        sql_str = f'SELECT COUNT(*) FROM {table_name} WHERE "Owner"=' f"'Steve'"
         cur = test_setup.conn.cursor()
         cur.execute(sql_str)
         if cur.has_result_set():
@@ -1220,7 +1215,7 @@ def test_preexisting_specific_columns_for_metadata_via_array(
     finally:
         cur.close()
     assert c == 0
- 
+
     docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
     assert len(docs) == 1
     assert docs[0].page_content == "foo"
@@ -1229,20 +1224,24 @@ def test_preexisting_specific_columns_for_metadata_via_array(
     assert len(docs) == 1
     assert docs[0].page_content == "bar"
 
-    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 100, "quality": "good"})
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 100, "quality": "good"}
+    )
     assert len(docs) == 0
 
-    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 0, "quality": "good"})
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 0, "quality": "good"}
+    )
     assert len(docs) == 1
     assert docs[0].page_content == "foo"
+
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_preexisting_specific_columns_for_metadata_multiple_columns(
     texts: List[str], metadatas: List[dict]
 ) -> None:
-
     table_name = "PREEXISTING_FILTER_MULTIPLE_COLUMNS"
-   # drop_table(test_setup.conn, table_name)
+    # drop_table(test_setup.conn, table_name)
 
     sql_str = (
         f'CREATE TABLE "{table_name}" ('
@@ -1264,9 +1263,9 @@ def test_preexisting_specific_columns_for_metadata_multiple_columns(
         metadatas=metadatas,
         embedding=embedding,
         table_name=table_name,
-        specific_metadata_columns=["quality", "start"]
+        specific_metadata_columns=["quality", "start"],
     )
- 
+
     docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
     assert len(docs) == 1
     assert docs[0].page_content == "foo"
@@ -1275,20 +1274,24 @@ def test_preexisting_specific_columns_for_metadata_multiple_columns(
     assert len(docs) == 1
     assert docs[0].page_content == "bar"
 
-    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 100, "quality": "good"})
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 100, "quality": "good"}
+    )
     assert len(docs) == 0
 
-    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 0, "quality": "good"})
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 0, "quality": "good"}
+    )
     assert len(docs) == 1
     assert docs[0].page_content == "foo"
+
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_preexisting_specific_columns_for_metadata_empty_columns(
     texts: List[str], metadatas: List[dict]
 ) -> None:
-
     table_name = "PREEXISTING_FILTER_MULTIPLE_COLUMNS_EMPTY"
-   # drop_table(test_setup.conn, table_name)
+    # drop_table(test_setup.conn, table_name)
 
     sql_str = (
         f'CREATE TABLE "{table_name}" ('
@@ -1310,10 +1313,10 @@ def test_preexisting_specific_columns_for_metadata_empty_columns(
         texts=texts,
         metadatas=metadatas,
         embedding=embedding,
-        table_name=table_name,            
-        specific_metadata_columns=["quality", "ready", "start"]
+        table_name=table_name,
+        specific_metadata_columns=["quality", "ready", "start"],
     )
- 
+
     docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
     assert len(docs) == 1
     assert docs[0].page_content == "foo"
@@ -1322,23 +1325,27 @@ def test_preexisting_specific_columns_for_metadata_empty_columns(
     assert len(docs) == 1
     assert docs[0].page_content == "bar"
 
-    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 100, "quality": "good"})
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 100, "quality": "good"}
+    )
     assert len(docs) == 0
 
-    docs = vectorDB.similarity_search("hello", k=5, filter={"start": 0, "quality": "good"})
+    docs = vectorDB.similarity_search(
+        "hello", k=5, filter={"start": 0, "quality": "good"}
+    )
     assert len(docs) == 1
     assert docs[0].page_content == "foo"
 
     docs = vectorDB.similarity_search("hello", k=5, filter={"ready": True})
     assert len(docs) == 3
 
+
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_preexisting_specific_columns_for_metadata_wrong_type(
     texts: List[str], metadatas: List[dict]
 ) -> None:
-
     table_name = "PREEXISTING_FILTER_COLUMNS_WRONG_TYPE"
-   # drop_table(test_setup.conn, table_name)
+    # drop_table(test_setup.conn, table_name)
 
     sql_str = (
         f'CREATE TABLE "{table_name}" ('
@@ -1362,9 +1369,9 @@ def test_preexisting_specific_columns_for_metadata_wrong_type(
             metadatas=metadatas,
             embedding=embedding,
             table_name=table_name,
-            specific_metadata_columns=["quality"]
+            specific_metadata_columns=["quality"],
         )
         exception_occured = False
-    except dbapi.Error as err: # Nothing we should do here, hdbcli will throw an error
+    except dbapi.Error:  # Nothing we should do here, hdbcli will throw an error
         exception_occured = True
     assert exception_occured
