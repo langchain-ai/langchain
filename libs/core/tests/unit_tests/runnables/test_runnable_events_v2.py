@@ -417,7 +417,7 @@ async def test_astream_events_from_model() -> None:
         {
             "data": {"input": "hello"},
             "event": "on_chat_model_start",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -425,7 +425,7 @@ async def test_astream_events_from_model() -> None:
         {
             "data": {"chunk": AIMessageChunk(content="hello", id=AnyStr())},
             "event": "on_chat_model_stream",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -433,7 +433,7 @@ async def test_astream_events_from_model() -> None:
         {
             "data": {"chunk": AIMessageChunk(content=" ", id=AnyStr())},
             "event": "on_chat_model_stream",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -441,7 +441,7 @@ async def test_astream_events_from_model() -> None:
         {
             "data": {"chunk": AIMessageChunk(content="world!", id=AnyStr())},
             "event": "on_chat_model_stream",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -451,7 +451,7 @@ async def test_astream_events_from_model() -> None:
                 "output": AIMessageChunk(content="hello world!", id=AnyStr()),
             },
             "event": "on_chat_model_end",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -495,7 +495,7 @@ async def test_astream_with_model_in_chain() -> None:
         {
             "data": {"input": {"messages": [[HumanMessage(content="hello")]]}},
             "event": "on_chat_model_start",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -503,7 +503,7 @@ async def test_astream_with_model_in_chain() -> None:
         {
             "data": {"chunk": AIMessageChunk(content="hello", id=AnyStr())},
             "event": "on_chat_model_stream",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -511,7 +511,7 @@ async def test_astream_with_model_in_chain() -> None:
         {
             "data": {"chunk": AIMessageChunk(content=" ", id=AnyStr())},
             "event": "on_chat_model_stream",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -519,7 +519,7 @@ async def test_astream_with_model_in_chain() -> None:
         {
             "data": {"chunk": AIMessageChunk(content="world!", id=AnyStr())},
             "event": "on_chat_model_stream",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -530,7 +530,7 @@ async def test_astream_with_model_in_chain() -> None:
                 "output": AIMessage(content="hello world!", id=AnyStr()),
             },
             "event": "on_chat_model_end",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -573,7 +573,7 @@ async def test_astream_with_model_in_chain() -> None:
         {
             "data": {"input": {"messages": [[HumanMessage(content="hello")]]}},
             "event": "on_chat_model_start",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -581,7 +581,7 @@ async def test_astream_with_model_in_chain() -> None:
         {
             "data": {"chunk": AIMessageChunk(content="hello", id=AnyStr())},
             "event": "on_chat_model_stream",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -589,7 +589,7 @@ async def test_astream_with_model_in_chain() -> None:
         {
             "data": {"chunk": AIMessageChunk(content=" ", id=AnyStr())},
             "event": "on_chat_model_stream",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -597,7 +597,7 @@ async def test_astream_with_model_in_chain() -> None:
         {
             "data": {"chunk": AIMessageChunk(content="world!", id=AnyStr())},
             "event": "on_chat_model_stream",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -608,7 +608,7 @@ async def test_astream_with_model_in_chain() -> None:
                 "output": AIMessage(content="hello world!", id=AnyStr()),
             },
             "event": "on_chat_model_end",
-            "metadata": {"a": "b"},
+            "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
             "tags": ["my_model"],
@@ -713,7 +713,12 @@ async def test_event_stream_with_simple_chain() -> None:
                 }
             },
             "event": "on_chat_model_start",
-            "metadata": {"a": "b", "foo": "bar"},
+            "metadata": {
+                "a": "b",
+                "foo": "bar",
+                "ls_model_type": "chat",
+                "ls_stop": "<stop_token>",
+            },
             "name": "my_model",
             "run_id": "",
             "tags": ["my_chain", "my_model", "seq:step:2"],
@@ -721,7 +726,12 @@ async def test_event_stream_with_simple_chain() -> None:
         {
             "data": {"chunk": AIMessageChunk(content="hello", id="ai1")},
             "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "foo": "bar"},
+            "metadata": {
+                "a": "b",
+                "foo": "bar",
+                "ls_model_type": "chat",
+                "ls_stop": "<stop_token>",
+            },
             "name": "my_model",
             "run_id": "",
             "tags": ["my_chain", "my_model", "seq:step:2"],
@@ -737,7 +747,12 @@ async def test_event_stream_with_simple_chain() -> None:
         {
             "data": {"chunk": AIMessageChunk(content=" ", id="ai1")},
             "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "foo": "bar"},
+            "metadata": {
+                "a": "b",
+                "foo": "bar",
+                "ls_model_type": "chat",
+                "ls_stop": "<stop_token>",
+            },
             "name": "my_model",
             "run_id": "",
             "tags": ["my_chain", "my_model", "seq:step:2"],
@@ -753,7 +768,12 @@ async def test_event_stream_with_simple_chain() -> None:
         {
             "data": {"chunk": AIMessageChunk(content="world!", id="ai1")},
             "event": "on_chat_model_stream",
-            "metadata": {"a": "b", "foo": "bar"},
+            "metadata": {
+                "a": "b",
+                "foo": "bar",
+                "ls_model_type": "chat",
+                "ls_stop": "<stop_token>",
+            },
             "name": "my_model",
             "run_id": "",
             "tags": ["my_chain", "my_model", "seq:step:2"],
@@ -779,7 +799,12 @@ async def test_event_stream_with_simple_chain() -> None:
                 "output": AIMessageChunk(content="hello world!", id="ai1"),
             },
             "event": "on_chat_model_end",
-            "metadata": {"a": "b", "foo": "bar"},
+            "metadata": {
+                "a": "b",
+                "foo": "bar",
+                "ls_model_type": "chat",
+                "ls_stop": "<stop_token>",
+            },
             "name": "my_model",
             "run_id": "",
             "tags": ["my_chain", "my_model", "seq:step:2"],
@@ -1459,7 +1484,7 @@ async def test_events_astream_config() -> None:
         {
             "data": {"input": "hello"},
             "event": "on_chat_model_start",
-            "metadata": {},
+            "metadata": {"ls_model_type": "chat"},
             "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
@@ -1467,7 +1492,7 @@ async def test_events_astream_config() -> None:
         {
             "data": {"chunk": AIMessageChunk(content="Goodbye", id="ai2")},
             "event": "on_chat_model_stream",
-            "metadata": {},
+            "metadata": {"ls_model_type": "chat"},
             "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
@@ -1475,7 +1500,7 @@ async def test_events_astream_config() -> None:
         {
             "data": {"chunk": AIMessageChunk(content=" ", id="ai2")},
             "event": "on_chat_model_stream",
-            "metadata": {},
+            "metadata": {"ls_model_type": "chat"},
             "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
@@ -1483,7 +1508,7 @@ async def test_events_astream_config() -> None:
         {
             "data": {"chunk": AIMessageChunk(content="world", id="ai2")},
             "event": "on_chat_model_stream",
-            "metadata": {},
+            "metadata": {"ls_model_type": "chat"},
             "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
@@ -1493,7 +1518,7 @@ async def test_events_astream_config() -> None:
                 "output": AIMessageChunk(content="Goodbye world", id="ai2"),
             },
             "event": "on_chat_model_end",
-            "metadata": {},
+            "metadata": {"ls_model_type": "chat"},
             "name": "GenericFakeChatModel",
             "run_id": "",
             "tags": [],
@@ -1625,27 +1650,22 @@ EXPECTED_EVENTS = [
 ]
 
 
-@pytest.mark.xfail(
-    reason="This test is failing due to missing functionality."
-    "Need to implement logic in _transform_stream_with_config that mimics the async "
-    "variant that uses tap_output_iter"
-)
 async def test_sync_in_async_stream_lambdas() -> None:
     """Test invoking nested runnable lambda."""
 
-    def add_one_(x: int) -> int:
+    def add_one(x: int) -> int:
         return x + 1
 
-    add_one = RunnableLambda(add_one_)
+    add_one_ = RunnableLambda(add_one)
 
-    async def add_one_proxy_(x: int, config: RunnableConfig) -> int:
-        streaming = add_one.stream(x, config)
+    async def add_one_proxy(x: int, config: RunnableConfig) -> int:
+        streaming = add_one_.stream(x, config)
         results = [result for result in streaming]
         return results[0]
 
-    add_one_proxy = RunnableLambda(add_one_proxy_)  # type: ignore
+    add_one_proxy_ = RunnableLambda(add_one_proxy)  # type: ignore
 
-    events = await _collect_events(add_one_proxy.astream_events(1, version="v2"))
+    events = await _collect_events(add_one_proxy_.astream_events(1, version="v2"))
     assert events == EXPECTED_EVENTS
 
 
@@ -1669,11 +1689,6 @@ async def test_async_in_async_stream_lambdas() -> None:
     assert events == EXPECTED_EVENTS
 
 
-@pytest.mark.xfail(
-    reason="This test is failing due to missing functionality."
-    "Need to implement logic in _transform_stream_with_config that mimics the async "
-    "variant that uses tap_output_iter"
-)
 async def test_sync_in_sync_lambdas() -> None:
     """Test invoking nested runnable lambda."""
 
