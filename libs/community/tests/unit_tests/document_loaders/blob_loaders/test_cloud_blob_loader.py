@@ -127,7 +127,7 @@ _TEST_CASES = [
 ]
 
 
-# @pytest.mark.requires("cloudpathlib")
+@pytest.mark.requires("cloudpathlib")
 @pytest.mark.parametrize("params", _TEST_CASES)
 def test_file_names_exist(toy_dir: str, params: dict) -> None:
     """Verify that the file names exist."""
