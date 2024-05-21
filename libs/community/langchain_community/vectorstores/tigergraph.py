@@ -28,11 +28,37 @@ class TigerGraphVector(VectorStore):
     To use, you should have the ``pyTigerGraph`` python package installed.
 
     Args:
-
-
+        conn (TigerGraphConnection):
+            A connection to a TigerGraph instance.
+        search_type (SearchType):
+            The search type to use.
+            Defaults to "hybrid". Options are: "vector", "sibling", and "hybrid".
+        search_index (Union[str, List[str], None]):
+            The search index to use. Defaults to None.
     Example:
         .. code-block:: python
+        from pyTigerGraph import TigerGraphConnection
 
+        # We first create a connection to the database
+        conn = TigerGraphConnection(
+            host="https://<your_tigergraph_host>",
+            username="<your_username>", 
+            password="<your_password>")
+
+        # We then create a TigerGraphVector object
+        # By default, the search type is "hybrid",
+        # and the search indices are ["Entity", "Relationship", 
+                                      "Document", "DocumentChunk"]
+        tg_vector = TigerGraphVector(
+                        conn,
+                        search_type="hybrid"
+                    )
+        
+        # We can then add texts to the TigerGraph instance
+        tg_vector.add_texts(["This is a test document"])
+
+        # We can then search for similar documents
+        results = tg_vector.search("This is a test document")
     """
 
     def __init__(
