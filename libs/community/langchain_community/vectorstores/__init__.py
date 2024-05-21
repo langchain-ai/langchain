@@ -382,7 +382,7 @@ __all__ = [
     "VDMS",
     "Vald",
     "Vearch",
-    "Vectara", 
+    "Vectara",
     "VectorStore",
     "VespaStore",
     "VLite",
