@@ -76,6 +76,8 @@ from langchain_core.runnables.utils import (
     get_lambda_source,
     get_unique_config_specs,
     indent_lines_after_first,
+    is_async_callable,
+    is_async_generator,
 )
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
@@ -93,7 +95,7 @@ if TYPE_CHECKING:
         RunLog,
         RunLogPatch,
     )
-    from langchain_core.tracers.root_listeners import Listener
+    from langchain_core.tracers.schemas import Run
 
 
 Other = TypeVar("Other")
@@ -1256,9 +1258,15 @@ class Runnable(Generic[Input, Output], ABC):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Listener] = None,
-        on_end: Optional[Listener] = None,
-        on_error: Optional[Listener] = None,
+        on_start: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_end: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_error: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
     ) -> Runnable[Input, Output]:
         """
         Bind lifecycle listeners to a Runnable, returning a new Runnable.
@@ -1274,22 +1282,26 @@ class Runnable(Generic[Input, Output], ABC):
         Example:
 
         .. code-block:: python
+
             from langchain_core.runnables import RunnableLambda
+            from langchain_core.tracers.schemas import Run
+
             import time
 
             def test_runnable(time_to_sleep : int):
                 time.sleep(time_to_sleep)
 
-            def fn_start(run_obj : Runnable):
+            def fn_start(run_obj: Run):
                 print("start_time:", run_obj.start_time)
 
-            def fn_end(run_obj : Runnable):
+            def fn_end(run_obj: Run):
                 print("end_time:", run_obj.end_time)
 
-            RunnableLambda(test_runnable).with_listeners(
+            chain = RunnableLambda(test_runnable).with_listeners(
                 on_start=fn_start,
                 on_end=fn_end
-                ).invoke(2)
+            )
+            chain.invoke(2)
         """
         from langchain_core.tracers.root_listeners import RootListenersTracer
 
@@ -1337,6 +1349,7 @@ class Runnable(Generic[Input, Output], ABC):
         Example:
 
         .. code-block:: python
+
             from langchain_core.runnables import RunnableLambda
 
             count = 0
@@ -1714,6 +1727,9 @@ class Runnable(Generic[Input, Output], ABC):
         """Helper method to transform an Iterator of Input values into an Iterator of
         Output values, with callbacks.
         Use this to implement `stream()` or `transform()` in Runnable subclasses."""
+        # Mixin that is used by both astream log and astream events implementation
+        from langchain_core.tracers._streaming import _StreamingCallbackHandler
+
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = tee(input, 2)
         # Start the input iterator to ensure the input runnable starts before this one
@@ -1740,6 +1756,17 @@ class Runnable(Generic[Input, Output], ABC):
             context = copy_context()
             context.run(var_child_runnable_config.set, child_config)
             iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
+            if stream_handler := next(
+                (
+                    cast(_StreamingCallbackHandler, h)
+                    for h in run_manager.handlers
+                    # instance check OK here, it's a mixin
+                    if isinstance(h, _StreamingCallbackHandler)  # type: ignore[misc]
+                ),
+                None,
+            ):
+                # populates streamed_output in astream_log() output if needed
+                iterator = stream_handler.tap_output_iter(run_manager.run_id, iterator)
             try:
                 while True:
                     chunk: Output = context.run(next, iterator)  # type: ignore
@@ -1967,7 +1994,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             # uses the default model ChatAnthropic
             print(model.invoke("which organization created you?").content)
 
-            # uses ChatOpenaAI
+            # uses ChatOpenAI
             print(
                 model.with_config(
                     configurable={"llm": "openai"}
@@ -3300,7 +3327,7 @@ class RunnableGenerator(Runnable[Input, Output]):
             self._atransform = atransform
             func_for_name: Callable = atransform
 
-        if inspect.isasyncgenfunction(transform):
+        if is_async_generator(transform):
             self._atransform = transform  # type: ignore[assignment]
             func_for_name = transform
         elif inspect.isgeneratorfunction(transform):
@@ -3513,7 +3540,7 @@ class RunnableLambda(Runnable[Input, Output]):
             self.afunc = afunc
             func_for_name: Callable = afunc
 
-        if inspect.iscoroutinefunction(func) or inspect.isasyncgenfunction(func):
+        if is_async_callable(func) or is_async_generator(func):
             if afunc is not None:
                 raise TypeError(
                     "Func was provided as a coroutine function, but afunc was "
@@ -3774,7 +3801,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
             afunc = f
 
-        if inspect.isasyncgenfunction(afunc):
+        if is_async_generator(afunc):
             output: Optional[Output] = None
             async for chunk in cast(
                 AsyncIterator[Output],
@@ -3992,7 +4019,7 @@ class RunnableLambda(Runnable[Input, Output]):
 
             afunc = f
 
-        if inspect.isasyncgenfunction(afunc):
+        if is_async_generator(afunc):
             output: Optional[Output] = None
             async for chunk in cast(
                 AsyncIterator[Output],
@@ -4034,7 +4061,7 @@ class RunnableLambda(Runnable[Input, Output]):
                 ),
             ):
                 yield chunk
-        elif not inspect.isasyncgenfunction(afunc):
+        elif not is_async_generator(afunc):
             # Otherwise, just yield it
             yield cast(Output, output)
 
@@ -4223,9 +4250,15 @@ class RunnableEach(RunnableEachBase[Input, Output]):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Listener] = None,
-        on_end: Optional[Listener] = None,
-        on_error: Optional[Listener] = None,
+        on_start: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_end: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_error: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
     ) -> RunnableEach[Input, Output]:
         """
         Bind lifecycle listeners to a Runnable, returning a new Runnable.
@@ -4713,9 +4746,15 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
     def with_listeners(
         self,
         *,
-        on_start: Optional[Listener] = None,
-        on_end: Optional[Listener] = None,
-        on_error: Optional[Listener] = None,
+        on_start: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_end: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
+        on_error: Optional[
+            Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
+        ] = None,
     ) -> Runnable[Input, Output]:
         """Bind lifecycle listeners to a Runnable, returning a new Runnable.
 
@@ -4836,7 +4875,7 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
     """
     if isinstance(thing, Runnable):
         return thing
-    elif inspect.isasyncgenfunction(thing) or inspect.isgeneratorfunction(thing):
+    elif is_async_generator(thing) or inspect.isgeneratorfunction(thing):
         return RunnableGenerator(thing)
     elif callable(thing):
         return RunnableLambda(cast(Callable[[Input], Output], thing))
