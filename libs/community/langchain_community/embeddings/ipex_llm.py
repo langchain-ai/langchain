@@ -19,8 +19,31 @@ class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
     """Wrapper around the BGE embedding model with IPEX-LLM optimizations on Intel CPUs and GPUs.
 
     To use, you should have the ``ipex-llm`` and ``sentence_transformers`` package installed.
+    Refer to `here <https://python.langchain.com/v0.1/docs/integrations/text_embedding/ipex_llm/>`_ for installation on Intel CPU.
 
-    TODO: add more example code and description
+    Example on Intel CPU:
+        .. code-block:: python
+
+            from langchain_community.embeddings import IpexLLMBgeEmbeddings
+
+            embedding_model = IpexLLMBgeEmbeddings(
+                model_name="BAAI/bge-large-en-v1.5",
+                model_kwargs={},
+                encode_kwargs={"normalize_embeddings": True},
+            )
+
+    Refer to `here <https://python.langchain.com/v0.1/docs/integrations/text_embedding/ipex_llm_gpu/>`_ for installation on Intel GPU.
+
+    Example on Intel GPU:
+        .. code-block:: python
+
+            from langchain_community.embeddings import IpexLLMBgeEmbeddings
+
+            embedding_model = IpexLLMBgeEmbeddings(
+                model_name="BAAI/bge-large-en-v1.5",
+                model_kwargs={"device": "xpu"},
+                encode_kwargs={"normalize_embeddings": True},
+            )
     """
 
     client: Any  #: :meta private:
