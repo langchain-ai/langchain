@@ -101,6 +101,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.infinity_local import (
         InfinityEmbeddingsLocal,
     )
+    from langchain_community.embeddings.ipex_llm import (
+        IpexLLMBgeEmbeddings
+    )
     from langchain_community.embeddings.itrex import (
         QuantizedBgeEmbeddings,
     )
