@@ -770,8 +770,7 @@ class VectaraRAG(Runnable):
                     if conv_id:
                         self.conv_id = conv_id
 
-                    # if factual consistency score is provided, pull that from 
-                    # the JSON response
+                    # If FCS is provided, pull it from the JSON response
                     if summary.get("factualConsistency", None):
                         fcs = summary.get("factualConsistency", {}).get("score", None)
                         yield {"fcs": fcs}
