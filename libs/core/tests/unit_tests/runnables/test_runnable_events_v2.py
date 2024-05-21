@@ -35,6 +35,7 @@ from langchain_core.runnables import (
     ConfigurableField,
     Runnable,
     RunnableConfig,
+    RunnableGenerator,
     RunnableLambda,
     ensure_config,
 )
@@ -1826,6 +1827,51 @@ async def test_astream_events_from_custom_runnable() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "StreamingRunnable",
+            "run_id": "",
+            "tags": [],
+        },
+    ]
+
+
+async def test_runnable_generator() -> None:
+    """Test async events from sync lambda."""
+
+    async def generator(inputs: AsyncIterator[str]) -> AsyncIterator[str]:
+        yield "1"
+        yield "2"
+
+    runnable: Runnable[str, str] = RunnableGenerator(transform=generator)
+    events = await _collect_events(runnable.astream_events("hello", version="v2"))
+    assert events == [
+        {
+            "data": {"input": "hello"},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "generator",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": "1"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "generator",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": "2"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "generator",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"output": "12"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "generator",
             "run_id": "",
             "tags": [],
         },
