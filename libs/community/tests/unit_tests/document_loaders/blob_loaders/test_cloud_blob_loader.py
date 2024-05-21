@@ -1,7 +1,6 @@
 """Verify that file system blob loader works as expected."""
 import os
 import tempfile
-
 from typing import Generator
 from urllib.parse import urlparse
 
@@ -41,6 +40,7 @@ def toy_dir() -> Generator[str, None, None]:
             nested_file.write("This is a more_nested.txt file.")
 
         yield f"file://{temp_dir}"
+
 
 # @pytest.fixture
 # @pytest.mark.requires("boto3")
@@ -126,6 +126,7 @@ _TEST_CASES = [
     },
 ]
 
+
 # @pytest.mark.requires("cloudpathlib")
 @pytest.mark.parametrize("params", _TEST_CASES)
 def test_file_names_exist(toy_dir: str, params: dict) -> None:
@@ -142,10 +143,9 @@ def test_file_names_exist(toy_dir: str, params: dict) -> None:
     blobs = list(loader.yield_blobs())
 
     url_parsed = urlparse(toy_dir)
-    sheme=""
+    sheme = ""
     if url_parsed.scheme == "file":
         sheme = "file://"
-
 
     file_names = sorted(f"{sheme}{blob.path}" for blob in blobs)
 
