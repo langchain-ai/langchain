@@ -1,54 +1,146 @@
 # arXiv
             
 LangChain implements the latest research in the field of Natural Language Processing.
-This page contains `arXiv` papers referenced in the LangChain Documentation and API Reference.
+This page contains `arXiv` papers referenced in the LangChain Documentation, API Reference,
+and Templates.
 
 ## Summary
 
-| arXiv id / Title | Authors | Published date 🔻 | LangChain Documentation and API Reference |
-|------------------|---------|-------------------|-------------------------|
-| `2307.03172v3` [Lost in the Middle: How Language Models Use Long Contexts](http://arxiv.org/abs/2307.03172v3) | Nelson F. Liu, Kevin Lin, John Hewitt,  et al. | 2023-07-06 | `Docs:` [docs/modules/data_connection/retrievers/long_context_reorder](https://python.langchain.com/docs/modules/data_connection/retrievers/long_context_reorder)
+| arXiv id / Title | Authors | Published date 🔻 | LangChain Documentation|
+|------------------|---------|-------------------|------------------------|
+| `2312.06648v2` [Dense X Retrieval: What Retrieval Granularity Should We Use?](http://arxiv.org/abs/2312.06648v2) | Tong Chen, Hongwei Wang, Sihao Chen,  et al. | 2023-12-11 | `Template:` [propositional-retrieval](https://python.langchain.com/docs/templates/propositional-retrieval)
+| `2311.09210v1` [Chain-of-Note: Enhancing Robustness in Retrieval-Augmented Language Models](http://arxiv.org/abs/2311.09210v1) | Wenhao Yu, Hongming Zhang, Xiaoman Pan,  et al. | 2023-11-15 | `Template:` [chain-of-note-wiki](https://python.langchain.com/docs/templates/chain-of-note-wiki)
+| `2310.06117v2` [Take a Step Back: Evoking Reasoning via Abstraction in Large Language Models](http://arxiv.org/abs/2310.06117v2) | Huaixiu Steven Zheng, Swaroop Mishra, Xinyun Chen,  et al. | 2023-10-09 | `Template:` [stepback-qa-prompting](https://python.langchain.com/docs/templates/stepback-qa-prompting)
+| `2305.14283v3` [Query Rewriting for Retrieval-Augmented Large Language Models](http://arxiv.org/abs/2305.14283v3) | Xinbei Ma, Yeyun Gong, Pengcheng He,  et al. | 2023-05-23 | `Template:` [rewrite-retrieve-read](https://python.langchain.com/docs/templates/rewrite-retrieve-read)
 | `2305.08291v1` [Large Language Model Guided Tree-of-Thought](http://arxiv.org/abs/2305.08291v1) | Jieyi Long | 2023-05-15 | `API:` [langchain_experimental.tot](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.tot)
-| `2305.06983v2` [Active Retrieval Augmented Generation](http://arxiv.org/abs/2305.06983v2) | Zhengbao Jiang, Frank F. Xu, Luyu Gao,  et al. | 2023-05-11 | `Docs:` [docs/modules/chains](https://python.langchain.com/docs/modules/chains)
 | `2303.17580v4` [HuggingGPT: Solving AI Tasks with ChatGPT and its Friends in Hugging Face](http://arxiv.org/abs/2303.17580v4) | Yongliang Shen, Kaitao Song, Xu Tan,  et al. | 2023-03-30 | `API:` [langchain_experimental.autonomous_agents](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.autonomous_agents)
 | `2303.08774v6` [GPT-4 Technical Report](http://arxiv.org/abs/2303.08774v6) | OpenAI, Josh Achiam, Steven Adler,  et al. | 2023-03-15 | `Docs:` [docs/integrations/vectorstores/mongodb_atlas](https://python.langchain.com/docs/integrations/vectorstores/mongodb_atlas)
-| `2301.10226v4` [A Watermark for Large Language Models](http://arxiv.org/abs/2301.10226v4) | John Kirchenbauer, Jonas Geiping, Yuxin Wen,  et al. | 2023-01-24 | `API:` [langchain_community.llms...HuggingFaceTextGenInference](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference.html#langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference), [langchain_community.llms...HuggingFaceEndpoint](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint.html#langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint), [langchain_community.llms...OCIModelDeploymentTGI](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI.html#langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI)
-| `2212.10496v1` [Precise Zero-Shot Dense Retrieval without Relevance Labels](http://arxiv.org/abs/2212.10496v1) | Luyu Gao, Xueguang Ma, Jimmy Lin,  et al. | 2022-12-20 | `Docs:` [docs/use_cases/query_analysis/techniques/hyde](https://python.langchain.com/docs/use_cases/query_analysis/techniques/hyde), `API:` [langchain.chains...HypotheticalDocumentEmbedder](https://api.python.langchain.com/en/latest/chains/langchain.chains.hyde.base.HypotheticalDocumentEmbedder.html#langchain.chains.hyde.base.HypotheticalDocumentEmbedder)
-| `2212.08073v1` [Constitutional AI: Harmlessness from AI Feedback](http://arxiv.org/abs/2212.08073v1) | Yuntao Bai, Saurav Kadavath, Sandipan Kundu,  et al. | 2022-12-15 | `Docs:` [docs/guides/productionization/evaluation/string/criteria_eval_chain](https://python.langchain.com/docs/guides/productionization/evaluation/string/criteria_eval_chain)
+| `2301.10226v4` [A Watermark for Large Language Models](http://arxiv.org/abs/2301.10226v4) | John Kirchenbauer, Jonas Geiping, Yuxin Wen,  et al. | 2023-01-24 | `API:` [langchain_community.llms...OCIModelDeploymentTGI](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI.html#langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI), [langchain_community.llms...HuggingFaceTextGenInference](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference.html#langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference), [langchain_community.llms...HuggingFaceEndpoint](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint.html#langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint)
+| `2212.10496v1` [Precise Zero-Shot Dense Retrieval without Relevance Labels](http://arxiv.org/abs/2212.10496v1) | Luyu Gao, Xueguang Ma, Jimmy Lin,  et al. | 2022-12-20 | `API:` [langchain.chains...HypotheticalDocumentEmbedder](https://api.python.langchain.com/en/latest/chains/langchain.chains.hyde.base.HypotheticalDocumentEmbedder.html#langchain.chains.hyde.base.HypotheticalDocumentEmbedder), `Template:` [hyde](https://python.langchain.com/docs/templates/hyde)
 | `2212.07425v3` [Robust and Explainable Identification of Logical Fallacies in Natural Language Arguments](http://arxiv.org/abs/2212.07425v3) | Zhivar Sourati, Vishnu Priya Prasanna Venkatesh, Darshan Deshpande,  et al. | 2022-12-12 | `API:` [langchain_experimental.fallacy_removal](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.fallacy_removal)
 | `2211.13892v2` [Complementary Explanations for Effective In-Context Learning](http://arxiv.org/abs/2211.13892v2) | Xi Ye, Srinivasan Iyer, Asli Celikyilmaz,  et al. | 2022-11-25 | `API:` [langchain_core.example_selectors...MaxMarginalRelevanceExampleSelector](https://api.python.langchain.com/en/latest/example_selectors/langchain_core.example_selectors.semantic_similarity.MaxMarginalRelevanceExampleSelector.html#langchain_core.example_selectors.semantic_similarity.MaxMarginalRelevanceExampleSelector)
 | `2211.10435v2` [PAL: Program-aided Language Models](http://arxiv.org/abs/2211.10435v2) | Luyu Gao, Aman Madaan, Shuyan Zhou,  et al. | 2022-11-18 | `API:` [langchain_experimental.pal_chain...PALChain](https://api.python.langchain.com/en/latest/pal_chain/langchain_experimental.pal_chain.base.PALChain.html#langchain_experimental.pal_chain.base.PALChain), [langchain_experimental.pal_chain](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.pal_chain)
 | `2209.10785v2` [Deep Lake: a Lakehouse for Deep Learning](http://arxiv.org/abs/2209.10785v2) | Sasun Hambardzumyan, Abhinav Tuli, Levon Ghukasyan,  et al. | 2022-09-22 | `Docs:` [docs/integrations/providers/activeloop_deeplake](https://python.langchain.com/docs/integrations/providers/activeloop_deeplake)
 | `2205.12654v1` [Bitext Mining Using Distilled Sentence Representations for Low-Resource Languages](http://arxiv.org/abs/2205.12654v1) | Kevin Heffernan, Onur Çelebi, Holger Schwenk | 2022-05-25 | `API:` [langchain_community.embeddings...LaserEmbeddings](https://api.python.langchain.com/en/latest/embeddings/langchain_community.embeddings.laser.LaserEmbeddings.html#langchain_community.embeddings.laser.LaserEmbeddings)
-| `2204.00498v1` [Evaluating the Text-to-SQL Capabilities of Large Language Models](http://arxiv.org/abs/2204.00498v1) | Nitarshan Rajkumar, Raymond Li, Dzmitry Bahdanau | 2022-03-15 | `Docs:` [docs/use_cases/sql/quickstart](https://python.langchain.com/docs/use_cases/sql/quickstart), `API:` [langchain_community.utilities...SQLDatabase](https://api.python.langchain.com/en/latest/utilities/langchain_community.utilities.sql_database.SQLDatabase.html#langchain_community.utilities.sql_database.SQLDatabase), [langchain_community.utilities...SparkSQL](https://api.python.langchain.com/en/latest/utilities/langchain_community.utilities.spark_sql.SparkSQL.html#langchain_community.utilities.spark_sql.SparkSQL)
+| `2204.00498v1` [Evaluating the Text-to-SQL Capabilities of Large Language Models](http://arxiv.org/abs/2204.00498v1) | Nitarshan Rajkumar, Raymond Li, Dzmitry Bahdanau | 2022-03-15 | `API:` [langchain_community.utilities...SQLDatabase](https://api.python.langchain.com/en/latest/utilities/langchain_community.utilities.sql_database.SQLDatabase.html#langchain_community.utilities.sql_database.SQLDatabase), [langchain_community.utilities...SparkSQL](https://api.python.langchain.com/en/latest/utilities/langchain_community.utilities.spark_sql.SparkSQL.html#langchain_community.utilities.spark_sql.SparkSQL)
 | `2202.00666v5` [Locally Typical Sampling](http://arxiv.org/abs/2202.00666v5) | Clara Meister, Tiago Pimentel, Gian Wiher,  et al. | 2022-02-01 | `API:` [langchain_community.llms...HuggingFaceTextGenInference](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference.html#langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference), [langchain_community.llms...HuggingFaceEndpoint](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint.html#langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint)
 | `2103.00020v1` [Learning Transferable Visual Models From Natural Language Supervision](http://arxiv.org/abs/2103.00020v1) | Alec Radford, Jong Wook Kim, Chris Hallacy,  et al. | 2021-02-26 | `API:` [langchain_experimental.open_clip](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.open_clip)
 | `1909.05858v2` [CTRL: A Conditional Transformer Language Model for Controllable Generation](http://arxiv.org/abs/1909.05858v2) | Nitish Shirish Keskar, Bryan McCann, Lav R. Varshney,  et al. | 2019-09-11 | `API:` [langchain_community.llms...HuggingFaceTextGenInference](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference.html#langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference), [langchain_community.llms...HuggingFaceEndpoint](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint.html#langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint)
 | `1908.10084v1` [Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks](http://arxiv.org/abs/1908.10084v1) | Nils Reimers, Iryna Gurevych | 2019-08-27 | `Docs:` [docs/integrations/text_embedding/sentence_transformers](https://python.langchain.com/docs/integrations/text_embedding/sentence_transformers)
 
-## Lost in the Middle: How Language Models Use Long Contexts
+## Dense X Retrieval: What Retrieval Granularity Should We Use?
 
-- **arXiv id:** 2307.03172v3
-- **Title:** Lost in the Middle: How Language Models Use Long Contexts
-- **Authors:** Nelson F. Liu, Kevin Lin, John Hewitt,  et al.
-- **Published Date:** 2023-07-06
-- **URL:** http://arxiv.org/abs/2307.03172v3
-- **LangChain Documentation:** [docs/modules/data_connection/retrievers/long_context_reorder](https://python.langchain.com/docs/modules/data_connection/retrievers/long_context_reorder)
+- **arXiv id:** 2312.06648v2
+- **Title:** Dense X Retrieval: What Retrieval Granularity Should We Use?
+- **Authors:** Tong Chen, Hongwei Wang, Sihao Chen,  et al.
+- **Published Date:** 2023-12-11
+- **URL:** http://arxiv.org/abs/2312.06648v2
+- **LangChain:**
 
+   - **Template:** [propositional-retrieval](https://python.langchain.com/docs/templates/propositional-retrieval)
 
-**Abstract:** While recent language models have the ability to take long contexts as input,
-relatively little is known about how well they use longer context. We analyze
-the performance of language models on two tasks that require identifying
-relevant information in their input contexts: multi-document question answering
-and key-value retrieval. We find that performance can degrade significantly
-when changing the position of relevant information, indicating that current
-language models do not robustly make use of information in long input contexts.
-In particular, we observe that performance is often highest when relevant
-information occurs at the beginning or end of the input context, and
-significantly degrades when models must access relevant information in the
-middle of long contexts, even for explicitly long-context models. Our analysis
-provides a better understanding of how language models use their input context
-and provides new evaluation protocols for future long-context language models.
+**Abstract:** Dense retrieval has become a prominent method to obtain relevant context or
+world knowledge in open-domain NLP tasks. When we use a learned dense retriever
+on a retrieval corpus at inference time, an often-overlooked design choice is
+the retrieval unit in which the corpus is indexed, e.g. document, passage, or
+sentence. We discover that the retrieval unit choice significantly impacts the
+performance of both retrieval and downstream tasks. Distinct from the typical
+approach of using passages or sentences, we introduce a novel retrieval unit,
+proposition, for dense retrieval. Propositions are defined as atomic
+expressions within text, each encapsulating a distinct factoid and presented in
+a concise, self-contained natural language format. We conduct an empirical
+comparison of different retrieval granularity. Our results reveal that
+proposition-based retrieval significantly outperforms traditional passage or
+sentence-based methods in dense retrieval. Moreover, retrieval by proposition
+also enhances the performance of downstream QA tasks, since the retrieved texts
+are more condensed with question-relevant information, reducing the need for
+lengthy input tokens and minimizing the inclusion of extraneous, irrelevant
+information.
+                
+## Chain-of-Note: Enhancing Robustness in Retrieval-Augmented Language Models
+
+- **arXiv id:** 2311.09210v1
+- **Title:** Chain-of-Note: Enhancing Robustness in Retrieval-Augmented Language Models
+- **Authors:** Wenhao Yu, Hongming Zhang, Xiaoman Pan,  et al.
+- **Published Date:** 2023-11-15
+- **URL:** http://arxiv.org/abs/2311.09210v1
+- **LangChain:**
+
+   - **Template:** [chain-of-note-wiki](https://python.langchain.com/docs/templates/chain-of-note-wiki)
+
+**Abstract:** Retrieval-augmented language models (RALMs) represent a substantial
+advancement in the capabilities of large language models, notably in reducing
+factual hallucination by leveraging external knowledge sources. However, the
+reliability of the retrieved information is not always guaranteed. The
+retrieval of irrelevant data can lead to misguided responses, and potentially
+causing the model to overlook its inherent knowledge, even when it possesses
+adequate information to address the query. Moreover, standard RALMs often
+struggle to assess whether they possess adequate knowledge, both intrinsic and
+retrieved, to provide an accurate answer. In situations where knowledge is
+lacking, these systems should ideally respond with "unknown" when the answer is
+unattainable. In response to these challenges, we introduces Chain-of-Noting
+(CoN), a novel approach aimed at improving the robustness of RALMs in facing
+noisy, irrelevant documents and in handling unknown scenarios. The core idea of
+CoN is to generate sequential reading notes for retrieved documents, enabling a
+thorough evaluation of their relevance to the given question and integrating
+this information to formulate the final answer. We employed ChatGPT to create
+training data for CoN, which was subsequently trained on an LLaMa-2 7B model.
+Our experiments across four open-domain QA benchmarks show that RALMs equipped
+with CoN significantly outperform standard RALMs. Notably, CoN achieves an
+average improvement of +7.9 in EM score given entirely noisy retrieved
+documents and +10.5 in rejection rates for real-time questions that fall
+outside the pre-training knowledge scope.
+                
+## Take a Step Back: Evoking Reasoning via Abstraction in Large Language Models
+
+- **arXiv id:** 2310.06117v2
+- **Title:** Take a Step Back: Evoking Reasoning via Abstraction in Large Language Models
+- **Authors:** Huaixiu Steven Zheng, Swaroop Mishra, Xinyun Chen,  et al.
+- **Published Date:** 2023-10-09
+- **URL:** http://arxiv.org/abs/2310.06117v2
+- **LangChain:**
+
+   - **Template:** [stepback-qa-prompting](https://python.langchain.com/docs/templates/stepback-qa-prompting)
+
+**Abstract:** We present Step-Back Prompting, a simple prompting technique that enables
+LLMs to do abstractions to derive high-level concepts and first principles from
+instances containing specific details. Using the concepts and principles to
+guide reasoning, LLMs significantly improve their abilities in following a
+correct reasoning path towards the solution. We conduct experiments of
+Step-Back Prompting with PaLM-2L, GPT-4 and Llama2-70B models, and observe
+substantial performance gains on various challenging reasoning-intensive tasks
+including STEM, Knowledge QA, and Multi-Hop Reasoning. For instance, Step-Back
+Prompting improves PaLM-2L performance on MMLU (Physics and Chemistry) by 7%
+and 11% respectively, TimeQA by 27%, and MuSiQue by 7%.
+                
+## Query Rewriting for Retrieval-Augmented Large Language Models
+
+- **arXiv id:** 2305.14283v3
+- **Title:** Query Rewriting for Retrieval-Augmented Large Language Models
+- **Authors:** Xinbei Ma, Yeyun Gong, Pengcheng He,  et al.
+- **Published Date:** 2023-05-23
+- **URL:** http://arxiv.org/abs/2305.14283v3
+- **LangChain:**
+
+   - **Template:** [rewrite-retrieve-read](https://python.langchain.com/docs/templates/rewrite-retrieve-read)
+
+**Abstract:** Large Language Models (LLMs) play powerful, black-box readers in the
+retrieve-then-read pipeline, making remarkable progress in knowledge-intensive
+tasks. This work introduces a new framework, Rewrite-Retrieve-Read instead of
+the previous retrieve-then-read for the retrieval-augmented LLMs from the
+perspective of the query rewriting. Unlike prior studies focusing on adapting
+either the retriever or the reader, our approach pays attention to the
+adaptation of the search query itself, for there is inevitably a gap between
+the input text and the needed knowledge in retrieval. We first prompt an LLM to
+generate the query, then use a web search engine to retrieve contexts.
+Furthermore, to better align the query to the frozen modules, we propose a
+trainable scheme for our pipeline. A small language model is adopted as a
+trainable rewriter to cater to the black-box LLM reader. The rewriter is
+trained using the feedback of the LLM reader by reinforcement learning.
+Evaluation is conducted on downstream tasks, open-domain QA and multiple-choice
+QA. Experiments results show consistent performance improvement, indicating
+that our framework is proven effective and scalable, and brings a new framework
+for retrieval-augmented LLM.
                 
 ## Large Language Model Guided Tree-of-Thought
 
@@ -57,8 +149,9 @@ and provides new evaluation protocols for future long-context language models.
 - **Authors:** Jieyi Long
 - **Published Date:** 2023-05-15
 - **URL:** http://arxiv.org/abs/2305.08291v1
+- **LangChain:**
 
-- **LangChain API Reference:** [langchain_experimental.tot](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.tot)
+   - **API Reference:** [langchain_experimental.tot](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.tot)
 
 **Abstract:** In this paper, we introduce the Tree-of-Thought (ToT) framework, a novel
 approach aimed at improving the problem-solving capabilities of auto-regressive
@@ -78,35 +171,6 @@ significantly increase the success rate of Sudoku puzzle solving. Our
 implementation of the ToT-based Sudoku solver is available on GitHub:
 \url{https://github.com/jieyilong/tree-of-thought-puzzle-solver}.
                 
-## Active Retrieval Augmented Generation
-
-- **arXiv id:** 2305.06983v2
-- **Title:** Active Retrieval Augmented Generation
-- **Authors:** Zhengbao Jiang, Frank F. Xu, Luyu Gao,  et al.
-- **Published Date:** 2023-05-11
-- **URL:** http://arxiv.org/abs/2305.06983v2
-- **LangChain Documentation:** [docs/modules/chains](https://python.langchain.com/docs/modules/chains)
-
-
-**Abstract:** Despite the remarkable ability of large language models (LMs) to comprehend
-and generate language, they have a tendency to hallucinate and create factually
-inaccurate output. Augmenting LMs by retrieving information from external
-knowledge resources is one promising solution. Most existing retrieval
-augmented LMs employ a retrieve-and-generate setup that only retrieves
-information once based on the input. This is limiting, however, in more general
-scenarios involving generation of long texts, where continually gathering
-information throughout generation is essential. In this work, we provide a
-generalized view of active retrieval augmented generation, methods that
-actively decide when and what to retrieve across the course of the generation.
-We propose Forward-Looking Active REtrieval augmented generation (FLARE), a
-generic method which iteratively uses a prediction of the upcoming sentence to
-anticipate future content, which is then utilized as a query to retrieve
-relevant documents to regenerate the sentence if it contains low-confidence
-tokens. We test FLARE along with baselines comprehensively over 4 long-form
-knowledge-intensive generation tasks/datasets. FLARE achieves superior or
-competitive performance on all tasks, demonstrating the effectiveness of our
-method. Code and datasets are available at https://github.com/jzbjyb/FLARE.
-                
 ## HuggingGPT: Solving AI Tasks with ChatGPT and its Friends in Hugging Face
 
 - **arXiv id:** 2303.17580v4
@@ -114,8 +178,9 @@ method. Code and datasets are available at https://github.com/jzbjyb/FLARE.
 - **Authors:** Yongliang Shen, Kaitao Song, Xu Tan,  et al.
 - **Published Date:** 2023-03-30
 - **URL:** http://arxiv.org/abs/2303.17580v4
+- **LangChain:**
 
-- **LangChain API Reference:** [langchain_experimental.autonomous_agents](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.autonomous_agents)
+   - **API Reference:** [langchain_experimental.autonomous_agents](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.autonomous_agents)
 
 **Abstract:** Solving complicated AI tasks with different domains and modalities is a key
 step toward artificial general intelligence. While there are numerous AI models
@@ -144,8 +209,9 @@ realization of artificial general intelligence.
 - **Authors:** OpenAI, Josh Achiam, Steven Adler,  et al.
 - **Published Date:** 2023-03-15
 - **URL:** http://arxiv.org/abs/2303.08774v6
-- **LangChain Documentation:** [docs/integrations/vectorstores/mongodb_atlas](https://python.langchain.com/docs/integrations/vectorstores/mongodb_atlas)
+- **LangChain:**
 
+   - **Documentation:** [docs/integrations/vectorstores/mongodb_atlas](https://python.langchain.com/docs/integrations/vectorstores/mongodb_atlas)
 
 **Abstract:** We report the development of GPT-4, a large-scale, multimodal model which can
 accept image and text inputs and produce text outputs. While less capable than
@@ -167,8 +233,9 @@ more than 1/1,000th the compute of GPT-4.
 - **Authors:** John Kirchenbauer, Jonas Geiping, Yuxin Wen,  et al.
 - **Published Date:** 2023-01-24
 - **URL:** http://arxiv.org/abs/2301.10226v4
+- **LangChain:**
 
-- **LangChain API Reference:** [langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference.html#langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference), [langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint.html#langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint), [langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI.html#langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI)
+   - **API Reference:** [langchain_community.llms...OCIModelDeploymentTGI](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI.html#langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI), [langchain_community.llms...HuggingFaceTextGenInference](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference.html#langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference), [langchain_community.llms...HuggingFaceEndpoint](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint.html#langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint)
 
 **Abstract:** Potential harms of large language models can be mitigated by watermarking
 model output, i.e., embedding signals into generated text that are invisible to
@@ -191,8 +258,10 @@ family, and discuss robustness and security.
 - **Authors:** Luyu Gao, Xueguang Ma, Jimmy Lin,  et al.
 - **Published Date:** 2022-12-20
 - **URL:** http://arxiv.org/abs/2212.10496v1
-- **LangChain Documentation:** [docs/use_cases/query_analysis/techniques/hyde](https://python.langchain.com/docs/use_cases/query_analysis/techniques/hyde)
-- **LangChain API Reference:** [langchain.chains.hyde.base.HypotheticalDocumentEmbedder](https://api.python.langchain.com/en/latest/chains/langchain.chains.hyde.base.HypotheticalDocumentEmbedder.html#langchain.chains.hyde.base.HypotheticalDocumentEmbedder)
+- **LangChain:**
+
+   - **API Reference:** [langchain.chains...HypotheticalDocumentEmbedder](https://api.python.langchain.com/en/latest/chains/langchain.chains.hyde.base.HypotheticalDocumentEmbedder.html#langchain.chains.hyde.base.HypotheticalDocumentEmbedder)
+   - **Template:** [hyde](https://python.langchain.com/docs/templates/hyde)
 
 **Abstract:** While dense retrieval has been shown effective and efficient across tasks and
 languages, it remains difficult to create effective fully zero-shot dense
@@ -212,35 +281,6 @@ state-of-the-art unsupervised dense retriever Contriever and shows strong
 performance comparable to fine-tuned retrievers, across various tasks (e.g. web
 search, QA, fact verification) and languages~(e.g. sw, ko, ja).
                 
-## Constitutional AI: Harmlessness from AI Feedback
-
-- **arXiv id:** 2212.08073v1
-- **Title:** Constitutional AI: Harmlessness from AI Feedback
-- **Authors:** Yuntao Bai, Saurav Kadavath, Sandipan Kundu,  et al.
-- **Published Date:** 2022-12-15
-- **URL:** http://arxiv.org/abs/2212.08073v1
-- **LangChain Documentation:** [docs/guides/productionization/evaluation/string/criteria_eval_chain](https://python.langchain.com/docs/guides/productionization/evaluation/string/criteria_eval_chain)
-
-
-**Abstract:** As AI systems become more capable, we would like to enlist their help to
-supervise other AIs. We experiment with methods for training a harmless AI
-assistant through self-improvement, without any human labels identifying
-harmful outputs. The only human oversight is provided through a list of rules
-or principles, and so we refer to the method as 'Constitutional AI'. The
-process involves both a supervised learning and a reinforcement learning phase.
-In the supervised phase we sample from an initial model, then generate
-self-critiques and revisions, and then finetune the original model on revised
-responses. In the RL phase, we sample from the finetuned model, use a model to
-evaluate which of the two samples is better, and then train a preference model
-from this dataset of AI preferences. We then train with RL using the preference
-model as the reward signal, i.e. we use 'RL from AI Feedback' (RLAIF). As a
-result we are able to train a harmless but non-evasive AI assistant that
-engages with harmful queries by explaining its objections to them. Both the SL
-and RL methods can leverage chain-of-thought style reasoning to improve the
-human-judged performance and transparency of AI decision making. These methods
-make it possible to control AI behavior more precisely and with far fewer human
-labels.
-                
 ## Robust and Explainable Identification of Logical Fallacies in Natural Language Arguments
 
 - **arXiv id:** 2212.07425v3
@@ -248,8 +288,9 @@ labels.
 - **Authors:** Zhivar Sourati, Vishnu Priya Prasanna Venkatesh, Darshan Deshpande,  et al.
 - **Published Date:** 2022-12-12
 - **URL:** http://arxiv.org/abs/2212.07425v3
+- **LangChain:**
 
-- **LangChain API Reference:** [langchain_experimental.fallacy_removal](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.fallacy_removal)
+   - **API Reference:** [langchain_experimental.fallacy_removal](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.fallacy_removal)
 
 **Abstract:** The spread of misinformation, propaganda, and flawed argumentation has been
 amplified in the Internet era. Given the volume of data and the subtlety of
@@ -280,8 +321,9 @@ further work on logical fallacy identification.
 - **Authors:** Xi Ye, Srinivasan Iyer, Asli Celikyilmaz,  et al.
 - **Published Date:** 2022-11-25
 - **URL:** http://arxiv.org/abs/2211.13892v2
+- **LangChain:**
 
-- **LangChain API Reference:** [langchain_core.example_selectors.semantic_similarity.MaxMarginalRelevanceExampleSelector](https://api.python.langchain.com/en/latest/example_selectors/langchain_core.example_selectors.semantic_similarity.MaxMarginalRelevanceExampleSelector.html#langchain_core.example_selectors.semantic_similarity.MaxMarginalRelevanceExampleSelector)
+   - **API Reference:** [langchain_core.example_selectors...MaxMarginalRelevanceExampleSelector](https://api.python.langchain.com/en/latest/example_selectors/langchain_core.example_selectors.semantic_similarity.MaxMarginalRelevanceExampleSelector.html#langchain_core.example_selectors.semantic_similarity.MaxMarginalRelevanceExampleSelector)
 
 **Abstract:** Large language models (LLMs) have exhibited remarkable capabilities in
 learning from explanations in prompts, but there has been limited understanding
@@ -307,8 +349,9 @@ performance across three real-world tasks on multiple LLMs.
 - **Authors:** Luyu Gao, Aman Madaan, Shuyan Zhou,  et al.
 - **Published Date:** 2022-11-18
 - **URL:** http://arxiv.org/abs/2211.10435v2
+- **LangChain:**
 
-- **LangChain API Reference:** [langchain_experimental.pal_chain.base.PALChain](https://api.python.langchain.com/en/latest/pal_chain/langchain_experimental.pal_chain.base.PALChain.html#langchain_experimental.pal_chain.base.PALChain), [langchain_experimental.pal_chain](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.pal_chain)
+   - **API Reference:** [langchain_experimental.pal_chain...PALChain](https://api.python.langchain.com/en/latest/pal_chain/langchain_experimental.pal_chain.base.PALChain.html#langchain_experimental.pal_chain.base.PALChain), [langchain_experimental.pal_chain](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.pal_chain)
 
 **Abstract:** Large language models (LLMs) have recently demonstrated an impressive ability
 to perform arithmetic and symbolic reasoning tasks, when provided with a few
@@ -340,8 +383,9 @@ publicly available at http://reasonwithpal.com/ .
 - **Authors:** Sasun Hambardzumyan, Abhinav Tuli, Levon Ghukasyan,  et al.
 - **Published Date:** 2022-09-22
 - **URL:** http://arxiv.org/abs/2209.10785v2
-- **LangChain Documentation:** [docs/integrations/providers/activeloop_deeplake](https://python.langchain.com/docs/integrations/providers/activeloop_deeplake)
+- **LangChain:**
 
+   - **Documentation:** [docs/integrations/providers/activeloop_deeplake](https://python.langchain.com/docs/integrations/providers/activeloop_deeplake)
 
 **Abstract:** Traditional data lakes provide critical data infrastructure for analytical
 workloads by enabling time travel, running SQL queries, ingesting data with
@@ -367,8 +411,9 @@ TensorFlow, JAX, and integrate with numerous MLOps tools.
 - **Authors:** Kevin Heffernan, Onur Çelebi, Holger Schwenk
 - **Published Date:** 2022-05-25
 - **URL:** http://arxiv.org/abs/2205.12654v1
+- **LangChain:**
 
-- **LangChain API Reference:** [langchain_community.embeddings.laser.LaserEmbeddings](https://api.python.langchain.com/en/latest/embeddings/langchain_community.embeddings.laser.LaserEmbeddings.html#langchain_community.embeddings.laser.LaserEmbeddings)
+   - **API Reference:** [langchain_community.embeddings...LaserEmbeddings](https://api.python.langchain.com/en/latest/embeddings/langchain_community.embeddings.laser.LaserEmbeddings.html#langchain_community.embeddings.laser.LaserEmbeddings)
 
 **Abstract:** Scaling multilingual representation learning beyond the hundred most frequent
 languages is challenging, in particular to cover the long tail of low-resource
@@ -395,8 +440,9 @@ encoders, mine bitexts, and validate the bitexts by training NMT systems.
 - **Authors:** Nitarshan Rajkumar, Raymond Li, Dzmitry Bahdanau
 - **Published Date:** 2022-03-15
 - **URL:** http://arxiv.org/abs/2204.00498v1
-- **LangChain Documentation:** [docs/use_cases/sql/quickstart](https://python.langchain.com/docs/use_cases/sql/quickstart)
-- **LangChain API Reference:** [langchain_community.utilities.sql_database.SQLDatabase](https://api.python.langchain.com/en/latest/utilities/langchain_community.utilities.sql_database.SQLDatabase.html#langchain_community.utilities.sql_database.SQLDatabase), [langchain_community.utilities.spark_sql.SparkSQL](https://api.python.langchain.com/en/latest/utilities/langchain_community.utilities.spark_sql.SparkSQL.html#langchain_community.utilities.spark_sql.SparkSQL)
+- **LangChain:**
+
+   - **API Reference:** [langchain_community.utilities...SQLDatabase](https://api.python.langchain.com/en/latest/utilities/langchain_community.utilities.sql_database.SQLDatabase.html#langchain_community.utilities.sql_database.SQLDatabase), [langchain_community.utilities...SparkSQL](https://api.python.langchain.com/en/latest/utilities/langchain_community.utilities.spark_sql.SparkSQL.html#langchain_community.utilities.spark_sql.SparkSQL)
 
 **Abstract:** We perform an empirical evaluation of Text-to-SQL capabilities of the Codex
 language model. We find that, without any finetuning, Codex is a strong
@@ -413,8 +459,9 @@ few-shot examples.
 - **Authors:** Clara Meister, Tiago Pimentel, Gian Wiher,  et al.
 - **Published Date:** 2022-02-01
 - **URL:** http://arxiv.org/abs/2202.00666v5
+- **LangChain:**
 
-- **LangChain API Reference:** [langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference.html#langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference), [langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint.html#langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint)
+   - **API Reference:** [langchain_community.llms...HuggingFaceTextGenInference](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference.html#langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference), [langchain_community.llms...HuggingFaceEndpoint](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint.html#langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint)
 
 **Abstract:** Today's probabilistic language generators fall short when it comes to
 producing coherent and fluent text despite the fact that the underlying models
@@ -444,8 +491,9 @@ reducing degenerate repetitions.
 - **Authors:** Alec Radford, Jong Wook Kim, Chris Hallacy,  et al.
 - **Published Date:** 2021-02-26
 - **URL:** http://arxiv.org/abs/2103.00020v1
+- **LangChain:**
 
-- **LangChain API Reference:** [langchain_experimental.open_clip](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.open_clip)
+   - **API Reference:** [langchain_experimental.open_clip](https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.open_clip)
 
 **Abstract:** State-of-the-art computer vision systems are trained to predict a fixed set
 of predetermined object categories. This restricted form of supervision limits
@@ -475,8 +523,9 @@ https://github.com/OpenAI/CLIP.
 - **Authors:** Nitish Shirish Keskar, Bryan McCann, Lav R. Varshney,  et al.
 - **Published Date:** 2019-09-11
 - **URL:** http://arxiv.org/abs/1909.05858v2
+- **LangChain:**
 
-- **LangChain API Reference:** [langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference.html#langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference), [langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint.html#langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint)
+   - **API Reference:** [langchain_community.llms...HuggingFaceTextGenInference](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference.html#langchain_community.llms.huggingface_text_gen_inference.HuggingFaceTextGenInference), [langchain_community.llms...HuggingFaceEndpoint](https://api.python.langchain.com/en/latest/llms/langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint.html#langchain_community.llms.huggingface_endpoint.HuggingFaceEndpoint)
 
 **Abstract:** Large-scale language models show promising text generation capabilities, but
 users cannot easily control particular aspects of the generated text. We
@@ -497,8 +546,9 @@ full-sized, pretrained versions of CTRL at https://github.com/salesforce/ctrl.
 - **Authors:** Nils Reimers, Iryna Gurevych
 - **Published Date:** 2019-08-27
 - **URL:** http://arxiv.org/abs/1908.10084v1
-- **LangChain Documentation:** [docs/integrations/text_embedding/sentence_transformers](https://python.langchain.com/docs/integrations/text_embedding/sentence_transformers)
+- **LangChain:**
 
+   - **Documentation:** [docs/integrations/text_embedding/sentence_transformers](https://python.langchain.com/docs/integrations/text_embedding/sentence_transformers)
 
 **Abstract:** BERT (Devlin et al., 2018) and RoBERTa (Liu et al., 2019) has set a new
 state-of-the-art performance on sentence-pair regression tasks like semantic
