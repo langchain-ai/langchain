@@ -1,4 +1,5 @@
 import json
+import warnings
 from operator import itemgetter
 from typing import (
     Any,
@@ -13,6 +14,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 from aiohttp import ClientSession
@@ -34,7 +36,7 @@ from langchain_core.messages import (
     InvalidToolCall,
     ToolMessage,
     HumanMessage,
-    SystemMessage
+    SystemMessage,
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
@@ -55,8 +57,34 @@ from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 
+def _result_to_chunked_message(generated_result):
+    message = generated_result.generations[0].message
+    if isinstance(message, AIMessage) and message.tool_calls is not None:
+        tool_call_chunks = [
+            {
+                "name": tool_call["name"],
+                "args": json.dumps(tool_call["args"]),
+                "id": tool_call["id"],
+                "index": idx,
+            }
+            for idx, tool_call in enumerate(message.tool_calls)
+        ]
+        message_chunk = AIMessageChunk(
+            content=message.content,
+            tool_call_chunks=tool_call_chunks,
+        )
+        return ChatGenerationChunk(message=message_chunk)
+    else:
+        return cast(ChatGenerationChunk, generated_result.generations[0])
+
+
 def _message_role(type: str) -> str:
-    role_mapping = {"ai": "assistant", "human": "user", "chat": "user"}
+    role_mapping = {
+        "ai": "assistant",
+        "human": "user",
+        "chat": "user",
+        "AIMessageChunk": "assistant",
+    }
 
     if type in role_mapping:
         return role_mapping[type]
@@ -98,15 +126,14 @@ def _format_edenai_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
             if i != 0:
                 raise ValueError("System message must be at beginning of message list.")
             system = message.content
-        if isinstance(message, ToolMessage):
+        elif isinstance(message, ToolMessage):
             formatted_messages.append({"role": "tool", "message": message.content})
         else:
-            tool_calls = getattr(message, "tool_calls", [])
             formatted_messages.append(
                 {
                     "role": _message_role(message.type),
                     "message": message.content,
-                    "tool_calls": _format_tool_calls_to_edenai_tool_calls(tool_calls),
+                    "tool_calls": _format_tool_calls_to_edenai_tool_calls(message),
                 }
             )
 
@@ -118,8 +145,20 @@ def _format_edenai_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
     }
 
 
-def _format_tool_calls_to_edenai_tool_calls(tool_calls: List) -> List:
+def _format_tool_calls_to_edenai_tool_calls(message) -> List:
+    tool_calls = getattr(message, "tool_calls", [])
+    invalid_tool_calls = getattr(message, "invalid_tool_calls", [])
     edenai_tool_calls = []
+
+    for invalid_tool_call in invalid_tool_calls:
+        edenai_tool_calls.append(
+            {
+                "arguments": invalid_tool_call.get("args"),
+                "id": invalid_tool_call.get("id"),
+                "name": invalid_tool_call.get("name"),
+            }
+        )
+
     for tool_call in tool_calls:
         tool_args = tool_call.get("args", {})
         try:
@@ -291,6 +330,11 @@ class ChatEdenAI(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Call out to EdenAI's chat endpoint."""
+        if "available_tools" in kwargs:
+            yield self._stream_with_tools_as_generate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return
         url = f"{self.edenai_api_url}/text/chat/stream"
         headers = {
             "Authorization": f"Bearer {self._api_key}",
@@ -330,6 +374,11 @@ class ChatEdenAI(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        if "available_tools" in kwargs:
+            yield await self._astream_with_tools_as_agenerate(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return
         url = f"{self.edenai_api_url}/text/chat/stream"
         headers = {
             "Authorization": f"Bearer {self._api_key}",
@@ -422,10 +471,15 @@ class ChatEdenAI(BaseChatModel):
     ) -> ChatResult:
         """Call out to EdenAI's chat endpoint."""
         if self.streaming:
-            stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return generate_from_stream(stream_iter)
+            if "available_tools" in kwargs:
+                warnings.warn(
+                    "stream: Tool use is not yet supported in streaming mode."
+                )
+            else:
+                stream_iter = self._stream(
+                    messages, stop=stop, run_manager=run_manager, **kwargs
+                )
+                return generate_from_stream(stream_iter)
 
         url = f"{self.edenai_api_url}/text/chat"
         headers = {
@@ -489,10 +543,15 @@ class ChatEdenAI(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         if self.streaming:
-            stream_iter = self._astream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            return await agenerate_from_stream(stream_iter)
+            if "available_tools" in kwargs:
+                warnings.warn(
+                    "stream: Tool use is not yet supported in streaming mode."
+                )
+            else:
+                stream_iter = self._astream(
+                    messages, stop=stop, run_manager=run_manager, **kwargs
+                )
+                return await agenerate_from_stream(stream_iter)
 
         url = f"{self.edenai_api_url}/text/chat"
         headers = {
@@ -539,3 +598,13 @@ class ChatEdenAI(BaseChatModel):
                     ],
                     llm_output=data,
                 )
+
+    def _stream_with_tools_as_generate(self, *args, **kwargs):
+        warnings.warn("stream: Tool use is not yet supported in streaming mode.")
+        result = self._generate(*args, **kwargs)
+        return _result_to_chunked_message(result)
+
+    async def _astream_with_tools_as_agenerate(self, *args, **kwargs):
+        warnings.warn("stream: Tool use is not yet supported in streaming mode.")
+        result = await self._agenerate(*args, **kwargs)
+        return _result_to_chunked_message(result)
