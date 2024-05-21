@@ -48,7 +48,9 @@ class TigerGraphVector(VectorStore):
         # We then create a TigerGraphVector object
         # By default, the search type is "hybrid",
         # and the search indices are ["Entity", "Relationship", 
-                                      "Document", "DocumentChunk"]
+        #                              "Document", "DocumentChunk"]
+        from langchain_community.vectorstores import TigerGraphVector
+
         tg_vector = TigerGraphVector(
                         conn,
                         search_type="hybrid"
