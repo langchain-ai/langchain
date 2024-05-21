@@ -17,20 +17,20 @@ def test_anthropic_model_name_param() -> None:
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_param() -> None:
-    llm = Anthropic(model="foo")
+    llm = Anthropic(model="foo")  # type: ignore[call-arg]
     assert llm.model == "foo"
 
 
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
-    llm = Anthropic(model="claude-instant-1")
+    llm = Anthropic(model="claude-instant-1")  # type: ignore[call-arg]
     output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
-    llm = Anthropic(model="claude-instant-1")
+    llm = Anthropic(model="claude-instant-1")  # type: ignore[call-arg]
     generator = llm.stream("I'm Pickle Rick")
 
     assert isinstance(generator, Generator)

@@ -10,8 +10,8 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain_community.llms.solar import SOLAR_SERVICE_URL_BASE, SolarCommon
 
 
-@deprecated(
-    since="0.0.34", removal="0.2.0", alternative_import="langchain_upstage.ChatUpstage"
+@deprecated(  # type: ignore[arg-type]
+    since="0.0.34", removal="0.3.0", alternative_import="langchain_upstage.ChatUpstage"
 )
 class SolarChat(SolarCommon, ChatOpenAI):
     """Wrapper around Solar large language models.

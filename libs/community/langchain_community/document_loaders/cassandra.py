@@ -57,8 +57,10 @@ class CassandraLoader(BaseLoader):
                 (do not use together with the table parameter)
             page_content_mapper: a function to convert a row to string page content.
                 Defaults to the str representation of the row.
+            metadata_mapper: a function to convert a row to document metadata.
             query_parameters: The query parameters used when calling session.execute .
             query_timeout: The query timeout used when calling session.execute .
+            query_trace: Whether to use tracing when calling session.execute .
             query_custom_payload: The query custom_payload used when calling
                 session.execute .
             query_execution_profile: The query execution_profile used when calling

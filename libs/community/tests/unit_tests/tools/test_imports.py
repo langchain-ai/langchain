@@ -9,6 +9,7 @@ EXPECTED_ALL = [
     "AIPluginTool",
     "APIOperation",
     "ArxivQueryRun",
+    "AskNewsSearch",
     "AzureAiServicesDocumentIntelligenceTool",
     "AzureAiServicesImageAnalysisTool",
     "AzureAiServicesSpeechToTextTool",
@@ -138,6 +139,7 @@ EXPECTED_ALL = [
     "format_tool_to_openai_function",
     "tool",
     "MerriamWebsterQueryRun",
+    "MojeekSearch",
 ]
 
 

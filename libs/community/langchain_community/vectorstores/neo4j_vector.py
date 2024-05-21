@@ -20,6 +20,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.vectorstores import VectorStore
 
+from langchain_community.graphs import Neo4jGraph
 from langchain_community.vectorstores.utils import DistanceStrategy
 
 DEFAULT_DISTANCE_STRATEGY = DistanceStrategy.COSINE
@@ -483,6 +484,7 @@ class Neo4jVector(VectorStore):
         retrieval_query: str = "",
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         index_type: IndexType = DEFAULT_INDEX_TYPE,
+        graph: Optional[Neo4jGraph] = None,
     ) -> None:
         try:
             import neo4j
@@ -501,40 +503,44 @@ class Neo4jVector(VectorStore):
                 "distance_strategy must be either 'EUCLIDEAN_DISTANCE' or 'COSINE'"
             )
 
-        # Handle if the credentials are environment variables
+        # Graph object takes precedent over env or input params
+        if graph:
+            self._driver = graph._driver
+            self._database = graph._database
+        else:
+            # Handle if the credentials are environment variables
+            # Support URL for backwards compatibility
+            if not url:
+                url = os.environ.get("NEO4J_URL")
 
-        # Support URL for backwards compatibility
-        if not url:
-            url = os.environ.get("NEO4J_URL")
+            url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
+            username = get_from_dict_or_env(
+                {"username": username}, "username", "NEO4J_USERNAME"
+            )
+            password = get_from_dict_or_env(
+                {"password": password}, "password", "NEO4J_PASSWORD"
+            )
+            database = get_from_dict_or_env(
+                {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
+            )
 
-        url = get_from_dict_or_env({"url": url}, "url", "NEO4J_URI")
-        username = get_from_dict_or_env(
-            {"username": username}, "username", "NEO4J_USERNAME"
-        )
-        password = get_from_dict_or_env(
-            {"password": password}, "password", "NEO4J_PASSWORD"
-        )
-        database = get_from_dict_or_env(
-            {"database": database}, "database", "NEO4J_DATABASE", "neo4j"
-        )
+            self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
+            self._database = database
+            # Verify connection
+            try:
+                self._driver.verify_connectivity()
+            except neo4j.exceptions.ServiceUnavailable:
+                raise ValueError(
+                    "Could not connect to Neo4j database. "
+                    "Please ensure that the url is correct"
+                )
+            except neo4j.exceptions.AuthError:
+                raise ValueError(
+                    "Could not connect to Neo4j database. "
+                    "Please ensure that the username and password are correct"
+                )
 
-        self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
-        self._database = database
         self.schema = ""
-        # Verify connection
-        try:
-            self._driver.verify_connectivity()
-        except neo4j.exceptions.ServiceUnavailable:
-            raise ValueError(
-                "Could not connect to Neo4j database. "
-                "Please ensure that the url is correct"
-            )
-        except neo4j.exceptions.AuthError:
-            raise ValueError(
-                "Could not connect to Neo4j database. "
-                "Please ensure that the username and password are correct"
-            )
-
         # Verify if the version support vector index
         self._is_enterprise = False
         self.verify_version()
@@ -1036,6 +1042,19 @@ class Neo4jVector(VectorStore):
         }
 
         results = self.query(read_query, params=parameters)
+
+        if any(result["text"] is None for result in results):
+            if not self.retrieval_query:
+                raise ValueError(
+                    f"Make sure that none of the `{self.text_node_property}` "
+                    f"properties on nodes with label `{self.node_label}` "
+                    "are missing or empty"
+                )
+            else:
+                raise ValueError(
+                    "Inspect the `retrieval_query` and ensure it doesn't "
+                    "return None for the `text` column"
+                )
 
         docs = [
             (

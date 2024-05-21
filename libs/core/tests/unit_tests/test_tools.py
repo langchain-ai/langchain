@@ -3,6 +3,7 @@
 import asyncio
 import json
 import sys
+import textwrap
 from datetime import datetime
 from enum import Enum
 from functools import partial
@@ -39,7 +40,7 @@ def test_unnamed_decorator() -> None:
     assert isinstance(search_api, BaseTool)
     assert search_api.name == "search_api"
     assert not search_api.return_direct
-    assert search_api("test") == "API result"
+    assert search_api.invoke("test") == "API result"
 
 
 class _MockSchema(BaseModel):
@@ -331,9 +332,8 @@ def test_structured_tool_from_function_docstring() -> None:
         "required": ["bar", "baz"],
     }
 
-    prefix = "foo(bar: int, baz: str) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + foo.__doc__.strip()
+    assert structured_tool.description == textwrap.dedent(foo.__doc__.strip())
 
 
 def test_structured_tool_from_function_docstring_complex_args() -> None:
@@ -364,9 +364,8 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
         "required": ["bar", "baz"],
     }
 
-    prefix = "foo(bar: int, baz: List[str]) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + foo.__doc__.strip()
+    assert structured_tool.description == textwrap.dedent(foo.__doc__).strip()
 
 
 def test_structured_tool_lambda_multi_args_schema() -> None:
@@ -562,7 +561,7 @@ def test_missing_docstring() -> None:
 def test_create_tool_positional_args() -> None:
     """Test that positional arguments are allowed."""
     test_tool = Tool("test_name", lambda x: x, "test_description")
-    assert test_tool("foo") == "foo"
+    assert test_tool.invoke("foo") == "foo"
     assert test_tool.name == "test_name"
     assert test_tool.description == "test_description"
     assert test_tool.is_single_input
@@ -572,7 +571,7 @@ def test_create_tool_keyword_args() -> None:
     """Test that keyword arguments are allowed."""
     test_tool = Tool(name="test_name", func=lambda x: x, description="test_description")
     assert test_tool.is_single_input
-    assert test_tool("foo") == "foo"
+    assert test_tool.invoke("foo") == "foo"
     assert test_tool.name == "test_name"
     assert test_tool.description == "test_description"
 
@@ -590,7 +589,7 @@ async def test_create_async_tool() -> None:
         coroutine=_test_func,
     )
     assert test_tool.is_single_input
-    assert test_tool("foo") == "foo"
+    assert test_tool.invoke("foo") == "foo"
     assert test_tool.name == "test_name"
     assert test_tool.description == "test_description"
     assert test_tool.coroutine is not None
@@ -699,9 +698,8 @@ def test_structured_tool_from_function() -> None:
         "required": ["bar", "baz"],
     }
 
-    prefix = "foo(bar: int, baz: str) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + foo.__doc__.strip()
+    assert structured_tool.description == textwrap.dedent(foo.__doc__.strip())
 
 
 def test_validation_error_handling_bool() -> None:
@@ -905,3 +903,15 @@ async def test_async_tool_pass_context() -> None:
     assert (
         await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
     )
+
+
+def test_tool_description() -> None:
+    def foo(bar: str) -> str:
+        """The foo."""
+        return bar
+
+    foo1 = tool(foo)
+    assert foo1.description == "The foo."  # type: ignore
+
+    foo2 = StructuredTool.from_function(foo)
+    assert foo2.description == "The foo."

@@ -4,6 +4,7 @@ from langchain_community import vectorstores
 from langchain_community.vectorstores import __all__, _module_lookup
 
 EXPECTED_ALL = [
+    "Aerospike",
     "AlibabaCloudOpenSearch",
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
@@ -58,14 +59,17 @@ EXPECTED_ALL = [
     "MyScale",
     "MyScaleSettings",
     "Neo4jVector",
+    "NeuralDBClientVectorStore",
     "NeuralDBVectorStore",
     "OpenSearchVectorSearch",
+    "OracleVS",
     "PGEmbedding",
     "PGVector",
     "PathwayVectorClient",
     "Pinecone",
     "Qdrant",
     "Redis",
+    "Relyt",
     "Rockset",
     "SKLearnVectorStore",
     "SQLiteVSS",
@@ -82,6 +86,7 @@ EXPECTED_ALL = [
     "TileDB",
     "TimescaleVector",
     "Typesense",
+    "UpstashVectorStore",
     "USearch",
     "VDMS",
     "Vald",

@@ -48,6 +48,8 @@ from langchain_core.output_parsers import (
     CommaSeparatedListOutputParser,
     StrOutputParser,
 )
+from langchain_core.outputs.chat_generation import ChatGeneration
+from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 from langchain_core.prompts import (
     ChatPromptTemplate,
@@ -111,7 +113,19 @@ class FakeTracer(BaseTracer):
 
     def _replace_message_id(self, maybe_message: Any) -> Any:
         if isinstance(maybe_message, BaseMessage):
-            maybe_message.id = AnyStr()
+            maybe_message.id = str(next(self.uuids_generator))
+        if isinstance(maybe_message, ChatGeneration):
+            maybe_message.message.id = str(next(self.uuids_generator))
+        if isinstance(maybe_message, LLMResult):
+            for i, gen_list in enumerate(maybe_message.generations):
+                for j, gen in enumerate(gen_list):
+                    maybe_message.generations[i][j] = self._replace_message_id(gen)
+        if isinstance(maybe_message, dict):
+            for k, v in maybe_message.items():
+                maybe_message[k] = self._replace_message_id(v)
+        if isinstance(maybe_message, list):
+            for i, v in enumerate(maybe_message):
+                maybe_message[i] = self._replace_message_id(v)
 
         return maybe_message
 
@@ -134,20 +148,10 @@ class FakeTracer(BaseTracer):
                     self.uuids_map[run.parent_run_id] if run.parent_run_id else None
                 ),
                 "child_runs": [self._copy_run(child) for child in run.child_runs],
-                "execution_order": None,
-                "child_execution_order": None,
                 "trace_id": self._replace_uuid(run.trace_id) if run.trace_id else None,
                 "dotted_order": new_dotted_order,
-                "inputs": {
-                    k: self._replace_message_id(v) for k, v in run.inputs.items()
-                }
-                if isinstance(run.inputs, dict)
-                else run.inputs,
-                "outputs": {
-                    k: self._replace_message_id(v) for k, v in run.outputs.items()
-                }
-                if isinstance(run.outputs, dict)
-                else run.outputs,
+                "inputs": self._replace_message_id(run.inputs),
+                "outputs": self._replace_message_id(run.outputs),
             }
         )
 
@@ -1652,11 +1656,14 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
 
     assert len(spy.call_args_list) == 2
     for i, call in enumerate(spy.call_args_list):
-        assert call.args[0] == ("hello" if i == 0 else "wooorld")
-        if i == 0:
+        call_arg = call.args[0]
+
+        if call_arg == "hello":
+            assert call_arg == "hello"
             assert call.args[1].get("tags") == ["a-tag"]
             assert call.args[1].get("metadata") == {}
         else:
+            assert call_arg == "wooorld"
             assert call.args[1].get("tags") == []
             assert call.args[1].get("metadata") == {"key": "value"}
 
@@ -1664,8 +1671,8 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
 
     assert fake.batch(["hello", "wooorld"], dict(tags=["a-tag"])) == [5, 7]
     assert len(spy.call_args_list) == 2
+    assert set(call.args[0] for call in spy.call_args_list) == {"hello", "wooorld"}
     for i, call in enumerate(spy.call_args_list):
-        assert call.args[0] == ("hello" if i == 0 else "wooorld")
         assert call.args[1].get("tags") == ["a-tag"]
         assert call.args[1].get("metadata") == {}
     spy.reset_mock()
@@ -1686,28 +1693,15 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
         5,
         7,
     ]
-    assert spy.call_args_list == [
-        mocker.call(
-            "hello",
-            dict(
-                metadata={"key": "value"},
-                tags=[],
-                callbacks=None,
-                recursion_limit=25,
-                run_id=None,
-            ),
-        ),
-        mocker.call(
-            "wooorld",
-            dict(
-                metadata={"key": "value"},
-                tags=[],
-                callbacks=None,
-                recursion_limit=25,
-                run_id=None,
-            ),
-        ),
-    ]
+    assert set(call.args[0] for call in spy.call_args_list) == {"hello", "wooorld"}
+    for call in spy.call_args_list:
+        assert call.args[1] == dict(
+            metadata={"key": "value"},
+            tags=[],
+            callbacks=None,
+            recursion_limit=25,
+            run_id=None,
+        )
 
 
 async def test_prompt() -> None:
@@ -1951,7 +1945,9 @@ async def test_with_listeners_async(mocker: MockerFixture) -> None:
 
 @freeze_time("2023-01-01")
 def test_prompt_with_chat_model(
-    mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture,
+    snapshot: SnapshotAssertion,
+    deterministic_uuids: MockerFixture,
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -2055,7 +2051,9 @@ def test_prompt_with_chat_model(
 
 @freeze_time("2023-01-01")
 async def test_prompt_with_chat_model_async(
-    mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture,
+    snapshot: SnapshotAssertion,
+    deterministic_uuids: MockerFixture,
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -2782,7 +2780,9 @@ async def test_prompt_with_llm_and_async_lambda(
 
 @freeze_time("2023-01-01")
 def test_prompt_with_chat_model_and_parser(
-    mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture,
+    snapshot: SnapshotAssertion,
+    deterministic_uuids: MockerFixture,
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -2821,7 +2821,9 @@ def test_prompt_with_chat_model_and_parser(
 
 @freeze_time("2023-01-01")
 def test_combining_sequences(
-    mocker: MockerFixture, snapshot: SnapshotAssertion
+    mocker: MockerFixture,
+    snapshot: SnapshotAssertion,
+    deterministic_uuids: MockerFixture,
 ) -> None:
     prompt = (
         SystemMessagePromptTemplate.from_template("You are a nice assistant.")
@@ -4881,6 +4883,23 @@ async def test_runnable_gen() -> None:
     assert [p async for p in arunnable.astream(None)] == [1, 2, 3]
     assert await arunnable.abatch([None, None]) == [6, 6]
 
+    class AsyncGen:
+        async def __call__(self, input: AsyncIterator[Any]) -> AsyncIterator[int]:
+            yield 1
+            yield 2
+            yield 3
+
+    arunnablecallable = RunnableGenerator(AsyncGen())
+    assert await arunnablecallable.ainvoke(None) == 6
+    assert [p async for p in arunnablecallable.astream(None)] == [1, 2, 3]
+    assert await arunnablecallable.abatch([None, None]) == [6, 6]
+    with pytest.raises(NotImplementedError):
+        arunnablecallable.invoke(None)
+    with pytest.raises(NotImplementedError):
+        arunnablecallable.stream(None)
+    with pytest.raises(NotImplementedError):
+        arunnablecallable.batch([None, None])
+
 
 async def test_runnable_gen_context_config() -> None:
     """Test that a generator can call other runnables with config
@@ -5506,3 +5525,64 @@ async def test_passthrough_atransform_with_dicts() -> None:
 
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
     assert chunks == [{"foo": "a"}, {"foo": "n"}]
+
+
+def test_listeners() -> None:
+    from langchain_core.runnables import RunnableLambda
+    from langchain_core.tracers.schemas import Run
+
+    def fake_chain(inputs: dict) -> dict:
+        return {**inputs, "key": "extra"}
+
+    shared_state = {}
+    value1 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+    value2 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+
+    def on_start(run: Run) -> None:
+        shared_state[run.id] = {"inputs": run.inputs}
+
+    def on_end(run: Run) -> None:
+        shared_state[run.id]["outputs"] = run.inputs
+
+    chain = (
+        RunnableLambda(fake_chain)
+        .with_listeners(on_end=on_end, on_start=on_start)
+        .map()
+    )
+
+    data = [{"name": "one"}, {"name": "two"}]
+    chain.invoke(data, config={"max_concurrency": 1})
+    assert len(shared_state) == 2
+    assert value1 in shared_state.values(), "Value not found in the dictionary."
+    assert value2 in shared_state.values(), "Value not found in the dictionary."
+
+
+async def test_listeners_async() -> None:
+    from langchain_core.runnables import RunnableLambda
+    from langchain_core.tracers.schemas import Run
+
+    def fake_chain(inputs: dict) -> dict:
+        return {**inputs, "key": "extra"}
+
+    shared_state = {}
+    value1 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+    value2 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+
+    def on_start(run: Run) -> None:
+        shared_state[run.id] = {"inputs": run.inputs}
+
+    def on_end(run: Run) -> None:
+        shared_state[run.id]["outputs"] = run.inputs
+
+    chain: Runnable = (
+        RunnableLambda(fake_chain)
+        .with_listeners(on_end=on_end, on_start=on_start)
+        .map()
+    )
+
+    data = [{"name": "one"}, {"name": "two"}]
+    await chain.ainvoke(data, config={"max_concurrency": 1})
+
+    assert len(shared_state) == 2
+    assert value1 in shared_state.values(), "Value not found in the dictionary."
+    assert value2 in shared_state.values(), "Value not found in the dictionary."
