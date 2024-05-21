@@ -13,16 +13,16 @@ import threading
 import time
 from typing import (
     TYPE_CHECKING,
+    Any,
     Optional,
     TypeVar,
-    Any,
 )
 
 from langchain_core.runnables.base import (
     Input,
     Output,
-    RunnableBindingBase,
     Runnable,
+    RunnableBindingBase,
     RunnableLambda,
 )
 

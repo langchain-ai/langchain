@@ -1340,6 +1340,7 @@ class Runnable(Generic[Input, Output], ABC):
     def with_rate_limit(self, *, rate_limiter) -> Runnable[Input, Output]:
         """Create a new Runnable that retries the original runnable on exceptions."""
         from langchain_core.runnables.rate_limiter import RunnableRateLimiter
+
         return RunnableRateLimiter(
             bound=self,
             kwargs={},
