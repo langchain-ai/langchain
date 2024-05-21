@@ -551,7 +551,7 @@ class BaseChatOpenAI(BaseChatModel):
         token_usage = response.get("usage", {})
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
-            if token_usage:
+            if token_usage and isinstance(message, AIMessage):
                 message.token_usage = {
                     "input_tokens": token_usage.get("prompt_tokens", 0),
                     "output_tokens": token_usage.get("completion_tokens", 0),

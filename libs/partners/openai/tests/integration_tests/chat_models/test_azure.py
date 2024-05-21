@@ -5,7 +5,12 @@ from typing import Any, Optional
 
 import pytest
 from langchain_core.callbacks import CallbackManager
-from langchain_core.messages import BaseMessage, BaseMessageChunk, HumanMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    BaseMessageChunk,
+    HumanMessage,
+)
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -43,12 +48,14 @@ def test_chat_openai(llm: AzureChatOpenAI) -> None:
     """Test AzureChatOpenAI wrapper."""
     message = HumanMessage(content="Hello")
     response = llm.invoke([message])
-    assert isinstance(response, BaseMessage)
+    assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
     # test token usage
-    for k in ("input_tokens", "output_tokens", "total_tokens"):
-        assert isinstance(response.token_usage[k], int)
+    assert response.token_usage is not None
+    assert isinstance(response.token_usage["input_tokens"], int)
+    assert isinstance(response.token_usage["output_tokens"], int)
+    assert isinstance(response.token_usage["total_tokens"], int)
 
 
 @pytest.mark.scheduled
