@@ -122,7 +122,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         # atomic check and set
         tap = self.is_tapped.setdefault(run_id, sentinel)
         # wait for first chunk
-        first = await py_anext(output, sentinel)
+        first = await py_anext(output, default=sentinel)
         if first is sentinel:
             return
         # get run info
