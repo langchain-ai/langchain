@@ -129,19 +129,20 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         run_info = self.run_map.get(run_id)
         if run_info is None:
             # run has finished, don't issue any stream events
-            yield first
+            yield cast(T, first)
             return
         if tap is sentinel:
             # if we are the first to tap, issue stream events
-            event = {
+            event: StreamEvent = {
                 "event": f"on_{run_info['run_type']}_stream",
                 "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "data": {},
             }
             self._send({**event, "data": {"chunk": first}}, run_info["run_type"])
-            yield first
+            yield cast(T, first)
             # consume the rest of the output
             async for chunk in output:
                 self._send(
@@ -151,7 +152,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 yield chunk
         else:
             # otherwise just pass through
-            yield first
+            yield cast(T, first)
             # consume the rest of the output
             async for chunk in output:
                 yield chunk
@@ -169,19 +170,20 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         run_info = self.run_map.get(run_id)
         if run_info is None:
             # run has finished, don't issue any stream events
-            yield first
+            yield cast(T, first)
             return
         if tap is sentinel:
             # if we are the first to tap, issue stream events
-            event = {
+            event: StreamEvent = {
                 "event": f"on_{run_info['run_type']}_stream",
                 "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "data": {},
             }
             self._send({**event, "data": {"chunk": first}}, run_info["run_type"])
-            yield first
+            yield cast(T, first)
             # consume the rest of the output
             for chunk in output:
                 self._send(
@@ -191,7 +193,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 yield chunk
         else:
             # otherwise just pass through
-            yield first
+            yield cast(T, first)
             # consume the rest of the output
             for chunk in output:
                 yield chunk
@@ -794,7 +796,7 @@ async def _astream_events_implementation_v2(
 
     # Assign the stream handler to the config
     config = ensure_config(config)
-    run_id = config.setdefault("run_id", uuid4())
+    run_id = cast(UUID, config.setdefault("run_id", uuid4()))
     callbacks = config.get("callbacks")
     if callbacks is None:
         config["callbacks"] = [event_streamer]
