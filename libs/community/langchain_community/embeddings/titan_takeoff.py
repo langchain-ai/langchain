@@ -179,12 +179,12 @@ class TitanTakeoffEmbed(Embeddings):
         return self.client.embed(input, consumer_group)
 
     def embed_documents(
-        self, texts: Union[List[str], str], consumer_group: Optional[str] = None
+        self, texts: List[str], consumer_group: Optional[str] = None
     ) -> List[List[float]]:
         """Embed documents.
 
         Args:
-            texts (Union[List[str], str]): List of prompts/documents to embed
+            texts (List[str]): List of prompts/documents to embed
             consumer_group (Optional[str], optional): Consumer group to send request
             to containing embedding model. Defaults to None.
 

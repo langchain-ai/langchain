@@ -28,7 +28,7 @@ def test_titan_takeoff_call(httpx_mock: Any) -> None:
 
     embedding = TitanTakeoffEmbed(port=port)
 
-    output_1 = embedding.embed_documents("What is 2 + 2?", "primary")
+    output_1 = embedding.embed_documents(["What is 2 + 2?"], "primary")
     output_2 = embedding.embed_query("What is 2 + 2?", "primary")
 
     assert isinstance(output_1, list)
@@ -57,12 +57,12 @@ def test_no_consumer_group_fails(httpx_mock: Any) -> None:
     embedding = TitanTakeoffEmbed(port=port)
 
     with pytest.raises(MissingConsumerGroup):
-        embedding.embed_documents("What is 2 + 2?")
+        embedding.embed_documents(["What is 2 + 2?"])
     with pytest.raises(MissingConsumerGroup):
         embedding.embed_query("What is 2 + 2?")
 
     # Check specifying a consumer group works
-    embedding.embed_documents("What is 2 + 2?", "primary")
+    embedding.embed_documents(["What is 2 + 2?"], "primary")
     embedding.embed_query("What is 2 + 2?", "primary")
 
 
@@ -100,7 +100,7 @@ def test_takeoff_initialization(httpx_mock: Any) -> None:
     )
     # Shouldn't need to specify consumer group as there is only one specified during
     # initialization
-    output_1 = llm.embed_documents("What is 2 + 2?")
+    output_1 = llm.embed_documents(["What is 2 + 2?"])
     output_2 = llm.embed_query("What is 2 + 2?")
 
     assert isinstance(output_1, list)
@@ -159,11 +159,11 @@ def test_takeoff_initialization_with_more_than_one_consumer_group(
     # There was more than one consumer group specified during initialization so we
     # need to specify which one to use
     with pytest.raises(MissingConsumerGroup):
-        llm.embed_documents("What is 2 + 2?")
+        llm.embed_documents(["What is 2 + 2?"])
     with pytest.raises(MissingConsumerGroup):
         llm.embed_query("What is 2 + 2?")
 
-    output_1 = llm.embed_documents("What is 2 + 2?", "embed")
+    output_1 = llm.embed_documents(["What is 2 + 2?"], "embed")
     output_2 = llm.embed_query("What is 2 + 2?", "embed2")
 
     assert isinstance(output_1, list)
