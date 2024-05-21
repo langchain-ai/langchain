@@ -23,7 +23,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
     def __init__(
         self,
-        cosmos_client: CosmosClient,
+        cosmos_client,
         database_name: str,
         container_name: str,
         partition_key: str,
