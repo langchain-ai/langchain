@@ -8,6 +8,7 @@ import pytest
 
 from langchain_community.embeddings import TitanTakeoffEmbed
 from langchain_community.embeddings.titan_takeoff import (
+    Device,
     MissingConsumerGroup,
     ReaderConfig,
 )
@@ -75,12 +76,12 @@ def test_takeoff_initialization(httpx_mock: Any) -> None:
     embed_url = f"http://localhost:{inf_port}/embed"
     reader_1 = ReaderConfig(
         model_name="test",
-        device="cpu",
+        device=Device.cpu,
         consumer_group="embed",
     )
     reader_2 = ReaderConfig(
         model_name="test2",
-        device="cuda",
+        device=Device.cuda,
         consumer_group="embed",
     )
 
@@ -106,11 +107,11 @@ def test_takeoff_initialization(httpx_mock: Any) -> None:
     assert isinstance(output_2, list)
     # Ensure the management api was called to create the reader
     assert len(httpx_mock.get_requests()) == 4
-    for key, value in reader_1.items():
+    for key, value in reader_1.dict().items():
         assert json.loads(httpx_mock.get_requests()[0].content)[key] == value
     assert httpx_mock.get_requests()[0].url == mgnt_url
     # Also second call should be made to spin uo reader 2
-    for key, value in reader_2.items():
+    for key, value in reader_2.dict().items():
         assert json.loads(httpx_mock.get_requests()[1].content)[key] == value
     assert httpx_mock.get_requests()[1].url == mgnt_url
     # Ensure the third call is to generate endpoint to inference
@@ -133,12 +134,12 @@ def test_takeoff_initialization_with_more_than_one_consumer_group(
     embed_url = f"http://localhost:{inf_port}/embed"
     reader_1 = ReaderConfig(
         model_name="test",
-        device="cpu",
+        device=Device.cpu,
         consumer_group="embed",
     )
     reader_2 = ReaderConfig(
         model_name="test2",
-        device="cuda",
+        device=Device.cuda,
         consumer_group="embed2",
     )
 
@@ -169,11 +170,11 @@ def test_takeoff_initialization_with_more_than_one_consumer_group(
     assert isinstance(output_2, list)
     # Ensure the management api was called to create the reader
     assert len(httpx_mock.get_requests()) == 4
-    for key, value in reader_1.items():
+    for key, value in reader_1.dict().items():
         assert json.loads(httpx_mock.get_requests()[0].content)[key] == value
     assert httpx_mock.get_requests()[0].url == mgnt_url
     # Also second call should be made to spin uo reader 2
-    for key, value in reader_2.items():
+    for key, value in reader_2.dict().items():
         assert json.loads(httpx_mock.get_requests()[1].content)[key] == value
     assert httpx_mock.get_requests()[1].url == mgnt_url
     # Ensure the third call is to generate endpoint to inference
