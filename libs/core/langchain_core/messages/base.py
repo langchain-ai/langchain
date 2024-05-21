@@ -115,7 +115,7 @@ def merge_content(
             if first_content.get("index") != 0:
                 raise Exception(
                     "Failed to concatenate onto a chunk with index",
-                    f"{first_content.get('index')}.\\n"
+                    f"{first_content.get('index')}.\n"
                     "You must concatenate message content chunks in order, ",
                     "starting with index 0.",
                 )
