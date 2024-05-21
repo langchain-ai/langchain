@@ -557,6 +557,7 @@ class AzureSearch(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        *,
         filters: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -788,6 +789,7 @@ class AzureSearch(VectorStore):
         text_embeddings: Iterable[Tuple[str, List[float]]],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        *,
         azure_search_endpoint: str = "",
         azure_search_key: str = "",
         index_name: str = "langchain-index",
@@ -811,6 +813,7 @@ class AzureSearch(VectorStore):
         text_embeddings: Iterable[Tuple[str, List[float]]],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        *,
         azure_search_endpoint: str = "",
         azure_search_key: str = "",
         index_name: str = "langchain-index",
