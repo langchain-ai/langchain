@@ -91,6 +91,7 @@ _EXPECTED = [
     "ZepVectorStore",
     "Zilliz",
     "TencentVectorDB",
+    "AzureCosmosDBNoSqlVectorSearch",
     "AzureCosmosDBVectorSearch",
     "VectorStore",
     "Yellowbrick",
