@@ -95,6 +95,38 @@ def merge_content(
         else:
             return_list: List[Union[str, Dict]] = [first_content]
             return return_list + second_content
+    elif isinstance(second_content, dict) and isinstance(
+        second_content.get("index"), int
+    ):
+        second_index = second_content.get("index")
+        if second_index < 0:
+            raise Exception(
+                f"Invalid index value {second_index} found when concatenating chunks"
+            )
+        if isinstance(first_content, List):
+            if second_index > len(first_content):
+                raise Exception(
+                    f"Failed to concatenate a chunk with index {second_index}",
+                    f"to a chunk that only had {len(first_content)} parts.\n"
+                    "You must concatenate message content chunks in order.",
+                )
+            final_content = first_content.copy()
+        elif isinstance(first_content, dict):
+            if first_content.get("index") != 0:
+                raise Exception(
+                    "Failed to concatenate onto a chunk with index",
+                    f"{first_content.get('index')}.\\n"
+                    "You must concatenate message content chunks in order, ",
+                    "starting with index 0.",
+                )
+            final_content = [first_content]
+        if second_index == len(final_content):
+            return final_content + [second_content]
+        else:
+            final_content[second_index] = merge_content(
+                final_content[second_index], second_content
+            )
+            return final_content
     # If both are lists, merge them naively
     elif isinstance(second_content, List):
         return first_content + second_content
