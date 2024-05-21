@@ -290,7 +290,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 thread_id: Existing thread to use.
                 run_id: Existing run to use. Should only be supplied when providing
                     the tool output for a required action after an initial invocation.
-                file_ids: (deprecated) File ids to include in new run. Use 'attachments' instead
+                file_ids: (deprecated) File ids to include in new run. Use
+                    'attachments' instead
                 attachments: Assistant files to include in new run. (v2 API).
                 message_metadata: Metadata to associate with new message.
                 thread_metadata: Metadata to associate with new thread. Only relevant
@@ -425,7 +426,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
                 thread_id: Existing thread to use.
                 run_id: Existing run to use. Should only be supplied when providing
                     the tool output for a required action after an initial invocation.
-                file_ids: (deprecated) File ids to include in new run. Use 'attachments' instead
+                file_ids: (deprecated) File ids to include in new run. Use
+                    'attachments' instead
                 attachments: Assistant files to include in new run. (v2 API).
                 message_metadata: Metadata to associate with new message.
                 thread_metadata: Metadata to associate with new thread. Only relevant
