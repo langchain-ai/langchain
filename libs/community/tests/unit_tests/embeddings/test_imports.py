@@ -75,6 +75,7 @@ EXPECTED_ALL = [
     "OpenVINOEmbeddings",
     "OpenVINOBgeEmbeddings",
     "SolarEmbeddings",
+    "IpexLLMBgeEmbeddings",
 ]
 
 
