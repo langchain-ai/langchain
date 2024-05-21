@@ -135,14 +135,14 @@ class ChatSparkLLM(BaseChatModel):
 
     client: Any = None  #: :meta private:
     spark_app_id: Optional[str] = None
-    spark_api_key: Optional[str] = None
+    spark_api_key: Optional[str] = Field(default=None, alias="api_key")
     spark_api_secret: Optional[str] = None
     spark_api_url: Optional[str] = None
     spark_llm_domain: Optional[str] = None
     spark_user_id: str = "lc_user"
     streaming: bool = False
     request_timeout: int = Field(30, alias="timeout")
-    temperature: float = 0.5
+    temperature: float = Field(default=0.5)
     top_k: int = 4
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
