@@ -421,6 +421,8 @@ def test_response_metadata() -> None:
         )
     )
     assert "content" in result.response_metadata["logprobs"]
+    for k in ("input_tokens", "output_tokens", "total_tokens"):
+        assert isinstance(result.token_usage[k], int)
 
 
 async def test_async_response_metadata() -> None:
@@ -438,6 +440,8 @@ async def test_async_response_metadata() -> None:
         )
     )
     assert "content" in result.response_metadata["logprobs"]
+    for k in ("input_tokens", "output_tokens", "total_tokens"):
+        assert isinstance(result.token_usage[k], int)
 
 
 def test_response_metadata_streaming() -> None:

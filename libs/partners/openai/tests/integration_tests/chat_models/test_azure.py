@@ -46,6 +46,10 @@ def test_chat_openai(llm: AzureChatOpenAI) -> None:
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
+    # test token usage
+    for k in ("input_tokens", "output_tokens", "total_tokens"):
+        assert isinstance(response.token_usage[k], int)
+
 
 @pytest.mark.scheduled
 def test_chat_openai_generate() -> None:

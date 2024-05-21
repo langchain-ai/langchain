@@ -75,6 +75,8 @@ async def test_ainvoke() -> None:
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
+    for k in ("input_tokens", "output_tokens", "total_tokens"):
+        assert isinstance(result.token_usage[k], int)
 
 
 def test_invoke() -> None:
@@ -83,6 +85,8 @@ def test_invoke() -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+    for k in ("input_tokens", "output_tokens", "total_tokens"):
+        assert isinstance(result.token_usage[k], int)
 
 
 def test_system_invoke() -> None:
