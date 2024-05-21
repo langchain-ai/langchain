@@ -1,3 +1,4 @@
+import sys
 from typing import Any, Callable, Generator
 from unittest.mock import MagicMock, Mock, call
 
@@ -8,7 +9,9 @@ from langchain_community.vectorstores.aerospike import Aerospike
 from langchain_community.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
-pytestmark = pytest.mark.requires("aerospike_vector_search")
+pytestmark = pytest.mark.requires("aerospike_vector_search") and pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="requires python3.9 or higher"
+)
 
 
 @pytest.fixture(scope="module")
