@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import List, Optional, Sequence, Union
+from typing import List, Optional, Sequence
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
@@ -50,7 +50,7 @@ class MultiQueryRetriever(BaseRetriever):
     """
 
     retriever: BaseRetriever
-    llm_chain: Union[LLMChain, Runnable]
+    llm_chain: Runnable
     verbose: bool = True
     parser_key: str = "lines"
     """DEPRECATED. parser_key is no longer used and should not be specified."""
