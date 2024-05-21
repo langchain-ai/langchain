@@ -70,9 +70,6 @@ class ClovaEmbeddings(BaseModel, Embeddings):
         )
         return values
 
-    def embed(self, texts: List[str]) -> List[List[float]]:
-        return self.embed_documents(texts)
-
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """
         Embed a list of texts and return their embeddings.
