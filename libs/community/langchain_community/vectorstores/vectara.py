@@ -91,7 +91,7 @@ class VectaraQueryConfig:
     summary_config: SummaryConfig = field(default_factory=SummaryConfig)
 
 
-def create_vectara_query_config(search_kwargs):
+def create_vectara_query_config(search_kwargs) -> VectaraQueryConfig:
     # Extracting nested MMRConfig if present
     mmr_config_kwargs = search_kwargs.get("mmr_config", {})
     mmr_config = MMRConfig(**mmr_config_kwargs)
@@ -248,8 +248,8 @@ class Vectara(VectorStore):
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
-        for id in ids:
-            self._delete_doc(id)
+        success = [self._delete_doc(id) for id in ids]
+        return all(success)
 
     def add_files(
         self,
@@ -651,9 +651,9 @@ class Vectara(VectorStore):
         """Return a Vectara RAG runnable for chat."""
         return VectaraRAG(self, config, chat=True)
 
-    def as_retriever(self, config: VectaraQueryConfig) -> VectaraRetriever:
+    def as_retriever(self, **kwargs) -> VectaraRetriever:
         """return a retriever object."""
-        return VectaraRetriever(vectorstore=self, config=config)
+        return VectaraRetriever(vectorstore=self, config=kwargs.get('config', VectaraQueryConfig()))
 
 
 class VectaraRetriever(BaseRetriever):
