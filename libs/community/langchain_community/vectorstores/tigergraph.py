@@ -42,12 +42,12 @@ class TigerGraphVector(VectorStore):
         # We first create a connection to the database
         conn = TigerGraphConnection(
             host="https://<your_tigergraph_host>",
-            username="<your_username>", 
+            username="<your_username>",
             password="<your_password>")
 
         # We then create a TigerGraphVector object
         # By default, the search type is "hybrid",
-        # and the search indices are ["Entity", "Relationship", 
+        # and the search indices are ["Entity", "Relationship",
         #                              "Document", "DocumentChunk"]
         from langchain_community.vectorstores import TigerGraphVector
 
@@ -55,7 +55,7 @@ class TigerGraphVector(VectorStore):
                         conn,
                         search_type="hybrid"
                     )
-        
+
         # We can then add texts to the TigerGraph instance
         tg_vector.add_texts(["This is a test document"])
 
