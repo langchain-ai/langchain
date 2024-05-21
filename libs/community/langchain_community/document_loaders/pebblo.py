@@ -303,12 +303,6 @@ class PebbloSafeLoader(BaseLoader):
             pebblo_resp = requests.post(
                 app_discover_url, headers=headers, json=payload, timeout=20
             )
-            if self.api_key:
-                pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}/v1/discover"
-                headers.update({"x-api-key": self.api_key})
-                _ = requests.post(
-                    pebblo_cloud_url, headers=headers, json=payload, timeout=20
-                )
             logger.debug(
                 "send_discover[local]: request url %s, body %s len %s\
                     response status %s body %s",
@@ -333,13 +327,13 @@ class PebbloSafeLoader(BaseLoader):
             try:
                 headers.update({"x-api-key": self.api_key})
                 if pebblo_resp:
-                    pebblo_resp_docs = json.loads(pebblo_resp.text).get("docs")
+                    pebblo_resp_docs = json.loads(pebblo_resp.text).get("ai_apps_data")
                     payload.update(
                         {
-                            "pebbloServerVersion": pebblo_resp_docs.get(
+                            "pebblo_server_version": pebblo_resp_docs.get(
                                 "pebbloServerVersion"
                             ),
-                            "pebbloClientVersion": pebblo_resp_docs.get(
+                            "pebblo_client_version": pebblo_resp_docs.get(
                                 "pebbloClientVersion"
                             ),
                         }
