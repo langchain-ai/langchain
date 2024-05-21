@@ -31,6 +31,7 @@ T = TypeVar("T")
 class CloudBlob(Blob):
     def as_string(self) -> str:
         """Read data as a string."""
+        from cloudpathlib import AnyPath
         if self.data is None and self.path:
             return AnyPath(self.path).read_text(encoding=self.encoding)  # type: ignore
         elif isinstance(self.data, bytes):
@@ -42,6 +43,7 @@ class CloudBlob(Blob):
 
     def as_bytes(self) -> bytes:
         """Read data as bytes."""
+        from cloudpathlib import AnyPath
         if isinstance(self.data, bytes):
             return self.data
         elif isinstance(self.data, str):
@@ -54,6 +56,7 @@ class CloudBlob(Blob):
     @contextlib.contextmanager
     def as_bytes_io(self) -> Generator[Union[BytesIO, BufferedReader], None, None]:
         """Read data as a byte stream."""
+        from cloudpathlib import AnyPath
         if isinstance(self.data, bytes):
             yield BytesIO(self.data)
         elif self.data is None and self.path:
@@ -67,6 +70,7 @@ def _url_to_filename(url: str) -> str:
     Convert file:, s3:, az: or gs: url to localfile.
     If the file is not here, download it in a temporary file.
     """
+    from cloudpathlib import AnyPath
     url_parsed = urlparse(url)
     suffix = Path(url_parsed.path).suffix
     if url_parsed.scheme in ["s3", "az", "gs"]:
@@ -176,6 +180,7 @@ class CloudBlobLoader(BlobLoader):
                     exclude=["**/*.py", "**/*.pyc"]
                 )
         """  # noqa: E501
+        from cloudpathlib import AnyPath
         url_parsed = urlparse(str(url))
 
         if url_parsed.scheme == "file":
