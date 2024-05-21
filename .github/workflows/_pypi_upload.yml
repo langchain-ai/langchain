@@ -1,0 +1,87 @@
+name: Publish Python distribution to PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      distribVersion:
+        discription: 'Version of gigachain distrib'
+        required: true
+        type: string
+        default: '0.1.0'
+      publish:
+        discription: 'Publish distrib to pypi'
+        required: true
+        type: boolean
+        default: false
+      gitHubRelease:
+        discription: 'Create GitHub Release'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install pypa/build
+        run: >-
+          python3 -m
+          pip install
+          build
+          --user
+      - name: Build a binary wheel
+        run: python3 -m build
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.tags }}
+          path: dist/
+
+  publish-to-pypi:
+    if: ${{ inputs.distrib }}
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/gigachat
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@v3
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+  github-release:
+    name: >-
+      Upload distrib to GitHub Release
+    if: ${{ inputs.gitHubRelease }}
+    needs:
+      - build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create
+          '${{ github.ref_name }}'
+          --repo '${{ github.repository }}'
+          --notes ""
+      - name: Upload artifact to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          gh release upload
+          '${{ github.ref_name }}' dist/**
+          --repo '${{ github.repository }}'
