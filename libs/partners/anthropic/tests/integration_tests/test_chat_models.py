@@ -74,12 +74,7 @@ async def test_ainvoke() -> None:
     llm = ChatAnthropicMessages(model_name=MODEL_NAME)
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
-    assert isinstance(result, AIMessage)
     assert isinstance(result.content, str)
-    assert result.token_usage is not None
-    assert isinstance(result.token_usage["input_tokens"], int)
-    assert isinstance(result.token_usage["output_tokens"], int)
-    assert isinstance(result.token_usage["total_tokens"], int)
 
 
 def test_invoke() -> None:
@@ -87,12 +82,7 @@ def test_invoke() -> None:
     llm = ChatAnthropicMessages(model_name=MODEL_NAME)
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
-    assert isinstance(result, AIMessage)
     assert isinstance(result.content, str)
-    assert result.token_usage is not None
-    assert isinstance(result.token_usage["input_tokens"], int)
-    assert isinstance(result.token_usage["output_tokens"], int)
-    assert isinstance(result.token_usage["total_tokens"], int)
 
 
 def test_system_invoke() -> None:

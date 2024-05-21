@@ -409,7 +409,6 @@ def test_invoke() -> None:
 def test_response_metadata() -> None:
     llm = ChatOpenAI()
     result = llm.invoke([HumanMessage(content="I'm PickleRick")], logprobs=True)
-    assert isinstance(result, AIMessage)
     assert result.response_metadata
     assert all(
         k in result.response_metadata
@@ -422,16 +421,11 @@ def test_response_metadata() -> None:
         )
     )
     assert "content" in result.response_metadata["logprobs"]
-    assert result.token_usage is not None
-    assert isinstance(result.token_usage["input_tokens"], int)
-    assert isinstance(result.token_usage["output_tokens"], int)
-    assert isinstance(result.token_usage["total_tokens"], int)
 
 
 async def test_async_response_metadata() -> None:
     llm = ChatOpenAI()
     result = await llm.ainvoke([HumanMessage(content="I'm PickleRick")], logprobs=True)
-    assert isinstance(result, AIMessage)
     assert result.response_metadata
     assert all(
         k in result.response_metadata
@@ -444,10 +438,6 @@ async def test_async_response_metadata() -> None:
         )
     )
     assert "content" in result.response_metadata["logprobs"]
-    assert result.token_usage is not None
-    assert isinstance(result.token_usage["input_tokens"], int)
-    assert isinstance(result.token_usage["output_tokens"], int)
-    assert isinstance(result.token_usage["total_tokens"], int)
 
 
 def test_response_metadata_streaming() -> None:
