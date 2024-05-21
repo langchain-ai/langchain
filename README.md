@@ -47,10 +47,10 @@
 
 * [`gigachain`](libs/langchain);
 * [`gigachain-core`](libs/core);
-* [`gigachain-community`](libs/cimmunity);
+* [`gigachain-community`](libs/community);
 * [`gigachain-experimental`](libs/experimental);
 * [`gigachain-cli`](libs/cli);
-* [GigaChain Templates](templates) и пакеты Python.
+* [`GigaChain Templates`](templates) и пакеты Python.
 
 ![Стэк технологий GigaChain](docs/static/img/gigachain-stack.png)
 
@@ -75,7 +75,7 @@
 
   Генерация с дополнением данными включает в себя специфические типы цепочек, которые сначала получают данные от внешнего источника, а затем используют их в генерации. Примеры включают в себя суммирование больших текстов и ответы на вопросы по заданным источникам данных.
 
-  Пример - [Ответы на вопросы по документу на примере "разговор с книгой" (RAG)](docs/docs/use_cases/question_answering/gigachat_qa.ipynb)
+  Пример - [Ответы на вопросы по документу на примере "разговор с книгой" (RAG)](docs/docs/how_to/gigachat_qa.ipynb)
   
   Пример — [Ответы на вопросы по статьям из Wikipedia](docs/docs/integrations/retrievers/wikipedia.ipynb)
 
@@ -91,10 +91,7 @@
 
 - Самооценка (*Evaluation*).
 
-  **BETA** Генеративные модели традиционно сложно оценивать с помощью стандартных метрик. Один из новых способов оценки — использование самих языковых моделей. GigaChain предоставляет некоторые запросы и цепочки для решения таких задач.
-
-> [!WARNING]
-> GigaChain наследует [несовместимые изменения](https://github.com/langchain-ai/langchain#breaking-changes-for-select-chains-sqldatabase-on-72823), которые были сделаны в оригинальной библиотеке 28.07.2023. Подробнее о том, как мигрировать свой проект читайте в [документации Langchain](https://github.com/langchain-ai/langchain/blob/master/MIGRATE.md).
+  **BETA** Генеративные модели традиционно сложно оценивать с помощью стандартных метрик. Один из новых способов оценки — использование самих языковых моделей. GigaChain предоставляет некоторые запросы и цепочки для решения таких задач
 
 
 ## Установка
@@ -113,7 +110,7 @@ pip install gigachain
 pip uninstall langchain langchain_experimental langchain_core langchain_community
 ```
 
-После чего [установить библиотеку `gigachain`]({#ustanovka-giga-chain):
+После чего установить библиотеку `gigachain`:
 
 ```sh
 pip install gigachain
@@ -316,7 +313,7 @@ chat = GigaChat(credentials='<авторизационные_данные>', ver
 
 ### Базовые примеры работы с GigaChat
 
-- [Ответы на вопросы по документу на примере "разговор с книгой" (RAG)](docs/docs/use_cases/question_answering/gigachat_qa.ipynb)
+- [Ответы на вопросы по документу на примере "разговор с книгой" (RAG)](docs/docs/how_to/gigachat_qa.ipynb)
 - [Суммаризация по алгоритму MapReduce](docs/extras/use_cases/summarization.ipynb) (см. раздел map/reduce)
 - [Работа с хабом промптов, цепочками и парсером JSON](docs/docs/modules/model_io/output_parsers/json.ipynb)
 - [Работа с хабом промптов на примере задачи суммаризации книг](hub/prompts/summarize/map_reduce/summarize_examples.ipynb)
