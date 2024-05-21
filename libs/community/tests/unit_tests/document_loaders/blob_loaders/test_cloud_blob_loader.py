@@ -158,7 +158,7 @@ def test_file_names_exist(toy_dir: str, params: dict) -> None:
     assert loader.count_matching_files() == len(relative_filenames)
 
 
-# @pytest.mark.requires("cloudpathlib")
+@pytest.mark.requires("cloudpathlib")
 def test_show_progress(toy_dir: str) -> None:
     """Verify that file system loader works with a progress bar."""
     loader = CloudBlobLoader(toy_dir)

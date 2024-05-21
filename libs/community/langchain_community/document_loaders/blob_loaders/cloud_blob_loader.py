@@ -12,11 +12,12 @@ from typing import (
     Optional,
     Sequence,
     TypeVar,
-    Union,
+    Union, TYPE_CHECKING,
 )
 from urllib.parse import urlparse
 
-from cloudpathlib import AnyPath
+if TYPE_CHECKING:
+    from cloudpathlib import AnyPath
 
 from langchain_community.document_loaders.blob_loaders.schema import (
     Blob,
@@ -127,7 +128,7 @@ class CloudBlobLoader(BlobLoader):
 
     def __init__(
         self,
-        url: Union[str, AnyPath],
+        url: Union[str, "AnyPath"],
         *,
         glob: str = "**/[!.]*",
         exclude: Sequence[str] = (),
@@ -201,7 +202,7 @@ class CloudBlobLoader(BlobLoader):
             # yield Blob.from_path(path)
             yield self.from_cloud_path(path)
 
-    def _yield_paths(self) -> Iterable[AnyPath]:
+    def _yield_paths(self) -> Iterable["AnyPath"]:
         """Yield paths that match the requested pattern."""
         if self.path.is_file():  # type: ignore
             yield self.path
@@ -229,7 +230,7 @@ class CloudBlobLoader(BlobLoader):
     @classmethod
     def from_cloud_path(
         cls,
-        path: AnyPath,
+        path: "AnyPath",
         *,
         encoding: str = "utf-8",
         mime_type: Optional[str] = None,
@@ -280,15 +281,3 @@ class CloudBlobLoader(BlobLoader):
             path=str(path),
             metadata=metadata if metadata is not None else {},
         )
-
-
-# if __name__ == "__main__":
-#     for blob in CloudBlobLoader(
-#             # url="s3://ai-faq-s3-faq-data-458767788899/dataset/output/",
-#             url="file:///home/pprados/workspace.bda/rag-template/data/faq/faq.csv",
-#             # url="/home/pprados/workspace.bda/rag-template/data/faq/faq.csv",
-#             exclude=["*.txt"],
-#             suffixes=[".csv"],
-#     ).yield_blobs():
-#         print(blob.as_string())
-#     print("terminate")
