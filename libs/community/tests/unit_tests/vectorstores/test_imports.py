@@ -13,7 +13,6 @@ EXPECTED_ALL = [
     "AstraDB",
     "AtlasDB",
     "AwaDB",
-    "AzureCosmosDBNoSqlVectorSearch",
     "AzureCosmosDBVectorSearch",
     "AzureSearch",
     "BESVectorStore",

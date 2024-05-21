@@ -49,7 +49,6 @@ def test_compatible_vectorstore_documentation() -> None:
         "Aerospike",
         "AnalyticDB",
         "AstraDB",
-        "AzureCosmosDBNoSqlVectorSearch",
         "AzureCosmosDBVectorSearch",
         "AzureSearch",
         "AwaDB",
