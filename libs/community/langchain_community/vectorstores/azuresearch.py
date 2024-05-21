@@ -21,10 +21,7 @@ from typing import (
 )
 
 import numpy as np
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import root_validator
@@ -802,13 +799,3 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
-
-    async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-    ) -> List[Document]:
-        raise NotImplementedError(
-            "AzureSearchVectorStoreRetriever does not support async"
-        )
