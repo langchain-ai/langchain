@@ -77,17 +77,41 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
                 sorted_embeddings = sorted(embeddings, key=lambda e: e.get("index", 0))
                 # Return just the embeddings
                 return [result.get("embedding", []) for result in sorted_embeddings]
+            # Common Error 1: Invalid `api_key`
+            elif response.status_code == 401:
+                raise Exception(
+                    "401 Unauthorized: Access denied for `BaichuanEmbedding`."
+                    "Please check your `api_key`."
+                )
+            # Common Error 2: Incorrect proxy settings
+            elif response.status_code == 407:
+                raise Exception(
+                    "407 Proxy Authentication Required: Please check your proxy "
+                    "setting and provide valid credentials."
+                )
+            # Client Error
+            elif response.status_code >= 400:
+                raise Exception(
+                    f"{response.status_code} Client Error: Please verify your "
+                    f"input and try again."
+                )
+            # Server Error
+            elif response.status_code >= 500:
+                raise Exception(
+                    f"{response.status_code} Service Error: An internal error "
+                    f"has occurred on the `BaichuanEmbedding` server."
+                )
             else:
                 # Log error or handle unsuccessful response appropriately
-                print(  # noqa: T201
+                raise Exception(  # noqa: T201
                     f"Error: Received status code {response.status_code} from "
-                    "embedding API"
+                    "`BaichuanEmbedding` API"
                 )
-                return None
         except Exception as e:
             # Log the exception or handle it as needed
-            print(f"Exception occurred while trying to get embeddings: {str(e)}")  # noqa: T201
-            return None
+            raise Exception(  # noqa: T201
+                f"Exception occurred while trying to get embeddings: {str(e)}"
+            )
 
     def embed_documents(self, texts: List[str]) -> Optional[List[List[float]]]:  # type: ignore[override]
         """Public method to get embeddings for a list of documents.
