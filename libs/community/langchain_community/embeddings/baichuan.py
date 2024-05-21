@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -79,34 +80,35 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
                 return [result.get("embedding", []) for result in sorted_embeddings]
             # Common Error 1: Invalid `api_key`
             elif response.status_code == 401:
-                raise Exception(
+                warnings.warn(
                     "401 Unauthorized: Access denied for `BaichuanEmbedding`."
                     "Please check your `api_key`."
                 )
             # Common Error 2: Incorrect proxy settings
             elif response.status_code == 407:
-                raise Exception(
+                warnings.warn(
                     "407 Proxy Authentication Required: Please check your proxy "
                     "setting and provide valid credentials."
                 )
             # Client Error
             elif response.status_code >= 400:
-                raise Exception(
+                warnings.warn(
                     f"{response.status_code} Client Error: Please verify your "
                     f"input and try again."
                 )
             # Server Error
             elif response.status_code >= 500:
-                raise Exception(
+                warnings.warn(
                     f"{response.status_code} Service Error: An internal error "
                     f"has occurred on the `BaichuanEmbedding` server."
                 )
             else:
                 # Log error or handle unsuccessful response appropriately
-                raise Exception(  # noqa: T201
+                warnings.warn(  # noqa: T201
                     f"Error: Received status code {response.status_code} from "
                     "`BaichuanEmbedding` API"
                 )
+            return None
         except Exception as e:
             # Log the exception or handle it as needed
             raise Exception(  # noqa: T201
