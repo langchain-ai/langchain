@@ -64,8 +64,6 @@ def test_import_all_using_dir() -> None:
             getattr(mod, name)
 
 
-# Quick check to verify that folks aren't modifying the __all__ variable to add
-# imports to langchain_community
 def test_no_more_changes_to_proxy_community() -> None:
     """This test is meant to catch any changes to the proxy community module.
 
@@ -91,10 +89,11 @@ def test_no_more_changes_to_proxy_community() -> None:
     evil_magic_number = 38620
 
     assert hash_ == evil_magic_number, (
-        "If you're triggering this test, you're likely adding"
-        "imports from langchain to langchain_community. Please"
-        "don't do that -- proxy imports from langchain to langchain_community"
-        "are officially DEPRECATED. "
+        "If you're triggering this test, you're likely adding a new import "
+        "to the langchain package that is importing something from "
+        "langchain_community. This test is meant to catch such such imports "
+        "as they are officially DEPRECATED. Please do not add any new imports "
+        "from langchain_community to the langchain package. "
     )
 
 
@@ -108,9 +107,6 @@ def extract_deprecated_lookup(file_path: str) -> Optional[Dict[str, Any]]:
 
     Returns:
         dict or None: The value of DEPRECATED_LOOKUP if it exists, None otherwise.
-
-    Raises:
-        InvalidDeprecatedLookupError: If DEPRECATED_LOOKUP is not a dict of str to str.
     """
     with open(file_path, "r") as file:
         tree = ast.parse(file.read(), filename=file_path)
@@ -124,7 +120,7 @@ def extract_deprecated_lookup(file_path: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _dict_from_ast(node: ast.AST) -> Dict[str, str]:
+def _dict_from_ast(node: ast.Dict) -> Dict[str, str]:
     """Convert an AST dict node to a Python dictionary, assuming str to str format.
 
     Args:
@@ -132,9 +128,6 @@ def _dict_from_ast(node: ast.AST) -> Dict[str, str]:
 
     Returns:
         dict: The corresponding Python dictionary.
-
-    Raises:
-        InvalidDeprecatedLookupError: If any key or value is not a string.
     """
     result = {}
     for key, value in zip(node.keys, node.values):
@@ -152,9 +145,6 @@ def _literal_eval_str(node: ast.AST) -> str:
 
     Returns:
         str: The corresponding string value.
-
-    Raises:
-        InvalidDeprecatedLookupError: If the node does not represent a string.
     """
     if isinstance(node, ast.Constant):  # Python 3.8+
         if isinstance(node.value, str):
