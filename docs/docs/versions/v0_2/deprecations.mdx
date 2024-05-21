@@ -7,7 +7,7 @@ sidebar_label: Changes
 
 This code contains a list of deprecations and removals in the `langchain` and `langchain-core` packages.
 
-New features and improvements are not listed here. See the [overview](/docs/versions/v_02/overview) for a summary of what's new in this release.
+New features and improvements are not listed here. See the [overview](/docs/versions/overview/) for a summary of what's new in this release.
 
 ## Breaking changes
 
@@ -35,25 +35,28 @@ The following code has been removed:
 
 Behavior was changed for the following code:
 
-- `@tool` decorator now assigns the function doc-string as the tool description. Previously, the `@tool` decorator
+
+### @tool decorator
+
+`@tool` decorator now assigns the function doc-string as the tool description. Previously, the `@tool` decorator
 using to prepend the function signature.
 
-    Before 0.2.0:
+Before 0.2.0:
 
-    ```python
-    @tool
-    def my_tool(x: str) -> str:
-        """Some description."""
-        return "something"
+```python
+@tool
+def my_tool(x: str) -> str:
+    """Some description."""
+    return "something"
 
-    print(my_tool.description)
-    ```
+print(my_tool.description)
+```
 
-    Would result in: `my_tool: (x: str) -> str - Some description.`
+Would result in: `my_tool: (x: str) -> str - Some description.`
 
-    As of 0.2.0:
+As of 0.2.0:
 
-    It will result in: `Some description.`
+It will result in: `Some description.`
 
 ## Code that moved to another package
 
@@ -85,7 +88,7 @@ Code that has better alternatives available and will eventually be removed, so t
 
 ### astream events V1
 
-If you are using `astream_events`, please review how to [migrate to astream events v2](/docs/versions/v_02/migrating_astream_events).
+If you are using `astream_events`, please review how to [migrate to astream events v2](/docs/versions/v0_2/migrating_astream_events).
 
 ### langchain_core
 
@@ -485,7 +488,7 @@ Removal: 0.3.0
 Alternative: langchain_core.utils.function_calling.convert_to_openai_tool()
 
 
-## langchain
+### langchain
 
 
 #### AgentType
