@@ -1,7 +1,17 @@
 """Module that contains tests for runnable.astream_events API."""
 import sys
 from itertools import cycle
-from typing import Any, AsyncIterator, Dict, List, Sequence, cast
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    cast,
+)
 
 import pytest
 
@@ -9,6 +19,7 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import Document
 from langchain_core.language_models import FakeStreamingListLLM, GenericFakeChatModel
+from langchain_core.load import dumpd
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -25,9 +36,12 @@ from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
     RunnableLambda,
+    ensure_config,
 )
+from langchain_core.runnables.config import get_callback_manager_for_config
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.schema import StreamEvent
+from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import tool
 from tests.unit_tests.stubs import AnyStr
 
@@ -1707,3 +1721,112 @@ async def test_sync_in_sync_lambdas() -> None:
 
     events = await _collect_events(add_one_proxy_.astream_events(1, version="v2"))
     assert events == EXPECTED_EVENTS
+
+
+class StreamingRunnable(Runnable[Input, Output]):
+    """A custom runnable used for testing purposes"""
+
+    iterable: Iterable[Any]
+
+    def __init__(self, iterable: Iterable[Any]) -> None:
+        """Initialize the runnable."""
+        self.iterable = iterable
+
+    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+        """Invoke the runnable."""
+        raise ValueError("Server side error")
+
+    def stream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Output]:
+        raise NotImplementedError()
+
+    async def astream(
+        self,
+        input: Input,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Output]:
+        config = ensure_config(config)
+        callback_manager = get_callback_manager_for_config(config)
+        run_manager = callback_manager.on_chain_start(
+            dumpd(self),
+            input,
+            name=config.get("run_name", self.get_name()),
+            run_id=config.get("run_id"),
+        )
+
+        try:
+            final_output = None
+            for element in self.iterable:
+                if isinstance(element, BaseException):
+                    raise element
+                yield element
+
+                if final_output is None:
+                    final_output = element
+                else:
+                    try:
+                        final_output = final_output + element
+                    except TypeError:
+                        final_output = element
+
+            # set final channel values as run output
+            run_manager.on_chain_end(final_output)
+        except BaseException as e:
+            run_manager.on_chain_error(e)
+            raise
+
+
+async def test_astream_events_from_custom_runnable() -> None:
+    """Test astream events from a custom runnable."""
+    iterator = ["1", "2", "3"]
+    runnable: Runnable[int, str] = StreamingRunnable(iterator)
+    chunks = [chunk async for chunk in runnable.astream(1, version="v2")]
+    assert chunks == ["1", "2", "3"]
+    events = await _collect_events(runnable.astream_events(1, version="v2"))
+    assert events == [
+        {
+            "data": {"input": 1},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "StreamingRunnable",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": "1"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "StreamingRunnable",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": "2"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "StreamingRunnable",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": "3"},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "StreamingRunnable",
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"output": "123"},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "StreamingRunnable",
+            "run_id": "",
+            "tags": [],
+        },
+    ]
