@@ -143,11 +143,11 @@ def test_file_names_exist(toy_dir: str, params: dict) -> None:
     blobs = list(loader.yield_blobs())
 
     url_parsed = urlparse(toy_dir)
-    sheme = ""
+    scheme = ""
     if url_parsed.scheme == "file":
-        sheme = "file://"
+        scheme = "file://"
 
-    file_names = sorted(f"{sheme}{blob.path}" for blob in blobs)
+    file_names = sorted(f"{scheme}{blob.path}" for blob in blobs)
 
     expected_filenames = sorted(
         str(toy_dir + "/" + relative_filename)
