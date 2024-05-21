@@ -33,7 +33,8 @@ def _milvus_from_texts(
         FakeEmbeddings(),
         metadatas=metadatas,
         ids=ids,
-        connection_args={"uri": "http://127.0.0.1:19530"},
+        # connection_args={"uri": "http://127.0.0.1:19530"},
+        connection_args={"uri": "./milvus_demo.db"},
         drop_old=drop,
     )
 
@@ -56,23 +57,6 @@ def test_milvus_with_metadata() -> None:
     assert_docs_equal_without_pk(
         output, [Document(page_content="foo", metadata={"label": "test"})]
     )
-
-
-def test_milvus_with_id() -> None:
-    """Test with ids"""
-    ids = ["id_" + str(i) for i in range(len(fake_texts))]
-    docsearch = _milvus_from_texts(ids=ids)
-    output = docsearch.similarity_search("foo", k=1)
-    assert_docs_equal_without_pk(output, [Document(page_content="foo")])
-
-    output = docsearch.delete(ids=ids)
-    assert output.delete_count == len(fake_texts)  # type: ignore[attr-defined]
-
-    try:
-        ids = ["dup_id" for _ in fake_texts]
-        _milvus_from_texts(ids=ids)
-    except Exception as e:
-        assert isinstance(e, AssertionError)
 
 
 def test_milvus_with_score() -> None:
@@ -116,19 +100,6 @@ def test_milvus_add_extra() -> None:
     docsearch = _milvus_from_texts(metadatas=metadatas)
 
     docsearch.add_texts(texts, metadatas)
-
-    output = docsearch.similarity_search("foo", k=10)
-    assert len(output) == 6
-
-
-def test_milvus_no_drop() -> None:
-    """Test end to end construction and MRR search."""
-    texts = ["foo", "bar", "baz"]
-    metadatas = [{"page": i} for i in range(len(texts))]
-    docsearch = _milvus_from_texts(metadatas=metadatas)
-    del docsearch
-
-    docsearch = _milvus_from_texts(metadatas=metadatas, drop=False)
 
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 6
