@@ -5,6 +5,7 @@ import tempfile
 from io import BufferedReader, BytesIO
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Generator,
     Iterable,
@@ -12,7 +13,7 @@ from typing import (
     Optional,
     Sequence,
     TypeVar,
-    Union, TYPE_CHECKING,
+    Union,
 )
 from urllib.parse import urlparse
 
