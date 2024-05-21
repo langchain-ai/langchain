@@ -1,42 +1,14 @@
 import importlib
 from typing import Any, Callable, Dict, Optional
 
-from langchain_core._api import internal, warn_deprecated
-
 from langchain._api.interactive_env import is_interactive_env
+from langchain_core._api import internal, warn_deprecated
 
 ALLOWED_TOP_LEVEL_PKGS = {
     "langchain_community",
     "langchain_core",
     "langchain",
 }
-
-
-# For 0.1 releases keep this here
-# Remove for 0.2 release so that deprecation warnings will
-# be raised for all the new namespaces.
-_NAMESPACES_WITH_DEPRECATION_WARNINGS_IN_0_1 = {
-    "langchain",
-    "langchain.adapters.openai",
-    "langchain.agents.agent_toolkits",
-    "langchain.callbacks",
-    "langchain.chat_models",
-    "langchain.docstore",
-    "langchain.document_loaders",
-    "langchain.document_transformers",
-    "langchain.embeddings",
-    "langchain.llms",
-    "langchain.memory.chat_message_histories",
-    "langchain.storage",
-    "langchain.tools",
-    "langchain.utilities",
-    "langchain.vectorstores",
-}
-
-
-def _should_deprecate_for_package(package: str) -> bool:
-    """Should deprecate for this package?"""
-    return bool(package in _NAMESPACES_WITH_DEPRECATION_WARNINGS_IN_0_1)
 
 
 def create_importer(
@@ -109,7 +81,6 @@ def create_importer(
                     not is_interactive_env()
                     and deprecated_lookups
                     and name in deprecated_lookups
-                    and _should_deprecate_for_package(package)
                 ):
                     # Depth 3:
                     # internal.py
@@ -127,6 +98,9 @@ def create_importer(
                                 f">> from {package} import {name}\n\n"
                                 "with new imports of:\n\n"
                                 f">> from {new_module} import {name}\n"
+                                "You can use the langchain cli to **automatically** "
+                                "upgrade many imports. Please see documentation here "
+                                "https://python.langchain.com/v0.2/docs/versions/v0_2/ "
                             ),
                         )
                 return result
@@ -139,7 +113,7 @@ def create_importer(
             try:
                 module = importlib.import_module(fallback_module)
                 result = getattr(module, name)
-                if not is_interactive_env() and _should_deprecate_for_package(package):
+                if not is_interactive_env():
                     # Depth 3:
                     # internal.py
                     # module_import.py
@@ -156,6 +130,9 @@ def create_importer(
                                 f">> from {package} import {name}\n\n"
                                 "with new imports of:\n\n"
                                 f">> from {fallback_module} import {name}\n"
+                                "You can use the langchain cli to **automatically** "
+                                "upgrade many imports. Please see documentation here "
+                                "https://python.langchain.com/v0.2/docs/versions/v0_2/ "
                             ),
                         )
                 return result
