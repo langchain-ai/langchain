@@ -124,8 +124,8 @@ def extract_deprecated_lookup(file_path: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _dict_from_ast(node) -> Dict[str, str]:
-    """Convers an AST dict node to a Python dictionary, assuming str to str format.
+def _dict_from_ast(node: ast.AST) -> Dict[str, str]:
+    """Convert an AST dict node to a Python dictionary, assuming str to str format.
 
     Args:
         node (ast.Dict): The AST node representing a dictionary.
