@@ -3,6 +3,7 @@
 import json
 from typing import List
 
+import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
@@ -14,6 +15,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
 
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
@@ -329,3 +331,19 @@ def test_with_structured_output() -> None:
     response = structured_llm.invoke("what's the weather in san francisco, ca")
     assert isinstance(response, dict)
     assert response["location"]
+
+
+class GetWeather(BaseModel):
+    """Get the current weather in a given location"""
+
+    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+
+@pytest.mark.parametrize("tool_choice", ["GetWeather", "auto", "any"])
+def test_anthropic_bind_tools_tool_choice(tool_choice: str) -> None:
+    chat_model = ChatAnthropic(
+        model="claude-3-sonnet-20240229",
+    )
+    chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice=tool_choice)
+    response = chat_model_with_tools.invoke("what's the weather in ny and la")
+    assert isinstance(response, AIMessage)

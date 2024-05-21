@@ -56,6 +56,7 @@ _EXPECTED = [
     "MyScaleSettings",
     "Neo4jVector",
     "OpenSearchVectorSearch",
+    "OracleVS",
     "PGEmbedding",
     "PGVector",
     "PathwayVectorClient",
@@ -93,6 +94,7 @@ _EXPECTED = [
     "AzureCosmosDBVectorSearch",
     "VectorStore",
     "Yellowbrick",
+    "NeuralDBClientVectorStore",
     "NeuralDBVectorStore",
     "CouchbaseVectorStore",
 ]

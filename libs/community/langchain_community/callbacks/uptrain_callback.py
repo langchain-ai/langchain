@@ -65,6 +65,7 @@ from uuid import UUID
 from langchain_core.callbacks.base import BaseCallbackHandler
 from langchain_core.documents import Document
 from langchain_core.outputs import LLMResult
+from langchain_core.utils import guard_import
 
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
@@ -75,17 +76,7 @@ logger.addHandler(handler)
 
 def import_uptrain() -> Any:
     """Import the `uptrain` package."""
-    try:
-        import uptrain
-    except ImportError as e:
-        raise ImportError(
-            "To use the UpTrainCallbackHandler, you need the"
-            "`uptrain` package. Please install it with"
-            "`pip install uptrain`.",
-            e,
-        )
-
-    return uptrain
+    return guard_import("uptrain")
 
 
 class UpTrainDataSchema:

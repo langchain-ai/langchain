@@ -456,7 +456,7 @@ class PGVector(VectorStore):
         return self.CollectionStore.get_by_name(session, self.collection_name)
 
     @classmethod
-    def __from(
+    def _from(
         cls,
         texts: List[str],
         embeddings: List[List[float]],
@@ -624,7 +624,7 @@ class PGVector(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
-        results = self.__query_collection(embedding=embedding, k=k, filter=filter)
+        results = self._query_collection(embedding=embedding, k=k, filter=filter)
 
         return self._results_to_docs_and_scores(results)
 
@@ -923,7 +923,7 @@ class PGVector(VectorStore):
                 f"Invalid type: Expected a dictionary but got type: {type(filters)}"
             )
 
-    def __query_collection(
+    def _query_collection(
         self,
         embedding: List[float],
         k: int = 4,
@@ -1009,7 +1009,7 @@ class PGVector(VectorStore):
         """
         embeddings = embedding.embed_documents(list(texts))
 
-        return cls.__from(
+        return cls._from(
             texts,
             embeddings,
             embedding,
@@ -1055,7 +1055,7 @@ class PGVector(VectorStore):
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
 
-        return cls.__from(
+        return cls._from(
             texts,
             embeddings,
             embedding,
@@ -1219,7 +1219,7 @@ class PGVector(VectorStore):
             List[Tuple[Document, float]]: List of Documents selected by maximal marginal
                 relevance to the query and score for each.
         """
-        results = self.__query_collection(embedding=embedding, k=fetch_k, filter=filter)
+        results = self._query_collection(embedding=embedding, k=fetch_k, filter=filter)
 
         embedding_list = [result.EmbeddingStore.embedding for result in results]
 

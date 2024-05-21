@@ -10,7 +10,7 @@ from langchain_community.embeddings.google_palm import GooglePalmEmbeddings
 def test_google_palm_embedding_documents() -> None:
     """Test Google PaLM embeddings."""
     documents = ["foo bar"]
-    embedding = GooglePalmEmbeddings()
+    embedding = GooglePalmEmbeddings()  # type: ignore[call-arg]
     output = embedding.embed_documents(documents)
     assert len(output) == 1
     assert len(output[0]) == 768
@@ -19,7 +19,7 @@ def test_google_palm_embedding_documents() -> None:
 def test_google_palm_embedding_documents_multiple() -> None:
     """Test Google PaLM embeddings."""
     documents = ["foo bar", "bar foo", "foo"]
-    embedding = GooglePalmEmbeddings()
+    embedding = GooglePalmEmbeddings()  # type: ignore[call-arg]
     output = embedding.embed_documents(documents)
     assert len(output) == 3
     assert len(output[0]) == 768
@@ -30,6 +30,6 @@ def test_google_palm_embedding_documents_multiple() -> None:
 def test_google_palm_embedding_query() -> None:
     """Test Google PaLM embeddings."""
     document = "foo bar"
-    embedding = GooglePalmEmbeddings()
+    embedding = GooglePalmEmbeddings()  # type: ignore[call-arg]
     output = embedding.embed_query(document)
     assert len(output) == 768

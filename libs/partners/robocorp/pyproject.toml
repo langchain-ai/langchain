@@ -1,7 +1,7 @@
 
 [tool.poetry]
 name = "gigachain-robocorp"
-version = "0.0.5"
+version = "0.0.7"
 description = "An integration package connecting Robocorp Action Server and LangChain"
 authors = []
 readme = "README.md"
@@ -17,7 +17,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.1.31"
+gigachain-core = ">=0.1.52,<0.3"
 requests = "^2.31.0"
 types-requests = "^2.31.0.6"
 

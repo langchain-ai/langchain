@@ -248,7 +248,7 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
         mock_send_message = MagicMock(return_value=mock_response)
         mock_chat.send_message = mock_send_message
 
-        model = ChatVertexAI(**prompt_params)
+        model = ChatVertexAI(**prompt_params)  # type: ignore[arg-type]
         message = HumanMessage(content=user_prompt)
         if stop:
             response = model.invoke([message], stop=[stop])

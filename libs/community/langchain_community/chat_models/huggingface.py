@@ -2,6 +2,7 @@
 
 from typing import Any, AsyncIterator, Iterator, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -35,6 +36,13 @@ from langchain_community.llms.huggingface_text_gen_inference import (
 DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."""
 
 
+@deprecated(
+    since="0.0.37",
+    removal="0.3",
+    alternative_import=(
+        "from langchain_huggingface.chat_models.huggingface import ChatHuggingFace"
+    ),
+)
 class ChatHuggingFace(BaseChatModel):
     """Hugging Face LLMs as ChatModels.
 

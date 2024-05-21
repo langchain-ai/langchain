@@ -1,16 +1,16 @@
 
 [tool.poetry]
 name = "gigachain-ai21"
-version = "0.1.4"
+version = "0.1.5"
 description = "An integration package connecting AI21 and LangChain"
 authors = []
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.1.48"
-gigachain-text-splitters = "^0.0.1"
-ai21 = "^2.2.1"
+gigachain-core = ">=0.1.48,<0.3"
+gigachain-text-splitters = ">=0.0.1,<0.2"
+ai21 = "^2.2.5"
 
 [tool.poetry.group.test]
 optional = true
@@ -24,6 +24,7 @@ pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 gigachain-core = { path = "../../core", develop = true }
 gigachain-standard-tests = { path = "../../standard-tests", develop = true }
+gigachain-text-splitters = { path = "../../text-splitters", develop = true }
 
 [tool.poetry.group.codespell]
 optional = true

@@ -1,5 +1,4 @@
 from langchain import llms
-from langchain.llms.base import BaseLLM
 
 EXPECT_ALL = [
     "AI21",
@@ -88,6 +87,4 @@ EXPECT_ALL = [
 
 def test_all_imports() -> None:
     """Simple test to make sure all things can be imported."""
-    for cls in llms.__all__:
-        assert issubclass(getattr(llms, cls), BaseLLM)
     assert set(llms.__all__) == set(EXPECT_ALL)

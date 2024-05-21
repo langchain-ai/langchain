@@ -15,7 +15,6 @@ from langchain_core.pydantic_v1 import Field, root_validator
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
 from langchain.schema import RUN_KEY
-from langchain.utils.math import cosine_similarity
 
 
 def _embedding_factory() -> Embeddings:
@@ -165,6 +164,14 @@ class _EmbeddingDistanceChainMixin(Chain):
         Returns:
             np.ndarray: The cosine distance.
         """
+        try:
+            from langchain_community.utils.math import cosine_similarity
+        except ImportError:
+            raise ImportError(
+                "The cosine_similarity function is required to compute cosine distance."
+                " Please install the langchain-community package using"
+                " `pip install langchain-community`."
+            )
         return 1.0 - cosine_similarity(a, b)
 
     @staticmethod

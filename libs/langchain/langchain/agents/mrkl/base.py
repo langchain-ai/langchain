@@ -34,7 +34,7 @@ class ChainConfig(NamedTuple):
     action_description: str
 
 
-@deprecated("0.1.0", alternative="create_react_agent", removal="0.2.0")
+@deprecated("0.1.0", alternative="create_react_agent", removal="0.3.0")
 class ZeroShotAgent(Agent):
     """Agent for the MRKL chain."""
 
@@ -140,7 +140,7 @@ class ZeroShotAgent(Agent):
         super()._validate_tools(tools)
 
 
-@deprecated("0.1.0", removal="0.2.0")
+@deprecated("0.1.0", removal="0.3.0")
 class MRKLChain(AgentExecutor):
     """[Deprecated] Chain that implements the MRKL system."""
 

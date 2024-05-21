@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "gigachain-community"
-version = "0.0.36"
-description = "Community contributed LangChain integrations."
+version = "0.2.0"
+description = "Community contributed gigachain integrations."
 authors = []
 license = "MIT"
 readme = "README.md"
@@ -12,7 +12,8 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.1.43"
+gigachain-core = "^0.2.0"
+gigachain = "^0.2.0"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
@@ -106,6 +107,7 @@ premai = {version = "^0.3.25", optional = true}
 vdms = {version = "^0.0.20", optional = true}
 httpx-sse = {version = "^0.4.0", optional = true}
 pyjwt = {version = "^2.8.0", optional = true}
+oracledb = {version = "^2.2.0", optional = true}
 
 [tool.poetry.group.test]
 optional = true
@@ -117,7 +119,7 @@ optional = true
 pytest = "^7.3.0"
 pytest-cov = "^4.1.0"
 pytest-dotenv = "^0.5.2"
-duckdb-engine = "^0.9.2"
+duckdb-engine = "^0.11.0"
 pytest-watcher = "^0.2.6"
 freezegun = "^1.2.2"
 responses = "^0.22.0"
@@ -129,6 +131,7 @@ pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
 gigachain-core = {path = "../core", develop = true}
+gigachain = {path = "../langchain", develop = true}
 
 [tool.poetry.group.codespell]
 optional = true
@@ -163,6 +166,7 @@ cassio = "^0.1.6"
 tiktoken = ">=0.3.2,<0.6.0"
 anthropic = "^0.3.11"
 gigachain-core = { path = "../core", develop = true }
+gigachain = {path = "../langchain", develop = true}
 fireworks-ai = "^0.9.0"
 vdms = "^0.0.20"
 exllamav2 = "^0.0.18"
@@ -174,7 +178,7 @@ optional = true
 ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
+mypy = "^1"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-toml = "^0.10.8.1"
@@ -184,6 +188,7 @@ types-redis = "^4.3.21.6"
 mypy-protobuf = "^3.0.0"
 gigachain-core = {path = "../core", develop = true}
 gigachain-text-splitters = {path = "../text-splitters", develop = true}
+gigachain = {path = "../langchain", develop = true}
 
 [tool.poetry.group.dev]
 optional = true
@@ -283,7 +288,8 @@ extended_testing = [
  "premai",
  "vdms",
  "httpx-sse",
- "pyjwt"
+ "pyjwt",
+ "oracledb"
 ]
 
 [tool.ruff]
