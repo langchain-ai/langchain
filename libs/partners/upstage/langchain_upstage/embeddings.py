@@ -46,7 +46,7 @@ class UpstageEmbeddings(BaseModel, Embeddings):
 
             from langchain_upstage import UpstageEmbeddings
 
-            model = UpstageEmbeddings()
+            model = UpstageEmbeddings(model='solar-embedding-1-large')
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
