@@ -46,6 +46,7 @@ def test_compatible_vectorstore_documentation() -> None:
 
     # These are mentioned in the indexing.ipynb documentation
     documented = {
+        "Aerospike",
         "AnalyticDB",
         "AstraDB",
         "AzureCosmosDBVectorSearch",
