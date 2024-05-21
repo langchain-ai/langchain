@@ -129,9 +129,9 @@ def _dict_from_ast(node: ast.Dict) -> Dict[str, str]:
     Returns:
         dict: The corresponding Python dictionary.
     """
-    result = {}
+    result: Dict[str, str] = {}
     for key, value in zip(node.keys, node.values):
-        py_key = _literal_eval_str(key)
+        py_key = _literal_eval_str(key)  # type: ignore
         py_value = _literal_eval_str(value)
         result[py_key] = py_value
     return result
