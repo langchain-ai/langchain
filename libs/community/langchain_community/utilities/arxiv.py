@@ -48,7 +48,7 @@ class ArxivAPIWrapper(BaseModel):
                 load_all_available_meta = False,
                 doc_content_chars_max = 40000
             )
-            arxiv.run("tree of thought llm)
+            arxiv.run("tree of thought llm")
     """
 
     arxiv_search: Any  #: :meta private:
