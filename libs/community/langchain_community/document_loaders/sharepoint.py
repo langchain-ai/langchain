@@ -88,7 +88,7 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
 
     def authorized_identities(self, document_library_id, file_id):
         data = self._fetch_access_token()
-        access_token = data.get('access_token')
+        access_token = data.get("access_token")
         url = (
             f"https://graph.microsoft.com/v1.0/sites/{self.site_id}/"
             f"drives/{document_library_id}/items/{file_id}/permissions"
@@ -115,10 +115,10 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                         group_data.get("grantedToV2").get("user")
                     )
                     # print(group_data)
-                    group_names.append(site_data.get('displayName'))
-                
+                    group_names.append(site_data.get("displayName"))
+
         return group_names
-    
+
     def _fetch_access_token(self):
         with open(self.token_path) as f:
             s = f.read()
