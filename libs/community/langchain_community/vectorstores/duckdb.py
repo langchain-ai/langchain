@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import json
 import uuid
-from typing import Any, Iterable, List, Optional, Type
 import warnings
+from typing import Any, Iterable, List, Optional, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -146,11 +146,13 @@ class DuckDB(VectorStore):
         have_pandas = False
         try:
             import pandas as pd
+
             have_pandas = True
         except ImportError:
             warnings.warn(
                 "Unable to import pandas. "
-                "Please install it with `pip install -U pandas` to improve performance of add_texts()."
+                "Please install it with `pip install -U pandas` "
+                "to improve performance of add_texts()."
             )
 
         # Extract ids from kwargs or generate new ones if not provided
