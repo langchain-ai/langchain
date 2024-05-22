@@ -142,7 +142,7 @@ class AsyncHtmlLoader(BaseLoader):
                         url,
                         headers=self.session.headers,
                         ssl=None if self.session.verify else False,
-                        proxy=proxy
+                        proxy=proxy,
                     ) as response:
                         try:
                             text = await response.text()
