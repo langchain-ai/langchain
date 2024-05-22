@@ -227,7 +227,7 @@ class ChatTongyi(BaseChatModel):
             "qwen-vl-chat-v1",
             "qwen-audio-turbo",
             "qwen-vl-plus",
-            "qwen-vl-max"
+            "qwen-vl-max",
         ]
         if values["model_name"] in dashscope_multimodal_models:
             try:
