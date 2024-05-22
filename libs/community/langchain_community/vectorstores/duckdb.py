@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 import warnings
 from typing import Any, Iterable, List, Optional, Type
@@ -9,6 +10,8 @@ from typing import Any, Iterable, List, Optional, Type
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_VECTOR_KEY = "embedding"
 DEFAULT_ID_KEY = "id"
@@ -149,9 +152,9 @@ class DuckDB(VectorStore):
 
             have_pandas = True
         except ImportError:
-            warnings.warn(
+            logger.info(
                 "Unable to import pandas. "
-                "Please install it with `pip install -U pandas` "
+                "Install it with `pip install -U pandas` "
                 "to improve performance of add_texts()."
             )
 
