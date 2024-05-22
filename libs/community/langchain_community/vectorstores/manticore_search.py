@@ -38,7 +38,7 @@ class ManticoreSearchSettings(BaseSettings):
     knn_type: str = "hnsw"
 
     # A mandatory setting that specifies the dimensions of the vectors being indexed.
-    knn_dims: int = None  # Defaults autodetect
+    knn_dims: Optional[int] = None  # Defaults autodetect
 
     # A mandatory setting that specifies the distance function used by the HNSW index.
     hnsw_similarity: str = "L2"  # Acceptable values are: L2, IP, COSINE
@@ -80,17 +80,20 @@ class ManticoreSearch(VectorStore):
 
     def __init__(
         self,
-        embedding_function: Optional[Embeddings] = None,
+        embedding: Embeddings,
+        *,
         config: Optional[ManticoreSearchSettings] = None,
         **kwargs: Any,
     ) -> None:
         """
         ManticoreSearch Wrapper to LangChain
 
-        embedding_function (Embeddings):
-        config (ManticoreSearchSettings): Configuration of ManticoreSearch Client
-        Other keyword arguments will pass into Configuration of API client
-            [manticoresearch-python](https://github.com/manticoresoftware/manticoresearch-python)
+        Args:
+            embedding (Embeddings): Text embedding model.
+            config (ManticoreSearchSettings): Configuration of ManticoreSearch Client
+            **kwargs: Other keyword arguments will pass into Configuration of API client
+                manticoresearch-python. See
+                https://github.com/manticoresoftware/manticoresearch-python for more.
         """
         try:
             import manticoresearch.api as ENDPOINTS
@@ -111,7 +114,7 @@ class ManticoreSearch(VectorStore):
 
         super().__init__()
 
-        self.embedding_function = embedding_function
+        self.embedding = embedding
         if config is not None:
             self.config = config
         else:
@@ -138,7 +141,7 @@ class ManticoreSearch(VectorStore):
 
         # Detect embeddings dimension
         if self.config.knn_dims is None:
-            self.dim = len(self.embedding_function.embed_query("test"))
+            self.dim: int = len(self.embedding.embed_query("test"))
         else:
             self.dim = self.config.knn_dims
 
@@ -178,14 +181,15 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
 
     @property
     def embeddings(self) -> Embeddings:
-        return self.embedding_function
+        return self.embedding
 
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        *,
         batch_size: int = 32,
-        text_ids: Optional[Iterable[str]] = None,
+        text_ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -203,17 +207,17 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         # Embed and create the documents
         ids = text_ids or [
             # See https://stackoverflow.com/questions/67219691/python-hash-function-that-returns-32-or-64-bits
-            int(sha1(t.encode("utf-8")).hexdigest()[:15], 16)
+            str(int(sha1(t.encode("utf-8")).hexdigest()[:15], 16))
             for t in texts
         ]
         transac = []
-        for i, (text, meta) in enumerate(zip(texts, metadatas)):
+        for i, text in enumerate(texts):
             embed = self.embeddings.embed_query(text)
             doc_uuid = str(uuid.uuid1())
             doc = {
                 self.config.column_map["document"]: text,
                 self.config.column_map["embedding"]: embed,
-                self.config.column_map["metadata"]: meta,
+                self.config.column_map["metadata"]: metadatas[i] if metadatas else {},
                 self.config.column_map["uuid"]: doc_uuid,
             }
             transac.append(
@@ -243,12 +247,13 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[Dict[Any, Any]]] = None,
+        *,
         config: Optional[ManticoreSearchSettings] = None,
-        text_ids: Optional[Iterable[str]] = None,
+        text_ids: Optional[List[str]] = None,
         batch_size: int = 32,
         **kwargs: Any,
     ) -> ManticoreSearch:
-        ctx = cls(embedding, config, **kwargs)
+        ctx = cls(embedding, config=config, **kwargs)
         ctx.add_texts(
             texts=texts,
             embedding=embedding,
@@ -264,8 +269,9 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         cls: Type[ManticoreSearch],
         documents: List[Document],
         embedding: Embeddings,
+        *,
         config: Optional[ManticoreSearchSettings] = None,
-        text_ids: Optional[Iterable[str]] = None,
+        text_ids: Optional[List[str]] = None,
         batch_size: int = 32,
         **kwargs: Any,
     ) -> ManticoreSearch:
@@ -313,7 +319,7 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
             List[Document]: List of Documents
         """
         return self.similarity_search_by_vector(
-            self.embedding_function.embed_query(query), k, **kwargs
+            self.embedding.embed_query(query), k, **kwargs
         )
 
     def similarity_search_by_vector(
