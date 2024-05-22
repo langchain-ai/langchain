@@ -99,6 +99,8 @@ def test_vectara_add_documents(vectara1) -> None:  # type: ignore[no-untyped-def
 def vectara2():  # type: ignore[no-untyped-def]
     # download documents to local storage and then upload as files
     # attention paper and deep learning book
+    vectara2: Vectara = Vectara()
+
     urls = [
         (
             "https://papers.nips.cc/paper_files/paper/2017/"
@@ -116,7 +118,6 @@ def vectara2():  # type: ignore[no-untyped-def]
         urllib.request.urlretrieve(url, name)
         files_list.append(name)
 
-    vectara2: Vectara = Vectara()
     doc_ids = vectara2.add_files(
         files_list=files_list,
         metadatas=[{"url": url, "test_num": "2"} for url in urls],
