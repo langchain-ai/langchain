@@ -1,6 +1,7 @@
 import importlib
 from typing import Any, Optional
 
+from langchain_core._api import beta
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     SimpleChatModel,
@@ -17,6 +18,7 @@ __all__ = [
 ]
 
 
+@beta
 def init_model(
     model_name: str, *, model_provider: Optional[str] = None, **kwargs: Any
 ) -> BaseChatModel:
