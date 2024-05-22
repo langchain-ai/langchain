@@ -18,7 +18,7 @@ __all__ = [
 ]
 
 
-@beta
+@beta()
 def init_model(
     model_name: str, *, model_provider: Optional[str] = None, **kwargs: Any
 ) -> BaseChatModel:
