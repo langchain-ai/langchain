@@ -38,7 +38,7 @@ Revision: {revision}""",
         "critique_request",
         "critique",
         "revision_request",
-        "revision"
+        "revision",
     ],
 )
 
