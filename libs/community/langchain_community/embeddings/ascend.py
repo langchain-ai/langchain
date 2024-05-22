@@ -9,14 +9,14 @@ class AscendEmbeddings(Embeddings, BaseModel):
     """
     Ascend NPU accelerate Embedding model
 
-    Please ensure that you haved installed CANN and torch_npu.
+    Please ensure that you have installed CANN and torch_npu.
 
     Example:
 
     from langchain_community.embeddings import AscendEmbeddings
     model = AscendEmbeddings(model_path=<path_to_model>,
         device_id=0,
-        query_instruction="Represend this sentence for searching relevant passages: "
+        query_instruction="Represent this sentence for searching relevant passages: "
     )
     """
 
@@ -29,7 +29,7 @@ class AscendEmbeddings(Embeddings, BaseModel):
     """Unstruntion to used for embedding document."""
     document_instruction: str = ""
     use_fp16: bool = True
-    pooling_method: Optional[str] = 'cls'
+    pooling_method: Optional[str] = "cls"
     model: Any
     tokenizer: Any
 
@@ -46,7 +46,9 @@ class AscendEmbeddings(Embeddings, BaseModel):
             self.model = AutoModel.from_pretrained(self.model_path).npu().eval()
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
         except Exception as e:
-            raise Exception(f"Failed to load model [self.model_path], due to following error:{e}")
+            raise Exception(
+                f"Failed to load model [self.model_path], due to following error:{e}"
+            )
 
         if self.use_fp16:
             self.model.half()
@@ -54,8 +56,10 @@ class AscendEmbeddings(Embeddings, BaseModel):
 
     @root_validator
     def validate_environment(cls, values: Dict) -> Dict:
-        if not os.access(values['model_path'], os.F_OK):
-            raise FileNotFoundError(f"Unabled to find valid model path in [{values['model_path']}]")
+        if not os.access(values["model_path"], os.F_OK):
+            raise FileNotFoundError(
+                f"Unabled to find valid model path in [{values['model_path']}]"
+            )
         try:
             import torch_npu
         except ImportError:
@@ -63,54 +67,54 @@ class AscendEmbeddings(Embeddings, BaseModel):
         except Exception as e:
             raise e
         try:
-            torch_npu.npu.set_device(values['device_id'])
+            torch_npu.npu.set_device(values["device_id"])
         except Exception as e:
             raise Exception(f"set device failed due to {e}")
         return values
 
     def encode(self, sentences):
-        inputs = self.tokenizer(sentences,
+        inputs = self.tokenizer(
+            sentences,
             padding=True,
             truncation=True,
-            return_tensors='pt',
-            max_length=512)
+            return_tensors="pt",
+            max_length=512,
+        )
         try:
             import torch
         except ImportError as e:
-            raise ImportError("Unable to import torch, please install with "
-                "`pip install -U torch`."
+            raise ImportError(
+                "Unable to import torch, please install with " "`pip install -U torch`."
             ) from e
         last_hidden_state = self.model(
-            inputs.input_ids.npu(),
-            inputs.attention_mask.npu(),
-            return_dict=True
+            inputs.input_ids.npu(), inputs.attention_mask.npu(), return_dict=True
         ).last_hidden_state
-        tmp = self.pooling(last_hidden_state, inputs['attention_mask'].npu())
+        tmp = self.pooling(last_hidden_state, inputs["attention_mask"].npu())
         embeddings = torch.nn.functional.normalize(tmp, dim=-1)
         return embeddings.cpu().detach().numpy()
 
-
-    def pooling(self,
-            last_hidden_state: Any,
-            attention_mask: Any = None):
+    def pooling(self, last_hidden_state: Any, attention_mask: Any = None):
         try:
             import torch
         except ImportError as e:
-            raise ImportError("Unable to import torch, please install with "
-                "`pip install -U torch`."
+            raise ImportError(
+                "Unable to import torch, please install with " "`pip install -U torch`."
             ) from e
-        if self.pooling_method == 'cls':
+        if self.pooling_method == "cls":
             return last_hidden_state[:, 0]
-        elif self.pooling_method == 'mean':
-            s = torch.sum(last_hidden_state * attention_mask.unsqueeze(-1).float(), dim=-1)
+        elif self.pooling_method == "mean":
+            s = torch.sum(
+                last_hidden_state * attention_mask.unsqueeze(-1).float(), dim=-1
+            )
             d = attention_mask.sum(dim=1, keepdim=True).float()
             return s / d
         else:
-            raise NotImplementedError(f"Pooling method [{self.pooling_method}] not implemented")
-
+            raise NotImplementedError(
+                f"Pooling method [{self.pooling_method}] not implemented"
+            )
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         return self.encode([self.document_instruction + text for text in texts])
 
-    def embed_query(self, text:str) -> List[float]:
+    def embed_query(self, text: str) -> List[float]:
         return self.encode([self.query_instruction + text])[0]
