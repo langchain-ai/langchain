@@ -36,4 +36,3 @@ class WikipediaQueryRun(BaseTool):
     ) -> str:
         """Use the Wikipedia tool."""
         return self.api_wrapper.run(query)
-
