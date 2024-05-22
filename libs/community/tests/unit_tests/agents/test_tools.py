@@ -1,5 +1,4 @@
 """Test tool utils."""
-
 import unittest
 from typing import Any, Type
 from unittest.mock import MagicMock, Mock
