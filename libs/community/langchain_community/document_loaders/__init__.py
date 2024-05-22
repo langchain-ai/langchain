@@ -214,7 +214,7 @@ if TYPE_CHECKING:
         GitHubIssuesLoader,
     )
     from langchain_community.document_loaders.glue_catalog import (
-        GlueCatalogLoader,  # noqa: F401
+        GlueCatalogLoader,
     )
     from langchain_community.document_loaders.google_speech_to_text import (
         GoogleSpeechToTextLoader,
@@ -332,8 +332,8 @@ if TYPE_CHECKING:
         OracleAutonomousDatabaseLoader,
     )
     from langchain_community.document_loaders.oracleai import (
-        OracleDocLoader,  # noqa: F401
-        OracleTextSplitter,  # noqa: F401
+        OracleDocLoader,
+        OracleTextSplitter,
     )
     from langchain_community.document_loaders.org_mode import (
         UnstructuredOrgModeLoader,

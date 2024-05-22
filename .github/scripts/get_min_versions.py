@@ -76,4 +76,4 @@ if __name__ == "__main__":
 
     print(
         " ".join([f"{lib}=={version}" for lib, version in min_versions.items()])
-    )  # noqa: T201
+    )
