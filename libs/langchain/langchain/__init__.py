@@ -6,8 +6,6 @@ from importlib import metadata
 from typing import Any, Optional
 
 from langchain_community.__gigachain_community import _check_gigachain_community_version
-
-# Check that we have gigachain_core package instead of langchain_core
 from langchain_core.__gigachain_core import _check_gigachain_core_version
 from langchain_core._api.deprecation import surface_langchain_deprecation_warnings
 
