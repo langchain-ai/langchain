@@ -4,7 +4,6 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from ipex_llm.transformers.convert import _optimize_post, _optimize_pre
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field
 
@@ -71,11 +70,16 @@ class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
         try:
             import sentence_transformers
+            from ipex_llm.transformers.convert import _optimize_post, _optimize_pre
 
         except ImportError as exc:
+            base_url = "https://python.langchain.com/v0.1/docs/integrations/text_embedding/"
             raise ImportError(
-                "Could not import sentence_transformers python package. "
-                "Please install it with `pip install sentence_transformers`."
+                "Could not import ipex_llm or sentence_transformers"
+                f"Please refer to {base_url}/ipex_llm/ "
+                "for install required packages on Intel CPU. "
+                "And refer to {base_url}/ipex_llm_gpu/ "
+                "for install required packages on Intel GPU. "
             ) from exc
 
         # Set "cpu" as default device
