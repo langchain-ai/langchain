@@ -405,7 +405,7 @@ if TYPE_CHECKING:
     )
     from langchain_community.document_loaders.scrapfly import (
         ScrapflyLoader,
-    )    
+    )
     from langchain_community.document_loaders.sharepoint import (
         SharePointLoader,
     )
