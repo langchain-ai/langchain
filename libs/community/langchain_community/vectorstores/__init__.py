@@ -27,6 +27,9 @@ if TYPE_CHECKING:
         VectorStore,
     )
 
+    from langchain_community.vectorstores.aerospike import (
+        Aerospike,
+    )
     from langchain_community.vectorstores.alibabacloud_opensearch import (
         AlibabaCloudOpenSearch,
         AlibabaCloudOpenSearchSettings,
@@ -236,6 +239,7 @@ if TYPE_CHECKING:
         TencentVectorDB,
     )
     from langchain_community.vectorstores.thirdai_neuraldb import (
+        NeuralDBClientVectorStore,
         NeuralDBVectorStore,
     )
     from langchain_community.vectorstores.tidb_vector import (
@@ -291,6 +295,7 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "Aerospike",
     "AlibabaCloudOpenSearch",
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
@@ -345,6 +350,7 @@ __all__ = [
     "MyScale",
     "MyScaleSettings",
     "Neo4jVector",
+    "NeuralDBClientVectorStore",
     "NeuralDBVectorStore",
     "OracleVS",
     "OpenSearchVectorSearch",
@@ -387,6 +393,7 @@ __all__ = [
 ]
 
 _module_lookup = {
+    "Aerospike": "langchain_community.vectorstores.aerospike",
     "AlibabaCloudOpenSearch": "langchain_community.vectorstores.alibabacloud_opensearch",  # noqa: E501
     "AlibabaCloudOpenSearchSettings": "langchain_community.vectorstores.alibabacloud_opensearch",  # noqa: E501
     "AnalyticDB": "langchain_community.vectorstores.analyticdb",
@@ -441,6 +448,7 @@ _module_lookup = {
     "MyScale": "langchain_community.vectorstores.myscale",
     "MyScaleSettings": "langchain_community.vectorstores.myscale",
     "Neo4jVector": "langchain_community.vectorstores.neo4j_vector",
+    "NeuralDBClientVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",  # noqa: E501
     "NeuralDBVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",
     "OpenSearchVectorSearch": "langchain_community.vectorstores.opensearch_vector_search",  # noqa: E501
     "OracleVS": "langchain_community.vectorstores.oraclevs",
@@ -488,6 +496,3 @@ def __getattr__(name: str) -> Any:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-__all__ = list(_module_lookup.keys())

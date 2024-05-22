@@ -9,7 +9,7 @@ from langchain_community.retrievers import ArxivRetriever
 
 @pytest.fixture
 def retriever() -> ArxivRetriever:
-    return ArxivRetriever()
+    return ArxivRetriever()  # type: ignore[call-arg]
 
 
 def assert_docs(docs: List[Document], all_meta: bool = False) -> None:
@@ -39,7 +39,7 @@ def test_load_success_all_meta(retriever: ArxivRetriever) -> None:
 
 
 def test_load_success_init_args() -> None:
-    retriever = ArxivRetriever(load_max_docs=1, load_all_available_meta=True)
+    retriever = ArxivRetriever(load_max_docs=1, load_all_available_meta=True)  # type: ignore[call-arg]
     docs = retriever.invoke("ChatGPT")
     assert len(docs) == 1
     assert_docs(docs, all_meta=True)

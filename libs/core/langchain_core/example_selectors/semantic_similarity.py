@@ -22,7 +22,7 @@ class _VectorStoreExampleSelector(BaseExampleSelector, BaseModel, ABC):
     """Example selector that selects examples based on SemanticSimilarity."""
 
     vectorstore: VectorStore
-    """VectorStore than contains information about examples."""
+    """VectorStore that contains information about examples."""
     k: int = 4
     """Number of examples to select."""
     example_keys: Optional[List[str]] = None
