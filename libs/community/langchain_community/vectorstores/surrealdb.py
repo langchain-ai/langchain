@@ -213,7 +213,7 @@ class SurrealDBStore(VectorStore):
         k: int = DEFAULT_K,
         filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> List[Tuple[Document, float, Any]]:
         """Run similarity search for query embedding asynchronously
         and return documents and scores
 
@@ -273,7 +273,7 @@ class SurrealDBStore(VectorStore):
             (
                 Document(
                     page_content=doc["text"],
-                    metadata={"id": doc["id"], **(doc.get("metadata", None) or {})},
+                    metadata={"id": doc["id"], **(doc.get("metadata") or {})},
                 ),
                 doc["similarity"],
                 doc["embedding"],
@@ -510,17 +510,12 @@ class SurrealDBStore(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
 
-        result = [
-            (document, similarity, embedding)
-            for document, similarity, embedding in (
-                await self._asimilarity_search_by_vector_with_score(
-                    embedding, fetch_k, filter, **kwargs
-                )
-            )
-        ]
+        result = await self._asimilarity_search_by_vector_with_score(
+            embedding, fetch_k, filter, **kwargs
+        )
 
         # extract only document from result
-        results = [sub[0] for sub in result]
+        docs = [sub[0] for sub in result]
         # extract only embedding from result
         embeddings = [sub[-1] for sub in result]
 
@@ -531,7 +526,7 @@ class SurrealDBStore(VectorStore):
             lambda_mult=lambda_mult,
         )
 
-        return [results[i] for i in mmr_selected]
+        return [docs[i] for i in mmr_selected]
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -564,7 +559,7 @@ class SurrealDBStore(VectorStore):
         async def _max_marginal_relevance_search_by_vector() -> List[Document]:
             await self.initialize()
             return await self.amax_marginal_relevance_search_by_vector(
-                self, embedding, k, fetch_k, lambda_mult, filter
+                embedding, k, fetch_k, lambda_mult, filter
             )
 
         return asyncio.run(_max_marginal_relevance_search_by_vector())
