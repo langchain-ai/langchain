@@ -33,7 +33,6 @@ torch = {version = ">=1,<3", optional = true}
 jinja2 = {version = "^3", optional = true}
 tiktoken = {version = ">=0.7,<1.0", optional = true, python=">=3.9"}
 qdrant-client = {version = "^1.3.1", optional = true, python = ">=3.8.1,<3.12"}
-dataclasses-json = ">= 0.5.7, < 0.7"
 cohere = {version = ">=4,<6", optional = true}
 openai = {version = "<2", optional = true}
 nlpcloud = {version = "^1", optional = true}
