@@ -400,7 +400,7 @@ class Vectara(VectorStore):
                             "corpusId": self._vectara_corpus_id,
                             "metadataFilter": config.filter,
                         }
-                    ]
+                    ],
                 }
             ]
         }
@@ -412,7 +412,7 @@ class Vectara(VectorStore):
         if config.mmr_config.is_enabled:
             body["query"][0]["rerankingConfig"] = {
                 "rerankerId": 272725718,
-                "mmrConfig": {"diversityBias": config.mmr_config.diversity_bias}
+                "mmrConfig": {"diversityBias": config.mmr_config.diversity_bias},
             }
         if config.summary_config.is_enabled:
             body["query"][0]["summary"] = [
@@ -423,7 +423,7 @@ class Vectara(VectorStore):
                 }
             ]
             if chat:
-                body["query"][0]["summary"][0]["chat"] = {                      # type: ignore
+                body["query"][0]["summary"][0]["chat"] = {  # type: ignore
                     "store": True,
                     "conversationId": chat_conv_id,
                 }
@@ -681,6 +681,7 @@ class VectaraRetriever(VectorStoreRetriever):
         """Add documents to vectorstore."""
         return self.vectorstore.add_documents(documents, **kwargs)
 
+
 class VectaraRAG(Runnable):
     def __init__(
         self, vectara: Vectara, config: VectaraQueryConfig, chat: bool = False
@@ -690,11 +691,12 @@ class VectaraRAG(Runnable):
         self.chat = chat
         self.conv_id = None
 
-    def stream(self, 
-               input: str,
-               config: Optional[RunnableConfig] = None,
-               **kwargs: Any,
-        ) -> Iterator[dict]:
+    def stream(
+        self,
+        input: str,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Iterator[dict]:
         """get streaming output from Vectara RAG
 
         Args:
@@ -804,9 +806,10 @@ class VectaraRAG(Runnable):
                     yield {"context": res}
         return
 
-    def invoke(self, 
-               input: str,
-               config: Optional[RunnableConfig] = None,
+    def invoke(
+        self,
+        input: str,
+        config: Optional[RunnableConfig] = None,
     ) -> dict:
         res = {"answer": ""}
         for chunk in self.stream(input):
