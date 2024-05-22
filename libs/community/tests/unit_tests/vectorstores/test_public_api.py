@@ -2,6 +2,7 @@
 from langchain_community.vectorstores import __all__ as public_api
 
 _EXPECTED = [
+    "Aerospike",
     "AlibabaCloudOpenSearch",
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
