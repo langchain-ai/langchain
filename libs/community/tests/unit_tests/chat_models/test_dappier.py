@@ -38,7 +38,7 @@ def test_dappier_messages_formatting(
     assert result == expected
 
 
-def test_dappierai_initialization():
+def test_dappierai_initialization() -> None:
     for model in [
         ChatDappierAI(dappier_model="dappier-ai-model", dappier_api_key="xyz"),
         ChatDappierAI(model="dappier-ai-model", api_key="xyz"),
