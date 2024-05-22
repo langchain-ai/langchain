@@ -4,6 +4,9 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from langchain_community.graphs.anzograph_graph import (
+        AnzoGraphDBGraph,
+    )
     from langchain_community.graphs.arangodb_graph import (
         ArangoGraph,
     )
@@ -48,6 +51,7 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "AnzoGraphDBGraph",
     "ArangoGraph",
     "FalkorDBGraph",
     "GremlinGraph",
@@ -65,6 +69,7 @@ __all__ = [
 ]
 
 _module_lookup = {
+    "AnzoGraphDBGraph": "langchain_community.graphs.anzograph_graph",
     "ArangoGraph": "langchain_community.graphs.arangodb_graph",
     "FalkorDBGraph": "langchain_community.graphs.falkordb_graph",
     "GremlinGraph": "langchain_community.graphs.gremlin_graph",
