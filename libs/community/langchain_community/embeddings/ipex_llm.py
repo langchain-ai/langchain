@@ -1,6 +1,7 @@
 # This file is adapted from
 # https://github.com/langchain-ai/langchain/blob/master/libs/community/langchain_community/embeddings/huggingface.py
 
+import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
@@ -13,7 +14,7 @@ DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
     "Represent this question for searching relevant passages: "
 )
 DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索相关文章："
-
+logger = logging.getLogger(__name__)
 
 class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
     """Wrapper around the BGE embedding model with IPEX-LLM optimizations on Intel CPUs and GPUs.
@@ -75,6 +76,13 @@ class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
 
         # Set "cpu" as default device
         if "device" not in self.model_kwargs:
+            self.model_kwargs["device"] = "cpu"
+
+        if self.model_kwargs["device"] not in ["cpu", "xpu"]:
+            logger.warning(
+                "IpexLLMBgeEmbeddings currently only supports device to be 'cpu' or 'xpu', "
+                f"but you have: {self.model_kwargs["device"]}; Use 'cpu' instead."
+            )
             self.model_kwargs["device"] = "cpu"
 
         self.client = sentence_transformers.SentenceTransformer(
