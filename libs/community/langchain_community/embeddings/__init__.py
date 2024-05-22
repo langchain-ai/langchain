@@ -203,6 +203,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.tensorflow_hub import (
         TensorflowHubEmbeddings,
     )
+    from langchain_community.embeddings.titan_takeoff import (
+        TitanTakeoffEmbed,
+    )
     from langchain_community.embeddings.vertexai import (
         VertexAIEmbeddings,
     )
@@ -288,6 +291,7 @@ __all__ = [
     "SpacyEmbeddings",
     "SparkLLMTextEmbeddings",
     "TensorflowHubEmbeddings",
+    "TitanTakeoffEmbed",
     "VertexAIEmbeddings",
     "VolcanoEmbeddings",
     "VoyageEmbeddings",
@@ -379,8 +383,6 @@ def __getattr__(name: str) -> Any:
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
-
-__all__ = list(_module_lookup.keys())
 
 logger = logging.getLogger(__name__)
 
