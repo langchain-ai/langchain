@@ -7496,7 +7496,7 @@ six = ">=1.15.0"
 name = "rdflib"
 version = "7.0.0"
 description = "RDFLib is a Python library for working with RDF, a simple yet powerful language for representing information."
-optional = true
+optional = false
 python-versions = ">=3.8.1,<4.0.0"
 files = [
     {file = "rdflib-7.0.0-py3-none-any.whl", hash = "sha256:0438920912a642c866a513de6fe8a0001bd86ef975057d6962c79ce4771687cd"},
@@ -8359,7 +8359,7 @@ files = [
 name = "sparqlwrapper"
 version = "2.0.0"
 description = "SPARQL Endpoint interface to Python"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "SPARQLWrapper-2.0.0-py3-none-any.whl", hash = "sha256:c99a7204fff676ee28e6acef327dc1ff8451c6f7217dcd8d49e8872f324a8a20"},
