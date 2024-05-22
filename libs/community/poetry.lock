@@ -2633,13 +2633,13 @@ url = "../text-splitters"
 
 [[package]]
 name = "gigachat"
-version = "0.1.25"
+version = "0.1.27"
 description = "GigaChat. Python-library for GigaChain and LangChain"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "gigachat-0.1.25-py3-none-any.whl", hash = "sha256:ab42b6404b52bcd14519d2feb924685e1142f0205741202f82358fc98a6290e4"},
-    {file = "gigachat-0.1.25.tar.gz", hash = "sha256:338fcea85c6791bb1cc607c34b31043047ce15ca7eb1bb4f2f3e958df2654e74"},
+    {file = "gigachat-0.1.27-py3-none-any.whl", hash = "sha256:6d22344cad6aba773eaee0300343a98a289117308627bd9724900d1cdae9d95f"},
+    {file = "gigachat-0.1.27.tar.gz", hash = "sha256:715465a5f933b789c7cdc55420d68daccdecb37e35600af2d89645efff623d4f"},
 ]
 
 [package.dependencies]
@@ -10129,4 +10129,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "8f451e1dfa42a624bb482c5b8477149f45134a13649c5144892b2491823fcb58"
+content-hash = "a1cabfd924e2bc9e9dd759c2530a4f55548a5a427dc77304df551decfa80b458"
