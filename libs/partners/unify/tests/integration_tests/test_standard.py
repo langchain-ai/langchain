@@ -1,6 +1,4 @@
 """Standard LangChain interface tests"""
-
-import time
 from typing import Type
 
 import pytest

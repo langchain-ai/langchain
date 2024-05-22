@@ -21,7 +21,7 @@ class TestUnify(ChatModelUnitTests):
             "unify_api_key": "test_api_key",
         }
 
-    @pytest.mark.xfail(reason="Not implemented.")
+    @pytest.fixture
     def test_standard_params(
         self,
         chat_model_class: Type[BaseChatModel],
