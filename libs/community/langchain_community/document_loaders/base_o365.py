@@ -129,7 +129,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
             loader = FileSystemBlobLoader(path=temp_dir)
             for blob in loader.yield_blobs():
                 if not isinstance(blob.path, PurePath):
-                    raise AssertionError("Expected blob path to be a PurePath")
+                    raise NotImplementedError("Expected blob path to be a PurePath")
                 if blob.path:
                     file_metadata_ = metadata_dict.get(str(blob.path), {})
                     blob.metadata.update(file_metadata_)
