@@ -85,7 +85,7 @@ class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
         if self.model_kwargs["device"] not in ["cpu", "xpu"]:
             logger.warning(
                 "IpexLLMBgeEmbeddings currently only supports device to be "
-                f"'cpu' or 'xpu', but you have: {self.model_kwargs["device"]};"
+                f"'cpu' or 'xpu', but you have: {self.model_kwargs['device']};"
                 " Use 'cpu' instead."
             )
             self.model_kwargs["device"] = "cpu"
