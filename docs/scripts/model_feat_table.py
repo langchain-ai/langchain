@@ -116,7 +116,7 @@ Each LLM integration can optionally provide native implementations for async, st
 
 {table}
 
-"""  # noqa: E501
+"""
 
 CHAT_MODEL_TEMPLATE = """\
 ---
@@ -133,7 +133,7 @@ The following table shows all the chat models that support one or more advanced 
 
 {table}
 
-"""  # noqa: E501
+"""
 
 
 def get_llm_table():

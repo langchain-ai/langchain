@@ -143,7 +143,7 @@ def test_chat_message_chunks() -> None:
         role="User", content=" indeed."
     ) == AIMessageChunk(
         content="I am indeed."
-    ), "Other MessageChunk + ChatMessageChunk should be a MessageChunk as the left side"  # noqa: E501
+    ), "Other MessageChunk + ChatMessageChunk should be a MessageChunk as the left side"
 
 
 def test_function_message_chunks() -> None:

@@ -105,7 +105,7 @@ if TYPE_CHECKING:
         OpenWeatherMapAPIWrapper,
     )
     from langchain_community.utilities.oracleai import (
-        OracleSummary,  # noqa: F401
+        OracleSummary,
     )
     from langchain_community.utilities.outline import (
         OutlineAPIWrapper,

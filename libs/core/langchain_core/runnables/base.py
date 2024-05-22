@@ -517,7 +517,7 @@ class Runnable(Generic[Input, Output], ABC):
                 json_and_bytes_chain.invoke("[1, 2, 3]")
                 # -> {"json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
 
-        """  # noqa: E501
+        """
         from langchain_core.runnables.passthrough import RunnablePick
 
         return self | RunnablePick(keys)

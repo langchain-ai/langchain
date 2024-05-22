@@ -389,7 +389,7 @@ class ArxivAPIWrapper(BaseModel):
 
         Returns:
             List of ArxivPaper objects.
-        """  # noqa: E501
+        """
 
         def cut_authors(authors: list) -> list[str]:
             if len(authors) > 3:
