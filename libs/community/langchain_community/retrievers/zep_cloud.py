@@ -12,7 +12,6 @@ from langchain_core.retrievers import BaseRetriever
 
 try:
     from zep_cloud import MemorySearchResult, SearchScope, SearchType
-    from zep_cloud.client import AsyncZep, Zep
 
     class ZepCloudRetriever(BaseRetriever):
         """`Zep Cloud` MemoryStore Retriever.
