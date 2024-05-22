@@ -1,6 +1,7 @@
 from langchain import chat_models
 
 EXPECTED_ALL = [
+    "init_model",
     "ChatOpenAI",
     "BedrockChat",
     "AzureChatOpenAI",
