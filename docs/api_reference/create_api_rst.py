@@ -364,7 +364,7 @@ def main(dirs: Optional[list] = None) -> None:
         dirs += [
             dir_
             for dir_ in os.listdir(ROOT_DIR / "libs" / "partners")
-            if os.path.isdir(dir_)
+            if os.path.isdir(ROOT_DIR / "libs" / "partners" / dir_)
             and "pyproject.toml" in os.listdir(ROOT_DIR / "libs" / "partners" / dir_)
         ]
     for dir_ in dirs:

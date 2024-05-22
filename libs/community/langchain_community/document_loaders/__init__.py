@@ -403,6 +403,9 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.s3_file import (
         S3FileLoader,
     )
+    from langchain_community.document_loaders.scrapfly import (
+        ScrapflyLoader,
+    )
     from langchain_community.document_loaders.sharepoint import (
         SharePointLoader,
     )
@@ -654,6 +657,7 @@ _module_lookup = {
     "RocksetLoader": "langchain_community.document_loaders.rocksetdb",
     "S3DirectoryLoader": "langchain_community.document_loaders.s3_directory",
     "S3FileLoader": "langchain_community.document_loaders.s3_file",
+    "ScrapflyLoader": "langchain_community.document_loaders.scrapfly",
     "SQLDatabaseLoader": "langchain_community.document_loaders.sql_database",
     "SRTLoader": "langchain_community.document_loaders.srt",
     "SeleniumURLLoader": "langchain_community.document_loaders.url_selenium",
@@ -854,6 +858,7 @@ __all__ = [
     "RocksetLoader",
     "S3DirectoryLoader",
     "S3FileLoader",
+    "ScrapflyLoader",
     "SQLDatabaseLoader",
     "SRTLoader",
     "SeleniumURLLoader",
