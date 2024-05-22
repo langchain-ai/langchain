@@ -13,6 +13,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Optional,
     Tuple,
     Type,
@@ -20,10 +21,7 @@ from typing import (
 )
 
 import numpy as np
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForRetrieverRun,
-    CallbackManagerForRetrieverRun,
-)
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import root_validator
@@ -567,7 +565,11 @@ class AzureSearch(VectorStore):
         return [doc for doc, _, _ in docs_and_scores]
 
     def semantic_hybrid_search_with_score(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        score_type: Literal["score", "reranker_score"] = "score",
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
         Returns the most similar indexed documents to the query text.
@@ -575,14 +577,29 @@ class AzureSearch(VectorStore):
         Args:
             query (str): The query text for which to find similar documents.
             k (int): The number of documents to return. Default is 4.
+            score_type: Must either be "score" or "reranker_score".
+                Defaulted to "score".
 
         Returns:
-            List[Document]: A list of documents that are most similar to the query text.
+            List[Tuple[Document, float]]: A list of documents and their
+                corresponding scores.
         """
+        score_threshold = kwargs.pop("score_threshold", None)
         docs_and_scores = self.semantic_hybrid_search_with_score_and_rerank(
             query, k=k, filters=kwargs.get("filters", None)
         )
-        return [(doc, score) for doc, score, _ in docs_and_scores]
+        if score_type == "score":
+            return [
+                (doc, score)
+                for doc, score, _ in docs_and_scores
+                if score_threshold is None or score >= score_threshold
+            ]
+        elif score_type == "reranker_score":
+            return [
+                (doc, reranker_score)
+                for doc, _, reranker_score in docs_and_scores
+                if score_threshold is None or reranker_score >= score_threshold
+            ]
 
     def semantic_hybrid_search_with_score_and_rerank(
         self, query: str, k: int = 4, filters: Optional[str] = None
@@ -716,7 +733,8 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     """Azure Search instance used to find similar documents."""
     search_type: str = "hybrid"
     """Type of search to perform. Options are "similarity", "hybrid",
-    "semantic_hybrid", "similarity_score_threshold", "hybrid_score_threshold"."""
+    "semantic_hybrid", "similarity_score_threshold", "hybrid_score_threshold", 
+    or "semantic_hybrid_score_threshold"."""
     k: int = 4
     """Number of documents to return."""
     allowed_search_types: ClassVar[Collection[str]] = (
@@ -725,6 +743,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         "hybrid",
         "hybrid_score_threshold",
         "semantic_hybrid",
+        "semantic_hybrid_score_threshold",
     )
 
     class Config:
@@ -770,16 +789,13 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
             ]
         elif self.search_type == "semantic_hybrid":
             docs = self.vectorstore.semantic_hybrid_search(query, k=self.k, **kwargs)
+        elif self.search_type == "semantic_hybrid_score_threshold":
+            docs = [
+                doc
+                for doc, _ in self.vectorstore.semantic_hybrid_search_with_score(
+                    query, k=self.k, **kwargs
+                )
+            ]
         else:
             raise ValueError(f"search_type of {self.search_type} not allowed.")
         return docs
-
-    async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
-    ) -> List[Document]:
-        raise NotImplementedError(
-            "AzureSearchVectorStoreRetriever does not support async"
-        )

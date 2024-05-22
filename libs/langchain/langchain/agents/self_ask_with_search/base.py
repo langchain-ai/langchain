@@ -117,7 +117,7 @@ def create_self_ask_with_search_agent(
             )
 
             prompt = hub.pull("hwchase17/self-ask-with-search")
-            model = ChatAnthropic()
+            model = ChatAnthropic(model="claude-3-haiku-20240307")
             tools = [...]  # Should just be one tool with name `Intermediate Answer`
 
             agent = create_self_ask_with_search_agent(model, tools, prompt)

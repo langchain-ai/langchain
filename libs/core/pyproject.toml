@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-core"
-version = "0.1.52"
+version = "0.2.1"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -79,6 +79,11 @@ select = [
 [tool.mypy]
 disallow_untyped_defs = "True"
 exclude = ["notebooks", "examples", "example_data", "langchain_core/pydantic"]
+
+[[tool.mypy.overrides]]
+# conditional dependencies introduced by langsmith-sdk
+module = ["numpy", "pytest"]
+ignore_missing_imports = true
 
 [tool.coverage.run]
 omit = ["tests/*"]
