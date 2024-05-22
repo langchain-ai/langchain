@@ -45,6 +45,8 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "gigachain",
             "gigachain-core",
             "gigachat",
+            'google-auth-httplib2',
+            'httplib2',
             "langsmith",
             "numpy",
             "python",

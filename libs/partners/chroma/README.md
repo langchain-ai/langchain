@@ -1,11 +1,11 @@
-# langchain-chroma
+# gigachain-chroma
 
 This package contains the LangChain integration with Chroma.
 
 ## Installation
 
 ```bash
-pip install -U langchain-chroma
+pip install -U gigachain-chroma
 ```
 
 ## Usage
