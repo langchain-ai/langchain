@@ -101,12 +101,12 @@ def _extract_type_checking_imports(code: str) -> List[Tuple[str, str]]:
     tree = ast.parse(code)
 
     class TypeCheckingVisitor(ast.NodeVisitor):
-        def visit_ImportFrom(self, node):
+        def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
             for alias in node.names:
                 imports.append((node.module, alias.name))
 
     class GlobalScopeVisitor(ast.NodeVisitor):
-        def visit_If(self, node):
+        def visit_If(self, node: ast.If) -> None:
             if (
                 isinstance(node.test, ast.Name)
                 and node.test.id == "TYPE_CHECKING"
