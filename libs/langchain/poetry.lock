@@ -6701,7 +6701,7 @@ cli = ["typer"]
 cohere = ["cohere"]
 docarray = ["docarray"]
 embeddings = ["sentence-transformers"]
-extended-testing = ["aiosqlite", "langchain-anthropic", "langchain-fireworks", "langchain-groq", "langchain-mistralai", "langchain-openai", "langchain-together", "numexpr", "openai", "rapidfuzz", "tiktoken"]
+extended-testing = ["aiosqlite", "jsonschema", "langchain-anthropic", "langchain-fireworks", "langchain-groq", "langchain-mistralai", "langchain-openai", "langchain-together", "numexpr", "openai", "rapidfuzz", "tiktoken"]
 javascript = ["esprima"]
 llms = ["clarifai", "cohere", "huggingface_hub", "manifest-ml", "nlpcloud", "openai", "openlm", "torch", "transformers"]
 openai = ["openai", "tiktoken"]
@@ -6711,4 +6711,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "481f3312299ba7d07afb778fd2dc2d917dbd6ca3f5e39776429e1489d41a50dd"
+content-hash = "7892f407d49f72181d575ba4caa52fd7cf248e5c9f38922526c97f73d282cc19"

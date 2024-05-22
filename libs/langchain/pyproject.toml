@@ -54,6 +54,7 @@ langchain-fireworks = {version = "^0", optional = true}
 langchain-together = {version = "^0", optional = true}
 langchain-mistralai = {version = "^0", optional = true}
 langchain-groq = {version = "^0", optional = true}
+jsonschema = {version = "^4.22.0", optional = true}
 
 [tool.poetry.group.test]
 optional = true
