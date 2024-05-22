@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from langchain_community.utilities.brave_search import (
         BraveSearchWrapper,
     )
+    from langchain_community.utilities.dataherald import DataheraldAPIWrapper
     from langchain_community.utilities.dria_index import (
         DriaAPIWrapper,
     )
@@ -124,6 +125,7 @@ if TYPE_CHECKING:
     from langchain_community.utilities.python import (
         PythonREPL,
     )
+    from langchain_community.utilities.rememberizer import RememberizerAPIWrapper
     from langchain_community.utilities.requests import (
         Requests,
         RequestsWrapper,
@@ -182,6 +184,7 @@ __all__ = [
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
+    "DataheraldAPIWrapper",
     "DriaAPIWrapper",
     "DuckDuckGoSearchAPIWrapper",
     "GoldenQueryAPIWrapper",
@@ -213,13 +216,14 @@ __all__ = [
     "PowerBIDataset",
     "PubMedAPIWrapper",
     "PythonREPL",
+    "RememberizerAPIWrapper",
     "Requests",
     "RequestsWrapper",
     "RivaASR",
     "RivaTTS",
-    "SQLDatabase",
     "SceneXplainAPIWrapper",
     "SearchApiAPIWrapper",
+    "SQLDatabase",
     "SearxSearchWrapper",
     "SerpAPIWrapper",
     "SparkSQL",
@@ -304,6 +308,3 @@ def __getattr__(name: str) -> Any:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-__all__ = list(_module_lookup.keys())
