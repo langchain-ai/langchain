@@ -164,7 +164,7 @@ class Chroma(VectorStore):
             collection_metadata: Collection configurations.
             client: Chroma client. Documentation:
                     https://docs.trychroma.com/reference/js-client#class:-chromaclient
-            relevance_score_fn: Fuction to calculate relevance score from distance.
+            relevance_score_fn: Function to calculate relevance score from distance.
                     Used only in `similarity_search_with_relevance_scores`
             create_collection_if_not_exists: Whether to create collection
                     if it doesn't exist. Defaults to True.
@@ -285,7 +285,7 @@ class Chroma(VectorStore):
             List of IDs of the added images.
 
         Raises:
-            ValueError: When matadata is incorrect.
+            ValueError: When metadata is incorrect.
         """
         # Map from uris to b64 encoded strings
         b64_texts = [self.encode_image(uri=uri) for uri in uris]
@@ -372,7 +372,7 @@ class Chroma(VectorStore):
             List of IDs of the added texts.
 
         Raises:
-            ValueError: When matadata is incorrect.
+            ValueError: When metadata is incorrect.
         """
 
         if ids is None:
