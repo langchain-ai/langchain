@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, cast
 
 import requests
 from langchain_core.embeddings import Embeddings
@@ -107,14 +107,19 @@ class ClovaEmbeddings(BaseModel, Embeddings):
 
         # HTTP headers for authorization
         headers = {
-            "X-NCP-CLOVASTUDIO-API-KEY": self.clova_emb_api_key.get_secret_value(),
-            "X-NCP-APIGW-API-KEY": self.clova_emb_apigw_api_key.get_secret_value(),
+            "X-NCP-CLOVASTUDIO-API-KEY": cast(
+                SecretStr, self.clova_emb_api_key
+            ).get_secret_value(),
+            "X-NCP-APIGW-API-KEY": cast(
+                SecretStr, self.clova_emb_apigw_api_key
+            ).get_secret_value(),
             "Content-Type": "application/json",
         }
 
         # send request
+        app_id = cast(SecretStr, self.app_id).get_secret_value()
         response = requests.post(
-            f"{self.endpoint_url}/{self.model}/{self.app_id.get_secret_value()}",
+            f"{self.endpoint_url}/{self.model}/{app_id}",
             headers=headers,
             json=payload,
         )
