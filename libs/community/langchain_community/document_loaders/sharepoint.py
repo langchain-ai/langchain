@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Iterator, List, Optional, Sequence
+from typing import Any, Iterator, List, Optional, Sequence
 
 import requests
 from langchain_core.document_loaders import BaseLoader
@@ -65,9 +65,7 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                 raise ValueError(f"There isn't a folder with path {self.folder_path}.")
             for blob in self._load_from_folder(target_folder):
                 for parsed_blob in blob_parser.lazy_parse(blob):
-                    auth_identities = self.authorized_identities(
-                        self.document_library_id, self.file_id
-                    )
+                    auth_identities = self.authorized_identities()
                     parsed_blob.metadata["authorized_identities"] = auth_identities
                     yield parsed_blob
         if self.folder_id:
@@ -86,12 +84,12 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             for blob in self._load_from_folder(target_folder):
                 yield from blob_parser.lazy_parse(blob)
 
-    def authorized_identities(self, document_library_id, file_id):
+    def authorized_identities(self) -> List:
         data = self._fetch_access_token()
         access_token = data.get("access_token")
         url = (
             f"https://graph.microsoft.com/v1.0/sites/{self.site_id}/"
-            f"drives/{document_library_id}/items/{file_id}/permissions"
+            f"drives/{self.document_library_id}/items/{self.file_id}/permissions"
         )
         payload = {}
 
@@ -119,8 +117,8 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
 
         return group_names
 
-    def _fetch_access_token(self):
+    def _fetch_access_token(self) -> Any:
         with open(self.token_path) as f:
             s = f.read()
-            data = json.loads(s)
-            return data
+        data = json.loads(s)
+        return data
