@@ -33,7 +33,7 @@ install-py-deps:
 
 _generate-files-internal:
 	mkdir -p $(INTERMEDIATE_DIR)
-	rsync -avm --delete $(SOURCE_DIR) $(INTERMEDIATE_DIR)
+	rsync -am --delete $(SOURCE_DIR) $(INTERMEDIATE_DIR)
 
 generate-files: _generate-files-internal
 	mkdir -p $(INTERMEDIATE_DIR)/templates
@@ -63,7 +63,7 @@ render:
 	$(PYTHON) scripts/notebook_convert.py $(INTERMEDIATE_DIR) $(OUTPUT_NEW_DOCS_DIR)
 
 md-sync:
-	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --include="*.png" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_NEW_DOCS_DIR)
+	rsync -am --include="*/" --include="*.mdx" --include="*.md" --include="*.png" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_NEW_DOCS_DIR)
 
 generate-references:
 	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(OUTPUT_NEW_DOCS_DIR)
