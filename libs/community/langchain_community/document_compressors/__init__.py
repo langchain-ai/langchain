@@ -6,7 +6,7 @@ if TYPE_CHECKING:
         FlashrankRerank,
     )
     from langchain_community.document_compressors.jina_rerank import (
-        JinaRerank,  # noqa: F401
+        JinaRerank,
     )
     from langchain_community.document_compressors.llmlingua_filter import (
         LLMLinguaCompressor,
@@ -15,7 +15,6 @@ if TYPE_CHECKING:
         OpenVINOReranker,
     )
 
-__all__ = ["LLMLinguaCompressor", "OpenVINOReranker", "FlashrankRerank"]
 
 _module_lookup = {
     "LLMLinguaCompressor": "langchain_community.document_compressors.llmlingua_filter",
@@ -32,4 +31,4 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
-__all__ = list(_module_lookup.keys())
+__all__ = ["LLMLinguaCompressor", "OpenVINOReranker", "FlashrankRerank", "JinaRerank"]
