@@ -10,8 +10,6 @@ from unittest.mock import patch
 import pytest
 import pathlib
 
-import rdflib
-import SPARQLWrapper
 from langchain_community.graphs.anzograph_graph import AnzoGraphDBGraph
 from langchain_community.chains.graph_qa.anzograph import AnzoGraphDBQAChain
 
@@ -52,16 +50,6 @@ class FakeAnzoGraphDBGraph(AnzoGraphDBGraph):
         fake_result = [rdflib.term.Literal("fake_result")]
         return fake_result
 
-
-# Using the decorator for tests that require the two dependencies
-rdflib_installed = pytest.mark.skipif(
-    "rdflib" not in globals(),
-    reason="rdflib is required for these tests but not installed."
-)
-sparqlwrapper_installed = pytest.mark.skipif(
-    SPARQLWrapper is None,
-    reason="SPARQLWrapper is required for these tests but not installed."
-)
 
 @pytest.mark.usefixtures("rdflib_installed", "sparqlwrapper_installed")
 class TestAnzoGraphDBGraph(unittest.TestCase):
