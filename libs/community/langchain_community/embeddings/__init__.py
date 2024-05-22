@@ -173,7 +173,7 @@ if TYPE_CHECKING:
         QuantizedBiEncoderEmbeddings,
     )
     from langchain_community.embeddings.oracleai import (
-        OracleEmbeddings,  # noqa: F401
+        OracleEmbeddings,
     )
     from langchain_community.embeddings.premai import (
         PremAIEmbeddings,

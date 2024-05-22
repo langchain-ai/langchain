@@ -49,7 +49,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
 
         For more:
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """  # noqa: E501
+    """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
