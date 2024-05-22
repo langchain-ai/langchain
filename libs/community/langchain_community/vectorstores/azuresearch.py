@@ -807,7 +807,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
             docs = [
                 doc
                 for doc, _ in self.vectorstore.semantic_hybrid_search_with_score(
-                    query, k=self.k, **kwargs
+                    query, k=self.k, **params
                 )
             ]
         else:
