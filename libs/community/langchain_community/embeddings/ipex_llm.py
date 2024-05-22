@@ -4,10 +4,9 @@
 import logging
 from typing import Any, Dict, List, Optional
 
+from ipex_llm.transformers.convert import _optimize_post, _optimize_pre
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field
-from ipex_llm.transformers.convert import _optimize_pre, _optimize_post
-from ipex_llm import optimize_model
 
 DEFAULT_BGE_MODEL = "BAAI/bge-small-en-v1.5"
 DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
@@ -17,10 +16,13 @@ DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索�
 logger = logging.getLogger(__name__)
 
 class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
-    """Wrapper around the BGE embedding model with IPEX-LLM optimizations on Intel CPUs and GPUs.
+    """Wrapper around the BGE embedding model
+    with IPEX-LLM optimizations on Intel CPUs and GPUs.
 
-    To use, you should have the ``ipex-llm`` and ``sentence_transformers`` package installed.
-    Refer to `here <https://python.langchain.com/v0.1/docs/integrations/text_embedding/ipex_llm/>`_ for installation on Intel CPU.
+    To use, you should have the ``ipex-llm``
+    and ``sentence_transformers`` package installed. Refer to
+    `here <https://python.langchain.com/v0.1/docs/integrations/text_embedding/ipex_llm/>`_
+    for installation on Intel CPU.
 
     Example on Intel CPU:
         .. code-block:: python
@@ -33,7 +35,9 @@ class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
                 encode_kwargs={"normalize_embeddings": True},
             )
 
-    Refer to `here <https://python.langchain.com/v0.1/docs/integrations/text_embedding/ipex_llm_gpu/>`_ for installation on Intel GPU.
+    Refer to
+    `here <https://python.langchain.com/v0.1/docs/integrations/text_embedding/ipex_llm_gpu/>`_
+    for installation on Intel GPU.
 
     Example on Intel GPU:
         .. code-block:: python
@@ -80,8 +84,9 @@ class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
 
         if self.model_kwargs["device"] not in ["cpu", "xpu"]:
             logger.warning(
-                "IpexLLMBgeEmbeddings currently only supports device to be 'cpu' or 'xpu', "
-                f"but you have: {self.model_kwargs["device"]}; Use 'cpu' instead."
+                "IpexLLMBgeEmbeddings currently only supports device to be "
+                f"'cpu' or 'xpu', but you have: {self.model_kwargs["device"]};"
+                " Use 'cpu' instead."
             )
             self.model_kwargs["device"] = "cpu"
 
