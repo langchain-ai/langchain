@@ -257,6 +257,7 @@ def convert_python_function_to_openai_function(
         },
     }
 
+
 @deprecated(
     "0.1.16",
     removal="0.3.0",
