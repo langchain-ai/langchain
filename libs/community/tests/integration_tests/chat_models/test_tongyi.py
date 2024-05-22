@@ -77,6 +77,25 @@ def test_model() -> None:
     assert isinstance(response.content, str)
 
 
+def test_vision_model() -> None:
+    """Test model kwarg works."""
+    chat = ChatTongyi(model="qwen-vl-max")  # type: ignore[call-arg]
+    response = chat.invoke(
+        [
+            HumanMessage(
+                content=[
+                    {
+                        "image": "https://python.langchain.com/v0.1/assets/images/run_details-806f6581cd382d4887a5bc3e8ac62569.png"
+                    },
+                    {"text": "Summarize the image"},
+                ]
+            )
+        ]
+    )
+    assert isinstance(response, BaseMessage)
+    assert isinstance(response.content, list)
+
+
 def test_functions_call_thoughts() -> None:
     chat = ChatTongyi(model="qwen-plus")  # type: ignore[call-arg]
 
