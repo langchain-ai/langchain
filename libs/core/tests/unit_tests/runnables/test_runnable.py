@@ -1451,7 +1451,6 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
             recursion_limit=25,
             configurable={"hello": "there"},
             metadata={"hello": "there", "bye": "now"},
-            run_id=None,
         ),
     )
     spy.reset_mock()
@@ -1593,7 +1592,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
-                run_id=None,
             ),
         ),
         mocker.call(
@@ -1603,7 +1601,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
-                run_id=None,
             ),
         ),
     ]
@@ -1629,7 +1626,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
-            run_id=None,
         ),
     )
     second_call = next(call for call in spy.call_args_list if call.args[0] == "wooorld")
@@ -1640,7 +1636,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
-            run_id=None,
         ),
     )
 
@@ -1711,7 +1706,6 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
             tags=[],
             callbacks=None,
             recursion_limit=25,
-            run_id=None,
         )
 
 
