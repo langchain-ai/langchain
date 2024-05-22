@@ -68,7 +68,6 @@ def _check_correct_or_not_defined__all__(code: str) -> bool:
     return all_good
 
 
-@pytest.mark.xfail
 def test_no_dynamic__all__() -> None:
     """Verify that __all__ is not computed at runtime.
 
