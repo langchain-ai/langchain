@@ -78,7 +78,7 @@ string = "racecar"
 if string == string[::-1]:
     print(string, "is a palindrome")  # noqa: T201
 else:
-    print(string, "is not a palindrome")"""  # noqa: T201
+    print(string, "is not a palindrome")"""
     tool = PythonAstREPLTool()
     assert tool.run(program) == "racecar is a palindrome\n"
 
