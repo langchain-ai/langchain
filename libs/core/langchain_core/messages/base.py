@@ -34,6 +34,8 @@ class BaseMessage(Serializable):
     name: Optional[str] = None
 
     id: Optional[str] = None
+    """An optional unique identifier for the message. This should ideally be
+    provided by the provider/model which created the message."""
 
     class Config:
         extra = Extra.allow

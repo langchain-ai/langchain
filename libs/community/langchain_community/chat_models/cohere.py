@@ -96,7 +96,7 @@ def get_cohere_chat_request(
 
 
 @deprecated(
-    since="0.0.30", removal="0.2.0", alternative_import="langchain_cohere.ChatCohere"
+    since="0.0.30", removal="0.3.0", alternative_import="langchain_cohere.ChatCohere"
 )
 class ChatCohere(BaseChatModel, BaseCohere):
     """`Cohere` chat large language models.
@@ -172,9 +172,9 @@ class ChatCohere(BaseChatModel, BaseCohere):
         request = get_cohere_chat_request(messages, **self._default_params, **kwargs)
 
         if hasattr(self.async_client, "chat_stream"):  # detect and support sdk v5
-            stream = self.async_client.chat_stream(**request)
+            stream = await self.async_client.chat_stream(**request)
         else:
-            stream = self.async_client.chat(**request, stream=True)
+            stream = await self.async_client.chat(**request, stream=True)
 
         async for data in stream:
             if data.event_type == "text-generation":

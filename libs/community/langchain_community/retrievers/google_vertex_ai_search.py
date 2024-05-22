@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
@@ -195,6 +196,11 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
         return documents
 
 
+@deprecated(
+    since="0.0.33",
+    removal="0.3.0",
+    alternative_import="langchain_google_community.VertexAISearchRetriever",
+)
 class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetriever):
     """`Google Vertex AI Search` retriever.
 
@@ -345,6 +351,11 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant for a query."""
+        return self.get_relevant_documents_with_response(query)[0]
+
+    def get_relevant_documents_with_response(
+        self, query: str
+    ) -> Tuple[List[Document], Any]:
         from google.api_core.exceptions import InvalidArgument
 
         search_request = self._create_search_request(query)
@@ -382,9 +393,14 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
                 + f" Got {self.engine_data_type}"
             )
 
-        return documents
+        return documents, response
 
 
+@deprecated(
+    since="0.0.33",
+    removal="0.3.0",
+    alternative_import="langchain_google_community.VertexAIMultiTurnSearchRetriever",
+)
 class GoogleVertexAIMultiTurnSearchRetriever(
     BaseRetriever, _BaseGoogleVertexAISearchRetriever
 ):
