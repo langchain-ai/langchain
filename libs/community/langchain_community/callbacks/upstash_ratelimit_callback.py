@@ -58,6 +58,7 @@ class UpstashRatelimitHandler(BaseCallbackHandler):
     def __init__(
         self,
         identifier: str,
+        *,
         token_ratelimit: Optional[Ratelimit] = None,
         request_ratelimit: Optional[Ratelimit] = None,
         include_output_tokens: bool = False,
@@ -84,32 +85,32 @@ class UpstashRatelimitHandler(BaseCallbackHandler):
         Example:
             .. code-block:: python
 
-            from upstash_redis import Redis
-            from upstash_ratelimit import Ratelimit, FixedWindow
+                from upstash_redis import Redis
+                from upstash_ratelimit import Ratelimit, FixedWindow
 
-            redis = Redis.from_env()
-            ratelimit = Ratelimit(
-                redis=redis,
-                # fixed window to allow 10 requests every 10 seconds:
-                limiter=FixedWindow(max_requests=10, window=10),
-            )
+                redis = Redis.from_env()
+                ratelimit = Ratelimit(
+                    redis=redis,
+                    # fixed window to allow 10 requests every 10 seconds:
+                    limiter=FixedWindow(max_requests=10, window=10),
+                )
 
-            user_id = "foo"
-            handler = UpstashRatelimitHandler(
-                identifier=user_id,
-                request_ratelimit=ratelimit
-            )
+                user_id = "foo"
+                handler = UpstashRatelimitHandler(
+                    identifier=user_id,
+                    request_ratelimit=ratelimit
+                )
 
-            # Initialize a simple runnable to test
-            chain = RunnableLambda(str)
+                # Initialize a simple runnable to test
+                chain = RunnableLambda(str)
 
-            # pass handler as callback:
-            output = chain.invoke(
-                "input",
-                config={
-                    "callbacks": [handler]
-                }
-            )
+                # pass handler as callback:
+                output = chain.invoke(
+                    "input",
+                    config={
+                        "callbacks": [handler]
+                    }
+                )
 
         """
         if not any([token_ratelimit, request_ratelimit]):

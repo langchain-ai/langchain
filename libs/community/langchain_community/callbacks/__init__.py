@@ -73,7 +73,7 @@ if TYPE_CHECKING:
         TrubricsCallbackHandler,
     )
     from langchain_community.callbacks.upstash_ratelimit_callback import (
-        UpstashRatelimitError,  # noqa: F401
+        UpstashRatelimitError,
         UpstashRatelimitHandler,  # noqa: F401
     )
     from langchain_community.callbacks.uptrain_callback import (
