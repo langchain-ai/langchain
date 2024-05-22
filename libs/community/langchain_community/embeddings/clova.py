@@ -47,9 +47,11 @@ class ClovaEmbeddings(BaseModel, Embeddings):
     model: str = "clir-emb-dolphin"
     """Embedding model name to use."""
     clova_emb_api_key: Optional[SecretStr] = None
+    """API key for accessing Clova's embedding service."""
     clova_emb_apigw_api_key: Optional[SecretStr] = None
+    """API gateway key for enhanced security."""
     app_id: Optional[SecretStr] = None
-    """API Key for Clova API."""
+    """Application ID for identifying your application."""
 
     class Config:
         extra = Extra.forbid
