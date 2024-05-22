@@ -102,6 +102,7 @@ LLM_TEMPLATE = """\
 sidebar_position: 1
 sidebar_class_name: hidden
 keywords: [compatibility]
+custom_edit_url:
 ---
 
 # LLMs
@@ -123,6 +124,7 @@ CHAT_MODEL_TEMPLATE = """\
 sidebar_position: 0
 sidebar_class_name: hidden
 keywords: [compatibility, bind_tools, tool calling, function calling, structured output, with_structured_output, json mode, local model]
+custom_edit_url:
 ---
 
 # Chat models
