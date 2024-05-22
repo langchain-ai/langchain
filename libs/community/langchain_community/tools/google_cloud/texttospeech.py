@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 from typing import TYPE_CHECKING, Any, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 
@@ -36,6 +37,11 @@ def _encoding_file_extension_map(encoding: texttospeech.AudioEncoding) -> Option
     return ENCODING_FILE_EXTENSION_MAP.get(encoding)
 
 
+@deprecated(
+    since="0.0.33",
+    removal="0.3.0",
+    alternative_import="langchain_google_community.TextToSpeechTool",
+)
 class GoogleCloudTextToSpeechTool(BaseTool):
     """Tool that queries the Google Cloud Text to Speech API.
 

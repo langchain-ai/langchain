@@ -6,6 +6,12 @@ from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
 
 MODEL_COST_PER_1K_TOKENS = {
+    # GPT-4o input
+    "gpt-4o": 0.005,
+    "gpt-4o-2024-05-13": 0.005,
+    # GPT-4o output
+    "gpt-4o-completion": 0.015,
+    "gpt-4o-2024-05-13-completion": 0.015,
     # GPT-4 input
     "gpt-4": 0.03,
     "gpt-4-0314": 0.03,
@@ -17,6 +23,8 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-4-1106-preview": 0.01,
     "gpt-4-0125-preview": 0.01,
     "gpt-4-turbo-preview": 0.01,
+    "gpt-4-turbo": 0.01,
+    "gpt-4-turbo-2024-04-09": 0.01,
     # GPT-4 output
     "gpt-4-completion": 0.06,
     "gpt-4-0314-completion": 0.06,
@@ -28,6 +36,8 @@ MODEL_COST_PER_1K_TOKENS = {
     "gpt-4-1106-preview-completion": 0.03,
     "gpt-4-0125-preview-completion": 0.03,
     "gpt-4-turbo-preview-completion": 0.03,
+    "gpt-4-turbo-completion": 0.03,
+    "gpt-4-turbo-2024-04-09-completion": 0.03,
     # GPT-3.5 input
     # gpt-3.5-turbo points at gpt-3.5-turbo-0613 until Feb 16, 2024.
     # Switches to gpt-3.5-turbo-0125 after.

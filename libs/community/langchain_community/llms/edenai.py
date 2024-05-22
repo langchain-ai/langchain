@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class EdenAI(LLM):
-    """Wrapper around edenai models.
+    """EdenAI models.
 
     To use, you should have
     the environment variable ``EDENAI_API_KEY`` set with your API token.

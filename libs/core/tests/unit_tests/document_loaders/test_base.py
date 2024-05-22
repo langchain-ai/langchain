@@ -64,3 +64,4 @@ async def test_default_aload() -> None:
     docs = loader.load()
     assert docs == [Document(page_content="foo"), Document(page_content="bar")]
     assert docs == [doc async for doc in loader.alazy_load()]
+    assert docs == await loader.aload()
