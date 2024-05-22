@@ -9,6 +9,7 @@ from typing import (
     Any,
     AsyncIterator,
     Dict,
+    Iterator,
     List,
     Optional,
     Sequence,
@@ -16,7 +17,7 @@ from typing import (
     Union,
     cast,
 )
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from typing_extensions import NotRequired, TypedDict
 
@@ -36,6 +37,7 @@ from langchain_core.runnables.utils import (
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.log_stream import LogEntry
 from langchain_core.tracers.memory_stream import _MemoryStream
+from langchain_core.utils.aiter import py_anext
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
@@ -86,6 +88,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         super().__init__(*args, **kwargs)
         # Map of run ID to run info.
         self.run_map: Dict[UUID, RunInfo] = {}
+        self.is_tapped: Dict[UUID, Any] = {}
 
         # Filter which events will be sent over the queue.
         self.root_event_filter = _RootEventFilter(
@@ -102,10 +105,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
 
-    async def _send(self, event: StreamEvent, event_type: str) -> None:
+    def _send(self, event: StreamEvent, event_type: str) -> None:
         """Send an event to the stream."""
         if self.root_event_filter.include_event(event, event_type):
-            await self.send_stream.send(event)
+            self.send_stream.send_nowait(event)
 
     def __aiter__(self) -> AsyncIterator[Any]:
         """Iterate over the receive stream."""
@@ -115,22 +118,85 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self, run_id: UUID, output: AsyncIterator[T]
     ) -> AsyncIterator[T]:
         """Tap the output aiter."""
-        async for chunk in output:
-            run_info = self.run_map.get(run_id)
-            if run_info is None:
-                raise AssertionError(f"Run ID {run_id} not found in run map.")
-            await self._send(
-                {
-                    "event": f"on_{run_info['run_type']}_stream",
-                    "data": {"chunk": chunk},
-                    "run_id": str(run_id),
-                    "name": run_info["name"],
-                    "tags": run_info["tags"],
-                    "metadata": run_info["metadata"],
-                },
-                run_info["run_type"],
-            )
-            yield chunk
+        sentinel = object()
+        # atomic check and set
+        tap = self.is_tapped.setdefault(run_id, sentinel)
+        # wait for first chunk
+        first = await py_anext(output, default=sentinel)
+        if first is sentinel:
+            return
+        # get run info
+        run_info = self.run_map.get(run_id)
+        if run_info is None:
+            # run has finished, don't issue any stream events
+            yield cast(T, first)
+            return
+        if tap is sentinel:
+            # if we are the first to tap, issue stream events
+            event: StreamEvent = {
+                "event": f"on_{run_info['run_type']}_stream",
+                "run_id": str(run_id),
+                "name": run_info["name"],
+                "tags": run_info["tags"],
+                "metadata": run_info["metadata"],
+                "data": {},
+            }
+            self._send({**event, "data": {"chunk": first}}, run_info["run_type"])
+            yield cast(T, first)
+            # consume the rest of the output
+            async for chunk in output:
+                self._send(
+                    {**event, "data": {"chunk": chunk}},
+                    run_info["run_type"],
+                )
+                yield chunk
+        else:
+            # otherwise just pass through
+            yield cast(T, first)
+            # consume the rest of the output
+            async for chunk in output:
+                yield chunk
+
+    def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
+        """Tap the output aiter."""
+        sentinel = object()
+        # atomic check and set
+        tap = self.is_tapped.setdefault(run_id, sentinel)
+        # wait for first chunk
+        first = next(output, sentinel)
+        if first is sentinel:
+            return
+        # get run info
+        run_info = self.run_map.get(run_id)
+        if run_info is None:
+            # run has finished, don't issue any stream events
+            yield cast(T, first)
+            return
+        if tap is sentinel:
+            # if we are the first to tap, issue stream events
+            event: StreamEvent = {
+                "event": f"on_{run_info['run_type']}_stream",
+                "run_id": str(run_id),
+                "name": run_info["name"],
+                "tags": run_info["tags"],
+                "metadata": run_info["metadata"],
+                "data": {},
+            }
+            self._send({**event, "data": {"chunk": first}}, run_info["run_type"])
+            yield cast(T, first)
+            # consume the rest of the output
+            for chunk in output:
+                self._send(
+                    {**event, "data": {"chunk": chunk}},
+                    run_info["run_type"],
+                )
+                yield chunk
+        else:
+            # otherwise just pass through
+            yield cast(T, first)
+            # consume the rest of the output
+            for chunk in output:
+                yield chunk
 
     async def on_chat_model_start(
         self,
@@ -155,7 +221,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "inputs": {"messages": messages},
         }
 
-        await self._send(
+        self._send(
             {
                 "event": "on_chat_model_start",
                 "data": {
@@ -192,7 +258,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "inputs": {"prompts": prompts},
         }
 
-        await self._send(
+        self._send(
             {
                 "event": "on_llm_start",
                 "data": {
@@ -224,6 +290,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
         if run_info is None:
             raise AssertionError(f"Run ID {run_id} not found in run map.")
+        if self.is_tapped.get(run_id):
+            return
         if run_info["run_type"] == "chat_model":
             event = "on_chat_model_stream"
 
@@ -241,7 +309,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         else:
             raise ValueError(f"Unexpected run type: {run_info['run_type']}")
 
-        await self._send(
+        self._send(
             {
                 "event": event,
                 "data": {
@@ -295,7 +363,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         else:
             raise ValueError(f"Unexpected run type: {run_info['run_type']}")
 
-        await self._send(
+        self._send(
             {
                 "event": event,
                 "data": {"output": output, "input": inputs_},
@@ -340,7 +408,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
         self.run_map[run_id] = run_info
 
-        await self._send(
+        self._send(
             {
                 "event": f"on_{run_type_}_start",
                 "data": data,
@@ -373,7 +441,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "input": inputs,
         }
 
-        await self._send(
+        self._send(
             {
                 "event": event,
                 "data": data,
@@ -408,7 +476,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "inputs": inputs,
         }
 
-        await self._send(
+        self._send(
             {
                 "event": "on_tool_start",
                 "data": {
@@ -432,7 +500,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             )
         inputs = run_info["inputs"]
 
-        await self._send(
+        self._send(
             {
                 "event": "on_tool_end",
                 "data": {
@@ -470,7 +538,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "inputs": {"query": query},
         }
 
-        await self._send(
+        self._send(
             {
                 "event": "on_retriever_start",
                 "data": {
@@ -492,7 +560,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Run when Retriever ends running."""
         run_info = self.run_map.pop(run_id)
 
-        await self._send(
+        self._send(
             {
                 "event": "on_retriever_end",
                 "data": {
@@ -728,6 +796,7 @@ async def _astream_events_implementation_v2(
 
     # Assign the stream handler to the config
     config = ensure_config(config)
+    run_id = cast(UUID, config.setdefault("run_id", uuid4()))
     callbacks = config.get("callbacks")
     if callbacks is None:
         config["callbacks"] = [event_streamer]
@@ -747,7 +816,10 @@ async def _astream_events_implementation_v2(
     # add each chunk to the output stream
     async def consume_astream() -> None:
         try:
-            async for _ in runnable.astream(input, config, **kwargs):
+            # if astream also calls tap_output_aiter this will be a no-op
+            async for _ in event_streamer.tap_output_aiter(
+                run_id, runnable.astream(input, config, **kwargs)
+            ):
                 # All the content will be picked up
                 pass
         finally:
