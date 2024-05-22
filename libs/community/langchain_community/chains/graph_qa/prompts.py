@@ -411,3 +411,120 @@ NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_PROMPT = PromptTemplate(
     input_variables=["schema", "question", "extra_instructions"],
     template=NEPTUNE_OPENCYPHER_GENERATION_SIMPLE_TEMPLATE,
 )
+
+ANZOGRAPHDB_INTENT_TEMPLATE = """Task: Identify the intent of a prompt and return the appropriate SPARQL query type.
+You are an assistant that distinguishes different types of prompts and returns the corresponding SPARQL query types.
+Consider only the following query types:
+* SELECT: this query type corresponds to questions
+* UPDATE: this query type corresponds to all requests for deleting, inserting, or changing triples
+Note: Be as concise as possible.
+Do not include any explanations or apologies in your responses.
+Do not respond to any questions that ask for anything else than for you to identify a SPARQL query type.
+Do not include any unnecessary whitespaces or any text except the query type, i.e., either return 'SELECT' or 'UPDATE'.
+
+The prompt is:
+{prompt}
+Helpful Answer:"""
+ANZOGRAPHDB_INTENT_PROMPT = PromptTemplate(
+    input_variables=["prompt"], template=ANZOGRAPHDB_INTENT_TEMPLATE
+)
+
+ANZOGRAPHDB_GENERATION_SELECT_TEMPLATE = """Task: Generate a SPARQL SELECT statement for querying a graph database.
+Do NOT use neither backticks (```) nor backsticks with "sparql" (```sparql) in the Generated SPARQL. 
+For instance, to find all email addresses of John Doe, the following query would be suitable:
+
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT ?email
+WHERE {{
+    ?person foaf:name "John Doe" .
+    ?person foaf:mbox ?email .
+}}
+
+Instructions:
+Use only the node types and properties provided in the schema.
+Do not use any node types and properties that are not explicitly provided.
+Include all necessary prefixes.
+Schema:
+{schema}
+Note: Be as concise as possible.
+Do not include any explanations or apologies in your responses.
+Do not respond to any questions that ask for anything else than for you to construct a SPARQL query.
+Do not include any text except the SPARQL query generated.
+
+The question is:
+{prompt}"""
+ANZOGRAPHDB_GENERATION_SELECT_PROMPT = PromptTemplate(
+    input_variables=["schema", "prompt"],
+    template=ANZOGRAPHDB_GENERATION_SELECT_TEMPLATE,
+)
+
+ANZOGRAPHDB_GENERATION_UPDATE_TEMPLATE = """Task: Generate a SPARQL UPDATE statement for updating a graph database.
+Do NOT use neither backticks (```) nor backsticks with "sparql" (```sparql) in the Generated SPARQL. 
+For instance, to add 'jane.doe@foo.bar' as a new email address for Jane Doe, the following query would be suitable:
+
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+INSERT {{
+    ?person foaf:mbox <mailto:jane.doe@foo.bar> .
+}}
+WHERE {{
+    ?person foaf:name "Jane Doe" .
+}}
+
+Instructions:
+Make the query as short as possible and avoid adding unnecessary triples.
+Use only the node types and properties provided in the schema.
+Do not use any node types and properties that are not explicitly provided.
+Include all necessary prefixes.
+Schema:
+{schema}
+Note: Be as concise as possible.
+Do not include any explanations or apologies in your responses.
+Do not respond to any questions that ask for anything else than for you to construct a SPARQL query.
+Return only the generated SPARQL query, nothing else.
+
+The information to be inserted is:
+{prompt}"""
+ANZOGRAPHDB_GENERATION_UPDATE_PROMPT = PromptTemplate(
+    input_variables=["schema", "prompt"],
+    template=ANZOGRAPHDB_GENERATION_UPDATE_TEMPLATE,
+)
+
+ANZOGRAPHDB_QA_TEMPLATE = """Task: Generate a natural language response from the results of a SPARQL query.
+You are an assistant that creates well-written and human understandable answers.
+The information part contains the information provided, which you can use to construct an answer.
+The information provided is authoritative, you must never doubt it or try to use your internal knowledge to correct it.
+Make your response sound like the information is coming from an AI assistant, but don't add any information.
+Information:
+{context}
+
+Question: {prompt}
+Helpful Answer:"""
+ANZOGRAPHDB_QA_PROMPT = PromptTemplate(
+    input_variables=["context", "prompt"], template=ANZOGRAPHDB_QA_TEMPLATE
+)
+ANZOGRAPHDB_QA_FIX_TEMPLATE = """
+This following SPARQL query delimited by triple backticks
+```
+{generated_sparql}
+```
+is not valid.
+The error delimited by triple backticks is
+```
+{error_message}
+```
+
+Give me a correct version of the SPARQL query.
+Include  the SPARQL query generated.
+Do not change the logic of the query.
+Do not include any explanations or apologies in your responses.
+Do not wrap the query in backticks.
+Do not include any text except the SPARQL query generated.
+The ontology schema delimited by triple backticks in Turtle format is:
+```
+{schema}
+```
+"""
+ANZOGRAPHDB_QA_FIX_PROMPT = PromptTemplate(
+    input_variables=["error_message", "generated_sparql", "schema"],
+    template=ANZOGRAPHDB_QA_FIX_TEMPLATE,
+)
