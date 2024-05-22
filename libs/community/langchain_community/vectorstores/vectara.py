@@ -5,7 +5,7 @@ import logging
 import os
 from dataclasses import dataclass, field
 from hashlib import md5
-from typing import Any, Iterable, List, Optional, Tuple, Type
+from typing import Any, Iterable, List, Optional, Tuple, Type, Iterator
 
 import requests
 from langchain_core.callbacks.manager import (
@@ -14,10 +14,9 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.retrievers import BaseRetriever
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.runnables.utils import Input, Output
-from langchain_core.vectorstores import VectorStore
+from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +90,7 @@ class VectaraQueryConfig:
     summary_config: SummaryConfig = field(default_factory=SummaryConfig)
 
 
-def create_vectara_query_config(search_kwargs) -> VectaraQueryConfig:
+def create_vectara_query_config(search_kwargs: dict) -> VectaraQueryConfig:
     # Extracting nested MMRConfig if present
     mmr_config_kwargs = search_kwargs.get("mmr_config", {})
     mmr_config = MMRConfig(**mmr_config_kwargs)
@@ -242,14 +241,16 @@ class Vectara(VectorStore):
         """Delete by vector ID or other criteria.
         Args:
             ids: List of ids to delete.
-            **kwargs: Other keyword arguments that subclasses might use.
 
         Returns:
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
-        success = [self._delete_doc(id) for id in ids]
-        return all(success)
+        if ids:
+            success = [self._delete_doc(id) for id in ids]
+            return all(success)
+        else:
+            return True
 
     def add_files(
         self,
@@ -401,19 +402,19 @@ class Vectara(VectorStore):
                             "corpusId": self._vectara_corpus_id,
                             "metadataFilter": config.filter,
                         }
-                    ],
+                    ]
                 }
             ]
         }
+
         if config.lambda_val > 0:
-            body["query"][0]["corpusKey"][0]["lexicalInterpolationConfig"] = {
+            body["query"][0]["corpusKey"][0]["lexicalInterpolationConfig"] = {  # type: ignore
                 "lambda": config.lambda_val
             }
-
         if config.mmr_config.is_enabled:
             body["query"][0]["rerankingConfig"] = {
                 "rerankerId": 272725718,
-                "mmrConfig": {"diversityBias": config.mmr_config.diversity_bias},
+                "mmrConfig": {"diversityBias": config.mmr_config.diversity_bias}
             }
         if config.summary_config.is_enabled:
             body["query"][0]["summary"] = [
@@ -423,11 +424,11 @@ class Vectara(VectorStore):
                     "summarizerPromptName": config.summary_config.prompt_name,
                 }
             ]
-        if chat:
-            body["query"][0]["summary"][0]["chat"] = {
-                "store": True,
-                "conversationId": chat_conv_id,
-            }
+            if chat:
+                body["query"][0]["summary"][0]["chat"] = {                      # type: ignore
+                    "store": True,
+                    "conversationId": chat_conv_id,
+                }
         return body
 
     def vectara_query(
@@ -658,10 +659,10 @@ class Vectara(VectorStore):
         )
 
 
-class VectaraRetriever(BaseRetriever):
+class VectaraRetriever(VectorStoreRetriever):
     """Vectara Retriever class."""
 
-    vectorstore: VectorStore
+    vectorstore: Vectara
     """VectorStore to use for retrieval."""
 
     config: VectaraQueryConfig
@@ -678,22 +679,9 @@ class VectaraRetriever(BaseRetriever):
         docs_and_scores = self.vectorstore.vectara_query(query, self.config)
         return [doc for doc, _ in docs_and_scores]
 
-    async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
-    ) -> List[Document]:
-        docs = await self._get_relevant_documents(query, run_manager=run_manager)
-        return docs
-
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add documents to vectorstore."""
         return self.vectorstore.add_documents(documents, **kwargs)
-
-    async def aadd_documents(
-        self, documents: List[Document], **kwargs: Any
-    ) -> List[str]:
-        """Add documents to vectorstore."""
-        return await self.vectorstore.aadd_documents(documents, **kwargs)
-
 
 class VectaraRAG(Runnable):
     def __init__(
@@ -704,7 +692,11 @@ class VectaraRAG(Runnable):
         self.chat = chat
         self.conv_id = None
 
-    def stream(self, question: Input) -> Output:
+    def stream(self, 
+               input: str,
+               config: Optional[RunnableConfig] = None,
+               **kwargs: Any,
+        ) -> Iterator[dict]:
         """get streaming output from Vectara RAG
 
         Args:
@@ -713,11 +705,7 @@ class VectaraRAG(Runnable):
         Returns:
             The output dictionary with question, answer and context
         """
-        if not isinstance(question, str):
-            question = question.get("question", "")
-
-        config = self.config
-        body = self.vectara._get_query_body(question, config, self.chat, self.conv_id)
+        body = self.vectara._get_query_body(input, self.config, self.chat, self.conv_id)
 
         response = self.vectara._session.post(
             headers=self.vectara._get_post_headers(),
@@ -738,7 +726,7 @@ class VectaraRAG(Runnable):
         responses = []
         documents = []
 
-        yield {"question": question}  # First chunk is the question
+        yield {"question": input}  # First chunk is the question
 
         for line in response.iter_lines():
             if line:  # filter out keep-alive new lines
@@ -779,14 +767,14 @@ class VectaraRAG(Runnable):
                         continue
 
                     # Yield the summary chunk
-                    chunk = summary["text"]
+                    chunk = str(summary["text"])
                     yield {"answer": chunk}
                 else:
-                    if config.score_threshold:
+                    if self.config.score_threshold:
                         responses = [
                             r
                             for r in response_set["response"]
-                            if r["score"] > config.score_threshold
+                            if r["score"] > self.config.score_threshold
                         ]
                     else:
                         responses = response_set["response"]
@@ -813,14 +801,17 @@ class VectaraRAG(Runnable):
                         )
                         for x, md in zip(responses, metadatas)
                     ]
-                    if config.mmr_config.is_enabled:
-                        res = res[: config.k]
+                    if self.config.mmr_config.is_enabled:
+                        res = res[: self.config.k]
                     yield {"context": res}
         return
 
-    def invoke(self, question: Input) -> Output:
+    def invoke(self, 
+               input: str,
+               config: Optional[RunnableConfig] = None,
+    ) -> dict:
         res = {"answer": ""}
-        for chunk in self.stream(question):
+        for chunk in self.stream(input):
             if "context" in chunk:
                 res["context"] = chunk["context"]
             elif "question" in chunk:
