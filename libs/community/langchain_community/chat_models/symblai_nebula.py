@@ -1,4 +1,5 @@
 import json
+from json import JSONDecodeError
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
 import requests
@@ -12,14 +13,7 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-    ChatMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -57,8 +51,8 @@ class ChatNebula(BaseChatModel):
 
     API Reference: https://docs.symbl.ai/reference/nebula-chat
 
-    To use, you should have the environment variable ``NEBULA_API_KEY`` set with your API key,
-    or pass it as a named parameter to the constructor.
+    To use, you should have the environment variable ``NEBULA_API_KEY`` set with your
+    API key, or pass it as a named parameter to the constructor.
     To request an API key, visit https://platform.symbl.ai/#/login
 
 
@@ -72,10 +66,10 @@ class ChatNebula(BaseChatModel):
 
             messages = [
             SystemMessage(
-                content="You are a helpful assistant that answers general knowledge questions."
+                "You are a helpful assistant that answers general knowledge questions."
             ),
             HumanMessage(
-                content="Answer the following question. How can I help save the world."
+                "Answer the following question. How can I help save the world."
             ),
             ]
             chat.invoke(messages)
@@ -151,7 +145,7 @@ class ChatNebula(BaseChatModel):
             chunk_decoded = chunk_response.decode()[6:]
             try:
                 chunk = json.loads(chunk_decoded)
-            except:
+            except JSONDecodeError:
                 continue
             token = chunk["delta"]
             cg_chunk = ChatGenerationChunk(message=AIMessageChunk(content=token))
@@ -188,7 +182,7 @@ class ChatNebula(BaseChatModel):
                     chunk_decoded = chunk_response.decode()[6:]
                     try:
                         chunk = json.loads(chunk_decoded)
-                    except:
+                    except JSONDecodeError:
                         continue
                     token = chunk["delta"]
                     cg_chunk = ChatGenerationChunk(
