@@ -43,6 +43,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.clarifai import (
         ClarifaiEmbeddings,
     )
+    from langchain_community.embeddings.clova import (
+        ClovaEmbeddings,
+    )
     from langchain_community.embeddings.cohere import (
         CohereEmbeddings,
     )
@@ -232,6 +235,7 @@ __all__ = [
     "BedrockEmbeddings",
     "BookendEmbeddings",
     "ClarifaiEmbeddings",
+    "ClovaEmbeddings",
     "CohereEmbeddings",
     "DashScopeEmbeddings",
     "DatabricksEmbeddings",
@@ -309,6 +313,7 @@ _module_lookup = {
     "BedrockEmbeddings": "langchain_community.embeddings.bedrock",
     "BookendEmbeddings": "langchain_community.embeddings.bookend",
     "ClarifaiEmbeddings": "langchain_community.embeddings.clarifai",
+    "ClovaEmbeddings": "langchain_community.embeddings.clova",
     "CohereEmbeddings": "langchain_community.embeddings.cohere",
     "DashScopeEmbeddings": "langchain_community.embeddings.dashscope",
     "DatabricksEmbeddings": "langchain_community.embeddings.databricks",
