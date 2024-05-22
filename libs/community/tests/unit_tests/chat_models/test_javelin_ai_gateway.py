@@ -4,7 +4,6 @@ import pytest
 from langchain_core.pydantic_v1 import SecretStr
 
 from langchain_community.chat_models import ChatJavelinAIGateway
-from typing import cast
 
 
 @pytest.mark.requires("javelin_sdk")
