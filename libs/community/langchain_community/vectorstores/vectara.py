@@ -5,17 +5,15 @@ import logging
 import os
 from dataclasses import dataclass, field
 from hashlib import md5
-from typing import Any, Iterable, List, Optional, Tuple, Type, Iterator
+from typing import Any, Iterable, Iterator, List, Optional, Tuple, Type
 
 import requests
 from langchain_core.callbacks.manager import (
-    AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import Runnable, RunnableConfig
-from langchain_core.runnables.utils import Input, Output
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
 logger = logging.getLogger(__name__)
