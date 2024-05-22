@@ -1,0 +1,39 @@
+FROM python:3.11
+
+# Set up a non-root user
+RUN useradd -m jupyter
+
+WORKDIR /home/jupyter/workspace
+
+# Copy the necessary files
+COPY libs/partners/redis /home/jupyter/workspace/libs/partners/redis
+COPY libs/core /home/jupyter/workspace/libs/core
+COPY libs/langchain /home/jupyter/workspace/libs/langchain
+COPY pyproject.toml /home/jupyter/workspace/
+
+# Create necessary directories and set permissions
+RUN mkdir -p /home/jupyter/workspace/libs/partners/redis/docs && \
+    chown -R jupyter:jupyter /home/jupyter/workspace
+
+# Switch to non-root user
+USER jupyter
+
+# Set up virtual environment
+RUN python -m venv /home/jupyter/venv
+ENV PATH="/home/jupyter/venv/bin:$PATH"
+
+# Install dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -e /home/jupyter/workspace/libs/core && \
+    pip install --no-cache-dir -e /home/jupyter/workspace/libs/langchain && \
+    pip install --no-cache-dir -e /home/jupyter/workspace/libs/partners/redis && \
+    pip install --no-cache-dir jupyter redis sentence-transformers
+
+# Set the working directory to the docs folder
+WORKDIR /home/jupyter/workspace/libs/partners/redis/docs
+
+# Expose Jupyter port
+EXPOSE 8888
+
+# Start Jupyter Notebook with checkpoints disabled
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--NotebookApp.token=''", "--NotebookApp.password=''", "--NotebookApp.allow_root=True", "--NotebookApp.disable_check_xsrf=True", "--FileContentsManager.checkpoints_kwargs={'root_dir':'/tmp/checkpoints'}"]

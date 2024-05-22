@@ -1,0 +1,22 @@
+name: langchain-redis-notebooks
+services:
+  jupyter:
+    build:
+      context: ../../../..
+      dockerfile: libs/partners/redis/docs/Dockerfile.jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./:/home/jupyter/workspace/libs/partners/redis/docs
+    environment:
+      - REDIS_URL=redis://redis:6379
+    user: jupyter
+    working_dir: /home/jupyter/workspace/libs/partners/redis/docs
+    depends_on:
+      - redis
+
+  redis:
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"
+      - "8001:8001"

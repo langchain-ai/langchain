@@ -1,0 +1,14 @@
+name: redis-stack
+services:
+  redis:
+    image: "redis/redis-stack:${REDIS_VERSION:-latest}"
+    ports:
+      - "6379:6379"
+    environment:
+      - "REDIS_ARGS=--save '' --appendonly no"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    labels:
+      - "com.docker.compose.publishers=redis,6379,6379"
