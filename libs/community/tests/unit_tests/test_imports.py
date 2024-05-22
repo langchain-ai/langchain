@@ -2,6 +2,7 @@ import ast
 import glob
 import importlib
 from pathlib import Path
+from typing import List, Tuple
 
 import pytest
 
@@ -91,3 +92,82 @@ def test_no_dynamic__all__() -> None:
             f"__all__ is not correctly defined in the "
             f"following files: {sorted(bad_definitions)}"
         )
+
+
+def _extract_type_checking_imports(code: str) -> List[Tuple[str, str]]:
+    """Extract all TYPE CHECKING imports that import from langchain_community."""
+    imports: List[Tuple[str, str]] = []
+
+    tree = ast.parse(code)
+
+    class TypeCheckingVisitor(ast.NodeVisitor):
+        def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+            if node.module:
+                for alias in node.names:
+                    imports.append((node.module, alias.name))
+
+    class GlobalScopeVisitor(ast.NodeVisitor):
+        def visit_If(self, node: ast.If) -> None:
+            if (
+                isinstance(node.test, ast.Name)
+                and node.test.id == "TYPE_CHECKING"
+                and isinstance(node.test.ctx, ast.Load)
+            ):
+                TypeCheckingVisitor().visit(node)
+            self.generic_visit(node)
+
+    GlobalScopeVisitor().visit(tree)
+    return imports
+
+
+def test_init_files_properly_defined() -> None:
+    """This is part of a set of tests that verify that init files are properly
+
+    defined if they're using dynamic imports.
+    """
+    # Please never ever add more modules to this list.
+    # Do feel free to fix the underlying issues and remove exceptions
+    # from the list.
+    excepted_modules = {"llms"}  # NEVER ADD MORE MODULES TO THIS LIST
+    for path in glob.glob(ALL_COMMUNITY_GLOB):
+        # Relative to community root
+        relative_path = Path(path).relative_to(COMMUNITY_ROOT)
+        str_path = str(relative_path)
+
+        if not str_path.endswith("__init__.py"):
+            continue
+
+        module_name = str(relative_path.parent).replace("/", ".")
+
+        if module_name in excepted_modules:
+            continue
+
+        code = Path(path).read_text()
+
+        # Check for dynamic __getattr__ definition in the __init__ file
+        if "__getattr__" not in code:
+            continue
+
+        try:
+            module = importlib.import_module("langchain_community." + module_name)
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
+                f"Could not import `{module_name}`. Defined in path: {path}"
+            ) from e
+
+        if not hasattr(module, "__all__"):
+            raise AssertionError(
+                f"__all__ not defined in {module_name}. This is required "
+                f"if __getattr__ is defined."
+            )
+
+        imports = _extract_type_checking_imports(code)
+
+        # Get the names of all the TYPE CHECKING imports
+        names = [name for _, name in imports]
+
+        missing_imports = set(module.__all__) - set(names)
+
+        assert (
+            not missing_imports
+        ), f"Missing imports: {missing_imports} in file path: {path}"
