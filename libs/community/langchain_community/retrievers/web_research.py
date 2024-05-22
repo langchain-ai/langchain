@@ -77,7 +77,8 @@ class WebResearchRetriever(BaseRetriever):
     )
     trust_env: bool = Field(
         False,
-        description="Whether to use the http_proxy/https_proxy env variables or check .netrc for proxy configuration",
+        description="Whether to use the http_proxy/https_proxy env variables or "
+        "check .netrc for proxy configuration",
     )
 
     @classmethod
@@ -102,7 +103,8 @@ class WebResearchRetriever(BaseRetriever):
             prompt: prompt to generating search questions
             num_search_results: Number of pages per Google search
             text_splitter: Text splitter for splitting web pages into chunks
-            trust_env: Whether to use the http_proxy/https_proxy env variables or check .netrc for proxy configuration
+            trust_env: Whether to use the http_proxy/https_proxy env variables
+                or check .netrc for proxy configuration
 
         Returns:
             WebResearchRetriever
