@@ -45,9 +45,9 @@ try:
 
         api_key: str
         """Your Zep API key."""
-        zep_client: Zep
+        zep_client: Any
         """Zep client used for making API requests."""
-        zep_client_async: AsyncZep
+        zep_client_async: Any
         """Async Zep client used for making API requests."""
         session_id: str
         """Zep session ID."""
