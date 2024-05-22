@@ -241,8 +241,14 @@ class ChatTongyi(BaseChatModel):
 
     client: Any  #: :meta private:
     model_name: str = Field(default="qwen-turbo", alias="model")
-
-    """Model name to use."""
+    """Model name to use.
+    callable multimodal model:
+    - qwen-vl-v1
+    - qwen-vl-chat-v1
+    - qwen-audio-turbo
+    - qwen-vl-plus
+    - qwen-vl-max
+    """
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
     top_p: float = 0.8
@@ -280,18 +286,34 @@ class ChatTongyi(BaseChatModel):
                 "Could not import dashscope python package. "
                 "Please install it with `pip install dashscope --upgrade`."
             )
-        try:
-            if "vl" in values["model_name"]:
+        dashscope_multimodal_models = [
+            "qwen-vl-v1",
+            "qwen-vl-chat-v1",
+            "qwen-audio-turbo",
+            "qwen-vl-plus",
+            "qwen-vl-max",
+        ]
+        if (
+            values["model_name"] in dashscope_multimodal_models
+            or "vl" in values["model_name"]
+        ):
+            try:
                 values["client"] = dashscope.MultiModalConversation
-            else:
+            except AttributeError:
+                raise ValueError(
+                    "`dashscope` has no `MultiModalConversation` attribute, this is "
+                    "likely due to an old version of the dashscope package. Try "
+                    "upgrading it with `pip install --upgrade dashscope`."
+                )
+        else:
+            try:
                 values["client"] = dashscope.Generation
-        except AttributeError:
-            raise ValueError(
-                "`dashscope` has no `Generation` attribute, this is likely "
-                "due to an old version of the dashscope package. Try upgrading it "
-                "with `pip install --upgrade dashscope`."
-            )
-
+            except AttributeError:
+                raise ValueError(
+                    "`dashscope` has no `Generation` attribute, this is likely "
+                    "due to an old version of the dashscope package. Try upgrading it "
+                    "with `pip install --upgrade dashscope`."
+                )
         return values
 
     @property
