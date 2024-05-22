@@ -51,7 +51,7 @@ def vectara1():  # type: ignore[no-untyped-def]
     vectara1.delete(doc_ids)
 
 
-def test_vectara_add_documents(vectara1) -> None:  # type: ignore[no-untyped-def]
+def test_vectara_add_documents(vectara1: Vectara) -> None:  # type: ignore[no-untyped-def]
     """Test add_documents."""
 
     # test without filter
@@ -129,7 +129,7 @@ def vectara2():  # type: ignore[no-untyped-def]
     vectara2.delete(doc_ids)
 
 
-def test_vectara_from_files(vectara2) -> None:
+def test_vectara_from_files(vectara2: Vectara) -> None:
     """Test end to end construction and search."""
     # finally do a similarity search to see if all works okay
     output = vectara2.similarity_search(
@@ -200,7 +200,7 @@ def vectara3():  # type: ignore[no-untyped-def]
     vectara3.delete(doc_ids)
 
 
-def test_vectara_mmr(vectara3) -> None:  # type: ignore[no-untyped-def]
+def test_vectara_mmr(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
     # test max marginal relevance
     output1 = vectara3.max_marginal_relevance_search(
         "generative AI",
