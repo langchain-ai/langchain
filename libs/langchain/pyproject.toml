@@ -177,12 +177,12 @@ extended_testing = [
     "langchain-together",
     "langchain-mistralai",
     "langchain-groq",
-    "scipy",
     "openai",
     "tiktoken",
     "numexpr",
     "rapidfuzz",
     "aiosqlite",
+    "jsonschema",
 ]
 
 [tool.ruff]
