@@ -650,7 +650,7 @@ class Vectara(VectorStore):
         """Return a Vectara RAG runnable for chat."""
         return VectaraRAG(self, config, chat=True)
 
-    def as_retriever(self, **kwargs) -> VectaraRetriever:
+    def as_retriever(self, **kwargs: Any) -> VectaraRetriever:
         """return a retriever object."""
         return VectaraRetriever(
             vectorstore=self, config=kwargs.get("config", VectaraQueryConfig())
