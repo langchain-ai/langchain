@@ -35,4 +35,10 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
-__all__ = ["LLMLinguaCompressor", "OpenVINOReranker", "FlashrankRerank", "JinaRerank"]
+__all__ = [
+    "LLMLinguaCompressor",
+    "OpenVINOReranker",
+    "FlashrankRerank",
+    "JinaRerank",
+    "RankLLMRerank",
+]
