@@ -28,7 +28,7 @@ from langchain_community.document_loaders.blob_loaders.schema import (
 T = TypeVar("T")
 
 
-class CloudBlob(Blob):
+class _CloudBlob(Blob):
     def as_string(self) -> str:
         """Read data as a string."""
         from cloudpathlib import AnyPath
@@ -124,7 +124,7 @@ def _make_iterator(
 
 
 class CloudBlobLoader(BlobLoader):
-    """Load blobs from cloud URL.
+    """Load blobs from cloud URL or file:.
 
     Example:
 
@@ -211,7 +211,7 @@ class CloudBlobLoader(BlobLoader):
 
         for path in iterator(self._yield_paths()):
             # yield Blob.from_path(path)
-            yield self.from_cloud_path(path)
+            yield self.from_path(path)
 
     def _yield_paths(self) -> Iterable["AnyPath"]:
         """Yield paths that match the requested pattern."""
@@ -219,11 +219,11 @@ class CloudBlobLoader(BlobLoader):
             yield self.path
             return
 
-        paths = self.path.glob(self.glob)  # type: ignore
+        paths = self.path.glob(self.glob)
         for path in paths:
             if self.exclude:
                 if any(path.match(glob) for glob in self.exclude):
-                    continue  # FIXME
+                    continue
             if path.is_file():
                 if self.suffixes and path.suffix not in self.suffixes:
                     continue  # FIXME
@@ -239,7 +239,7 @@ class CloudBlobLoader(BlobLoader):
         return num
 
     @classmethod
-    def from_cloud_path(
+    def from_path(
         cls,
         path: "AnyPath",
         *,
@@ -265,10 +265,6 @@ class CloudBlobLoader(BlobLoader):
             _mimetype = mimetypes.guess_type(path)[0] if guess_type else None  # type: ignore
         else:
             _mimetype = mime_type
-        # We do not load the data immediately, instead we treat the blob as a
-        # reference to the underlying data.
-        # data = path.read_bytes()
-        # with open(path, "r", encoding=encoding) as f:
         #     data= f.read_bytes()
 
         url_parsed = urlparse(str(path))
@@ -285,7 +281,7 @@ class CloudBlobLoader(BlobLoader):
                 metadata=metadata if metadata is not None else {},
             )
 
-        return CloudBlob(
+        return _CloudBlob(
             data=None,
             mimetype=_mimetype,
             encoding=encoding,

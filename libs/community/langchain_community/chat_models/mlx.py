@@ -141,6 +141,9 @@ class ChatMLX(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        import mlx.core as mx
+        from mlx_lm.utils import generate_step
+
         try:
             import mlx.core as mx
             from mlx_lm.utils import generate_step
