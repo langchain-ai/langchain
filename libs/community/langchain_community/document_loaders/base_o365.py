@@ -7,7 +7,7 @@ import os
 import tempfile
 from abc import abstractmethod
 from enum import Enum
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Sequence, Union
 
 from langchain_core.pydantic_v1 import (
@@ -116,20 +116,24 @@ class O365BaseLoader(BaseLoader, BaseModel):
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
                         file.download(to_path=temp_dir, chunk_size=self.chunk_size)
-                        metadata_dict[file.name] = {}
-                        metadata_dict[file.name]["source"] = file.web_url
-                        metadata_dict[file.name]["mime_type"] = file.mime_type
-                        metadata_dict[file.name]["created"] = file.created
-                        metadata_dict[file.name]["modified"] = file.modified
-                        metadata_dict[file.name]["created_by"] = str(file.created_by)
-                        metadata_dict[file.name]["modified_by"] = str(file.modified_by)
-                        metadata_dict[file.name]["description"] = file.description
+                        metadata_dict[file.name] = {
+                            "source": file.web_url,
+                            "mime_type": file.mime_type,
+                            "created": file.created,
+                            "modified": file.modified,
+                            "created_by": str(file.created_by),
+                            "modified_by": str(file.modified_by),
+                            "description": file.description,
+                        }
 
             loader = FileSystemBlobLoader(path=temp_dir)
-            for document in loader.yield_blobs():
-                if document.path and hasattr(document.path, "name"):
-                    document.metadata.update(metadata_dict.get(document.path.name, {}))
-                yield document
+            for blob in loader.yield_blobs():
+                if not isinstance(blob.path, PurePath):
+                    raise AssertionError("Expected blob path to be a PurePath")
+                if blob.path:
+                    file_metadata_ = metadata_dict.get(str(blob.path), {})
+                    blob.metadata.update(file_metadata_)
+                yield blob
         if self.recursive:
             for subfolder in folder.get_child_folders():
                 yield from self._load_from_folder(subfolder)
