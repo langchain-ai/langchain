@@ -77,10 +77,6 @@ def test_no_dynamic__all__() -> None:
     """
     bad_definitions = []
     for path in glob.glob(ALL_COMMUNITY_GLOB):
-        relative_path = Path(path).parts[-1]
-        if relative_path.endswith(".typed"):
-            continue
-
         if not path.endswith("__init__.py"):
             continue
 
