@@ -1374,8 +1374,8 @@ def test_preexisting_specific_columns_for_metadata_wrong_type_or_non_existing(
         exception_occured = False
     except dbapi.Error:  # Nothing we should do here, hdbcli will throw an error
         exception_occured = True
-    assert exception_occured    # Check if table is created
-    
+    assert exception_occured  # Check if table is created
+
     exception_occured = False
     try:
         HanaDB.from_texts(
@@ -1390,7 +1390,6 @@ def test_preexisting_specific_columns_for_metadata_wrong_type_or_non_existing(
     except AttributeError:  # Nothing we should do here, hdbcli will throw an error
         exception_occured = True
     assert exception_occured
-
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
