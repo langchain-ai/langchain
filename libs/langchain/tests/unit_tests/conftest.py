@@ -19,6 +19,14 @@ def pytest_addoption(parser: Parser) -> None:
         help="Only run core tests. Never runs any extended tests.",
     )
 
+    parser.addoption(
+        "--community",
+        action="store_true",
+        dest="community",
+        default=False,
+        help="enable running unite tests that require community",
+    )
+
 
 def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> None:
     """Add implementations for handling custom markers.
@@ -42,6 +50,12 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
 
     only_extended = config.getoption("--only-extended") or False
     only_core = config.getoption("--only-core") or False
+
+    if not config.getoption("--community"):
+        skip_community = pytest.mark.skip(reason="need --community option to run")
+        for item in items:
+            if "community" in item.keywords:
+                item.add_marker(skip_community)
 
     if only_extended and only_core:
         raise ValueError("Cannot specify both `--only-extended` and `--only-core`.")

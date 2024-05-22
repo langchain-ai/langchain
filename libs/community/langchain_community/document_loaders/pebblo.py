@@ -45,6 +45,7 @@ class PebbloSafeLoader(BaseLoader):
         description: str = "",
         api_key: Optional[str] = None,
         load_semantic: bool = False,
+        classifier_url: Optional[str] = None,
     ):
         if not name or not isinstance(name, str):
             raise NameError("Must specify a valid name.")
@@ -63,6 +64,7 @@ class PebbloSafeLoader(BaseLoader):
         self.source_type = get_loader_type(loader_name)
         self.source_path_size = self.get_source_size(self.source_path)
         self.source_aggregate_size = 0
+        self.classifier_url = classifier_url or CLASSIFIER_URL
         self.loader_details = {
             "loader": loader_name,
             "source_path": self.source_path,
@@ -210,7 +212,7 @@ class PebbloSafeLoader(BaseLoader):
                     self.source_aggregate_size
                 )
         payload = Doc(**payload).dict(exclude_unset=True)
-        load_doc_url = f"{CLASSIFIER_URL}{LOADER_DOC_URL}"
+        load_doc_url = f"{self.classifier_url}{LOADER_DOC_URL}"
         classified_docs = []
         try:
             pebblo_resp = requests.post(
@@ -296,17 +298,11 @@ class PebbloSafeLoader(BaseLoader):
             "Content-Type": "application/json",
         }
         payload = self.app.dict(exclude_unset=True)
-        app_discover_url = f"{CLASSIFIER_URL}{APP_DISCOVER_URL}"
+        app_discover_url = f"{self.classifier_url}{APP_DISCOVER_URL}"
         try:
             pebblo_resp = requests.post(
                 app_discover_url, headers=headers, json=payload, timeout=20
             )
-            if self.api_key:
-                pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}/v1/discover"
-                headers.update({"x-api-key": self.api_key})
-                _ = requests.post(
-                    pebblo_cloud_url, headers=headers, json=payload, timeout=20
-                )
             logger.debug(
                 "send_discover[local]: request url %s, body %s len %s\
                     response status %s body %s",
@@ -331,13 +327,13 @@ class PebbloSafeLoader(BaseLoader):
             try:
                 headers.update({"x-api-key": self.api_key})
                 if pebblo_resp:
-                    pebblo_resp_docs = json.loads(pebblo_resp.text).get("docs")
+                    pebblo_resp_docs = json.loads(pebblo_resp.text).get("ai_apps_data")
                     payload.update(
                         {
-                            "pebbloServerVersion": pebblo_resp_docs.get(
+                            "pebblo_server_version": pebblo_resp_docs.get(
                                 "pebbloServerVersion"
                             ),
-                            "pebbloClientVersion": pebblo_resp_docs.get(
+                            "pebblo_client_version": pebblo_resp_docs.get(
                                 "pebbloClientVersion"
                             ),
                         }

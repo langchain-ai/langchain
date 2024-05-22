@@ -2,6 +2,7 @@
 from langchain_community.vectorstores import __all__ as public_api
 
 _EXPECTED = [
+    "Aerospike",
     "AlibabaCloudOpenSearch",
     "AlibabaCloudOpenSearchSettings",
     "AnalyticDB",
@@ -55,6 +56,7 @@ _EXPECTED = [
     "MyScaleSettings",
     "Neo4jVector",
     "OpenSearchVectorSearch",
+    "OracleVS",
     "PGEmbedding",
     "PGVector",
     "PathwayVectorClient",
@@ -77,6 +79,7 @@ _EXPECTED = [
     "Tigris",
     "TimescaleVector",
     "Typesense",
+    "UpstashVectorStore",
     "USearch",
     "Vald",
     "VDMS",
@@ -91,6 +94,7 @@ _EXPECTED = [
     "AzureCosmosDBVectorSearch",
     "VectorStore",
     "Yellowbrick",
+    "NeuralDBClientVectorStore",
     "NeuralDBVectorStore",
     "CouchbaseVectorStore",
 ]
