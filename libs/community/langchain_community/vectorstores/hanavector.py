@@ -145,6 +145,8 @@ class HanaDB(VectorStore):
             ["REAL_VECTOR"],
             self.vector_column_length,
         )
+        for column_name in self.specific_metadata_columns:
+            self._check_column(self.table_name, column_name)
 
     def _table_exists(self, table_name) -> bool:  # type: ignore[no-untyped-def]
         sql_str = (
@@ -162,7 +164,7 @@ class HanaDB(VectorStore):
             cur.close()
         return False
 
-    def _check_column(self, table_name, column_name, column_type, column_length=None):  # type: ignore[no-untyped-def]
+    def _check_column(self, table_name, column_name, column_type=None, column_length=None):  # type: ignore[no-untyped-def]
         sql_str = (
             "SELECT DATA_TYPE_NAME, LENGTH FROM SYS.TABLE_COLUMNS WHERE "
             "SCHEMA_NAME = CURRENT_SCHEMA "
@@ -176,10 +178,11 @@ class HanaDB(VectorStore):
                 if len(rows) == 0:
                     raise AttributeError(f"Column {column_name} does not exist")
                 # Check data type
-                if rows[0][0] not in column_type:
-                    raise AttributeError(
-                        f"Column {column_name} has the wrong type: {rows[0][0]}"
-                    )
+                if column_type:
+                    if rows[0][0] not in column_type:
+                        raise AttributeError(
+                            f"Column {column_name} has the wrong type: {rows[0][0]}"
+                        )
                 # Check length, if parameter was provided
                 if column_length is not None:
                     if rows[0][1] != column_length:
@@ -243,7 +246,7 @@ class HanaDB(VectorStore):
             return {}, []
 
         for column_name in self.specific_metadata_columns:
-            special_metadata.append(metadata.pop(column_name, None))
+            special_metadata.append(metadata.get(column_name, None))
 
         return metadata, special_metadata
 

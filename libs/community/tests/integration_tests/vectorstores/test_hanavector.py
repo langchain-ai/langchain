@@ -1341,7 +1341,7 @@ def test_preexisting_specific_columns_for_metadata_empty_columns(
 
 
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
-def test_preexisting_specific_columns_for_metadata_wrong_type(
+def test_preexisting_specific_columns_for_metadata_wrong_type_or_non_existing(
     texts: List[str], metadatas: List[dict]
 ) -> None:
     table_name = "PREEXISTING_FILTER_COLUMNS_WRONG_TYPE"
@@ -1374,4 +1374,62 @@ def test_preexisting_specific_columns_for_metadata_wrong_type(
         exception_occured = False
     except dbapi.Error:  # Nothing we should do here, hdbcli will throw an error
         exception_occured = True
+    assert exception_occured    # Check if table is created
+    
+    exception_occured = False
+    try:
+        HanaDB.from_texts(
+            connection=test_setup.conn,
+            texts=texts,
+            metadatas=metadatas,
+            embedding=embedding,
+            table_name=table_name,
+            specific_metadata_columns=["NonExistingColumn"],
+        )
+        exception_occured = False
+    except AttributeError:  # Nothing we should do here, hdbcli will throw an error
+        exception_occured = True
     assert exception_occured
+
+
+
+@pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
+def test_preexisting_specific_columns_for_returned_metadata_completeness(
+    texts: List[str], metadatas: List[dict]
+) -> None:
+    table_name = "PREEXISTING_FILTER_COLUMNS_METADATA_COMPLETENESS"
+    # drop_table(test_setup.conn, table_name)
+
+    sql_str = (
+        f'CREATE TABLE "{table_name}" ('
+        f'"VEC_TEXT" NCLOB, '
+        f'"VEC_META" NCLOB, '
+        f'"VEC_VECTOR" REAL_VECTOR, '
+        f'"quality" NVARCHAR(100), '
+        f'"NonExisting" NVARCHAR(100), '
+        f'"ready" BOOLEAN, '
+        f'"start" INTEGER);'
+    )
+    try:
+        cur = test_setup.conn.cursor()
+        cur.execute(sql_str)
+    finally:
+        cur.close()
+
+    vectorDB = HanaDB.from_texts(
+        connection=test_setup.conn,
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embedding,
+        table_name=table_name,
+        specific_metadata_columns=["quality", "ready", "start", "NonExisting"],
+    )
+
+    docs = vectorDB.similarity_search("hello", k=5, filter={"quality": "good"})
+    assert len(docs) == 1
+    assert docs[0].page_content == "foo"
+    assert docs[0].metadata["end"] == 100
+    assert docs[0].metadata["start"] == 0
+    assert docs[0].metadata["quality"] == "good"
+    assert docs[0].metadata["ready"]
+    assert "NonExisting" not in docs[0].metadata.keys()
