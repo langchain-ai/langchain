@@ -1,10 +1,8 @@
 import ast
 import glob
 import importlib
-import ast
-from typing import List, Tuple
-
 from pathlib import Path
+from typing import List, Tuple
 
 import pytest
 
