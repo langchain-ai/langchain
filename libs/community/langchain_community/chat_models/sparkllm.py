@@ -85,7 +85,7 @@ def _convert_delta_to_message_chunk(
     elif msg_role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=msg_content, role=msg_role)
     else:
-        return default_class(content=msg_content)
+        return default_class(content=msg_content)  # type: ignore[call-arg]
 
 
 class ChatSparkLLM(BaseChatModel):
@@ -135,14 +135,14 @@ class ChatSparkLLM(BaseChatModel):
 
     client: Any = None  #: :meta private:
     spark_app_id: Optional[str] = None
-    spark_api_key: Optional[str] = None
+    spark_api_key: Optional[str] = Field(default=None, alias="api_key")
     spark_api_secret: Optional[str] = None
     spark_api_url: Optional[str] = None
     spark_llm_domain: Optional[str] = None
     spark_user_id: str = "lc_user"
     streaming: bool = False
     request_timeout: int = Field(30, alias="timeout")
-    temperature: float = 0.5
+    temperature: float = Field(default=0.5)
     top_k: int = 4
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
@@ -382,10 +382,10 @@ class _SparkLLMClient:
             on_close=self.on_close,
             on_open=self.on_open,
         )
-        ws.messages = messages
-        ws.user_id = user_id
-        ws.model_kwargs = self.model_kwargs if model_kwargs is None else model_kwargs
-        ws.streaming = streaming
+        ws.messages = messages  # type: ignore[attr-defined]
+        ws.user_id = user_id  # type: ignore[attr-defined]
+        ws.model_kwargs = self.model_kwargs if model_kwargs is None else model_kwargs  # type: ignore[attr-defined]
+        ws.streaming = streaming  # type: ignore[attr-defined]
         ws.run_forever()
 
     def arun(

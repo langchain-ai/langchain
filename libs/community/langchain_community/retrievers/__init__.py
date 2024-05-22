@@ -28,6 +28,9 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.arxiv import (
         ArxivRetriever,
     )
+    from langchain_community.retrievers.asknews import (
+        AskNewsRetriever,
+    )
     from langchain_community.retrievers.azure_ai_search import (
         AzureAISearchRetriever,
         AzureCognitiveSearchRetriever,
@@ -123,6 +126,7 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.weaviate_hybrid_search import (
         WeaviateHybridSearchRetriever,
     )
+    from langchain_community.retrievers.web_research import WebResearchRetriever
     from langchain_community.retrievers.wikipedia import (
         WikipediaRetriever,
     )
@@ -142,6 +146,7 @@ _module_lookup = {
     "AmazonKnowledgeBasesRetriever": "langchain_community.retrievers.bedrock",
     "ArceeRetriever": "langchain_community.retrievers.arcee",
     "ArxivRetriever": "langchain_community.retrievers.arxiv",
+    "AskNewsRetriever": "langchain_community.retrievers.asknews",
     "AzureAISearchRetriever": "langchain_community.retrievers.azure_ai_search",
     "AzureCognitiveSearchRetriever": "langchain_community.retrievers.azure_ai_search",
     "BM25Retriever": "langchain_community.retrievers.bm25",
@@ -174,6 +179,7 @@ _module_lookup = {
     "TavilySearchAPIRetriever": "langchain_community.retrievers.tavily_search_api",
     "VespaRetriever": "langchain_community.retrievers.vespa_retriever",
     "WeaviateHybridSearchRetriever": "langchain_community.retrievers.weaviate_hybrid_search",  # noqa: E501
+    "WebResearchRetriever": "langchain_community.retrievers.web_research",
     "WikipediaRetriever": "langchain_community.retrievers.wikipedia",
     "YouRetriever": "langchain_community.retrievers.you",
     "ZepRetriever": "langchain_community.retrievers.zep",
@@ -194,8 +200,9 @@ __all__ = [
     "AmazonKnowledgeBasesRetriever",
     "ArceeRetriever",
     "ArxivRetriever",
-    "AzureCognitiveSearchRetriever",
+    "AskNewsRetriever",
     "AzureAISearchRetriever",
+    "AzureCognitiveSearchRetriever",
     "BM25Retriever",
     "BreebsRetriever",
     "ChaindeskRetriever",
@@ -209,8 +216,8 @@ __all__ = [
     "GoogleDocumentAIWarehouseRetriever",
     "GoogleVertexAIMultiTurnSearchRetriever",
     "GoogleVertexAISearchRetriever",
-    "KNNRetriever",
     "KayAiRetriever",
+    "KNNRetriever",
     "LlamaIndexGraphRetriever",
     "LlamaIndexRetriever",
     "MetalRetriever",
@@ -223,10 +230,11 @@ __all__ = [
     "RememberizerRetriever",
     "RemoteLangChainRetriever",
     "SVMRetriever",
-    "TFIDFRetriever",
     "TavilySearchAPIRetriever",
+    "TFIDFRetriever",
     "VespaRetriever",
     "WeaviateHybridSearchRetriever",
+    "WebResearchRetriever",
     "WikipediaRetriever",
     "YouRetriever",
     "ZepRetriever",

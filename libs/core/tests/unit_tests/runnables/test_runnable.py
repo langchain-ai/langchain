@@ -1440,7 +1440,6 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
             recursion_limit=25,
             configurable={"hello": "there"},
             metadata={"hello": "there", "bye": "now"},
-            run_id=None,
         ),
     )
     spy.reset_mock()
@@ -1582,7 +1581,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
-                run_id=None,
             ),
         ),
         mocker.call(
@@ -1592,7 +1590,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
-                run_id=None,
             ),
         ),
     ]
@@ -1618,7 +1615,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
-            run_id=None,
         ),
     )
     second_call = next(call for call in spy.call_args_list if call.args[0] == "wooorld")
@@ -1629,7 +1625,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
-            run_id=None,
         ),
     )
 
@@ -1700,7 +1695,6 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
             tags=[],
             callbacks=None,
             recursion_limit=25,
-            run_id=None,
         )
 
 
@@ -4883,6 +4877,23 @@ async def test_runnable_gen() -> None:
     assert [p async for p in arunnable.astream(None)] == [1, 2, 3]
     assert await arunnable.abatch([None, None]) == [6, 6]
 
+    class AsyncGen:
+        async def __call__(self, input: AsyncIterator[Any]) -> AsyncIterator[int]:
+            yield 1
+            yield 2
+            yield 3
+
+    arunnablecallable = RunnableGenerator(AsyncGen())
+    assert await arunnablecallable.ainvoke(None) == 6
+    assert [p async for p in arunnablecallable.astream(None)] == [1, 2, 3]
+    assert await arunnablecallable.abatch([None, None]) == [6, 6]
+    with pytest.raises(NotImplementedError):
+        arunnablecallable.invoke(None)
+    with pytest.raises(NotImplementedError):
+        arunnablecallable.stream(None)
+    with pytest.raises(NotImplementedError):
+        arunnablecallable.batch([None, None])
+
 
 async def test_runnable_gen_context_config() -> None:
     """Test that a generator can call other runnables with config
@@ -5508,3 +5519,64 @@ async def test_passthrough_atransform_with_dicts() -> None:
 
     chunks = [chunk async for chunk in runnable.atransform(chunk_iterator())]
     assert chunks == [{"foo": "a"}, {"foo": "n"}]
+
+
+def test_listeners() -> None:
+    from langchain_core.runnables import RunnableLambda
+    from langchain_core.tracers.schemas import Run
+
+    def fake_chain(inputs: dict) -> dict:
+        return {**inputs, "key": "extra"}
+
+    shared_state = {}
+    value1 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+    value2 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+
+    def on_start(run: Run) -> None:
+        shared_state[run.id] = {"inputs": run.inputs}
+
+    def on_end(run: Run) -> None:
+        shared_state[run.id]["outputs"] = run.inputs
+
+    chain = (
+        RunnableLambda(fake_chain)
+        .with_listeners(on_end=on_end, on_start=on_start)
+        .map()
+    )
+
+    data = [{"name": "one"}, {"name": "two"}]
+    chain.invoke(data, config={"max_concurrency": 1})
+    assert len(shared_state) == 2
+    assert value1 in shared_state.values(), "Value not found in the dictionary."
+    assert value2 in shared_state.values(), "Value not found in the dictionary."
+
+
+async def test_listeners_async() -> None:
+    from langchain_core.runnables import RunnableLambda
+    from langchain_core.tracers.schemas import Run
+
+    def fake_chain(inputs: dict) -> dict:
+        return {**inputs, "key": "extra"}
+
+    shared_state = {}
+    value1 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+    value2 = {"inputs": {"name": "one"}, "outputs": {"name": "one"}}
+
+    def on_start(run: Run) -> None:
+        shared_state[run.id] = {"inputs": run.inputs}
+
+    def on_end(run: Run) -> None:
+        shared_state[run.id]["outputs"] = run.inputs
+
+    chain: Runnable = (
+        RunnableLambda(fake_chain)
+        .with_listeners(on_end=on_end, on_start=on_start)
+        .map()
+    )
+
+    data = [{"name": "one"}, {"name": "two"}]
+    await chain.ainvoke(data, config={"max_concurrency": 1})
+
+    assert len(shared_state) == 2
+    assert value1 in shared_state.values(), "Value not found in the dictionary."
+    assert value2 in shared_state.values(), "Value not found in the dictionary."
