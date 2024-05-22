@@ -102,8 +102,9 @@ def _extract_type_checking_imports(code: str) -> List[Tuple[str, str]]:
 
     class TypeCheckingVisitor(ast.NodeVisitor):
         def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-            for alias in node.names:
-                imports.append((node.module, alias.name))
+            if node.module:
+                for alias in node.names:
+                    imports.append((node.module, alias.name))
 
     class GlobalScopeVisitor(ast.NodeVisitor):
         def visit_If(self, node: ast.If) -> None:
