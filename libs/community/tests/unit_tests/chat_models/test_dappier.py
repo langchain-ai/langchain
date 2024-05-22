@@ -3,7 +3,7 @@ from typing import List, cast
 
 import pytest
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain_core.pydantic_v1 import SecretStr, ValidationError
+from langchain_core.pydantic_v1 import SecretStr
 
 from langchain_community.chat_models.dappier import (
     ChatDappierAI,
@@ -39,12 +39,9 @@ def test_dappier_messages_formatting(
 
 
 def test_dappierai_initialization():
-    try:
-        for model in [
-            ChatDappierAI(dappier_model="dappier-ai-model", dappier_api_key="xyz"),
-            ChatDappierAI(model="dappier-ai-model", api_key="xyz"),
-        ]:
-            assert model.dappier_model == "dappier-ai-model"
-            assert cast(SecretStr, model.dappier_api_key).get_secret_value() == "xyz"
-    except ValidationError as e:
-        print(e)
+    for model in [
+        ChatDappierAI(dappier_model="dappier-ai-model", dappier_api_key="xyz"),
+        ChatDappierAI(model="dappier-ai-model", api_key="xyz"),
+    ]:
+        assert model.dappier_model == "dappier-ai-model"
+        assert cast(SecretStr, model.dappier_api_key).get_secret_value() == "xyz"
