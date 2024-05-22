@@ -1,9 +1,7 @@
-import os
 import sys
 from pathlib import Path
 
-from langchain_community import chat_models, llms
-from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
+from langchain_community import llms
 from langchain_core.language_models.llms import LLM, BaseLLM
 
 LLM_IGNORE = ("FakeListLLM", "OpenAIChat", "PromptLayerOpenAIChat")
@@ -16,49 +14,85 @@ LLM_FEAT_TABLE_CORRECTION = {
 }
 CHAT_MODEL_IGNORE = ("FakeListChatModel", "HumanInputChatModel")
 
-CHAT_MODEL_FEAT_TABLE_CORRECTION = {
-    "ChatMLflowAIGateway": {"_agenerate": False},
-    "PromptLayerChatOpenAI": {"_stream": False, "_astream": False},
-    "ChatKonko": {"_astream": False, "_agenerate": False},
+CHAT_MODEL_FEAT_TABLE = {
     "ChatAnthropic": {
         "tool_calling": True,
         "structured_output": True,
         "package": "langchain-anthropic",
+        "link": "/docs/integrations/chat/anthropic/",
     },
     "ChatMistralAI": {
         "tool_calling": True,
         "structured_output": True,
         "package": "langchain-mistralai",
+        "link": "/docs/integrations/chat/mistralai/",
     },
     "ChatFireworks": {
         "tool_calling": True,
         "structured_output": True,
+        "json_mode": True,
         "package": "langchain-fireworks",
+        "link": "/docs/integrations/chat/fireworks/",
     },
     "AzureChatOpenAI": {
         "tool_calling": True,
         "structured_output": True,
+        "json_mode": True,
         "package": "langchain-openai",
+        "link": "/docs/integrations/chat/azure_chat_openai/",
     },
     "ChatOpenAI": {
         "tool_calling": True,
         "structured_output": True,
+        "json_mode": True,
         "package": "langchain-openai",
+        "link": "/docs/integrations/chat/openai/",
+    },
+    "ChatTogether": {
+        "tool_calling": True,
+        "structured_output": True,
+        "json_mode": True,
+        "package": "langchain-together",
+        "link": "/docs/integrations/chat/together/",
     },
     "ChatVertexAI": {
         "tool_calling": True,
         "structured_output": True,
         "package": "langchain-google-vertexai",
+        "link": "/docs/integrations/chat/google_vertex_ai_palm/",
     },
     "ChatGroq": {
         "tool_calling": True,
         "structured_output": True,
+        "json_mode": True,
         "package": "langchain-groq",
+        "link": "/docs/integrations/chat/groq/",
     },
     "ChatCohere": {
         "tool_calling": True,
         "structured_output": True,
         "package": "langchain-cohere",
+        "link": "/docs/integrations/chat/cohere/",
+    },
+    "ChatBedrock": {
+        "tool_calling": True,
+        "package": "langchain-aws",
+        "link": "/docs/integrations/chat/bedrock/",
+    },
+    "ChatHuggingFace": {
+        "local": True,
+        "package": "langchain-huggingface",
+        "link": "/docs/integrations/chat/huggingface/",
+    },
+    "ChatOllama": {
+        "local": True,
+        "package": "langchain-community",
+        "link": "/docs/integrations/chat/ollama/",
+    },
+    "vLLM Chat (via ChatOpenAI)": {
+        "local": True,
+        "package": "langchain-community",
+        "link": "/docs/integrations/chat/vllm/",
     },
 }
 
@@ -88,19 +122,14 @@ CHAT_MODEL_TEMPLATE = """\
 ---
 sidebar_position: 0
 sidebar_class_name: hidden
-keywords: [compatibility, bind_tools, tool calling, function calling, structured output, with_structured_output]
+keywords: [compatibility, bind_tools, tool calling, function calling, structured output, with_structured_output, json mode, local model]
 ---
 
 # Chat models
 
-## Features (natively supported)
-All ChatModels implement the Runnable interface, which comes with default implementations of all methods, ie. `ainvoke`, `batch`, `abatch`, `stream`, `astream`. This gives all ChatModels basic support for async, streaming and batch, which by default is implemented as below:
-- *Async* support defaults to calling the respective sync method in asyncio's default thread pool executor. This lets other async functions in your application make progress while the ChatModel is being executed, by moving this call to a background thread.
-- *Streaming* support defaults to returning an `Iterator` (or `AsyncIterator` in the case of async streaming) of a single value, the final result returned by the underlying ChatModel provider. This obviously doesn't give you token-by-token streaming, which requires native support from the ChatModel provider, but ensures your code that expects an iterator of tokens can work for any of our ChatModel integrations.
-- *Batch* support defaults to calling the underlying ChatModel in parallel for each input by making use of a thread pool executor (in the sync batch case) or `asyncio.gather` (in the async batch case). The concurrency can be controlled with the `max_concurrency` key in `RunnableConfig`.
+## Advanced features
 
-Each ChatModel integration can optionally provide native implementations to truly enable async or streaming.
-The table shows, for each integration, which features have been implemented with native support.
+The following table shows all the chat models that support one or more advanced features.
 
 {table}
 
@@ -163,47 +192,30 @@ def get_llm_table():
 
 def get_chat_model_table() -> str:
     """Get the table of chat models."""
-    feat_table = {}
-    for cm in chat_models.__all__:
-        feat_table[cm] = {}
-        cls = getattr(chat_models, cm)
-        if issubclass(cls, SimpleChatModel):
-            comparison_cls = SimpleChatModel
-        else:
-            comparison_cls = BaseChatModel
-        for feat in ("_stream", "_astream", "_agenerate"):
-            feat_table[cm][feat] = getattr(cls, feat) != getattr(comparison_cls, feat)
-    final_feats = {
-        k: v
-        for k, v in {**feat_table, **CHAT_MODEL_FEAT_TABLE_CORRECTION}.items()
-        if k not in CHAT_MODEL_IGNORE
-    }
     header = [
         "model",
-        "_agenerate",
-        "_stream",
-        "_astream",
         "tool_calling",
         "structured_output",
+        "json_mode",
+        "local",
         "package",
     ]
     title = [
         "Model",
-        "Invoke",
-        "Async invoke",
-        "Stream",
-        "Async stream",
-        "[Tool calling](/docs/modules/model_io/chat/function_calling/)",
-        "[Structured output](/docs/modules/model_io/chat/structured_output/)",
-        "Python Package",
+        "[Tool calling](/docs/how_to/tool_calling/)",
+        "[Structured output](/docs/how_to/structured_output/)",
+        "JSON mode",
+        "Local",
+        "Package",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
-    for llm, feats in sorted(final_feats.items()):
+    for llm, feats in sorted(CHAT_MODEL_FEAT_TABLE.items()):
         # Fields are in the order of the header
-        row = [llm, "✅"]
+        row = [
+            f"[{llm}]({feats['link']})",
+        ]
         for h in header[1:]:
             value = feats.get(h)
-            index = header.index(h)
             if h == "package":
                 row.append(value or "langchain-community")
             else:

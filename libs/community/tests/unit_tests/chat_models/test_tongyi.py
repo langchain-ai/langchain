@@ -1,7 +1,9 @@
 from langchain_core.messages import (
     AIMessage,
+    FunctionMessage,
     HumanMessage,
-    SystemMessage, ToolMessage, FunctionMessage,
+    SystemMessage,
+    ToolMessage,
 )
 from langchain_core.output_parsers.openai_tools import (
     parse_tool_call,
@@ -58,7 +60,7 @@ def test__convert_dict_to_message_function_call() -> None:
     expected_output = AIMessage(
         content="foo",
         additional_kwargs={"tool_calls": raw_function_calls},
-        tool_calls=tool_calls,
+        tool_calls=tool_calls,  # type: ignore[arg-type]
         invalid_tool_calls=[],
     )
     assert result == expected_output

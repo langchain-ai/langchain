@@ -217,3 +217,43 @@ class ChatModelIntegrationTests(ABC):
         ]
         result_list_content = model_with_tools.invoke(messages_list_content)
         assert isinstance(result_list_content, AIMessage)
+
+    def test_structured_few_shot_examples(
+        self,
+        chat_model_class: Type[BaseChatModel],
+        chat_model_params: dict,
+        chat_model_has_tool_calling: bool,
+    ) -> None:
+        """
+        Test that model can process few-shot examples with tool calls.
+        """
+        if not chat_model_has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+        model = chat_model_class(**chat_model_params)
+        model_with_tools = model.bind_tools([my_adder_tool])
+        function_name = "my_adder_tool"
+        function_args = {"a": 1, "b": 2}
+        function_result = json.dumps({"result": 3})
+
+        messages_string_content = [
+            HumanMessage(content="What is 1 + 2"),
+            AIMessage(
+                content="",
+                tool_calls=[
+                    {
+                        "name": function_name,
+                        "args": function_args,
+                        "id": "abc123",
+                    },
+                ],
+            ),
+            ToolMessage(
+                name=function_name,
+                content=function_result,
+                tool_call_id="abc123",
+            ),
+            AIMessage(content=function_result),
+            HumanMessage(content="What is 3 + 4"),
+        ]
+        result_string_content = model_with_tools.invoke(messages_string_content)
+        assert isinstance(result_string_content, AIMessage)
