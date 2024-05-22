@@ -740,7 +740,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     k: int = 4
     """Number of documents to return."""
     search_kwargs: dict = Field(
-        default_factory=lambda: {"fetch_k": 20, "lambda_mult": 0.5}
+        default_factory=lambda: {}
     )
     """Search params.
         score_threshold: Minimum relevance threshold
