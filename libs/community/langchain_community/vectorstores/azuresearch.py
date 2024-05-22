@@ -739,9 +739,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
     or "semantic_hybrid_score_threshold"."""
     k: int = 4
     """Number of documents to return."""
-    search_kwargs: dict = Field(
-        default_factory=lambda: {}
-    )
+    search_kwargs: dict = {}
     """Search params.
         score_threshold: Minimum relevance threshold
             for similarity_score_threshold
