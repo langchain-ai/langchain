@@ -1,5 +1,4 @@
 import asyncio
-import numpy as np
 from typing import (
     Any,
     Dict,
@@ -9,9 +8,11 @@ from typing import (
     Tuple,
 )
 
+import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 DEFAULT_K = 4  # Number of Documents to return.
@@ -380,11 +381,9 @@ class SurrealDBStore(VectorStore):
             List of Documents most similar along with relevance distance scores
         """
 
-        async def _similarity_search_with_score() -> (List[Tuple[Document, float]]):
+        async def _similarity_search_with_score() -> List[Tuple[Document, float]]:
             await self.initialize()
-            return await self.asimilarity_search_with_score(
-                query, k, filter, **kwargs
-            )
+            return await self.asimilarity_search_with_score(query, k, filter, **kwargs)
 
         return asyncio.run(_similarity_search_with_score())
 
@@ -521,13 +520,9 @@ class SurrealDBStore(VectorStore):
         ]
 
         # extract only document from result
-        results = [
-            sub[0] for sub in result
-        ]
+        results = [sub[0] for sub in result]
         # extract only embedding from result
-        embeddings = [
-            sub[-1] for sub in result
-        ]
+        embeddings = [sub[-1] for sub in result]
 
         mmr_selected = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
