@@ -4,8 +4,6 @@ import importlib
 from pathlib import Path
 from typing import List, Tuple
 
-import pytest
-
 COMMUNITY_ROOT = Path(__file__).parent.parent.parent / "langchain_community"
 ALL_COMMUNITY_GLOB = COMMUNITY_ROOT.as_posix() + "/**/*.py"
 HERE = Path(__file__).parent
@@ -68,7 +66,6 @@ def _check_correct_or_not_defined__all__(code: str) -> bool:
     return all_good
 
 
-@pytest.mark.xfail
 def test_no_dynamic__all__() -> None:
     """Verify that __all__ is not computed at runtime.
 
