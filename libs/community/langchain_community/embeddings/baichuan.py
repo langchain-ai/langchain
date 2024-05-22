@@ -23,11 +23,23 @@ BAICHUAN_API_URL: str = "http://api.baichuan-ai.com/v1/embeddings"
 # NOTE!! BaichuanTextEmbeddings only supports Chinese text embedding.
 # Multi-language support is coming soon.
 class BaichuanTextEmbeddings(BaseModel, Embeddings):
-    """Baichuan Text Embedding models."""
+    """Baichuan Text Embedding models.
+
+    To use, you should set the environment variable ``BAICHUAN_API_KEY`` to
+    your API key or pass it as a named parameter to the constructor.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_community.embeddings import BaichuanTextEmbeddings
+
+            baichuan = BaichuanTextEmbeddings(baichuan_api_key="my-api-key")
+    """
 
     session: Any  #: :meta private:
     model_name: str = "Baichuan-Text-Embedding"
     baichuan_api_key: Optional[SecretStr] = None
+    """Automatically inferred from env var `BAICHUAN_API_KEY` if not provided."""
 
     @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
