@@ -11,6 +11,8 @@ repository = "https://www.github.com/langchain-ai/langchain"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 black = "^24.2.0"
+rdflib = "^7.0.0"
+sparqlwrapper = "^2.0.0"
 
 [tool.poetry.group.docs.dependencies]
 langchain = { path = "libs/langchain/", develop = true }
@@ -37,6 +39,8 @@ langchain-community = { path = "libs/community/", develop = true }
 langchain = { path = "libs/langchain/", develop = true }
 langchain-experimental = { path = "libs/experimental/", develop = true }
 langchain-openai = { path = "libs/partners/openai", develop = true }
+rdflib = "^7.0.0"
+sparqlwrapper = "^2.0.0"
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
@@ -52,8 +56,12 @@ langchain-openai = { path = "libs/partners/openai", develop = true }
 ipykernel = "^6.29.2"
 
 [tool.poetry.group.test.dependencies]
+rdflib = "^7.0.0"
+sparqlwrapper = "^2.0.0"
 
 [tool.poetry.group.test_integration.dependencies]
+rdflib = "^7.0.0"
+sparqlwrapper = "^2.0.0"
 
 [tool.poetry.group.typing.dependencies]
 
