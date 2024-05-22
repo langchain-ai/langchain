@@ -162,11 +162,11 @@ class Chroma(VectorStore):
             persist_director: Directory to persist the collection.
             client_settings: Chroma client settings
             collection_metadata: Collection configurations.
-            client: Chroma client. Documentation: 
+            client: Chroma client. Documentation:
                     https://docs.trychroma.com/reference/js-client#class:-chromaclient
-            relevance_score_fn: Fuction to calculate relevance score from distance. 
+            relevance_score_fn: Fuction to calculate relevance score from distance.
                     Used only in `similarity_search_with_relevance_scores`
-            create_collection_if_not_exists: Whether to create collection 
+            create_collection_if_not_exists: Whether to create collection
                     if it doesn't exist. Defaults to True.
         """
         if client is not None:
@@ -241,13 +241,14 @@ class Chroma(VectorStore):
             query_texts: List of query texts.
             query_embeddings: List of query embeddings.
             n_results: Number of results to return. Defaults to 4.
-            where: dict used to filter results by 
+            where: dict used to filter results by
                     e.g. {"color" : "red", "price": 4.20}.
-            where_document: dict used to filter by the documents. 
+            where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
 
         Returns:
-            List of `n_results` nearest neighbor embeddings for provided query_embeddings or query_texts.
+            List of `n_results` nearest neighbor embeddings for provided
+            query_embeddings or query_texts.
 
         See more: https://docs.trychroma.com/reference/py-collection#query
         """
@@ -471,7 +472,7 @@ class Chroma(VectorStore):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
-            where_document: dict used to filter by the documents. 
+            where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
 
         Returns:
@@ -501,11 +502,11 @@ class Chroma(VectorStore):
             embedding (List[float]): Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
-            where_document: dict used to filter by the documents. 
+            where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
 
         Returns:
-            List of documents most similar to the query text and relevance score 
+            List of documents most similar to the query text and relevance score
             in float for each. Lower score represents more similarity.
         """
         results = self.__query_collection(
@@ -531,11 +532,11 @@ class Chroma(VectorStore):
             query: Query text to search for.
             k: Number of results to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
-            where_document: dict used to filter by the documents. 
+            where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
 
         Returns:
-            List of documents most similar to the query text and 
+            List of documents most similar to the query text and
             distance in float for each. Lower score represents more similarity.
         """
         if self._embedding_function is None:
@@ -559,13 +560,13 @@ class Chroma(VectorStore):
         return _results_to_docs_and_scores(results)
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        """Select the relevance score function based on the distance metric used by the VectorStore.
+        """Select the relevance score function based on collections distance metric.
 
-        The most similar documents will have the lowest relevance score.
-        Default relevance score function is euclidean distance.
-        Distance metric must be provided in `collection_metadata` during initizalition of Chroma object.
-        Example: collection_metadata={"hnsw:space": "cosine"}
-        Available distance metrics are: 'cosine', 'l2' and 'ip'.
+        The most similar documents will have the lowest relevance score. Default
+        relevance score function is euclidean distance. Distance metric must be
+        provided in `collection_metadata` during initizalition of Chroma object.
+        Example: collection_metadata={"hnsw:space": "cosine"}. Available distance
+        metrics are: 'cosine', 'l2' and 'ip'.
 
         Returns:
             The relevance score function.
@@ -615,11 +616,12 @@ class Chroma(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            fetch_k: Number of Documents to fetch to pass to MMR algorithm. Defaults to 20.
+            fetch_k: Number of Documents to fetch to pass to MMR algorithm. Defaults to
+                20.
             lambda_mult: Number between 0 and 1 that determines the degree
-                        of diversity among the results with 0 corresponding
-                        to maximum diversity and 1 to minimum diversity.
-                        Defaults to 0.5.
+                of diversity among the results with 0 corresponding
+                to maximum diversity and 1 to minimum diversity.
+                Defaults to 0.5.
             filter: Filter by metadata. Defaults to None.
 
         Returns:
@@ -669,7 +671,7 @@ class Chroma(VectorStore):
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
             filter: Filter by metadata. Defaults to None.
-            where_document: dict used to filter by the documents. 
+            where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
 
         Returns:
