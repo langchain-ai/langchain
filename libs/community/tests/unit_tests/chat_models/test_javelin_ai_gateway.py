@@ -38,10 +38,10 @@ def test_api_key_alias() -> None:
     for model in [
         ChatJavelinAIGateway(
             route="<javelin-ai-gateway-chat-route>",
-            javelin_api_key=SecretStr("test_key"),
+            javelin_api_key="secret-api-key",
         ),
         ChatJavelinAIGateway(
-            route="<javelin-ai-gateway-chat-route>", api_key=SecretStr("test_key")
+            route="<javelin-ai-gateway-chat-route>", api_key="secret-api-key"
         ),
     ]:
-        assert cast(SecretStr, model.javelin_api_key).get_secret_value() == "test_key"
+        assert str(model.javelin_api_key) == "**********"

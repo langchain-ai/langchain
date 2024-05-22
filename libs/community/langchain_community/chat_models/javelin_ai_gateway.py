@@ -90,9 +90,7 @@ class ChatJavelinAIGateway(BaseChatModel):
             try:
                 self.client = JavelinClient(
                     base_url=self.gateway_uri,
-                    javelin_api_key=cast(
-                        SecretStr, self.javelin_api_key
-                    ).get_secret_value(),
+                    api_key=cast(SecretStr, self.javelin_api_key).get_secret_value(),
                 )
             except UnauthorizedError as e:
                 raise ValueError("Javelin: Incorrect API Key.") from e
