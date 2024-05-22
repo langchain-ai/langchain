@@ -1,0 +1,17 @@
+language python
+
+pattern langchain_all_migrations() {
+  any {
+    langchain_migrate_community_to_core(),
+    langchain_migrate_fireworks(),
+    langchain_migrate_ibm(),
+    langchain_migrate_langchain_to_core(),
+    langchain_migrate_langchain_to_langchain_community(),
+    langchain_migrate_langchain_to_textsplitters(),
+    langchain_migrate_openai(),
+    langchain_migrate_pinecone(),
+    langchain_migrate_anthropic()
+  }
+}
+
+langchain_all_migrations()
