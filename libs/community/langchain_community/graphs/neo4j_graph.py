@@ -595,8 +595,8 @@ class Neo4jGraph(GraphStore):
                 if prop_type == "STRING":
                     with_clauses.append(
                         (
-                            f"collect(distinct substring(toString(n.`{prop_name}`), 0, 50)) "
-                            f"AS `{prop_name}_values`"
+                            f"collect(distinct substring(toString(n.`{prop_name}`)"
+                            f", 0, 50)) AS `{prop_name}_values`"
                         )
                     )
                     return_clauses.append(
@@ -672,8 +672,8 @@ class Neo4jGraph(GraphStore):
                     else:
                         with_clauses.append(
                             (
-                                f"collect(distinct substring(toString(n.`{prop_name}`), 0, 50)) "
-                                f"AS `{prop_name}_values`"
+                                f"collect(distinct substring(toString(n.`{prop_name}`)"
+                                f", 0, 50)) AS `{prop_name}_values`"
                             )
                         )
                         return_clauses.append(f"values: `{prop_name}_values`")
