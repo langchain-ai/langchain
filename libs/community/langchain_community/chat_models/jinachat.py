@@ -174,10 +174,10 @@ class JinaChat(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    jinachat_api_key: Optional[SecretStr] = None
+    jinachat_api_key: Optional[SecretStr] = Field(None, alias="api_key")
     """Base URL path for API requests, 
     leave blank if not using a proxy or service emulator."""
-    request_timeout: Optional[Union[float, Tuple[float, float]]] = None
+    request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(None, alias="timeout")
     """Timeout for requests to JinaChat completion API. Default is 600 seconds."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
