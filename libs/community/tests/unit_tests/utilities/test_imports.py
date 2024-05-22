@@ -5,6 +5,7 @@ EXPECTED_ALL = [
     "ApifyWrapper",
     "ArceeWrapper",
     "ArxivAPIWrapper",
+    "AskNewsAPIWrapper",
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",

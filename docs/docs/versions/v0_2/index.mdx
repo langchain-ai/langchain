@@ -69,11 +69,11 @@ After the second run, you’ll get: `from langchain_openai import ChatOpenAI`
 ```bash
 # Run a first time
 # Will replace from langchain.chat_models import ChatOpenAI
-langchain-cli migrate [path to code] --diff # Preview
+langchain-cli migrate --diff [path to code] # Preview
 langchain-cli migrate [path to code] # Apply
 
 # Run a second time to apply more import replacements
-langchain-cli migrate [path to code] --diff # Preview
+langchain-cli migrate --diff [path to code] # Preview
 langchain-cli migrate [path to code] # Apply
 ```
 
