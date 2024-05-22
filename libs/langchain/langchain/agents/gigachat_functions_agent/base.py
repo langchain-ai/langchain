@@ -2,7 +2,6 @@
 
 from typing import Sequence
 
-from langchain_community.tools.render import format_tool_to_gigachat_function
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
@@ -11,6 +10,7 @@ from langchain_core.prompts.chat import (
 )
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import format_tool_to_gigachat_function
 
 from langchain.agents.format_scratchpad.gigachat_functions import (
     format_to_gigachat_function_messages,

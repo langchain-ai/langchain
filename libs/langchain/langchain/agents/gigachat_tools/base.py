@@ -1,10 +1,10 @@
 from typing import Sequence
 
-from langchain_community.tools.convert_to_openai import format_tool_to_openai_tool
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import format_tool_to_openai_tool
 
 from langchain.agents.format_scratchpad.openai_tools import (
     format_to_openai_tool_messages,

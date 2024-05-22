@@ -5,14 +5,12 @@ import warnings
 from importlib import metadata
 from typing import Any, Optional
 
-from langchain_community.__gigachain_community import _check_gigachain_community_version
 from langchain_core.__gigachain_core import _check_gigachain_core_version
 from langchain_core._api.deprecation import surface_langchain_deprecation_warnings
 
 # Убелимся, что мы используем именно gigachain_core и gigachain_community,
 # а не соответствующие langchain_... версии
 _check_gigachain_core_version()
-_check_gigachain_community_version()
 
 
 try:
