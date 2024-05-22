@@ -8,12 +8,13 @@ from langchain_community.vectorstores.vectara import SummaryConfig, Vectara
 
 #
 # For this test to run properly, please setup as follows:
-# 1. Create a Vectara account: sign up at https://www.vectara.com/integrations/langchain 
+# 1. Create a Vectara account: sign up at https://www.vectara.com/integrations/langchain
 # 2. Create a corpus in your Vectara account, with a filter attribute called "test_num".
 # 3. Create an API_KEY for this corpus with permissions for query and indexing
 # 4. Setup environment variables:
 #    VECTARA_API_KEY, VECTARA_CORPUS_ID and VECTARA_CUSTOMER_ID
 #
+
 
 def get_abbr(s: str) -> str:
     words = s.split(" ")  # Split the string into words
@@ -126,6 +127,7 @@ def vectara2():  # type: ignore[no-untyped-def]
     # Tear down code
     vectara2.delete(doc_ids)
 
+
 def test_vectara_from_files(vectara2) -> None:
     """Test end to end construction and search."""
     # finally do a similarity search to see if all works okay
@@ -136,8 +138,9 @@ def test_vectara_from_files(vectara2) -> None:
         n_sentence_after=0,
         filter="doc.test_num = 2",
     )
-    assert ("By the commonly adopted machine learning tradition" 
-            in output[0].page_content)
+    assert (
+        "By the commonly adopted machine learning tradition" in output[0].page_content
+    )
 
     # another similarity search, this time with n_sentences_before/after = 1
     output = vectara2.similarity_search(
@@ -207,8 +210,10 @@ def test_vectara_mmr(vectara3) -> None:  # type: ignore[no-untyped-def]
         n_sentence_after=0,
     )
     assert len(output1) == 2
-    assert ("This is why today we're adding a fundamental capability to our" 
-            in output1[1].page_content)
+    assert (
+        "This is why today we're adding a fundamental capability to our"
+        in output1[1].page_content
+    )
 
     output2 = vectara3.max_marginal_relevance_search(
         "generative AI",
@@ -219,8 +224,10 @@ def test_vectara_mmr(vectara3) -> None:  # type: ignore[no-untyped-def]
         n_sentence_after=0,
     )
     assert len(output2) == 2
-    assert ("Neural LLM systems are excellent at understanding the context" 
-            in output2[1].page_content)
+    assert (
+        "Neural LLM systems are excellent at understanding the context"
+        in output2[1].page_content
+    )
 
 
 def test_vectara_with_summary(vectara3) -> None:  # type: ignore[no-untyped-def]
