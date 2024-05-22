@@ -90,6 +90,7 @@ if TYPE_CHECKING:
     from langchain_community.tools.convert_to_openai import (
         format_tool_to_openai_function,
     )
+    from langchain_community.tools.dataherald import DataheraldTextToSQL
     from langchain_community.tools.ddg_search.tool import (
         DuckDuckGoSearchResults,
         DuckDuckGoSearchRun,
@@ -356,6 +357,7 @@ __all__ = [
     "CopyFileTool",
     "CurrentWebPageTool",
     "DeleteFileTool",
+    "DataheraldTextToSQL",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
     "E2BDataAnalysisTool",

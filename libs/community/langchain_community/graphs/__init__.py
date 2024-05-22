@@ -29,6 +29,8 @@ if TYPE_CHECKING:
         Neo4jGraph,
     )
     from langchain_community.graphs.neptune_graph import (
+        BaseNeptuneGraph,
+        NeptuneAnalyticsGraph,
         NeptuneGraph,
     )
     from langchain_community.graphs.neptune_rdf_graph import (
@@ -53,11 +55,13 @@ __all__ = [
     "GremlinGraph",
     "HugeGraph",
     "KuzuGraph",
+    "BaseNeptuneGraph",
     "MemgraphGraph",
     "NebulaGraph",
     "Neo4jGraph",
     "NeptuneGraph",
     "NeptuneRdfGraph",
+    "NeptuneAnalyticsGraph",
     "NetworkxEntityGraph",
     "OntotextGraphDBGraph",
     "RdfGraph",
