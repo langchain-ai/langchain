@@ -26,11 +26,9 @@ def _format_dappier_messages(
 
     for message in messages:
         if message.type == "human":
-            formatted_messages.append(
-                {"role": "user", "content": message.content})
+            formatted_messages.append({"role": "user", "content": message.content})
         elif message.type == "system":
-            formatted_messages.append(
-                {"role": "system", "content": message.content})
+            formatted_messages.append({"role": "system", "content": message.content})
 
     return formatted_messages
 
@@ -71,7 +69,8 @@ class ChatDappierAI(BaseChatModel):
     dappier_model: str = Field("dm_01hpsxyfm2fwdt2zet9cg6fdxt", alias="model")
 
     dappier_api_key: Optional[SecretStr] = Field(
-        None, description="Dappier API Token", alias="api_key")
+        None, description="Dappier API Token", alias="api_key"
+    )
 
     class Config:
         """Configuration for this pydantic object."""
@@ -86,8 +85,7 @@ class ChatDappierAI(BaseChatModel):
         api_key = values["dappier_api_key"] or values["api_key"]
         if not api_key:
             api_key = convert_to_secret_str(
-                get_from_dict_or_env(
-                    values, "dappier_api_key", "DAPPIER_API_KEY")
+                get_from_dict_or_env(values, "dappier_api_key", "DAPPIER_API_KEY")
             )
         if isinstance(api_key, str):
             api_key = convert_to_secret_str(api_key)
@@ -138,8 +136,7 @@ class ChatDappierAI(BaseChatModel):
         message_response = data["message"]
 
         return ChatResult(
-            generations=[ChatGeneration(
-                message=AIMessage(content=message_response))]
+            generations=[ChatGeneration(message=AIMessage(content=message_response))]
         )
 
     async def _agenerate(
@@ -168,7 +165,6 @@ class ChatDappierAI(BaseChatModel):
 
                 return ChatResult(
                     generations=[
-                        ChatGeneration(message=AIMessage(
-                            content=message_response))
+                        ChatGeneration(message=AIMessage(content=message_response))
                     ]
                 )

@@ -4,7 +4,11 @@ from typing import List, cast
 import pytest
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.pydantic_v1 import SecretStr, ValidationError
-from langchain_community.chat_models.dappier import _format_dappier_messages, ChatDappierAI
+
+from langchain_community.chat_models.dappier import (
+    ChatDappierAI,
+    _format_dappier_messages,
+)
 
 
 @pytest.mark.parametrize(
