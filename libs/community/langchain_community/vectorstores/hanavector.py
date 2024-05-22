@@ -164,9 +164,9 @@ class HanaDB(VectorStore):
             cur.close()
         return False
 
-    def _check_column(
+    def _check_column(  # type: ignore[no-untyped-def]
         self, table_name, column_name, column_type=None, column_length=None
-    ):  # type: ignore[no-untyped-def]
+    ):
         sql_str = (
             "SELECT DATA_TYPE_NAME, LENGTH FROM SYS.TABLE_COLUMNS WHERE "
             "SCHEMA_NAME = CURRENT_SCHEMA "
