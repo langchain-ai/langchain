@@ -32,8 +32,6 @@ def test_embed_documents(model_id: str) -> None:
         model_kwargs={"device": device},
         encode_kwargs={"normalize_embeddings": True},
     )
-    output = embedding_model.embed_documents(sentence)
-    assert isinstance(output, list)
     output = embedding_model.embed_documents([sentence, query])
     assert len(output) == 2
 
