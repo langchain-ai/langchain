@@ -132,17 +132,17 @@ class ChatModelIntegrationTests(ABC):
         assert isinstance(result.content, str)
         assert len(result.content) > 0
 
-    def test_token_usage(
+    def test_usage_metadata(
         self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
     ) -> None:
         model = chat_model_class(**chat_model_params)
         result = model.invoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert result.token_usage is not None
-        assert isinstance(result.token_usage["input_tokens"], int)
-        assert isinstance(result.token_usage["output_tokens"], int)
-        assert isinstance(result.token_usage["total_tokens"], int)
+        assert result.usage_metadata is not None
+        assert isinstance(result.usage_metadata["input_tokens"], int)
+        assert isinstance(result.usage_metadata["output_tokens"], int)
+        assert isinstance(result.usage_metadata["total_tokens"], int)
 
     def test_tool_message_histories_string_content(
         self,

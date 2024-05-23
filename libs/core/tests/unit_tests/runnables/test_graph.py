@@ -227,8 +227,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                             },
                             "required": ["name", "args", "id", "error"],
                         },
-                        "TokenUsage": {
-                            "title": "TokenUsage",
+                        "UsageMetadata": {
+                            "title": "UsageMetadata",
                             "type": "object",
                             "properties": {
                                 "input_tokens": {
@@ -303,7 +303,9 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "type": "array",
                                     "items": {"$ref": "#/definitions/InvalidToolCall"},
                                 },
-                                "token_usage": {"$ref": "#/definitions/TokenUsage"},
+                                "usage_metadata": {
+                                    "$ref": "#/definitions/UsageMetadata"
+                                },
                             },
                             "required": ["content"],
                         },

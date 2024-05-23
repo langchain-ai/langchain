@@ -383,8 +383,8 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 },
                 "required": ["name", "args", "id", "error"],
             },
-            "TokenUsage": {
-                "title": "TokenUsage",
+            "UsageMetadata": {
+                "title": "UsageMetadata",
                 "type": "object",
                 "properties": {
                     "input_tokens": {"title": "Input Tokens", "type": "integer"},
@@ -443,7 +443,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "type": "array",
                         "items": {"$ref": "#/definitions/InvalidToolCall"},
                     },
-                    "token_usage": {"$ref": "#/definitions/TokenUsage"},
+                    "usage_metadata": {"$ref": "#/definitions/UsageMetadata"},
                 },
                 "required": ["content"],
             },

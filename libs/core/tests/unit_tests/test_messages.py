@@ -123,15 +123,15 @@ def test_message_chunks() -> None:
     # Test token usage
     left = AIMessageChunk(
         content="",
-        token_usage={"input_tokens": 1, "output_tokens": 2, "total_tokens": 3},
+        usage_metadata={"input_tokens": 1, "output_tokens": 2, "total_tokens": 3},
     )
     right = AIMessageChunk(
         content="",
-        token_usage={"input_tokens": 4, "output_tokens": 5, "total_tokens": 9},
+        usage_metadata={"input_tokens": 4, "output_tokens": 5, "total_tokens": 9},
     )
     assert left + right == AIMessageChunk(
         content="",
-        token_usage={"input_tokens": 5, "output_tokens": 7, "total_tokens": 12},
+        usage_metadata={"input_tokens": 5, "output_tokens": 7, "total_tokens": 12},
     )
     assert AIMessageChunk(content="") + left == left
     assert right + AIMessageChunk(content="") == right

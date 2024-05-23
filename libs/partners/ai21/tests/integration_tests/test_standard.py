@@ -42,12 +42,12 @@ class TestAI21J2(ChatModelIntegrationTests):
         )
 
     @pytest.mark.xfail(reason="Not implemented.")
-    def test_token_usage(
+    def test_usage_metadata(
         self,
         chat_model_class: Type[BaseChatModel],
         chat_model_params: dict,
     ) -> None:
-        super().test_token_usage(
+        super().test_usage_metadata(
             chat_model_class,
             chat_model_params,
         )
@@ -91,12 +91,12 @@ class TestAI21Jamba(ChatModelIntegrationTests):
         )
 
     @pytest.mark.xfail(reason="Not implemented.")
-    def test_token_usage(
+    def test_usage_metadata(
         self,
         chat_model_class: Type[BaseChatModel],
         chat_model_params: dict,
     ) -> None:
-        super().test_token_usage(
+        super().test_usage_metadata(
             chat_model_class,
             chat_model_params,
         )

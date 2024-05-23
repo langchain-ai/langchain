@@ -92,7 +92,7 @@ def test__format_output() -> None:
             ChatGeneration(
                 message=AIMessage(
                     "bar",
-                    token_usage={
+                    usage_metadata={
                         "input_tokens": 2,
                         "output_tokens": 1,
                         "total_tokens": 3,

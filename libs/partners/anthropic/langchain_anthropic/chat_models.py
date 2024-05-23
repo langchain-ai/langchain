@@ -504,7 +504,7 @@ class ChatAnthropic(BaseChatModel):
         else:
             msg = AIMessage(content=content)
         # Collect token usage
-        msg.token_usage = {
+        msg.usage_metadata = {
             "input_tokens": data.usage.input_tokens,
             "output_tokens": data.usage.output_tokens,
             "total_tokens": data.usage.input_tokens + data.usage.output_tokens,

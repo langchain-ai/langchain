@@ -21,8 +21,8 @@ from langchain_core.utils.json import (
 )
 
 
-class TokenUsage(TypedDict):
-    """Token usage information for a message.
+class UsageMetadata(TypedDict):
+    """Usage metadata for a message, such as token counts.
 
     Attributes:
         input_tokens: (int) count of input (or prompt) tokens
@@ -47,8 +47,8 @@ class AIMessage(BaseMessage):
     """If provided, tool calls associated with the message."""
     invalid_tool_calls: List[InvalidToolCall] = []
     """If provided, tool calls with parsing errors associated with the message."""
-    token_usage: Optional[TokenUsage] = None
-    """If provided, token usage information associated with the message.
+    usage_metadata: Optional[UsageMetadata] = None
+    """If provided, usage metadata for a message, such as token counts.
 
     This is a standard representation of token usage that is consistent across models.
     """
@@ -220,20 +220,20 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 tool_call_chunks = []
 
             # Token usage
-            if self.token_usage or other.token_usage:
-                left: TokenUsage = self.token_usage or TokenUsage(
+            if self.usage_metadata or other.usage_metadata:
+                left: UsageMetadata = self.usage_metadata or UsageMetadata(
                     input_tokens=0, output_tokens=0, total_tokens=0
                 )
-                right: TokenUsage = other.token_usage or TokenUsage(
+                right: UsageMetadata = other.usage_metadata or UsageMetadata(
                     input_tokens=0, output_tokens=0, total_tokens=0
                 )
-                token_usage: Optional[TokenUsage] = {
+                usage_metadata: Optional[UsageMetadata] = {
                     "input_tokens": left["input_tokens"] + right["input_tokens"],
                     "output_tokens": left["output_tokens"] + right["output_tokens"],
                     "total_tokens": left["total_tokens"] + right["total_tokens"],
                 }
             else:
-                token_usage = None
+                usage_metadata = None
 
             return self.__class__(
                 example=self.example,
@@ -241,7 +241,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 additional_kwargs=additional_kwargs,
                 tool_call_chunks=tool_call_chunks,
                 response_metadata=response_metadata,
-                token_usage=token_usage,
+                usage_metadata=usage_metadata,
                 id=self.id,
             )
 
