@@ -265,7 +265,6 @@ class CloudBlobLoader(BlobLoader):
             _mimetype = mimetypes.guess_type(path)[0] if guess_type else None  # type: ignore
         else:
             _mimetype = mime_type
-        #     data= f.read_bytes()
 
         url_parsed = urlparse(str(path))
         if url_parsed.scheme in ["file", ""]:
