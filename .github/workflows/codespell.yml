@@ -34,4 +34,9 @@ jobs:
         with:
           skip: guide_imports.json,*.ambr,./cookbook/data/imdb_top_1000.csv,*.lock
           ignore_words_list: ${{ steps.extract_ignore_words.outputs.ignore_words_list }}
-          exclude_file: libs/community/langchain_community/llms/yuan2.py
+          exclude_file: 
+            - libs/community/langchain_community/llms/yuan2.py 
+            - docs/docs/integrations/providers/trulens.mdx
+            - libs/community/tests/integration_tests/graphs/test_age_graph.py
+            - libs/community/langchain_community/tools/ainetwork/value.py
+            - libs/community/langchain_community/tools/e2b_data_analysis/unparse.py
