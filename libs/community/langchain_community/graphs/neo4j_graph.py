@@ -151,7 +151,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
             formatted_node_props.append(f"- **{node_type}**")
             for prop in properties:
                 example = ""
-                if prop["type"] == "STRING":
+                if prop["type"] == "STRING" and prop.get("values"):
                     if prop.get("distinct_count", 11) > DISTINCT_VALUE_LIMIT:
                         example = (
                             f'Example: "{clean_string_values(prop["values"][0])}"'
@@ -400,7 +400,7 @@ class Neo4jGraph(GraphStore):
         """
         Refreshes the Neo4j graph schema information.
         """
-        from neo4j.exceptions import ClientError
+        from neo4j.exceptions import ClientError, CypherTypeError
 
         node_properties = [
             el["output"]
@@ -461,10 +461,14 @@ class Neo4jGraph(GraphStore):
                 enhanced_cypher = self._enhanced_schema_cypher(
                     node["name"], node_props, node["count"] < EXHAUSTIVE_SEARCH_LIMIT
                 )
-                enhanced_info = self.query(enhanced_cypher)[0]["output"]
-                for prop in node_props:
-                    if prop["property"] in enhanced_info:
-                        prop.update(enhanced_info[prop["property"]])
+                # Due to schema-flexible nature of neo4j errors can happen
+                try:
+                    enhanced_info = self.query(enhanced_cypher)[0]["output"]
+                    for prop in node_props:
+                        if prop["property"] in enhanced_info:
+                            prop.update(enhanced_info[prop["property"]])
+                except CypherTypeError:
+                    continue
             # Update rel info
             for rel in schema_counts[0]["relationships"]:
                 # Skip bloom labels
@@ -479,10 +483,14 @@ class Neo4jGraph(GraphStore):
                     rel["count"] < EXHAUSTIVE_SEARCH_LIMIT,
                     is_relationship=True,
                 )
-                enhanced_info = self.query(enhanced_cypher)[0]["output"]
-                for prop in rel_props:
-                    if prop["property"] in enhanced_info:
-                        prop.update(enhanced_info[prop["property"]])
+                try:
+                    enhanced_info = self.query(enhanced_cypher)[0]["output"]
+                    for prop in rel_props:
+                        if prop["property"] in enhanced_info:
+                            prop.update(enhanced_info[prop["property"]])
+                # Due to schema-flexible nature of neo4j errors can happen
+                except CypherTypeError:
+                    continue
 
         schema = _format_schema(self.structured_schema, self._enhanced_schema)
 
@@ -587,8 +595,8 @@ class Neo4jGraph(GraphStore):
                 if prop_type == "STRING":
                     with_clauses.append(
                         (
-                            f"collect(distinct substring(n.`{prop_name}`, 0, 50)) "
-                            f"AS `{prop_name}_values`"
+                            f"collect(distinct substring(toString(n.`{prop_name}`)"
+                            f", 0, 50)) AS `{prop_name}_values`"
                         )
                     )
                     return_clauses.append(
@@ -664,8 +672,8 @@ class Neo4jGraph(GraphStore):
                     else:
                         with_clauses.append(
                             (
-                                f"collect(distinct substring(n.`{prop_name}`, 0, 50)) "
-                                f"AS `{prop_name}_values`"
+                                f"collect(distinct substring(toString(n.`{prop_name}`)"
+                                f", 0, 50)) AS `{prop_name}_values`"
                             )
                         )
                         return_clauses.append(f"values: `{prop_name}_values`")

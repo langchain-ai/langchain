@@ -124,7 +124,6 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
         metadata={},
         callbacks=None,
         recursion_limit=25,
-        run_id=None,
     )
     if var_config := var_child_runnable_config.get():
         empty.update(
