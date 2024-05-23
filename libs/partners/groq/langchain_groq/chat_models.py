@@ -955,6 +955,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     else:
         return ChatMessage(content=_dict.get("content", ""), role=role)
 
+
 def _lc_tool_call_to_groq_tool_call(tool_call: ToolCall) -> dict:
     return {
         "type": "function",
