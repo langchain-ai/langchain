@@ -59,7 +59,9 @@ db = Chroma.from_documents(documents, OpenAIEmbeddings())
 
   </TabItem>
   <TabItem value="pinecone" label="Pinecone">
-This walkthrough uses the `Pinecone` vector database, which provides broad functionality to store and search over vectors. For a more detailed guide to creating a Pinecone index, check out the [Pinecone integration page](/docs/integrations/vectorstores/pinecone).
+This walkthrough uses the `Pinecone` vector database, which provides broad functionality to store and search over vectors.
+
+In the [Pinecone console](https://app.pinecone.io), create a new index with `dimension=1536` called "langchain-test-index". Then, copy the API key and index name. For a more detailed guide to creating a Pinecone index, check out the [Pinecone integration page](/docs/integrations/vectorstores/pinecone).
 
 ```bash
 pip install langchain-pinecone
