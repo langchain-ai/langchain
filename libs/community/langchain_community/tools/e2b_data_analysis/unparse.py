@@ -543,7 +543,7 @@ class Unparser:
         "Is": "is",
         "IsNot": "is not",
         "In": "in",
-        "NotIn": "not in", # codespell:disable-line
+        "NotIn": "not in",
     }
 
     def _Compare(self, t):
