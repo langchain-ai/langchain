@@ -200,6 +200,8 @@ class UpstageEmbeddings(BaseModel, Embeddings):
         assert (
             self.embed_batch_size <= MAX_EMBED_BATCH_SIZE
         ), f"The embed_batch_size should not be larger than {MAX_EMBED_BATCH_SIZE}."
+        if not texts:
+            return []
         params = self._invocation_params
         params["model"] = params["model"] + "-passage"
         embeddings = []
@@ -242,6 +244,8 @@ class UpstageEmbeddings(BaseModel, Embeddings):
         assert (
             self.embed_batch_size <= MAX_EMBED_BATCH_SIZE
         ), f"The embed_batch_size should not be larger than {MAX_EMBED_BATCH_SIZE}."
+        if not texts:
+            return []
         params = self._invocation_params
         params["model"] = params["model"] + "-passage"
         embeddings = []
