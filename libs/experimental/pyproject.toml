@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain-experimental"
-version = "0.0.57"
+version = "0.0.59"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -12,8 +12,8 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = "^0.1.41"
-gigachain = "^0.1.15"
+gigachain-core = "^0.2"
+gigachain-community = "^0.2"
 presidio-anonymizer = {version = "^2.2.352", optional = true}
 presidio-analyzer = {version = "^2.2.352", optional = true}
 faker = {version = "^19.3.1", optional = true}
@@ -62,7 +62,9 @@ pytest-asyncio = "^0.20.3"
 gigachain = {path = "../langchain", develop = true}
 gigachain-core = {path = "../core", develop = true}
 gigachain-community = {path = "../community", develop = true}
+gigachain-text-splitters = {path = "../text-splitters", develop = true}
 gigachat = "^0.1.27"
+
 
 [tool.poetry.group.test_integration]
 optional = true

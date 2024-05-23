@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Optional, Type
 
-from langchain_community.vectorstores.inmemory import InMemoryVectorStore
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -117,10 +116,30 @@ class VectorStoreIndexWrapper(BaseModel):
         return await chain.ainvoke({chain.question_key: question})
 
 
+def _get_in_memory_vectorstore() -> Type[VectorStore]:
+    """Get the InMemoryVectorStore."""
+    import warnings
+
+    try:
+        from langchain_community.vectorstores.inmemory import InMemoryVectorStore
+    except ImportError:
+        raise ImportError(
+            "Please install langchain-community to use the InMemoryVectorStore."
+        )
+    warnings.warn(
+        "Using InMemoryVectorStore as the default vectorstore."
+        "This memory store won't persist data. You should explicitly"
+        "specify a vectorstore when using VectorstoreIndexCreator"
+    )
+    return InMemoryVectorStore
+
+
 class VectorstoreIndexCreator(BaseModel):
     """Logic for creating indexes."""
 
-    vectorstore_cls: Type[VectorStore] = InMemoryVectorStore
+    vectorstore_cls: Type[VectorStore] = Field(
+        default_factory=_get_in_memory_vectorstore
+    )
     embedding: Embeddings
     text_splitter: TextSplitter = Field(default_factory=_get_default_text_splitter)
     vectorstore_kwargs: dict = Field(default_factory=dict)

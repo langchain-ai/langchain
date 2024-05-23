@@ -12,7 +12,7 @@ from langchain_community.embeddings.premai import PremAIEmbeddings
 
 @pytest.fixture
 def embedder() -> PremAIEmbeddings:
-    return PremAIEmbeddings(project_id=8, model="text-embedding-3-small")
+    return PremAIEmbeddings(project_id=8, model="text-embedding-3-small")  # type: ignore[call-arg]
 
 
 def test_prem_embedding_documents(embedder: PremAIEmbeddings) -> None:

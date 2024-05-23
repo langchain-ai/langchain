@@ -6,7 +6,7 @@ from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinis
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation
 
-from gigachat.models import FunctionCall
+from gigachat.models.function_call import FunctionCall
 from langchain.agents.agent import AgentOutputParser
 
 

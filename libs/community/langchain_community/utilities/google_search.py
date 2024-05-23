@@ -2,10 +2,10 @@
 
 from typing import Any, Dict, List, Optional
 
+import httplib2
 from langchain_core._api.deprecation import deprecated
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
-import httplib2
 
 
 @deprecated(
@@ -103,7 +103,10 @@ class GoogleSearchAPIWrapper(BaseModel):
             )
 
         service = build(
-            "customsearch", "v1", developerKey=google_api_key, http=values.get("http", None)
+            "customsearch",
+            "v1",
+            developerKey=google_api_key,
+            http=values.get("http", None),
         )
         values["search_engine"] = service
 

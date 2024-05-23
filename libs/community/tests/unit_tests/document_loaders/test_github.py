@@ -38,19 +38,19 @@ def test_initialization_ghe() -> None:
 def test_invalid_initialization() -> None:
     # Invalid parameter
     with pytest.raises(ValueError):
-        GitHubIssuesLoader(invalid="parameter")
+        GitHubIssuesLoader(invalid="parameter")  # type: ignore[call-arg]
 
     # Invalid value for valid parameter
     with pytest.raises(ValueError):
-        GitHubIssuesLoader(state="invalid_state")
+        GitHubIssuesLoader(state="invalid_state")  # type: ignore[arg-type, call-arg]
 
     # Invalid type for labels
     with pytest.raises(ValueError):
-        GitHubIssuesLoader(labels="not_a_list")
+        GitHubIssuesLoader(labels="not_a_list")  # type: ignore[arg-type, call-arg]
 
     # Invalid date format for since
     with pytest.raises(ValueError):
-        GitHubIssuesLoader(since="not_a_date")
+        GitHubIssuesLoader(since="not_a_date")  # type: ignore[call-arg]
 
 
 def test_load_github_issue(mocker: MockerFixture) -> None:
@@ -171,7 +171,7 @@ def test_github_file_content_get_file_paths(mocker: MockerFixture) -> None:
     assert files[0]["path"] == "readme.md"
 
     # case2: didn't add file_filter
-    loader = GithubFileLoader(
+    loader = GithubFileLoader(  # type: ignore[call-arg]
         repo="shufanhao/langchain",
         access_token="access_token",
         github_api_url="https://github.com",
@@ -220,7 +220,7 @@ def test_github_file_content_loader(mocker: MockerFixture) -> None:
     mocker.patch("requests.get", side_effect=[file_path_res, file_content_res])
 
     # case1: file_extension=".md"
-    loader = GithubFileLoader(
+    loader = GithubFileLoader(  # type: ignore[call-arg]
         repo="shufanhao/langchain",
         access_token="access_token",
         github_api_url="https://github.com",

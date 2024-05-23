@@ -330,7 +330,7 @@ class GigaChat(_BaseGigaChat, BaseLLM):
         for chunk in self._client.stream(payload):
             if chunk.choices:
                 content = chunk.choices[0].delta.content
-                yield GenerationChunk(text=content)
+                yield GenerationChunk(text=content)  # type: ignore
                 if run_manager:
                     run_manager.on_llm_new_token(content if content is not None else "")
 
@@ -346,7 +346,7 @@ class GigaChat(_BaseGigaChat, BaseLLM):
         async for chunk in self._client.astream(payload):
             if chunk.choices:
                 content = chunk.choices[0].delta.content
-                yield GenerationChunk(text=content)
+                yield GenerationChunk(text=content)  # type: ignore
                 if run_manager:
                     await run_manager.on_llm_new_token(
                         content if content is not None else ""
