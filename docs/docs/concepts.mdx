@@ -174,7 +174,7 @@ The `content` property describes the content of the message.
 This can be a few different things:
 
 - A string (most models deal this type of content)
-- A List of dictionaries (this is used for multi-modal input, where the dictionary contains information about that input type and that input location)
+- A List of dictionaries (this is used for multimodal input, where the dictionary contains information about that input type and that input location)
 
 #### HumanMessage
 
@@ -476,6 +476,12 @@ If you are still using AgentExecutor, do not fear: we still have a guide on [how
 It is recommended, however, that you start to transition to LangGraph.
 In order to assist in this we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent)
 
+### Multimodal
+
+Some models are multimodal, accepting images, audio and even video as inputs. These are still less common, meaning model providers haven't standardized on the "best" way to define the API. Multimodal **outputs** are even less common. As such, we've kept our multimodal abstractions fairly light weight and plan to further solidify the multimodal APIs and interaction patterns as the field matures.
+
+In LangChain, most chat models that support multimodal inputs also accept those values in OpenAI's content blocks format. So far this is restricted to image inputs. For models like Gemini which support video and other bytes input, the APIs also support the native, model-specific representations.
+
 ### Callbacks
 
 LangChain provides a callbacks system that allows you to hook into the various stages of your LLM application. This is useful for logging, monitoring, streaming, and other tasks.
@@ -642,3 +648,7 @@ Table columns:
 | Character  | [CharacterTextSplitter](/docs/how_to/character_text_splitter/)                                                                                                                | A user defined character                                                                                        |               | Splits text based on a user defined character. One of the simpler methods.                                                                                                                                                                                                   |
 | Semantic Chunker (Experimental) | [SemanticChunker](/docs/how_to/semantic-chunker/)                                                                                                                             | Sentences                                                                                                       |               | First splits on sentences. Then combines ones next to each other if they are semantically similar enough. Taken from [Greg Kamradt](https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/tutorials/LevelsOfTextSplitting/5_Levels_Of_Text_Splitting.ipynb) |
 | Integration: AI21 Semantic | [AI21SemanticTextSplitter](/docs/integrations/document_transformers/ai21_semantic_text_splitter/)                                                                                                                    |    ✅           | Identifies distinct topics that form coherent pieces of text and splits along those.                                                                                                                                                                                         |
+
+
+
+
