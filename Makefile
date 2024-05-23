@@ -40,7 +40,7 @@ api_docs_quick_preview:
 ## api_docs_clean: Clean the API Reference documentation build artifacts.
 api_docs_clean:
 	find ./docs/api_reference -name '*_api_reference.rst' -delete
-	git clean -fdx ./docs/api_reference
+	git clean -fdX ./docs/api_reference
 	
 
 ## api_docs_linkcheck: Run linkchecker on the API Reference documentation.
