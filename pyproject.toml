@@ -60,8 +60,6 @@ rdflib = "^7.0.0"
 sparqlwrapper = "^2.0.0"
 
 [tool.poetry.group.test_integration.dependencies]
-rdflib = "^7.0.0"
-sparqlwrapper = "^2.0.0"
 
 [tool.poetry.group.typing.dependencies]
 
