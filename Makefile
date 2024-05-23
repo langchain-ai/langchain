@@ -32,10 +32,16 @@ api_docs_build:
 	poetry run python docs/api_reference/create_api_rst.py
 	cd docs/api_reference && poetry run make html
 
+api_docs_quick_preview:
+	poetry run python docs/api_reference/create_api_rst.py text-splitters
+	cd docs/api_reference && poetry run make html
+	open docs/api_reference/_build/html/text_splitters_api_reference.html
+
 ## api_docs_clean: Clean the API Reference documentation build artifacts.
 api_docs_clean:
 	find ./docs/api_reference -name '*_api_reference.rst' -delete
-	cd docs/api_reference && poetry run make clean
+	git clean -fdX ./docs/api_reference
+	
 
 ## api_docs_linkcheck: Run linkchecker on the API Reference documentation.
 api_docs_linkcheck:
