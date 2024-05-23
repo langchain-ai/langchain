@@ -51,7 +51,7 @@ class JSONLoader(BaseLoader):
                 JSON Lines format.
         """
         try:
-            import jq  # noqa:F401
+            import jq
 
             self.jq = jq
         except ImportError:

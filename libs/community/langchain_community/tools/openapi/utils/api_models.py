@@ -55,6 +55,7 @@ class APIPropertyLocation(Enum):
 _SUPPORTED_MEDIA_TYPES = ("application/json",)
 
 SUPPORTED_LOCATIONS = {
+    APIPropertyLocation.HEADER,
     APIPropertyLocation.QUERY,
     APIPropertyLocation.PATH,
 }
@@ -530,7 +531,7 @@ class APIOperation(BaseModel):
             description=description or "",
             base_url=spec.base_url,
             path=path,
-            method=method,
+            method=method,  # type: ignore[arg-type]
             properties=properties,
             request_body=api_request_body,
         )
