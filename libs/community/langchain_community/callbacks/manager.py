@@ -28,7 +28,7 @@ bedrock_anthropic_callback_var: (ContextVar)[
 wandb_tracing_callback_var: ContextVar[Optional[WandbTracer]] = ContextVar(
     "tracing_wandb_callback", default=None
 )
-comet_tracing_callback_var: ContextVar[Optional[CometTracer]] = ContextVar(  # noqa: E501
+comet_tracing_callback_var: ContextVar[Optional[CometTracer]] = ContextVar(
     "tracing_comet_callback", default=None
 )
 

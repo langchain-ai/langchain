@@ -383,7 +383,7 @@ class Redis(VectorStore):
 
         # type check for metadata
         if metadatas:
-            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore  # noqa: E501
+            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore
                 raise ValueError("Number of metadatas must match number of texts")
             if not (isinstance(metadatas, list) and isinstance(metadatas[0], dict)):
                 raise ValueError("Metadatas must be a list of dicts")
@@ -704,7 +704,7 @@ class Redis(VectorStore):
 
         # type check for metadata
         if metadatas:
-            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore  # noqa: E501
+            if isinstance(metadatas, list) and len(metadatas) != len(texts):  # type: ignore
                 raise ValueError("Number of metadatas must match number of texts")
             if not (isinstance(metadatas, list) and isinstance(metadatas[0], dict)):
                 raise ValueError("Metadatas must be a list of dicts")
@@ -832,7 +832,7 @@ class Redis(VectorStore):
         # Perform vector search
         # ignore type because redis-py is wrong about bytes
         try:
-            results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore  # noqa: E501
+            results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore
         except redis.exceptions.ResponseError as e:
             # split error message and see if it starts with "Syntax"
             if str(e).split(" ")[0] == "Syntax":
@@ -947,7 +947,7 @@ class Redis(VectorStore):
         # Perform vector search
         # ignore type because redis-py is wrong about bytes
         try:
-            results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore  # noqa: E501
+            results = self.client.ft(self.index_name).search(redis_query, params_dict)  # type: ignore
         except redis.exceptions.ResponseError as e:
             # split error message and see if it starts with "Syntax"
             if str(e).split(" ")[0] == "Syntax":
