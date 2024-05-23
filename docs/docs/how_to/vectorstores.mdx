@@ -58,6 +58,23 @@ db = Chroma.from_documents(documents, OpenAIEmbeddings())
 ```
 
   </TabItem>
+  <TabItem value="pinecone" label="Pinecone">
+This walkthrough uses the `Pinecone` vector database, which provides broad functionality to store and search over vectors. For a more detailed guide to creating a Pinecone index, check out the [Pinecone integration page](/docs/integrations/vectorstores/pinecone).
+
+```bash
+pip install langchain-pinecone
+```
+
+```python
+from langchain_pinecone import PineconeVectorStore
+
+os.environ['PINECONE_API_KEY'] = getpass.getpass('Pinecone API Key:')
+
+index_name = "langchain-test-index"
+
+docsearch = PineconeVectorStore.from_documents(documents, OpenAIEmbeddings(), index_name=index_name)
+```
+  </TabItem>
   <TabItem value="faiss" label="FAISS">
 
 This walkthrough uses the `FAISS` vector database, which makes use of the Facebook AI Similarity Search (FAISS) library.
