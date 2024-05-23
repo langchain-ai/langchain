@@ -59,7 +59,7 @@ db = Chroma.from_documents(documents, OpenAIEmbeddings())
 
   </TabItem>
   <TabItem value="pinecone" label="Pinecone">
-  
+
 This walkthrough uses the `Pinecone` vector database, which provides broad functionality to store and search over vectors. For a more detailed guide to using Pinecone with LangChain, check out the [Pinecone integration page](/docs/integrations/vectorstores/pinecone).
 
 ```bash
@@ -91,6 +91,7 @@ index = pc.Index(index_name)
 
 docsearch = PineconeVectorStore.from_documents(documents, OpenAIEmbeddings(), index_name=index_name)
 ```
+
   </TabItem>
   <TabItem value="faiss" label="FAISS">
 
