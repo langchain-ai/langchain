@@ -6,7 +6,7 @@ import sys
 from typing import TYPE_CHECKING, Dict, Optional, Set
 
 from langchain_core.messages import BaseMessage
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.adapters.openai import convert_message_to_dict
@@ -55,7 +55,7 @@ class ChatEverlyAI(ChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         return False
 
-    everlyai_api_key: Optional[str] = None
+    everlyai_api_key: Optional[SecretStr] = Field(None, alias="api_key")
     """EverlyAI Endpoints API keys."""
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
     """Model name to use."""
@@ -63,6 +63,11 @@ class ChatEverlyAI(ChatOpenAI):
     """Base URL path for API requests."""
     available_models: Optional[Set[str]] = None
     """Available models from EverlyAI API."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
 
     @staticmethod
     def get_available_models() -> Set[str]:
