@@ -80,6 +80,7 @@ CHAT_MODEL_FEAT_TABLE = {
         "link": "/docs/integrations/chat/bedrock/",
     },
     "ChatHuggingFace": {
+        "tool_calling": True,
         "local": True,
         "package": "langchain-huggingface",
         "link": "/docs/integrations/chat/huggingface/",
