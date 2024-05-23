@@ -35,6 +35,7 @@ def test_initialize_more() -> None:
     assert ls_params["ls_provider"] == "azure"
     assert ls_params["ls_model_name"] == "35-turbo-dev"
 
+
 def test_initialize_azure_openai_with_openai_api_base_set() -> None:
     os.environ["OPENAI_API_BASE"] = "https://api.openai.com"
     llm = AzureChatOpenAI(
