@@ -99,8 +99,8 @@ DBConnection = Union[AsyncEngine, Engine, str]
 class SQLChatMessageHistory(BaseChatMessageHistory):
     """Chat message history stored in an SQL database."""
 
-    @deprecated
     @property
+    @deprecated("0.2.2", alternative="session_maker")
     def Session(self) -> Union[scoped_session, async_sessionmaker]:
         return self.session_maker
 
@@ -120,9 +120,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
             connection = connection_string
             self.connection_string = connection_string
         if connection_string and connection:
-            raise ValueError(
-                "connection_string and connection are mutually exclusive"
-            )
+            raise ValueError("connection_string and connection are mutually exclusive")
         if isinstance(connection, str):
             self.async_mode = async_mode
             if async_mode:
