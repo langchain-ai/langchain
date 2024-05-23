@@ -23,14 +23,15 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
     def __init__(
         self,
-        cosmos_client: CosmosClient,
-        database_name: str,
-        container_name: str,
-        partition_key: str,
+        *,
         embedding: Embeddings,
-        vector_embedding_policy: Dict[str, Any],
-        indexing_policy: Dict[str, Any],
-        cosmos_container_properties: Dict[str, Any],
+        cosmos_client: Optional[CosmosClient] = None,
+        database_name: Optional[str] = None,
+        container_name: Optional[str] = None,
+        partition_key: Optional[str] = None,
+        vector_embedding_policy: Optional[Dict[str, Any]] = None,
+        indexing_policy: Optional[Dict[str, Any]] = None,
+        cosmos_container_properties: Optional[Dict[str, Any]] = None,
     ):
         """
         Constructor for AzureCosmosDBNoSqlVectorSearch
