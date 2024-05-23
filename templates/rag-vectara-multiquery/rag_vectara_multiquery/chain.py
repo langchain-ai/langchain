@@ -26,7 +26,7 @@ config = VectaraQueryConfig(k=10, lambda_val=0.005, summary_config=summary_confi
 # Setup the Multi-query retriever
 llm = ChatOpenAI(temperature=0)
 retriever = MultiQueryRetriever.from_llm(
-    retriever=vectara.as_retriever(config), llm=llm
+    retriever=vectara.as_retriever(config=config), llm=llm
 )
 
 # Setup RAG pipeline with multi-query.

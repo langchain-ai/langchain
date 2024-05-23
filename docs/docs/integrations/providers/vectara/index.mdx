@@ -147,7 +147,7 @@ There is no need to keep that history locally to LangChain, as Vectara will mana
 
 If you want to use Vectara as a retriever only, you can use the `as_retriever` method, which returns a `VectaraRetriever` object.
 ```python
-retriever = vectara.as_retriever(config)
+retriever = vectara.as_retriever(config=config)
 retriever.invoke(query_str)
 ```
 
