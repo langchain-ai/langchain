@@ -33,6 +33,7 @@ class __ModuleName__LLM(BaseLLM):
         """Return type of LLM."""
         return "__package_name_short__-llm"
 
+    # TODO: This method must be implemented to generate text completions.
     def _generate(
         self,
         prompts: List[str],

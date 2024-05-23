@@ -30,6 +30,7 @@ class Chat__ModuleName__(BaseChatModel):
         """Return type of chat model."""
         return "chat-__package_name_short__"
 
+    # TODO: This method must be implemented to generate chat responses.
     def _generate(
         self,
         messages: List[BaseMessage],
