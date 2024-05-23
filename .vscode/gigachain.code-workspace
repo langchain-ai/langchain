@@ -1,0 +1,35 @@
+{
+	"folders": [
+		{
+			"path": "../libs/cli"
+		},
+		{
+			"path": "../libs/community"
+		},
+		{
+			"path": "../libs/core"
+		},
+		{
+			"path": "../libs/experimental"
+		},
+		{
+			"path": "../libs/external_tools"
+		},
+		{
+			"path": "../libs/langchain"
+		},
+		{
+			"path": "../libs/partners"
+		},
+		{
+			"path": "../libs/standard-tests"
+		},
+		{
+			"path": "../libs/streamlit_agent"
+		},
+		{
+			"path": "../libs/text-splitters"
+		}
+	],
+	"settings": {}
+}
