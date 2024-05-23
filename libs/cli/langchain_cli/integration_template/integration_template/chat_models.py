@@ -1,4 +1,5 @@
 """__ModuleName__ chat models."""
+
 from typing import Any, AsyncIterator, Iterator, List, Optional
 
 from langchain_core.callbacks import (
@@ -38,7 +39,7 @@ class Chat__ModuleName__(BaseChatModel):
     ) -> ChatResult:
         raise NotImplementedError
 
-    # TODO: Implement if __model_name__ supports streaming. Otherwise delete method.
+    # TODO: Implement if Chat__ModuleName__ supports streaming. Otherwise delete method.
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -48,7 +49,7 @@ class Chat__ModuleName__(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         raise NotImplementedError
 
-    # TODO: Implement if __model_name__ supports async streaming. Otherwise delete
+    # TODO: Implement if Chat__ModuleName__ supports async streaming. Otherwise delete
     # method.
     async def _astream(
         self,
@@ -59,7 +60,7 @@ class Chat__ModuleName__(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         raise NotImplementedError
 
-    # TODO: Implement if __model_name__ supports async generation. Otherwise delete
+    # TODO: Implement if Chat__ModuleName__ supports async generation. Otherwise delete
     # method.
     async def _agenerate(
         self,
