@@ -21,5 +21,5 @@ See a [usage example](https://python.langchain.com/docs/integrations/chat/upstag
 
 See a [usage example](https://python.langchain.com/docs/integrations/text_embedding/upstage)
 
-Use `solar-1-mini-embedding` as the default model for embeddings. Do not add suffixes such as `-query` or `-passage` to the model name.
+Use `solar-embedding-1-large` model for embeddings. Do not add suffixes such as `-query` or `-passage` to the model name.
 `UpstageEmbeddings` will automatically add the suffixes based on the method called.
