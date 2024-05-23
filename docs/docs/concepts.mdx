@@ -535,10 +535,15 @@ of the object.
 If you're creating a custom chain or runnable, you need to remember to propagate request time
 callbacks to any child objects.
 
-:::important
-For code running python >=3.11, LangChain is able to automatically propagate
-request time callbacks to child objects. This feature was added since
-added as users forgetting to propagate callbacks was a common problem.
+:::important Async in Python<=3.10
+
+Any `RunnableLambda`, a `RunnableGenerator`, or `Tool` that invokes other runnables
+and is running async in python<=3.10, will have to propagate callbacks to child
+objects manually. This is because LangChain cannot automatically propagate
+callbacks to child objects in this case.
+
+This is a common reason why you may fail to see events being emitted from custom
+runnables or tools.
 :::
 
 ## Techniques

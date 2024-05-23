@@ -182,7 +182,7 @@ if TYPE_CHECKING:
         OpenSearchVectorSearch,
     )
     from langchain_community.vectorstores.oraclevs import (
-        OracleVS,  # noqa: F401
+        OracleVS,
     )
     from langchain_community.vectorstores.pathway import (
         PathwayVectorClient,
@@ -448,7 +448,7 @@ _module_lookup = {
     "MyScale": "langchain_community.vectorstores.myscale",
     "MyScaleSettings": "langchain_community.vectorstores.myscale",
     "Neo4jVector": "langchain_community.vectorstores.neo4j_vector",
-    "NeuralDBClientVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",  # noqa: E501
+    "NeuralDBClientVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",
     "NeuralDBVectorStore": "langchain_community.vectorstores.thirdai_neuraldb",
     "OpenSearchVectorSearch": "langchain_community.vectorstores.opensearch_vector_search",  # noqa: E501
     "OracleVS": "langchain_community.vectorstores.oraclevs",
