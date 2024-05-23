@@ -21,7 +21,7 @@ function Imports({ imports }) {
       </b>
         {imports.map(({ imported, source, docs }, index) => (
           <span key={imported}>
-            <a href={docs}>{imported}</a>{index < imports.length - 1 ? ', ' : ''}
+            <a href={docs}>{imported}</a>{index < imports.length - 1 ? ' | ' : ''}
           </span>
         ))}
     </div>
