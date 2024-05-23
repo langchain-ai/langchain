@@ -96,6 +96,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
         infer if it is a base_url or azure_endpoint and update accordingly.
     """
     ignore_openai_api_base: bool = False
+    """For when conflicting packages require `openai_base_url` env var. Setting it,
+        to True will set `openai_api_base` to None if it is found in env vars.
+    """
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
