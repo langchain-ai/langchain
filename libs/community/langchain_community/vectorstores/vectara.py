@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 MMR_RERANKER_ID = 272725718
 SLIGNSHOT_RERANKER_ID = 272725719
 
+
 @dataclass
 class SummaryConfig:
     """Configuration for summary generation.
@@ -45,7 +46,7 @@ class RerankConfig:
 
     reranker: "MMR", "Slingshot" or "None"
     rerank_k: number of results to fetch before reranking, defaults to 50
-    mmr_diversity_bias: for MMR only - a number between 0 and 1 that determines 
+    mmr_diversity_bias: for MMR only - a number between 0 and 1 that determines
         the degree of diversity among the results with 0 corresponding
         to minimum diversity and 1 to maximum diversity.
         Defaults to 0.3.
@@ -532,7 +533,7 @@ class Vectara(VectorStore):
             - score_threshold: minimal score threshold for the result.
             - n_sentence_before: number of sentences before the matching segment
             - n_sentence_after: number of sentences after the matching segment
-            - rerank_config: optional configuration for Reranking 
+            - rerank_config: optional configuration for Reranking
               (see RerankConfig dataclass)
             - summary_config: optional configuration for summary
               (see SummaryConfig dataclass)
@@ -588,7 +589,7 @@ class Vectara(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
         kwargs["rerank_config"] = RerankConfig(
-            reranker="MMR", rerank_k=fetch_k, mmr_diversity_bias = 1 - lambda_mult
+            reranker="MMR", rerank_k=fetch_k, mmr_diversity_bias=1 - lambda_mult
         )
         return self.similarity_search(query, **kwargs)
 

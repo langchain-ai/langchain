@@ -1,4 +1,5 @@
 """Wrapper around Vald vector database."""
+
 from __future__ import annotations
 
 from typing import Any, Iterable, List, Optional, Tuple, Type
