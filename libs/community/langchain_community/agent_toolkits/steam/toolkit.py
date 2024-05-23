@@ -42,7 +42,7 @@ class SteamToolkit(BaseToolkit):
             )
             for action in operations
         ]
-        return cls(tools=tools)
+        return cls(tools=tools)  # type: ignore[arg-type]
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

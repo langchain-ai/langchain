@@ -34,4 +34,4 @@ class GmailBaseTool(BaseTool):
         Returns:
             A tool.
         """
-        return cls(service=api_resource)
+        return cls(service=api_resource)  # type: ignore[call-arg]
