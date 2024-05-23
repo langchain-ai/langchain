@@ -90,6 +90,7 @@ if TYPE_CHECKING:
     from langchain_community.tools.convert_to_openai import (
         format_tool_to_openai_function,
     )
+    from langchain_community.tools.dataherald import DataheraldTextToSQL
     from langchain_community.tools.ddg_search.tool import (
         DuckDuckGoSearchResults,
         DuckDuckGoSearchRun,
@@ -356,6 +357,7 @@ __all__ = [
     "CopyFileTool",
     "CurrentWebPageTool",
     "DeleteFileTool",
+    "DataheraldTextToSQL",
     "DuckDuckGoSearchResults",
     "DuckDuckGoSearchRun",
     "E2BDataAnalysisTool",
@@ -610,6 +612,3 @@ def __getattr__(name: str) -> Any:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-__all__ = list(_module_lookup.keys())
