@@ -4,6 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Union
 
+from langchain_core._api import deprecated
 from sqlalchemy import Column, Integer, Text, delete, select
 
 try:
@@ -98,26 +99,30 @@ DBConnection = Union[AsyncEngine, Engine, str]
 class SQLChatMessageHistory(BaseChatMessageHistory):
     """Chat message history stored in an SQL database."""
 
+    @deprecated
     @property
     def Session(self) -> Union[scoped_session, async_sessionmaker]:
-        logger.warning("Session is deprecated, use session_maker instead")
         return self.session_maker
 
     def __init__(
         self,
         session_id: str,
         connection_string: Optional[str] = None,
-        connection: Union[None, DBConnection] = None,
-        engine_args: Optional[Dict[str, Any]] = None,
-        async_mode: Optional[bool] = None,  # Use only if connection is a string
         table_name: str = "message_store",
         session_id_field_name: str = "session_id",
         custom_message_converter: Optional[BaseMessageConverter] = None,
+        connection: Union[None, DBConnection] = None,
+        engine_args: Optional[Dict[str, Any]] = None,
+        async_mode: Optional[bool] = None,  # Use only if connection is a string
     ):
         if connection_string:
             logger.warning("connection_string is deprecated, use connection instead")
             connection = connection_string
             self.connection_string = connection_string
+        if connection_string and connection:
+            raise ValueError(
+                "connection_string and connection are mutually exclusive"
+            )
         if isinstance(connection, str):
             self.async_mode = async_mode
             if async_mode:

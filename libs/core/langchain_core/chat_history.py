@@ -121,23 +121,6 @@ class BaseChatMessageHistory(ABC):
         else:
             self.add_message(HumanMessage(content=message))
 
-    async def aadd_user_message(self, message: Union[HumanMessage, str]) -> None:
-        """Convenience method for adding a human message string to the store.
-
-        Please note that this is a convenience method. Code should favor the
-        bulk add_messages interface instead to save on round-trips to the underlying
-        persistence layer.
-
-        This method may be deprecated in a future release.
-
-        Args:
-            message: The human message to add
-        """
-        if isinstance(message, HumanMessage):
-            await self.aadd_message(message)
-        else:
-            await self.aadd_message(HumanMessage(content=message))
-
     def add_ai_message(self, message: Union[AIMessage, str]) -> None:
         """Convenience method for adding an AI message string to the store.
 
@@ -155,23 +138,6 @@ class BaseChatMessageHistory(ABC):
         else:
             self.add_message(AIMessage(content=message))
 
-    async def aadd_ai_message(self, message: Union[AIMessage, str]) -> None:
-        """Convenience method for adding an AI message string to the store.
-
-        Please note that this is a convenience method. Code should favor the bulk
-        add_messages interface instead to save on round-trips to the underlying
-        persistence layer.
-
-        This method may be deprecated in a future release.
-
-        Args:
-            message: The AI message to add.
-        """
-        if isinstance(message, AIMessage):
-            await self.aadd_message(message)
-        else:
-            await self.aadd_message(AIMessage(content=message))
-
     def add_message(self, message: BaseMessage) -> None:
         """Add a Message object to the store.
 
@@ -182,22 +148,6 @@ class BaseChatMessageHistory(ABC):
             # This means that the sub-class has implemented an efficient add_messages
             # method, so we should use it.
             self.add_messages([message])
-        else:
-            raise NotImplementedError(
-                "add_message is not implemented for this class. "
-                "Please implement add_message or add_messages."
-            )
-
-    async def aadd_message(self, message: BaseMessage) -> None:
-        """Add a Message object to the store.
-
-        Args:
-            message: A BaseMessage object to store.
-        """
-        if type(self).add_messages != BaseChatMessageHistory.add_messages:
-            # This means that the sub-class has implemented an efficient add_messages
-            # method, so we should use it.
-            await self.aadd_messages([message])
         else:
             raise NotImplementedError(
                 "add_message is not implemented for this class. "
