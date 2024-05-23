@@ -208,9 +208,9 @@ def search_code_for_arxiv_references(code_dir: Path) -> dict[str, set[str]]:
             else:
                 module_name_and_member_reduced.add(module_name_and_member)
         if module_name_and_member_reduced:
-            arxiv_id2module_name_and_members_reduced[arxiv_id] = (
-                module_name_and_member_reduced
-            )
+            arxiv_id2module_name_and_members_reduced[
+                arxiv_id
+            ] = module_name_and_member_reduced
         if removed_modules:
             logger.warning(
                 f"{arxiv_id}: Removed the following modules with 2+ -part namespaces: {removed_modules}."
@@ -473,7 +473,8 @@ def log_results(arxiv_id2type2key2urls):
 def generate_arxiv_references_page(file_name: Path, papers: list[ArxivPaper]) -> None:
     with open(file_name, "w") as f:
         # Write the table headers
-        f.write("""# arXiv
+        f.write(
+            """# arXiv
             
 LangChain implements the latest research in the field of Natural Language Processing.
 This page contains `arXiv` papers referenced in the LangChain Documentation, API Reference,
@@ -483,7 +484,8 @@ and Templates.
 
 | arXiv id / Title | Authors | Published date 🔻 | LangChain Documentation|
 |------------------|---------|-------------------|------------------------|
-""")
+"""
+        )
         for paper in papers:
             refs = []
             if paper.referencing_doc2url:
@@ -536,7 +538,8 @@ and Templates.
             refs = "\n".join(
                 [el for el in [docs_refs, api_ref_refs, template_refs] if el]
             )
-            f.write(f"""
+            f.write(
+                f"""
 ## {paper.title}
 
 - **arXiv id:** {paper.arxiv_id}
@@ -549,7 +552,8 @@ and Templates.
 {refs}
 
 **Abstract:** {paper.abstract}
-                """)
+                """
+            )
 
     logger.warning(f"Created the {file_name} file with {len(papers)} arXiv references.")
 
