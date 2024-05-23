@@ -2,11 +2,12 @@ from pathlib import Path
 from typing import Any, AsyncGenerator, Generator, Tuple
 
 import pytest
-from langchain_community.chat_message_histories import SQLChatMessageHistory
-from langchain_community.chat_message_histories.sql import DefaultMessageConverter
 from langchain_core.messages import AIMessage, HumanMessage
 from sqlalchemy import Column, Integer, Text
 from sqlalchemy.orm import DeclarativeBase
+
+from langchain_community.chat_message_histories import SQLChatMessageHistory
+from langchain_community.chat_message_histories.sql import DefaultMessageConverter
 
 
 @pytest.fixture()
@@ -25,7 +26,7 @@ def acon_str(tmp_path: Path) -> str:
 
 @pytest.fixture()
 def sql_histories(
-        con_str: str,
+    con_str: str,
 ) -> Generator[Tuple[SQLChatMessageHistory, SQLChatMessageHistory], None, None]:
     message_history = SQLChatMessageHistory(
         session_id="123", connection=con_str, table_name="test_table"
@@ -42,7 +43,7 @@ def sql_histories(
 
 @pytest.fixture()
 async def asql_histories(
-        acon_str: str,
+    acon_str: str,
 ) -> AsyncGenerator[Tuple[SQLChatMessageHistory, SQLChatMessageHistory], None]:
     message_history = SQLChatMessageHistory(
         session_id="123",
@@ -66,7 +67,7 @@ async def asql_histories(
 
 
 def test_add_messages(
-        sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
+    sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
     sql_history, other_history = sql_histories
     sql_history.add_messages([HumanMessage("Hello!"), AIMessage("Hi there!")])
@@ -81,7 +82,7 @@ def test_add_messages(
 
 @pytest.mark.asyncio
 async def test_async_add_messages(
-        asql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
+    asql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
     sql_history, other_history = asql_histories
     await sql_history.aadd_messages([HumanMessage("Hello!"), AIMessage("Hi there!")])
@@ -95,12 +96,16 @@ async def test_async_add_messages(
 
 
 def test_multiple_sessions(
-        sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
+    sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
     sql_history, other_history = sql_histories
-    sql_history.add_messages([
-        HumanMessage("Hello!"), AIMessage("Hi there!"),
-        HumanMessage("Whats cracking?")])
+    sql_history.add_messages(
+        [
+            HumanMessage("Hello!"),
+            AIMessage("Hi there!"),
+            HumanMessage("Whats cracking?"),
+        ]
+    )
 
     # Ensure the messages are added correctly in the first session
     messages = sql_history.messages
@@ -122,12 +127,16 @@ def test_multiple_sessions(
 
 @pytest.mark.asyncio
 async def test_async_multiple_sessions(
-        asql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
+    asql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
     sql_history, other_history = asql_histories
-    await sql_history.aadd_messages([
-        HumanMessage("Hello!"), AIMessage("Hi there!"),
-        HumanMessage("Whats cracking?")])
+    await sql_history.aadd_messages(
+        [
+            HumanMessage("Hello!"),
+            AIMessage("Hi there!"),
+            HumanMessage("Whats cracking?"),
+        ]
+    )
 
     # Ensure the messages are added correctly in the first session
     messages = await sql_history.aget_messages()
@@ -148,7 +157,7 @@ async def test_async_multiple_sessions(
 
 
 def test_clear_messages(
-        sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
+    sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
     sql_history, other_history = sql_histories
     sql_history.add_user_message("Hello!")
@@ -166,7 +175,7 @@ def test_clear_messages(
 
 @pytest.mark.asyncio
 async def test_async_clear_messages(
-        asql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
+    asql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
     sql_history, other_history = asql_histories
     await sql_history.aadd_messages([HumanMessage("Hello!"), AIMessage("Hi there!")])
