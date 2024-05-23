@@ -177,7 +177,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     "(or alias `base_url`)."
                     "If you are using a separate package that also requires "
                     "a `base_url` env, you can use the `ignore_openai_api_base` "
-                    "paramter of this class to bypass this check."
+                    "parameter of this class to bypass this check."
                 )
             if values["deployment_name"]:
                 raise ValueError(

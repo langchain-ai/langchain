@@ -1,5 +1,8 @@
-from langchain_openai import AzureOpenAIEmbeddings
 import os
+
+from langchain_openai import AzureOpenAIEmbeddings
+
+
 def test_initialize_azure_openai() -> None:
   embeddings = AzureOpenAIEmbeddings(
       model="text-embedding-large",

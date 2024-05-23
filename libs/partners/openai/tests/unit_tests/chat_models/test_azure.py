@@ -1,7 +1,9 @@
 """Test Azure OpenAI Chat API wrapper."""
 
-from langchain_openai import AzureChatOpenAI
 import os
+
+from langchain_openai import AzureChatOpenAI
+
 
 def test_initialize_azure_openai() -> None:
     llm = AzureChatOpenAI(
