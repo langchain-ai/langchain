@@ -16,7 +16,7 @@ function Imports({ imports }) {
         borderBottomRightRadius: "var(--ifm-code-border-radius)",
       }}
     >
-      <b style={{ paddingLeft: "0.65rem", marginBottom: "0.45rem" }}>
+      <b style={{ paddingLeft: "0.65rem", marginBottom: "0.45rem", marginRight: "0.5rem" }}>
         API Reference:
       </b>
         {imports.map(({ imported, source, docs }, index) => (
