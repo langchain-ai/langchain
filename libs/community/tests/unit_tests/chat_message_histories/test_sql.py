@@ -1,8 +1,8 @@
 from pathlib import Path
-from typing import Any, AsyncGenerator, Generator, Tuple
+from typing import Any, AsyncGenerator, Generator, List, Tuple
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from sqlalchemy import Column, Integer, Text
 from sqlalchemy.orm import DeclarativeBase
 
@@ -70,7 +70,9 @@ def test_add_messages(
     sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
     sql_history, other_history = sql_histories
-    sql_history.add_messages([HumanMessage("Hello!"), AIMessage("Hi there!")])
+    sql_history.add_messages(
+        [HumanMessage(content="Hello!"), AIMessage(content="Hi there!")]
+    )
 
     messages = sql_history.messages
     assert len(messages) == 2
@@ -85,7 +87,9 @@ async def test_async_add_messages(
     asql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
     sql_history, other_history = asql_histories
-    await sql_history.aadd_messages([HumanMessage("Hello!"), AIMessage("Hi there!")])
+    await sql_history.aadd_messages(
+        [HumanMessage(content="Hello!"), AIMessage(content="Hi there!")]
+    )
 
     messages = await sql_history.aget_messages()
     assert len(messages) == 2
@@ -101,9 +105,9 @@ def test_multiple_sessions(
     sql_history, other_history = sql_histories
     sql_history.add_messages(
         [
-            HumanMessage("Hello!"),
-            AIMessage("Hi there!"),
-            HumanMessage("Whats cracking?"),
+            HumanMessage(content="Hello!"),
+            AIMessage(content="Hi there!"),
+            HumanMessage(content="Whats cracking?"),
         ]
     )
 
@@ -115,7 +119,7 @@ def test_multiple_sessions(
     assert messages[2].content == "Whats cracking?"
 
     # second session
-    other_history.add_user_message("Hellox")
+    other_history.add_messages([HumanMessage(content="Hellox")])
     assert len(other_history.messages) == 1
     messages = sql_history.messages
     assert len(messages) == 3
@@ -132,21 +136,21 @@ async def test_async_multiple_sessions(
     sql_history, other_history = asql_histories
     await sql_history.aadd_messages(
         [
-            HumanMessage("Hello!"),
-            AIMessage("Hi there!"),
-            HumanMessage("Whats cracking?"),
+            HumanMessage(content="Hello!"),
+            AIMessage(content="Hi there!"),
+            HumanMessage(content="Whats cracking?"),
         ]
     )
 
     # Ensure the messages are added correctly in the first session
-    messages = await sql_history.aget_messages()
+    messages: List[BaseMessage] = await sql_history.aget_messages()
     assert len(messages) == 3, "waat"
     assert messages[0].content == "Hello!"
     assert messages[1].content == "Hi there!"
     assert messages[2].content == "Whats cracking?"
 
     # second session
-    await other_history.aadd_messages([HumanMessage("Hellox")])
+    await other_history.aadd_messages([HumanMessage(content="Hellox")])
     messages = await sql_history.aget_messages()
     assert len(await other_history.aget_messages()) == 1
     assert len(messages) == 3
@@ -160,11 +164,12 @@ def test_clear_messages(
     sql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
     sql_history, other_history = sql_histories
-    sql_history.add_user_message("Hello!")
-    sql_history.add_ai_message("Hi there!")
+    sql_history.add_messages(
+        [HumanMessage(content="Hello!"), AIMessage(content="Hi there!")]
+    )
     assert len(sql_history.messages) == 2
     # Now create another history with different session id
-    other_history.add_user_message("Hellox")
+    other_history.add_messages([HumanMessage(content="Hellox")])
     assert len(other_history.messages) == 1
     assert len(sql_history.messages) == 2
     # Now clear the first history
@@ -178,10 +183,12 @@ async def test_async_clear_messages(
     asql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
     sql_history, other_history = asql_histories
-    await sql_history.aadd_messages([HumanMessage("Hello!"), AIMessage("Hi there!")])
+    await sql_history.aadd_messages(
+        [HumanMessage(content="Hello!"), AIMessage(content="Hi there!")]
+    )
     assert len(await sql_history.aget_messages()) == 2
     # Now create another history with different session id
-    await other_history.aadd_messages([HumanMessage("Hellox")])
+    await other_history.aadd_messages([HumanMessage(content="Hellox")])
     assert len(await other_history.aget_messages()) == 1
     assert len(await sql_history.aget_messages()) == 2
     # Now clear the first history
