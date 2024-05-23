@@ -6,6 +6,7 @@ external_packages:
   - name: "langchain-google-community"
     version: "1.0.4"
     description: "An integration package connecting miscellaneous Google's products and LangChain"
+    company: "Google"
     authors: []
     repository: "https://github.com/langchain-ai/langchain-google"
     license: "MIT"
@@ -14,6 +15,7 @@ external_packages:
   - name: "langchain-google-genai"
     version: "1.0.4"
     description: "An integration package connecting Google's genai package and LangChain"
+    company: "Google"
     authors: []
     repository: "https://github.com/langchain-ai/langchain-google"
     license: "MIT"
@@ -22,6 +24,7 @@ external_packages:
   - name: "langchain-google-vertexai"
     version: "1.0.4"
     description: "An integration package connecting Google VertexAI and LangChain"
+    company: "Google"
     authors: []
     repository: "https://github.com/langchain-ai/langchain-google"
     license: "MIT"
@@ -30,6 +33,7 @@ external_packages:
   - name: "langchain-astradb"
     version: "0.3.2"
     description: "An integration package connecting Astra DB and LangChain"
+    company: "DataStax"
     authors: []
     repository: "https://github.com/langchain-ai/langchain-datastax"
     license: "MIT"
@@ -38,6 +42,7 @@ external_packages:
   - name: "langchain-nvidia-ai-endpoints"
     version: "0.0.17"
     description: "An integration package connecting NVIDIA AI Endpoints and LangChain"
+    company: "NVIDIA"
     authors: []
     repository: "https://github.com/langchain-ai/langchain"
     license: "MIT"
@@ -46,6 +51,7 @@ external_packages:
   - name: "langchain-nvidia-trt"
     version: "0.0.1"
     description: "An integration package connecting TritonTensorRT and LangChain"
+    company: "NVIDIA"
     authors: []
     repository: "https://github.com/langchain-ai/langchain"
     license: "MIT"
@@ -54,6 +60,7 @@ external_packages:
   - name: "langchain-cohere"
     version: "0.1.5"
     description: "An integration package connecting Cohere and LangChain"
+    company: "Cohere"
     authors: []
     repository: "https://github.com/langchain-ai/langchain-cohere"
     license: "MIT"
@@ -62,6 +69,7 @@ external_packages:
   - name: "langchain-elasticsearch"
     version: "0.2.1"
     description: "An integration package connecting Elasticsearch and LangChain"
+    company: "Elastic NV"
     authors: []
     repository: "https://github.com/langchain-ai/langchain-elastic"
     license: "MIT"
@@ -78,6 +86,7 @@ external_packages:
   - name: "langchain-aws"
     version: "0.1.4"
     description: "An integration package connecting AWS and LangChain"
+    company: "Amazon"
     authors: []
     repository: "https://github.com/langchain-ai/langchain-aws"
     license: "MIT"
@@ -86,6 +95,7 @@ external_packages:
   - name: "langchain-weaviate"
     version: "0.0.2"
     description: "An integration package connecting Weaviate and LangChain"
+    company: "Weaviate"
     authors: []
     repository: "https://github.com/langchain-ai/langchain-weaviate"
     license: "MIT"

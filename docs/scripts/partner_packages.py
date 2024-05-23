@@ -29,6 +29,7 @@ class PartnerPackage:
     version: str
     description: str
     url: str
+    company: str = None
     authors: list[str] = None
     license: str = None
     external_dependencies: list[str] = None
@@ -62,6 +63,7 @@ def parse_toml_metadata(metadata):
         version=version,
         description=description,
         authors=authors,
+        company="",
         url=url,
         license=license_,
     )
@@ -93,6 +95,7 @@ def get_external_package_info():
                 version=package["version"],
                 description=package.get("description", ""),
                 authors=package.get("authors", []),
+                company=package.get("company", ""),
                 url=package.get("source_code", ""),
                 license=package.get("license", ""),
             )
@@ -145,8 +148,8 @@ def get_partner_metadatas(partner_dirs: list[Path]) -> list[PartnerPackage]:
 def generate_table(packages: list[PartnerPackage]) -> str:
     lines = []
     table_header = """
-| Package 🔻 | Version | License | Authors | Description |
-|------------|---------|---------|---------|-------------|
+| Package 🔻 | Version | License | Company |Authors | Description |
+|------------|---------|---------|---------|--------|-------------|
 """
     lines.append(table_header)
     for package in sorted(packages, key=lambda x: x.name):
@@ -156,6 +159,7 @@ def generate_table(packages: list[PartnerPackage]) -> str:
                 title_link,
                 package.version,
                 package.license,
+                package.company,
                 ", ".join(package.authors),
                 package.description,
             ]
