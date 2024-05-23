@@ -3,6 +3,7 @@
 Other LangChain classes use **Utilities** to interact with third-part systems
 and packages.
 """
+
 import importlib
 from typing import TYPE_CHECKING, Any
 
@@ -19,6 +20,9 @@ if TYPE_CHECKING:
     from langchain_community.utilities.arxiv import (
         ArxivAPIWrapper,
     )
+    from langchain_community.utilities.asknews import (
+        AskNewsAPIWrapper,
+    )
     from langchain_community.utilities.awslambda import (
         LambdaWrapper,
     )
@@ -31,6 +35,7 @@ if TYPE_CHECKING:
     from langchain_community.utilities.brave_search import (
         BraveSearchWrapper,
     )
+    from langchain_community.utilities.dataherald import DataheraldAPIWrapper
     from langchain_community.utilities.dria_index import (
         DriaAPIWrapper,
     )
@@ -99,6 +104,9 @@ if TYPE_CHECKING:
     from langchain_community.utilities.openweathermap import (
         OpenWeatherMapAPIWrapper,
     )
+    from langchain_community.utilities.oracleai import (
+        OracleSummary,
+    )
     from langchain_community.utilities.outline import (
         OutlineAPIWrapper,
     )
@@ -117,6 +125,7 @@ if TYPE_CHECKING:
     from langchain_community.utilities.python import (
         PythonREPL,
     )
+    from langchain_community.utilities.rememberizer import RememberizerAPIWrapper
     from langchain_community.utilities.requests import (
         Requests,
         RequestsWrapper,
@@ -170,10 +179,12 @@ __all__ = [
     "ApifyWrapper",
     "ArceeWrapper",
     "ArxivAPIWrapper",
+    "AskNewsAPIWrapper",
     "AudioStream",
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
+    "DataheraldAPIWrapper",
     "DriaAPIWrapper",
     "DuckDuckGoSearchAPIWrapper",
     "GoldenQueryAPIWrapper",
@@ -199,18 +210,20 @@ __all__ = [
     "NasaAPIWrapper",
     "NutritionAIAPI",
     "OpenWeatherMapAPIWrapper",
+    "OracleSummary",
     "OutlineAPIWrapper",
     "Portkey",
     "PowerBIDataset",
     "PubMedAPIWrapper",
     "PythonREPL",
+    "RememberizerAPIWrapper",
     "Requests",
     "RequestsWrapper",
     "RivaASR",
     "RivaTTS",
-    "SQLDatabase",
     "SceneXplainAPIWrapper",
     "SearchApiAPIWrapper",
+    "SQLDatabase",
     "SearxSearchWrapper",
     "SerpAPIWrapper",
     "SparkSQL",
@@ -230,6 +243,7 @@ _module_lookup = {
     "ApifyWrapper": "langchain_community.utilities.apify",
     "ArceeWrapper": "langchain_community.utilities.arcee",
     "ArxivAPIWrapper": "langchain_community.utilities.arxiv",
+    "AskNewsAPIWrapper": "langchain_community.utilities.asknews",
     "AudioStream": "langchain_community.utilities.nvidia_riva",
     "BibtexparserWrapper": "langchain_community.utilities.bibtex",
     "BingSearchAPIWrapper": "langchain_community.utilities.bing_search",
@@ -260,6 +274,7 @@ _module_lookup = {
     "NasaAPIWrapper": "langchain_community.utilities.nasa",
     "NutritionAIAPI": "langchain_community.utilities.passio_nutrition_ai",
     "OpenWeatherMapAPIWrapper": "langchain_community.utilities.openweathermap",
+    "OracleSummary": "langchain_community.utilities.oracleai",
     "OutlineAPIWrapper": "langchain_community.utilities.outline",
     "Portkey": "langchain_community.utilities.portkey",
     "PowerBIDataset": "langchain_community.utilities.powerbi",
@@ -293,6 +308,3 @@ def __getattr__(name: str) -> Any:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-__all__ = list(_module_lookup.keys())

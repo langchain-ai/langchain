@@ -2,22 +2,24 @@
 
 All functionality related to the [Hugging Face Platform](https://huggingface.co/).
 
+## Installation
+
+Most of the Hugging Face integrations are available in the `langchain-huggingface` package.
+
+```bash
+pip install langchain-huggingface
+```
+
 ## Chat models
 
 ### Models from Hugging Face
 
 We can use the `Hugging Face` LLM classes or directly use the `ChatHuggingFace` class.
 
-We need to install several python packages.
-
-```bash
-pip install huggingface_hub
-pip install transformers
-```
 See a [usage example](/docs/integrations/chat/huggingface).
 
 ```python
-from langchain_community.chat_models.huggingface import ChatHuggingFace
+from langchain_huggingface import ChatHuggingFace
 ```
 
 ## LLMs
@@ -26,60 +28,23 @@ from langchain_community.chat_models.huggingface import ChatHuggingFace
 
 Hugging Face models can be run locally through the `HuggingFacePipeline` class.
 
-We need to install `transformers` python package.
-
-```bash
-pip install transformers
-```
-
 See a [usage example](/docs/integrations/llms/huggingface_pipelines).
 
 ```python
-from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain_huggingface import HuggingFacePipeline
 ```
-
-To use the OpenVINO backend in local pipeline wrapper, please install the optimum library and set HuggingFacePipeline's backend as `openvino`:
-
-```bash
-pip install --upgrade-strategy eager "optimum[openvino,nncf]"
-```
-
-See a [usage example](/docs/integrations/llms/huggingface_pipelines)
-
-To export your model to the OpenVINO IR format with the CLI:
-
-```bash
-optimum-cli export openvino --model gpt2 ov_model
-```
-
-To apply [weight-only quantization](https://github.com/huggingface/optimum-intel?tab=readme-ov-file#export) when exporting your model.
-
 
 ## Embedding Models
 
-### Hugging Face Hub
-
->The [Hugging Face Hub](https://huggingface.co/docs/hub/index) is a platform 
-> with over 350k models, 75k datasets, and 150k demo apps (Spaces), all open source 
-> and publicly available, in an online platform where people can easily 
-> collaborate and build ML together. The Hub works as a central place where anyone 
-> can explore, experiment, collaborate, and build technology with Machine Learning.
-
-We need to install the `sentence_transformers` python package.
-
-```bash
-pip install sentence_transformers
-```
-
-
-#### HuggingFaceEmbeddings
+### HuggingFaceEmbeddings
 
 See a [usage example](/docs/integrations/text_embedding/huggingfacehub).
 
 ```python
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 ```
-#### HuggingFaceInstructEmbeddings
+
+### HuggingFaceInstructEmbeddings
 
 See a [usage example](/docs/integrations/text_embedding/instruct_embeddings).
 
@@ -87,7 +52,7 @@ See a [usage example](/docs/integrations/text_embedding/instruct_embeddings).
 from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 ```
 
-#### HuggingFaceBgeEmbeddings
+### HuggingFaceBgeEmbeddings
 
 >[BGE models on the HuggingFace](https://huggingface.co/BAAI/bge-large-en) are [the best open-source embedding models](https://huggingface.co/spaces/mteb/leaderboard).
 >BGE model is created by the [Beijing Academy of Artificial Intelligence (BAAI)](https://en.wikipedia.org/wiki/Beijing_Academy_of_Artificial_Intelligence). `BAAI` is a private non-profit organization engaged in AI research and development.

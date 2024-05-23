@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Any
 
 from langchain._api import create_importer
-from langchain.retrievers.pubmed import PubMedRetriever
 
 if TYPE_CHECKING:
     from langchain_community.retrievers import PubMedRetriever

@@ -214,7 +214,7 @@ if TYPE_CHECKING:
         GitHubIssuesLoader,
     )
     from langchain_community.document_loaders.glue_catalog import (
-        GlueCatalogLoader,  # noqa: F401
+        GlueCatalogLoader,
     )
     from langchain_community.document_loaders.google_speech_to_text import (
         GoogleSpeechToTextLoader,
@@ -331,6 +331,10 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.oracleadb_loader import (
         OracleAutonomousDatabaseLoader,
     )
+    from langchain_community.document_loaders.oracleai import (
+        OracleDocLoader,
+        OracleTextSplitter,
+    )
     from langchain_community.document_loaders.org_mode import (
         UnstructuredOrgModeLoader,
     )
@@ -398,6 +402,9 @@ if TYPE_CHECKING:
     )
     from langchain_community.document_loaders.s3_file import (
         S3FileLoader,
+    )
+    from langchain_community.document_loaders.scrapfly import (
+        ScrapflyLoader,
     )
     from langchain_community.document_loaders.sharepoint import (
         SharePointLoader,
@@ -624,6 +631,8 @@ _module_lookup = {
     "OnlinePDFLoader": "langchain_community.document_loaders.pdf",
     "OpenCityDataLoader": "langchain_community.document_loaders.open_city_data",
     "OracleAutonomousDatabaseLoader": "langchain_community.document_loaders.oracleadb_loader",  # noqa: E501
+    "OracleDocLoader": "langchain_community.document_loaders.oracleai",
+    "OracleTextSplitter": "langchain_community.document_loaders.oracleai",
     "OutlookMessageLoader": "langchain_community.document_loaders.email",
     "PDFMinerLoader": "langchain_community.document_loaders.pdf",
     "PDFMinerPDFasHTMLLoader": "langchain_community.document_loaders.pdf",
@@ -648,6 +657,7 @@ _module_lookup = {
     "RocksetLoader": "langchain_community.document_loaders.rocksetdb",
     "S3DirectoryLoader": "langchain_community.document_loaders.s3_directory",
     "S3FileLoader": "langchain_community.document_loaders.s3_file",
+    "ScrapflyLoader": "langchain_community.document_loaders.scrapfly",
     "SQLDatabaseLoader": "langchain_community.document_loaders.sql_database",
     "SRTLoader": "langchain_community.document_loaders.srt",
     "SeleniumURLLoader": "langchain_community.document_loaders.url_selenium",
@@ -822,6 +832,8 @@ __all__ = [
     "OnlinePDFLoader",
     "OpenCityDataLoader",
     "OracleAutonomousDatabaseLoader",
+    "OracleDocLoader",
+    "OracleTextSplitter",
     "OutlookMessageLoader",
     "PDFMinerLoader",
     "PDFMinerPDFasHTMLLoader",
@@ -846,6 +858,7 @@ __all__ = [
     "RocksetLoader",
     "S3DirectoryLoader",
     "S3FileLoader",
+    "ScrapflyLoader",
     "SQLDatabaseLoader",
     "SRTLoader",
     "SeleniumURLLoader",

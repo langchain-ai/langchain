@@ -6,8 +6,8 @@ from typing import Dict
 LANGCHAIN_DIRS = [
     "libs/core",
     "libs/text-splitters",
-    "libs/community",
     "libs/langchain",
+    "libs/community",
     "libs/experimental",
 ]
 
@@ -91,4 +91,4 @@ if __name__ == "__main__":
     }
     for key, value in outputs.items():
         json_output = json.dumps(value)
-        print(f"{key}={json_output}")  # noqa: T201
+        print(f"{key}={json_output}")
