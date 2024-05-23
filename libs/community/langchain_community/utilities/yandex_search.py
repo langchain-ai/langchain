@@ -46,9 +46,9 @@ class YandexSearchAPIWrapper(BaseModel):
         search_term: str,
         page: int = 1,
         num_results: int = 10,
-        filter: str = None,
-        lr: int = None,
-        l10n: str = None,
+        filter: Optional[str] = None,
+        lr: Optional[int] = None,
+        l10n: Optional[str] = None,
     ) -> List[dict]:
         """
         Sends a POST request to the Yandex Search API and returns the search results.
@@ -78,7 +78,7 @@ class YandexSearchAPIWrapper(BaseModel):
         """
 
         domain_url = self._get_yandex_domain(l10n if l10n is not None else self.l10n)
-        headers = {}
+        headers: Dict[str, str] = {}
         params = {
             "folderid": self.yandex_folder_id,
             "apikey": self.yandex_api_key,
@@ -129,9 +129,12 @@ class YandexSearchAPIWrapper(BaseModel):
                             passage_text = "".join(text_parts).strip()
 
                     item = {
-                        "url": doc.find("url").text,
-                        "title": "".join(doc.find("title").itertext()),
-                        "domain": doc.find("domain").text,
+                        "url": doc.find("url").text 
+                            if doc.find("url") is not None else "",
+                        "title": "".join(doc.find("title").itertext()) 
+                            if doc.find("title") is not None else "",
+                        "domain": doc.find("domain").text 
+                            if doc.find("domain") is not None else "",
                         "snippet": passage_text,
                     }
                     items.append(item)
@@ -192,7 +195,7 @@ class YandexSearchAPIWrapper(BaseModel):
         self,
         query: str,
         num_results: int,
-        search_params: Optional[Dict[str, str]] = None,
+        search_params: Optional[Dict[str, Any]] = None,
     ) -> List[Dict]:
         """Run query through Yandex Search and return metadata.
 
