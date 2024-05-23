@@ -20,8 +20,8 @@ function Imports({ imports }) {
         API Reference:
       </b>
         {imports.map(({ imported, source, docs }) => (
-          <span key={imported}> | <a href={docs}>{imported}</a></span>
-        ))}
+          <span key={imported}><a href={docs}>{imported}</a></span>
+        )).join(" | ")}
     </div>
   );
 }
