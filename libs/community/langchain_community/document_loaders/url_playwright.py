@@ -182,7 +182,7 @@ class PlaywrightURLLoader(BaseLoader):
         self.continue_on_failure = continue_on_failure
         self.headless = headless
         self.proxy = proxy
-        self.user_agent = user_agent          
+        self.user_agent = user_agent
 
         if remove_selectors or scraped_selectors and evaluator:
             raise ValueError(
