@@ -76,10 +76,10 @@ class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
                 "https://python.langchain.com/v0.1/docs/integrations/text_embedding/"
             )
             raise ImportError(
-                "Could not import ipex_llm or sentence_transformers"
+                "Could not import ipex_llm or sentence_transformers. "
                 f"Please refer to {base_url}/ipex_llm/ "
                 "for install required packages on Intel CPU. "
-                "And refer to {base_url}/ipex_llm_gpu/ "
+                f"And refer to {base_url}/ipex_llm_gpu/ "
                 "for install required packages on Intel GPU. "
             ) from exc
 
