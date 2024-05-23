@@ -1,35 +1,41 @@
+"""Couchbase vector stores."""
+
 from __future__ import annotations
 
+import asyncio
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from functools import partial
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-from langchain_core._api.deprecation import deprecated
-
 
 if TYPE_CHECKING:
     from couchbase.cluster import Cluster
 
 
-@deprecated(
-    since="0.2.1",
-    removal="0.3.0",
-    alternative_import="langchain_couchbase.CouchbaseVectorStore",
-)
 class CouchbaseVectorStore(VectorStore):
-    """`Couchbase Vector Store` vector store.
+    """Couchbase vector store.
 
-    To use it, you need
-    - a recent installation of the `couchbase` library
-    - a Couchbase database with a pre-defined Search index with support for
-        vector fields
+     To use it, you need
+        - a Couchbase database with a pre-defined Search index with support for
+            vector fields
 
     Example:
         .. code-block:: python
 
-            from langchain_community.vectorstores import CouchbaseVectorStore
+            from langchain_couchbase import CouchbaseVectorStore
             from langchain_openai import OpenAIEmbeddings
 
             from couchbase.cluster import Cluster
@@ -231,7 +237,7 @@ class CouchbaseVectorStore(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[Dict[str, Any]]] = None,
+        metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: Optional[int] = None,
         **kwargs: Any,
@@ -293,6 +299,16 @@ class CouchbaseVectorStore(VectorStore):
 
         return doc_ids
 
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(self.add_texts, **kwargs), texts, metadatas
+        )
+
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete documents from the vector store by ids.
 
@@ -330,6 +346,11 @@ class CouchbaseVectorStore(VectorStore):
         """Return the query embedding object."""
         return self._embedding_function
 
+    async def adelete(
+        self, ids: Optional[List[str]] = None, **kwargs: Any
+    ) -> Optional[bool]:
+        raise NotImplementedError
+
     def _format_metadata(self, row_fields: Dict[str, Any]) -> Dict[str, Any]:
         """Helper method to format the metadata from the Couchbase Search API.
         Args:
@@ -349,6 +370,44 @@ class CouchbaseVectorStore(VectorStore):
                 metadata[key] = value
 
         return metadata
+
+    def similarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        search_options: Optional[Dict[str, Any]] = {},
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return documents most similar to embedding vector with their scores.
+
+        Args:
+            query (str): Query to look up for similar documents
+            k (int): Number of Documents to return.
+                Defaults to 4.
+            search_options (Optional[Dict[str, Any]]): Optional search options that are
+                passed to Couchbase search.
+                Defaults to empty dictionary
+            fields (Optional[List[str]]): Optional list of fields to include in the
+                metadata of results. Note that these need to be stored in the index.
+                If nothing is specified, defaults to all the fields stored in the index.
+
+        Returns:
+            List of Documents most similar to the query.
+        """
+        query_embedding = self.embeddings.embed_query(query)
+        docs_with_scores = self.similarity_search_with_score_by_vector(
+            query_embedding, k, search_options, **kwargs
+        )
+        return [doc for doc, _ in docs_with_scores]
+
+    async def asimilarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(self.similarity_search, query, k=k, **kwargs)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def similarity_search_with_score_by_vector(
         self,
@@ -406,9 +465,9 @@ class CouchbaseVectorStore(VectorStore):
 
             else:
                 search_iter = self._cluster.search(
-                    index=self._index_name,
-                    request=search_req,
-                    options=SearchOptions(limit=k, fields=fields, raw=search_options),
+                    self._index_name,
+                    search_req,
+                    SearchOptions(limit=k, fields=fields, raw=search_options),
                 )
 
             docs_with_score = []
@@ -428,35 +487,6 @@ class CouchbaseVectorStore(VectorStore):
             raise ValueError(f"Search failed with error: {e}")
 
         return docs_with_score
-
-    def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        search_options: Optional[Dict[str, Any]] = {},
-        **kwargs: Any,
-    ) -> List[Document]:
-        """Return documents most similar to embedding vector with their scores.
-
-        Args:
-            query (str): Query to look up for similar documents
-            k (int): Number of Documents to return.
-                Defaults to 4.
-            search_options (Optional[Dict[str, Any]]): Optional search options that are
-                passed to Couchbase search.
-                Defaults to empty dictionary
-            fields (Optional[List[str]]): Optional list of fields to include in the
-                metadata of results. Note that these need to be stored in the index.
-                If nothing is specified, defaults to all the fields stored in the index.
-
-        Returns:
-            List of Documents most similar to the query.
-        """
-        query_embedding = self.embeddings.embed_query(query)
-        docs_with_scores = self.similarity_search_with_score_by_vector(
-            query_embedding, k, search_options, **kwargs
-        )
-        return [doc for doc, _ in docs_with_scores]
 
     def similarity_search_with_score(
         self,
@@ -487,6 +517,15 @@ class CouchbaseVectorStore(VectorStore):
         )
         return docs_with_score
 
+    async def asimilarity_search_with_score(
+        self, *args: Any, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(self.similarity_search_with_score, *args, **kwargs)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
+
     def similarity_search_by_vector(
         self,
         embedding: List[float],
@@ -514,6 +553,66 @@ class CouchbaseVectorStore(VectorStore):
             embedding, k, search_options, **kwargs
         )
         return [doc for doc, _ in docs_with_score]
+
+    async def asimilarity_search_by_vector(
+        self, embedding: List[float], k: int = 4, **kwargs: Any
+    ) -> List[Document]:
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(self.similarity_search_by_vector, embedding, k=k, **kwargs)
+        return await asyncio.get_event_loop().run_in_executor(None, func)
+
+    def max_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        raise NotImplementedError
+
+    async def amax_marginal_relevance_search(
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        # This is a temporary workaround to make the similarity search
+        # asynchronous. The proper solution is to make the similarity search
+        # asynchronous in the vector store implementations.
+        func = partial(
+            self.max_marginal_relevance_search,
+            query,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
+            **kwargs,
+        )
+        return await asyncio.get_event_loop().run_in_executor(None, func)
+
+    def max_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        raise NotImplementedError
+
+    async def amax_marginal_relevance_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
+    ) -> List[Document]:
+        raise NotImplementedError
 
     @classmethod
     def _from_kwargs(
@@ -564,7 +663,7 @@ class CouchbaseVectorStore(VectorStore):
         cls: Type[CouchbaseVectorStore],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> CouchbaseVectorStore:
         """Construct a Couchbase vector store from a list of texts.
@@ -572,7 +671,7 @@ class CouchbaseVectorStore(VectorStore):
         Example:
             .. code-block:: python
 
-            from langchain_community.vectorstores import CouchbaseVectorStore
+            from langchain_couchbase import CouchbaseVectorStore
             from langchain_openai import OpenAIEmbeddings
 
             from couchbase.cluster import Cluster
@@ -622,3 +721,18 @@ class CouchbaseVectorStore(VectorStore):
         )
 
         return vector_store
+
+    @classmethod
+    async def afrom_texts(
+        cls: Type[CouchbaseVectorStore],
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> CouchbaseVectorStore:
+        return await asyncio.get_running_loop().run_in_executor(
+            None, partial(cls.from_texts, **kwargs), texts, embedding, metadatas
+        )
+
+    def _select_relevance_score_fn(self) -> Callable[[float], float]:
+        raise NotImplementedError
