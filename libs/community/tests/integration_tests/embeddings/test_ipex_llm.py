@@ -1,6 +1,7 @@
 """Test IPEX LLM"""
 
 import os
+
 import pytest
 
 from langchain_community.embeddings import IpexLLMBgeEmbeddings
@@ -8,14 +9,16 @@ from langchain_community.embeddings import IpexLLMBgeEmbeddings
 model_ids_to_test = os.getenv("TEST_IPEXLLM_BGE_EMBEDDING_MODEL_IDS") or ""
 skip_if_no_model_ids = pytest.mark.skipif(
     not model_ids_to_test,
-    reason="TEST_IPEXLLM_BGE_EMBEDDING_MODEL_IDS environment variable not set."
+    reason="TEST_IPEXLLM_BGE_EMBEDDING_MODEL_IDS environment variable not set.",
 )
 model_ids_to_test = [model_id.strip() for model_id in model_ids_to_test.split(",")]  # type: ignore
 
 device = os.getenv("TEST_IPEXLLM_BGE_EMBEDDING_MODEL_DEVICE") or "cpu"
 
-sentence = "IPEX-LLM is a PyTorch library for running LLM on Intel CPU and GPU (e.g., local PC with iGPU, discrete GPU such as Arc, Flex and Max) with very low latency."
+sentence = "IPEX-LLM is a PyTorch library for running LLM on Intel CPU and GPU (e.g., \
+local PC with iGPU, discrete GPU such as Arc, Flex and Max) with very low latency."
 query = "What is IPEX-LLM?"
+
 
 @skip_if_no_model_ids
 @pytest.mark.parametrize(
@@ -33,6 +36,7 @@ def test_embed_documents(model_id: str) -> None:
     assert len(output) == 1
     output = embedding_model.embed_documents([sentence, query])
     assert len(output) == 2
+
 
 @skip_if_no_model_ids
 @pytest.mark.parametrize(
