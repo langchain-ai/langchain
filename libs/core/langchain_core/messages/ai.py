@@ -110,7 +110,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment] # noqa: E501
+    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
 
     tool_call_chunks: List[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
