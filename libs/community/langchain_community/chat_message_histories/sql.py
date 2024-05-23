@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, List, Optional, Sequence, Union, Dict
 
 from sqlalchemy import Column, Integer, Text, delete, select
 
@@ -108,7 +108,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
         session_id: str,
         connection_string: Optional[str] = None,
         connection: Union[None, DBConnection] = None,
-        engine_args: Optional[dict[str, Any]] = None,
+        engine_args: Optional[Dict[str, Any]] = None,
         async_mode: Optional[bool] = None,  # Use only if connection is a string
         table_name: str = "message_store",
         session_id_field_name: str = "session_id",
@@ -138,7 +138,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
                 "sqlalchemy.engine.Engine or sqlalchemy.ext.asyncio.engine.AsyncEngine"
             )
 
-        # To be consistant with others SQL implementations, rename to session_maker
+        # To be consistent with others SQL implementations, rename to session_maker
         self.session_maker: Union[scoped_session, async_sessionmaker]
         if self.async_mode:
             self.session_maker = async_sessionmaker(bind=self.async_engine)
@@ -222,7 +222,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
             await session.commit()
 
     def add_messages(self, messages: Sequence[BaseMessage]) -> None:
-        # The methode RunnableWithMessageHistory._exit_history() call
+        # The method RunnableWithMessageHistory._exit_history() call
         #  add_message method by mistake and not aadd_message.
         # See https://github.com/langchain-ai/langchain/issues/22021
         if self.async_mode:
