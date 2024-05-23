@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
+from langchain_core.globals import get_renderer
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field
 from langchain_core.utils import get_bolded_text
@@ -71,6 +72,10 @@ class BaseMessage(Serializable):
 
     def pretty_print(self) -> None:
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
+
+    def _repr_html_(self) -> str:
+        """Print HTML representation of the message."""
+        return get_renderer().render_html(self)
 
 
 def merge_content(

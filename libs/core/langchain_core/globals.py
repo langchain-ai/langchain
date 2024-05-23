@@ -1,7 +1,9 @@
 # flake8: noqa
 """Global values and configuration that apply to all of LangChain."""
+import abc
+import contextlib
 import warnings
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Any
 
 if TYPE_CHECKING:
     from langchain_core.caches import BaseCache
@@ -14,6 +16,23 @@ if TYPE_CHECKING:
 _verbose: bool = False
 _debug: bool = False
 _llm_cache: Optional["BaseCache"] = None
+
+# Renderer
+
+
+class Renderer(abc.ABC):
+    def render_html(self, obj: Any) -> str:
+        """Render an object as HTML."""
+        raise NotImplementedError
+
+
+class DefaultRenderer(Renderer):
+    def render_html(self, obj: Any) -> str:
+        """Render an object as HTML."""
+        return str(obj)
+
+
+_renderer: Optional[Renderer] = None
 
 
 def set_verbose(value: bool) -> None:
@@ -195,3 +214,30 @@ def get_llm_cache() -> "BaseCache":
 
     global _llm_cache
     return _llm_cache or old_llm_cache
+
+
+def set_renderer(renderer: Renderer) -> None:
+    """Set a new renderer."""
+    global _renderer
+    _renderer = renderer
+
+
+def get_renderer() -> Renderer:
+    """Get the current renderer."""
+    global _renderer
+    return _renderer or DefaultRenderer()
+
+
+@contextlib.contextmanager
+def with_renderer(renderer: Renderer):
+    """Context manager for temporarily setting a new renderer."""
+    global _renderer
+    # Save the current value
+    original_value = _renderer
+    try:
+        # Update the global value
+        _renderer = renderer
+        yield
+    finally:
+        # Restore the original value
+        _renderer = original_value

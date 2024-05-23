@@ -106,6 +106,12 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
         return prompt + other
 
+    def _repr_html_(self) -> str:
+        """Print HTML representation of the message."""
+        from langchain_core.globals import get_renderer
+
+        return get_renderer().render_html(self)
+
 
 class MessagesPlaceholder(BaseMessagePromptTemplate):
     """Prompt template that assumes variable is already list of messages.

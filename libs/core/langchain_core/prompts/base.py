@@ -279,6 +279,12 @@ class BasePromptTemplate(
         else:
             raise ValueError(f"{save_path} must be json or yaml")
 
+    def _repr_html_(self) -> str:
+        """Print HTML representation of the message."""
+        from langchain_core.globals import get_renderer
+
+        return get_renderer().render_html(self)
+
 
 def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> Dict:
     base_info = {"page_content": doc.page_content, **doc.metadata}
