@@ -66,11 +66,27 @@ pip install langchain-pinecone
 ```
 
 ```python
+import time
 from langchain_pinecone import PineconeVectorStore
+from pinecone import Pinecone, ServerlessSpec
+
+pc = Pinecone(api_key=pinecone_api_key)
 
 os.environ['PINECONE_API_KEY'] = getpass.getpass('Pinecone API Key:')
 
-index_name = "langchain-test-index"
+index_name = "langchain-index" #change if desired
+
+if index_name not in existing_indexes:
+    pc.create_index(
+        name=index_name,
+        dimension=1536,
+        metric="cosine",
+        spec=ServerlessSpec(cloud="aws", region="us-east-1"),
+    )
+    while not pc.describe_index(index_name).status["ready"]:
+        time.sleep(1)
+
+index = pc.Index(index_name)
 
 docsearch = PineconeVectorStore.from_documents(documents, OpenAIEmbeddings(), index_name=index_name)
 ```
