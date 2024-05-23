@@ -89,7 +89,16 @@ def test__format_output() -> None:
     )
     expected = ChatResult(
         generations=[
-            ChatGeneration(message=AIMessage("bar")),
+            ChatGeneration(
+                message=AIMessage(
+                    "bar",
+                    usage_metadata={
+                        "input_tokens": 2,
+                        "output_tokens": 1,
+                        "total_tokens": 3,
+                    },
+                )
+            ),
         ],
         llm_output={
             "id": "foo",

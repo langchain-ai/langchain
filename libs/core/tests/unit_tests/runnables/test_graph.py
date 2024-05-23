@@ -227,6 +227,29 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                             },
                             "required": ["name", "args", "id", "error"],
                         },
+                        "UsageMetadata": {
+                            "title": "UsageMetadata",
+                            "type": "object",
+                            "properties": {
+                                "input_tokens": {
+                                    "title": "Input Tokens",
+                                    "type": "integer",
+                                },
+                                "output_tokens": {
+                                    "title": "Output Tokens",
+                                    "type": "integer",
+                                },
+                                "total_tokens": {
+                                    "title": "Total Tokens",
+                                    "type": "integer",
+                                },
+                            },
+                            "required": [
+                                "input_tokens",
+                                "output_tokens",
+                                "total_tokens",
+                            ],
+                        },
                         "AIMessage": {
                             "title": "AIMessage",
                             "description": "Message from an AI.",
@@ -279,6 +302,9 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "default": [],
                                     "type": "array",
                                     "items": {"$ref": "#/definitions/InvalidToolCall"},
+                                },
+                                "usage_metadata": {
+                                    "$ref": "#/definitions/UsageMetadata"
                                 },
                             },
                             "required": ["content"],

@@ -120,6 +120,22 @@ def test_message_chunks() -> None:
     assert ai_msg_chunk + tool_calls_msg_chunk == tool_calls_msg_chunk
     assert tool_calls_msg_chunk + ai_msg_chunk == tool_calls_msg_chunk
 
+    # Test token usage
+    left = AIMessageChunk(
+        content="",
+        usage_metadata={"input_tokens": 1, "output_tokens": 2, "total_tokens": 3},
+    )
+    right = AIMessageChunk(
+        content="",
+        usage_metadata={"input_tokens": 4, "output_tokens": 5, "total_tokens": 9},
+    )
+    assert left + right == AIMessageChunk(
+        content="",
+        usage_metadata={"input_tokens": 5, "output_tokens": 7, "total_tokens": 12},
+    )
+    assert AIMessageChunk(content="") + left == left
+    assert right + AIMessageChunk(content="") == right
+
 
 def test_chat_message_chunks() -> None:
     assert ChatMessageChunk(role="User", content="I am", id="ai4") + ChatMessageChunk(

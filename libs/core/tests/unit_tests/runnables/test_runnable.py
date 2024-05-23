@@ -383,6 +383,16 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 },
                 "required": ["name", "args", "id", "error"],
             },
+            "UsageMetadata": {
+                "title": "UsageMetadata",
+                "type": "object",
+                "properties": {
+                    "input_tokens": {"title": "Input Tokens", "type": "integer"},
+                    "output_tokens": {"title": "Output Tokens", "type": "integer"},
+                    "total_tokens": {"title": "Total Tokens", "type": "integer"},
+                },
+                "required": ["input_tokens", "output_tokens", "total_tokens"],
+            },
             "AIMessage": {
                 "title": "AIMessage",
                 "description": "Message from an AI.",
@@ -433,6 +443,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "type": "array",
                         "items": {"$ref": "#/definitions/InvalidToolCall"},
                     },
+                    "usage_metadata": {"$ref": "#/definitions/UsageMetadata"},
                 },
                 "required": ["content"],
             },

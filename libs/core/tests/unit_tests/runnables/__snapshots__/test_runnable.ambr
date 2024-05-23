@@ -5286,6 +5286,9 @@
             'title': 'Type',
             'type': 'string',
           }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
+          }),
         }),
         'required': list([
           'content',
@@ -5705,6 +5708,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),
@@ -5821,6 +5847,9 @@
             'title': 'Type',
             'type': 'string',
           }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
+          }),
         }),
         'required': list([
           'content',
@@ -6240,6 +6269,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),
@@ -6340,6 +6392,9 @@
             'title': 'Type',
             'type': 'string',
           }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
+          }),
         }),
         'required': list([
           'content',
@@ -6690,6 +6745,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),
@@ -6778,6 +6856,9 @@
             'title': 'Type',
             'type': 'string',
           }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
+          }),
         }),
         'required': list([
           'content',
@@ -7197,6 +7278,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),
@@ -7285,6 +7389,9 @@
             'title': 'Type',
             'type': 'string',
           }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
+          }),
         }),
         'required': list([
           'content',
@@ -7706,6 +7813,29 @@
         'title': 'ToolMessage',
         'type': 'object',
       }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
+        'type': 'object',
+      }),
     }),
     'title': 'PromptTemplateOutput',
   })
@@ -7783,6 +7913,9 @@
             ]),
             'title': 'Type',
             'type': 'string',
+          }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
           }),
         }),
         'required': list([
@@ -8216,6 +8349,29 @@
         'title': 'ToolMessage',
         'type': 'object',
       }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
+        'type': 'object',
+      }),
     }),
     'items': dict({
       '$ref': '#/definitions/PromptTemplateOutput',
@@ -8320,6 +8476,9 @@
             ]),
             'title': 'Type',
             'type': 'string',
+          }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
           }),
         }),
         'required': list([
@@ -8671,6 +8830,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),
