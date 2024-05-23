@@ -36,7 +36,7 @@ from tests.unit_tests.stubs import AnyStr
 
 
 def test__convert_dict_to_message_system() -> None:
-    message = Messages(role=MessagesRole.SYSTEM, content="foo")
+    message = Messages(id=None, role=MessagesRole.SYSTEM, content="foo")
     expected = SystemMessage(content="foo")
 
     actual = _convert_dict_to_message(message)
@@ -45,7 +45,7 @@ def test__convert_dict_to_message_system() -> None:
 
 
 def test__convert_dict_to_message_human() -> None:
-    message = Messages(role=MessagesRole.USER, content="foo")
+    message = Messages(id=None, role=MessagesRole.USER, content="foo")
     expected = HumanMessage(content="foo")
 
     actual = _convert_dict_to_message(message)
@@ -54,7 +54,7 @@ def test__convert_dict_to_message_human() -> None:
 
 
 def test__convert_dict_to_message_ai() -> None:
-    message = Messages(role=MessagesRole.ASSISTANT, content="foo")
+    message = Messages(id=None, role=MessagesRole.ASSISTANT, content="foo")
     expected = AIMessage(content="foo")
 
     actual = _convert_dict_to_message(message)
@@ -64,7 +64,7 @@ def test__convert_dict_to_message_ai() -> None:
 
 def test__convert_message_to_dict_system() -> None:
     message = SystemMessage(content="foo")
-    expected = Messages(role=MessagesRole.SYSTEM, content="foo")
+    expected = Messages(id=None, role=MessagesRole.SYSTEM, content="foo")
 
     actual = _convert_message_to_dict(message)
 
@@ -73,7 +73,7 @@ def test__convert_message_to_dict_system() -> None:
 
 def test__convert_message_to_dict_human() -> None:
     message = HumanMessage(content="foo")
-    expected = Messages(role=MessagesRole.USER, content="foo")
+    expected = Messages(id=None, role=MessagesRole.USER, content="foo")
 
     actual = _convert_message_to_dict(message)
 
@@ -82,7 +82,7 @@ def test__convert_message_to_dict_human() -> None:
 
 def test__convert_message_to_dict_ai() -> None:
     message = AIMessage(content="foo")
-    expected = Messages(role=MessagesRole.ASSISTANT, content="foo")
+    expected = Messages(id=None, role=MessagesRole.ASSISTANT, content="foo")
 
     actual = _convert_message_to_dict(message)
 
@@ -94,7 +94,7 @@ def test__convert_message_to_dict_ai() -> None:
 )
 def test__convert_message_to_dict_chat(role: MessagesRole) -> None:
     message = ChatMessage(role=role, content="foo")
-    expected = Messages(role=role, content="foo")
+    expected = Messages(id=None, role=role, content="foo")
 
     actual = _convert_message_to_dict(message)
 
@@ -107,6 +107,7 @@ def chat_completion() -> ChatCompletion:
         choices=[
             Choices(
                 message=Messages(
+                    id=None,
                     role=MessagesRole.ASSISTANT,
                     content="Bar Baz",
                 ),

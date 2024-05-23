@@ -28,6 +28,7 @@ def chat_completion() -> ChatCompletion:
         choices=[
             Choices(
                 message=Messages(
+                    id=None,
                     role=MessagesRole.ASSISTANT,
                     content="Bar Baz",
                 ),

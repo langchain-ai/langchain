@@ -45,6 +45,7 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "dataclasses-json",
             "gigachain-core",
             "gigachain-text-splitters",
+            "gigachat",
             "langsmith",
             "numpy",
             "pydantic",

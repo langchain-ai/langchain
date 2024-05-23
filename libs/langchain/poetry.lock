@@ -2228,6 +2228,21 @@ type = "directory"
 url = "../text-splitters"
 
 [[package]]
+name = "gigachat"
+version = "0.1.27"
+description = "GigaChat. Python-library for GigaChain and LangChain"
+optional = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "gigachat-0.1.27-py3-none-any.whl", hash = "sha256:6d22344cad6aba773eaee0300343a98a289117308627bd9724900d1cdae9d95f"},
+    {file = "gigachat-0.1.27.tar.gz", hash = "sha256:715465a5f933b789c7cdc55420d68daccdecb37e35600af2d89645efff623d4f"},
+]
+
+[package.dependencies]
+httpx = "<1"
+pydantic = ">=1"
+
+[[package]]
 name = "gitdb"
 version = "4.0.11"
 description = "Git Object Database"
@@ -9380,4 +9395,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "fdc79db8badbe1776d64ba9b3f42bd2134ac07101143a4df39091591755aa198"
+content-hash = "73592810368eded38411e453e5c7f5352e33e5685936b963f286b533587c4f7e"
