@@ -115,6 +115,50 @@ def test_character_text_splitter_keep_separator_regex(
 @pytest.mark.parametrize(
     "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
 )
+def test_character_text_splitter_keep_separator_regex_start(
+    separator: str, is_separator_regex: bool
+) -> None:
+    """Test splitting by characters while keeping the separator
+    that is a regex special character and placing it at the start of each chunk.
+    """
+    text = "foo.bar.baz.123"
+    splitter = CharacterTextSplitter(
+        separator=separator,
+        chunk_size=1,
+        chunk_overlap=0,
+        keep_separator="start",
+        is_separator_regex=is_separator_regex,
+    )
+    output = splitter.split_text(text)
+    expected_output = ["foo", ".bar", ".baz", ".123"]
+    assert output == expected_output
+
+
+@pytest.mark.parametrize(
+    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+)
+def test_character_text_splitter_keep_separator_regex_end(
+    separator: str, is_separator_regex: bool
+) -> None:
+    """Test splitting by characters while keeping the separator
+    that is a regex special character and placing it at the end of each chunk.
+    """
+    text = "foo.bar.baz.123"
+    splitter = CharacterTextSplitter(
+        separator=separator,
+        chunk_size=1,
+        chunk_overlap=0,
+        keep_separator="end",
+        is_separator_regex=is_separator_regex,
+    )
+    output = splitter.split_text(text)
+    expected_output = ["foo.", "bar.", "baz.", "123"]
+    assert output == expected_output
+
+
+@pytest.mark.parametrize(
+    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+)
 def test_character_text_splitter_discard_separator_regex(
     separator: str, is_separator_regex: bool
 ) -> None:
