@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, Sequence, Union, Dict
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from sqlalchemy import Column, Integer, Text, delete, select
 
