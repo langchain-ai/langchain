@@ -19,9 +19,11 @@ function Imports({ imports }) {
       <b style={{ paddingLeft: "0.65rem", marginBottom: "0.45rem" }}>
         API Reference:
       </b>
-        {imports.map(({ imported, source, docs }) => (
-          <span key={imported}><a href={docs}>{imported}</a></span>
-        )).join(" | ")}
+        {imports.map(({ imported, source, docs }, index) => (
+          <span key={imported}>
+            <a href={docs}>{imported}</a>{index < imports.length - 1 ? ', ' : ''}
+          </span>
+        ))}
     </div>
   );
 }
