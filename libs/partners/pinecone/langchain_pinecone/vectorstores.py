@@ -113,6 +113,7 @@ class PineconeVectorStore(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
+        id_prefix: Optional[str] = None,
         namespace: Optional[str] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
@@ -130,6 +131,7 @@ class PineconeVectorStore(VectorStore):
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
             ids: Optional list of ids to associate with the texts.
+            id_prefix: Optional string to use as an ID prefix when upserting vectors.
             namespace: Optional pinecone namespace to add the texts to.
             batch_size: Batch size to use when adding the texts to the vectorstore.
             embedding_chunk_size: Chunk size to use when embedding the texts.
@@ -143,6 +145,8 @@ class PineconeVectorStore(VectorStore):
 
         texts = list(texts)
         ids = ids or [str(uuid.uuid4()) for _ in texts]
+        if id_prefix:
+            ids = [id_prefix+"#"+id if id_prefix+"#" not in id else id for id in ids]
         metadatas = metadatas or [{} for _ in texts]
         for metadata, text in zip(metadatas, texts):
             metadata[self._text_key] = text
