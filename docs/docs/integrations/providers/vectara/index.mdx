@@ -82,10 +82,10 @@ In this case, we used the default retrieval parameters, but you can also specify
 - `lambda_val`: the [lexical matching](https://docs.vectara.com/docs/api-reference/search-apis/lexical-matching) factor for hybrid search (defaults to 0.025)
 - `filter`: a [filter](https://docs.vectara.com/docs/common-use-cases/filtering-by-metadata/filter-overview) to apply to the results (default None)
 - `n_sentence_context`: number of sentences to include before/after the actual matching segment when returning results. This defaults to 2.
-- `mmr_config`: can be used to specify MMR (max marginal relevance) reranking of the results
-   - `is_enabled`: True or False
-   - `mmr_k`: number of results to use for MMR reranking
-   - `diversity_bias`: 0 = no diversity, 1 = full diversity. This is the lambda parameter in the MMR formula and is in the range 0...1
+- `rerank_config`: can be used to specify reranker for thr results
+   - `reranker`: MMR, Slingshot or None. Note that "Slingshot" is a Scale only feature
+   - `rerank_k`: number of results to use for reranking
+   - `mmr_diversity_bias`: 0 = no diversity, 1 = full diversity. This is the lambda parameter in the MMR formula and is in the range 0...1
 
 To get results without the relevance score, you can simply use the 'similarity_search' method:
 ```python   
@@ -102,17 +102,18 @@ There are a few additional parameters that can be specified in the `VectaraQuery
    - is_enabled: True or False
    - max_results: number of results to use for summary generation
    - response_lang: language of the response summary, in ISO 639-2 format (e.g. 'en', 'fr', 'de', etc)
-* mmr_config (optional): can be used to specify MMR (max marginal relevance) reranking of the results
-   - is_enabled: True or False
-   - mmr_k: number of results to use for MMR reranking
-   - diversity_bias: 0 = no diversity, 1 = full diversity. This is the lambda parameter in the MMR formula and is in the range 0...1
+* rerank_config (optional): can be used to specify Vectara Reranker of the results
+   - reranker: MMR, Slingshot or None
+   - rerank_k: number of results to use for reranking
+   - mmr_diversity_bias: 0 = no diversity, 1 = full diversity. 
+     This is the lambda parameter in the MMR formula and is in the range 0...1
 
 For example:
 
 ```python
 summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang='eng')
-mmr_config = MMRConfig(is_enabled=True, mmr_k=50, diversity_bias=0.2)
-config = VectaraQueryConfig(k=10, lambda_val=0.005, mmr_config=mmr_config, summary_config=summary_config)
+rerank_config = RerankConfig(reranker="MMR", rerank_k=50, mmr_diversity_bias=0.2)
+config = VectaraQueryConfig(k=10, lambda_val=0.005, rerank_config=rerank_config, summary_config=summary_config)
 ```
 Then you can use the `as_rag` method to create a RAG pipeline:
 
@@ -131,8 +132,8 @@ The RAG functionality can be used to create a chatbot. For example, you can crea
 
 ```python
 summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang='eng')
-mmr_config = MMRConfig(is_enabled=True, mmr_k=50, diversity_bias=0.2)
-config = VectaraQueryConfig(k=10, lambda_val=0.005, mmr_config=mmr_config, summary_config=summary_config)
+rerank_config = RerankConfig(reranker="MMR", rerank_k=50, mmr_diversity_bias=0.2)
+config = VectaraQueryConfig(k=10, lambda_val=0.005, rerank_config=rerank_config, summary_config=summary_config)
 
 query_str = "what did Biden say?"
 bot = vectara.as_chat(config)
@@ -163,8 +164,8 @@ This is automatically included in the output of the RAG pipeline
 
 ```python
 summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang='eng')
-mmr_config = MMRConfig(is_enabled=True, mmr_k=50, diversity_bias=0.2)
-config = VectaraQueryConfig(k=10, lambda_val=0.005, mmr_config=mmr_config, summary_config=summary_config)
+rerank_config = RerankConfig(reranker="MMR", rerank_k=50, mmr_diversity_bias=0.2)
+config = VectaraQueryConfig(k=10, lambda_val=0.005, rerank_config=rerank_config, summary_config=summary_config)
 
 rag = vectara.as_rag(config)
 resp = rag.invoke(query_str)

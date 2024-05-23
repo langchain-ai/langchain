@@ -18,6 +18,8 @@ from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 
 logger = logging.getLogger(__name__)
 
+MMR_RERANKER_ID = 272725718
+SLIGNSHOT_RERANKER_ID = 272725719
 
 @dataclass
 class SummaryConfig:
@@ -38,23 +40,23 @@ class SummaryConfig:
 
 
 @dataclass
-class MMRConfig:
-    """Configuration for Maximal Marginal Relevance (MMR) search.
+class RerankConfig:
+    """Configuration for Reranker.
 
-    is_enabled: True if MMR is enabled, False otherwise
-    mmr_k: number of results to fetch for MMR, defaults to 50
-    diversity_bias: number between 0 and 1 that determines the degree
-        of diversity among the results with 0 corresponding
+    reranker: "MMR", "Slingshot" or "None"
+    rerank_k: number of results to fetch before reranking, defaults to 50
+    mmr_diversity_bias: for MMR only - a number between 0 and 1 that determines 
+        the degree of diversity among the results with 0 corresponding
         to minimum diversity and 1 to maximum diversity.
         Defaults to 0.3.
-        Note: diversity_bias is equivalent 1-lambda_mult
+        Note: mmr_diversity_bias is equivalent 1-lambda_mult
         where lambda_mult is the value often used in max_marginal_relevance_search()
         We chose to use that since we believe it's more intuitive to the user.
     """
 
-    is_enabled: bool = False
-    mmr_k: int = 50
-    diversity_bias: float = 0.3
+    reranker: str = "MMR"
+    rerank_k: int = 50
+    mmr_diversity_bias: float = 0.3
 
 
 @dataclass
@@ -74,7 +76,7 @@ class VectaraQueryConfig:
         to add, defaults to 2
     n_sentence_after: number of sentences before the matching segment
         to add, defaults to 2
-    mmr_config: MMRConfig configuration dataclass
+    rerank_config: RerankConfig configuration dataclass
     summary_config: SummaryConfig configuration dataclass
     """
 
@@ -84,14 +86,14 @@ class VectaraQueryConfig:
     score_threshold: Optional[float] = None
     n_sentence_before: int = 2
     n_sentence_after: int = 2
-    mmr_config: MMRConfig = field(default_factory=MMRConfig)
+    rerank_config: RerankConfig = field(default_factory=RerankConfig)
     summary_config: SummaryConfig = field(default_factory=SummaryConfig)
 
 
 def create_vectara_query_config(search_kwargs: dict) -> VectaraQueryConfig:
-    # Extracting nested MMRConfig if present
-    mmr_config_kwargs = search_kwargs.get("mmr_config", {})
-    mmr_config = MMRConfig(**mmr_config_kwargs)
+    # Extracting nested RerankConfig if present
+    rerank_config_kwargs = search_kwargs.get("rerank_config", {})
+    rerank_config = RerankConfig(**rerank_config_kwargs)
 
     # Extracting nested SummaryConfig if present
     summary_config_kwargs = search_kwargs.get("summary_config", {})
@@ -105,7 +107,7 @@ def create_vectara_query_config(search_kwargs: dict) -> VectaraQueryConfig:
         score_threshold=search_kwargs.get("score_threshold", None),
         n_sentence_before=search_kwargs.get("n_sentence_before", 2),
         n_sentence_after=search_kwargs.get("n_sentence_after", 2),
-        mmr_config=mmr_config,
+        rerank_config=rerank_config,
         summary_config=summary_config,
     )
     return config
@@ -376,8 +378,8 @@ class Vectara(VectorStore):
         Returns:
             A dictionary with the body of the query
         """
-        if isinstance(config.mmr_config, dict):
-            config.mmr_config = MMRConfig(**config.mmr_config)
+        if isinstance(config.rerank_config, dict):
+            config.rerank_config = RerankConfig(**config.rerank_config)
         if isinstance(config.summary_config, dict):
             config.summary_config = SummaryConfig(**config.summary_config)
 
@@ -387,8 +389,8 @@ class Vectara(VectorStore):
                     "query": query,
                     "start": 0,
                     "numResults": (
-                        config.mmr_config.mmr_k
-                        if config.mmr_config.is_enabled
+                        config.rerank_config.rerank_k
+                        if config.rerank_config.reranker in ["MMR", "Slingshot"]
                         else config.k
                     ),
                     "contextConfig": {
@@ -409,11 +411,17 @@ class Vectara(VectorStore):
             body["query"][0]["corpusKey"][0]["lexicalInterpolationConfig"] = {  # type: ignore
                 "lambda": config.lambda_val
             }
-        if config.mmr_config.is_enabled:
+
+        if config.rerank_config.reranker == "MMR":
             body["query"][0]["rerankingConfig"] = {
-                "rerankerId": 272725718,
-                "mmrConfig": {"diversityBias": config.mmr_config.diversity_bias},
+                "rerankerId": MMR_RERANKER_ID,
+                "mmrConfig": {"diversityBias": config.rerank_config.mmr_diversity_bias},
             }
+        elif config.rerank_config.reranker == "Slingshot":
+            body["query"][0]["rerankingConfig"] = {
+                "rerankerId": SLIGNSHOT_RERANKER_ID,
+            }
+
         if config.summary_config.is_enabled:
             body["query"][0]["summary"] = [
                 {
@@ -493,7 +501,7 @@ class Vectara(VectorStore):
             for x, md in zip(responses, metadatas)
         ]
 
-        if config.mmr_config.is_enabled:
+        if config.rerank_config.reranker in ["MMR", "Slingshot"]:
             res = res[: config.k]
         if config.summary_config.is_enabled:
             summary = result["responseSet"][0]["summary"][0]["text"]
@@ -524,7 +532,8 @@ class Vectara(VectorStore):
             - score_threshold: minimal score threshold for the result.
             - n_sentence_before: number of sentences before the matching segment
             - n_sentence_after: number of sentences after the matching segment
-            - mmr_config: optional configuration for MMR (see MMRConfig dataclass)
+            - rerank_config: optional configuration for Reranking 
+              (see RerankConfig dataclass)
             - summary_config: optional configuration for summary
               (see SummaryConfig dataclass)
         Returns:
@@ -578,8 +587,8 @@ class Vectara(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        kwargs["mmr_config"] = MMRConfig(
-            is_enabled=True, mmr_k=fetch_k, diversity_bias=1 - lambda_mult
+        kwargs["rerank_config"] = RerankConfig(
+            reranker="MMR", rerank_k=fetch_k, mmr_diversity_bias = 1 - lambda_mult
         )
         return self.similarity_search(query, **kwargs)
 
@@ -801,7 +810,7 @@ class VectaraRAG(Runnable):
                         )
                         for x, md in zip(responses, metadatas)
                     ]
-                    if self.config.mmr_config.is_enabled:
+                    if self.config.rerank_config.reranker in ["MMR", "Slingshot"]:
                         res = res[: self.config.k]
                     yield {"context": res}
         return
