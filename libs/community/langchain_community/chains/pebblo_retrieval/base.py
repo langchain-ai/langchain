@@ -70,6 +70,8 @@ class PebbloRetrievalQA(Chain):
     """Description of app."""
     api_key: Optional[str] = None  #: :meta private:
     """Pebblo cloud API key for app."""
+    classifier_url: str = CLASSIFIER_URL  #: :meta private:
+    """Classifier endpoint."""
     _discover_sent = False  #: :meta private:
     """Flag to check if discover payload has been sent."""
     _prompt_sent = False  #: :meta private:
@@ -126,8 +128,8 @@ class PebbloRetrievalQA(Chain):
             },
             "prompt_time": prompt_time,
             "user": auth_context.user_id if auth_context else "unknown",
-            "user_identities": auth_context.authorized_identities
-            if "authorized_identities" in dict(auth_context)
+            "user_identities": auth_context.user_auth
+            if "user_auth" in dict(auth_context)
             else []
             if auth_context
             else [],
@@ -219,6 +221,7 @@ class PebbloRetrievalQA(Chain):
         chain_type: str = "stuff",
         chain_type_kwargs: Optional[dict] = None,
         api_key: Optional[str] = None,
+        classifier_url: str = CLASSIFIER_URL,
         **kwargs: Any,
     ) -> "PebbloRetrievalQA":
         """Load chain from chain type."""
@@ -238,7 +241,9 @@ class PebbloRetrievalQA(Chain):
             **kwargs,
         )
 
-        PebbloRetrievalQA._send_discover(app, api_key=api_key)
+        PebbloRetrievalQA._send_discover(
+            app, api_key=api_key, classifier_url=classifier_url
+        )
 
         return cls(
             combine_documents_chain=combine_documents_chain,
@@ -246,6 +251,7 @@ class PebbloRetrievalQA(Chain):
             owner=owner,
             description=description,
             api_key=api_key,
+            classifier_url=classifier_url,
             **kwargs,
         )
 
@@ -315,14 +321,14 @@ class PebbloRetrievalQA(Chain):
         return app
 
     @staticmethod
-    def _send_discover(app, api_key) -> None:  # type: ignore
+    def _send_discover(app, api_key, classifier_url) -> None:  # type: ignore
         """Send app discovery payload to pebblo-server. Internal method."""
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
         }
         payload = app.dict(exclude_unset=True)
-        app_discover_url = f"{CLASSIFIER_URL}{APP_DISCOVER_URL}"
+        app_discover_url = f"{classifier_url}{APP_DISCOVER_URL}"
         try:
             pebblo_resp = requests.post(
                 app_discover_url, headers=headers, json=payload, timeout=20
@@ -389,7 +395,7 @@ class PebbloRetrievalQA(Chain):
             "Accept": "application/json",
             "Content-Type": "application/json",
         }
-        app_discover_url = f"{CLASSIFIER_URL}{PROMPT_URL}"
+        app_discover_url = f"{self.classifier_url}{PROMPT_URL}"
         try:
             pebblo_resp = requests.post(
                 app_discover_url, headers=headers, json=qa_payload.dict(), timeout=20
