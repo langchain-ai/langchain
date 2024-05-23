@@ -201,7 +201,7 @@ def _convert_function_to_dict(function: Dict) -> Any:
 
                 res.parameters = FunctionParameters(
                     type="object",
-                    properties=properties,
+                    properties=properties,  # type: ignore[arg-type]
                     required=props.get("required", []),
                 )
             else:
@@ -525,7 +525,8 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         key_name = convert_to_gigachat_tool(schema)["function"]["name"]
         if is_pydantic_schema:
             output_parser: OutputParserLike = PydanticToolsParser(
-                tools=[schema], first_tool_only=True
+                tools=[schema],  # type: ignore
+                first_tool_only=True,
             )
         else:
             output_parser = JsonOutputKeyToolsParser(
