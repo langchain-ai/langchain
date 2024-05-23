@@ -131,6 +131,7 @@ class CloudBlobLoader(BlobLoader):
     .. code-block:: python
 
         loader = CloudBlobLoader("s3://mybucket/id")
+
         for blob in loader.yield_blobs():
             print(blob)
     """  # noqa: E501
@@ -145,11 +146,14 @@ class CloudBlobLoader(BlobLoader):
         show_progress: bool = False,
     ) -> None:
         """Initialize with a url and how to glob over it.
+
         Use [CloudPathLib](https://cloudpathlib.drivendata.org/).
 
         Args:
             url: Cloud URL to load from.
-                  If a path to a file is provided, glob/exclude/suffixes are ignored.
+                 Supports s3://, az://, gs://, file:// schemes.
+                 If no scheme is provided, it is assumed to be a local file.
+                 If a path to a file is provided, glob/exclude/suffixes are ignored.
             glob: Glob pattern relative to the specified path
                   by default set to pick up all non-hidden files
             exclude: patterns to exclude from results, use glob syntax
@@ -252,6 +256,8 @@ class CloudBlobLoader(BlobLoader):
 
         Args:
             path: path like object to file to be read
+                  Supports s3://, az://, gs://, file:// schemes.
+                  If no scheme is provided, it is assumed to be a local file.
             encoding: Encoding to use if decoding the bytes into a string
             mime_type: if provided, will be set as the mime-type of the data
             guess_type: If True, the mimetype will be guessed from the file extension,
