@@ -1,7 +1,6 @@
 # This file is adapted from
 # https://github.com/langchain-ai/langchain/blob/master/libs/community/langchain_community/embeddings/huggingface.py
 
-import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
@@ -12,7 +11,6 @@ DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
     "Represent this question for searching relevant passages: "
 )
 DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索相关文章："
-logger = logging.getLogger(__name__)
 
 
 class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
@@ -90,12 +88,10 @@ class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
             self.model_kwargs["device"] = "cpu"
 
         if self.model_kwargs["device"] not in ["cpu", "xpu"]:
-            logger.warning(
+            raise ValueError(
                 "IpexLLMBgeEmbeddings currently only supports device to be "
-                f"'cpu' or 'xpu', but you have: {self.model_kwargs['device']};"
-                " Use 'cpu' instead."
+                f"'cpu' or 'xpu', but you have: {self.model_kwargs['device']}."
             )
-            self.model_kwargs["device"] = "cpu"
 
         self.client = sentence_transformers.SentenceTransformer(
             self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
