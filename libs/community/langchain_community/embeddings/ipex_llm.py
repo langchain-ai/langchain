@@ -14,6 +14,7 @@ DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
 DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索相关文章："
 logger = logging.getLogger(__name__)
 
+
 class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
     """Wrapper around the BGE embedding model
     with IPEX-LLM optimizations on Intel CPUs and GPUs.
@@ -73,7 +74,9 @@ class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
             from ipex_llm.transformers.convert import _optimize_post, _optimize_pre
 
         except ImportError as exc:
-            base_url = "https://python.langchain.com/v0.1/docs/integrations/text_embedding/"
+            base_url = (
+                "https://python.langchain.com/v0.1/docs/integrations/text_embedding/"
+            )
             raise ImportError(
                 "Could not import ipex_llm or sentence_transformers"
                 f"Please refer to {base_url}/ipex_llm/ "
@@ -102,7 +105,7 @@ class IpexLLMBgeEmbeddings(BaseModel, Embeddings):
         self.client = _optimize_pre(self.client)
         self.client = _optimize_post(self.client)
         if self.model_kwargs["device"] == "xpu":
-            self.client = self.client.half().to('xpu')
+            self.client = self.client.half().to("xpu")
 
         if "-zh" in self.model_name:
             self.query_instruction = DEFAULT_QUERY_BGE_INSTRUCTION_ZH
