@@ -431,7 +431,7 @@ class Jaguar(VectorStore):
 
     def prt(self, msg: str) -> None:
         with open("/tmp/debugjaguar.log", "a") as file:
-            print(f"msg={msg}", file=file, flush=True)  # noqa: T201
+            print(f"msg={msg}", file=file, flush=True)
 
     def _parseMeta(self, nvmap: dict, filecol: str) -> Tuple[List[str], List[str], str]:
         filepath = ""

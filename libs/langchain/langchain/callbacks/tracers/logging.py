@@ -33,8 +33,8 @@ class LoggingCallbackHandler(FunctionCallbackHandler):
         text: str,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,  # noqa: ARG002
-        **kwargs: Any,  # noqa: ARG002
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
     ) -> None:
         try:
             crumbs_str = f"[{self.get_breadcrumbs(run=self._get_run(run_id=run_id))}] "
