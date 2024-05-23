@@ -1,4 +1,5 @@
 """Loader that loads data from Sharepoint Document Library"""
+
 from __future__ import annotations
 
 import json
@@ -82,7 +83,9 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             if not isinstance(target_folder, Folder):
                 raise ValueError("Unable to fetch root folder")
             for blob in self._load_from_folder(target_folder):
-                yield from blob_parser.lazy_parse(blob)
+                for blob_part in blob_parser.lazy_parse(blob):
+                    blob_part.metadata.update(blob.metadata)
+                    yield blob_part
 
     def authorized_identities(self) -> List:
         data = self._fetch_access_token()
