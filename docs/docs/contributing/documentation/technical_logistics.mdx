@@ -71,12 +71,26 @@ make docs_clean
 make api_docs_clean
 ```
 
+
+
 Next, you can build the documentation as outlined below:
 
 ```bash
 make docs_build
 make api_docs_build
 ```
+
+:::tip
+
+The `make api_docs_build` command takes a long time. If you're making cosmetic changes to the API docs and want to see how they look, use:
+
+```bash
+make api_docs_quick_preview
+```
+
+which will just build a small subset of the API reference.
+
+:::
 
 Finally, run the link checker to ensure all links are valid:
 
