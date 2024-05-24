@@ -17,7 +17,7 @@ DEFAULT_VECTOR_KEY = "embedding"
 DEFAULT_ID_KEY = "id"
 DEFAULT_TEXT_KEY = "text"
 DEFAULT_TABLE_NAME = "embeddings"
-SIMILARITY_ALIAS = "similarity"
+SIMILARITY_ALIAS = "similarity_score"
 
 
 class DuckDB(VectorStore):
