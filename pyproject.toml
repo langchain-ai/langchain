@@ -56,8 +56,6 @@ langchain-openai = { path = "libs/partners/openai", develop = true }
 ipykernel = "^6.29.2"
 
 [tool.poetry.group.test.dependencies]
-rdflib = "^7.0.0"
-sparqlwrapper = "^2.0.0"
 
 [tool.poetry.group.test_integration.dependencies]
 
