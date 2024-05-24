@@ -115,11 +115,9 @@ class RetrieverV2(
     ) -> RunnableSerializable:
         if output_format == "string":
             document_formatter = document_formatter or _default_document_formatter
-            return self | (lambda res: document_formatter(res.documents))
+            return self | _retrieval_response_to_documents | document_formatter
         elif output_format == "documents":
-            return self | (
-                lambda res: [hit.source or Document(hit.snippet) for hit in res.hits]
-            )
+            return self | _retrieval_response_to_documents
         elif output_format == "hits":
             return self
         else:
@@ -173,3 +171,7 @@ class Hit(TypedDict, total=False):
 
 def _default_document_formatter(documents: Sequence[Document]) -> str:
     return "\n\n".join(doc.page_content for doc in documents)
+
+
+def _retrieval_response_to_documents(response: RetrievalResponse) -> List[Document]:
+    return [hit["source"] or Document(hit["snippet"]) for hit in response["hits"]]
