@@ -122,6 +122,7 @@ __all__ = [
     "ConversationSummaryBufferMemory",
     "ConversationSummaryMemory",
     "ConversationTokenBufferMemory",
+    "ConversationTokenBufferVectorStoreMemory",
     "CosmosDBChatMessageHistory",
     "DynamoDBChatMessageHistory",
     "ElasticsearchChatMessageHistory",
