@@ -62,7 +62,7 @@ class Milvus(VectorStore):
         primary_field (str): Name of the primary key field. Defaults to "pk".
         text_field (str): Name of the text field. Defaults to "text".
         vector_field (str): Name of the vector field. Defaults to "vector".
-        metadata_field (str): Name of the metadta field. Defaults to None.
+        metadata_field (str): Name of the metadata field. Defaults to None.
             When metadata_field is specified,
             the document's metadata will store as json.
 
