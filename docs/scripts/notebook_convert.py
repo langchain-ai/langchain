@@ -122,14 +122,13 @@ def _modify_frontmatter(
     edit_url = (
         f"https://github.com/langchain-ai/langchain/edit/master/docs/docs/{rel_path}"
     )
-    print(edit_url)
-    if re.match(r"$[\s\n]*---\n", body):
+    if re.match(r"^[\s\n]*---\n", body):
         # if custom_edit_url already exists, leave it
         if re.match(r"custom_edit_url: ", body):
             return body
         else:
             return re.sub(
-                "$[\s\n]*---\n", f"---\ncustom_edit_url: {edit_url}\n", body, count=1
+                r"^[\s\n]*---\n", f"---\ncustom_edit_url: {edit_url}\n", body, count=1
             )
     else:
         return f"---\ncustom_edit_url: {edit_url}\n---\n{body}"
