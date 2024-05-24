@@ -36,6 +36,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
+    LangSmithParams,
     agenerate_from_stream,
     generate_from_stream,
 )
@@ -547,8 +548,15 @@ class BaseChatOpenAI(BaseChatModel):
         if response.get("error"):
             raise ValueError(response.get("error"))
 
+        token_usage = response.get("usage", {})
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
+            if token_usage and isinstance(message, AIMessage):
+                message.usage_metadata = {
+                    "input_tokens": token_usage.get("prompt_tokens", 0),
+                    "output_tokens": token_usage.get("completion_tokens", 0),
+                    "total_tokens": token_usage.get("total_tokens", 0),
+                }
             generation_info = dict(finish_reason=res.get("finish_reason"))
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
@@ -557,7 +565,6 @@ class BaseChatOpenAI(BaseChatModel):
                 generation_info=generation_info,
             )
             generations.append(gen)
-        token_usage = response.get("usage", {})
         llm_output = {
             "token_usage": token_usage,
             "model_name": self.model_name,
@@ -638,6 +645,23 @@ class BaseChatOpenAI(BaseChatModel):
             **self._default_params,
             **kwargs,
         }
+
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        ls_params = LangSmithParams(
+            ls_provider="openai",
+            ls_model_name=self.model_name,
+            ls_model_type="chat",
+            ls_temperature=params.get("temperature", self.temperature),
+        )
+        if ls_max_tokens := params.get("max_tokens", self.max_tokens):
+            ls_params["ls_max_tokens"] = ls_max_tokens
+        if ls_stop := stop or params.get("stop", None):
+            ls_params["ls_stop"] = ls_stop
+        return ls_params
 
     @property
     def _llm_type(self) -> str:

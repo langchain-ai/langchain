@@ -40,7 +40,7 @@ class VectorSQLOutputParser(BaseOutputParser[str]):
     @classmethod
     def from_embeddings(
         cls, model: Embeddings, distance_func_name: str = "distance", **kwargs: Any
-    ) -> BaseOutputParser:
+    ) -> VectorSQLOutputParser:
         return cls(model=model, distance_func_name=distance_func_name, **kwargs)
 
     def parse(self, text: str) -> str:

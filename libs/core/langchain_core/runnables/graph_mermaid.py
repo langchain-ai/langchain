@@ -57,7 +57,7 @@ def draw_mermaid(
         # Add nodes to the graph
         for node in nodes.values():
             node_label = format_dict.get(node, format_dict[default_class_label]).format(
-                _escape_node_label(node), _escape_node_label(node.split(":", 1)[-1])
+                _escape_node_label(node), node.split(":", 1)[-1]
             )
             mermaid_graph += f"\t{node_label};\n"
 
