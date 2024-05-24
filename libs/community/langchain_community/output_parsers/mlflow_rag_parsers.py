@@ -67,4 +67,4 @@ class StrObjOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
             raise ImportError(
                 "mlflow 2.13.0 or higher is required to use this output parser. "
             )
-        return StringResponse(text=text)
+        return StringResponse(text=text).asdict()
