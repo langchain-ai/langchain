@@ -12,7 +12,7 @@ from langchain_community.document_loaders.tensorflow_datasets import (
 )
 
 if TYPE_CHECKING:
-    import tensorflow as tf  # noqa: E402
+    import tensorflow as tf
 
 
 def decode_to_str(item: tf.Tensor) -> str:

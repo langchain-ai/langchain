@@ -333,3 +333,28 @@ def test_enhanced_schema() -> None:
     # remove metadata portion of schema
     del graph.structured_schema["metadata"]
     assert graph.structured_schema == expected_output
+
+
+def test_enhanced_schema_exception() -> None:
+    """Test no error with weird schema."""
+    url = os.environ.get("NEO4J_URI")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(
+        url=url, username=username, password=password, enhanced_schema=True
+    )
+    graph.query("MATCH (n) DETACH DELETE n")
+    graph.query("CREATE (:Node {foo:'bar'})," "(:Node {foo: 1}), (:Node {foo: [1,2]})")
+    graph.refresh_schema()
+    expected_output = {
+        "node_props": {"Node": [{"property": "foo", "type": "STRING"}]},
+        "rel_props": {},
+        "relationships": [],
+    }
+    # remove metadata portion of schema
+    del graph.structured_schema["metadata"]
+    assert graph.structured_schema == expected_output
