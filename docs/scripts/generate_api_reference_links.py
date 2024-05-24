@@ -186,7 +186,7 @@ def replace_imports(file):
     data = code_block_re.sub(replacer, data)
 
     # if all_imports:
-    #     print(f"Adding {len(all_imports)} links for imports in {file}")  # noqa: T201
+    #     print(f"Adding {len(all_imports)} links for imports in {file}")
     with open(file, "w") as f:
         f.write(data)
     return all_imports

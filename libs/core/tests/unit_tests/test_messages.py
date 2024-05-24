@@ -120,37 +120,21 @@ def test_message_chunks() -> None:
     assert ai_msg_chunk + tool_calls_msg_chunk == tool_calls_msg_chunk
     assert tool_calls_msg_chunk + ai_msg_chunk == tool_calls_msg_chunk
 
-    # Response metadata
-    chunk_1 = AIMessageChunk(
+    # Test token usage
+    left = AIMessageChunk(
         content="",
-        response_metadata={
-            "token_usage": {
-                "completion_tokens": 1,
-                "prompt_tokens": 2,
-                "total_tokens": 3,
-            },
-        },
+        usage_metadata={"input_tokens": 1, "output_tokens": 2, "total_tokens": 3},
     )
-    chunk_2 = AIMessageChunk(
+    right = AIMessageChunk(
         content="",
-        response_metadata={
-            "token_usage": {
-                "completion_tokens": 4,
-                "prompt_tokens": 5,
-                "total_tokens": 9,
-            },
-        },
+        usage_metadata={"input_tokens": 4, "output_tokens": 5, "total_tokens": 9},
     )
-    assert chunk_1 + chunk_2 == AIMessageChunk(
+    assert left + right == AIMessageChunk(
         content="",
-        response_metadata={
-            "token_usage": {
-                "completion_tokens": 5,
-                "prompt_tokens": 7,
-                "total_tokens": 12,
-            },
-        },
+        usage_metadata={"input_tokens": 5, "output_tokens": 7, "total_tokens": 12},
     )
+    assert AIMessageChunk(content="") + left == left
+    assert right + AIMessageChunk(content="") == right
 
 
 def test_chat_message_chunks() -> None:
@@ -175,7 +159,7 @@ def test_chat_message_chunks() -> None:
         role="User", content=" indeed."
     ) == AIMessageChunk(
         content="I am indeed."
-    ), "Other MessageChunk + ChatMessageChunk should be a MessageChunk as the left side"  # noqa: E501
+    ), "Other MessageChunk + ChatMessageChunk should be a MessageChunk as the left side"
 
 
 def test_function_message_chunks() -> None:

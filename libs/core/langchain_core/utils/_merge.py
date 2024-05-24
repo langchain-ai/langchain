@@ -3,9 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 
-def merge_dicts(
-    left: Dict[str, Any], right: Dict[str, Any], add_ints: bool = False
-) -> Dict[str, Any]:
+def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
     """Merge two dicts, handling specific scenarios where a key exists in both
     dictionaries but has a value of None in 'left'. In such cases, the method uses the
     value from 'right' for that key in the merged dictionary.
@@ -33,13 +31,11 @@ def merge_dicts(
         elif isinstance(merged[right_k], str):
             merged[right_k] += right_v
         elif isinstance(merged[right_k], dict):
-            merged[right_k] = merge_dicts(merged[right_k], right_v, add_ints=add_ints)
+            merged[right_k] = merge_dicts(merged[right_k], right_v)
         elif isinstance(merged[right_k], list):
             merged[right_k] = merge_lists(merged[right_k], right_v)
         elif merged[right_k] == right_v:
             continue
-        elif isinstance(merged[right_k], int) and add_ints:
-            merged[right_k] += right_v
         else:
             raise TypeError(
                 f"Additional kwargs key {right_k} already exists in left dict and "

@@ -350,20 +350,21 @@ def test_stream() -> None:
     for chunk in llm.stream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
-        if "token_usage" in chunk.response_metadata:
+        assert isinstance(chunk, AIMessageChunk)
+        if chunk.usage_metadata is not None:
             chunks_with_token_counts += 1
     if chunks_with_token_counts != 1:
         raise AssertionError(
-            "Expected only one chunk with token counts. "
+            "Expected exactly one chunk with token counts. "
             "AIMessageChunk aggregation adds counts. Check that "
             "this is behaving properly."
         )
 
     # check token usage is populated
     assert isinstance(full, AIMessageChunk)
-    assert "token_usage" in full.response_metadata
-    for key in ["completion_tokens", "prompt_tokens", "total_tokens"]:
-        assert isinstance(full.response_metadata["token_usage"][key], int)
+    assert full.usage_metadata is not None
+    for key in full.usage_metadata:
+        assert full.usage_metadata[key] > 0
 
     # check not populated
     aggregate: Optional[BaseMessageChunk] = None
@@ -371,7 +372,7 @@ def test_stream() -> None:
         assert isinstance(chunk.content, str)
         aggregate = chunk if aggregate is None else aggregate + chunk
     assert isinstance(aggregate, AIMessageChunk)
-    assert "token_usage" not in aggregate.response_metadata
+    assert aggregate.usage_metadata is None
 
 
 async def test_astream() -> None:
@@ -383,20 +384,21 @@ async def test_astream() -> None:
     async for chunk in llm.astream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
-        if "token_usage" in chunk.response_metadata:
+        assert isinstance(chunk, AIMessageChunk)
+        if chunk.usage_metadata is not None:
             chunks_with_token_counts += 1
     if chunks_with_token_counts != 1:
         raise AssertionError(
-            "Expected only one chunk with token counts. "
+            "Expected exactly one chunk with token counts. "
             "AIMessageChunk aggregation adds counts. Check that "
             "this is behaving properly."
         )
 
     # check token usage is populated
     assert isinstance(full, AIMessageChunk)
-    assert "token_usage" in full.response_metadata
-    for key in ["completion_tokens", "prompt_tokens", "total_tokens"]:
-        assert isinstance(full.response_metadata["token_usage"][key], int)
+    assert full.usage_metadata is not None
+    for key in full.usage_metadata:
+        assert full.usage_metadata[key] > 0
 
     # check not populated
     aggregate: Optional[BaseMessageChunk] = None
@@ -404,7 +406,7 @@ async def test_astream() -> None:
         assert isinstance(chunk.content, str)
         aggregate = chunk if aggregate is None else aggregate + chunk
     assert isinstance(aggregate, AIMessageChunk)
-    assert "token_usage" not in aggregate.response_metadata
+    assert aggregate.usage_metadata is None
 
 
 async def test_abatch() -> None:

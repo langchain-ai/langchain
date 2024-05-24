@@ -14,6 +14,10 @@
   ],
   "redirects": [
     {
+      "source": "/docs/how_to/tool_calls_multi_modal(/?)",
+      "destination": "/docs/how_to/multimodal_inputs/"
+    },
+    {
       "source": "/v0.2/docs/langsmith(/?)",
       "destination": "https://docs.smith.langchain.com/"
     },
