@@ -120,7 +120,9 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
         if connection_string:
             warn_deprecated(
                 since="0.2.2",
-                alternative="connection_string is deprecated, use connection instead")
+                removal="0.3.0",
+                name="connection_string",
+                alternative="Use connection instead")
             connection = connection_string
             self.connection_string = connection_string
         if isinstance(connection, str):
