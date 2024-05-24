@@ -58,6 +58,7 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
+from langchain_core.messages.ai import UsageMetadata
 from langchain_core.output_parsers import (
     JsonOutputParser,
     PydanticOutputParser,
@@ -483,23 +484,36 @@ class BaseChatOpenAI(BaseChatModel):
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
                 if len(chunk["choices"]) == 0:
-                    continue
-                choice = chunk["choices"][0]
-                if choice["delta"] is None:
-                    continue
-                chunk = _convert_delta_to_message_chunk(
-                    choice["delta"], default_chunk_class
-                )
-                generation_info = {}
-                if finish_reason := choice.get("finish_reason"):
-                    generation_info["finish_reason"] = finish_reason
-                logprobs = choice.get("logprobs")
-                if logprobs:
-                    generation_info["logprobs"] = logprobs
-                default_chunk_class = chunk.__class__
-                chunk = ChatGenerationChunk(
-                    message=chunk, generation_info=generation_info or None
-                )
+                    if token_usage := chunk.get("usage"):
+                        usage_metadata = UsageMetadata(
+                            input_tokens=token_usage.get("prompt_tokens", 0),
+                            output_tokens=token_usage.get("completion_tokens", 0),
+                            total_tokens=token_usage.get("total_tokens", 0),
+                        )
+                        chunk = ChatGenerationChunk(
+                            message=default_chunk_class(
+                                content="", usage_metadata=usage_metadata
+                            )
+                        )
+                    else:
+                        continue
+                else:
+                    choice = chunk["choices"][0]
+                    if choice["delta"] is None:
+                        continue
+                    chunk = _convert_delta_to_message_chunk(
+                        choice["delta"], default_chunk_class
+                    )
+                    generation_info = {}
+                    if finish_reason := choice.get("finish_reason"):
+                        generation_info["finish_reason"] = finish_reason
+                    logprobs = choice.get("logprobs")
+                    if logprobs:
+                        generation_info["logprobs"] = logprobs
+                    default_chunk_class = chunk.__class__
+                    chunk = ChatGenerationChunk(
+                        message=chunk, generation_info=generation_info or None
+                    )
                 if run_manager:
                     run_manager.on_llm_new_token(
                         chunk.text, chunk=chunk, logprobs=logprobs
@@ -589,23 +603,36 @@ class BaseChatOpenAI(BaseChatModel):
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
                 if len(chunk["choices"]) == 0:
-                    continue
-                choice = chunk["choices"][0]
-                if choice["delta"] is None:
-                    continue
-                chunk = _convert_delta_to_message_chunk(
-                    choice["delta"], default_chunk_class
-                )
-                generation_info = {}
-                if finish_reason := choice.get("finish_reason"):
-                    generation_info["finish_reason"] = finish_reason
-                logprobs = choice.get("logprobs")
-                if logprobs:
-                    generation_info["logprobs"] = logprobs
-                default_chunk_class = chunk.__class__
-                chunk = ChatGenerationChunk(
-                    message=chunk, generation_info=generation_info or None
-                )
+                    if token_usage := chunk.get("usage"):
+                        usage_metadata = UsageMetadata(
+                            input_tokens=token_usage.get("prompt_tokens", 0),
+                            output_tokens=token_usage.get("completion_tokens", 0),
+                            total_tokens=token_usage.get("total_tokens", 0),
+                        )
+                        chunk = ChatGenerationChunk(
+                            message=default_chunk_class(
+                                content="", usage_metadata=usage_metadata
+                            )
+                        )
+                    else:
+                        continue
+                else:
+                    choice = chunk["choices"][0]
+                    if choice["delta"] is None:
+                        continue
+                    chunk = _convert_delta_to_message_chunk(
+                        choice["delta"], default_chunk_class
+                    )
+                    generation_info = {}
+                    if finish_reason := choice.get("finish_reason"):
+                        generation_info["finish_reason"] = finish_reason
+                    logprobs = choice.get("logprobs")
+                    if logprobs:
+                        generation_info["logprobs"] = logprobs
+                    default_chunk_class = chunk.__class__
+                    chunk = ChatGenerationChunk(
+                        message=chunk, generation_info=generation_info or None
+                    )
                 if run_manager:
                     await run_manager.on_llm_new_token(
                         token=chunk.text, chunk=chunk, logprobs=logprobs
@@ -1134,6 +1161,29 @@ class ChatOpenAI(BaseChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
         return True
+
+    def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
+        """Set default stream_options."""
+        default_stream_options = {"include_usage": True}
+        stream_options = kwargs.get("stream_options", {})
+        merged_stream_options = {**default_stream_options, **stream_options}
+        kwargs["stream_options"] = merged_stream_options
+
+        return super()._stream(*args, **kwargs)
+
+    async def _astream(
+        self,
+        *args: Any,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        """Set default stream_options."""
+        default_stream_options = {"include_usage": True}
+        stream_options = kwargs.get("stream_options", {})
+        merged_stream_options = {**default_stream_options, **stream_options}
+        kwargs["stream_options"] = merged_stream_options
+
+        async for chunk in super()._astream(*args, **kwargs):
+            yield chunk
 
 
 def _is_pydantic_class(obj: Any) -> bool:
