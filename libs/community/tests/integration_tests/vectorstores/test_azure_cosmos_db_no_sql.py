@@ -44,23 +44,25 @@ def safe_delete_database() -> None:
     cosmos_client.delete_database(database_name)
 
 
-def get_vector_indexing_policy(embedding_type):
+def get_vector_indexing_policy(embedding_type: str) -> dict:
     return {
         "indexingMode": "consistent",
         "includedPaths": [{"path": "/*"}],
         "excludedPaths": [{"path": '/"_etag"/?'}],
-        "vectorIndexes": [{"path": "/embedding", "type": f"{embedding_type}"}],
+        "vectorIndexes": [{"path": "/embedding", "type": embedding_type}],
     }
 
 
-def get_vector_embedding_policy(distance_function, data_type, dimensions):
+def get_vector_embedding_policy(
+    distance_function: str, data_type: str, dimensions: int
+) -> dict:
     return {
         "vectorEmbeddings": [
             {
                 "path": "/embedding",
-                "dataType": f"{data_type}",
+                "dataType": data_type,
                 "dimensions": dimensions,
-                "distanceFunction": f"{distance_function}",
+                "distanceFunction": distance_function,
             }
         ]
     }
@@ -68,7 +70,7 @@ def get_vector_embedding_policy(distance_function, data_type, dimensions):
 
 class TestAzureCosmosDBNoSqlVectorSearch:
     def test_from_documents_cosine_distance(
-            self, azure_openai_embeddings: OpenAIEmbeddings
+        self, azure_openai_embeddings: OpenAIEmbeddings
     ) -> None:
         """Test end to end construction and search."""
         documents = [
@@ -85,26 +87,23 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             database_name=database_name,
             container_name=container_name,
             partition_key=partition_key,
-            vector_embedding_policy=get_vector_embedding_policy("cosine", "float32",
-                                                                400),
+            vector_embedding_policy=get_vector_embedding_policy(
+                "cosine", "float32", 400
+            ),
             indexing_policy=get_vector_indexing_policy("flat"),
             cosmos_container_properties=cosmos_container_properties,
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
-        output = store.similarity_search(
-            "Dogs",
-            k=2
-        )
+        output = store.similarity_search("Dogs", k=2)
 
         assert output
         assert output[0].page_content == "Dogs are tough."
         safe_delete_database()
 
     def test_from_texts_cosine_distance_delete_one(
-            self,
-            azure_openai_embeddings: OpenAIEmbeddings
-        ) -> None:
+        self, azure_openai_embeddings: OpenAIEmbeddings
+    ) -> None:
         texts = [
             "Dogs are tough.",
             "Cats have fluff.",
@@ -121,17 +120,15 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             database_name=database_name,
             container_name=container_name,
             partition_key=partition_key,
-            vector_embedding_policy=get_vector_embedding_policy("cosine", "float32",
-                                                                400),
+            vector_embedding_policy=get_vector_embedding_policy(
+                "cosine", "float32", 400
+            ),
             indexing_policy=get_vector_indexing_policy("flat"),
             cosmos_container_properties=cosmos_container_properties,
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
-        output = store.similarity_search(
-            "Dogs",
-            k=1
-        )
+        output = store.similarity_search("Dogs", k=1)
         assert output
         assert output[0].page_content == "Dogs are tough."
 
@@ -139,10 +136,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         store.delete_document_by_id(str(output[0].metadata["id"]))
         sleep(2)
 
-        output2 = store.similarity_search(
-            "Dogs",
-            k=1
-        )
+        output2 = store.similarity_search("Dogs", k=1)
         assert output2
         assert output2[0].page_content != "Dogs are tough."
         safe_delete_database()

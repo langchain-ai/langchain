@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import uuid
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.vectorstores import VST, VectorStore
+from langchain_core.vectorstores import VectorStore
 
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
@@ -13,13 +15,14 @@ if TYPE_CHECKING:
     from azure.cosmos.cosmos_client import CosmosClient
 
 
-# You can read more about vector search using AzureCosmosDBNoSQL here.
-# https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search
 class AzureCosmosDBNoSqlVectorSearch(VectorStore):
     """`Azure Cosmos DB for NoSQL` vector store.
 
     To use, you should have both:
-    - the ``azure-cosmos`` python package installed
+        - the ``azure-cosmos`` python package installed
+
+    You can read more about vector search using AzureCosmosDBNoSQL here:
+    https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search
     """
 
     def __init__(
@@ -137,35 +140,25 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
     @classmethod
     def _from_kwargs(
-        cls: Type[VST],
+        cls,
         embedding: Embeddings,
+        *,
+        cosmos_client: CosmosClient,
+        vector_embedding_policy: Dict[str, Any],
+        indexing_policy: Dict[str, Any],
+        cosmos_container_properties: Dict[str, Any],
+        database_name: str = "vectorSearchDB",
+        container_name: str = "vectorSearchContainer",
         **kwargs: Any,
-    ) -> VST:
-        known_kwargs = {
-            "cosmos_client",
-            "vector_embedding_policy",
-            "indexing_policy",
-            "cosmos_container_properties",
-            "database_name",
-            "container_name",
-        }
+    ) -> AzureCosmosDBNoSqlVectorSearch:
         if kwargs:
-            unknown_kwargs = set(kwargs.keys()) - known_kwargs
-            if unknown_kwargs:
-                warnings.warn(
-                    "Method 'from_texts' of AzureCosmosDBNoSql vector "
-                    "store invoked with "
-                    f"unsupported arguments "
-                    f"({', '.join(sorted(unknown_kwargs))}), "
-                    "which will be ignored."
-                )
-
-        cosmos_client = kwargs.get("cosmos_client"),
-        vector_embedding_policy = kwargs.get("vector_embedding_policy"),
-        indexing_policy = kwargs.get("indexing_policy"),
-        cosmos_container_properties = kwargs.get("cosmos_container_properties"),
-        database_name = kwargs.get("database_name"),
-        container_name = kwargs.get("container_name")
+            warnings.warn(
+                "Method 'from_texts' of AzureCosmosDBNoSql vector "
+                "store invoked with "
+                f"unsupported arguments "
+                f"({', '.join(sorted(kwargs))}), "
+                "which will be ignored."
+            )
 
         return cls(
             embedding=embedding,
@@ -177,15 +170,14 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             container_name=container_name,
         )
 
-
     @classmethod
     def from_texts(
-        cls: Type[VST],
+        cls,
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> VST:
+    ) -> AzureCosmosDBNoSqlVectorSearch:
         """Create an AzureCosmosDBNoSqlVectorSearch vectorstore from raw texts.
 
         Args:
