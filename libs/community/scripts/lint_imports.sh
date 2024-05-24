@@ -13,7 +13,8 @@ git --no-pager grep '^from langchain_experimental\.' . && errors=$((errors+1))
 # Whether the standary library actually poses a risk to users
 # is very nuanced and dependns on user's environment.
 # https://docs.python.org/3/library/xml.etree.elementtree.html
-git --no-pager grep '^from xml\.' . && errors=$((errors+1))
+git --no-pager grep '^from xml\.' . | grep -vE "# OK: user-must-opt-in" && errors=$((errors+1))
+git --no-pager grep '^import xml\.' . | grep -vE "# OK: user-must-opt-in" && errors=$((errors+1))
 
 # Decide on an exit status based on the errors
 if [ "$errors" -gt 0 ]; then

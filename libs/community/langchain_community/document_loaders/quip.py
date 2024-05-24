@@ -1,9 +1,9 @@
 import logging
 import re
-import xml.etree.cElementTree
+import xml.etree.cElementTree  # OK: user-must-opt-in
 from io import BytesIO
 from typing import List, Optional, Sequence
-from xml.etree.ElementTree import ElementTree
+from xml.etree.ElementTree import ElementTree  # OK: user-must-opt-in
 
 from langchain_core.documents import Document
 
