@@ -20,7 +20,8 @@ from langchain_community.vectorstores.vectara import (
 #    VECTARA_API_KEY, VECTARA_CORPUS_ID and VECTARA_CUSTOMER_ID
 #
 
-test_prompt_name = 'vectara-experimental-summary-ext-2023-12-11-sml'
+test_prompt_name = "vectara-experimental-summary-ext-2023-12-11-sml"
+
 
 def get_abbr(s: str) -> str:
     words = s.split(" ")  # Split the string into words
@@ -155,6 +156,7 @@ def test_vectara_from_files(vectara2: Vectara) -> None:
     )
     assert "Note the use of" in output[0].page_content
 
+
 def test_vectara_rag_with_reranking(vectara2: Vectara) -> None:
     """Test Vectara reranking."""
 
@@ -163,43 +165,50 @@ def test_vectara_rag_with_reranking(vectara2: Vectara) -> None:
     # Note: we don't test Slingshot as it's for Scale only
 
     # Test MMR
-    summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng", 
-                                   prompt_name=test_prompt_name)
+    summary_config = SummaryConfig(
+        is_enabled=True,
+        max_results=7,
+        response_lang="eng",
+        prompt_name=test_prompt_name,
+    )
     rerank_config = RerankConfig(reranker="MMR", rerank_k=50, diversity_bias=0.2)
     config = VectaraQueryConfig(
-        k=10, lambda_val=0.005, rerank_config=rerank_config, 
-        summary_config=summary_config
+        k=10,
+        lambda_val=0.005,
+        rerank_config=rerank_config,
+        summary_config=summary_config,
     )
 
     rag1 = vectara2.as_rag(config)
     response1 = rag1.invoke(query_str)
 
-    assert (
-        "transformer model" in response1["answer"].lower()
-    )
+    assert "transformer model" in response1["answer"].lower()
 
     # Test No reranking
-    summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng", 
-                                   prompt_name=test_prompt_name)
+    summary_config = SummaryConfig(
+        is_enabled=True,
+        max_results=7,
+        response_lang="eng",
+        prompt_name=test_prompt_name,
+    )
     rerank_config = RerankConfig(reranker="None")
     config = VectaraQueryConfig(
-        k=10, lambda_val=0.005, 
+        k=10,
+        lambda_val=0.005,
         rerank_config=rerank_config,
-        summary_config=summary_config
+        summary_config=summary_config,
     )
     rag2 = vectara2.as_rag(config)
     response2 = rag2.invoke(query_str)
 
-    assert (
-        "transformer model" in response2["answer"].lower()
-    )
+    assert "transformer model" in response2["answer"].lower()
 
     # assert that the page content is different for the top 5 results
     # in each reranking
     n_results = 10
     response1_content = [x[0].page_content for x in response1["context"][:n_results]]
     response2_content = [x[0].page_content for x in response2["context"][:n_results]]
-    assert (response1_content != response2_content)
+    assert response1_content != response2_content
 
 
 @pytest.fixture(scope="function")
@@ -259,10 +268,7 @@ def test_vectara_mmr(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
         n_sentence_after=0,
     )
     assert len(output1) == 2
-    assert (
-        "Generative AI promises to revolutionize"
-        in output1[1].page_content
-    )
+    assert "Generative AI promises to revolutionize" in output1[1].page_content
 
     output2 = vectara3.max_marginal_relevance_search(
         "generative AI",
@@ -278,6 +284,7 @@ def test_vectara_mmr(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
         in output2[1].page_content
     )
 
+
 def test_vectara_with_summary(vectara3) -> None:  # type: ignore[no-untyped-def]
     """Test vectara summary."""
     # test summarization
@@ -285,8 +292,12 @@ def test_vectara_with_summary(vectara3) -> None:  # type: ignore[no-untyped-def]
     output1 = vectara3.similarity_search(
         query="what is generative AI?",
         k=num_results,
-        summary_config=SummaryConfig(is_enabled=True, max_results=5,
-                                     response_lang="eng", prompt_name=test_prompt_name)
+        summary_config=SummaryConfig(
+            is_enabled=True,
+            max_results=5,
+            response_lang="eng",
+            prompt_name=test_prompt_name,
+        ),
     )
 
     assert len(output1) == num_results + 1
