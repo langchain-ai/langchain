@@ -1,5 +1,4 @@
 """VectorStore wrapper around a Postgres-TimescaleVector database."""
-
 from __future__ import annotations
 
 import enum

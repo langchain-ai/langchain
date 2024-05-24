@@ -1,5 +1,4 @@
 """Wrapper around the Tencent vector database."""
-
 from __future__ import annotations
 
 import json
