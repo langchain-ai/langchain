@@ -1,32 +1,84 @@
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    TypedDict,
+    TypeVar,
+    Union,
+    cast,
+)
+
+from langchain_core.documents import Document
+from langchain_core.runnables import RunnableConfig, RunnableSerializable
+from langchain_core.stores import BaseStore
+
 ####################
-# Interfaces
+# INTERFACES
 ####################
 
 
-class Index(ABC):
+class Index(BaseStore[str, Document], ABC):
     """Interface for a document index."""
 
     @abstractmethod
-    def add(self, documents: Sequence[Document], **kwargs: Any) -> AddResponse:
+    def add(
+        self,
+        documents: Sequence[Document],
+        *,
+        ids: Optional[Union[List[str], Tuple[str]]] = None,
+        **kwargs: Any,
+    ) -> AddResponse:
         """Add documents to index."""
 
     @abstractmethod
     def delete(
         self, *, ids: Optional[Union[List[str], Tuple[str]]] = None, **kwargs: Any
     ) -> DeleteResponse:
-        """Delete documents by id."""
+        """Delete documents."""
 
     @abstractmethod
     def get(
         self, *, ids: Optional[Union[List[str], Tuple[str]]] = None, **kwargs: Any
     ) -> GetResponse:
+        """Get documents."""
+
+    @abstractmethod
+    def delete_by_ids(self, ids: Union[List[str], Tuple[str]]) -> DeleteResponse:
+        """Delete documents by id."""
+
+    @abstractmethod
+    def get_by_ids(self, ids: Union[List[str], Tuple[str]]) -> GetResponse:
         """Get documents by id."""
+
+    def mget(self, keys: Sequence[str]) -> List[Optional[Document]]:
+        return cast(List[Optional[Document]], self.get_by_ids(keys))  # type: ignore[arg-type]
+
+    def mset(self, key_value_pairs: Sequence[Tuple[str, Document]]) -> None:
+        ids, documents = zip(*key_value_pairs)
+        self.add(documents, ids=ids)
+
+    def mdelete(self, keys: Sequence[str]) -> None:
+        self.delete_by_ids(keys)  # type: ignore[arg-type]
 
     # QUESTION: do we need Index.update or Index.upsert? should Index.add just do that?
     # QUESTION: should we support lazy versions of operations?
 
 
 Q = TypeVar("Q")
+
+
+class RetrievalResponse(TypedDict, total=False):
+    hits: List[Hit]
+    metadata: dict
 
 
 class RetrieverV2(
@@ -55,18 +107,19 @@ class RetrieverV2(
 
     # QUESTION: Anything to do with streaming?
 
-    def as_runnable(
+    def with_output_format(
         self,
         *,
         output_format: Literal["string", "documents", "hits"] = "string",
-        document_formatter: Optional[
-            Callable[Sequence[Document], str]
-        ] = _document_formatter,
+        document_formatter: Optional[Callable[[Sequence[Document]], str]] = None,
     ) -> RunnableSerializable:
         if output_format == "string":
+            document_formatter = document_formatter or _default_document_formatter
             return self | (lambda res: document_formatter(res.documents))
         elif output_format == "documents":
-            return self | (lambda res: res.documents)
+            return self | (
+                lambda res: [hit.source or Document(hit.snippet) for hit in res.hits]
+            )
         elif output_format == "hits":
             return self
         else:
@@ -92,31 +145,31 @@ class VectorStoreV2(Index, RetrieverV2[Union[str, Sequence[float]]]):
 
 
 class AddResponse(TypedDict):
-    succeeded: int
-    failed: int
+    succeeded: List[str]
+    failed: List[str]
 
 
 class DeleteResponse(TypedDict):
-    succeeded: int
-    failed: int
+    succeeded: List[str]
+    failed: List[str]
 
 
 GetResponse = List[Document]
 
 
-class RetrievalResponse(TypedDict, total=False):
-    hits: List[Hit]
-    metadata: dict
-
-    @property
-    def documents(self) -> List[Document]:
-        return [h.document for h in hits]
-
-
-class Hit(TypedDict):
-    source: Document
-    snippet: Optional[Tuple[float, float]]
+class Hit(TypedDict, total=False):
+    source: Optional[Document]
+    snippet: Optional[str]
     id: str
     score: float
     metric: str
     extra: dict
+
+
+####################
+# HELPERS
+####################
+
+
+def _default_document_formatter(documents: Sequence[Document]) -> str:
+    return "\n\n".join(doc.page_content for doc in documents)
