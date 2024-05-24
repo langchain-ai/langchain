@@ -19,7 +19,7 @@ from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 logger = logging.getLogger(__name__)
 
 MMR_RERANKER_ID = 272725718
-SLIGNSHOT_RERANKER_ID = 272725719
+SLINGSHOT_RERANKER_ID = 272725719
 
 
 @dataclass
@@ -420,7 +420,7 @@ class Vectara(VectorStore):
             }
         elif config.rerank_config.reranker == "Slingshot":
             body["query"][0]["rerankingConfig"] = {
-                "rerankerId": SLIGNSHOT_RERANKER_ID,
+                "rerankerId": SLINGSHOT_RERANKER_ID,
             }
 
         if config.summary_config.is_enabled:
