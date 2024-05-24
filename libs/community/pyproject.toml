@@ -108,7 +108,6 @@ oracledb = {version = "^2.2.0", optional = true}
 cloudpathlib = { version = "^0.18", optional = true }
 
 
-
 [tool.poetry.group.test]
 optional = true
 
@@ -123,7 +122,7 @@ duckdb-engine = "^0.11.0"
 pytest-watcher = "^0.2.6"
 freezegun = "^1.2.2"
 responses = "^0.22.0"
-pytest-asyncio = "^0.23.7"
+pytest-asyncio = "^0.20.3"
 lark = "^1.1.5"
 pandas = "^2.0.0"
 pytest-mock  = "^3.10.0"
@@ -197,7 +196,6 @@ optional = true
 jupyter = "^1.0.0"
 setuptools = "^67.6.1"
 langchain-core = {path = "../core", develop = true}
-syrupy = "^4.6.1"
 
 [tool.poetry.extras]
 cli = ["typer"]
@@ -292,7 +290,7 @@ extended_testing = [
  "httpx-sse",
  "pyjwt",
  "oracledb",
- "sparqlwrapper"
+ "sparqlwrapper", 
 ]
 
 [tool.ruff]
@@ -333,7 +331,7 @@ build-backend = "poetry.core.masonry.api"
 #
 # https://github.com/tophat/syrupy
 # --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
-addopts = "--strict-markers --strict-config --durations=5 -vv"
+addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
 # Registering custom markers.
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
