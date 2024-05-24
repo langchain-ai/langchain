@@ -581,10 +581,16 @@ def _returns_runnable(attr: Any) -> bool:
     if not callable(attr):
         return False
     return_type = typing.get_type_hints(attr).get("return")
-    if not return_type:
-        return False
-    elif inspect.isclass(return_type):
-        return issubclass(return_type, Runnable)
+    return bool(return_type and _is_runnable_type(return_type))
+
+
+def _is_runnable_type(type_: Any) -> bool:
+    if inspect.isclass(type_):
+        return issubclass(type_, Runnable)
+    origin = getattr(type_, "__origin__", None)
+    if inspect.isclass(origin):
+        return issubclass(origin, Runnable)
+    elif origin is typing.Union:
+        return all(_is_runnable_type(t) for t in type_.__args__)
     else:
-        return_type = getattr(return_type, "__origin__")
-        return issubclass(return_type, Runnable)
+        return False
