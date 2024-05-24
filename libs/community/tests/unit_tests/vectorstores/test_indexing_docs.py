@@ -50,6 +50,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "AnalyticDB",
         "AstraDB",
         "AzureCosmosDBVectorSearch",
+        "AzureCosmosDBNoSqlVectorSearch",
         "AzureSearch",
         "AwaDB",
         "Bagel",
