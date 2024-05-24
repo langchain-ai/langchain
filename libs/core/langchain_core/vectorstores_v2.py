@@ -12,15 +12,18 @@ class Index(ABC):
 
     @abstractmethod
     def delete(
-        self, ids: Union[List[str], Tuple[str]], **kwargs: Any
+        self, *, ids: Optional[Union[List[str], Tuple[str]]] = None, **kwargs: Any
     ) -> DeleteResponse:
         """Delete documents by id."""
 
     @abstractmethod
-    def get(self, ids: Union[List[str], Tuple[str]], **kwargs: Any) -> GetResponse:
+    def get(
+        self, *, ids: Optional[Union[List[str], Tuple[str]]] = None, **kwargs: Any
+    ) -> GetResponse:
         """Get documents by id."""
 
     # QUESTION: do we need Index.update or Index.upsert? should Index.add just do that?
+    # QUESTION: how do you get sorted results? how do you get filtered results? maybe
 
 
 Q = TypeVar("Q")
