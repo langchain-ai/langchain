@@ -100,7 +100,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
     """Chat message history stored in an SQL database."""
 
     @property
-    @deprecated("0.2.2", alternative="session_maker")
+    @deprecated("0.2.2", removal="0.3.0", alternative="session_maker")
     def Session(self) -> Union[scoped_session, async_sessionmaker]:
         return self.session_maker
 

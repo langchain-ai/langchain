@@ -19,6 +19,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Sequence, Union
 
+from langchain_core._api import deprecated
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -104,6 +105,7 @@ class BaseChatMessageHistory(ABC):
         """
         return await run_in_executor(None, lambda: self.messages)
 
+    @deprecated("0.1.38",removal="0.3.0",alternative="add_messages")
     def add_user_message(self, message: Union[HumanMessage, str]) -> None:
         """Convenience method for adding a human message string to the store.
 
@@ -121,6 +123,7 @@ class BaseChatMessageHistory(ABC):
         else:
             self.add_message(HumanMessage(content=message))
 
+    @deprecated("0.1.38",removal="0.3.0",alternative="add_messages")
     def add_ai_message(self, message: Union[AIMessage, str]) -> None:
         """Convenience method for adding an AI message string to the store.
 
