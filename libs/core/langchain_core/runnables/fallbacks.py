@@ -1,4 +1,7 @@
 import asyncio
+import inspect
+import typing
+from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -549,3 +552,39 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             await run_manager.on_chain_error(e)
             raise e
         await run_manager.on_chain_end(output)
+
+    def __getattr__(self, name: str) -> Any:
+        attr = getattr(self.runnable, name)
+        if _returns_runnable(attr):
+
+            @wraps(attr)
+            def wrapped(*args: Any, **kwargs: Any) -> Any:
+                new_runnable = attr(*args, **kwargs)
+                new_fallbacks = []
+                for fallback in self.fallbacks:
+                    fallback_attr = getattr(fallback, name)
+                    new_fallbacks.append(fallback_attr(*args, **kwargs))
+
+                return RunnableWithFallbacks(
+                    **{
+                        **self.dict(),
+                        **{"runnable": new_runnable, "fallbacks": new_fallbacks},
+                    }
+                )
+
+            return wrapped
+
+        return attr
+
+
+def _returns_runnable(attr: Any) -> bool:
+    if not callable(attr):
+        return False
+    return_type = typing.get_type_hints(attr).get("return")
+    if not return_type:
+        return False
+    elif inspect.isclass(return_type):
+        return issubclass(return_type, Runnable)
+    else:
+        return_type = getattr(return_type, "__origin__")
+        return issubclass(return_type, Runnable)
