@@ -105,24 +105,26 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
         return self.session_maker
 
     def __init__(
-            self,
-            session_id: str,
-            connection_string: Optional[str] = None,
-            table_name: str = "message_store",
-            session_id_field_name: str = "session_id",
-            custom_message_converter: Optional[BaseMessageConverter] = None,
-            connection: Union[None, DBConnection] = None,
-            engine_args: Optional[Dict[str, Any]] = None,
-            async_mode: Optional[bool] = None,  # Use only if connection is a string
+        self,
+        session_id: str,
+        connection_string: Optional[str] = None,
+        table_name: str = "message_store",
+        session_id_field_name: str = "session_id",
+        custom_message_converter: Optional[BaseMessageConverter] = None,
+        connection: Union[None, DBConnection] = None,
+        engine_args: Optional[Dict[str, Any]] = None,
+        async_mode: Optional[bool] = None,  # Use only if connection is a string
     ):
-        assert not (connection_string and connection), \
-            "connection_string and connection are mutually exclusive"
+        assert not (
+            connection_string and connection
+        ), "connection_string and connection are mutually exclusive"
         if connection_string:
             warn_deprecated(
                 since="0.2.2",
                 removal="0.3.0",
                 name="connection_string",
-                alternative="Use connection instead")
+                alternative="Use connection instead",
+            )
             connection = connection_string
             self.connection_string = connection_string
         if isinstance(connection, str):
