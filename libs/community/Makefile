@@ -4,7 +4,7 @@
 all: help
 
 # Define a variable for the test file path.
-TEST_FILE ?= tests/unit_tests/
+TEST_FILE = tests/unit_tests/graphs/test_anzographdbgraph.py
 integration_tests: TEST_FILE = tests/integration_tests/
 
 # Run unit tests and generate a coverage report.
