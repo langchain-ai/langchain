@@ -268,7 +268,10 @@ def test_vectara_mmr(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
         n_sentence_after=0,
     )
     assert len(output1) == 2
-    assert "Generative AI promises to revolutionize" in output1[1].page_content
+    assert (
+        "This is why today we're adding a fundamental capability" in 
+        output1[1].page_content
+    )
 
     output2 = vectara3.max_marginal_relevance_search(
         "generative AI",
@@ -280,7 +283,7 @@ def test_vectara_mmr(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
     )
     assert len(output2) == 2
     assert (
-        "You can try it out on your own on our newly launched AskNews"
+        "Neural LLM systems are excellent at understanding the context"
         in output2[1].page_content
     )
 
