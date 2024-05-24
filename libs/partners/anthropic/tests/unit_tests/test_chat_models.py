@@ -424,14 +424,16 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
     ai = AIMessage(
         [
             {"type": "text", "text": "thought"},
-            {"type": "tool_use", "name": "bar", "id": "1", "input": {"baz": "NOT_BUZZ"}},
+            {
+                "type": "tool_use",
+                "name": "bar",
+                "id": "1",
+                "input": {"baz": "NOT_BUZZ"},
+            },
         ],
         tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "BUZZ"}}],
     )
-    tool = ToolMessage(
-        "blurb",
-        tool_call_id="1",
-    )
+    tool = ToolMessage("blurb", tool_call_id="1")
     messages = [system, human, ai, tool]
     expected = (
         "fuzz",
