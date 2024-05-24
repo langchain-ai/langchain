@@ -4,11 +4,23 @@
   "trailingSlash": true,
   "rewrites": [
     {
+      "source": "/v0.1",
+      "destination": "https://langchain-v01.vercel.app/v0.1"
+    },
+    {
       "source": "/v0.1/:path(.*/?)*",
       "destination": "https://langchain-v01.vercel.app/v0.1/:path*"
     }
   ],
   "redirects": [
+    {
+      "source": "/v0.2/docs/langsmith(/?)",
+      "destination": "https://docs.smith.langchain.com/"
+    },
+    {
+      "source": "/v0.2/docs/langgraph(/?)",
+      "destination": "https://langchain-ai.github.io/langgraph"
+    },
     {
       "source": "/",
       "destination": "/v0.2/docs/introduction/"
@@ -18,8 +30,16 @@
       "destination": "/v0.2/docs/introduction/"
     },
     {
+      "source": "/docs/get_started/introduction(/?)",
+      "destination": "/v0.2/docs/introduction/"
+    },
+    {
       "source": "/docs/:path(.*/?)*",
       "destination": "/v0.1/docs/:path*"
+    },
+    {
+      "source": "/cookbook(/?)",
+      "destination": "/v0.1/docs/cookbook/"
     }
   ]
 }

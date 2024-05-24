@@ -9,6 +9,7 @@ from typing import (
     Any,
     AsyncIterator,
     Dict,
+    Iterator,
     List,
     Optional,
     Sequence,
@@ -102,10 +103,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
 
-    async def _send(self, event: StreamEvent, event_type: str) -> None:
+    def _send(self, event: StreamEvent, event_type: str) -> None:
         """Send an event to the stream."""
         if self.root_event_filter.include_event(event, event_type):
-            await self.send_stream.send(event)
+            self.send_stream.send_nowait(event)
 
     def __aiter__(self) -> AsyncIterator[Any]:
         """Iterate over the receive stream."""
@@ -119,7 +120,26 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_info = self.run_map.get(run_id)
             if run_info is None:
                 raise AssertionError(f"Run ID {run_id} not found in run map.")
-            await self._send(
+            self._send(
+                {
+                    "event": f"on_{run_info['run_type']}_stream",
+                    "data": {"chunk": chunk},
+                    "run_id": str(run_id),
+                    "name": run_info["name"],
+                    "tags": run_info["tags"],
+                    "metadata": run_info["metadata"],
+                },
+                run_info["run_type"],
+            )
+            yield chunk
+
+    def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
+        """Tap the output aiter."""
+        for chunk in output:
+            run_info = self.run_map.get(run_id)
+            if run_info is None:
+                raise AssertionError(f"Run ID {run_id} not found in run map.")
+            self._send(
                 {
                     "event": f"on_{run_info['run_type']}_stream",
                     "data": {"chunk": chunk},
@@ -155,7 +175,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "inputs": {"messages": messages},
         }
 
-        await self._send(
+        self._send(
             {
                 "event": "on_chat_model_start",
                 "data": {
@@ -192,7 +212,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "inputs": {"prompts": prompts},
         }
 
-        await self._send(
+        self._send(
             {
                 "event": "on_llm_start",
                 "data": {
@@ -241,7 +261,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         else:
             raise ValueError(f"Unexpected run type: {run_info['run_type']}")
 
-        await self._send(
+        self._send(
             {
                 "event": event,
                 "data": {
@@ -295,7 +315,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         else:
             raise ValueError(f"Unexpected run type: {run_info['run_type']}")
 
-        await self._send(
+        self._send(
             {
                 "event": event,
                 "data": {"output": output, "input": inputs_},
@@ -340,7 +360,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
         self.run_map[run_id] = run_info
 
-        await self._send(
+        self._send(
             {
                 "event": f"on_{run_type_}_start",
                 "data": data,
@@ -373,7 +393,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "input": inputs,
         }
 
-        await self._send(
+        self._send(
             {
                 "event": event,
                 "data": data,
@@ -408,7 +428,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "inputs": inputs,
         }
 
-        await self._send(
+        self._send(
             {
                 "event": "on_tool_start",
                 "data": {
@@ -432,7 +452,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             )
         inputs = run_info["inputs"]
 
-        await self._send(
+        self._send(
             {
                 "event": "on_tool_end",
                 "data": {
@@ -470,7 +490,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "inputs": {"query": query},
         }
 
-        await self._send(
+        self._send(
             {
                 "event": "on_retriever_start",
                 "data": {
@@ -492,7 +512,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Run when Retriever ends running."""
         run_info = self.run_map.pop(run_id)
 
-        await self._send(
+        self._send(
             {
                 "event": "on_retriever_end",
                 "data": {
