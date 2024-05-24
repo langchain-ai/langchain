@@ -67,7 +67,7 @@ class CometTracer(BaseTracer):
         if not run.parent_run_id:
             # This is the first run, which maps to a chain
             metadata = run_dict["extra"].get("metadata", None)
-            
+
             chain_: "Chain" = self._chain.Chain(
                 inputs=run_dict["inputs"],
                 metadata=metadata,
