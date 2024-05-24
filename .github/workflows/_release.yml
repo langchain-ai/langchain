@@ -84,9 +84,8 @@ jobs:
           repository: langchain-ai/langchain
           path: langchain
           sparse-checkout: | # this only grabs files for relevant dir
-            .github
             ${{ inputs.working-directory }}
-          ref: master # this scopes to just master branch (I think)
+          ref: master # this scopes to just master branch
           fetch-depth: 0 # this fetches entire commit history
       - name: Check Tags
         id: check-tags
