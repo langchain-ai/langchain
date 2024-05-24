@@ -23,15 +23,14 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
     def __init__(
         self,
-        *,
-        embedding: Embeddings,
         cosmos_client: CosmosClient,
-        database_name: str,
-        container_name: str,
-        partition_key: str,
+        embedding: Embeddings,
         vector_embedding_policy: Dict[str, Any],
         indexing_policy: Dict[str, Any],
         cosmos_container_properties: Dict[str, Any],
+        *,
+        database_name: str = "vectorSearchDB",
+        container_name: str = "vectorSearchContainer",
     ):
         """
         Constructor for AzureCosmosDBNoSqlVectorSearch
@@ -66,7 +65,6 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self._database_name = database_name
         self._container_name = container_name
         self._embedding = embedding
-        self._partition_key = partition_key
         self._vector_embedding_policy = vector_embedding_policy
         self._indexing_policy = indexing_policy
         self._cosmos_container_properties = cosmos_container_properties
@@ -144,9 +142,6 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         cosmos_client: CosmosClient = None,
-        database_name: Optional[str] = None,
-        container_name: Optional[str] = None,
-        partition_key: Optional[str] = None,
         vector_embedding_policy: Optional[Dict[str, Any]] = None,
         indexing_policy: Optional[Dict[str, Any]] = None,
         cosmos_container_properties: Optional[Dict[str, Any]] = None,
@@ -154,12 +149,6 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
     ) -> VST:
         if cosmos_client is None:
             raise ValueError("Must provide 'cosmos_client' named parameter.")
-        if database_name is None:
-            raise ValueError("Must provide 'database_name' named parameter.")
-        if container_name is None:
-            raise ValueError("Must provide 'container_name' named parameter.")
-        if partition_key is None:
-            raise ValueError("Must provide 'partition_key' named parameter.")
         if vector_embedding_policy is None:
             raise ValueError("Must provide 'vector_embedding_policy' named parameter.")
         if indexing_policy is None:
@@ -171,9 +160,6 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
         vectorstore = cls(
             cosmos_client,
-            database_name,
-            container_name,
-            partition_key,
             embedding,
             vector_embedding_policy,
             indexing_policy,
