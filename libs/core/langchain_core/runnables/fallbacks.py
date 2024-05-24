@@ -565,7 +565,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                     fallback_attr = getattr(fallback, name)
                     new_fallbacks.append(fallback_attr(*args, **kwargs))
 
-                return RunnableWithFallbacks(
+                return self.__class__(
                     **{
                         **self.dict(),
                         **{"runnable": new_runnable, "fallbacks": new_fallbacks},
