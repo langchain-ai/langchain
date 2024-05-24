@@ -32,7 +32,7 @@ class YandexSearchAPIWrapper(BaseModel):
         extra = Extra.forbid
 
     def _get_yandex_domain(self, language: str) -> str:
-        """Determine the appropriate Yandex domain based on 
+        """Determine the appropriate Yandex domain based on
         the notification language."""
         if language == "tr":
             return "https://yandex.com.tr/search/xml"
@@ -173,11 +173,11 @@ class YandexSearchAPIWrapper(BaseModel):
             query (str): The search query string.
             filter (str, optional): The filter setting ('none', 'moderate', 'strict').
             lr (int, optional): The region identifier for localized search.
-            l10n (str, optional): The language for notifications 
+            l10n (str, optional): The language for notifications
                 (e.g., 'ru', 'en', 'tr').
 
         Returns:
-            str: Concatenated string of snippets if any results are found, 
+            str: Concatenated string of snippets if any results are found,
             otherwise a not found message.
         """
 
@@ -205,7 +205,7 @@ class YandexSearchAPIWrapper(BaseModel):
             search_params: Parameters to be passed on search
 
         Returns:
-            A list of dictionaries with keys depending on 
+            A list of dictionaries with keys depending on
             the Yandex Search API response structure.
         """
         metadata_results = []
