@@ -1,4 +1,5 @@
 import uuid
+import warnings
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
@@ -23,12 +24,12 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
     def __init__(
         self,
+        *,
         cosmos_client: CosmosClient,
         embedding: Embeddings,
         vector_embedding_policy: Dict[str, Any],
         indexing_policy: Dict[str, Any],
         cosmos_container_properties: Dict[str, Any],
-        *,
         database_name: str = "vectorSearchDB",
         container_name: str = "vectorSearchContainer",
     ):
@@ -135,36 +136,75 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         return doc_ids
 
     @classmethod
+    def _from_kwargs(
+        cls: Type[VST],
+        embedding: Embeddings,
+        **kwargs: Any,
+    ) -> VST:
+        known_kwargs = {
+            "cosmos_client",
+            "vector_embedding_policy",
+            "indexing_policy",
+            "cosmos_container_properties",
+            "database_name",
+            "container_name",
+        }
+        if kwargs:
+            unknown_kwargs = set(kwargs.keys()) - known_kwargs
+            if unknown_kwargs:
+                warnings.warn(
+                    "Method 'from_texts' of AzureCosmosDBNoSql vector "
+                    "store invoked with "
+                    f"unsupported arguments "
+                    f"({', '.join(sorted(unknown_kwargs))}), "
+                    "which will be ignored."
+                )
+
+        cosmos_client = kwargs.get("cosmos_client"),
+        vector_embedding_policy = kwargs.get("vector_embedding_policy"),
+        indexing_policy = kwargs.get("indexing_policy"),
+        cosmos_container_properties = kwargs.get("cosmos_container_properties"),
+        database_name = kwargs.get("database_name"),
+        container_name = kwargs.get("container_name")
+
+        return cls(
+            embedding=embedding,
+            cosmos_client=cosmos_client,
+            vector_embedding_policy=vector_embedding_policy,
+            indexing_policy=indexing_policy,
+            cosmos_container_properties=cosmos_container_properties,
+            database_name=database_name,
+            container_name=container_name,
+        )
+
+
+    @classmethod
     def from_texts(
         cls: Type[VST],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        cosmos_client: CosmosClient = None,
-        vector_embedding_policy: Optional[Dict[str, Any]] = None,
-        indexing_policy: Optional[Dict[str, Any]] = None,
-        cosmos_container_properties: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> VST:
-        if cosmos_client is None:
-            raise ValueError("Must provide 'cosmos_client' named parameter.")
-        if vector_embedding_policy is None:
-            raise ValueError("Must provide 'vector_embedding_policy' named parameter.")
-        if indexing_policy is None:
-            raise ValueError("Must provide 'indexing_policy' named parameter.")
-        if cosmos_container_properties is None:
-            raise ValueError(
-                "Must provide 'cosmos_container_properties' named parameter."
-            )
+        """Create an AzureCosmosDBNoSqlVectorSearch vectorstore from raw texts.
 
-        vectorstore = cls(
-            cosmos_client,
-            embedding,
-            vector_embedding_policy,
-            indexing_policy,
-            cosmos_container_properties,
+        Args:
+            texts: the texts to insert.
+            embedding: the embedding function to use in the store.
+            metadatas: metadata dicts for the texts.
+            **kwargs: you can pass any argument that you would
+                to :meth:`~add_texts` and/or to the 'AstraDB' constructor
+                (see these methods for details). These arguments will be
+                routed to the respective methods as they are.
+
+        Returns:
+            an `AzureCosmosDBNoSqlVectorSearch` vectorstore.
+        """
+        vectorstore = AzureCosmosDBNoSqlVectorSearch._from_kwargs(embedding, **kwargs)
+        vectorstore.add_texts(
+            texts=texts,
+            metadatas=metadatas,
         )
-        vectorstore.add_texts(texts, metadatas=metadatas)
         return vectorstore
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
