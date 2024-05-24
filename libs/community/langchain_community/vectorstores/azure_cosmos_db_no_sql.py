@@ -9,9 +9,7 @@ from langchain_core.vectorstores import VST, VectorStore
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
-    from azure.cosmos.container import ContainerProxy
     from azure.cosmos.cosmos_client import CosmosClient
-    from azure.cosmos.database import DatabaseProxy
 
 
 # You can read more about vector search using AzureCosmosDBNoSQL here.
@@ -23,25 +21,16 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
     - the ``azure-cosmos`` python package installed
     """
 
-    cosmos_client: CosmosClient = None
-    database: DatabaseProxy
-    container: ContainerProxy
-    database_name: str = None
-    partition_key: str = None
-    vector_embedding_policy: Dict[str, Any] = None
-    indexing_policy: Dict[str, Any] = None
-    cosmos_container_properties: Dict[str, Any] = None
-
     def __init__(
         self,
         cosmos_client: CosmosClient,
         embedding: Embeddings,
+        vector_embedding_policy: Dict[str, Any],
+        indexing_policy: Dict[str, Any],
+        cosmos_container_properties: Dict[str, Any],
         *,
         database_name: str = "vectorSearchDB",
         container_name: str = "vectorSearchContainer",
-        vector_embedding_policy: Optional[Dict[str, Any]] = None,
-        indexing_policy: Optional[Dict[str, Any]] = None,
-        cosmos_container_properties: Optional[Dict[str, Any]] = None,
     ):
         """
         Constructor for AzureCosmosDBNoSqlVectorSearch
@@ -71,27 +60,27 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                 "or empty in the vector_embedding_policy."
             )
 
-        self.cosmos_client = cosmos_client
-        self.database_name = database_name
-        self.container_name = container_name
-        self.embedding = embedding
-        self.vector_embedding_policy = vector_embedding_policy
-        self.indexing_policy = indexing_policy
-        self.cosmos_container_properties = cosmos_container_properties
+        self._cosmos_client = cosmos_client
+        self._database_name = database_name
+        self._container_name = container_name
+        self._embedding = embedding
+        self._vector_embedding_policy = vector_embedding_policy
+        self._indexing_policy = indexing_policy
+        self._cosmos_container_properties = cosmos_container_properties
 
         # Create the database if it already doesn't exist
-        self.database = self.cosmos_client.create_database_if_not_exists(
-            id=self.database_name
+        self._database = self._cosmos_client.create_database_if_not_exists(
+            id=self._database_name
         )
 
         # Create the collection if it already doesn't exist
-        self._container = self.database.create_container_if_not_exists(
-            id=self.container_name,
-            partition_key=self.cosmos_container_properties["partition_key"],
-            indexing_policy=self.indexing_policy,
-            vector_embedding_policy=self.vector_embedding_policy,
+        self._container = self._database.create_container_if_not_exists(
+            id=self._container_name,
+            partition_key=self._cosmos_container_properties["partition_key"],
+            indexing_policy=self._indexing_policy,
+            vector_embedding_policy=self._vector_embedding_policy,
         )
-        self._embedding_key = self.vector_embedding_policy["vectorEmbeddings"][0][
+        self._embedding_key = self._vector_embedding_policy["vectorEmbeddings"][0][
             "path"
         ][1:]
 
@@ -155,8 +144,6 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         vector_embedding_policy: Optional[Dict[str, Any]] = None,
         indexing_policy: Optional[Dict[str, Any]] = None,
         cosmos_container_properties: Optional[Dict[str, Any]] = None,
-        database_name: Optional[str] = None,
-        container_name: Optional[str] = None,
         **kwargs: Any,
     ) -> VST:
         if cosmos_client is None:
@@ -169,19 +156,13 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             raise ValueError(
                 "Must provide 'cosmos_container_properties' named parameter."
             )
-        if database_name is None:
-            raise ValueError("Must provide 'database_name' named parameter.")
-        if container_name is None:
-            raise ValueError("Must provide 'container_name' named parameter.")
 
         vectorstore = cls(
             cosmos_client,
             embedding,
-            vector_embedding_policy=vector_embedding_policy,
-            indexing_policy=indexing_policy,
-            cosmos_container_properties=cosmos_container_properties,
-            database_name=database_name,
-            container_name=container_name,
+            vector_embedding_policy,
+            indexing_policy,
+            cosmos_container_properties,
         )
         vectorstore.add_texts(texts, metadatas=metadatas)
         return vectorstore
