@@ -269,8 +269,8 @@ def test_vectara_mmr(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
     )
     assert len(output1) == 2
     assert (
-        "This is why today we're adding a fundamental capability" in 
-        output1[1].page_content
+        "This is why today we're adding a fundamental capability"
+        in output1[1].page_content
     )
 
     output2 = vectara3.max_marginal_relevance_search(
