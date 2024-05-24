@@ -1,6 +1,10 @@
+import json
 from pathlib import Path
 from typing import Any, Dict, get_args
+from unittest import TestCase
 from unittest.mock import MagicMock, Mock, patch
+
+import requests
 
 from langchain_upstage import UpstageLayoutAnalysisLoader
 from langchain_upstage.layout_analysis import OutputType, SplitType
@@ -205,3 +209,45 @@ def test_page_split_html_output(mock_post: Mock) -> None:
         assert document.metadata["page"] == MOCK_RESPONSE_JSON["elements"][i]["page"]
         assert document.metadata["type"] == "html"
         assert document.metadata["split"] == "page"
+
+
+@patch("requests.post")
+def test_request_exception(mock_post: Mock) -> None:
+    mock_post.side_effect = requests.RequestException("Mocked request exception")
+
+    loader = UpstageLayoutAnalysisLoader(
+        file_path=EXAMPLE_PDF_PATH,
+        output_type="html",
+        split="page",
+        api_key="valid_api_key",
+        exclude=[],
+    )
+
+    with TestCase.assertRaises(TestCase(), ValueError) as context:
+        loader.load()
+
+    assert "Failed to send request: Mocked request exception" == str(context.exception)
+
+
+@patch("requests.post")
+def test_json_decode_error(mock_post: Mock) -> None:
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.side_effect = json.JSONDecodeError("Expecting value", "", 0)
+    mock_post.return_value = mock_response
+
+    loader = UpstageLayoutAnalysisLoader(
+        file_path=EXAMPLE_PDF_PATH,
+        output_type="html",
+        split="page",
+        api_key="valid_api_key",
+        exclude=[],
+    )
+
+    with TestCase.assertRaises(TestCase(), ValueError) as context:
+        loader.load()
+
+    assert (
+        "Failed to decode JSON response: Expecting value: line 1 column 1 (char 0)"
+        == str(context.exception)
+    )
