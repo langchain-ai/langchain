@@ -503,6 +503,12 @@ class ChatAnthropic(BaseChatModel):
             )
         else:
             msg = AIMessage(content=content)
+        # Collect token usage
+        msg.usage_metadata = {
+            "input_tokens": data.usage.input_tokens,
+            "output_tokens": data.usage.output_tokens,
+            "total_tokens": data.usage.input_tokens + data.usage.output_tokens,
+        }
         return ChatResult(
             generations=[ChatGeneration(message=msg)],
             llm_output=llm_output,
