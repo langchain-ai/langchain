@@ -4,7 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-from langchain_core._api import deprecated
+from langchain_core._api import deprecated, warn_deprecated
 from sqlalchemy import Column, Integer, Text, delete, select
 
 try:
@@ -105,22 +105,24 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
         return self.session_maker
 
     def __init__(
-        self,
-        session_id: str,
-        connection_string: Optional[str] = None,
-        table_name: str = "message_store",
-        session_id_field_name: str = "session_id",
-        custom_message_converter: Optional[BaseMessageConverter] = None,
-        connection: Union[None, DBConnection] = None,
-        engine_args: Optional[Dict[str, Any]] = None,
-        async_mode: Optional[bool] = None,  # Use only if connection is a string
+            self,
+            session_id: str,
+            connection_string: Optional[str] = None,
+            table_name: str = "message_store",
+            session_id_field_name: str = "session_id",
+            custom_message_converter: Optional[BaseMessageConverter] = None,
+            connection: Union[None, DBConnection] = None,
+            engine_args: Optional[Dict[str, Any]] = None,
+            async_mode: Optional[bool] = None,  # Use only if connection is a string
     ):
+        assert not (connection_string and connection), \
+            "connection_string and connection are mutually exclusive"
         if connection_string:
-            logger.warning("connection_string is deprecated, use connection instead")
+            warn_deprecated(
+                since="0.2.2",
+                alternative="connection_string is deprecated, use connection instead")
             connection = connection_string
             self.connection_string = connection_string
-        if connection_string and connection:
-            raise ValueError("connection_string and connection are mutually exclusive")
         if isinstance(connection, str):
             self.async_mode = async_mode
             if async_mode:
