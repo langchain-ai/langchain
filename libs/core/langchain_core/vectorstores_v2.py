@@ -23,7 +23,7 @@ class Index(ABC):
         """Get documents by id."""
 
     # QUESTION: do we need Index.update or Index.upsert? should Index.add just do that?
-    # QUESTION: how do you get sorted results? how do you get filtered results? maybe
+    # QUESTION: should we support lazy versions of operations?
 
 
 Q = TypeVar("Q")
@@ -52,6 +52,8 @@ class RetrieverV2(
         result = self.retrieve(**params)
         # TODO: callback manager stuff
         return result
+
+    # QUESTION: Anything to do with streaming?
 
     def as_runnable(
         self,
