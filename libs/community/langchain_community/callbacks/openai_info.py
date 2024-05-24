@@ -1,8 +1,8 @@
 """Callback Handler that prints to std out."""
 
 import threading
-from typing import Any, Dict, List
 import warnings
+from typing import Any, Dict, List
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
