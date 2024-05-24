@@ -158,6 +158,7 @@ def _load_chat_prompt(config: Dict) -> ChatPromptTemplate:
     """Load chat prompt from config"""
     messages = config.pop("messages")
     config.pop("input_variables")
+    config.pop("output_parser")
     text_messages = []
     for message in messages:
         text_messages.append(
