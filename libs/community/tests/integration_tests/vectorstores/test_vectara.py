@@ -171,7 +171,7 @@ def test_vectara_rag_with_reranking(vectara2: Vectara) -> None:
         response_lang="eng",
         prompt_name=test_prompt_name,
     )
-    rerank_config = RerankConfig(reranker="MMR", rerank_k=50, diversity_bias=0.2)
+    rerank_config = RerankConfig(reranker="MMR", rerank_k=50, mmr_diversity_bias=0.2)
     config = VectaraQueryConfig(
         k=10,
         lambda_val=0.005,
