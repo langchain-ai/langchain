@@ -363,8 +363,9 @@ def test_stream() -> None:
     # check token usage is populated
     assert isinstance(full, AIMessageChunk)
     assert full.usage_metadata is not None
-    for key in full.usage_metadata:
-        assert full.usage_metadata[key] > 0
+    assert full.usage_metadata["input_tokens"] > 0
+    assert full.usage_metadata["output_tokens"] > 0
+    assert full.usage_metadata["total_tokens"] > 0
 
     # check not populated
     aggregate: Optional[BaseMessageChunk] = None
@@ -397,8 +398,9 @@ async def test_astream() -> None:
     # check token usage is populated
     assert isinstance(full, AIMessageChunk)
     assert full.usage_metadata is not None
-    for key in full.usage_metadata:
-        assert full.usage_metadata[key] > 0
+    assert full.usage_metadata["input_tokens"] > 0
+    assert full.usage_metadata["output_tokens"] > 0
+    assert full.usage_metadata["total_tokens"] > 0
 
     # check not populated
     aggregate: Optional[BaseMessageChunk] = None
