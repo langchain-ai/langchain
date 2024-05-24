@@ -68,7 +68,7 @@ class CometTracer(BaseTracer):
             # This is the first run, which maps to a chain
             chain_: "Chain" = self._chain.Chain(
                 inputs=run_dict["inputs"],
-                metadata=None,
+                metadata=run_dict["extra"]["metadata"],
                 experiment_info=self._experiment_info.get(),
             )
             self._chains_map[run.id] = chain_
