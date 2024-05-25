@@ -153,7 +153,7 @@ class YandexSearchAPIWrapper(BaseModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the API key exists in the environment."""
         yandex_api_key = get_from_dict_or_env(
-            values, "yandex_api_key", "YANDEX_API_KEY"
+            values, "api_key", "YANDEX_API_KEY"
         )
         yandex_folder_id = get_from_dict_or_env(
             values, "yandex_folder_id", "YANDEX_FOLDER_ID"
