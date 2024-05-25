@@ -11,8 +11,8 @@ from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
 
 if TYPE_CHECKING:
-    from zep_cloud.client import Zep, AsyncZep
     from zep_cloud import MemorySearchResult, SearchScope, SearchType
+    from zep_cloud.client import AsyncZep, Zep
 
 class ZepCloudRetriever(BaseRetriever):
     """`Zep Cloud` MemoryStore Retriever.
