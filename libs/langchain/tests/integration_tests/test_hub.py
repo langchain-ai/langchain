@@ -16,8 +16,9 @@ def test_hub_pull_public_prompt() -> None:
         == "56489e79537fc477d8368e6c9902df15b5e9fe8bc0e4f38dc4b15b65e550077c"
     )
 
+
 def test_hub_pull_private_prompt() -> None:
-    private_prompt = hub.pull('integration-test', api_key=os.environ['HUB_API_KEY'])
+    private_prompt = hub.pull("integration-test", api_key=os.environ["HUB_API_KEY"])
     assert isinstance(private_prompt, ChatPromptTemplate)
     assert private_prompt.metadata is not None
     assert private_prompt.metadata["lc_hub_owner"] == "-"
