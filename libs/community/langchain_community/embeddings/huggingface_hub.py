@@ -101,10 +101,30 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         # replace newlines, which can negatively affect performance.
         texts = [text.replace("\n", " ") for text in texts]
         _model_kwargs = self.model_kwargs or {}
-        responses = self.client.post(
-            json={"inputs": texts, "parameters": _model_kwargs}, task=self.task
-        )
-        return json.loads(responses.decode())
+        import json
+        import time
+        import requests
+        from requests.exceptions import ConnectionError, Timeout
+        
+        # Function to handle retries
+        def retry_request():
+            retries = 3
+            for attempt in range(retries):
+                try:
+                    response = self.client.post(
+                        json={"inputs": texts, "parameters": _model_kwargs}, task=self.task
+                    )
+                    return json.loads(response.decode())
+                except (ConnectionError, Timeout) as e:
+                    if attempt < retries - 1:
+                        time.sleep(2 ** attempt)  # Exponential backoff
+                        continue
+                    else:
+                        raise ConnectionError(f"Failed to connect after {retries} attempts: {e}")
+                except Exception as e:
+                    raise Exception(f"An error occurred: {e}")
+        
+        return retry_request()
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Async Call to HuggingFaceHub's embedding endpoint for embedding search docs.
