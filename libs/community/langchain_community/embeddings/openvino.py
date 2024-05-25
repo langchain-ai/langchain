@@ -211,7 +211,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
         ):
             sentences_batch = sentences_sorted[start_index : start_index + batch_size]
 
-            length = self.ov_model.inputs[0].get_partial_shape()[1]
+            length = self.ov_model.request.inputs[0].get_partial_shape()[1]
             if length.is_dynamic:
                 features = self.tokenizer(
                     sentences_batch, padding=True, truncation=True, return_tensors="pt"
