@@ -120,6 +120,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
             connection_string and connection
         ), "connection_string and connection are mutually exclusive"
         if connection_string:
+            global _warned_once_already
             if not _warned_once_already:
                 warn_deprecated(
                     since="0.2.2",
