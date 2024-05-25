@@ -3,7 +3,17 @@ import contextlib
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from langchain_core._api import deprecated, warn_deprecated
 from sqlalchemy import Column, Integer, Text, delete, select
@@ -27,7 +37,9 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import (
-    Session,
+    Session as SQLSession,
+)
+from sqlalchemy.orm import (
     declarative_base,
     scoped_session,
     sessionmaker,
@@ -285,7 +297,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
             await session.commit()
 
     @contextlib.contextmanager
-    def _make_sync_session(self) -> Session:
+    def _make_sync_session(self) -> Generator[SQLSession, None, None]:
         """Make an async session."""
         if self.async_mode:
             raise ValueError(
@@ -293,10 +305,10 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
                 "Please use the corresponding async method instead."
             )
         with self.session_maker() as session:
-            yield cast(Session, session)
+            yield cast(SQLSession, session)
 
     @contextlib.asynccontextmanager
-    async def _make_async_session(self) -> AsyncSession:
+    async def _make_async_session(self) -> AsyncGenerator[AsyncSession, None]:
         """Make an async session."""
         if not self.async_mode:
             raise ValueError(
