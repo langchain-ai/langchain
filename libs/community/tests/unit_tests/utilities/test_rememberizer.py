@@ -23,7 +23,9 @@ class TestRememberizerAPIWrapper(unittest.TestCase):
                 ]
             },
         )
-        wrapper = RememberizerAPIWrapper(rememberizer_api_key="dummy_key", n=10)
+        wrapper = RememberizerAPIWrapper(
+            rememberizer_api_key="dummy_key", top_k_results=10
+        )
         result = wrapper.search("test")
         self.assertEqual(
             result,
@@ -44,7 +46,9 @@ class TestRememberizerAPIWrapper(unittest.TestCase):
             status=400,
             json={"detail": "Incorrect authentication credentials."},
         )
-        wrapper = RememberizerAPIWrapper(rememberizer_api_key="dummy_key", n=10)
+        wrapper = RememberizerAPIWrapper(
+            rememberizer_api_key="dummy_key", top_k_results=10
+        )
         with self.assertRaises(ValueError) as e:
             wrapper.search("test")
             self.assertEqual(
@@ -66,7 +70,9 @@ class TestRememberizerAPIWrapper(unittest.TestCase):
                 "document": {"id": "id2", "name": "name2"},
             },
         ]
-        wrapper = RememberizerAPIWrapper(rememberizer_api_key="dummy_key", n=10)
+        wrapper = RememberizerAPIWrapper(
+            rememberizer_api_key="dummy_key", top_k_results=10
+        )
         result = wrapper.load("test")
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0].page_content, "content1")
