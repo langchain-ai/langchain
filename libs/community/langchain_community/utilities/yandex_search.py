@@ -20,7 +20,7 @@ class YandexSearchAPIWrapper(BaseModel):
     Example documentation link: [https://yandex.cloud/en/docs/search-api/]
     """
 
-    yandex_api_key: Optional[str] = None
+    api_key: Optional[str] = None
     yandex_folder_id: Optional[str] = None
     k: int = 10
     search_params: Optional[Dict[str, Any]] = None
