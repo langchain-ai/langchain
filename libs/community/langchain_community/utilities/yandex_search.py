@@ -158,7 +158,7 @@ class YandexSearchAPIWrapper(BaseModel):
         yandex_folder_id = get_from_dict_or_env(
             values, "yandex_folder_id", "YANDEX_FOLDER_ID"
         )
-        values["yandex_api_key"] = yandex_api_key
+        values["api_key"] = yandex_api_key
         values["yandex_folder_id"] = yandex_folder_id
 
         return values
