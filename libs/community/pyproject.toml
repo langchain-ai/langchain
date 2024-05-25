@@ -261,6 +261,7 @@ extended_testing = [
  "timescale-vector",
  "anthropic",
  "upstash-redis",
+ "upstash-ratelimit",
  "rspace_client",
  "fireworks-ai",
  "javelin-sdk",
