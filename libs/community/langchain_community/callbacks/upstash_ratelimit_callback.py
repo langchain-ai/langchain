@@ -1,10 +1,20 @@
 """Ratelimiting Handler to limit requests or tokens"""
 
+import logging
 from typing import Any, Dict, List, Literal, Optional
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
-from upstash_ratelimit import Ratelimit
+
+logger = logging.getLogger(__name__)
+try:
+    from upstash_ratelimit import Ratelimit
+except ImportError:
+    logger.error(
+        "Could not import upstash_redis python package. "
+        "Please install it with `pip install upstash_redis`."
+    )
+    Ratelimit = None
 
 
 class UpstashRatelimitError(Exception):
