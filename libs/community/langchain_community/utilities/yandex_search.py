@@ -1,8 +1,8 @@
 import warnings
-import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional
 
 import requests
+from defusedxml import ElementTree as ET
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
@@ -21,8 +21,16 @@ class YandexSearchAPIWrapper(BaseModel):
     """
 
     api_key: Optional[str] = None
+    """The service account's API key.
+    Used for user authentication together with the folder ID."""
+
     yandex_folder_id: Optional[str] = None
+    """The folder ID of the service account used to send requests.
+    Required for user authentication together with the API key."""
+
     k: int = 10
+    """Maximum number of groups that can be returned per page with search results. 
+    The range of possible values is 1 to 100."""
     search_params: Optional[Dict[str, Any]] = None
     filter: str = "moderate"  # moderate by default, can be changed to none or strict
     lr: Optional[int] = 225  # Region identifier, default is Russia
@@ -81,7 +89,7 @@ class YandexSearchAPIWrapper(BaseModel):
         headers: Dict[str, str] = {}
         params = {
             "folderid": self.yandex_folder_id,
-            "apikey": self.yandex_api_key,
+            "apikey": self.api_key,
             "filter": filter if filter is not None else self.filter,
             "lr": lr if lr is not None else self.lr,
             "l10n": l10n if l10n is not None else self.l10n,
@@ -152,14 +160,14 @@ class YandexSearchAPIWrapper(BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the API key exists in the environment."""
-        yandex_api_key = get_from_dict_or_env(
+        api_key = get_from_dict_or_env(
             values, "api_key", "YANDEX_API_KEY"
         )
-        yandex_folder_id = get_from_dict_or_env(
+        folder_id = get_from_dict_or_env(
             values, "yandex_folder_id", "YANDEX_FOLDER_ID"
         )
-        values["api_key"] = yandex_api_key
-        values["yandex_folder_id"] = yandex_folder_id
+        values["api_key"] = api_key
+        values["yandex_folder_id"] = folder_id
 
         return values
 
