@@ -1,8 +1,9 @@
 import asyncio
+import contextlib
 import json
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 from langchain_core._api import deprecated, warn_deprecated
 from sqlalchemy import Column, Integer, Text, delete, select
@@ -21,6 +22,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
+    AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
@@ -28,6 +30,7 @@ from sqlalchemy.orm import (
     declarative_base,
     scoped_session,
     sessionmaker,
+    Session,
 )
 
 logger = logging.getLogger(__name__)
@@ -95,7 +98,7 @@ class DefaultMessageConverter(BaseMessageConverter):
 
 DBConnection = Union[AsyncEngine, Engine, str]
 
-global _warned_once_already
+_warned_once_already = False
 
 class SQLChatMessageHistory(BaseChatMessageHistory):
     """Chat message history stored in an SQL database."""
@@ -183,7 +186,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve all messages from db"""
         assert not self.async_mode, "This method must be called without async_mode"
-        with self.session_maker() as session:
+        with self._make_sync_session() as session:
             result = (
                 session.query(self.sql_model_class)
                 .where(
@@ -201,7 +204,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
         """Retrieve all messages from db"""
         assert self.async_mode, "This method must be called with async_mode"
         await self._acreate_table_if_not_exists()
-        async with self.session_maker() as session:
+        async with self._make_async_session() as session:
             stmt = (
                 select(self.sql_model_class)
                 .where(
@@ -218,7 +221,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in db"""
-        with self.session_maker() as session:
+        with self._make_sync_session() as session:
             session.add(self.converter.to_sql_model(message, self.session_id))
             session.commit()
 
@@ -230,7 +233,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
         """
         assert self.async_mode, "This method must be called with async_mode"
         await self._acreate_table_if_not_exists()
-        async with self.session_maker() as session:
+        async with self._make_async_session() as session:
             session.add(self.converter.to_sql_model(message, self.session_id))
             await session.commit()
 
@@ -242,7 +245,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
             loop = asyncio.get_event_loop()
             loop.run_until_complete(self.aadd_messages(messages))
         else:
-            with self.session_maker() as session:
+            with self._make_sync_session() as session:
                 for message in messages:
                     session.add(self.converter.to_sql_model(message, self.session_id))
                 session.commit()
@@ -260,7 +263,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
         """Clear session memory from db"""
 
         assert not self.async_mode, "This method must be called without async_mode"
-        with self.session_maker() as session:
+        with self._make_sync_session() as session:
             session.query(self.sql_model_class).filter(
                 getattr(self.sql_model_class, self.session_id_field_name)
                 == self.session_id
@@ -272,10 +275,32 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
 
         assert self.async_mode, "This method must be called with async_mode"
         await self._acreate_table_if_not_exists()
-        async with self.session_maker() as session:
+        async with self._make_async_session() as session:
             stmt = delete(self.sql_model_class).filter(
                 getattr(self.sql_model_class, self.session_id_field_name)
                 == self.session_id
             )
             await session.execute(stmt)
             await session.commit()
+
+    @contextlib.contextmanager
+    def _make_sync_session(self) -> Session:
+        """Make an async session."""
+        if self.async_mode:
+            raise ValueError(
+                "Attempting to use a sync method in when async mode is turned on. "
+                "Please use the corresponding async method instead."
+            )
+        with self.session_maker() as session:
+            yield cast(Session, session)
+
+    @contextlib.asynccontextmanager
+    async def _make_async_session(self) -> AsyncSession:
+        """Make an async session."""
+        if not self.async_mode:
+            raise ValueError(
+                "Attempting to use an async method in when sync mode is turned on. "
+                "Please use the corresponding async method instead."
+            )
+        async with self.session_maker() as session:
+            yield cast(AsyncSession, session)
