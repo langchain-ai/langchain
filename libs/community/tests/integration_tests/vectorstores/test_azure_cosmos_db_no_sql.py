@@ -86,7 +86,6 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             cosmos_client=cosmos_client,
             database_name=database_name,
             container_name=container_name,
-            partition_key=partition_key,
             vector_embedding_policy=get_vector_embedding_policy(
                 "cosine", "float32", 400
             ),
@@ -119,7 +118,6 @@ class TestAzureCosmosDBNoSqlVectorSearch:
             cosmos_client=cosmos_client,
             database_name=database_name,
             container_name=container_name,
-            partition_key=partition_key,
             vector_embedding_policy=get_vector_embedding_policy(
                 "cosine", "float32", 400
             ),
