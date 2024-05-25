@@ -5,6 +5,8 @@ from unittest.mock import create_autospec
 import pytest
 from langchain_core.outputs import LLMResult
 
+from langchain_community.callbacks import UpstashRatelimitError, UpstashRatelimitHandler
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -16,8 +18,6 @@ except ImportError as error:
         "Please install it with `pip install upstash_redis`."
         f"Received error: {error}"
     )
-
-from langchain_community.callbacks import UpstashRatelimitError, UpstashRatelimitHandler
 
 
 # Fixtures
