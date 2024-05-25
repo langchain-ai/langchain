@@ -95,6 +95,7 @@ class DefaultMessageConverter(BaseMessageConverter):
 
 DBConnection = Union[AsyncEngine, Engine, str]
 
+global _warned_once_already
 
 class SQLChatMessageHistory(BaseChatMessageHistory):
     """Chat message history stored in an SQL database."""
@@ -119,12 +120,14 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
             connection_string and connection
         ), "connection_string and connection are mutually exclusive"
         if connection_string:
-            warn_deprecated(
-                since="0.2.2",
-                removal="0.3.0",
-                name="connection_string",
-                alternative="Use connection instead",
-            )
+            if not _warned_once_already:
+                warn_deprecated(
+                    since="0.2.2",
+                    removal="0.3.0",
+                    name="connection_string",
+                    alternative="Use connection instead",
+                )
+                _warned_once_already=True
             connection = connection_string
             self.connection_string = connection_string
         if isinstance(connection, str):
