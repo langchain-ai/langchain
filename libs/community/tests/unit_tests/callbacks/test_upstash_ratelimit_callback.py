@@ -1,13 +1,21 @@
+import logging
 from typing import Any
 from unittest.mock import create_autospec
 
 import pytest
 from langchain_core.outputs import LLMResult
 
+logger = logging.getLogger(__name__)
+
 try:
     from upstash_ratelimit import Ratelimit, Response
-except:
+except ImportError as error:
     Ratelimit, Response = None, None
+    logger.error(
+        "Could not import upstash_redis python package. "
+        "Please install it with `pip install upstash_redis`."
+        f"Received error: {error}"
+    )
 
 from langchain_community.callbacks import UpstashRatelimitError, UpstashRatelimitHandler
 
