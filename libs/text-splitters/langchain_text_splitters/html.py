@@ -173,7 +173,7 @@ class HTMLSectionSplitter:
     def __init__(
         self,
         headers_to_split_on: List[Tuple[str, str]],
-        xslt_path: str = "xsl/converting_to_header.xslt",
+        xslt_path: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Create a new HTMLSectionSplitter.
@@ -183,10 +183,17 @@ class HTMLSectionSplitter:
                 (arbitrary) keys for metadata. Allowed header values: h1, h2, h3, h4,
                 h5, h6 e.g. [("h1", "Header 1"), ("h2", "Header 2"].
             xslt_path: path to xslt file for document transformation.
+            Uses a default if not passed.
             Needed for html contents that using different format and layouts.
         """
         self.headers_to_split_on = dict(headers_to_split_on)
-        self.xslt_path = xslt_path
+
+        if xslt_path is None:
+            self.xslt_path = (
+                pathlib.Path(__file__).parent / "xsl/converting_to_header.xslt"
+            )
+        else:
+            self.xslt_path = xslt_path
         self.kwargs = kwargs
 
     def split_documents(self, documents: Iterable[Document]) -> List[Document]:
@@ -288,7 +295,9 @@ class HTMLSectionSplitter:
         # this is needed for htmls files that using different font sizes and layouts
         # check to see if self.xslt_path is a relative path or absolute path
         if not os.path.isabs(self.xslt_path):
-            xslt_path = pathlib.Path(__file__).parent / self.xslt_path
+            xslt_path = pathlib.Path(self.xslt_path).absolute()
+        else:
+            xslt_path = self.xslt_path
 
         xslt_tree = etree.parse(xslt_path)
         transform = etree.XSLT(xslt_tree)
