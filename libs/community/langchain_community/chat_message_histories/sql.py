@@ -27,10 +27,10 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import (
+    Session,
     declarative_base,
     scoped_session,
     sessionmaker,
-    Session,
 )
 
 logger = logging.getLogger(__name__)
@@ -100,6 +100,7 @@ DBConnection = Union[AsyncEngine, Engine, str]
 
 _warned_once_already = False
 
+
 class SQLChatMessageHistory(BaseChatMessageHistory):
     """Chat message history stored in an SQL database."""
 
@@ -131,7 +132,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
                     name="connection_string",
                     alternative="Use connection instead",
                 )
-                _warned_once_already=True
+                _warned_once_already = True
             connection = connection_string
             self.connection_string = connection_string
         if isinstance(connection, str):
