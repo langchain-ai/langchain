@@ -73,6 +73,7 @@ _EXPECTED = [
     "Weaviate",
     "Yellowbrick",
     "ZepVectorStore",
+    "ZepCloudVectorStore",
     "Zilliz",
 ]
 
