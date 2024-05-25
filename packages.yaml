@@ -113,3 +113,5 @@ repos:
       - name: langchain-postgres
         # non-standard path!
         path: .
+
+  # Partner integration repositories NOT in the langchain-ai organization:
