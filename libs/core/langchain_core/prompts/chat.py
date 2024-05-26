@@ -431,7 +431,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     if isinstance(tmpl, str):
                         text: str = tmpl
                     else:
-                        text = cast(_TextTemplateParam, tmpl)["text"]  # type: ignore[assignment]  # noqa: E501
+                        text = cast(_TextTemplateParam, tmpl)["text"]  # type: ignore[assignment]
                     prompt.append(
                         PromptTemplate.from_template(
                             text, template_format=template_format
