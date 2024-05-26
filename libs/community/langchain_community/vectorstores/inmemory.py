@@ -72,7 +72,7 @@ class InMemoryVectorStore(VectorStore):
         embedding: List[float],
         k: int = 4,
         filter: Optional[Callable[[Document], bool]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float, List[float]]]:
         result = []
         for doc in self.store.values():
@@ -95,7 +95,7 @@ class InMemoryVectorStore(VectorStore):
         embedding: List[float],
         k: int = 4,
         filter: Optional[Callable[[Document], bool]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         return [
             (doc, similarity)
@@ -218,15 +218,15 @@ class InMemoryVectorStore(VectorStore):
     def load(
         cls, path: str, embedding: Embeddings, **kwargs: Any
     ) -> "InMemoryVectorStore":
-        path: Path = Path(path)
-        with path.open("r") as f:
+        _path: Path = Path(path)
+        with _path.open("r") as f:
             store = load(json.load(f))
         vectorstore = cls(embedding=embedding, **kwargs)
         vectorstore.store = store
         return vectorstore
 
     def dump(self, path: str) -> None:
-        path: Path = Path(path)
-        path.parent.mkdir(exist_ok=True, parents=True)
-        with path.open("w") as f:
+        _path: Path = Path(path)
+        _path.parent.mkdir(exist_ok=True, parents=True)
+        with _path.open("w") as f:
             json.dump(dumpd(self.store), f, indent=2)
