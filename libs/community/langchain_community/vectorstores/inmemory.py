@@ -86,7 +86,7 @@ class InMemoryVectorStore(VectorStore):
                 )
             )
         result.sort(key=lambda x: x[1], reverse=True)
-        if filter:
+        if filter is not None:
             result = [r for r in result if filter(r[0])]
         return result[:k]
 
