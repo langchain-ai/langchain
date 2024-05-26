@@ -73,7 +73,7 @@ system_prompt = (
     "formats to build a knowledge graph.\n"
     "Try to capture as much information from the text as possible without "
     "sacrificing accuracy. Do not add any information that is not explicitly "
-    "mentioned in the text\n"
+    "mentioned in the text.\n"
     "- **Nodes** represent entities and concepts.\n"
     "- The aim is to achieve simplicity and clarity in the knowledge graph, making it\n"
     "accessible for a vast audience.\n"
@@ -82,8 +82,8 @@ system_prompt = (
     "Ensure you use basic or elementary types for node labels.\n"
     "- For example, when you identify an entity representing a person, "
     "always label it as **'person'**. Avoid using more specific terms "
-    "like 'mathematician' or 'scientist'"
-    "  - **Node IDs**: Never utilize integers as node IDs. Node IDs should be "
+    "like 'mathematician' or 'scientist'."
+    "- **Node IDs**: Never utilize integers as node IDs. Node IDs should be "
     "names or human-readable identifiers found in the text.\n"
     "- **Relationships** represent connections between entities or concepts.\n"
     "Ensure consistency and generality in relationship types when constructing "
@@ -138,8 +138,8 @@ def _get_additional_info(input_type: str) -> str:
     elif input_type == "relationship":
         return (
             "Instead of using specific and momentary types such as "
-            "'BECAME_PROFESSOR', use more general and timeless relationship types like "
-            "'PROFESSOR'. However, do not sacrifice any accuracy for generality"
+            "'BECAME_PROFESSOR', use more general and timeless relationship types "
+            "like 'PROFESSOR'. However, do not sacrifice any accuracy for generality"
         )
     elif input_type == "property":
         return ""
@@ -274,8 +274,27 @@ def create_simple_model(
     relationship_properties: Union[bool, List[str]] = False,
 ) -> Type[_Graph]:
     """
-    Simple model allows to limit node and/or relationship types.
-    Doesn't have any node or relationship properties.
+    Create a simple graph model with optional constraints on node 
+    and relationship types.
+
+    Args:
+        node_labels (Optional[List[str]]): Specifies the allowed node types. 
+            Defaults to None, allowing all node types.
+        rel_types (Optional[List[str]]): Specifies the allowed relationship types. 
+            Defaults to None, allowing all relationship types.
+        node_properties (Union[bool, List[str]]): Specifies if node properties should 
+            be included. If a list is provided, only properties with keys in the list 
+            will be included. If True, all properties are included. Defaults to False.
+        relationship_properties (Union[bool, List[str]]): Specifies if relationship 
+            properties should be included. If a list is provided, only properties with 
+            keys in the list will be included. If True, all properties are included. 
+            Defaults to False.
+
+    Returns:
+        Type[_Graph]: A graph model with the specified constraints.
+
+    Raises:
+        ValueError: If 'id' is included in the node or relationship properties list.
     """
 
     node_fields: Dict[str, Tuple[Any, Any]] = {
@@ -357,7 +376,8 @@ def create_simple_model(
         ),
     }
     if relationship_properties:
-        if isinstance(relationship_properties, list) and "id" in relationship_properties:
+        if isinstance(relationship_properties, list) and \
+              "id" in relationship_properties:
             raise ValueError(
                 "The relationship property 'id' is reserved and cannot be used."
             )
@@ -404,7 +424,9 @@ def map_to_base_node(node: Any) -> Node:
     return Node(id=node.id, type=node.type, properties=properties)
 
 
-def map_to_base_relationship(rel: Any) -> Relationship:
+def map_to_base_relationship(
+    rel: Any
+) -> Relationship:
     """Map the SimpleRelationship to the base Relationship."""
     source = Node(id=rel.source_node_id, type=rel.source_node_type)
     target = Node(id=rel.target_node_id, type=rel.target_node_type)
@@ -412,7 +434,12 @@ def map_to_base_relationship(rel: Any) -> Relationship:
     if hasattr(rel, "properties") and rel.properties:
         for p in rel.properties:
             properties[format_property_key(p.key)] = p.value
-    return Relationship(source=source, target=target, type=rel.type, properties=properties)
+    return Relationship(
+        source=source,
+        target=target,
+        type=rel.type,
+        properties=properties
+    )
 
 
 def _parse_and_clean_json(
@@ -634,7 +661,10 @@ class LLMGraphTransformer:
         else:
             # Define chain
             schema = create_simple_model(
-                allowed_nodes, allowed_relationships, node_properties, relationship_properties
+                allowed_nodes,
+                allowed_relationships,
+                node_properties,
+                relationship_properties,
             )
             structured_llm = llm.with_structured_output(schema, include_raw=True)
             prompt = prompt or default_prompt
