@@ -1,10 +1,13 @@
+import json
 import uuid
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
+from pathlib import Path
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+from langchain_core.load import load, dumpd
 
 from langchain_community.utils.math import cosine_similarity
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
@@ -199,3 +202,20 @@ class InMemoryVectorStore(VectorStore):
         **kwargs: Any,
     ) -> "InMemoryVectorStore":
         return cls.from_texts(texts, embedding, metadatas, **kwargs)
+
+    @classmethod
+    def load(
+        cls, path: str, embedding: Embeddings, **kwargs: Any
+    ) -> "InMemoryVectorStore":
+        path: Path = Path(path)
+        with path.open("r") as f:
+            store = load(json.load(f))
+        vectorstore = cls(embedding=embedding, **kwargs)
+        vectorstore.store = store
+        return vectorstore
+
+    def dump(self, path: str) -> None:
+        path: Path = Path(path)
+        path.parent.mkdir(exist_ok=True, parents=True)
+        with path.open("w") as f:
+            json.dump(dumpd(self.store), f, indent=2)
