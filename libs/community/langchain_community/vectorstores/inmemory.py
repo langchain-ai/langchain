@@ -1,13 +1,13 @@
 import json
 import uuid
+from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
-from pathlib import Path
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.load import dumpd, load
 from langchain_core.vectorstores import VectorStore
-from langchain_core.load import load, dumpd
 
 from langchain_community.utils.math import cosine_similarity
 from langchain_community.vectorstores.utils import maximal_marginal_relevance
@@ -82,14 +82,13 @@ class InMemoryVectorStore(VectorStore):
                 (
                     Document(page_content=doc["text"], metadata=doc["metadata"]),
                     similarity,
-                    vector
+                    vector,
                 )
             )
         result.sort(key=lambda x: x[1], reverse=True)
         if filter:
             result = [r for r in result if filter(r[0])]
         return result[:k]
-
 
     def similarity_search_with_score_by_vector(
         self,
@@ -99,8 +98,10 @@ class InMemoryVectorStore(VectorStore):
         **kwargs,
     ) -> List[Tuple[Document, float]]:
         return [
-            (doc, similarity) for doc, similarity, _ in
-            self._similarity_search_with_score_by_vector(embedding=embedding, k=k, filter=filter, **kwargs)
+            (doc, similarity)
+            for doc, similarity, _ in self._similarity_search_with_score_by_vector(
+                embedding=embedding, k=k, filter=filter, **kwargs
+            )
         ]
 
     def similarity_search_with_score(
