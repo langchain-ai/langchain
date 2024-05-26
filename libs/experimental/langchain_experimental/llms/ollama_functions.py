@@ -121,27 +121,8 @@ class OllamaFunctions(ChatOllama):
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.bind(functions=tools, **kwargs)
-
+    
     @overload
-    def with_structured_output(
-        self,
-        schema: Optional[_DictOrPydanticClass] = None,
-        *,
-        include_raw: Literal[True] = True,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]:
-        ...
-
-    @overload
-    def with_structured_output(
-        self,
-        schema: Optional[_DictOrPydanticClass] = None,
-        *,
-        include_raw: Literal[False] = False,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        ...
-
     def with_structured_output(
         self,
         schema: Optional[_DictOrPydanticClass] = None,
