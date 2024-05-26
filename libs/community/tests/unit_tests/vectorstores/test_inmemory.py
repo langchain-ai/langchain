@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from langchain_core.documents import Document
 
 from langchain_community.vectorstores.inmemory import InMemoryVectorStore
@@ -46,13 +48,13 @@ async def test_inmemory_mmr() -> None:
     assert output[1] == Document(page_content="foy")
 
 
-async def test_inmemory_dump_load(tmp_path) -> None:
+async def test_inmemory_dump_load(tmp_path: Path) -> None:
     """Test end to end construction and search."""
     embedding = ConsistentFakeEmbeddings()
     store = await InMemoryVectorStore.afrom_texts(["foo", "bar", "baz"], embedding)
     output = await store.asimilarity_search("foo", k=1)
 
-    test_file = tmp_path / "test.json"
+    test_file = str(tmp_path / "test.json")
     store.dump(test_file)
 
     loaded_store = InMemoryVectorStore.load(test_file, embedding)
