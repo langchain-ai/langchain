@@ -9,8 +9,10 @@ from langchain_community.embeddings import SparkLLMTextEmbeddings
 
 def test_sparkllm_initialization_by_alias() -> None:
     # Effective initialization
-    embeddings = SparkLLMTextEmbeddings(  # type: ignore[arg-type]
-        app_id="your-app-id", api_key="your-api-key", api_secret="your-api-secret"
+    embeddings = SparkLLMTextEmbeddings(
+        app_id="your-app-id",  # type: ignore[arg-type]
+        api_key="your-api-key",  # type: ignore[arg-type]
+        api_secret="your-api-secret",  # type: ignore[arg-type]
     )
     assert cast(SecretStr, embeddings.spark_app_id).get_secret_value() == "your-app-id"
     assert (
