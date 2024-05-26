@@ -298,6 +298,8 @@ def create_simple_model(
             properties should be included. If a list is provided, only properties with 
             keys in the list will be included. If True, all properties are included. 
             Defaults to False.
+        llm_type (Optional[str]): The type of the language model. Defaults to None.
+            Only openai supports enum param: openai-chat.
 
     Returns:
         Type[_Graph]: A graph model with the specified constraints.
