@@ -103,18 +103,25 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
             A list of list of floats representing the embeddings,
             or list with value None if an error occurs.
         """
+        app_id = ""
+        api_key = ""
+        api_secret = ""
+        if self.spark_app_id:
+            app_id = self.spark_app_id.get_secret_value()
+        if self.spark_api_key:
+            api_key = self.spark_api_key.get_secret_value()
+        if self.spark_api_secret:
+            api_secret = self.spark_api_secret.get_secret_value()
         url = self._assemble_ws_auth_url(
             request_url=host,
             method="POST",
-            api_key=self.spark_api_key.get_secret_value(),
-            api_secret=self.spark_api_secret.get_secret_value(),
+            api_key=api_key,
+            api_secret=api_secret,
         )
         embed_result: list = []
         for text in texts:
             query_context = {"messages": [{"content": text, "role": "user"}]}
-            content = self._get_body(
-                self.spark_app_id.get_secret_value(), query_context
-            )
+            content = self._get_body(app_id, query_context)
             response = requests.post(
                 url, json=content, headers={"content-type": "application/json"}
             ).text
