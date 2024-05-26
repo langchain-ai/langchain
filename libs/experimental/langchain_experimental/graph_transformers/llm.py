@@ -150,13 +150,21 @@ def optional_enum_field(
     enum_values: Optional[List[str]] = None,
     description: str = "",
     input_type: str = "node",
+    llm_type: Optional[str] = None,
     **field_kwargs: Any,
 ) -> Any:
     """Utility function to conditionally create a field with an enum constraint."""
-    if enum_values:
+    # Only openai supports enum param
+    if enum_values and llm_type == "openai-chat":
         return Field(
             ...,
             enum=enum_values,
+            description=f"{description}. Available options are {enum_values}",
+            **field_kwargs,
+        )
+    elif enum_values:
+        return Field(
+            ...,
             description=f"{description}. Available options are {enum_values}",
             **field_kwargs,
         )
@@ -271,6 +279,7 @@ def create_simple_model(
     node_labels: Optional[List[str]] = None,
     rel_types: Optional[List[str]] = None,
     node_properties: Union[bool, List[str]] = False,
+    llm_type: Optional[str] = None,
     relationship_properties: Union[bool, List[str]] = False,
 ) -> Type[_Graph]:
     """
@@ -308,6 +317,7 @@ def create_simple_model(
                 node_labels,
                 description="The type or label of the node.",
                 input_type="node",
+                llm_type=llm_type,
             ),
         ),
     }
@@ -660,10 +670,15 @@ class LLMGraphTransformer:
             self.chain = prompt | llm
         else:
             # Define chain
+            try:
+                llm_type = llm._llm_type  # type: ignore
+            except AttributeError:
+                llm_type = None
             schema = create_simple_model(
                 allowed_nodes,
                 allowed_relationships,
                 node_properties,
+                llm_type,
                 relationship_properties,
             )
             structured_llm = llm.with_structured_output(schema, include_raw=True)

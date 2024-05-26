@@ -41,7 +41,6 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "SQLAlchemy",
             "aiohttp",
             "async-timeout",
-            "dataclasses-json",
             "langchain-core",
             "langchain-text-splitters",
             "langsmith",

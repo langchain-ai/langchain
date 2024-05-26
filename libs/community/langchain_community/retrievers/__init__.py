@@ -28,6 +28,9 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.arxiv import (
         ArxivRetriever,
     )
+    from langchain_community.retrievers.asknews import (
+        AskNewsRetriever,
+    )
     from langchain_community.retrievers.azure_ai_search import (
         AzureAISearchRetriever,
         AzureCognitiveSearchRetriever,
@@ -143,6 +146,7 @@ _module_lookup = {
     "AmazonKnowledgeBasesRetriever": "langchain_community.retrievers.bedrock",
     "ArceeRetriever": "langchain_community.retrievers.arcee",
     "ArxivRetriever": "langchain_community.retrievers.arxiv",
+    "AskNewsRetriever": "langchain_community.retrievers.asknews",
     "AzureAISearchRetriever": "langchain_community.retrievers.azure_ai_search",
     "AzureCognitiveSearchRetriever": "langchain_community.retrievers.azure_ai_search",
     "BM25Retriever": "langchain_community.retrievers.bm25",
@@ -196,6 +200,7 @@ __all__ = [
     "AmazonKnowledgeBasesRetriever",
     "ArceeRetriever",
     "ArxivRetriever",
+    "AskNewsRetriever",
     "AzureAISearchRetriever",
     "AzureCognitiveSearchRetriever",
     "BM25Retriever",
