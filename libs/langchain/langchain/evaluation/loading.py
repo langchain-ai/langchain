@@ -56,7 +56,7 @@ def load_dataset(uri: str) -> List[Dict]:
 
         from langchain.evaluation import load_dataset
         ds = load_dataset("llm-math")
-    """  # noqa: E501
+    """
     try:
         from datasets import load_dataset
     except ImportError:
