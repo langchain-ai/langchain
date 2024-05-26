@@ -62,27 +62,32 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
 
     """
 
-    spark_app_id: SecretStr
+    spark_app_id: Optional[SecretStr] = Field(default=None, alias="app_id")
     """Automatically inferred from env var `SPARK_APP_ID` if not provided."""
-    spark_api_key: SecretStr
+    spark_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `SPARK_API_KEY` if not provided."""
-    spark_api_secret: SecretStr
+    spark_api_secret: Optional[SecretStr] = Field(default=None, alias="api_secret")
     """Automatically inferred from env var `SPARK_API_SECRET` if not provided."""
     domain: Literal["para", "query"] = Field(default="para")
     """This parameter is used for which Embedding this time belongs to.
     If "para"(default), it belongs to document Embedding. 
     If "query", it belongs to query Embedding."""
 
+    class Config:
+        """Configuration for this pydantic object"""
+
+        allow_population_by_field_name = True
+
     @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that auth token exists in environment."""
-        cls.spark_app_id = convert_to_secret_str(
+        values["spark_app_id"] = convert_to_secret_str(
             get_from_dict_or_env(values, "spark_app_id", "SPARK_APP_ID")
         )
-        cls.spark_api_key = convert_to_secret_str(
+        values["spark_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "spark_api_key", "SPARK_API_KEY")
         )
-        cls.spark_api_secret = convert_to_secret_str(
+        values["spark_api_secret"] = convert_to_secret_str(
             get_from_dict_or_env(values, "spark_api_secret", "SPARK_API_SECRET")
         )
         return values
