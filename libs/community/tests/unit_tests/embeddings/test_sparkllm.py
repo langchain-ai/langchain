@@ -1,19 +1,25 @@
 import os
+from typing import cast
 
 import pytest
-from langchain_core.pydantic_v1 import ValidationError
+from langchain_core.pydantic_v1 import SecretStr, ValidationError
 
 from langchain_community.embeddings import SparkLLMTextEmbeddings
 
 
 def test_sparkllm_initialization_by_alias() -> None:
     # Effective initialization
-    embeddings = SparkLLMTextEmbeddings(
+    embeddings = SparkLLMTextEmbeddings(  # type: ignore[call-arg]
         app_id="your-app-id", api_key="your-api-key", api_secret="your-api-secret"
     )
-    assert embeddings.spark_app_id.get_secret_value() == "your-app-id"
-    assert embeddings.spark_api_key.get_secret_value() == "your-api-key"
-    assert embeddings.spark_api_secret.get_secret_value() == "your-api-secret"
+    assert cast(SecretStr, embeddings.spark_app_id).get_secret_value() == "your-app-id"
+    assert (
+        cast(SecretStr, embeddings.spark_api_key).get_secret_value() == "your-api-key"
+    )
+    assert (
+        cast(SecretStr, embeddings.spark_api_secret).get_secret_value()
+        == "your-api-secret"
+    )
 
 
 def test_initialization_parameters_from_env() -> None:
@@ -24,9 +30,14 @@ def test_initialization_parameters_from_env() -> None:
 
     # Effective initialization
     embeddings = SparkLLMTextEmbeddings()
-    assert embeddings.spark_app_id.get_secret_value() == "your-app-id"
-    assert embeddings.spark_api_key.get_secret_value() == "your-api-key"
-    assert embeddings.spark_api_secret.get_secret_value() == "your-api-secret"
+    assert cast(SecretStr, embeddings.spark_app_id).get_secret_value() == "your-app-id"
+    assert (
+        cast(SecretStr, embeddings.spark_api_key).get_secret_value() == "your-api-key"
+    )
+    assert (
+        cast(SecretStr, embeddings.spark_api_secret).get_secret_value()
+        == "your-api-secret"
+    )
 
     # Environment variable missing
     del os.environ["SPARK_APP_ID"]
