@@ -44,7 +44,7 @@ class FireCrawlLoader(BaseLoader):
             raise ValueError(
                 f"Unrecognized mode '{mode}'. Expected one of 'crawl', 'scrape'."
             )
-        api_key = api_key or get_from_env("api_key", "FIREWALL_API_KEY")
+        api_key = api_key or get_from_env("api_key", "FIRECRAWL_API_KEY")
         self.firecrawl = FirecrawlApp(api_key=api_key)
         self.url = url
         self.mode = mode
