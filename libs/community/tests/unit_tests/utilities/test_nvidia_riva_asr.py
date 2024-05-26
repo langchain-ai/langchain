@@ -109,7 +109,7 @@ def riva_asr_stub_init_patch(
 @pytest.fixture
 def asr() -> RivaASR:
     """Initialize a copy of the runnable."""
-    return RivaASR(**CONFIG)
+    return RivaASR(**CONFIG)  # type: ignore[arg-type]
 
 
 @pytest.fixture
@@ -132,7 +132,7 @@ def test_init(asr: RivaASR) -> None:
 @pytest.mark.requires("riva.client")
 def test_init_defaults() -> None:
     """Ensure the runnable can be loaded with no arguments."""
-    _ = RivaASR()
+    _ = RivaASR()  # type: ignore[call-arg]
 
 
 @pytest.mark.requires("riva.client")

@@ -115,6 +115,50 @@ def test_character_text_splitter_keep_separator_regex(
 @pytest.mark.parametrize(
     "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
 )
+def test_character_text_splitter_keep_separator_regex_start(
+    separator: str, is_separator_regex: bool
+) -> None:
+    """Test splitting by characters while keeping the separator
+    that is a regex special character and placing it at the start of each chunk.
+    """
+    text = "foo.bar.baz.123"
+    splitter = CharacterTextSplitter(
+        separator=separator,
+        chunk_size=1,
+        chunk_overlap=0,
+        keep_separator="start",
+        is_separator_regex=is_separator_regex,
+    )
+    output = splitter.split_text(text)
+    expected_output = ["foo", ".bar", ".baz", ".123"]
+    assert output == expected_output
+
+
+@pytest.mark.parametrize(
+    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+)
+def test_character_text_splitter_keep_separator_regex_end(
+    separator: str, is_separator_regex: bool
+) -> None:
+    """Test splitting by characters while keeping the separator
+    that is a regex special character and placing it at the end of each chunk.
+    """
+    text = "foo.bar.baz.123"
+    splitter = CharacterTextSplitter(
+        separator=separator,
+        chunk_size=1,
+        chunk_overlap=0,
+        keep_separator="end",
+        is_separator_regex=is_separator_regex,
+    )
+    output = splitter.split_text(text)
+    expected_output = ["foo.", "bar.", "baz.", "123"]
+    assert output == expected_output
+
+
+@pytest.mark.parametrize(
+    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+)
 def test_character_text_splitter_discard_separator_regex(
     separator: str, is_separator_regex: bool
 ) -> None:
@@ -1214,6 +1258,38 @@ def test_md_header_text_splitter_fenced_code_block_interleaved(
                 f"{fence}\nfoo\n# Not a header\n{other_fence}\n# Not a header\n{fence}"
             ),
             metadata={"Header 1": "This is a Header"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+@pytest.mark.parametrize("characters", ["\ufeff"])
+def test_md_header_text_splitter_with_invisible_characters(characters: str) -> None:
+    """Test markdown splitter by header: Fenced code block."""
+
+    markdown_document = (
+        f"{characters}# Foo\n\n" "foo()\n" f"{characters}## Bar\n\n" "bar()"
+    )
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="foo()",
+            metadata={"Header 1": "Foo"},
+        ),
+        Document(
+            page_content="bar()",
+            metadata={"Header 1": "Foo", "Header 2": "Bar"},
         ),
     ]
 

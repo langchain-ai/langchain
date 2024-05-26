@@ -190,7 +190,7 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
                 print(  # noqa: T201
                     "Make sure that your data store is using Advanced Website "
                     "Indexing.\n"
-                    "https://cloud.google.com/generative-ai-app-builder/docs/about-advanced-features#advanced-website-indexing"  # noqa: E501
+                    "https://cloud.google.com/generative-ai-app-builder/docs/about-advanced-features#advanced-website-indexing"
                 )
 
         return documents
@@ -198,7 +198,7 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
 
 @deprecated(
     since="0.0.33",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_google_community.VertexAISearchRetriever",
 )
 class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetriever):
@@ -398,7 +398,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
 
 @deprecated(
     since="0.0.33",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_google_community.VertexAIMultiTurnSearchRetriever",
 )
 class GoogleVertexAIMultiTurnSearchRetriever(

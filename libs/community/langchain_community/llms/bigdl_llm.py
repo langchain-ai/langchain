@@ -23,6 +23,10 @@ class BigdlLLM(IpexLLM):
         cls,
         model_id: str,
         model_kwargs: Optional[dict] = None,
+        *,
+        tokenizer_id: Optional[str] = None,
+        load_in_4bit: bool = True,
+        load_in_low_bit: Optional[str] = None,
         **kwargs: Any,
     ) -> LLM:
         """
@@ -31,6 +35,8 @@ class BigdlLLM(IpexLLM):
         Args:
             model_id: Path for the huggingface repo id to be downloaded or
                       the huggingface checkpoint folder.
+            tokenizer_id: Path for the huggingface repo id to be downloaded or
+                      the huggingface checkpoint folder which contains the tokenizer.
             model_kwargs: Keyword arguments to pass to the model and tokenizer.
             kwargs: Extra arguments to pass to the model and tokenizer.
 
@@ -47,17 +53,32 @@ class BigdlLLM(IpexLLM):
             from transformers import AutoTokenizer, LlamaTokenizer
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import bigdl-llm or transformers. "
                 "Please install it with `pip install --pre --upgrade bigdl-llm[all]`."
             )
 
+        if load_in_low_bit is not None:
+            logger.warning(
+                """`load_in_low_bit` option is not supported in BigdlLLM and 
+                is ignored. For more data types support with `load_in_low_bit`, 
+                use IpexLLM instead."""
+            )
+
+        if not load_in_4bit:
+            raise ValueError(
+                "BigdlLLM only supports loading in 4-bit mode, "
+                "i.e. load_in_4bit = True. "
+                "Please install it with `pip install --pre --upgrade bigdl-llm[all]`."
+            )
+
         _model_kwargs = model_kwargs or {}
+        _tokenizer_id = tokenizer_id or model_id
 
         try:
-            tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
+            tokenizer = AutoTokenizer.from_pretrained(_tokenizer_id, **_model_kwargs)
         except Exception:
-            tokenizer = LlamaTokenizer.from_pretrained(model_id, **_model_kwargs)
+            tokenizer = LlamaTokenizer.from_pretrained(_tokenizer_id, **_model_kwargs)
 
         try:
             model = AutoModelForCausalLM.from_pretrained(
@@ -86,6 +107,8 @@ class BigdlLLM(IpexLLM):
         cls,
         model_id: str,
         model_kwargs: Optional[dict] = None,
+        *,
+        tokenizer_id: Optional[str] = None,
         **kwargs: Any,
     ) -> LLM:
         """
@@ -94,6 +117,8 @@ class BigdlLLM(IpexLLM):
         Args:
 
             model_id: Path for the bigdl-llm transformers low-bit model folder.
+            tokenizer_id: Path for the huggingface repo id or local model folder
+                      which contains the tokenizer.
             model_kwargs: Keyword arguments to pass to the model and tokenizer.
             kwargs: Extra arguments to pass to the model and tokenizer.
 
@@ -111,16 +136,18 @@ class BigdlLLM(IpexLLM):
             from transformers import AutoTokenizer, LlamaTokenizer
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import bigdl-llm or transformers. "
                 "Please install it with `pip install --pre --upgrade bigdl-llm[all]`."
             )
 
         _model_kwargs = model_kwargs or {}
+        _tokenizer_id = tokenizer_id or model_id
+
         try:
-            tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
+            tokenizer = AutoTokenizer.from_pretrained(_tokenizer_id, **_model_kwargs)
         except Exception:
-            tokenizer = LlamaTokenizer.from_pretrained(model_id, **_model_kwargs)
+            tokenizer = LlamaTokenizer.from_pretrained(_tokenizer_id, **_model_kwargs)
 
         try:
             model = AutoModelForCausalLM.load_low_bit(model_id, **_model_kwargs)

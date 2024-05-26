@@ -17,7 +17,7 @@ from langchain.chains.llm import LLMChain
 from langchain.tools.render import ToolsRenderer, render_text_description
 
 
-@deprecated("0.1.0", alternative="create_xml_agent", removal="0.2.0")
+@deprecated("0.1.0", alternative="create_xml_agent", removal="0.3.0")
 class XMLAgent(BaseSingleActionAgent):
     """Agent that uses XML tags.
 
@@ -147,7 +147,7 @@ def create_xml_agent(
             from langchain.agents import AgentExecutor, create_xml_agent
 
             prompt = hub.pull("hwchase17/xml-agent-convo")
-            model = ChatAnthropic()
+            model = ChatAnthropic(model="claude-3-haiku-20240307")
             tools = ...
 
             agent = create_xml_agent(model, tools, prompt)

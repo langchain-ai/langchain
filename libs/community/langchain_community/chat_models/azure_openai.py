@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 @deprecated(
     since="0.0.10",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_openai.AzureChatOpenAI",
 )
 class AzureChatOpenAI(ChatOpenAI):
@@ -85,7 +85,7 @@ class AzureChatOpenAI(ChatOpenAI):
         
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """  # noqa: E501
+    """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
         

@@ -33,17 +33,17 @@ if TYPE_CHECKING:
 tracing_callback_var: Any = None
 tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(
     "tracing_callback_v2", default=None
-)  # noqa: E501
+)
 run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVar(
     "run_collector", default=None
-)  # noqa: E501
+)
 
 
 @contextmanager
 def tracing_enabled(
     session_name: str = "default",
 ) -> Generator[TracerSessionV1, None, None]:
-    """Throws an error because this has been replaced by tracing_v2_enabled."""
+    """Throw an error because this has been replaced by tracing_v2_enabled."""
     raise RuntimeError(
         "tracing_enabled is no longer supported. Please use tracing_enabled_v2 instead."
     )
@@ -147,6 +147,8 @@ def _get_trace_callbacks(
 def _tracing_v2_is_enabled() -> bool:
     return (
         env_var_is_set("LANGCHAIN_TRACING_V2")
+        or env_var_is_set("LANGSMITH_TRACING")
+        or env_var_is_set("LANGSMITH_TRACING_V2")
         or tracing_v2_callback_var.get() is not None
         or get_run_tree_context() is not None
     )
