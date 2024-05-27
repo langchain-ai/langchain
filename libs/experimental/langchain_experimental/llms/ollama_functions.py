@@ -342,7 +342,7 @@ class OllamaFunctions(ChatOllama):
             tool_calls=[
                 ToolCall(
                     name=called_tool_name,
-                    args=called_tool_arguments if called_tool_arguments else "",
+                    args=called_tool_arguments if called_tool_arguments else {},
                     id=f"call_{str(uuid.uuid4()).replace('-', '')}",
                 )
             ],
