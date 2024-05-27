@@ -554,6 +554,37 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         await run_manager.on_chain_end(output)
 
     def __getattr__(self, name: str) -> Any:
+        """Get an attribute from the wrapped runnable and its fallbacks.
+
+        Returns:
+            If the attribute is anything other than a method that outputs a Runnable,
+            returns getattr(self.runnable, name). If the attribute is a method that
+            does return a new Runnable (e.g. llm.bind_tools([...] outputs a new
+            RunnableBinding) then self.runnable and each of the runnables in
+            self.fallbacks is replaced with getattr(x, name).
+
+        Example:
+            .. code-block:: python
+
+                from langchain_openai import ChatOpenAI
+                from langchain_anthropic import ChatAnthropic
+
+                gpt_4o = ChatOpenAI(model="gpt-4o")
+                claude_3_sonnet = ChatAnthropic(model="claude-3-sonnet-20240229")
+                llm = gpt_4o.with_fallbacks([claude_3_sonnet])
+
+                llm.model_name
+                # -> "gpt-4o"
+
+                # .bind_tools() is called on both ChatOpenAI and ChatAnthropic
+                # Equivalent to gpt_4o.bind_tools([...]).with_fallbacks([claude_3_sonnet.bind_tools([...])])
+                llm.bind_tools([...])
+                # -> RunnableWithFallbacks(
+                    runnable=RunnableBinding(bound=ChatOpenAI(...), kwargs={"tools": [...]}),
+                    fallbacks=[RunnableBinding(bound=ChatAnthropic(...), kwargs={"tools": [...]})],
+                )
+
+        """  # noqa: E501
         attr = getattr(self.runnable, name)
         if _returns_runnable(attr):
 
