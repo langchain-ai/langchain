@@ -6,13 +6,10 @@ on:
       distribProjectName:
         description: 'Name of distrib project in pypi'
         required: true
-        type: string
-        default: 'gigachain'
-      distribProjectPath:
-        description: 'Path to project in mono-repo'
-        required: true
-        type: string
-        default: 'gigachain/'
+        type: choice
+        options:
+          - gigachain-core
+          - gigachain-community
       publish:
         description: 'Publish distrib to pypi'
         required: false
@@ -24,12 +21,49 @@ on:
         type: boolean
         default: false
 
+env:
+  build-dir-gigachain-core: "libs/core"
+  build-dir-gigachain-community: "libs/community"
+
 jobs:
-  build:
-    name: Build distribution
+  check-ci-job-status:
+    name: Check CI workflow status
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Get last CI workflow status
+        id: JobStatus
+        run: |
+          JOB_STATUS=$(gh run list --workflow check_diffs.yml | grep -oh "completed.*" | head -1 | awk '{print $2}')
+          if [ "$JOB_STATUS" == "success" ]; then
+            echo "status is $JOB_STATUS"
+            echo "::set-output name=State::true"
+          else
+            echo "status is $JOB_STATUS"
+            echo "::set-output name=State::false"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check status
+        if: "${{ ! steps.JobStatus.outputs.State }}"
+        uses: actions/github-script@v3
+        with:
+          script: |
+            core.setFailed('Failed CI check')
+    
+  build:
+    name: Build distribution
+    needs: check-ci-job-status
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fail if branch is not main
+        if: github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/master'
+        run: |
+          echo "This workflow should not be triggered with workflow_dispatch on a branch other than master"
+          exit 1
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -41,14 +75,14 @@ jobs:
           echo "$HOME/.poetry/bin" >> $GITHUB_PATH
       - name: Build a binary wheel
         run: |
-          cd ${{ inputs.distribProjectPath }}
+          cd ${{ env[format('build-dir-{0}',inputs.distribProjectName)] }}
           poetry build
           
       - name: Store the distribution packages
         uses: actions/upload-artifact@v3
         with:
           name: ${{ inputs.distribProjectName }}
-          path: /home/runner/work/gigachain/gigachain/${{ inputs.distribProjectPath }}/dist/
+          path: /home/runner/work/gigachain/gigachain/${{ env[format('build-dir-{0}',inputs.distribProjectName)] }}/dist/
   publish-to-pypi:
     if: ${{ inputs.publish }}
     needs:
