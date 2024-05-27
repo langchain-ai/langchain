@@ -692,7 +692,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
 
 
 def test_runnable_get_graph_with_invalid_input_type() -> None:
-    """Test that an error is raised when trying to get graph with invalid input type."""
+    """Test that error isn't raised when getting graph with invalid input type."""
 
     class InvalidInputTypeRunnable(Runnable[int, int]):
         @property
@@ -714,7 +714,7 @@ def test_runnable_get_graph_with_invalid_input_type() -> None:
 
 
 def test_runnable_get_graph_with_invalid_output_type() -> None:
-    """Test that an error is raised when trying to get graph with invalid output type."""  # noqa: E501
+    """Test that error is't raised when getting graph with invalid output type."""
 
     class InvalidOutputTypeRunnable(Runnable[int, int]):
         @property
