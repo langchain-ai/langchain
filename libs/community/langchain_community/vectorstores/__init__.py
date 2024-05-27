@@ -294,6 +294,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.zep import (
         ZepVectorStore,
     )
+    from langchain_community.vectorstores.zep_cloud import (
+        ZepCloudVectorStore,
+    )
     from langchain_community.vectorstores.zilliz import (
         Zilliz,
     )
@@ -395,6 +398,7 @@ __all__ = [
     "Weaviate",
     "Yellowbrick",
     "ZepVectorStore",
+    "ZepCloudVectorStore",
     "Zilliz",
 ]
 
@@ -495,6 +499,7 @@ _module_lookup = {
     "Weaviate": "langchain_community.vectorstores.weaviate",
     "Yellowbrick": "langchain_community.vectorstores.yellowbrick",
     "ZepVectorStore": "langchain_community.vectorstores.zep",
+    "ZepCloudVectorStore": "langchain_community.vectorstores.zep_cloud",
     "Zilliz": "langchain_community.vectorstores.zilliz",
 }
 
