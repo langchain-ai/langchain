@@ -191,6 +191,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
 
     async def _acreate_table_if_not_exists(self) -> None:
         if not self._table_created:
+            assert self.async_mode, "This method must be called with async_mode"
             async with self.async_engine.begin() as conn:
                 await conn.run_sync(self.sql_model_class.metadata.create_all)
             self._table_created = True
@@ -198,7 +199,6 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve all messages from db"""
-        assert not self.async_mode, "This method must be called without async_mode"
         with self._make_sync_session() as session:
             result = (
                 session.query(self.sql_model_class)
@@ -215,7 +215,6 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
 
     async def aget_messages(self) -> List[BaseMessage]:
         """Retrieve all messages from db"""
-        assert self.async_mode, "This method must be called with async_mode"
         await self._acreate_table_if_not_exists()
         async with self._make_async_session() as session:
             stmt = (
@@ -244,7 +243,6 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
         Args:
             message: A BaseMessage object to store.
         """
-        assert self.async_mode, "This method must be called with async_mode"
         await self._acreate_table_if_not_exists()
         async with self._make_async_session() as session:
             session.add(self.converter.to_sql_model(message, self.session_id))
@@ -265,7 +263,6 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
 
     async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
         # Add all messages in one transaction
-        assert self.async_mode, "This method must be called with async_mode"
         await self._acreate_table_if_not_exists()
         async with self.session_maker() as session:
             for message in messages:
@@ -275,7 +272,6 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
     def clear(self) -> None:
         """Clear session memory from db"""
 
-        assert not self.async_mode, "This method must be called without async_mode"
         with self._make_sync_session() as session:
             session.query(self.sql_model_class).filter(
                 getattr(self.sql_model_class, self.session_id_field_name)
@@ -286,7 +282,6 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
     async def aclear(self) -> None:
         """Clear session memory from db"""
 
-        assert self.async_mode, "This method must be called with async_mode"
         await self._acreate_table_if_not_exists()
         async with self._make_async_session() as session:
             stmt = delete(self.sql_model_class).filter(
