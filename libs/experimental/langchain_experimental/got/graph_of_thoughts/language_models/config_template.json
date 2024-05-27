@@ -1,0 +1,19 @@
+{
+    "mixtral-8x22b-instruct" : {
+        "model_id": "ai-mixtral-8x22b-instruct",
+        "model_id": "meta/llama3-70b-instruct",
+        "prompt_token_cost": 0.0,
+        "response_token_cost": 0.0,
+        "temperature": 1,
+        "top_p": None,
+        "max_tokens": 2048
+    },
+    "llama3-70b-instruct" : {
+        "model_id": "meta/llama3-70b-instruct",
+        "prompt_token_cost": 0.0,
+        "response_token_cost": 0.0,
+        "temperature": 1,
+        "top_p": None,
+        "max_tokens": 2048
+    }
+}
