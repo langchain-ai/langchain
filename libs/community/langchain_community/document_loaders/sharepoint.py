@@ -65,10 +65,13 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             if not isinstance(target_folder, Folder):
                 raise ValueError(f"There isn't a folder with path {self.folder_path}.")
             for blob in self._load_from_folder(target_folder):
-                for parsed_blob in blob_parser.lazy_parse(blob):
-                    auth_identities = self.authorized_identities()
-                    parsed_blob.metadata["authorized_identities"] = auth_identities
-                    yield parsed_blob
+                if self.load_auth is True:
+                    for parsed_blob in blob_parser.lazy_parse(blob):
+                        auth_identities = self.authorized_identities()
+                        parsed_blob.metadata["authorized_identities"] = auth_identities
+                        yield parsed_blob
+                else:
+                    yield from blob_parser.lazy_parse(blob)
         if self.folder_id:
             target_folder = drive.get_item(self.folder_id)
             if not isinstance(target_folder, Folder):
