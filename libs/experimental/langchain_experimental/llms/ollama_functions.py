@@ -95,18 +95,18 @@ def parse_response(message: BaseMessage) -> str:
     """Extract `function_call` from `AIMessage`."""
     if isinstance(message, AIMessage):
         kwargs = message.additional_kwargs
-        if "function_call" in kwargs:
+        tool_calls = message.tool_calls
+        if len(tool_calls) > 0:
+            tool_call = tool_calls[-1]
+            args = tool_call.get("args")
+            return json.dumps(args)
+        elif "function_call" in kwargs:
             if "arguments" in kwargs["function_call"]:
                 return kwargs["function_call"]["arguments"]
             raise ValueError(
                 f"`arguments` missing from `function_call` within AIMessage: {message}"
             )
         else:
-            tool_calls = message.tool_calls
-            if len(tool_calls) > 0:
-                tool_call = tool_calls[-1]
-                args = tool_call.get("args")
-                return json.dumps(args)
             raise ValueError("`tool_calls` missing from AIMessage: {message}")
     raise ValueError(f"`message` is not an instance of `AIMessage`: {message}")
 
