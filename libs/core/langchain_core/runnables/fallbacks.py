@@ -577,7 +577,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 # -> "gpt-4o"
 
                 # .bind_tools() is called on both ChatOpenAI and ChatAnthropic
-                # Equivalent to gpt_4o.bind_tools([...]).with_fallbacks([claude_3_sonnet.bind_tools([...])])
+                # Equivalent to:
+                # gpt_4o.bind_tools([...]).with_fallbacks([claude_3_sonnet.bind_tools([...])])
                 llm.bind_tools([...])
                 # -> RunnableWithFallbacks(
                     runnable=RunnableBinding(bound=ChatOpenAI(...), kwargs={"tools": [...]}),
