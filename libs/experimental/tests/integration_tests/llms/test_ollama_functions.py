@@ -53,7 +53,8 @@ class TestOllamaFunctions(unittest.TestCase):
         res = model.invoke("What's the weather in San Francisco?")
 
         self.assertIsInstance(res, AIMessage)
-        tool_calls = res.__dict__["tool_calls"]
+        res = AIMessage(**res.__dict__)
+        tool_calls = res.tool_calls
         assert tool_calls
         tool_call = tool_calls[0]
         assert tool_call
@@ -90,11 +91,12 @@ class TestOllamaFunctions(unittest.TestCase):
         res = model.invoke("What is the capital of France?")
 
         self.assertIsInstance(res, AIMessage)
-        tool_calls = res.__dict__["tool_calls"]
+        res = AIMessage(**res.__dict__)
+        tool_calls = res.tool_calls
         if len(tool_calls) > 0:
             tool_call = tool_calls[0]
             assert tool_call
-            self.assertEqual("get_conversational_response", tool_call.get("name"))
+            self.assertEqual("__conversational_response", tool_call.get("name"))
 
     def test_ollama_structured_output(self) -> None:
         model = OllamaFunctions(model="phi3")

@@ -31,13 +31,9 @@ from langchain_core.runnables.base import RunnableMap
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.tools import BaseTool
 
-DEFAULT_SYSTEM_TEMPLATE = """You are a hyper intelligent AI assistant with access to the following tools:
+DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
 
 {tools}
-
-It is very important that you review the input carefully and choose the correct tool based on the tool's description.
-Don't blindly pick a tool.
-Fallback to the "get_conversational_response" tool if none of the other available tools are appropriate for the response.
 
 You must always select one of the above tools and respond with only a JSON object matching the following schema:
 
@@ -48,7 +44,7 @@ You must always select one of the above tools and respond with only a JSON objec
 """  # noqa: E501
 
 DEFAULT_RESPONSE_FUNCTION = {
-    "name": "get_conversational_response",
+    "name": "__conversational_response",
     "description": (
         "Respond conversationally if no other tools should be called for a given query."
     ),
@@ -295,7 +291,7 @@ class OllamaFunctions(ChatOllama):
             del kwargs["function_call"]
         if _is_pydantic_class(functions[0]):
             functions = [convert_to_ollama_tool(fn) for fn in functions]
-        functions.append(DEFAULT_RESPONSE_FUNCTION)
+        functions.insert(0, DEFAULT_RESPONSE_FUNCTION)
         system_message_prompt_template = SystemMessagePromptTemplate.from_template(
             self.tool_system_prompt_template
         )
@@ -317,7 +313,6 @@ class OllamaFunctions(ChatOllama):
                 Response: {chat_generation_content}"""
             )
         called_tool_name = parsed_chat_result["tool"]
-        called_tool_arguments = parsed_chat_result["tool_input"]
         called_tool = next(
             (fn for fn in functions if fn["name"] == called_tool_name), None
         )
@@ -327,15 +322,29 @@ class OllamaFunctions(ChatOllama):
                 f"{chat_generation_content}"
             )
         if called_tool["name"] == DEFAULT_RESPONSE_FUNCTION["name"]:
+            if (
+                "tool_input" in parsed_chat_result
+                and "response" in parsed_chat_result["tool_input"]
+            ):
+                response = parsed_chat_result["tool_input"]["response"]
+            elif "response" in parsed_chat_result:
+                response = parsed_chat_result["response"]
+            else:
+                raise ValueError(
+                    f"Failed to parse a response from {self.model} output: "
+                    f"{chat_generation_content}"
+                )
             return ChatResult(
                 generations=[
                     ChatGeneration(
                         message=AIMessage(
-                            content=called_tool_arguments["response"],
+                            content=response,
                         )
                     )
                 ]
             )
+
+        called_tool_arguments = parsed_chat_result["tool_input"]
 
         response_message_with_functions = AIMessage(
             content="",
