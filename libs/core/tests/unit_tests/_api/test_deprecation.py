@@ -155,30 +155,6 @@ async def test_deprecated_async_function() -> None:
 
     assert inspect.iscoroutinefunction(deprecated_async_function)
 
-    assert not inspect.iscoroutinefunction(deprecated_function)
-
-
-@pytest.mark.asyncio
-async def test_deprecated_async_function() -> None:
-    """Test deprecated async function."""
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
-        assert (
-            await deprecated_async_function() == "This is a deprecated async function."
-        )
-        assert len(warning_list) == 1
-        warning = warning_list[0].message
-        assert str(warning) == (
-            "The function `deprecated_async_function` was deprecated "
-            "in LangChain 2.0.0 and will be removed in 3.0.0"
-        )
-
-        doc = deprecated_function.__doc__
-        assert isinstance(doc, str)
-        assert doc.startswith("[*Deprecated*]  original doc")
-
-    assert inspect.iscoroutinefunction(deprecated_async_function)
-
 
 def test_deprecated_method() -> None:
     """Test deprecated method."""
@@ -219,31 +195,6 @@ async def test_deprecated_async_method() -> None:
         doc = obj.deprecated_method.__doc__
         assert isinstance(doc, str)
         assert doc.startswith("[*Deprecated*] original doc")
-
-    assert inspect.iscoroutinefunction(obj.deprecated_async_method)
-
-    assert not inspect.iscoroutinefunction(obj.deprecated_method)
-
-
-@pytest.mark.asyncio
-async def test_deprecated_async_method() -> None:
-    """Test deprecated async method."""
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always")
-        obj = ClassWithDeprecatedMethods()
-        assert (
-            await obj.deprecated_async_method() == "This is a deprecated async method."
-        )
-        assert len(warning_list) == 1
-        warning = warning_list[0].message
-        assert str(warning) == (
-            "The function `deprecated_async_method` was deprecated in "
-            "LangChain 2.0.0 and will be removed in 3.0.0"
-        )
-
-        doc = obj.deprecated_method.__doc__
-        assert isinstance(doc, str)
-        assert doc.startswith("[*Deprecated*]  original doc")
 
     assert inspect.iscoroutinefunction(obj.deprecated_async_method)
 
