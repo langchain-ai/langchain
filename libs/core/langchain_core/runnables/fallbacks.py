@@ -559,7 +559,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         Returns:
             If the attribute is anything other than a method that outputs a Runnable,
             returns getattr(self.runnable, name). If the attribute is a method that
-            does return a new Runnable (e.g. llm.bind_tools([...] outputs a new
+            does return a new Runnable (e.g. llm.bind_tools([...]) outputs a new
             RunnableBinding) then self.runnable and each of the runnables in
             self.fallbacks is replaced with getattr(x, name).
 
