@@ -77,8 +77,7 @@ def _len_check_if_sized(x: Any, y: Any, x_name: str, y_name: str) -> None:
 
 
 def VDMS_Client(host: str = "localhost", port: int = 55555) -> vdms.vdms:
-    """
-    Wrapper to initiate and connect a VDMS client to a VDMS server
+    """VDMS client for the VDMS server.
 
     Args:
         host: IP or hostname of VDMS server
@@ -98,7 +97,7 @@ def VDMS_Client(host: str = "localhost", port: int = 55555) -> vdms.vdms:
 
 
 class VDMS(VectorStore):
-    """Wrapper around Intel Lab's VDMS for vector-store workloads.
+    """Intel Lab's VDMS for vector-store workloads.
 
     To use, you should have both:
     - the ``vdms`` python package installed
@@ -256,7 +255,7 @@ class VDMS(VectorStore):
         metadatas = metadatas if metadatas is not None else [None for _ in texts]
         _len_check_if_sized(texts, metadatas, "texts", "metadatas")
 
-        ids = ids if ids is not None else [str(uuid.uuid1()) for _ in texts]
+        ids = ids if ids is not None else [str(uuid.uuid4()) for _ in texts]
         _len_check_if_sized(texts, ids, "texts", "ids")
 
         all_queries: List[Any] = []
@@ -536,7 +535,7 @@ class VDMS(VectorStore):
                 metadatas.append({"image_path": uri})
 
         # Populate IDs
-        ids = ids if ids is not None else [str(uuid.uuid1()) for _ in uris]
+        ids = ids if ids is not None else [str(uuid.uuid4()) for _ in uris]
 
         # Set embeddings
         embeddings = self._embed_image(uris=uris)
@@ -578,7 +577,7 @@ class VDMS(VectorStore):
 
         texts = list(texts)
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         embeddings = self._embed_documents(texts)
 
@@ -874,7 +873,7 @@ class VDMS(VectorStore):
             # **kwargs,
         )
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
         vdms_collection.add_texts(
             texts=texts,
             metadatas=metadatas,
@@ -1534,6 +1533,8 @@ def _check_descriptor_exists_by_id(
 
 
 def embedding2bytes(embedding: Union[List[float], None]) -> Union[bytes, None]:
+    """Convert embedding to bytes."""
+
     blob = None
     if embedding is not None:
         emb = np.array(embedding, dtype="float32")

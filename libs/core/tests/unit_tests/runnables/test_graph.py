@@ -206,6 +206,50 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         {"$ref": "#/definitions/ToolMessage"},
                     ],
                     "definitions": {
+                        "ToolCall": {
+                            "title": "ToolCall",
+                            "type": "object",
+                            "properties": {
+                                "name": {"title": "Name", "type": "string"},
+                                "args": {"title": "Args", "type": "object"},
+                                "id": {"title": "Id", "type": "string"},
+                            },
+                            "required": ["name", "args", "id"],
+                        },
+                        "InvalidToolCall": {
+                            "title": "InvalidToolCall",
+                            "type": "object",
+                            "properties": {
+                                "name": {"title": "Name", "type": "string"},
+                                "args": {"title": "Args", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
+                                "error": {"title": "Error", "type": "string"},
+                            },
+                            "required": ["name", "args", "id", "error"],
+                        },
+                        "UsageMetadata": {
+                            "title": "UsageMetadata",
+                            "type": "object",
+                            "properties": {
+                                "input_tokens": {
+                                    "title": "Input Tokens",
+                                    "type": "integer",
+                                },
+                                "output_tokens": {
+                                    "title": "Output Tokens",
+                                    "type": "integer",
+                                },
+                                "total_tokens": {
+                                    "title": "Total Tokens",
+                                    "type": "integer",
+                                },
+                            },
+                            "required": [
+                                "input_tokens",
+                                "output_tokens",
+                                "total_tokens",
+                            ],
+                        },
                         "AIMessage": {
                             "title": "AIMessage",
                             "description": "Message from an AI.",
@@ -240,12 +284,27 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "enum": ["ai"],
                                     "type": "string",
                                 },
-                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
                                 "example": {
                                     "title": "Example",
                                     "default": False,
                                     "type": "boolean",
+                                },
+                                "tool_calls": {
+                                    "title": "Tool Calls",
+                                    "default": [],
+                                    "type": "array",
+                                    "items": {"$ref": "#/definitions/ToolCall"},
+                                },
+                                "invalid_tool_calls": {
+                                    "title": "Invalid Tool Calls",
+                                    "default": [],
+                                    "type": "array",
+                                    "items": {"$ref": "#/definitions/InvalidToolCall"},
+                                },
+                                "usage_metadata": {
+                                    "$ref": "#/definitions/UsageMetadata"
                                 },
                             },
                             "required": ["content"],
@@ -284,8 +343,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "enum": ["human"],
                                     "type": "string",
                                 },
-                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
                                 "example": {
                                     "title": "Example",
                                     "default": False,
@@ -328,8 +387,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "enum": ["chat"],
                                     "type": "string",
                                 },
-                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
                                 "role": {"title": "Role", "type": "string"},
                             },
                             "required": ["content", "role"],
@@ -368,8 +427,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "enum": ["system"],
                                     "type": "string",
                                 },
-                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
                             },
                             "required": ["content"],
                         },
@@ -407,8 +466,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "enum": ["function"],
                                     "type": "string",
                                 },
-                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
                             },
                             "required": ["content", "name"],
                         },
@@ -446,8 +505,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "enum": ["tool"],
                                     "type": "string",
                                 },
-                                "id": {"title": "Id", "type": "string"},
                                 "name": {"title": "Name", "type": "string"},
+                                "id": {"title": "Id", "type": "string"},
                                 "tool_call_id": {
                                     "title": "Tool Call Id",
                                     "type": "string",
@@ -627,3 +686,4 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
     }
     assert graph.draw_ascii() == snapshot(name="ascii")
     assert graph.draw_mermaid() == snapshot(name="mermaid")
+    assert graph.draw_mermaid(with_styles=False) == snapshot(name="mermaid-simple")

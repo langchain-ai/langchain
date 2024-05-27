@@ -8,10 +8,16 @@ from anthropic.types import ContentBlock, Message, Usage
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
+from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
+from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
-from langchain_anthropic.chat_models import _merge_messages, convert_to_anthropic_tool
+from langchain_anthropic.chat_models import (
+    _format_messages,
+    _merge_messages,
+    convert_to_anthropic_tool,
+)
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
@@ -83,7 +89,16 @@ def test__format_output() -> None:
     )
     expected = ChatResult(
         generations=[
-            ChatGeneration(message=AIMessage("bar")),
+            ChatGeneration(
+                message=AIMessage(
+                    "bar",
+                    usage_metadata={
+                        "input_tokens": 2,
+                        "output_tokens": 1,
+                        "total_tokens": 3,
+                    },
+                )
+            ),
         ],
         llm_output={
             "id": "foo",
@@ -159,6 +174,25 @@ def test__merge_messages() -> None:
     ]
     actual = _merge_messages(messages)
     assert expected == actual
+
+
+def test__merge_messages_mutation() -> None:
+    original_messages = [
+        HumanMessage([{"type": "text", "text": "bar"}]),
+        HumanMessage("next thing"),
+    ]
+    messages = [
+        HumanMessage([{"type": "text", "text": "bar"}]),
+        HumanMessage("next thing"),
+    ]
+    expected = [
+        HumanMessage(
+            [{"type": "text", "text": "bar"}, {"type": "text", "text": "next thing"}]
+        ),
+    ]
+    actual = _merge_messages(messages)
+    assert expected == actual
+    assert messages == original_messages
 
 
 @pytest.fixture()
@@ -268,3 +302,246 @@ def test_convert_to_anthropic_tool(
     for fn in (pydantic, function, dummy_tool, json_schema, expected, openai_function):
         actual = convert_to_anthropic_tool(fn)  # type: ignore
         assert actual == expected
+
+
+def test__format_messages_with_tool_calls() -> None:
+    system = SystemMessage("fuzz")
+    human = HumanMessage("foo")
+    ai = AIMessage(
+        "",
+        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
+    )
+    tool = ToolMessage(
+        "blurb",
+        tool_call_id="1",
+    )
+    messages = [system, human, ai, tool]
+    expected = (
+        "fuzz",
+        [
+            {"role": "user", "content": "foo"},
+            {
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "name": "bar",
+                        "id": "1",
+                        "input": {"baz": "buzz"},
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                ],
+            },
+        ],
+    )
+    actual = _format_messages(messages)
+    assert expected == actual
+
+
+def test__format_messages_with_str_content_and_tool_calls() -> None:
+    system = SystemMessage("fuzz")
+    human = HumanMessage("foo")
+    # If content and tool_calls are specified and content is a string, then both are
+    # included with content first.
+    ai = AIMessage(
+        "thought",
+        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
+    )
+    tool = ToolMessage("blurb", tool_call_id="1")
+    messages = [system, human, ai, tool]
+    expected = (
+        "fuzz",
+        [
+            {"role": "user", "content": "foo"},
+            {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "thought"},
+                    {
+                        "type": "tool_use",
+                        "name": "bar",
+                        "id": "1",
+                        "input": {"baz": "buzz"},
+                    },
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                ],
+            },
+        ],
+    )
+    actual = _format_messages(messages)
+    assert expected == actual
+
+
+def test__format_messages_with_list_content_and_tool_calls() -> None:
+    system = SystemMessage("fuzz")
+    human = HumanMessage("foo")
+    # If content and tool_calls are specified and content is a list, then content is
+    # preferred.
+    ai = AIMessage(
+        [{"type": "text", "text": "thought"}],
+        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
+    )
+    tool = ToolMessage(
+        "blurb",
+        tool_call_id="1",
+    )
+    messages = [system, human, ai, tool]
+    expected = (
+        "fuzz",
+        [
+            {"role": "user", "content": "foo"},
+            {
+                "role": "assistant",
+                "content": [{"type": "text", "text": "thought"}],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                ],
+            },
+        ],
+    )
+    actual = _format_messages(messages)
+    assert expected == actual
+
+
+def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
+    """Show that tool_calls are preferred to tool_use blocks when both have same id."""
+    system = SystemMessage("fuzz")
+    human = HumanMessage("foo")
+    # NOTE: tool_use block in contents and tool_calls have different arguments.
+    ai = AIMessage(
+        [
+            {"type": "text", "text": "thought"},
+            {
+                "type": "tool_use",
+                "name": "bar",
+                "id": "1",
+                "input": {"baz": "NOT_BUZZ"},
+            },
+        ],
+        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "BUZZ"}}],
+    )
+    tool = ToolMessage("blurb", tool_call_id="1")
+    messages = [system, human, ai, tool]
+    expected = (
+        "fuzz",
+        [
+            {"role": "user", "content": "foo"},
+            {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "thought"},
+                    {
+                        "type": "tool_use",
+                        "name": "bar",
+                        "id": "1",
+                        "input": {"baz": "BUZZ"},  # tool_calls value preferred.
+                    },
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "content": "blurb", "tool_use_id": "1"}
+                ],
+            },
+        ],
+    )
+    actual = _format_messages(messages)
+    assert expected == actual
+
+
+def test_anthropic_api_key_is_secret_string() -> None:
+    """Test that the API key is stored as a SecretStr."""
+    chat_model = ChatAnthropic(
+        model="claude-3-opus-20240229",
+        anthropic_api_key="secret-api-key",
+    )
+    assert isinstance(chat_model.anthropic_api_key, SecretStr)
+
+
+def test_anthropic_api_key_masked_when_passed_from_env(
+    monkeypatch: MonkeyPatch, capsys: CaptureFixture
+) -> None:
+    """Test that the API key is masked when passed from an environment variable."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY ", "secret-api-key")
+    chat_model = ChatAnthropic(
+        model="claude-3-opus-20240229",
+    )
+    print(chat_model.anthropic_api_key, end="")  # noqa: T201
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+
+
+def test_anthropic_api_key_masked_when_passed_via_constructor(
+    capsys: CaptureFixture,
+) -> None:
+    """Test that the API key is masked when passed via the constructor."""
+    chat_model = ChatAnthropic(
+        model="claude-3-opus-20240229",
+        anthropic_api_key="secret-api-key",
+    )
+    print(chat_model.anthropic_api_key, end="")  # noqa: T201
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+
+
+def test_anthropic_uses_actual_secret_value_from_secretstr() -> None:
+    """Test that the actual secret value is correctly retrieved."""
+    chat_model = ChatAnthropic(
+        model="claude-3-opus-20240229",
+        anthropic_api_key="secret-api-key",
+    )
+    assert (
+        cast(SecretStr, chat_model.anthropic_api_key).get_secret_value()
+        == "secret-api-key"
+    )
+
+
+class GetWeather(BaseModel):
+    """Get the current weather in a given location"""
+
+    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+
+def test_anthropic_bind_tools_tool_choice() -> None:
+    chat_model = ChatAnthropic(
+        model="claude-3-opus-20240229",
+        anthropic_api_key="secret-api-key",
+    )
+    chat_model_with_tools = chat_model.bind_tools(
+        [GetWeather], tool_choice={"type": "tool", "name": "GetWeather"}
+    )
+    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+        "type": "tool",
+        "name": "GetWeather",
+    }
+    chat_model_with_tools = chat_model.bind_tools(
+        [GetWeather], tool_choice="GetWeather"
+    )
+    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+        "type": "tool",
+        "name": "GetWeather",
+    }
+    chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice="auto")
+    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+        "type": "auto"
+    }
+    chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice="any")
+    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+        "type": "any"
+    }
