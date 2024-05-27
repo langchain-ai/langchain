@@ -43,6 +43,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import (
@@ -435,26 +436,44 @@ class ChatAnthropic(BaseChatModel):
         with self._client.messages.stream(**params) as stream:
             for text in stream.text_stream:
                 generation_info = {}
+                usage_metadata: Optional[UsageMetadata] = None
                 for k, v in stream.current_message_snapshot.model_dump().items():
                     if k in ("content", "role", "type") or (
                         k in full_generation_info and k not in ("usage", "stop_reason")
                     ):
                         continue
                     elif k == "usage":
+                        input_tokens = v.get("input_tokens", 0)
+                        output_tokens = v.get("output_tokens", 0)
+                        total_tokens = input_tokens + output_tokens
                         if k not in full_generation_info:
                             full_generation_info[k] = v
-                            generation_info[k] = {
-                                **v,
-                                "output_tokens": [v["output_tokens"]],
-                            }
+                            usage_metadata = UsageMetadata(
+                                input_tokens=input_tokens,
+                                output_tokens=output_tokens,
+                                total_tokens=total_tokens,
+                            )
                         else:
-                            full_generation_info[k]["output_tokens"] += v["output_tokens"]
-                            generation_info[k] = {"output_tokens": [v["output_tokens"]]}
+                            full_generation_info[k]["output_tokens"] += v[
+                                "output_tokens"
+                            ]
+                            seen_input_tokens = full_generation_info[k].get(
+                                "input_tokens"
+                            )
+                            new_input_tokens = v.get("input_tokens", 0)
+                            input_tokens = 0 if seen_input_tokens else new_input_tokens
+                            output_tokens = v.get("output_tokens", 0)
+                            total_tokens = input_tokens + output_tokens
+                            usage_metadata = UsageMetadata(
+                                input_tokens=input_tokens,
+                                output_tokens=output_tokens,
+                                total_tokens=total_tokens,
+                            )
                     else:
                         full_generation_info[k] = v
                         generation_info[k] = v
                 chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(content=text),
+                    message=AIMessageChunk(content=text, usage_metadata=usage_metadata),
                     generation_info=generation_info,
                 )
                 if run_manager:
@@ -493,15 +512,48 @@ class ChatAnthropic(BaseChatModel):
             else:
                 yield cast(ChatGenerationChunk, result.generations[0])
             return
+        full_generation_info = {}
         async with self._async_client.messages.stream(**params) as stream:
             async for text in stream.text_stream:
-                generation_info = {
-                    k: v
-                    for k, v in stream.current_message_snapshot.model_dump().items()
-                    if k not in ("content", "role", "type")
-                }
+                generation_info = {}
+                usage_metadata: Optional[UsageMetadata] = None
+                for k, v in stream.current_message_snapshot.model_dump().items():
+                    if k in ("content", "role", "type") or (
+                        k in full_generation_info and k not in ("usage", "stop_reason")
+                    ):
+                        continue
+                    elif k == "usage":
+                        input_tokens = v.get("input_tokens", 0)
+                        output_tokens = v.get("output_tokens", 0)
+                        total_tokens = input_tokens + output_tokens
+                        if k not in full_generation_info:
+                            full_generation_info[k] = v
+                            usage_metadata = UsageMetadata(
+                                input_tokens=input_tokens,
+                                output_tokens=output_tokens,
+                                total_tokens=total_tokens,
+                            )
+                        else:
+                            full_generation_info[k]["output_tokens"] += v[
+                                "output_tokens"
+                            ]
+                            seen_input_tokens = full_generation_info[k].get(
+                                "input_tokens"
+                            )
+                            new_input_tokens = v.get("input_tokens", 0)
+                            input_tokens = 0 if seen_input_tokens else new_input_tokens
+                            output_tokens = v.get("output_tokens", 0)
+                            total_tokens = input_tokens + output_tokens
+                            usage_metadata = UsageMetadata(
+                                input_tokens=input_tokens,
+                                output_tokens=output_tokens,
+                                total_tokens=total_tokens,
+                            )
+                    else:
+                        full_generation_info[k] = v
+                        generation_info[k] = v
                 chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(content=text),
+                    message=AIMessageChunk(content=text, usage_metadata=usage_metadata),
                     generation_info=generation_info,
                 )
                 if run_manager:
