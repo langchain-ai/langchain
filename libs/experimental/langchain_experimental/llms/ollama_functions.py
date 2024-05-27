@@ -31,9 +31,13 @@ from langchain_core.runnables.base import RunnableMap
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.tools import BaseTool
 
-DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
+DEFAULT_SYSTEM_TEMPLATE = """You are a hyper intelligent AI assistant with access to the following tools:
 
 {tools}
+
+It is very important that you review the input carefully and choose the correct tool based on the tool's description.
+Don't blindly pick a tool.
+Fallback to the "get_conversational_response" tool if none of the other available tools are appropriate for the response.
 
 You must always select one of the above tools and respond with only a JSON object matching the following schema:
 
@@ -44,7 +48,7 @@ You must always select one of the above tools and respond with only a JSON objec
 """  # noqa: E501
 
 DEFAULT_RESPONSE_FUNCTION = {
-    "name": "__conversational_response",
+    "name": "get_conversational_response",
     "description": (
         "Respond conversationally if no other tools should be called for a given query."
     ),
@@ -125,8 +129,7 @@ class OllamaFunctions(ChatOllama):
         *,
         include_raw: Literal[True] = True,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]:
-        ...
+    ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
 
     @overload
     def with_structured_output(
@@ -135,8 +138,7 @@ class OllamaFunctions(ChatOllama):
         *,
         include_raw: Literal[False] = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        ...
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
 
     def with_structured_output(
         self,
@@ -289,10 +291,9 @@ class OllamaFunctions(ChatOllama):
                     "matching function in `functions`."
                 )
             del kwargs["function_call"]
-        elif not functions:
-            functions.append(DEFAULT_RESPONSE_FUNCTION)
         if _is_pydantic_class(functions[0]):
             functions = [convert_to_ollama_tool(fn) for fn in functions]
+        functions.append(DEFAULT_RESPONSE_FUNCTION)
         system_message_prompt_template = SystemMessagePromptTemplate.from_template(
             self.tool_system_prompt_template
         )
