@@ -5,7 +5,6 @@ from time import sleep
 from typing import Any
 
 import pytest
-from azure.cosmos import CosmosClient, PartitionKey
 from langchain_core.documents import Document
 
 from langchain_community.embeddings import OpenAIEmbeddings
@@ -24,12 +23,22 @@ model_name = os.getenv("OPENAI_EMBEDDINGS_MODEL_NAME", "text-embedding-ada-002")
 HOST = os.environ.get("HOST")
 KEY = os.environ.get("KEY")
 
-cosmos_client = CosmosClient(HOST, KEY)
 database_name = "langchain_python_db"
 container_name = "langchain_python_container"
 
-partition_key = PartitionKey(path="/id")
-cosmos_container_properties = {"partition_key": partition_key}
+
+@pytest.fixture()
+def cosmos_client() -> Any:
+    from azure.cosmos import CosmosClient
+
+    return CosmosClient(HOST, KEY)
+
+
+@pytest.fixture()
+def partition_key() -> Any:
+    from azure.cosmos import PartitionKey
+
+    return PartitionKey(path="/id")
 
 
 @pytest.fixture()
@@ -40,7 +49,7 @@ def azure_openai_embeddings() -> Any:
     return openai_embeddings
 
 
-def safe_delete_database() -> None:
+def safe_delete_database(cosmos_client: Any) -> None:
     cosmos_client.delete_database(database_name)
 
 
@@ -70,7 +79,10 @@ def get_vector_embedding_policy(
 
 class TestAzureCosmosDBNoSqlVectorSearch:
     def test_from_documents_cosine_distance(
-        self, azure_openai_embeddings: OpenAIEmbeddings
+        self,
+        cosmos_client: Any,
+        partition_key: Any,
+        azure_openai_embeddings: OpenAIEmbeddings,
     ) -> None:
         """Test end to end construction and search."""
         documents = [
@@ -90,7 +102,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
                 "cosine", "float32", 400
             ),
             indexing_policy=get_vector_indexing_policy("flat"),
-            cosmos_container_properties=cosmos_container_properties,
+            cosmos_container_properties={"partition_key": partition_key},
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
@@ -98,10 +110,13 @@ class TestAzureCosmosDBNoSqlVectorSearch:
 
         assert output
         assert output[0].page_content == "Dogs are tough."
-        safe_delete_database()
+        safe_delete_database(cosmos_client)
 
     def test_from_texts_cosine_distance_delete_one(
-        self, azure_openai_embeddings: OpenAIEmbeddings
+        self,
+        cosmos_client: Any,
+        partition_key: Any,
+        azure_openai_embeddings: OpenAIEmbeddings,
     ) -> None:
         texts = [
             "Dogs are tough.",
@@ -122,7 +137,7 @@ class TestAzureCosmosDBNoSqlVectorSearch:
                 "cosine", "float32", 400
             ),
             indexing_policy=get_vector_indexing_policy("flat"),
-            cosmos_container_properties=cosmos_container_properties,
+            cosmos_container_properties={"partition_key": partition_key},
         )
         sleep(1)  # waits for Cosmos DB to save contents to the collection
 
@@ -137,4 +152,4 @@ class TestAzureCosmosDBNoSqlVectorSearch:
         output2 = store.similarity_search("Dogs", k=1)
         assert output2
         assert output2[0].page_content != "Dogs are tough."
-        safe_delete_database()
+        safe_delete_database(cosmos_client)

@@ -158,6 +158,7 @@ optional = true
 # See Contributing Guide for more instructions on working with optional dependencies.
 # https://python.langchain.com/docs/contributing/code#working-with-optional-dependencies
 pytest-vcr = "^1.0.2"
+vcrpy = "^6"
 wrapt = "^1.15.0"
 openai = "^1"
 python-dotenv = "^1.0.0"
