@@ -25,6 +25,9 @@ if TYPE_CHECKING:
     from langchain_community.docstore.in_memory import (
         InMemoryDocstore,
     )
+    from langchain_community.docstore.sql_docstore import (
+        SQLStore,
+    )
     from langchain_community.docstore.wikipedia import (
         Wikipedia,
     )
@@ -32,6 +35,7 @@ if TYPE_CHECKING:
 _module_lookup = {
     "DocstoreFn": "langchain_community.docstore.arbitrary_fn",
     "InMemoryDocstore": "langchain_community.docstore.in_memory",
+    "SQLStore": "langchain_community.docstore.sql_docstore",
     "Wikipedia": "langchain_community.docstore.wikipedia",
 }
 
@@ -43,4 +47,4 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
-__all__ = ["DocstoreFn", "InMemoryDocstore", "Wikipedia"]
+__all__ = ["DocstoreFn", "InMemoryDocstore", "SQLStore", "Wikipedia"]

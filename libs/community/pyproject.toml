@@ -128,6 +128,7 @@ pytest-mock  = "^3.10.0"
 pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
+aiosqlite = "^0.19.0"
 langchain-core = {path = "../core", develop = true}
 langchain = {path = "../langchain", develop = true}
 

@@ -154,7 +154,7 @@ frozenlist = ">=1.1.0"
 name = "aiosqlite"
 version = "0.19.0"
 description = "asyncio bridge to the standard sqlite3 module"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "aiosqlite-0.19.0-py3-none-any.whl", hash = "sha256:edba222e03453e094a3ce605db1b970c4b3376264e56f32e2a4959f948d66a96"},
@@ -3981,7 +3981,7 @@ files = [
 
 [[package]]
 name = "langchain"
-version = "0.2.0"
+version = "0.2.1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3991,7 +3991,6 @@ develop = true
 [package.dependencies]
 aiohttp = "^3.8.3"
 async-timeout = {version = "^4.0.0", markers = "python_version < \"3.11\""}
-dataclasses-json = ">= 0.5.7, < 0.7"
 langchain-core = "^0.2.0"
 langchain-text-splitters = "^0.2.0"
 langsmith = "^0.1.17"
@@ -4023,7 +4022,7 @@ url = "../langchain"
 
 [[package]]
 name = "langchain-core"
-version = "0.2.0"
+version = "0.2.2rc1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -10079,4 +10078,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "1a30f88ba6352cfd5af8d3b7b6418ec01bad42c73e6096b1a3ccef06cb36709b"
+content-hash = "dd05d83fbb835b7c420c372b3705b0d9d94bbe853042ee6cc486e7a51a9428b4"
