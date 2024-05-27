@@ -613,7 +613,7 @@ class ChatMistralAI(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Union[Dict, Type[BaseModel]],
+        schema: Optional[Union[Dict, Type[BaseModel]]] = None,
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: bool = False,
@@ -720,6 +720,7 @@ class ChatMistralAI(BaseChatModel):
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
+
         Example: JSON mode, Pydantic schema (method="json_mode", include_raw=True):
             .. code-block::
 
@@ -772,8 +773,13 @@ class ChatMistralAI(BaseChatModel):
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
-        llm = self.bind_tools([schema], tool_choice="any")
         if method == "function_calling":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is 'function_calling'. "
+                    "Received None."
+                )
+            llm = self.bind_tools([schema], tool_choice="any")
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema], first_tool_only=True
