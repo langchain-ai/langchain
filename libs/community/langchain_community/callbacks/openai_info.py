@@ -1,7 +1,6 @@
 """Callback Handler that prints to std out."""
 
 import threading
-import warnings
 from typing import Any, Dict, List
 
 from langchain_core.callbacks import BaseCallbackHandler
@@ -236,8 +235,6 @@ class OpenAICallbackHandler(BaseCallbackHandler):
                 # model name (and therefore cost) is unavailable in
                 # streaming responses
                 model_name = ""
-                if isinstance(generation, ChatGenerationChunk):
-                    warnings.warn("Cost estimates unavailable in streaming mode.")
             else:
                 model_name = standardize_model_name(
                     response.llm_output.get("model_name", "")
