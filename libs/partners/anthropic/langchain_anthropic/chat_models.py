@@ -440,15 +440,16 @@ class ChatAnthropic(BaseChatModel):
                         k in full_generation_info and k not in ("usage", "stop_reason")
                     ):
                         continue
-                    elif k in full_generation_info and k == "usage":
-                        full_generation_info[k]["output_tokens"] += v["output_tokens"]
-                        generation_info[k] = {"output_tokens": [v["output_tokens"]]}
                     elif k == "usage":
-                        full_generation_info[k] = v
-                        generation_info[k] = {
-                            **v,
-                            "output_tokens": [v["output_tokens"]],
-                        }
+                        if k not in full_generation_info:
+                            full_generation_info[k] = v
+                            generation_info[k] = {
+                                **v,
+                                "output_tokens": [v["output_tokens"]],
+                            }
+                        else:
+                            full_generation_info[k]["output_tokens"] += v["output_tokens"]
+                            generation_info[k] = {"output_tokens": [v["output_tokens"]]}
                     else:
                         full_generation_info[k] = v
                         generation_info[k] = v
