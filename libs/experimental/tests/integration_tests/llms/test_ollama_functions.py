@@ -53,7 +53,7 @@ class TestOllamaFunctions(unittest.TestCase):
         res = model.invoke("What's the weather in San Francisco?")
 
         self.assertIsInstance(res, AIMessage)
-        tool_calls = res.tool_calls
+        tool_calls = res.__dict__["tool_calls"]
         assert tool_calls
         tool_call = tool_calls[0]
         assert tool_call
@@ -89,8 +89,8 @@ class TestOllamaFunctions(unittest.TestCase):
 
         res = model.invoke("What is the capital of France?")
 
-        self.assertEqual(AIMessage, type(res))
-        tool_calls = res.tool_calls
+        self.assertIsInstance(res, AIMessage)
+        tool_calls = res.__dict__["tool_calls"]
         if len(tool_calls) > 0:
             tool_call = tool_calls[0]
             assert tool_call
