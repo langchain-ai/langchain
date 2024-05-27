@@ -99,6 +99,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Weaviate",
         "Yellowbrick",
         "ZepVectorStore",
+        "ZepCloudVectorStore",
         "Zilliz",
         "Lantern",
         "OpenSearchVectorSearch",
