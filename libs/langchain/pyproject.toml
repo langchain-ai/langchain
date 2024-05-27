@@ -169,7 +169,7 @@ tiktoken = ">=0.7,<1"
 anthropic = "^0.3.11"
 langchain-core = {path = "../core", develop = true}
 langchain-text-splitters = {path = "../text-splitters", develop = true}
-langchainhub = "^0.1.15"
+langchainhub = "^0.1.16"
 
 [tool.poetry.group.lint]
 optional = true

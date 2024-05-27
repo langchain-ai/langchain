@@ -391,9 +391,15 @@ class Runnable(Generic[Input, Output], ABC):
         from langchain_core.runnables.graph import Graph
 
         graph = Graph()
-        input_node = graph.add_node(self.get_input_schema(config))
+        try:
+            input_node = graph.add_node(self.get_input_schema(config))
+        except TypeError:
+            input_node = graph.add_node(create_model(self.get_name("Input")))
         runnable_node = graph.add_node(self)
-        output_node = graph.add_node(self.get_output_schema(config))
+        try:
+            output_node = graph.add_node(self.get_output_schema(config))
+        except TypeError:
+            output_node = graph.add_node(create_model(self.get_name("Output")))
         graph.add_edge(input_node, runnable_node)
         graph.add_edge(runnable_node, output_node)
         return graph

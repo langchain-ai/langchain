@@ -72,10 +72,67 @@ jobs:
         run: |
           echo pkg-name="$(poetry version | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
           echo version="$(poetry version --short)" >> $GITHUB_OUTPUT
+  release-notes:
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    outputs:
+      release-body: ${{ steps.generate-release-body.outputs.release-body }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain
+          path: langchain
+          sparse-checkout: | # this only grabs files for relevant dir
+            ${{ inputs.working-directory }}
+          ref: master # this scopes to just master branch
+          fetch-depth: 0 # this fetches entire commit history
+      - name: Check Tags
+        id: check-tags
+        shell: bash
+        working-directory: langchain/${{ inputs.working-directory }}
+        env:
+          PKG_NAME: ${{ needs.build.outputs.pkg-name }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
+          echo $REGEX
+          PREV_TAG=$(git tag --sort=-creatordate | grep -P $REGEX | head -1)
+          TAG="${PKG_NAME}==${VERSION}"
+          if [ "$TAG" == "$PREV_TAG" ]; then
+            echo "No new version to release"
+            exit 1
+          fi
+          echo tag="$TAG" >> $GITHUB_OUTPUT
+          echo prev-tag="$PREV_TAG" >> $GITHUB_OUTPUT
+      - name: Generate release body
+        id: generate-release-body
+        working-directory: langchain
+        env:
+          WORKING_DIR: ${{ inputs.working-directory }}
+          PKG_NAME: ${{ needs.build.outputs.pkg-name }}
+          TAG: ${{ steps.check-tags.outputs.tag }}
+          PREV_TAG: ${{ steps.check-tags.outputs.prev-tag }}
+        run: |
+          PREAMBLE="Changes since $PREV_TAG"
+          # if PREV_TAG is empty, then we are releasing the first version
+          if [ -z "$PREV_TAG" ]; then
+            PREAMBLE="Initial release"
+            PREV_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
+          {
+            echo 'release-body<<EOF'
+            echo "# Release $TAG"
+            echo $PREAMBLE
+            echo
+            git log --format="%s" "$PREV_TAG"..HEAD -- $WORKING_DIR
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
 
   test-pypi-publish:
     needs:
       - build
+      - release-notes
     uses:
       ./.github/workflows/_test_release.yml
     with:
@@ -86,6 +143,7 @@ jobs:
   pre-release-checks:
     needs:
       - build
+      - release-notes
       - test-pypi-publish
     runs-on: ubuntu-latest
     steps:
@@ -229,6 +287,7 @@ jobs:
   publish:
     needs:
       - build
+      - release-notes
       - test-pypi-publish
       - pre-release-checks
     runs-on: ubuntu-latest
@@ -270,6 +329,7 @@ jobs:
   mark-release:
     needs:
       - build
+      - release-notes
       - test-pypi-publish
       - pre-release-checks
       - publish
@@ -306,6 +366,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           generateReleaseNotes: false
           tag: ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}
-          body: "# Release ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}\n\nPackage-specific release note generation coming soon."
+          body: ${{ needs.release-notes.outputs.release-body }}
           commit: ${{ github.sha }}
           makeLatest: ${{ needs.build.outputs.pkg-name == 'langchain-core'}}
