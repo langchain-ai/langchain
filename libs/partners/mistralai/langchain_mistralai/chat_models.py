@@ -720,22 +720,76 @@ class ChatMistralAI(BaseChatModel):
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
+        Example: JSON mode, Pydantic schema (method="json_mode", include_raw=True):
+            .. code-block::
 
+                from langchain_mistralai import ChatMistralAI
+                from langchain_core.pydantic_v1 import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    answer: str
+                    justification: str
+
+                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification,
+                    method="json_mode",
+                    include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "Answer the following question. "
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "What's heavier a pound of bricks or a pound of feathers?"
+                )
+                # -> {
+                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+                #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
+                #     'parsing_error': None
+                # }
+
+        Example: JSON mode, no schema (schema=None, method="json_mode", include_raw=True):
+            .. code-block::
+
+                from langchain_mistralai import ChatMistralAI
+
+                structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
+
+                structured_llm.invoke(
+                    "Answer the following question. "
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "What's heavier a pound of bricks or a pound of feathers?"
+                )
+                # -> {
+                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+                #     'parsed': {
+                #         'answer': 'They are both the same weight.',
+                #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
+                #     },
+                #     'parsing_error': None
+                # }
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
         llm = self.bind_tools([schema], tool_choice="any")
-        if is_pydantic_schema:
-            output_parser: OutputParserLike = PydanticToolsParser(
-                tools=[schema], first_tool_only=True
+        if method == "function_calling":
+            if is_pydantic_schema:
+                output_parser: OutputParserLike = PydanticToolsParser(
+                    tools=[schema], first_tool_only=True
+                )
+            else:
+                key_name = convert_to_openai_tool(schema)["function"]["name"]
+                output_parser = JsonOutputKeyToolsParser(
+                    key_name=key_name, first_tool_only=True
+                )
+        elif method == "json_mode":
+            llm = self.bind(response_format={"type": "json_object"})
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)
+                if is_pydantic_schema
+                else JsonOutputParser()
             )
-        else:
-            key_name = convert_to_openai_tool(schema)["function"]["name"]
-            output_parser = JsonOutputKeyToolsParser(
-                key_name=key_name, first_tool_only=True
-            )
-
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
                 parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
