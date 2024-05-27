@@ -78,30 +78,26 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
             A list of list of floats representing the embeddings, or None if an
             error occurs.
         """
-        try:
-            response = self.session.post(
-                BAICHUAN_API_URL, json={"input": texts, "model": self.model_name}
+        response = self.session.post(
+            BAICHUAN_API_URL, json={"input": texts, "model": self.model_name}
+        )
+        # Raise exception if response status code from 400 to 600
+        response.raise_for_status()
+        # Check if the response status code indicates success
+        if response.status_code == 200:
+            resp = response.json()
+            embeddings = resp.get("data", [])
+            # Sort resulting embeddings by index
+            sorted_embeddings = sorted(embeddings, key=lambda e: e.get("index", 0))
+            # Return just the embeddings
+            return [result.get("embedding", []) for result in sorted_embeddings]
+        else:
+            # Log error or handle unsuccessful response appropriately
+            # Handle 100 <= status_code < 400, not include 200
+            raise RequestException(
+                f"Error: Received status code {response.status_code} from "
+                "`BaichuanEmbedding` API"
             )
-            # Raise exception if response status code from 400 to 600
-            response.raise_for_status()
-            # Check if the response status code indicates success
-            if response.status_code == 200:
-                resp = response.json()
-                embeddings = resp.get("data", [])
-                # Sort resulting embeddings by index
-                sorted_embeddings = sorted(embeddings, key=lambda e: e.get("index", 0))
-                # Return just the embeddings
-                return [result.get("embedding", []) for result in sorted_embeddings]
-            else:
-                # Log error or handle unsuccessful response appropriately
-                # Handle 100 <= status_code < 400, not include 200
-                raise RequestException(
-                    f"Error: Received status code {response.status_code} from "
-                    "`BaichuanEmbedding` API"
-                )
-        except Exception:
-            # Log the exception or handle it as needed
-            raise
 
     def embed_documents(self, texts: List[str]) -> Optional[List[List[float]]]:  # type: ignore[override]
         """Public method to get embeddings for a list of documents.
