@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, LLMResult
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 MODEL_COST_PER_1K_TOKENS = {
     # GPT-4o input
