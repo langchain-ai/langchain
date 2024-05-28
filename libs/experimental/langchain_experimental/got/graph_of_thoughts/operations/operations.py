@@ -419,12 +419,14 @@ class Score(Operation):
                 )
                 scores = self.scoring_function(previous_thoughts_states)
             else:
-                prompt = prompter.score_prompt(previous_thoughts_states)
+                #Langchain chain to score the thoughts
+                prompt, var_dic = prompter.score_prompt(previous_thoughts_states)
+                var_dic_list = [var_dic for i in range(self.num_samples)]
                 self.logger.debug("Prompt for LM: %s", prompt)
-
-                responses = lm.get_response_texts(
-                    lm.query(prompt, num_responses=self.num_samples)
-                )
+                # Build the chain of operations
+                chain = prompt | lm | StrOutputParser()
+                # Execute the chain of operations as many times as the number of samples in parallel
+                responses = chain.batch(var_dic_list)
                 self.logger.debug("Responses from LM: %s", responses)
                 scores = parser.parse_score_answer(previous_thoughts_states, responses)
             for thought, score in zip(previous_thoughts, scores):
@@ -441,12 +443,14 @@ class Score(Operation):
                     )
                     score = self.scoring_function(thought.state)
                 else:
-                    prompt = prompter.score_prompt([thought.state])
+                    #Langchain chain to score the thoughts
+                    prompt, var_dic = prompter.score_prompt([thought.state])
+                    var_dic_list = [var_dic for i in range(self.num_samples)]
                     self.logger.debug("Prompt for LM: %s", prompt)
-
-                    responses = lm.get_response_texts(
-                        lm.query(prompt, num_responses=self.num_samples)
-                    )
+                    # Build the chain of operations
+                    chain = prompt | lm | StrOutputParser()
+                    # Execute the chain of operations as many times as the number of samples in parallel
+                    responses = chain.batch(var_dic_list)
                     self.logger.debug("Responses from LM: %s", responses)
                     score = parser.parse_score_answer([thought.state], responses)[0]
 
@@ -540,11 +544,14 @@ class ValidateAndImprove(Operation):
                     )
                     valid = self.validate_function(current_thought.state)
                 else:
-                    prompt = prompter.validation_prompt(**current_thought.state)
+                    #Langchain chain to validate the thoughts
+                    prompt, var_dic = prompter.validation_prompt(**current_thought.state)
+                    var_dic_list = [var_dic for i in range(self.num_samples)]
                     self.logger.debug("Prompt for LM: %s", prompt)
-                    responses = lm.get_response_texts(
-                        lm.query(prompt, num_responses=self.num_samples)
-                    )
+                    # Build the chain of operations
+                    chain = prompt | lm | StrOutputParser()
+                    # Execute the chain of operations in parallel as many times as the number of samples
+                    responses = chain.batch(var_dic_list)
                     self.logger.debug("Responses from LM: %s", responses)
 
                     valid = parser.parse_validation_answer(
@@ -558,11 +565,14 @@ class ValidateAndImprove(Operation):
                     or current_try >= self.num_tries
                 ):
                     break
-                improve_prompt = prompter.improve_prompt(**current_thought.state)
+                #Langchain chain to improve the thoughts
+                improve_prompt, var_dic = prompter.improve_prompt(**current_thought.state)
+                var_dic_list = [var_dic]    # The LLM is called only once to improve the thought
                 self.logger.debug("Prompt for LM: %s", improve_prompt)
-                responses = lm.get_response_texts(
-                    lm.query(improve_prompt, num_responses=1)
-                )
+                # Build the chain of operations
+                chain = improve_prompt | lm | StrOutputParser()
+                # Execute the chain of operations once
+                responses = chain.batch(var_dic_list)
                 self.logger.debug("Responses from LM: %s", responses)
                 state_update = parser.parse_improve_answer(
                     current_thought.state, responses
@@ -729,9 +739,14 @@ class Improve(Operation):
         assert len(self.predecessors) > 0, "Needs at least one predecessor"
 
         for thought in previous_thoughts:
-            improve_prompt = prompter.improve_prompt(**thought.state)
+            #Langchain chain to improve the thoughts
+            improve_prompt, var_dic  = prompter.improve_prompt(**thought.state)
+            var_dic_list = [var_dic]    # The LLM is called only once to improve the thought
             self.logger.debug("Prompt for LM: %s", improve_prompt)
-            responses = lm.get_response_texts(lm.query(improve_prompt, num_responses=1))
+            # Build the chain of operations
+            chain = improve_prompt | lm | StrOutputParser()
+            # Execute the chain of operations once
+            responses = chain.batch(var_dic_list)
             self.logger.debug("Responses from LM: %s", responses)
             state_update = parser.parse_improve_answer(thought.state, responses)
             self.thoughts.append(Thought({**thought.state, **state_update}))
@@ -802,14 +817,15 @@ class Aggregate(Operation):
             base_state = {**base_state, **thought.state}
 
         previous_thought_states = [thought.state for thought in previous_thoughts]
-        prompt = prompter.aggregation_prompt(previous_thought_states)
-
+        #Langchain chain to aggregate the thoughts
+        prompt, var_dic = prompter.aggregation_prompt(previous_thought_states)
+        var_dic_list = [var_dic for i in range(self.num_responses)]
         self.logger.debug("Prompt for LM: %s", prompt)
 
-        responses = lm.get_response_texts(
-            lm.query(prompt, num_responses=self.num_responses)
-        )
-
+        # Build the chain of operations
+        chain = prompt | lm | StrOutputParser()
+        # Execute the chain of operations in parallel as many times as the number of samples
+        responses = chain.batch(var_dic_list)
         self.logger.debug("Responses from LM: %s", responses)
 
         parsed = parser.parse_aggregation_answer(previous_thought_states, responses)

@@ -10,7 +10,8 @@ from typing import Dict, List, Any
 
 from .abstract_language_model import AbstractLanguageModel
 
-from langchain_nvidia_ai_endpoints import ChatNVIDIA
+from langchain_openai import ChatOpenAI
+
 
 
 class nvidia_ai_endpoints(AbstractLanguageModel):
@@ -53,9 +54,8 @@ class nvidia_ai_endpoints(AbstractLanguageModel):
         :rtype: Any
         """
 
-        llm = ChatNVIDIA(model= self.model_id, 
+        llm = ChatOpenAI(model_name = self.model_id, 
                         max_tokens= self.max_tokens, 
-                        top_p = self.top_p,
                         temperature = self.temperature
                         )
 
