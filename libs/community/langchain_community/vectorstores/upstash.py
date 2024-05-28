@@ -80,6 +80,7 @@ class UpstashVectorStore(VectorStore):
             functions are needed
             index_url: URL of the UpstashVector index.
             index_token: Token of the UpstashVector index.
+            namespace: Namespace to use from the index.
             embedding: Embeddings object or a boolean. When false, no embedding
                 is applied. If true, Upstash embeddings are used. When Upstash
                 embeddings are used, text is sent directly to Upstash and
@@ -95,7 +96,8 @@ class UpstashVectorStore(VectorStore):
                 vectorstore = UpstashVectorStore(
                     embedding=embeddings,
                     index_url="...",
-                    index_token="..."
+                    index_token="...",
+                    namespace="..."
                 )
 
                 # With an existing index
@@ -104,7 +106,8 @@ class UpstashVectorStore(VectorStore):
                 index = Index(url="...", token="...")
                 vectorstore = UpstashVectorStore(
                     embedding=embeddings,
-                    index=index
+                    index=index,
+                    namespace="..."
                 )
         """
 
@@ -188,9 +191,9 @@ class UpstashVectorStore(VectorStore):
         self,
         documents: List[Document],
         ids: Optional[List[str]] = None,
-        namespace: Optional[str] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -206,6 +209,7 @@ class UpstashVectorStore(VectorStore):
             batch_size: Batch size to use when upserting the embeddings.
             Upstash supports at max 1000 vectors per request.
             embedding_batch_size: Chunk size to use when embedding the texts.
+            namespace: Namespace to use from the index.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -220,6 +224,7 @@ class UpstashVectorStore(VectorStore):
             batch_size=batch_size,
             ids=ids,
             embedding_chunk_size=embedding_chunk_size,
+            namespace=namespace,
             **kwargs,
         )
 
@@ -229,6 +234,7 @@ class UpstashVectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -244,6 +250,7 @@ class UpstashVectorStore(VectorStore):
             batch_size: Batch size to use when upserting the embeddings.
             Upstash supports at max 1000 vectors per request.
             embedding_batch_size: Chunk size to use when embedding the texts.
+            namespace: Namespace to use from the index.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -258,6 +265,7 @@ class UpstashVectorStore(VectorStore):
             ids=ids,
             batch_size=batch_size,
             embedding_chunk_size=embedding_chunk_size,
+            namespace=namespace,
             **kwargs,
         )
 
@@ -268,6 +276,7 @@ class UpstashVectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -285,11 +294,15 @@ class UpstashVectorStore(VectorStore):
             batch_size: Batch size to use when upserting the embeddings.
             Upstash supports at max 1000 vectors per request.
             embedding_batch_size: Chunk size to use when embedding the texts.
+            namespace: Namespace to use from the index.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
 
         """
+        if namespace is None:
+            namespace = self._namespace
+            
         texts = list(texts)
         ids = ids or [str(uuid.uuid4()) for _ in texts]
 
@@ -312,7 +325,7 @@ class UpstashVectorStore(VectorStore):
             for batch in batch_iterate(
                 batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
             ):
-                self._index.upsert(vectors=batch, **kwargs)
+                self._index.upsert(vectors=batch, namespace=namespace, **kwargs)
 
         return ids
 
@@ -321,9 +334,9 @@ class UpstashVectorStore(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
-        namespace: Optional[str] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -341,6 +354,7 @@ class UpstashVectorStore(VectorStore):
             batch_size: Batch size to use when upserting the embeddings.
             Upstash supports at max 1000 vectors per request.
             embedding_batch_size: Chunk size to use when embedding the texts.
+            namespace: Namespace to use from the index.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
@@ -348,6 +362,7 @@ class UpstashVectorStore(VectorStore):
         """
         if namespace is None:
             namespace = self._namespace
+            
         texts = list(texts)
         ids = ids or [str(uuid.uuid4()) for _ in texts]
 
@@ -370,7 +385,7 @@ class UpstashVectorStore(VectorStore):
             for batch in batch_iterate(
                 batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
             ):
-                await self._async_index.upsert(vectors=batch,namespace=namespace, **kwargs)
+                await self._async_index.upsert(vectors=batch, namespace=namespace, **kwargs)
 
         return ids
 
@@ -389,7 +404,7 @@ class UpstashVectorStore(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Optional metadata filter in str format
-
+            namespace: Namespace to use from the index.
         Returns:
             List of Documents most similar to the query and score for each
         """
@@ -415,6 +430,7 @@ class UpstashVectorStore(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Optional metadata filter in str format
+            namespace: Namespace to use from the index.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -457,7 +473,7 @@ class UpstashVectorStore(VectorStore):
             
         if isinstance(embedding, str):
             results = self._index.query(
-                data=embedding, top_k=k, include_metadata=True, filter=filter, **kwargs
+                data=embedding, top_k=k, include_metadata=True, filter=filter, namespace=namespace, **kwargs
             )
         else:
             results = self._index.query(
@@ -516,6 +532,7 @@ class UpstashVectorStore(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Optional metadata filter in str format
+            namespace: Namespace to use from the index.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -539,6 +556,7 @@ class UpstashVectorStore(VectorStore):
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Optional metadata filter in str format
+            namespace: Namespace to use from the index.
 
         Returns:
             List of Documents most similar to the query
@@ -562,6 +580,7 @@ class UpstashVectorStore(VectorStore):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Optional metadata filter in str format
+            namespace: Namespace to use from the index.
 
         Returns:
             List of Documents most similar to the query
@@ -585,6 +604,7 @@ class UpstashVectorStore(VectorStore):
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Optional metadata filter in str format
+            namespace: Namespace to use from the index.
 
         Returns:
             List of Documents most similar to the query
@@ -646,10 +666,14 @@ class UpstashVectorStore(VectorStore):
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
             filter: Optional metadata filter in str format
+            namespace: Namespace to use from the index.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        if namespace is None:
+            namespace = self._namespace
+            
         assert isinstance(self.embeddings, Embeddings)
         if isinstance(embedding, str):
             results = self._index.query(
@@ -708,10 +732,15 @@ class UpstashVectorStore(VectorStore):
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
             filter: Optional metadata filter in str format
+            namespace: Namespace to use from the index.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
+        
+        if namespace is None:
+            namespace = self._namespace
+            
         assert isinstance(self.embeddings, Embeddings)
         if isinstance(embedding, str):
             results = await self._async_index.query(
@@ -772,6 +801,7 @@ class UpstashVectorStore(VectorStore):
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
             filter: Optional metadata filter in str format
+            namespace: Namespace to use from the index.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -811,10 +841,11 @@ class UpstashVectorStore(VectorStore):
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
             filter: Optional metadata filter in str format
+            namespace: Namespace to use from the index.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
-        """
+        """ 
         embedding = self._embed_query(query)
         return await self.amax_marginal_relevance_search_by_vector(
             embedding=embedding,
@@ -942,6 +973,7 @@ class UpstashVectorStore(VectorStore):
             ids: List of ids to delete.
             delete_all: Delete all vectors in the index.
             batch_size: Batch size to use when deleting the embeddings.
+            namespace: Namespace to use from the index.
             Upstash supports at max 1000 deletions per request.
         """
         if namespace is None:
@@ -971,6 +1003,7 @@ class UpstashVectorStore(VectorStore):
             ids: List of ids to delete.
             delete_all: Delete all vectors in the index.
             batch_size: Batch size to use when deleting the embeddings.
+            namespace: Namespace to use from the index.
             Upstash supports at max 1000 deletions per request.
         """
         if namespace is None:
