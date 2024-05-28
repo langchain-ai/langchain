@@ -427,6 +427,7 @@ class ChatAnthropic(BaseChatModel):
                 message_chunk = AIMessageChunk(
                     content=message.content,
                     tool_call_chunks=tool_call_chunks,
+                    usage_metadata=message.usage_metadata,
                 )
                 yield ChatGenerationChunk(message=message_chunk)
             else:
@@ -501,6 +502,7 @@ class ChatAnthropic(BaseChatModel):
                 message_chunk = AIMessageChunk(
                     content=message.content,
                     tool_call_chunks=tool_call_chunks,
+                    usage_metadata=message.usage_metadata,
                 )
                 yield ChatGenerationChunk(message=message_chunk)
             else:

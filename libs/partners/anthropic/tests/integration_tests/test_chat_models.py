@@ -317,6 +317,17 @@ def test_tool_use() -> None:
     assert isinstance(tool_call_chunk["args"], str)
     assert "location" in json.loads(tool_call_chunk["args"])
 
+    # Check usage metadata
+    assert gathered.usage_metadata is not None
+    assert gathered.usage_metadata["input_tokens"] > 0
+    assert gathered.usage_metadata["output_tokens"] > 0
+    assert gathered.usage_metadata["total_tokens"] > 0
+    assert (
+        gathered.usage_metadata["input_tokens"]
+        + gathered.usage_metadata["output_tokens"]
+        == gathered.usage_metadata["total_tokens"]
+    )
+
 
 def test_anthropic_with_empty_text_block() -> None:
     """Anthropic SDK can return an empty text block."""
