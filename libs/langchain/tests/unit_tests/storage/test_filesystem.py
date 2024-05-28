@@ -3,8 +3,8 @@ import tempfile
 from typing import Generator
 
 import pytest
+from langchain_core.stores import InvalidKeyException
 
-from langchain.storage.exceptions import InvalidKeyException
 from langchain.storage.file_system import LocalFileStore
 
 
@@ -55,6 +55,31 @@ def test_mset_chmod(chmod_dir_s: str, chmod_file_s: str) -> None:
         file_path = os.path.join(dir_path, "key1")
         assert (os.stat(dir_path).st_mode & 0o777) == chmod_dir
         assert (os.stat(file_path).st_mode & 0o777) == chmod_file
+
+
+def test_mget_update_atime() -> None:
+    # Create a temporary directory for testing
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Instantiate the LocalFileStore with a directory inside the temporary directory
+        # as the root path
+        temp_dir = os.path.join(temp_dir, "store_dir")
+        file_store = LocalFileStore(temp_dir, update_atime=True)
+
+        # Set values for keys
+        key_value_pairs = [("key1", b"value1"), ("key2", b"value2")]
+        file_store.mset(key_value_pairs)
+
+        # Get original access time
+        dir_path = str(file_store.root_path)
+        file_path = os.path.join(dir_path, "key1")
+        atime1 = os.stat(file_path).st_atime
+
+        # Get values for keys
+        _ = file_store.mget(["key1", "key2"])
+
+        # Make sure the filesystem access time has been updated
+        atime2 = os.stat(file_path).st_atime
+        assert atime2 != atime1
 
 
 def test_mdelete(file_store: LocalFileStore) -> None:

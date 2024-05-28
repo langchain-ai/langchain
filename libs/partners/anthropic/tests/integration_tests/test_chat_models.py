@@ -3,15 +3,20 @@
 import json
 from typing import List
 
+import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
     HumanMessage,
+    SystemMessage,
+    ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.tools import tool
 
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from tests.unit_tests._utils import FakeCallbackHandler
@@ -105,7 +110,7 @@ def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
     chat = ChatAnthropic(model="test")
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -264,6 +269,50 @@ def test_tool_use() -> None:
     assert "location" in json.loads(tool_call_chunk["args"])
 
 
+def test_anthropic_with_empty_text_block() -> None:
+    """Anthropic SDK can return an empty text block."""
+
+    @tool
+    def type_letter(letter: str) -> str:
+        """Type the given letter."""
+        return "OK"
+
+    model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0).bind_tools(
+        [type_letter]
+    )
+
+    messages = [
+        SystemMessage(
+            content="Repeat the given string using the provided tools. Do not write "
+            "anything else or provide any explanations. For example, "
+            "if the string is 'abc', you must print the "
+            "letters 'a', 'b', and 'c' one at a time and in that order. "
+        ),
+        HumanMessage(content="dog"),
+        AIMessage(
+            content=[
+                {"text": "", "type": "text"},
+                {
+                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                    "input": {"letter": "d"},
+                    "name": "type_letter",
+                    "type": "tool_use",
+                },
+            ],
+            tool_calls=[
+                {
+                    "name": "type_letter",
+                    "args": {"letter": "d"},
+                    "id": "toolu_01V6d6W32QGGSmQm4BT98EKk",
+                },
+            ],
+        ),
+        ToolMessage(content="OK", tool_call_id="toolu_01V6d6W32QGGSmQm4BT98EKk"),
+    ]
+
+    model.invoke(messages)
+
+
 def test_with_structured_output() -> None:
     llm = ChatAnthropic(
         model="claude-3-opus-20240229",
@@ -282,3 +331,19 @@ def test_with_structured_output() -> None:
     response = structured_llm.invoke("what's the weather in san francisco, ca")
     assert isinstance(response, dict)
     assert response["location"]
+
+
+class GetWeather(BaseModel):
+    """Get the current weather in a given location"""
+
+    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+
+@pytest.mark.parametrize("tool_choice", ["GetWeather", "auto", "any"])
+def test_anthropic_bind_tools_tool_choice(tool_choice: str) -> None:
+    chat_model = ChatAnthropic(
+        model="claude-3-sonnet-20240229",
+    )
+    chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice=tool_choice)
+    response = chat_model_with_tools.invoke("what's the weather in ny and la")
+    assert isinstance(response, AIMessage)

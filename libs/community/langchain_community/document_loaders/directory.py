@@ -129,6 +129,7 @@ class DirectoryLoader(BaseLoader):
             path
             for path in paths
             if not (self.exclude and any(path.match(glob) for glob in self.exclude))
+            and path.is_file()
         ]
 
         if self.sample_size > 0:

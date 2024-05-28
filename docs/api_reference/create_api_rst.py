@@ -187,7 +187,7 @@ def _load_package_modules(
             modules_by_namespace[top_namespace] = _module_members
 
         except ImportError as e:
-            print(f"Error: Unable to import module '{namespace}' with error: {e}")  # noqa: T201
+            print(f"Error: Unable to import module '{namespace}' with error: {e}")
 
     return modules_by_namespace
 
@@ -359,9 +359,14 @@ def main(dirs: Optional[list] = None) -> None:
         dirs = [
             dir_
             for dir_ in os.listdir(ROOT_DIR / "libs")
-            if dir_ not in ("cli", "partners")
+            if dir_ not in ("cli", "partners", "standard-tests")
         ]
-        dirs += os.listdir(ROOT_DIR / "libs" / "partners")
+        dirs += [
+            dir_
+            for dir_ in os.listdir(ROOT_DIR / "libs" / "partners")
+            if os.path.isdir(ROOT_DIR / "libs" / "partners" / dir_)
+            and "pyproject.toml" in os.listdir(ROOT_DIR / "libs" / "partners" / dir_)
+        ]
     for dir_ in dirs:
         # Skip any hidden directories
         # Some of these could be present by mistake in the code base

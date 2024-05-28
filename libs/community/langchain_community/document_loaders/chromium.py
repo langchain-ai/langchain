@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Iterator, List
+from typing import AsyncIterator, Iterator, List
 
 from langchain_core.documents import Document
 
@@ -13,20 +13,18 @@ class AsyncChromiumLoader(BaseLoader):
     """Scrape HTML pages from URLs using a
     headless instance of the Chromium."""
 
-    def __init__(
-        self,
-        urls: List[str],
-    ):
-        """
-        Initialize the loader with a list of URL paths.
+    def __init__(self, urls: List[str], *, headless: bool = True):
+        """Initialize the loader with a list of URL paths.
 
         Args:
-            urls (List[str]): A list of URLs to scrape content from.
+            urls: A list of URLs to scrape content from.
+            headless: Whether to run browser in headless mode.
 
         Raises:
             ImportError: If the required 'playwright' package is not installed.
         """
         self.urls = urls
+        self.headless = headless
 
         try:
             import playwright  # noqa: F401
@@ -52,7 +50,7 @@ class AsyncChromiumLoader(BaseLoader):
         logger.info("Starting scraping...")
         results = ""
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
+            browser = await p.chromium.launch(headless=self.headless)
             try:
                 page = await browser.new_page()
                 await page.goto(url)
@@ -78,3 +76,22 @@ class AsyncChromiumLoader(BaseLoader):
             html_content = asyncio.run(self.ascrape_playwright(url))
             metadata = {"source": url}
             yield Document(page_content=html_content, metadata=metadata)
+
+    async def alazy_load(self) -> AsyncIterator[Document]:
+        """
+        Asynchronously load text content from the provided URLs.
+
+        This method leverages asyncio to initiate the scraping of all provided URLs
+        simultaneously. It improves performance by utilizing concurrent asynchronous
+        requests. Each Document is yielded as soon as its content is available,
+        encapsulating the scraped content.
+
+        Yields:
+            Document: A Document object containing the scraped content, along with its
+            source URL as metadata.
+        """
+        tasks = [self.ascrape_playwright(url) for url in self.urls]
+        results = await asyncio.gather(*tasks)
+        for url, content in zip(self.urls, results):
+            metadata = {"source": url}
+            yield Document(page_content=content, metadata=metadata)

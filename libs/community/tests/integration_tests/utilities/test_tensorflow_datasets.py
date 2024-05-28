@@ -10,7 +10,7 @@ from langchain_core.pydantic_v1 import ValidationError
 from langchain_community.utilities.tensorflow_datasets import TensorflowDatasets
 
 if TYPE_CHECKING:
-    import tensorflow as tf  # noqa: E402
+    import tensorflow as tf
 
 
 def decode_to_str(item: tf.Tensor) -> str:
@@ -34,7 +34,7 @@ MAX_DOCS = 10
 
 @pytest.fixture
 def tfds_client() -> TensorflowDatasets:
-    return TensorflowDatasets(
+    return TensorflowDatasets(  # type: ignore[call-arg]
         dataset_name="mlqa/en",
         split_name="test",
         load_max_docs=MAX_DOCS,
@@ -58,7 +58,7 @@ def test_load_success(tfds_client: TensorflowDatasets) -> None:
 def test_load_fail_wrong_dataset_name() -> None:
     """Test that fails to load"""
     with pytest.raises(ValidationError) as exc_info:
-        TensorflowDatasets(
+        TensorflowDatasets(  # type: ignore[call-arg]
             dataset_name="wrong_dataset_name",
             split_name="test",
             load_max_docs=MAX_DOCS,
@@ -70,7 +70,7 @@ def test_load_fail_wrong_dataset_name() -> None:
 def test_load_fail_wrong_split_name() -> None:
     """Test that fails to load"""
     with pytest.raises(ValidationError) as exc_info:
-        TensorflowDatasets(
+        TensorflowDatasets(  # type: ignore[call-arg]
             dataset_name="mlqa/en",
             split_name="wrong_split_name",
             load_max_docs=MAX_DOCS,
@@ -82,7 +82,7 @@ def test_load_fail_wrong_split_name() -> None:
 def test_load_fail_no_func() -> None:
     """Test that fails to load"""
     with pytest.raises(ValidationError) as exc_info:
-        TensorflowDatasets(
+        TensorflowDatasets(  # type: ignore[call-arg]
             dataset_name="mlqa/en",
             split_name="test",
             load_max_docs=MAX_DOCS,

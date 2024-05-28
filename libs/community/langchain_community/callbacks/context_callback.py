@@ -1,4 +1,5 @@
 """Callback handler for Context AI"""
+
 import os
 from typing import Any, Dict, List
 from uuid import UUID
@@ -6,26 +7,23 @@ from uuid import UUID
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import LLMResult
+from langchain_core.utils import guard_import
 
 
 def import_context() -> Any:
     """Import the `getcontext` package."""
-    try:
-        import getcontext  # noqa: F401
-        from getcontext.generated.models import (
-            Conversation,
-            Message,
-            MessageRole,
-            Rating,
-        )
-        from getcontext.token import Credential  # noqa: F401
-    except ImportError:
-        raise ImportError(
-            "To use the context callback manager you need to have the "
-            "`getcontext` python package installed (version >=0.3.0). "
-            "Please install it with `pip install --upgrade python-context`"
-        )
-    return getcontext, Credential, Conversation, Message, MessageRole, Rating
+    return (
+        guard_import("getcontext", pip_name="python-context"),
+        guard_import("getcontext.token", pip_name="python-context").Credential,
+        guard_import(
+            "getcontext.generated.models", pip_name="python-context"
+        ).Conversation,
+        guard_import("getcontext.generated.models", pip_name="python-context").Message,
+        guard_import(
+            "getcontext.generated.models", pip_name="python-context"
+        ).MessageRole,
+        guard_import("getcontext.generated.models", pip_name="python-context").Rating,
+    )
 
 
 class ContextCallbackHandler(BaseCallbackHandler):
@@ -58,7 +56,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
         ...     SystemMessage(content="You translate English to French."),
         ...     HumanMessage(content="I love programming with LangChain."),
         ... ]
-        >>> chat(messages)
+        >>> chat.invoke(messages)
 
     Chain Example:
         >>> from langchain.chains import LLMChain
