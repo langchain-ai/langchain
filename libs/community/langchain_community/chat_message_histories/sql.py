@@ -213,6 +213,9 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
                 messages.append(self.converter.from_sql_model(record))
             return messages
 
+    def get_messages(self) -> List[BaseMessage]:
+        return self.messages
+
     async def aget_messages(self) -> List[BaseMessage]:
         """Retrieve all messages from db"""
         await self._acreate_table_if_not_exists()
