@@ -263,7 +263,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
         for key in kwargs:
             if key in kwargs_to_ignore:
                 logger.warning(
-                    f"WARNING: Parameter {key} is not supported. Removing {key}.\n"
+                    f"WARNING: Parameter {key} is not supported in kwargs. Removing {key}.\n"
                 )
                 keys_to_remove.append(key)
         
