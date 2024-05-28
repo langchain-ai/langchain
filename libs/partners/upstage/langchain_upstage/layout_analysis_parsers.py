@@ -173,7 +173,7 @@ class UpstageLayoutAnalysisParser(BaseBlobParser):
         """
         try:
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            options = {"ocr": self.use_ocr}
+            options = {"ocr": self.use_ocr, "use_ocr": self.use_ocr}
             response = requests.post(
                 LAYOUT_ANALYSIS_URL, headers=headers, files=files, data=options
             )
@@ -189,12 +189,13 @@ class UpstageLayoutAnalysisParser(BaseBlobParser):
 
         except requests.RequestException as req_err:
             # Handle any request-related exceptions
-            print(f"Request Exception: {req_err}")
             raise ValueError(f"Failed to send request: {req_err}")
         except json.JSONDecodeError as json_err:
             # Handle JSON decode errors
-            print(f"JSON Decode Error: {json_err}")
             raise ValueError(f"Failed to decode JSON response: {json_err}")
+        except Exception as err:
+            # Handle any other exceptions
+            raise ValueError(f"An error occurred: {err}")
 
         return []
 
@@ -247,9 +248,7 @@ class UpstageLayoutAnalysisParser(BaseBlobParser):
             metadata={
                 "page": elements["page"],
                 "id": elements["id"],
-                "type": self.output_type,
-                "split": self.split,
-                "bbox": elements["bounding_box"],
+                "bounding_box": json.dumps(elements["bounding_box"]),
                 "category": elements["category"],
             },
         )
@@ -282,8 +281,6 @@ class UpstageLayoutAnalysisParser(BaseBlobParser):
                     page_content=page_content,
                     metadata={
                         "page": group[0]["page"],
-                        "type": self.output_type,
-                        "split": self.split,
                     },
                 )
             )
@@ -346,8 +343,6 @@ class UpstageLayoutAnalysisParser(BaseBlobParser):
                 page_content=result,
                 metadata={
                     "total_pages": number_of_pages,
-                    "type": self.output_type,
-                    "split": self.split,
                 },
             )
 

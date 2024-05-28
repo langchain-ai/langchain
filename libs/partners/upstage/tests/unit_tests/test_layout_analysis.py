@@ -89,8 +89,6 @@ def test_none_split_text_output(mock_post: Mock) -> None:
     assert len(documents) == 1
     assert documents[0].page_content == MOCK_RESPONSE_JSON["text"]
     assert documents[0].metadata["total_pages"] == 1
-    assert documents[0].metadata["type"] == "text"
-    assert documents[0].metadata["split"] == "none"
 
 
 @patch("requests.post")
@@ -114,8 +112,6 @@ def test_element_split_text_output(mock_post: Mock) -> None:
         assert document.page_content == MOCK_RESPONSE_JSON["elements"][i]["text"]
         assert document.metadata["page"] == MOCK_RESPONSE_JSON["elements"][i]["page"]
         assert document.metadata["id"] == MOCK_RESPONSE_JSON["elements"][i]["id"]
-        assert document.metadata["type"] == "text"
-        assert document.metadata["split"] == "element"
 
 
 @patch("requests.post")
@@ -137,8 +133,6 @@ def test_page_split_text_output(mock_post: Mock) -> None:
 
     for i, document in enumerate(documents):
         assert document.metadata["page"] == MOCK_RESPONSE_JSON["elements"][i]["page"]
-        assert document.metadata["type"] == "text"
-        assert document.metadata["split"] == "page"
 
 
 @patch("requests.post")
@@ -159,8 +153,6 @@ def test_none_split_html_output(mock_post: Mock) -> None:
     assert len(documents) == 1
     assert documents[0].page_content == MOCK_RESPONSE_JSON["html"]
     assert documents[0].metadata["total_pages"] == 1
-    assert documents[0].metadata["type"] == "html"
-    assert documents[0].metadata["split"] == "none"
 
 
 @patch("requests.post")
@@ -184,8 +176,6 @@ def test_element_split_html_output(mock_post: Mock) -> None:
         assert document.page_content == MOCK_RESPONSE_JSON["elements"][i]["html"]
         assert document.metadata["page"] == MOCK_RESPONSE_JSON["elements"][i]["page"]
         assert document.metadata["id"] == MOCK_RESPONSE_JSON["elements"][i]["id"]
-        assert document.metadata["type"] == "html"
-        assert document.metadata["split"] == "element"
 
 
 @patch("requests.post")
@@ -207,8 +197,6 @@ def test_page_split_html_output(mock_post: Mock) -> None:
 
     for i, document in enumerate(documents):
         assert document.metadata["page"] == MOCK_RESPONSE_JSON["elements"][i]["page"]
-        assert document.metadata["type"] == "html"
-        assert document.metadata["split"] == "page"
 
 
 @patch("requests.post")
