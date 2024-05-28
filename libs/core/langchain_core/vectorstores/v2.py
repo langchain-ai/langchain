@@ -17,9 +17,8 @@ class VectorStoreV2(Index, RetrieverV2[Union[str, Sequence[float]]]):
         metric: str = "cosine_similarity",
         **kwargs: Any,
     ) -> RetrievalResponse:
-        """ "Retrieve documents by query"""
+        """Retrieve documents by query"""
 
-    @abstractmethod
     async def _aretrieve(
         self,
         query: Union[str, Sequence[float]],
@@ -28,4 +27,5 @@ class VectorStoreV2(Index, RetrieverV2[Union[str, Sequence[float]]]):
         metric: str = "cosine_similarity",
         **kwargs: Any,
     ) -> RetrievalResponse:
-        """ "Retrieve documents by query"""
+        """Retrieve documents by query"""
+        return await super()._aretrieve(query, method=method, metric=metric, **kwargs)
