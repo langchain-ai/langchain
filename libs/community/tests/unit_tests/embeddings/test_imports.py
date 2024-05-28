@@ -54,6 +54,7 @@ EXPECTED_ALL = [
     "LocalAIEmbeddings",
     "AwaEmbeddings",
     "HuggingFaceBgeEmbeddings",
+    "IpexLLMBgeEmbeddings",
     "ErnieEmbeddings",
     "JavelinAIGatewayEmbeddings",
     "OllamaEmbeddings",
