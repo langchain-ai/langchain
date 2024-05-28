@@ -97,7 +97,7 @@ jobs:
         run: |
           REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
           echo $REGEX
-          PREV_TAG=$(git tag --sort=-creatordate | grep -P $REGEX | head -1)
+          PREV_TAG=$(git tag --sort=-creatordate | {grep -P $REGEX || test $? = 1; } | head -1)
           TAG="${PKG_NAME}==${VERSION}"
           if [ "$TAG" == "$PREV_TAG" ]; then
             echo "No new version to release"
