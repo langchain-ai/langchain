@@ -37,8 +37,6 @@ _generate-files-internal:
 
 generate-files: _generate-files-internal
 	mkdir -p $(INTERMEDIATE_DIR)/templates
-	cp ../templates/docs/INDEX.md $(INTERMEDIATE_DIR)/templates/index.md
-	cp ../cookbook/README.md $(INTERMEDIATE_DIR)/cookbook.mdx
 
 	$(PYTHON) scripts/model_feat_table.py $(INTERMEDIATE_DIR)
 
