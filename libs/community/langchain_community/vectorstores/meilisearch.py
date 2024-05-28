@@ -243,6 +243,7 @@ class Meilisearch(VectorStore):
                 "hybrid": {"semanticRatio": 1.0, "embedder": embedder_name},
                 "limit": k,
                 "filter": filter,
+                "showRankingScore": True,
             },
         )
 
@@ -250,7 +251,7 @@ class Meilisearch(VectorStore):
             metadata = result[self._metadata_key]
             if self._text_key in metadata:
                 text = metadata.pop(self._text_key)
-                semantic_score = result["_semanticScore"]
+                semantic_score = result["_rankingScore"]
                 docs.append(
                     (Document(page_content=text, metadata=metadata), semantic_score)
                 )

@@ -1,4 +1,5 @@
 """Callback Handler that prints to std out."""
+
 import threading
 from typing import Any, Dict, List
 
@@ -6,6 +7,12 @@ from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
 
 MODEL_COST_PER_1K_TOKENS = {
+    # GPT-4o input
+    "gpt-4o": 0.005,
+    "gpt-4o-2024-05-13": 0.005,
+    # GPT-4o output
+    "gpt-4o-completion": 0.015,
+    "gpt-4o-2024-05-13-completion": 0.015,
     # GPT-4 input
     "gpt-4": 0.03,
     "gpt-4-0314": 0.03,
@@ -81,13 +88,15 @@ MODEL_COST_PER_1K_TOKENS = {
     # Fine Tuned input
     "babbage-002-finetuned": 0.0016,
     "davinci-002-finetuned": 0.012,
-    "gpt-3.5-turbo-0613-finetuned": 0.012,
-    "gpt-3.5-turbo-1106-finetuned": 0.012,
+    "gpt-3.5-turbo-0613-finetuned": 0.003,
+    "gpt-3.5-turbo-1106-finetuned": 0.003,
+    "gpt-3.5-turbo-0125-finetuned": 0.003,
     # Fine Tuned output
     "babbage-002-finetuned-completion": 0.0016,
     "davinci-002-finetuned-completion": 0.012,
-    "gpt-3.5-turbo-0613-finetuned-completion": 0.016,
-    "gpt-3.5-turbo-1106-finetuned-completion": 0.016,
+    "gpt-3.5-turbo-0613-finetuned-completion": 0.006,
+    "gpt-3.5-turbo-1106-finetuned-completion": 0.006,
+    "gpt-3.5-turbo-0125-finetuned-completion": 0.006,
     # Azure Fine Tuned input
     "babbage-002-azure-finetuned": 0.0004,
     "davinci-002-azure-finetuned": 0.002,

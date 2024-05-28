@@ -31,7 +31,7 @@ class BlackboardLoader(WebBaseLoader):
             )
             documents = loader.load()
 
-    """  # noqa: E501
+    """
 
     def __init__(
         self,
