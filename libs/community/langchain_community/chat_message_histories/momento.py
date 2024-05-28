@@ -4,7 +4,6 @@ import json
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Optional
 
-import langchain_core.retrievers.v2
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
     BaseMessage,
@@ -139,7 +138,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
 
         fetch_response = self.cache_client.list_fetch(self.cache_name, self.key)
 
-        if isinstance(fetch_response, langchain_core.retrievers.v2.Hit):
+        if isinstance(fetch_response, CacheListFetch.Hit):
             items = [json.loads(m) for m in fetch_response.value_list_string]
             return messages_from_dict(items)
         elif isinstance(fetch_response, CacheListFetch.Miss):
