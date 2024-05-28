@@ -294,7 +294,7 @@ class HuggingFacePipeline(BaseLLM):
                         f"Got invalid task {self.pipeline.task}, "
                         f"currently only {VALID_TASKS} are supported"
                     )
-
+                text = text[len(batch_prompts[j]) :]
                 # Append the processed text to results
                 text_generations.append(text)
 
