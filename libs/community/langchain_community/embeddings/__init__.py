@@ -43,6 +43,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.clarifai import (
         ClarifaiEmbeddings,
     )
+    from langchain_community.embeddings.clova import (
+        ClovaEmbeddings,
+    )
     from langchain_community.embeddings.cohere import (
         CohereEmbeddings,
     )
@@ -171,7 +174,7 @@ if TYPE_CHECKING:
         QuantizedBiEncoderEmbeddings,
     )
     from langchain_community.embeddings.oracleai import (
-        OracleEmbeddings,  # noqa: F401
+        OracleEmbeddings,
     )
     from langchain_community.embeddings.premai import (
         PremAIEmbeddings,
@@ -204,6 +207,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.tensorflow_hub import (
         TensorflowHubEmbeddings,
     )
+    from langchain_community.embeddings.titan_takeoff import (
+        TitanTakeoffEmbed,
+    )
     from langchain_community.embeddings.vertexai import (
         VertexAIEmbeddings,
     )
@@ -230,6 +236,7 @@ __all__ = [
     "BedrockEmbeddings",
     "BookendEmbeddings",
     "ClarifaiEmbeddings",
+    "ClovaEmbeddings",
     "CohereEmbeddings",
     "DashScopeEmbeddings",
     "DatabricksEmbeddings",
@@ -290,6 +297,7 @@ __all__ = [
     "SpacyEmbeddings",
     "SparkLLMTextEmbeddings",
     "TensorflowHubEmbeddings",
+    "TitanTakeoffEmbed",
     "VertexAIEmbeddings",
     "VolcanoEmbeddings",
     "VoyageEmbeddings",
@@ -307,6 +315,7 @@ _module_lookup = {
     "BedrockEmbeddings": "langchain_community.embeddings.bedrock",
     "BookendEmbeddings": "langchain_community.embeddings.bookend",
     "ClarifaiEmbeddings": "langchain_community.embeddings.clarifai",
+    "ClovaEmbeddings": "langchain_community.embeddings.clova",
     "CohereEmbeddings": "langchain_community.embeddings.cohere",
     "DashScopeEmbeddings": "langchain_community.embeddings.dashscope",
     "DatabricksEmbeddings": "langchain_community.embeddings.databricks",
@@ -382,8 +391,6 @@ def __getattr__(name: str) -> Any:
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
-
-__all__ = list(_module_lookup.keys())
 
 logger = logging.getLogger(__name__)
 

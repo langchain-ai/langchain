@@ -35,8 +35,6 @@ generate-files:
 	mkdir -p $(INTERMEDIATE_DIR)
 	cp -r $(SOURCE_DIR)/* $(INTERMEDIATE_DIR)
 	mkdir -p $(INTERMEDIATE_DIR)/templates
-	cp ../templates/docs/INDEX.md $(INTERMEDIATE_DIR)/templates/index.md
-	cp ../cookbook/README.md $(INTERMEDIATE_DIR)/cookbook.mdx
 
 	$(PYTHON) scripts/model_feat_table.py $(INTERMEDIATE_DIR)
 
@@ -44,9 +42,6 @@ generate-files:
 
 	wget -q https://raw.githubusercontent.com/langchain-ai/langserve/main/README.md -O $(INTERMEDIATE_DIR)/langserve.md
 	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/langserve.md https://github.com/langchain-ai/langserve/tree/main/
-
-	wget -q https://raw.githubusercontent.com/langchain-ai/langgraph/main/README.md -O $(INTERMEDIATE_DIR)/langgraph.md
-	$(PYTHON) scripts/resolve_local_links.py $(INTERMEDIATE_DIR)/langgraph.md https://github.com/langchain-ai/langgraph/tree/main/
 
 copy-infra:
 	mkdir -p $(OUTPUT_NEW_DIR)
