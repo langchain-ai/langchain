@@ -132,9 +132,8 @@ def _convert_delta_response_to_message_chunk(
     role = _delta.get("role", "")  # type: ignore
     content = _delta.get("content", "")  # type: ignore
     additional_kwargs: Dict = {}
-
     finish_reasons: Optional[str] = response.choices[0].finish_reason
-
+    
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content), finish_reasons
     elif role == "assistant" or default_class == AIMessageChunk:
@@ -330,8 +329,6 @@ class ChatPremAI(BaseChatModel, BaseModel):
             **all_kwargs,
         ):
             try:
-                # print(streamed_response)
-                # print(streamed_response.choices[0].delta['content'])
                 chunk, finish_reason = _convert_delta_response_to_message_chunk(
                     response=streamed_response, default_class=default_chunk_class
                 )
