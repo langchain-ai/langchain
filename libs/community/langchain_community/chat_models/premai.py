@@ -133,9 +133,6 @@ def _convert_delta_response_to_message_chunk(
     content = _delta.get("content", "")  # type: ignore
     additional_kwargs: Dict = {}
 
-    if role is None or role == "":
-        raise ChatPremAPIError("Role can not be None. Please check the response")
-
     finish_reasons: Optional[str] = response.choices[0].finish_reason
 
     if role == "user" or default_class == HumanMessageChunk:
@@ -313,6 +310,9 @@ class ChatPremAI(BaseChatModel, BaseModel):
     ) -> Iterator[ChatGenerationChunk]:
         system_prompt, messages_to_pass = _messages_to_prompt_dict(messages)
 
+        if stop is not None:
+            logger.warning("stop is not supported in langchain streaming")
+
         if "system_prompt" not in kwargs:
             if system_prompt is not None and system_prompt != "":
                 kwargs["system_prompt"] = system_prompt
@@ -330,6 +330,8 @@ class ChatPremAI(BaseChatModel, BaseModel):
             **all_kwargs,
         ):
             try:
+                # print(streamed_response)
+                # print(streamed_response.choices[0].delta['content'])
                 chunk, finish_reason = _convert_delta_response_to_message_chunk(
                     response=streamed_response, default_class=default_chunk_class
                 )
