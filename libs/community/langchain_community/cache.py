@@ -53,6 +53,7 @@ from sqlalchemy.engine import Row
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
+import langchain_core.retrievers.v2
 from langchain_community.utilities.cassandra import SetupMode as CassandraSetupMode
 from langchain_community.vectorstores.azure_cosmos_db import (
     CosmosDBSimilarityType,
@@ -983,7 +984,7 @@ class MomentoCache(BaseCache):
         get_response = self.cache_client.get(
             self.cache_name, self.__key(prompt, llm_string)
         )
-        if isinstance(get_response, CacheGet.Hit):
+        if isinstance(get_response, langchain_core.retrievers.v2.Hit):
             value = get_response.value_string
             generations = _load_generations_from_json(value)
         elif isinstance(get_response, CacheGet.Miss):

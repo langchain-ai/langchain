@@ -8,6 +8,8 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Iterable, List, Optional, Tuple
 
 import requests
+
+import langchain_core.retrievers.v2
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -206,7 +208,7 @@ class Clarifai(VectorStore):
         hits = [hit for data in search_response for hit in data.hits]
         executor = ThreadPoolExecutor(max_workers=10)
 
-        def hit_to_document(hit: resources_pb2.Hit) -> Tuple[Document, float]:
+        def hit_to_document(hit: langchain_core.retrievers.v2.Hit) -> Tuple[Document, float]:
             metadata = json_format.MessageToDict(hit.input.data.metadata)
             h = dict(self._auth.metadata)
             request = requests.get(hit.input.data.text.url, headers=h)
