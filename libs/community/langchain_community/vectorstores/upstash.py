@@ -151,7 +151,6 @@ class UpstashVectorStore(VectorStore):
         self._text_key = text_key
         self._namespace = namespace
 
-
     @property
     def embeddings(self) -> Optional[Union[Embeddings, bool]]:  # type: ignore
         """Access the query embedding object if available."""
@@ -302,7 +301,7 @@ class UpstashVectorStore(VectorStore):
         """
         if namespace is None:
             namespace = self._namespace
-            
+
         texts = list(texts)
         ids = ids or [str(uuid.uuid4()) for _ in texts]
 
@@ -362,7 +361,7 @@ class UpstashVectorStore(VectorStore):
         """
         if namespace is None:
             namespace = self._namespace
-            
+
         texts = list(texts)
         ids = ids or [str(uuid.uuid4()) for _ in texts]
 
@@ -385,7 +384,9 @@ class UpstashVectorStore(VectorStore):
             for batch in batch_iterate(
                 batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
             ):
-                await self._async_index.upsert(vectors=batch, namespace=namespace, **kwargs)
+                await self._async_index.upsert(
+                    vectors=batch, namespace=namespace, **kwargs
+                )
 
         return ids
 
@@ -410,9 +411,9 @@ class UpstashVectorStore(VectorStore):
         """
         if namespace is None:
             namespace = self._namespace
-            
+
         return self.similarity_search_by_vector_with_score(
-            self._embed_query(query), k=k, filter=filter,namespace=namespace, **kwargs
+            self._embed_query(query), k=k, filter=filter, namespace=namespace, **kwargs
         )
 
     async def asimilarity_search_with_score(
@@ -437,9 +438,9 @@ class UpstashVectorStore(VectorStore):
         """
         if namespace is None:
             namespace = self._namespace
-        
+
         return await self.asimilarity_search_by_vector_with_score(
-            self._embed_query(query), k=k, filter=filter,namespace=namespace, **kwargs
+            self._embed_query(query), k=k, filter=filter, namespace=namespace, **kwargs
         )
 
     def _process_results(self, results: List) -> List[Tuple[Document, float]]:
@@ -470,10 +471,15 @@ class UpstashVectorStore(VectorStore):
 
         if namespace is None:
             namespace = self._namespace
-            
+
         if isinstance(embedding, str):
             results = self._index.query(
-                data=embedding, top_k=k, include_metadata=True, filter=filter, namespace=namespace, **kwargs
+                data=embedding,
+                top_k=k,
+                include_metadata=True,
+                filter=filter,
+                namespace=namespace,
+                **kwargs,
             )
         else:
             results = self._index.query(
@@ -501,10 +507,15 @@ class UpstashVectorStore(VectorStore):
 
         if namespace is None:
             namespace = self._namespace
-            
+
         if isinstance(embedding, str):
             results = await self._async_index.query(
-                data=embedding, top_k=k, include_metadata=True, filter=filter, namespace=namespace,**kwargs
+                data=embedding,
+                top_k=k,
+                include_metadata=True,
+                filter=filter,
+                namespace=namespace,
+                **kwargs,
             )
         else:
             results = await self._async_index.query(
@@ -538,7 +549,7 @@ class UpstashVectorStore(VectorStore):
             List of Documents most similar to the query and score for each
         """
         docs_and_scores = self.similarity_search_with_score(
-            query, k=k, filter=filter, namespace=namespace ,**kwargs
+            query, k=k, filter=filter, namespace=namespace, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -562,7 +573,7 @@ class UpstashVectorStore(VectorStore):
             List of Documents most similar to the query
         """
         docs_and_scores = await self.asimilarity_search_with_score(
-            query, k=k, filter=filter, namespace=namespace,**kwargs
+            query, k=k, filter=filter, namespace=namespace, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -625,7 +636,9 @@ class UpstashVectorStore(VectorStore):
         """
         Since Upstash always returns relevance scores, default implementation is used.
         """
-        return self.similarity_search_with_score(query, k=k, filter=filter, namespace=namespace,**kwargs)
+        return self.similarity_search_with_score(
+            query, k=k, filter=filter, namespace=namespace, **kwargs
+        )
 
     async def _asimilarity_search_with_relevance_scores(
         self,
@@ -639,7 +652,7 @@ class UpstashVectorStore(VectorStore):
         Since Upstash always returns relevance scores, default implementation is used.
         """
         return await self.asimilarity_search_with_score(
-            query, k=k, filter=filter, namespace=namespace,**kwargs
+            query, k=k, filter=filter, namespace=namespace, **kwargs
         )
 
     def max_marginal_relevance_search_by_vector(
@@ -673,7 +686,7 @@ class UpstashVectorStore(VectorStore):
         """
         if namespace is None:
             namespace = self._namespace
-            
+
         assert isinstance(self.embeddings, Embeddings)
         if isinstance(embedding, str):
             results = self._index.query(
@@ -737,10 +750,10 @@ class UpstashVectorStore(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        
+
         if namespace is None:
             namespace = self._namespace
-            
+
         assert isinstance(self.embeddings, Embeddings)
         if isinstance(embedding, str):
             results = await self._async_index.query(
@@ -778,7 +791,6 @@ class UpstashVectorStore(VectorStore):
 
     def max_marginal_relevance_search(
         self,
-        
         query: str,
         k: int = 4,
         fetch_k: int = 20,
@@ -845,7 +857,7 @@ class UpstashVectorStore(VectorStore):
 
         Returns:
             List of Documents selected by maximal marginal relevance.
-        """ 
+        """
         embedding = self._embed_query(query)
         return await self.amax_marginal_relevance_search_by_vector(
             embedding=embedding,
@@ -978,7 +990,7 @@ class UpstashVectorStore(VectorStore):
         """
         if namespace is None:
             namespace = self._namespace
-            
+
         if delete_all:
             self._index.reset(namespace=namespace)
         elif ids is not None:
