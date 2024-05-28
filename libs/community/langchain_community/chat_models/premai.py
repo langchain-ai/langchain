@@ -211,6 +211,11 @@ class ChatPremAI(BaseChatModel, BaseModel):
     Changing the system prompt would override the default system prompt.
     """
 
+    repositories: Optional[dict] = None
+    """Add repositories id which will be overriding existing connected 
+    repositories (if any) and will use RAG with the connected repos. 
+    """
+
     streaming: Optional[bool] = False
     """Whether to stream the responses or not."""
 
@@ -254,6 +259,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
             "system_prompt": self.system_prompt,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
+            "repositories": self.repositories
         }
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
