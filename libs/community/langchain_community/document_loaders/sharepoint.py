@@ -67,7 +67,8 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             for blob in self._load_from_folder(target_folder):
                 if self.load_auth is True:
                     for parsed_blob in blob_parser.lazy_parse(blob):
-                        auth_identities = self.authorized_identities()
+                        file_id=parsed_blob.metadata.get("id")
+                        auth_identities = self.authorized_identities(file_id)
                         parsed_blob.metadata["authorized_identities"] = auth_identities
                         yield parsed_blob
                 else:
@@ -90,15 +91,15 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                     blob_part.metadata.update(blob.metadata)
                     yield blob_part
 
-    def authorized_identities(self) -> List:
+    def authorized_identities(self, file_id: str) -> List:
         data = self._fetch_access_token()
         access_token = data.get("access_token")
         url = (
             f"https://graph.microsoft.com/v1.0/sites/{self.site_id}/"
-            f"drives/{self.document_library_id}/items/{self.file_id}/permissions"
+            f"drives/{self.document_library_id}/items/{file_id}/permissions"
         )
         headers = {"Authorization": f"Bearer {access_token}"}
-        response = requests.request("GET", url, headers=headers, data={})
+        response = requests.request("GET", url, headers=headers)
         groups_list = response.json()
 
         group_names = []
@@ -107,7 +108,6 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             if group_data.get("grantedToV2"):
                 if group_data.get("grantedToV2").get("siteGroup"):
                     site_data = group_data.get("grantedToV2").get("siteGroup")
-                    # print(group_data)
                     group_names.append(site_data.get("displayName"))
                 elif group_data.get("grantedToV2").get("group") or (
                     group_data.get("grantedToV2").get("user")
@@ -115,7 +115,6 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                     site_data = group_data.get("grantedToV2").get("group") or (
                         group_data.get("grantedToV2").get("user")
                     )
-                    # print(group_data)
                     group_names.append(site_data.get("displayName"))
 
         return group_names
