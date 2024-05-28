@@ -173,7 +173,7 @@ class UpstageLayoutAnalysisParser(BaseBlobParser):
         """
         try:
             headers = {"Authorization": f"Bearer {self.api_key}"}
-            options = {"ocr": self.use_ocr, "use_ocr": self.use_ocr}
+            options = {"ocr": self.use_ocr}
             response = requests.post(
                 LAYOUT_ANALYSIS_URL, headers=headers, files=files, data=options
             )
