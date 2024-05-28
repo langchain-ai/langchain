@@ -191,9 +191,9 @@ class HTMLSectionSplitter:
         if xslt_path is None:
             self.xslt_path = (
                 pathlib.Path(__file__).parent / "xsl/converting_to_header.xslt"
-            ).as_posix()
+            ).absolute()
         else:
-            self.xslt_path = xslt_path
+            self.xslt_path = pathlib.Path(xslt_path).absolute()
         self.kwargs = kwargs
 
     def split_documents(self, documents: Iterable[Document]) -> List[Document]:
@@ -291,15 +291,7 @@ class HTMLSectionSplitter:
         parser = etree.HTMLParser()
         tree = etree.parse(StringIO(html_content), parser)
 
-        # document transformation for "structure-aware" chunking is handled with xsl.
-        # this is needed for htmls files that using different font sizes and layouts
-        # check to see if self.xslt_path is a relative path or absolute path
-        if not os.path.isabs(self.xslt_path):
-            xslt_path = pathlib.Path(self.xslt_path).absolute().as_posix()
-        else:
-            xslt_path = self.xslt_path
-
-        xslt_tree = etree.parse(xslt_path)
+        xslt_tree = etree.parse(self.xslt_path)
         transform = etree.XSLT(xslt_tree)
         result = transform(tree)
         return str(result)
