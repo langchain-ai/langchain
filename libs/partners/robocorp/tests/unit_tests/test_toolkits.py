@@ -125,7 +125,7 @@ def test_get_tools_with_complex_inputs() -> None:
         url="http://example.com", api_key="dummy_key"
     )
 
-    fixture_path = Path(__file__).with_name("openapi3.fixture.json")
+    fixture_path = Path(__file__).with_name("_openapi3.fixture.json")
 
     with patch(
         "langchain_robocorp.toolkits.requests.get"

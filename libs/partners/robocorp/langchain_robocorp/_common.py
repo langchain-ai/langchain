@@ -1,5 +1,6 @@
+import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, Type
 
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.utils.json_schema import dereference_refs
@@ -104,18 +105,7 @@ def create_field(schema: dict, required: bool) -> Tuple[Any, Any]:
         if len(field_types) == 1:
             field_type = field_types[0]  # Simplified handling
         else:
-            # Create a combined model for allOf
-            combined_name = schema.get("title", "CombinedModel")
-            combined_model = create_model(
-                combined_name,
-                **{f"field_{i}": (t, ...) for i, t in enumerate(field_types)},
-            )  # type: ignore
-            field_type = combined_model
-    elif "oneOf" in schema:
-        field_types = [
-            create_field(sub_schema, required)[0] for sub_schema in schema["oneOf"]
-        ]
-        field_type = Union[tuple(field_types)]
+            field_type = Union[tuple(field_types)]
     else:
         field_type = type_mapping.get(schema.get("type", "string"), str)
 
@@ -127,7 +117,9 @@ def create_field(schema: dict, required: bool) -> Tuple[Any, Any]:
             k: create_field(v, k in schema.get("required", []))
             for k, v in schema.get("properties", {}).items()
         }
-        model_name = schema.get("title", "NestedModel")
+        model_name = schema.get("title", f"NestedModel{time.time()}")
+        if model_name == "EventDateTime":
+            model_name += str(time.time())
         nested_model = create_model(model_name, **nested_fields)  # type: ignore
         return nested_model, Field(... if required else None, description=description)
 
