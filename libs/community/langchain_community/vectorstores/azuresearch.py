@@ -69,6 +69,7 @@ def _get_search_client(
     endpoint: str,
     key: str,
     index_name: str,
+    credential: Optional[Callable],
     semantic_configuration_name: Optional[str] = None,
     fields: Optional[List[SearchField]] = None,
     vector_search: Optional[VectorSearch] = None,
@@ -103,8 +104,10 @@ def _get_search_client(
     )
 
     default_fields = default_fields or []
-    if key is None:
-        credential = DefaultAzureCredential()
+    if credential:
+        credential = credential
+    elif key is None:
+        credential = DefaultAzureCredential(exclude_managed_identity_credential=True)
     elif key.upper() == "INTERACTIVE":
         credential = InteractiveBrowserCredential()
         credential.get_token("https://search.azure.com/.default")
@@ -221,14 +224,15 @@ def _get_search_client(
 
 
 class AzureSearch(VectorStore):
-    """`Azure Cognitive Search` vector store."""
+    """`Azure AI Search` vector store."""
 
     def __init__(
         self,
         azure_search_endpoint: str,
-        azure_search_key: str,
         index_name: str,
         embedding_function: Union[Callable, Embeddings],
+        credential: Optional[Callable],
+        azure_search_key: Optional[str] = None,
         search_type: str = "hybrid",
         semantic_configuration_name: Optional[str] = None,
         fields: Optional[List[SearchField]] = None,
@@ -290,6 +294,7 @@ class AzureSearch(VectorStore):
             azure_search_endpoint,
             azure_search_key,
             index_name,
+            credential=credential,
             semantic_configuration_name=semantic_configuration_name,
             fields=fields,
             vector_search=vector_search,
