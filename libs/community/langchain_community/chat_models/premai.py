@@ -104,21 +104,18 @@ def _response_to_result(
                     text=content, message=ChatMessage(role=role, content=content)
                 )
             )
-    
+
     if response.document_chunks is not None:
         return ChatResult(
-            generations=generations, 
+            generations=generations,
             llm_output={
-                "document_chunks": [chunk.to_dict() for chunk in response.document_chunks]
-            }
+                "document_chunks": [
+                    chunk.to_dict() for chunk in response.document_chunks
+                ]
+            },
         )
     else:
-        return ChatResult(
-            generations=generations, 
-            llm_output={
-                "document_chunks": None
-            }
-        )
+        return ChatResult(generations=generations, llm_output={"document_chunks": None})
 
 
 def _convert_delta_response_to_message_chunk(
@@ -133,7 +130,7 @@ def _convert_delta_response_to_message_chunk(
     content = _delta.get("content", "")  # type: ignore
     additional_kwargs: Dict = {}
     finish_reasons: Optional[str] = response.choices[0].finish_reason
-    
+
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content), finish_reasons
     elif role == "assistant" or default_class == AIMessageChunk:
@@ -212,7 +209,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
     """
 
     repositories: Optional[dict] = None
-    """Add repositories id which will be overriding existing connected 
+    """Add valid repository ids. This will be overriding existing connected 
     repositories (if any) and will use RAG with the connected repos. 
     """
 
@@ -259,11 +256,19 @@ class ChatPremAI(BaseChatModel, BaseModel):
             "system_prompt": self.system_prompt,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
-            "repositories": self.repositories
+            "repositories": self.repositories,
         }
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
-        kwargs_to_ignore = ["top_p", "tools", "frequency_penalty", "presence_penalty", "logit_bias", "stop", "seed"]
+        kwargs_to_ignore = [
+            "top_p",
+            "tools",
+            "frequency_penalty",
+            "presence_penalty",
+            "logit_bias",
+            "stop",
+            "seed",
+        ]
         keys_to_remove = []
 
         for key in kwargs:
@@ -272,10 +277,10 @@ class ChatPremAI(BaseChatModel, BaseModel):
                     f"WARNING: Parameter {key} is not supported in kwargs. Removing {key}.\n"
                 )
                 keys_to_remove.append(key)
-        
+
         for key in keys_to_remove:
             kwargs.pop(key)
-            
+
         all_kwargs = {**self._default_params, **kwargs}
         for key in list(self._default_params.keys()):
             if all_kwargs.get(key) is None or all_kwargs.get(key) == "":
