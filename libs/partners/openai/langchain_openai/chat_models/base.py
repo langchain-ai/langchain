@@ -1117,21 +1117,274 @@ class BaseChatOpenAI(BaseChatModel):
 
 
 class ChatOpenAI(BaseChatOpenAI):
-    """`OpenAI` Chat large language models API.
+    """OpenAI chat model integration.
 
-    To use, you should have the environment variable ``OPENAI_API_KEY``
-    set with your API key, or pass it as a named parameter to the constructor.
+    Setup:
+        Install ``langchain-openai`` and set environment variable ``OPENAI_API_KEY``.
 
-    Any parameters that are valid to be passed to the openai.create call can be passed
-    in, even if not explicitly saved on this class.
+        .. code-block:: bash
 
-    Example:
+            pip install -U langchain-openai
+            export OPENAI_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: str
+            Name of OpenAI model to use.
+        temperature: float
+            Sampling temperature.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
+        logprobs: Optional[bool]
+            Whether to return logprobs.
+        stream_options: Dict
+            Configure streaming outputs, like whether to return token usage when
+            streaming (``{"include_usage": True}``).
+
+    Key init args — client params:
+        timeout:
+            Timeout for requests.
+        max_retries:
+            Max number of retries.
+        api_key:
+            OpenAI API key. If not passed in will be read from env var OPENAI_API_KEY.
+        base_url:
+            Base URL for PAI requests. Only specify if using a proxy or service
+            emulator.
+        organization:
+            OpenAI organization ID. If not passed in will be read from env
+            var OPENAI_ORG_ID.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_openai import ChatOpenAI
 
-            model = ChatOpenAI(model="gpt-3.5-turbo")
-    """
+            llm = ChatOpenAI(
+                model="gpt-4o",
+                temperature=0,
+                max_tokens=None,
+                timeout=None,
+                max_retries=2,
+                # api_key="...",
+                # base_url="...",
+                # organization="...",
+                # other params...
+            )
+
+    **NOTE**: Any param which is not explicitly supported will be passed directly to the
+    ``openai.OpenAI.chat.completions.create(...)`` API every time to the model is
+    invoked. For example:
+        .. code-block:: python
+
+            from langchain_openai import ChatOpenAI
+            import openai
+
+            ChatOpenAI(..., frequency_penalty=0.2).invoke(...)
+
+            # results in underlying API call of:
+
+            openai.OpenAI(..).chat.completions.create(..., frequency_penalty=0.2)
+
+            # which is also equivalent to:
+
+            ChatOpenAI(...).invoke(..., frequency_penalty=0.2)
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "You are a helpful translator. Translate the user sentence to French."),
+                ("human", "I love programming."),
+            ]
+            llm.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(content="J'adore la programmation.", response_metadata={'token_usage': {'completion_tokens': 5, 'prompt_tokens': 31, 'total_tokens': 36}, 'model_name': 'gpt-4o', 'system_fingerprint': 'fp_43dfabdef1', 'finish_reason': 'stop', 'logprobs': None}, id='run-012cffe2-5d3d-424d-83b5-51c6d4a593d1-0', usage_metadata={'input_tokens': 31, 'output_tokens': 5, 'total_tokens': 36})
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in llm.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            AIMessageChunk(content='', id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
+            AIMessageChunk(content='J', id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
+            AIMessageChunk(content="'adore", id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
+            AIMessageChunk(content=' la', id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
+            AIMessageChunk(content=' programmation', id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
+            AIMessageChunk(content='.', id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
+            AIMessageChunk(content='', response_metadata={'finish_reason': 'stop'}, id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
+            AIMessageChunk(content='', id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0', usage_metadata={'input_tokens': 31, 'output_tokens': 5, 'total_tokens': 36})
+
+        .. code-block:: python
+
+            stream = llm.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block:: python
+
+            AIMessageChunk(content="J'adore la programmation.", response_metadata={'finish_reason': 'stop'}, id='run-bf917526-7f58-4683-84f7-36a6b671d140', usage_metadata={'input_tokens': 31, 'output_tokens': 5, 'total_tokens': 36})
+
+    Async:
+        .. code-block:: python
+
+            await llm.ainvoke(messages)
+
+            # stream:
+            # async for chunk in (await llm.astream(messages))
+
+            # batch:
+            # await llm.abatch([messages])
+
+        .. code-block:: python
+
+            AIMessage(content="J'adore la programmation.", response_metadata={'token_usage': {'completion_tokens': 5, 'prompt_tokens': 31, 'total_tokens': 36}, 'model_name': 'gpt-4o', 'system_fingerprint': 'fp_43dfabdef1', 'finish_reason': 'stop', 'logprobs': None}, id='run-012cffe2-5d3d-424d-83b5-51c6d4a593d1-0', usage_metadata={'input_tokens': 31, 'output_tokens': 5, 'total_tokens': 36})
+
+    Tool calling:
+        .. code-block:: python
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+            class GetPopulation(BaseModel):
+                '''Get the current population in a given location'''
+
+                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+            ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
+            ai_msg.tool_calls
+
+        .. code-block:: python
+
+            [{'name': 'GetWeather',
+              'args': {'location': 'Los Angeles, CA'},
+              'id': 'call_6XswGD5Pqk8Tt5atYr7tfenU'},
+             {'name': 'GetWeather',
+              'args': {'location': 'New York, NY'},
+              'id': 'call_ZVL15vA8Y7kXqOy3dtmQgeCi'},
+             {'name': 'GetPopulation',
+              'args': {'location': 'Los Angeles, CA'},
+              'id': 'call_49CFW8zqC9W7mh7hbMLSIrXw'},
+             {'name': 'GetPopulation',
+              'args': {'location': 'New York, NY'},
+              'id': 'call_6ghfKxV264jEfe1mRIkS3PE7'}]
+
+        See ``ChatOpenAI.bind_tools()`` method for more.
+
+    Structured output:
+        .. code-block:: python
+
+            from typing import Optional
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+            class Joke(BaseModel):
+                '''Joke to tell user.'''
+
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke")
+                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
+            structured_llm = llm.with_structured_output(Joke)
+            structured_llm.invoke("Tell me a joke about cats")
+
+        .. code-block:: python
+
+            Joke(setup='Why was the cat sitting on the computer?', punchline='To keep an eye on the mouse!', rating=None)
+
+        See ``ChatOpenAI.with_structured_output()`` for more.
+
+    JSON mode:
+        .. code-block:: python
+
+            json_llm = llm.bind(response_format={"type": "json_object"})
+            ai_msg = json_llm.invoke("Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]")
+            ai_msg.content
+
+        .. code-block:: python
+
+            '\\n{\\n  "random_ints": [23, 87, 45, 12, 78, 34, 56, 90, 11, 67]\\n}'
+
+    Image input:
+        .. code-block:: python
+
+            import base64
+            import httpx
+            from langchain_core.messages import HumanMessage
+
+            image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+            image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+            message = HumanMessage(
+                content=[
+                    {"type": "text", "text": "describe the weather in this image"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    },
+                ],
+            )
+            ai_msg = llm.invoke([message])
+            ai_msg.content
+
+        .. code-block:: python
+
+            "The weather in the image appears to be clear and pleasant. The sky is mostly blue with scattered, light clouds, suggesting a sunny day with minimal cloud cover. There is no indication of rain or strong winds, and the overall scene looks bright and calm. The lush green grass and clear visibility further indicate good weather conditions."
+
+    Token usage:
+        .. code-block:: python
+
+            ai_msg = llm.invoke(messages)
+            ai_msg.usage_metadata
+
+        .. code-block:: python
+
+            {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
+
+    Logprobs:
+        .. code-block:: python
+
+            logprobs_llm = llm.bind(logprobs=True)
+            ai_msg = logprobs_llm.invoke(messages)
+            ai_msg.response_metadata["logprobs"]
+
+        .. code-block:: python
+
+            {'content': [{'token': 'J', 'bytes': [74], 'logprob': -4.9617593e-06, 'top_logprobs': []},
+              {'token': "'adore", 'bytes': [39, 97, 100, 111, 114, 101], 'logprob': -0.25202933, 'top_logprobs': []},
+              {'token': ' la', 'bytes': [32, 108, 97], 'logprob': -0.20141791, 'top_logprobs': []},
+              {'token': ' programmation', 'bytes': [32, 112, 114, 111, 103, 114, 97, 109, 109, 97, 116, 105, 111, 110], 'logprob': -1.9361265e-07, 'top_logprobs': []},
+              {'token': '.', 'bytes': [46], 'logprob': -1.2233183e-05, 'top_logprobs': []}]}
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = llm.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {'token_usage': {'completion_tokens': 5,
+              'prompt_tokens': 28,
+              'total_tokens': 33},
+             'model_name': 'gpt-4o',
+             'system_fingerprint': 'fp_319be4768e',
+             'finish_reason': 'stop',
+             'logprobs': None}
+
+    """  # noqa: E501
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
