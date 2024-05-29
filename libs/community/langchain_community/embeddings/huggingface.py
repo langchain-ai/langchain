@@ -40,23 +40,23 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
-    cache_folder: Optional[str] = None
-    """Path to store models. 
-    Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
-    """Keyword arguments to pass to the Sentence Transformer model, such as `device`,
-    `prompts`, `default_prompt_name`, `revision`, `trust_remote_code`, or `token`.
+    """Keyword arguments to pass to the Sentence Transformer model, such as 
+    `cache_folder`, `device`, `prompts`, `default_prompt_name`, `revision`, 
+    `trust_remote_code`, or `token`.
     See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer"""
     encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass when calling the `encode` method of the Sentence
-    Transformer model, such as `prompt_name`, `prompt`, `batch_size`, `precision`,
-    `normalize_embeddings`, and more.
+    Transformer model, such as `show_progress_bar``prompt_name`, `prompt`, 
+    `batch_size`, `precision`, `normalize_embeddings`, and more.
     See also the Sentence Transformer documentation: https://sbert.net/docs/package_reference/SentenceTransformer.html#sentence_transformers.SentenceTransformer.encode"""
     multi_process: bool = False
     """Run encode() on multiple GPUs."""
     show_progress: bool = False
     """Whether to show a progress bar."""
-
+    show_progress_key: str = "show_progress_bar"
+    """Key to add the default value of show_progress to encode_kwargs."""
+    
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
@@ -70,8 +70,11 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             ) from exc
 
         self.client = sentence_transformers.SentenceTransformer(
-            self.model_name, cache_folder=self.cache_folder, **self.model_kwargs
+            self.model_name, **self.model_kwargs
         )
+        
+        if self.show_progress_key not in self.encode_kwargs:
+            self.encode_kwargs[self.show_progress_key] = self.show_progress
 
     class Config:
         """Configuration for this pydantic object."""
@@ -96,7 +99,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             sentence_transformers.SentenceTransformer.stop_multi_process_pool(pool)
         else:
             embeddings = self.client.encode(
-                texts, show_progress_bar=self.show_progress, **self.encode_kwargs
+                texts, **self.encode_kwargs
             )
 
         return embeddings.tolist()
