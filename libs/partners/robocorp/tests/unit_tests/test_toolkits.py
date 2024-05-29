@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.function_calling import convert_to_openai_function, convert_to_openai_tool
 
 from langchain_robocorp.toolkits import ActionServerToolkit
 
@@ -145,7 +145,8 @@ def test_get_tools_with_complex_inputs() -> None:
         assert tool.name == "create_event"
         assert tool.description == "Creates a new event in the specified calendar."
 
-        openai_func_spec = convert_to_openai_function(tool)
+        all_tools_as_openai_tools = [convert_to_openai_tool(t) for t in tools]
+        openai_func_spec = all_tools_as_openai_tools[0]
 
         assert isinstance(
             openai_func_spec, dict
