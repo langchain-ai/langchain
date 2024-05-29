@@ -155,8 +155,8 @@ class ChatHuggingFace(BaseChatModel):
     """
 
     llm: Any
-    """LLM, must be of type HuggingFaceTextGenInference, HuggingFaceEndpoint, or 
-        HuggingFaceHub."""
+    """LLM, must be of type HuggingFaceTextGenInference, HuggingFaceEndpoint,
+        HuggingFaceHub, or HuggingFacePipeline."""
     system_message: SystemMessage = SystemMessage(content=DEFAULT_SYSTEM_PROMPT)
     tokenizer: Any = None
     model_id: Optional[str] = None
