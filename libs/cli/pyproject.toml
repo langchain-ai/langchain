@@ -55,7 +55,7 @@ watch = "poetry run ptw"
 version = "poetry version --short"
 bump = ["_bump_1", "_bump_2"]
 lint = ["_lint", "_check_formatting"]
-format = ["_lint_fix", "_format"]
+format = ["_format", "_lint_fix"]
 
 _bump_2.shell = """sed -i "" "/^__version__ =/c\\ \n__version__ = \\"$version\\"\n" langchain_cli/cli.py"""
 _bump_2.uses = { version = "version" }
