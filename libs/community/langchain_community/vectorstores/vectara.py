@@ -40,6 +40,7 @@ class SummaryConfig:
     prompt_name: str = "vectara-summary-ext-v1.2.0"
     stream: bool = False
 
+
 @dataclass
 class MMRConfig:
     """Configuration for Maximal Marginal Relevance (MMR) search.
@@ -59,6 +60,7 @@ class MMRConfig:
     is_enabled: bool = False
     mmr_k: int = 50
     diversity_bias: float = 0.3
+
 
 @dataclass
 class RerankConfig:
@@ -127,7 +129,7 @@ class VectaraQueryConfig:
         self.lambda_val = lambda_val
         self.filter = filter
         self.score_threshold = score_threshold
-        
+
         if summary_config:
             self.summary_config = summary_config
         else:
@@ -150,15 +152,18 @@ class VectaraQueryConfig:
         if rerank_config:
             self.rerank_config = rerank_config
         elif mmr_config:
-            self.rerank_config = RerankConfig(reranker="mmr",
-                                              rerank_k=mmr_config.mmr_k,
-                                              mmr_diversity_bias=mmr_config.diversity_bias)
+            self.rerank_config = RerankConfig(
+                reranker="mmr",
+                rerank_k=mmr_config.mmr_k,
+                mmr_diversity_bias=mmr_config.diversity_bias,
+            )
             warnings.warn(
                 "MMRConfig is deprecated. Please use RerankConfig instead.",
                 DeprecationWarning,
             )
         else:
             self.rerank_config = RerankConfig()
+
 
 class Vectara(VectorStore):
     """`Vectara API` vector store.
@@ -437,8 +442,10 @@ class Vectara(VectorStore):
                     "start": 0,
                     "numResults": (
                         config.rerank_config.rerank_k
-                        if (config.rerank_config.reranker in 
-                            ["mmr", "rerank_multilingual_v1"])
+                        if (
+                            config.rerank_config.reranker
+                            in ["mmr", "rerank_multilingual_v1"]
+                        )
                         else config.k
                     ),
                     "contextConfig": {
@@ -574,7 +581,7 @@ class Vectara(VectorStore):
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 10.
-            
+
             any other querying variable in VectaraQueryConfig like:
             - lambda_val: lexical match parameter for hybrid search.
             - filter: filter string
@@ -859,8 +866,10 @@ class VectaraRAG(Runnable):
                         )
                         for x, md in zip(responses, metadatas)
                     ]
-                    if (self.config.rerank_config.reranker in 
-                        ["mmr", "rerank_multilingual_v1"]):
+                    if self.config.rerank_config.reranker in [
+                        "mmr",
+                        "rerank_multilingual_v1",
+                    ]:
                         res = res[: self.config.k]
                     yield {"context": res}
         return
