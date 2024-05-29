@@ -25,7 +25,7 @@ _DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE = (
     "END OF EXAMPLE\n\n"
     "EXAMPLE\n"
     "Oh huh. I know Descartes likes to drive antique scooters and play the mandolin.\n"
-    f"Output: (Descartes, likes to drive, antique scooters){KG_TRIPLE_DELIMITER}(Descartes, plays, mandolin)\n"
+    f"Output: (Descartes, likes to drive, antique scooters){KG_TRIPLE_DELIMITER}(Descartes, likes to play, the mandolin)\n"
     "END OF EXAMPLE\n\n"
     "EXAMPLE\n"
     "{text}"
