@@ -107,7 +107,7 @@ def _get_search_client(
     if credential:
         credential = credential
     elif key is None:
-        credential = DefaultAzureCredential(exclude_managed_identity_credential=True)
+        credential = DefaultAzureCredential()
     elif key.upper() == "INTERACTIVE":
         credential = InteractiveBrowserCredential()
         credential.get_token("https://search.azure.com/.default")
