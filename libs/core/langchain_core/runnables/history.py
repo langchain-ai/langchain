@@ -388,6 +388,12 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         elif isinstance(input_val, BaseMessage):
             return [input_val]
         elif isinstance(input_val, (list, tuple)):
+            if len(input_val) == 0:
+                return input_val
+            if isinstance(input_val[0], list):
+                if len(input_val) != 1:
+                    raise ValueError()
+                return input_val[0]
             return list(input_val)
         else:
             raise ValueError(
@@ -421,6 +427,12 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         elif isinstance(output_val, BaseMessage):
             return [output_val]
         elif isinstance(output_val, (list, tuple)):
+            if len(output_val) == 0:
+                return output_val
+            if isinstance(output_val[0], list):
+                if len(output_val) != 1:
+                    raise ValueError()
+                return output_val[0]
             return list(output_val)
         else:
             raise ValueError()
@@ -431,7 +443,10 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
         if not self.history_messages_key:
             # return all messages
-            messages += self._get_input_messages(input)
+            input_val = (
+                input if not self.input_messages_key else input[self.input_messages_key]
+            )
+            messages += self._get_input_messages(input_val)
         return messages
 
     async def _aenter_history(
@@ -454,7 +469,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         # Get the input messages
         inputs = load(run.inputs)
         input_messages = self._get_input_messages(inputs)
-
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
         if not self.history_messages_key:
