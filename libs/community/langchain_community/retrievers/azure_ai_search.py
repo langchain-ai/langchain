@@ -56,7 +56,7 @@ class AzureAISearchRetriever(BaseRetriever):
             values["api_key"] = get_from_dict_or_env(
                 values, "api_key", "AZURE_AI_SEARCH_API_KEY"
             )
-        except:
+        except ValueError as ve:
             values["azure_ad_token_provider"] = get_from_dict_or_env(
                 values, "azure_ad_token_provider", "azure_ad_token_provider"
             )
