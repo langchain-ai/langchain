@@ -6,6 +6,7 @@ from langchain_core.documents import Document
 
 from langchain_community.vectorstores import Vectara
 from langchain_community.vectorstores.vectara import (
+    MMRConfig,
     RerankConfig,
     SummaryConfig,
     VectaraQueryConfig,
@@ -94,7 +95,7 @@ def test_vectara_add_documents(vectara1: Vectara) -> None:  # type: ignore[no-un
         n_sentence_before=0,
         n_sentence_after=0,
     )
-    assert len(output3) == 1
+    assert len(output3) == 2
     assert output3[0][0].page_content == "large language model"
     assert output3[0][0].metadata["abbr"] == "llm"
 
@@ -156,13 +157,23 @@ def test_vectara_from_files(vectara2: Vectara) -> None:
     )
     assert "Note the use of" in output[0].page_content
 
+    # Test the old n_sentence_context to ensure it's backward compatible
+    output = vectara2.similarity_search(
+        "By the commonly adopted machine learning tradition",
+        k=1,
+        n_sentence_context=1,
+        filter="doc.test_num = 2",
+    )
+    assert "Note the use of" in output[0].page_content
+
+
 
 def test_vectara_rag_with_reranking(vectara2: Vectara) -> None:
     """Test Vectara reranking."""
 
     query_str = "What is a transformer model?"
 
-    # Note: we don't test Slingshot as it's for Scale only
+    # Note: we don't test rerank_multilingual_v1 as it's for Scale only
 
     # Test MMR
     summary_config = SummaryConfig(
@@ -171,7 +182,7 @@ def test_vectara_rag_with_reranking(vectara2: Vectara) -> None:
         response_lang="eng",
         prompt_name=test_prompt_name,
     )
-    rerank_config = RerankConfig(reranker="MMR", rerank_k=50, mmr_diversity_bias=0.2)
+    rerank_config = RerankConfig(reranker="mmr", rerank_k=50, mmr_diversity_bias=0.2)
     config = VectaraQueryConfig(
         k=10,
         lambda_val=0.005,
@@ -257,7 +268,7 @@ def vectara3():  # type: ignore[no-untyped-def]
     vectara3.delete(doc_ids)
 
 
-def test_vectara_mmr(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
+def test_vectara_with_langchain_mmr(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
     # test max marginal relevance
     output1 = vectara3.max_marginal_relevance_search(
         "generative AI",
@@ -287,6 +298,50 @@ def test_vectara_mmr(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
         in output2[1].page_content
     )
 
+def test_vectara_mmr(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
+    # test MMR directly with rerank_config
+    summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng")
+    rerank_config = RerankConfig(reranker="mmr", rerank_k=50, mmr_diversity_bias=0.2)
+    config = VectaraQueryConfig(
+        k=10, lambda_val=0.005, rerank_config=rerank_config, 
+        summary_config=summary_config
+    )
+    rag = vectara3.as_rag(config)
+    output1 = rag.invoke('what is generative AI?')["answer"]
+    assert len(output1) > 0
+
+    # test MMR directly with old mmr_config
+    summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng")
+    mmr_config = MMRConfig(is_enabled=True, mmr_k=50, diversity_bias=0.2)
+    config = VectaraQueryConfig(
+        k=10, lambda_val=0.005, mmr_config=mmr_config,
+        summary_config=summary_config
+    )
+    rag = vectara3.as_rag(config)
+    output2 = rag.invoke('what is generative AI?')["answer"]
+    assert len(output2) > 0
+
+    # test reranking disabled - RerankConfig
+    summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng")
+    rerank_config = RerankConfig(reranker="none")
+    config = VectaraQueryConfig(
+        k=10, lambda_val=0.005, rerank_config=rerank_config, 
+        summary_config=summary_config
+    )
+    rag = vectara3.as_rag(config)
+    output1 = rag.invoke('what is generative AI?')["answer"]
+    assert len(output1) > 0
+
+    # test with reranking disabled - MMRConfig
+    summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng")
+    mmr_config = MMRConfig(is_enabled=False, mmr_k=50, diversity_bias=0.2)
+    config = VectaraQueryConfig(
+        k=10, lambda_val=0.005, mmr_config=mmr_config,
+        summary_config=summary_config
+    )
+    rag = vectara3.as_rag(config)
+    output2 = rag.invoke('what is generative AI?')["answer"]
+    assert len(output2) > 0
 
 def test_vectara_with_summary(vectara3) -> None:  # type: ignore[no-untyped-def]
     """Test vectara summary."""

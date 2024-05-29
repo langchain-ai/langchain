@@ -83,7 +83,7 @@ In this case, we used the default retrieval parameters, but you can also specify
 - `filter`: a [filter](https://docs.vectara.com/docs/common-use-cases/filtering-by-metadata/filter-overview) to apply to the results (default None)
 - `n_sentence_context`: number of sentences to include before/after the actual matching segment when returning results. This defaults to 2.
 - `rerank_config`: can be used to specify reranker for thr results
-   - `reranker`: MMR, Slingshot or None. Note that "Slingshot" is a Scale only feature
+   - `reranker`: mmr, rerank_multilingual_v1 or none. Note that "rerank_multilingual_v1" is a Scale only feature
    - `rerank_k`: number of results to use for reranking
    - `mmr_diversity_bias`: 0 = no diversity, 1 = full diversity. This is the lambda parameter in the MMR formula and is in the range 0...1
 
@@ -103,7 +103,7 @@ There are a few additional parameters that can be specified in the `VectaraQuery
    - max_results: number of results to use for summary generation
    - response_lang: language of the response summary, in ISO 639-2 format (e.g. 'en', 'fr', 'de', etc)
 * rerank_config (optional): can be used to specify Vectara Reranker of the results
-   - reranker: MMR, Slingshot or None
+   - reranker: mmr, rerank_multilingual_v1 or none
    - rerank_k: number of results to use for reranking
    - mmr_diversity_bias: 0 = no diversity, 1 = full diversity. 
      This is the lambda parameter in the MMR formula and is in the range 0...1
@@ -112,7 +112,7 @@ For example:
 
 ```python
 summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang='eng')
-rerank_config = RerankConfig(reranker="MMR", rerank_k=50, mmr_diversity_bias=0.2)
+rerank_config = RerankConfig(reranker="mmr", rerank_k=50, mmr_diversity_bias=0.2)
 config = VectaraQueryConfig(k=10, lambda_val=0.005, rerank_config=rerank_config, summary_config=summary_config)
 ```
 Then you can use the `as_rag` method to create a RAG pipeline:
@@ -132,7 +132,7 @@ The RAG functionality can be used to create a chatbot. For example, you can crea
 
 ```python
 summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang='eng')
-rerank_config = RerankConfig(reranker="MMR", rerank_k=50, mmr_diversity_bias=0.2)
+rerank_config = RerankConfig(reranker="mmr", rerank_k=50, mmr_diversity_bias=0.2)
 config = VectaraQueryConfig(k=10, lambda_val=0.005, rerank_config=rerank_config, summary_config=summary_config)
 
 query_str = "what did Biden say?"
@@ -164,7 +164,7 @@ This is automatically included in the output of the RAG pipeline
 
 ```python
 summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang='eng')
-rerank_config = RerankConfig(reranker="MMR", rerank_k=50, mmr_diversity_bias=0.2)
+rerank_config = RerankConfig(reranker="mmr", rerank_k=50, mmr_diversity_bias=0.2)
 config = VectaraQueryConfig(k=10, lambda_val=0.005, rerank_config=rerank_config, summary_config=summary_config)
 
 rag = vectara.as_rag(config)
