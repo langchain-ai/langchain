@@ -67,7 +67,7 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             for blob in self._load_from_folder(target_folder):
                 if self.load_auth is True:
                     for parsed_blob in blob_parser.lazy_parse(blob):
-                        file_id=blob.metadata.get("id")
+                        file_id = blob.metadata.get("id")
                         auth_identities = self.authorized_identities(file_id)
                         parsed_blob.metadata["authorized_identities"] = auth_identities
                         yield parsed_blob
@@ -80,7 +80,7 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             for blob in self._load_from_folder(target_folder):
                 if self.load_auth is True:
                     for parsed_blob in blob_parser.lazy_parse(blob):
-                        file_id=blob.metadata.get("id")
+                        file_id = blob.metadata.get("id")
                         auth_identities = self.authorized_identities(file_id)
                         parsed_blob.metadata["authorized_identities"] = auth_identities
                         yield parsed_blob
@@ -90,7 +90,7 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             for blob in self._load_from_object_ids(drive, self.object_ids):
                 if self.load_auth is True:
                     for parsed_blob in blob_parser.lazy_parse(blob):
-                        file_id=blob.metadata.get("id")
+                        file_id = blob.metadata.get("id")
                         auth_identities = self.authorized_identities(file_id)
                         parsed_blob.metadata["authorized_identities"] = auth_identities
                         yield parsed_blob
