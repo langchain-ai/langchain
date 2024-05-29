@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List, Tuple, TypedDict
 
 from langchain_core.documents import Document
 
 from langchain_text_splitters.base import Language
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
-
-import re
 
 
 class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
@@ -224,14 +223,15 @@ class HeaderType(TypedDict):
     name: str
     data: str
 
+
 class ExperimentalMarkdownSyntaxTextSplitter:
     DEFAULT_HEADER_KEYS = {
-        '#': 'Header 1',
-        '##': 'Header 2',
-        '###': 'Header 3',
-        '####': 'Header 4',
-        '#####': 'Header 5',
-        '######': 'Header 6'
+        "#": "Header 1",
+        "##": "Header 2",
+        "###": "Header 3",
+        "####": "Header 4",
+        "#####": "Header 5",
+        "######": "Header 6",
     }
 
     def __init__(
@@ -241,17 +241,17 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         strip_headers: bool = True,
     ):
         self.chunks = []
-        self.current_chunk = Document(page_content='')
+        self.current_chunk = Document(page_content="")
         self.current_header_stack = []
         self.strip_headers = strip_headers
         if headers_to_split_on:
             self.splittable_headers = dict(headers_to_split_on)
         else:
             self.splittable_headers = self.DEFAULT_HEADER_KEYS
-        
+
         self.return_each_line = return_each_line
-        
-    def split_text(self, text: str) -> List[Document]:    
+
+    def split_text(self, text: str) -> List[Document]:
         raw_lines = text.splitlines(keepends=True)
 
         while raw_lines:
@@ -262,26 +262,29 @@ class ExperimentalMarkdownSyntaxTextSplitter:
             if header_match:
                 self._complete_chunk_doc()
 
-                if self.strip_headers == False:
+                if not self.strip_headers:
                     self.current_chunk.page_content += raw_line
-                
+
                 # add the header to the stack
                 header_depth = len(header_match.group(1))
                 header_text = header_match.group(2)
                 self._resolve_header_stack(header_depth, header_text)
             elif code_match:
                 self._complete_chunk_doc()
-                self.current_chunk.page_content = self._resolve_code_chunk(raw_line, raw_lines)
-                self.current_chunk.metadata['Code'] = code_match.group(1)
+                self.current_chunk.page_content = self._resolve_code_chunk(
+                    raw_line, raw_lines
+                )
+                self.current_chunk.metadata["Code"] = code_match.group(1)
                 self._complete_chunk_doc()
             elif horz_match:
                 self._complete_chunk_doc()
             else:
                 self.current_chunk.page_content += raw_line
-        
+
         self._complete_chunk_doc()
-        # I don't see why `return_each_line` is a necessary feature of this splitter. 
-        # It's easy enough to to do outside of the class and the caller can have more control over it.
+        # I don't see why `return_each_line` is a necessary feature of this splitter.
+        # It's easy enough to to do outside of the class and the caller can have more
+        # control over it.
         if self.return_each_line:
             return [
                 Document(page_content=line, metadata=chunk.metadata)
@@ -290,12 +293,12 @@ class ExperimentalMarkdownSyntaxTextSplitter:
                 if line and not line.isspace()
             ]
         return self.chunks
-    
+
     def _resolve_header_stack(self, header_depth, header_text):
         for i, (depth, _) in enumerate(self.current_header_stack):
-            if depth == header_depth: 
+            if depth == header_depth:
                 self.current_header_stack[i] = (header_depth, header_text)
-                self.current_header_stack = self.current_header_stack[:i+1]
+                self.current_header_stack = self.current_header_stack[: i + 1]
                 return
         self.current_header_stack.append((header_depth, header_text))
 
@@ -312,25 +315,26 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         # Discard any empty documents
         if chunk_content and not chunk_content.isspace():
             # Apply the header stack as metadata
-            for (depth, value) in self.current_header_stack:
-                header_key = self.splittable_headers.get('#' * depth)
+            for depth, value in self.current_header_stack:
+                header_key = self.splittable_headers.get("#" * depth)
                 self.current_chunk.metadata[header_key] = value
             self.chunks.append(self.current_chunk)
         # Reset the current chunk
-        self.current_chunk = Document(page_content='')
+        self.current_chunk = Document(page_content="")
 
     # Match methods
-    def _match_header(self, line): 
-        match = re.match(r'^(#{1,6}) (.*)', line)
+    def _match_header(self, line):
+        match = re.match(r"^(#{1,6}) (.*)", line)
         # Only matches on the configured headers
         if match and match.group(1) in self.splittable_headers:
             return match
 
-    def _match_code(self, line): 
-        matches = [re.match(rule, line) for rule in [r'^```(.*)', r'^~~~(.*)']]
+    def _match_code(self, line):
+        matches = [re.match(rule, line) for rule in [r"^```(.*)", r"^~~~(.*)"]]
         return next((match for match in matches if match), None)
 
-    def _match_horz(self, line): 
-        matches = [re.match(rule, line) for rule in [r'^\*\*\*+\n', r'^---+\n', r'^___+\n']]
+    def _match_horz(self, line):
+        matches = [
+            re.match(rule, line) for rule in [r"^\*\*\*+\n", r"^---+\n", r"^___+\n"]
+        ]
         return next((match for match in matches if match), None)
-    
