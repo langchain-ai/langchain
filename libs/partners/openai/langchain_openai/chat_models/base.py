@@ -1162,29 +1162,6 @@ class ChatOpenAI(BaseChatOpenAI):
         """Return whether this model can be serialized by Langchain."""
         return True
 
-    def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
-        """Set default stream_options."""
-        default_stream_options = {"include_usage": True}
-        stream_options = kwargs.get("stream_options", {})
-        merged_stream_options = {**default_stream_options, **stream_options}
-        kwargs["stream_options"] = merged_stream_options
-
-        return super()._stream(*args, **kwargs)
-
-    async def _astream(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> AsyncIterator[ChatGenerationChunk]:
-        """Set default stream_options."""
-        default_stream_options = {"include_usage": True}
-        stream_options = kwargs.get("stream_options", {})
-        merged_stream_options = {**default_stream_options, **stream_options}
-        kwargs["stream_options"] = merged_stream_options
-
-        async for chunk in super()._astream(*args, **kwargs):
-            yield chunk
-
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and issubclass(obj, BaseModel)
