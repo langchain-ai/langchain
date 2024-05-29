@@ -24,6 +24,7 @@ CHAT_MODEL_FEAT_TABLE = {
     "ChatMistralAI": {
         "tool_calling": True,
         "structured_output": True,
+        "json_model": True,
         "package": "langchain-mistralai",
         "link": "/docs/integrations/chat/mistralai/",
     },
