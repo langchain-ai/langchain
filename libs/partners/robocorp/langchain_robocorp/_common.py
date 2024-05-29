@@ -98,17 +98,23 @@ def create_field(schema: dict, required: bool) -> Tuple[Any, Any]:
     Creates a Pydantic field based on the schema definition.
     """
     if "anyOf" in schema:
-        field_types = [create_field(sub_schema, required)[0] for sub_schema in schema["anyOf"]]
+        field_types = [
+            create_field(sub_schema, required)[0] for sub_schema in schema["anyOf"]
+        ]
         if len(field_types) == 1:
             field_type = field_types[0]  # Simplified handling
         else:
             # Create a combined model for allOf
             combined_name = schema.get("title", "CombinedModel")
-            combined_model = create_model(combined_name,
-                                          **{f"field_{i}": (t, ...) for i, t in enumerate(field_types)})  # type: ignore
+            combined_model = create_model(
+                combined_name,
+                **{f"field_{i}": (t, ...) for i, t in enumerate(field_types)},
+            )  # type: ignore
             field_type = combined_model
     elif "oneOf" in schema:
-        field_types = [create_field(sub_schema, required)[0] for sub_schema in schema["oneOf"]]
+        field_types = [
+            create_field(sub_schema, required)[0] for sub_schema in schema["oneOf"]
+        ]
         field_type = Union[tuple(field_types)]
     else:
         field_type = type_mapping.get(schema.get("type", "string"), str)

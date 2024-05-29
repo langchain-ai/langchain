@@ -24,7 +24,7 @@ def test_get_tools_success() -> None:
     fixture_path = Path(__file__).with_name("_openapi2.fixture.json")
 
     with patch(
-            "langchain_robocorp.toolkits.requests.get"
+        "langchain_robocorp.toolkits.requests.get"
     ) as mocked_get, fixture_path.open("r") as f:
         data = json.load(f)  # Using json.load directly on the file object
         mocked_response = MagicMock()
@@ -128,7 +128,7 @@ def test_odd_toolkit():
     fixture_path = Path(__file__).with_name("openapi3.fixture.json")
 
     with patch(
-            "langchain_robocorp.toolkits.requests.get"
+        "langchain_robocorp.toolkits.requests.get"
     ) as mocked_get, fixture_path.open("r") as f:
         data = json.load(f)  # Using json.load directly on the file object
         mocked_response = MagicMock()
@@ -179,4 +179,4 @@ def test_odd_toolkit():
             "event",
         }, "Required fields mismatch."
 
-        assert set(params["properties"].keys()) == {'calendar_id', 'event'}
+        assert set(params["properties"].keys()) == {"calendar_id", "event"}
