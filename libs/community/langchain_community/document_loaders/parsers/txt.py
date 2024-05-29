@@ -12,10 +12,4 @@ class TextParser(BaseBlobParser):
 
     def lazy_parse(self, blob: Blob) -> Iterator[Document]:  # type: ignore[valid-type]
         """Lazily parse the blob."""
-        yield Document(
-            page_content=blob.as_string(),
-            metadata={
-                "source": blob.source,
-                **blob.metadata,
-            }
-        )  # type: ignore[attr-defined]
+        yield Document(page_content=blob.as_string(), metadata={"source": blob.source})  # type: ignore[attr-defined]

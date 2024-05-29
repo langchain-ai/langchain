@@ -240,6 +240,7 @@ class PyMuPDFParser(BaseBlobParser):
                 doc = fitz.open(file_path)
             else:
                 doc = fitz.open(stream=file_path, filetype="pdf")
+
             yield from [
                 Document(
                     page_content=page.get_text(**self.text_kwargs)
@@ -255,11 +256,6 @@ class PyMuPDFParser(BaseBlobParser):
                             k: doc.metadata[k]
                             for k in doc.metadata
                             if type(doc.metadata[k]) in [str, int]
-                        },
-                        **{
-                            k: blob.metadata[k]
-                            for k in blob.metadata
-                            if type(blob.metadata[k]) in [str, int]
                         },
                     ),
                 )
