@@ -383,6 +383,16 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 },
                 "required": ["name", "args", "id", "error"],
             },
+            "UsageMetadata": {
+                "title": "UsageMetadata",
+                "type": "object",
+                "properties": {
+                    "input_tokens": {"title": "Input Tokens", "type": "integer"},
+                    "output_tokens": {"title": "Output Tokens", "type": "integer"},
+                    "total_tokens": {"title": "Total Tokens", "type": "integer"},
+                },
+                "required": ["input_tokens", "output_tokens", "total_tokens"],
+            },
             "AIMessage": {
                 "title": "AIMessage",
                 "description": "Message from an AI.",
@@ -433,6 +443,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                         "type": "array",
                         "items": {"$ref": "#/definitions/InvalidToolCall"},
                     },
+                    "usage_metadata": {"$ref": "#/definitions/UsageMetadata"},
                 },
                 "required": ["content"],
             },
@@ -1440,7 +1451,6 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
             recursion_limit=25,
             configurable={"hello": "there"},
             metadata={"hello": "there", "bye": "now"},
-            run_id=None,
         ),
     )
     spy.reset_mock()
@@ -1582,7 +1592,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
-                run_id=None,
             ),
         ),
         mocker.call(
@@ -1592,7 +1601,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
                 tags=["c"],
                 callbacks=None,
                 recursion_limit=5,
-                run_id=None,
             ),
         ),
     ]
@@ -1618,7 +1626,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
-            run_id=None,
         ),
     )
     second_call = next(call for call in spy.call_args_list if call.args[0] == "wooorld")
@@ -1629,7 +1636,6 @@ async def test_with_config(mocker: MockerFixture) -> None:
             tags=["c"],
             callbacks=None,
             recursion_limit=5,
-            run_id=None,
         ),
     )
 
@@ -1700,7 +1706,6 @@ async def test_default_method_implementations(mocker: MockerFixture) -> None:
             tags=[],
             callbacks=None,
             recursion_limit=25,
-            run_id=None,
         )
 
 
@@ -4882,6 +4887,23 @@ async def test_runnable_gen() -> None:
     assert await arunnable.ainvoke(None) == 6
     assert [p async for p in arunnable.astream(None)] == [1, 2, 3]
     assert await arunnable.abatch([None, None]) == [6, 6]
+
+    class AsyncGen:
+        async def __call__(self, input: AsyncIterator[Any]) -> AsyncIterator[int]:
+            yield 1
+            yield 2
+            yield 3
+
+    arunnablecallable = RunnableGenerator(AsyncGen())
+    assert await arunnablecallable.ainvoke(None) == 6
+    assert [p async for p in arunnablecallable.astream(None)] == [1, 2, 3]
+    assert await arunnablecallable.abatch([None, None]) == [6, 6]
+    with pytest.raises(NotImplementedError):
+        arunnablecallable.invoke(None)
+    with pytest.raises(NotImplementedError):
+        arunnablecallable.stream(None)
+    with pytest.raises(NotImplementedError):
+        arunnablecallable.batch([None, None])
 
 
 async def test_runnable_gen_context_config() -> None:

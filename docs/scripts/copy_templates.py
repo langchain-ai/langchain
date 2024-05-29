@@ -21,12 +21,13 @@ if __name__ == "__main__":
         with open(full_destination, "r") as f:
             content = f.read()
         # remove images
-        content = re.sub("\!\[.*?\]\((.*?)\)", "", content)
+        content = re.sub(r"\!\[.*?\]\((.*?)\)", "", content)
         with open(full_destination, "w") as f:
             f.write(content)
 
     sidebar_hidden = """---
 sidebar_class_name: hidden
+custom_edit_url:
 ---
 
 """
@@ -39,7 +40,7 @@ sidebar_class_name: hidden
         content = f.read()
 
     # replace relative links
-    content = re.sub("\]\(\.\.\/", "](/docs/templates/", content)
+    content = re.sub(r"\]\(\.\.\/", "](/docs/templates/", content)
 
     with open(templates_index_intermediate, "w") as f:
         f.write(sidebar_hidden + content)

@@ -41,7 +41,7 @@ class Nebula(LLM):
                 nebula_service_path="NEBULA_SERVICE_PATH",
                 nebula_api_key="NEBULA_API_KEY",
             )
-    """  # noqa: E501
+    """
 
     """Key/value arguments to pass to the model. Reserved for future use"""
     model_kwargs: Optional[dict] = None

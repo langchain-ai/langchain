@@ -82,6 +82,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_message_histories.zep import (
         ZepChatMessageHistory,
     )
+    from langchain_community.chat_message_histories.zep_cloud import (
+        ZepCloudChatMessageHistory,
+    )
 
 __all__ = [
     "AstraDBChatMessageHistory",
@@ -105,6 +108,7 @@ __all__ = [
     "UpstashRedisChatMessageHistory",
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
+    "ZepCloudChatMessageHistory",
 ]
 
 _module_lookup = {
@@ -129,6 +133,7 @@ _module_lookup = {
     "UpstashRedisChatMessageHistory": "langchain_community.chat_message_histories.upstash_redis",  # noqa: E501
     "XataChatMessageHistory": "langchain_community.chat_message_histories.xata",
     "ZepChatMessageHistory": "langchain_community.chat_message_histories.zep",
+    "ZepCloudChatMessageHistory": "langchain_community.chat_message_histories.zep_cloud",  # noqa: E501
 }
 
 
@@ -137,6 +142,3 @@ def __getattr__(name: str) -> Any:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-__all__ = list(_module_lookup.keys())
