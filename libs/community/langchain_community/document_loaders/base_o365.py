@@ -131,7 +131,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
                 if not isinstance(blob.path, PurePath):
                     raise NotImplementedError("Expected blob path to be a PurePath")
                 if blob.path:
-                    file_metadata_ = metadata_dict.get(str(blob.path), {})
+                    file_metadata_ = metadata_dict.get(str(blob.path.name), {})
                     blob.metadata.update(file_metadata_)
                 yield blob
         if self.recursive:
