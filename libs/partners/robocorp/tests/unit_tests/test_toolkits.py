@@ -24,7 +24,7 @@ def test_get_tools_success() -> None:
     fixture_path = Path(__file__).with_name("_openapi2.fixture.json")
 
     with patch(
-        "langchain_robocorp.toolkits.requests.get"
+            "langchain_robocorp.toolkits.requests.get"
     ) as mocked_get, fixture_path.open("r") as f:
         data = json.load(f)  # Using json.load directly on the file object
         mocked_response = MagicMock()
@@ -118,3 +118,65 @@ Strictly adhere to the schema."""
             ],
         }
         assert params["properties"]["rows_to_add"] == expected
+
+
+def test_odd_toolkit():
+    toolkit_instance = ActionServerToolkit(
+        url="http://example.com", api_key="dummy_key"
+    )
+
+    fixture_path = Path(__file__).with_name("openapi3.fixture.json")
+
+    with patch(
+            "langchain_robocorp.toolkits.requests.get"
+    ) as mocked_get, fixture_path.open("r") as f:
+        data = json.load(f)  # Using json.load directly on the file object
+        mocked_response = MagicMock()
+        mocked_response.json.return_value = data
+        mocked_response.status_code = 200
+        mocked_response.headers = {"Content-Type": "application/json"}
+        mocked_get.return_value = mocked_response
+
+        # Execute
+        tools = toolkit_instance.get_tools()
+        assert len(tools) == 4
+
+        tool = tools[0]
+        assert tool.name == "create_event"
+        assert tool.description == "Creates a new event in the specified calendar."
+
+        openai_func_spec = convert_to_openai_function(tool)
+
+        assert isinstance(
+            openai_func_spec, dict
+        ), "openai_func_spec should be a dictionary."
+        assert set(openai_func_spec.keys()) == {
+            "description",
+            "name",
+            "parameters",
+        }, "Top-level keys mismatch."
+
+        assert openai_func_spec["description"] == tool.description
+        assert openai_func_spec["name"] == tool.name
+
+        assert isinstance(
+            openai_func_spec["parameters"], dict
+        ), "Parameters should be a dictionary."
+
+        params = openai_func_spec["parameters"]
+        assert set(params.keys()) == {
+            "type",
+            "properties",
+            "required",
+        }, "Parameters keys mismatch."
+        assert params["type"] == "object", "`type` in parameters should be 'object'."
+        assert isinstance(
+            params["properties"], dict
+        ), "`properties` should be a dictionary."
+        assert isinstance(params["required"], list), "`required` should be a list."
+
+        assert set(params["required"]) == {
+            "event",
+        }, "Required fields mismatch."
+
+        assert set(params["properties"].keys()) == {'calendar_id', 'event'}
