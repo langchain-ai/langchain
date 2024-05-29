@@ -3,7 +3,10 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from langchain_core.utils.function_calling import convert_to_openai_function, convert_to_openai_tool
+from langchain_core.utils.function_calling import (
+    convert_to_openai_function,
+    convert_to_openai_tool,
+)
 
 from langchain_robocorp.toolkits import ActionServerToolkit
 
@@ -146,25 +149,25 @@ def test_get_tools_with_complex_inputs() -> None:
         assert tool.description == "Creates a new event in the specified calendar."
 
         all_tools_as_openai_tools = [convert_to_openai_tool(t) for t in tools]
-        openai_func_spec = all_tools_as_openai_tools[0]
+        openai_tool_spec = all_tools_as_openai_tools[0]["function"]
 
         assert isinstance(
-            openai_func_spec, dict
+            openai_tool_spec, dict
         ), "openai_func_spec should be a dictionary."
-        assert set(openai_func_spec.keys()) == {
+        assert set(openai_tool_spec.keys()) == {
             "description",
             "name",
             "parameters",
         }, "Top-level keys mismatch."
 
-        assert openai_func_spec["description"] == tool.description
-        assert openai_func_spec["name"] == tool.name
+        assert openai_tool_spec["description"] == tool.description
+        assert openai_tool_spec["name"] == tool.name
 
         assert isinstance(
-            openai_func_spec["parameters"], dict
+            openai_tool_spec["parameters"], dict
         ), "Parameters should be a dictionary."
 
-        params = openai_func_spec["parameters"]
+        params = openai_tool_spec["parameters"]
         assert set(params.keys()) == {
             "type",
             "properties",
