@@ -1,4 +1,5 @@
 """Test Milvus functionality."""
+
 from typing import Any, List, Optional
 
 from langchain_core.documents import Document
@@ -29,18 +30,28 @@ def _get_pks(expr: str, docsearch: Milvus) -> List[Any]:
     return docsearch.get_pks(expr)  # type: ignore[return-value]
 
 
+def _remove_pk_from_list_of_documents(output):
+    docs = []
+    for doc in output:
+        del doc.metadata["pk"]
+        docs.append(doc)
+    return docs
+
+
 def test_milvus() -> None:
     """Test end to end construction and search."""
     docsearch = _milvus_from_texts()
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    docs = _remove_pk_from_list_of_documents(output)
+    assert docs == [Document(page_content="foo")]
 
 
 def test_milvus_with_metadata() -> None:
     """Test with metadata"""
     docsearch = _milvus_from_texts(metadatas=[{"label": "test"}] * len(fake_texts))
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo", metadata={"label": "test"})]
+    docs = _remove_pk_from_list_of_documents(output)
+    assert docs == [Document(page_content="foo", metadata={"label": "test"})]
 
 
 def test_milvus_with_id() -> None:
@@ -48,7 +59,8 @@ def test_milvus_with_id() -> None:
     ids = ["id_" + str(i) for i in range(len(fake_texts))]
     docsearch = _milvus_from_texts(ids=ids)
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    docs = _remove_pk_from_list_of_documents(output)
+    assert docs == [Document(page_content="foo")]
 
     output = docsearch.delete(ids=ids)
     assert output.delete_count == len(fake_texts)  # type: ignore[attr-defined]
@@ -67,6 +79,7 @@ def test_milvus_with_score() -> None:
     docsearch = _milvus_from_texts(metadatas=metadatas)
     output = docsearch.similarity_search_with_score("foo", k=3)
     docs = [o[0] for o in output]
+    docs = _remove_pk_from_list_of_documents(docs)
     scores = [o[1] for o in output]
     assert docs == [
         Document(page_content="foo", metadata={"page": 0}),
@@ -82,7 +95,11 @@ def test_milvus_max_marginal_relevance_search() -> None:
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = _milvus_from_texts(metadatas=metadatas)
     output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3)
-    assert output == [
+    docs = []
+    for doc in output:
+        del doc.metadata["pk"]
+        docs.append(doc)
+    assert docs == [
         Document(page_content="foo", metadata={"page": 0}),
         Document(page_content="baz", metadata={"page": 2}),
     ]
@@ -131,7 +148,7 @@ def test_milvus_delete_entities() -> None:
     expr = "id in [1,2]"
     pks = _get_pks(expr, docsearch)
     result = docsearch.delete(pks)
-    assert result is True
+    assert result.delete_count == 2
 
 
 def test_milvus_upsert_entities() -> None:
