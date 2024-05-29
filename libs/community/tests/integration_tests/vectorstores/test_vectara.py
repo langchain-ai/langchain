@@ -167,7 +167,6 @@ def test_vectara_from_files(vectara2: Vectara) -> None:
     assert "Note the use of" in output[0].page_content
 
 
-
 def test_vectara_rag_with_reranking(vectara2: Vectara) -> None:
     """Test Vectara reranking."""
 
@@ -298,50 +297,54 @@ def test_vectara_with_langchain_mmr(vectara3: Vectara) -> None:  # type: ignore[
         in output2[1].page_content
     )
 
+
 def test_vectara_mmr(vectara3: Vectara) -> None:  # type: ignore[no-untyped-def]
     # test MMR directly with rerank_config
     summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng")
     rerank_config = RerankConfig(reranker="mmr", rerank_k=50, mmr_diversity_bias=0.2)
     config = VectaraQueryConfig(
-        k=10, lambda_val=0.005, rerank_config=rerank_config, 
-        summary_config=summary_config
+        k=10,
+        lambda_val=0.005,
+        rerank_config=rerank_config,
+        summary_config=summary_config,
     )
     rag = vectara3.as_rag(config)
-    output1 = rag.invoke('what is generative AI?')["answer"]
+    output1 = rag.invoke("what is generative AI?")["answer"]
     assert len(output1) > 0
 
     # test MMR directly with old mmr_config
     summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng")
     mmr_config = MMRConfig(is_enabled=True, mmr_k=50, diversity_bias=0.2)
     config = VectaraQueryConfig(
-        k=10, lambda_val=0.005, mmr_config=mmr_config,
-        summary_config=summary_config
+        k=10, lambda_val=0.005, mmr_config=mmr_config, summary_config=summary_config
     )
     rag = vectara3.as_rag(config)
-    output2 = rag.invoke('what is generative AI?')["answer"]
+    output2 = rag.invoke("what is generative AI?")["answer"]
     assert len(output2) > 0
 
     # test reranking disabled - RerankConfig
     summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng")
     rerank_config = RerankConfig(reranker="none")
     config = VectaraQueryConfig(
-        k=10, lambda_val=0.005, rerank_config=rerank_config, 
-        summary_config=summary_config
+        k=10,
+        lambda_val=0.005,
+        rerank_config=rerank_config,
+        summary_config=summary_config,
     )
     rag = vectara3.as_rag(config)
-    output1 = rag.invoke('what is generative AI?')["answer"]
+    output1 = rag.invoke("what is generative AI?")["answer"]
     assert len(output1) > 0
 
     # test with reranking disabled - MMRConfig
     summary_config = SummaryConfig(is_enabled=True, max_results=7, response_lang="eng")
     mmr_config = MMRConfig(is_enabled=False, mmr_k=50, diversity_bias=0.2)
     config = VectaraQueryConfig(
-        k=10, lambda_val=0.005, mmr_config=mmr_config,
-        summary_config=summary_config
+        k=10, lambda_val=0.005, mmr_config=mmr_config, summary_config=summary_config
     )
     rag = vectara3.as_rag(config)
-    output2 = rag.invoke('what is generative AI?')["answer"]
+    output2 = rag.invoke("what is generative AI?")["answer"]
     assert len(output2) > 0
+
 
 def test_vectara_with_summary(vectara3) -> None:  # type: ignore[no-untyped-def]
     """Test vectara summary."""
