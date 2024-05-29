@@ -73,6 +73,8 @@ chat.invoke(
 
 > If you are going to place system prompt here, then it will override your system prompt that was fixed while deploying the application from the platform. 
 
+> You can find all the optional parameters [here](https://docs.premai.io/get-started/sdk#optional-parameters). Any parameters other than [these supported parameters](https://docs.premai.io/get-started/sdk#optional-parameters) will be automatically removed before calling the model.
+
 
 ### Native RAG Support with Prem Repositories
 
