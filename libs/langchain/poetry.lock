@@ -3454,7 +3454,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.2.1"
+version = "0.2.2rc1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -3478,7 +3478,7 @@ url = "../core"
 
 [[package]]
 name = "langchain-openai"
-version = "0.1.7"
+version = "0.1.8rc1"
 description = "An integration package connecting OpenAI and LangChain"
 optional = true
 python-versions = ">=3.8.1,<4.0"
@@ -3486,8 +3486,8 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = ">=0.2.0,<0.3"
-openai = "^1.24.0"
+langchain-core = ">=0.2.2rc1,<0.3"
+openai = "^1.26.0"
 tiktoken = ">=0.7,<1"
 
 [package.source]
@@ -3515,13 +3515,13 @@ url = "../text-splitters"
 
 [[package]]
 name = "langchainhub"
-version = "0.1.15"
+version = "0.1.16"
 description = "The LangChain Hub API client"
 optional = false
-python-versions = ">=3.8.1,<4.0"
+python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langchainhub-0.1.15-py3-none-any.whl", hash = "sha256:89a0951abd1db255e91c6d545d092a598fc255aa865d1ffc3ce8f93bbeae60e7"},
-    {file = "langchainhub-0.1.15.tar.gz", hash = "sha256:fa3ff81a31946860f84c119f1e2f6b7c7707e2bd7ed2394a7313b286d59f3bda"},
+    {file = "langchainhub-0.1.16-py3-none-any.whl", hash = "sha256:a4379a1879cc6b441b8d02cc65e28a54f160fba61c9d1d4b0eddc3a276dff99a"},
+    {file = "langchainhub-0.1.16.tar.gz", hash = "sha256:9f11e68fddb575e70ef4b28800eedbd9eeb180ba508def04f7153ea5b246b6fc"},
 ]
 
 [package.dependencies]
@@ -9350,4 +9350,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "44d9a0d7814bd18bc7bfdf3210ed48151f4d0868f66940f04976c27e06b1fd4b"
+content-hash = "6896c5c74c17f9975950849e9e4273a0cc4ef89a4c4a458a9fd3cfe1ba3248f0"
