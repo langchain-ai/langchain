@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Dict, List, Optional, Callable
+from typing import Callable, Dict, List, Optional
 
 import aiohttp
 import requests
@@ -56,7 +56,7 @@ class AzureAISearchRetriever(BaseRetriever):
             values["api_key"] = get_from_dict_or_env(
                 values, "api_key", "AZURE_AI_SEARCH_API_KEY"
             )
-        except ValueError as ve:
+        except ValueError:
             values["azure_ad_token_provider"] = get_from_dict_or_env(
                 values, "azure_ad_token_provider", "azure_ad_token_provider"
             )
