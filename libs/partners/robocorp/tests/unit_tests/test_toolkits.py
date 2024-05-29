@@ -120,7 +120,7 @@ Strictly adhere to the schema."""
         assert params["properties"]["rows_to_add"] == expected
 
 
-def test_odd_toolkit():
+def test_get_tools_with_complex_inputs() -> None:
     toolkit_instance = ActionServerToolkit(
         url="http://example.com", api_key="dummy_key"
     )
