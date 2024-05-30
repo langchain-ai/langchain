@@ -63,7 +63,7 @@ jobs:
             langchain/libs/partners/google-genai \
             langchain/libs/partners/google-vertexai \
             langchain/libs/partners/nvidia-ai-endpoints \
-            langchain/libs/partners/cohere \
+            langchain/libs/partners/cohere
           mv langchain-google/libs/genai langchain/libs/partners/google-genai
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
           mv langchain-nvidia/libs/ai-endpoints langchain/libs/partners/nvidia-ai-endpoints
