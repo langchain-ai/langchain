@@ -121,7 +121,7 @@ def _format_edenai_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
     formatted_messages = []
 
     human_messages = filter(lambda msg: isinstance(msg, HumanMessage), messages)
-    text = list(human_messages)[-1].content if human_messages else ""
+    last_human_message = list(human_messages)[-1] if human_messages else ""
 
     tool_results, other_messages = _extract_edenai_tool_results_from_messages(messages)
     for i, message in enumerate(other_messages):
@@ -131,7 +131,7 @@ def _format_edenai_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
             system = message.content
         elif isinstance(message, ToolMessage):
             formatted_messages.append({"role": "tool", "message": message.content})
-        else:
+        elif message != last_human_message:
             formatted_messages.append(
                 {
                     "role": _message_role(message.type),
@@ -141,7 +141,7 @@ def _format_edenai_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
             )
 
     return {
-        "text": text,
+        "text": getattr(last_human_message, "content", ""),
         "previous_history": formatted_messages,
         "chatbot_global_action": system,
         "tool_results": tool_results,
