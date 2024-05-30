@@ -11,43 +11,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-        - uses: actions/checkout@v4
-          with:
-            path: langchain
-        - uses: actions/checkout@v4
-          with:
-            repository: langchain-ai/langchain-google
-            path: langchain-google
-        - uses: actions/checkout@v4
-          with:
-            repository: langchain-ai/langchain-nvidia
-            path: langchain-nvidia
-        - uses: actions/checkout@v4
-          with:
-            repository: langchain-ai/langchain-cohere
-            path: langchain-cohere
-        - uses: actions/checkout@v4
-          with:
-            repository: langchain-ai/langchain-aws
-            path: langchain-aws
-
-        - name: Move libs
-          run: |
-            rm -rf \
-              langchain/libs/partners/google-genai \
-              langchain/libs/partners/google-vertexai \
-              langchain/libs/partners/nvidia-ai-endpoints \
-              langchain/libs/partners/cohere \
-            mv langchain-google/libs/genai langchain/libs/partners/google-genai
-            mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
-            mv langchain-nvidia/libs/ai-endpoints langchain/libs/partners/nvidia-ai-endpoints
-            mv langchain-cohere/libs/cohere langchain/libs/partners/cohere
-            mv langchain-aws/libs/aws langchain/libs/partners/aws
-
-  tests:
-    needs: build
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -71,6 +34,35 @@ jobs:
     name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-google
+          path: langchain-google
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-nvidia
+          path: langchain-nvidia
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-cohere
+          path: langchain-cohere
+      - uses: actions/checkout@v4
+        with:
+          repository: langchain-ai/langchain-aws
+          path: langchain-aws
+
+      - name: Move libs
+        run: |
+          rm -rf \
+            langchain/libs/partners/google-genai \
+            langchain/libs/partners/google-vertexai \
+            langchain/libs/partners/nvidia-ai-endpoints \
+            langchain/libs/partners/cohere \
+          mv langchain-google/libs/genai langchain/libs/partners/google-genai
+          mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
+          mv langchain-nvidia/libs/ai-endpoints langchain/libs/partners/nvidia-ai-endpoints
+          mv langchain-cohere/libs/cohere langchain/libs/partners/cohere
+          mv langchain-aws/libs/aws langchain/libs/partners/aws
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: "./.github/actions/poetry_setup"
