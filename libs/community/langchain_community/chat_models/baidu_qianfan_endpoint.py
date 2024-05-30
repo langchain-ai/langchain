@@ -133,11 +133,12 @@ class QianfanChatEndpoint(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """extra params for model invoke using with `do`."""
 
-    client: Any
+    client: Any  #: :meta private:
 
-    qianfan_ak: Optional[SecretStr] = None
-    qianfan_sk: Optional[SecretStr] = None
-
+    qianfan_ak: Optional[SecretStr] = Field(default=None, alias="api_key")
+    """Qianfan API KEY"""
+    qianfan_sk: Optional[SecretStr] = Field(default=None, alias="secret_key")
+    """Qianfan SECRET KEY"""
     streaming: Optional[bool] = False
     """Whether to stream the results or not."""
 
@@ -145,7 +146,9 @@ class QianfanChatEndpoint(BaseChatModel):
     """request timeout for chat http requests"""
 
     top_p: Optional[float] = 0.8
+    """What probability mass to use."""
     temperature: Optional[float] = 0.95
+    """What sampling temperature to use."""
     penalty_score: Optional[float] = 1
     """Model params, only supported in ERNIE-Bot and ERNIE-Bot-turbo.
     In the case of other model, passing these params will not affect the result.
@@ -292,7 +295,6 @@ class QianfanChatEndpoint(BaseChatModel):
         """
         if self.streaming:
             completion = ""
-            token_usage = {}
             chat_generation_info: Dict = {}
             for chunk in self._stream(messages, stop, run_manager, **kwargs):
                 chat_generation_info = (
@@ -337,7 +339,6 @@ class QianfanChatEndpoint(BaseChatModel):
     ) -> ChatResult:
         if self.streaming:
             completion = ""
-            token_usage = {}
             chat_generation_info: Dict = {}
             async for chunk in self._astream(messages, stop, run_manager, **kwargs):
                 chat_generation_info = (
