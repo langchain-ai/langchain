@@ -1,7 +1,9 @@
 import json
+import sys
 import time
 from unittest.mock import MagicMock
 
+import pytest
 from langsmith import Client, traceable
 
 from langchain_core.runnables.base import RunnableLambda
@@ -54,10 +56,10 @@ def test_config_traceable_handoff() -> None:
     my_parent_runnable = RunnableLambda(my_parent_function)
 
     assert my_parent_runnable.invoke(1, {"callbacks": [tracer]}) == 6
-    for _ in range(10):
+    for _ in range(15):
         time.sleep(0.1)
         posts = _get_posts(mock_client_)
-        if len(posts) == 5:
+        if len(posts) == 6:
             break
     # There should have been 6 runs created,
     # one for each function invocation
@@ -94,6 +96,9 @@ def test_config_traceable_handoff() -> None:
         parent_run_id = id_
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="Asyncio context vars require Python 3.11+"
+)
 async def test_config_traceable_async_handoff() -> None:
     mock_session = MagicMock()
     mock_client_ = Client(session=mock_session, api_key="test")
@@ -125,10 +130,10 @@ async def test_config_traceable_async_handoff() -> None:
     my_parent_runnable = RunnableLambda(my_parent_function)  # type: ignore
     result = await my_parent_runnable.ainvoke(1, {"callbacks": [tracer]})
     assert result == 6
-    for _ in range(10):
+    for _ in range(15):
         time.sleep(0.1)
         posts = _get_posts(mock_client_)
-        if len(posts) == 5:
+        if len(posts) == 6:
             break
     # There should have been 6 runs created,
     # one for each function invocation

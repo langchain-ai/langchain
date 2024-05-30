@@ -115,13 +115,17 @@ def _set_config_context(config: RunnableConfig) -> None:
     Args:
         config (RunnableConfig): The config to set.
     """
-    from langsmith import RunTree
-    from langsmith.run_helpers import _set_tracing_context, get_tracing_context
+    from langsmith import (
+        RunTree,  # type: ignore
+        run_helpers,  # type: ignore
+    )
 
     var_child_runnable_config.set(config)
-    rt = RunTree.from_runnable_config(dict(config))
-    tc = get_tracing_context()
-    _set_tracing_context({**tc, "parent": rt})
+    if hasattr(RunTree, "from_runnable_config"):
+        # import _set_tracing_context, get_tracing_context
+        rt = RunTree.from_runnable_config(dict(config))
+        tc = run_helpers.get_tracing_context()
+        run_helpers._set_tracing_context({**tc, "parent": rt})
 
 
 def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
