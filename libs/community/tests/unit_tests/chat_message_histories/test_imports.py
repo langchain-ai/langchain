@@ -23,6 +23,7 @@ EXPECTED_ALL = [
     "XataChatMessageHistory",
     "ZepChatMessageHistory",
     "ZepCloudChatMessageHistory",
+    "KafkaChatMessageHistory",
 ]
 
 

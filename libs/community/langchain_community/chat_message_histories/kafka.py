@@ -1,19 +1,23 @@
+from __future__ import annotations
+
 import time
 import logging
 import json
-from typing import Sequence, Optional
+from typing import Sequence, Optional, TYPE_CHECKING
 from enum import Enum
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import BaseMessage, message_to_dict, messages_from_dict
-from confluent_kafka.admin import AdminClient, NewTopic
-from confluent_kafka import OFFSET_END, OFFSET_BEGINNING, Consumer, Producer
+
+if TYPE_CHECKING:
+    from confluent_kafka.admin import NewTopic, AdminClient
+    from confluent_kafka import OFFSET_END, OFFSET_BEGINNING, Consumer
 
 
 logger = logging.getLogger(__name__)
 
 BOOTSTRAP_SERVERS_CONFIG = "bootstrap.servers"
 
-DEFAULT_TTL_MS = 604800000 # 7 days
+DEFAULT_TTL_MS = 604800000  # 7 days
 DEFAULT_REPLICATION_FACTOR = 1
 DEFAULT_PARTITION = 3
 
@@ -84,6 +88,14 @@ class KafkaChatMessageHistory(BaseChatMessageHistory):
             replication_factor: The replication factor for the topic. Default 1.
             partition: The number of partitions for the topic. Default 3.
         """
+        try:
+            from confluent_kafka import Producer
+        except (ImportError, ModuleNotFoundError):
+            raise ImportError(
+                "Could not import confluent_kafka package. "
+                "Please install it with `pip install confluent_kafka`."
+            )
+
         self.session_id = session_id
         self.bootstrap_servers = bootstrap_servers
         self.admin_client = AdminClient({BOOTSTRAP_SERVERS_CONFIG: bootstrap_servers})
