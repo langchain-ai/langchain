@@ -129,6 +129,7 @@ jobs:
             langchain/libs/partners/aws
 
       - name: Ensure the tests did not create any additional files
+        working-directory: .
         run: |
           set -eu
 
