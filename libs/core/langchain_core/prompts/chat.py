@@ -966,14 +966,13 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Returns:
             a chat prompt template
         """
-        _messages = [
-            _convert_to_message(message, template_format) for message in messages
-        ]
-
         # Automatically infer input variables from messages
         input_vars: Set[str] = set()
         partial_vars: Dict[str, Any] = {}
-        for _message in _messages:
+        _messages = []
+        for message in messages:
+            _message = _convert_to_message(message)
+            _messages.append(_message)
             if isinstance(_message, MessagesPlaceholder) and _message.optional:
                 partial_vars[_message.variable_name] = []
             elif isinstance(
