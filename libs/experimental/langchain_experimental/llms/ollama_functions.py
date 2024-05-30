@@ -71,18 +71,32 @@ def _is_pydantic_class(obj: Any) -> bool:
     )
 
 
+def _is_pydantic_object(obj: Any) -> bool:
+    return isinstance(obj, BaseModel)
+
+
 def convert_to_ollama_tool(tool: Any) -> Dict:
     """Convert a tool to an Ollama tool."""
+    description = None
     if _is_pydantic_class(tool):
         schema = tool.construct().schema()
-        definition = {"name": schema["title"], "properties": schema["properties"]}
-        if "required" in schema:
-            definition["required"] = schema["required"]
+        name = schema["title"]
+    elif _is_pydantic_object(tool):
+        schema = tool.get_input_schema().schema()
+        name = tool.get_name()
+        description = tool.description
+    elif isinstance(tool, dict) and "name" in tool and "parameters" in tool:
+        return tool.copy()
+    else:
+        raise ValueError(
+            f"""Cannot convert {tool} to an Ollama tool. 
+            {tool} needs to be a Pydantic class, model, or a dict."""
+        )
+    definition = {"name": name, "parameters": schema}
+    if description:
+        definition["description"] = description
 
-        return definition
-    raise ValueError(
-        f"Cannot convert {tool} to an Ollama tool. {tool} needs to be a Pydantic model."
-    )
+    return definition
 
 
 class _AllReturnType(TypedDict):
@@ -297,9 +311,8 @@ class OllamaFunctions(ChatOllama):
                     "matching function in `functions`."
                 )
             del kwargs["function_call"]
-        if _is_pydantic_class(functions[0]):
-            functions = [convert_to_ollama_tool(fn) for fn in functions]
-        functions.insert(0, DEFAULT_RESPONSE_FUNCTION)
+        functions = [convert_to_ollama_tool(fn) for fn in functions]
+        functions.append(DEFAULT_RESPONSE_FUNCTION)
         system_message_prompt_template = SystemMessagePromptTemplate.from_template(
             self.tool_system_prompt_template
         )
