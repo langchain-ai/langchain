@@ -944,9 +944,9 @@ class AgentExecutor(Chain):
     `"generate"` calls the agent's LLM Chain one final time to generate
         a final answer based on the previous steps.
     """
-    handle_parsing_errors: Union[
-        bool, str, Callable[[OutputParserException], str]
-    ] = False
+    handle_parsing_errors: Union[bool, str, Callable[[OutputParserException], str]] = (
+        False
+    )
     """How to handle errors raised by the agent's output parser.
     Defaults to `False`, which raises the error.
     If `true`, the error will be sent back to the LLM as an observation.
@@ -965,10 +965,10 @@ class AgentExecutor(Chain):
     Defaults to False.
     """
 
-    def terminate(self, 
-                  run_manager: Union[
-                      AsyncCallbackManagerForChainRun, 
-                      CallbackManagerForChainRun]):
+    def terminate(
+        self,
+        run_manager: Union[AsyncCallbackManagerForChainRun, CallbackManagerForChainRun],
+    ):
         """Terminate the agent on the next observation."""
         if isinstance(self.agent, BaseSingleActionAgent):
             self.forced_to_terminate_history[run_manager.parent_run_id] = True
@@ -1464,8 +1464,7 @@ class AgentExecutor(Chain):
                 next_step_action = next_step_output[0]
                 # See if tool should return directly
                 tool_return = self._get_tool_return(
-                    next_step_action, 
-                    run_manager=run_manager
+                    next_step_action, run_manager=run_manager
                 )
                 if tool_return is not None:
                     return self._return(
@@ -1518,8 +1517,7 @@ class AgentExecutor(Chain):
                         next_step_action = next_step_output[0]
                         # See if tool should return directly
                         tool_return = self._get_tool_return(
-                            next_step_action, 
-                            run_manager=run_manager
+                            next_step_action, run_manager=run_manager
                         )
                         if tool_return is not None:
                             return await self._areturn(
@@ -1544,9 +1542,9 @@ class AgentExecutor(Chain):
             )
 
     def _get_tool_return(
-        self, 
-        next_step_output: Tuple[AgentAction, str], 
-        run_manager: Union[AsyncCallbackManagerForChainRun, CallbackManagerForChainRun]
+        self,
+        next_step_output: Tuple[AgentAction, str],
+        run_manager: Union[AsyncCallbackManagerForChainRun, CallbackManagerForChainRun],
     ) -> Optional[AgentFinish]:
         """Check if the tool is a returning tool."""
         agent_action, observation = next_step_output

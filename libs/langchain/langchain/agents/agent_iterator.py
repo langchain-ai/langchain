@@ -312,8 +312,7 @@ class AgentExecutorIterator:
         if len(next_step_output) == 1:
             next_step_action = next_step_output[0]
             tool_return = self.agent_executor._get_tool_return(
-                next_step_action, 
-                run_manager=run_manager
+                next_step_action, run_manager=run_manager
             )
             if tool_return is not None:
                 return self._return(tool_return, run_manager=run_manager)
@@ -343,8 +342,7 @@ class AgentExecutorIterator:
         if len(next_step_output) == 1:
             next_step_action = next_step_output[0]
             tool_return = self.agent_executor._get_tool_return(
-                next_step_action, 
-                run_manager=run_manager
+                next_step_action, run_manager=run_manager
             )
             if tool_return is not None:
                 return await self._areturn(tool_return, run_manager=run_manager)
