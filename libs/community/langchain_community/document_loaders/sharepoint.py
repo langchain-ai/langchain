@@ -1,4 +1,5 @@
 """Loader that loads data from Sharepoint Document Library"""
+
 from __future__ import annotations
 
 import json
@@ -64,10 +65,13 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             if not isinstance(target_folder, Folder):
                 raise ValueError(f"There isn't a folder with path {self.folder_path}.")
             for blob in self._load_from_folder(target_folder):
-                for parsed_blob in blob_parser.lazy_parse(blob):
-                    auth_identities = self.authorized_identities()
-                    parsed_blob.metadata["authorized_identities"] = auth_identities
-                    yield parsed_blob
+                if self.load_auth is True:
+                    for parsed_blob in blob_parser.lazy_parse(blob):
+                        auth_identities = self.authorized_identities()
+                        parsed_blob.metadata["authorized_identities"] = auth_identities
+                        yield parsed_blob
+                else:
+                    yield from blob_parser.lazy_parse(blob)
         if self.folder_id:
             target_folder = drive.get_item(self.folder_id)
             if not isinstance(target_folder, Folder):
@@ -82,7 +86,9 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             if not isinstance(target_folder, Folder):
                 raise ValueError("Unable to fetch root folder")
             for blob in self._load_from_folder(target_folder):
-                yield from blob_parser.lazy_parse(blob)
+                for blob_part in blob_parser.lazy_parse(blob):
+                    blob_part.metadata.update(blob.metadata)
+                    yield blob_part
 
     def authorized_identities(self) -> List:
         data = self._fetch_access_token()

@@ -24,6 +24,7 @@ CHAT_MODEL_FEAT_TABLE = {
     "ChatMistralAI": {
         "tool_calling": True,
         "structured_output": True,
+        "json_model": True,
         "package": "langchain-mistralai",
         "link": "/docs/integrations/chat/mistralai/",
     },
@@ -80,6 +81,7 @@ CHAT_MODEL_FEAT_TABLE = {
         "link": "/docs/integrations/chat/bedrock/",
     },
     "ChatHuggingFace": {
+        "tool_calling": True,
         "local": True,
         "package": "langchain-huggingface",
         "link": "/docs/integrations/chat/huggingface/",
@@ -102,6 +104,7 @@ LLM_TEMPLATE = """\
 sidebar_position: 1
 sidebar_class_name: hidden
 keywords: [compatibility]
+custom_edit_url:
 ---
 
 # LLMs
@@ -123,6 +126,7 @@ CHAT_MODEL_TEMPLATE = """\
 sidebar_position: 0
 sidebar_class_name: hidden
 keywords: [compatibility, bind_tools, tool calling, function calling, structured output, with_structured_output, json mode, local model]
+custom_edit_url:
 ---
 
 # Chat models
