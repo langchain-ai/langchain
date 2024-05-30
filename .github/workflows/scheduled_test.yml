@@ -95,7 +95,7 @@ jobs:
         shell: bash
         run: |
           echo "Running scheduled tests, installing dependencies with poetry..."
-          cd langchain/${{ matrix.working-directory }}
+          cd ../${{ matrix.working-directory }}
           poetry install --with=test_integration,test
 
       - name: Run integration tests
