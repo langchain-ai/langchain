@@ -109,6 +109,21 @@ var_child_runnable_config = ContextVar(
 )
 
 
+def _set_config_context(config: RunnableConfig) -> None:
+    """Set the child runnable config + tracing context
+
+    Args:
+        config (RunnableConfig): The config to set.
+    """
+    from langsmith import RunTree
+    from langsmith.run_helpers import _set_tracing_context, get_tracing_context
+
+    var_child_runnable_config.set(config)
+    rt = RunTree.from_runnable_config(config)
+    tc = get_tracing_context()
+    _set_tracing_context({**tc, "parent": rt})
+
+
 def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     """Ensure that a config is a dict with all keys present.
 
