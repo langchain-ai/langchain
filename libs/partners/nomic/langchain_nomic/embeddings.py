@@ -122,6 +122,7 @@ class NomicEmbeddings(Embeddings):
             task_type="search_query",
         )[0]
 
+
 class NomicMultimodalEmbeddings(NomicEmbeddings):
     def __init__(
         self,
@@ -143,4 +144,3 @@ class NomicMultimodalEmbeddings(NomicEmbeddings):
             images=uris,
             model=self.vision_model,
         )["embeddings"]
-        
