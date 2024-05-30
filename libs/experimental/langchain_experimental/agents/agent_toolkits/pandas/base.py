@@ -220,7 +220,7 @@ def create_pandas_dataframe_agent(
                 verbose=True
             )
 
-    """  # noqa: E501
+    """
     try:
         if engine == "modin":
             import modin.pandas as pd

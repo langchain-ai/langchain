@@ -1,4 +1,5 @@
 """OpenAI chat wrapper."""
+
 from __future__ import annotations
 
 import logging
@@ -217,7 +218,7 @@ class ChatOpenAI(BaseChatModel):
     )
     """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
         None."""
-    max_retries: int = 2
+    max_retries: int = Field(default=2)
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
