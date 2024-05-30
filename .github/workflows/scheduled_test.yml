@@ -71,7 +71,7 @@ jobs:
           mv langchain-aws/libs/aws langchain/libs/partners/aws
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: "langchain/.github/actions/poetry_setup"
+        uses: "./langchain/.github/actions/poetry_setup"
         with:
           python-version: ${{ matrix.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
