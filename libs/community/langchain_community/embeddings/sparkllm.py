@@ -16,9 +16,6 @@ from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validat
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from numpy import ndarray
 
-# Used for embedding
-EMBEDDING_API_URL: str = "https://emb-cn-huabei-1.xf-yun.com/"
-
 # SparkLLMTextEmbeddings is an embedding model provided by iFLYTEK Co., Ltd.. (https://iflytek.com/en/).
 
 # Official Website: https://www.xfyun.cn/doc/spark/Embedding_api.html
@@ -68,6 +65,8 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
     """Automatically inferred from env var `SPARK_API_KEY` if not provided."""
     spark_api_secret: Optional[SecretStr] = Field(default=None, alias="api_secret")
     """Automatically inferred from env var `SPARK_API_SECRET` if not provided."""
+    base_url: str = Field(default="https://emb-cn-huabei-1.xf-yun.com/")
+    """Base URL path for API requests"""
     domain: Literal["para", "query"] = Field(default="para")
     """This parameter is used for which Embedding this time belongs to.
     If "para"(default), it belongs to document Embedding. 
@@ -141,7 +140,7 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
         Returns:
             A list of embeddings, one for each text, or None if an error occurs.
         """
-        return self._embed(texts, EMBEDDING_API_URL)
+        return self._embed(texts, self.base_url)
 
     def embed_query(self, text: str) -> Optional[List[float]]:  # type: ignore[override]
         """Public method to get embedding for a single query text.
@@ -152,7 +151,7 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
         Returns:
             Embeddings for the text, or None if an error occurs.
         """
-        result = self._embed([text], EMBEDDING_API_URL)
+        result = self._embed([text], self.base_url)
         return result[0] if result is not None else None
 
     @staticmethod
