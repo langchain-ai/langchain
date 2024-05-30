@@ -1937,7 +1937,7 @@ def _configure(
                 # If the LC parent has already been reflected
                 # in the run tree, we know the run_tree is either the
                 # same parent or a child of the parent.
-                elif str(parent_run_id_) in run_tree.dotted_order:
+                elif run_tree and str(parent_run_id_) in run_tree.dotted_order:
                     parent_run_id_ = parent_run_id
                 # Otherwise, we assume the LC context has progressed
                 # beyond the run tree and we should not inherit the parent.

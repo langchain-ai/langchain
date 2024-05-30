@@ -119,7 +119,7 @@ def _set_config_context(config: RunnableConfig) -> None:
     from langsmith.run_helpers import _set_tracing_context, get_tracing_context
 
     var_child_runnable_config.set(config)
-    rt = RunTree.from_runnable_config(config)
+    rt = RunTree.from_runnable_config(dict(config))
     tc = get_tracing_context()
     _set_tracing_context({**tc, "parent": rt})
 

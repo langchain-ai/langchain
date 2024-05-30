@@ -122,7 +122,7 @@ async def test_config_traceable_async_handoff() -> None:
     async def my_parent_function(a: int) -> int:
         return await my_function(a)
 
-    my_parent_runnable = RunnableLambda(None, afunc=my_parent_function)
+    my_parent_runnable = RunnableLambda(my_parent_function) # type: ignore
     result = await my_parent_runnable.ainvoke(1, {"callbacks": [tracer]})
     assert result == 6
     for _ in range(10):
