@@ -1072,7 +1072,6 @@ class FAISS(VectorStore):
                 Pickle files can be modified by malicious actors to deliver a
                 malicious payload that results in execution of
                 arbitrary code on your machine.
-            asynchronous: whether to use async version or not
         """
         if not allow_dangerous_deserialization:
             raise ValueError(
