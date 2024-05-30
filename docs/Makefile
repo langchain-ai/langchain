@@ -68,6 +68,16 @@ generate-references:
 
 build: install-py-deps generate-files copy-infra render md-sync
 
+generate-watch:
+	fswatch $(SOURCE_DIR) | xargs -I{} make _generate-files-internal 
+
+echo:
+	echo "hi"
+	echo x$(SOURCE_PATHS)x
+
+build-watch:
+	fswatch $(INTERMEDIATE_DIR) | grep -E --line-buffered "(?:.md|.mdx|.ipynb)$$" | xargs -I{} make render md-sync copy-infra SOURCE_PATHS={}
+
 vercel-build: install-vercel-deps build generate-references
 	rm -rf docs
 	mv $(OUTPUT_NEW_DOCS_DIR) docs
