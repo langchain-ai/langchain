@@ -9,7 +9,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
-from langchain_experimental.open_clip import OpenCLIPEmbeddings
+from langchain_nomic import NomicMultimodalEmbeddings
 from PIL import Image
 
 
@@ -102,8 +102,8 @@ def multi_modal_rag_chain(retriever):
 vectorstore_mmembd = Chroma(
     collection_name="multi-modal-rag",
     persist_directory=str(Path(__file__).parent.parent / "chroma_db_multi_modal"),
-    embedding_function=OpenCLIPEmbeddings(
-        model_name="ViT-H-14", checkpoint="laion2b_s32b_b79k"
+    embedding_function=NomicMultimodalEmbeddings(
+        vision_model="nomic-embed-vision-v1", text_model="nomic-embed-text-v1"
     ),
 )
 

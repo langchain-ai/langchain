@@ -121,3 +121,26 @@ class NomicEmbeddings(Embeddings):
             texts=[text],
             task_type="search_query",
         )[0]
+
+class NomicMultimodalEmbeddings(NomicEmbeddings):
+    def __init__(
+        self,
+        *,
+        text_model: str,
+        vision_model: str,
+        nomic_api_key: Optional[str] = None,
+        dimensionality: Optional[int] = None,
+    ):
+        super().__init__(
+            model=text_model,
+            nomic_api_key=nomic_api_key,
+            dimensionality=dimensionality,
+        )
+        self.vision_model = vision_model
+
+    def embed_image(self, uris: List[str]) -> List[List[float]]:
+        return embed.image(
+            images=uris,
+            model=self.vision_model,
+        )["embeddings"]
+        
