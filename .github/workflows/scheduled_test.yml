@@ -92,9 +92,9 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Install dependencies
-        working-directory: langchain/${{ matrix.working-directory }}
         run: |
           echo "Running scheduled tests, installing dependencies with poetry..."
+          cd langchain/${{ matrix.working-directory }}
           poetry install --with=test_integration,test
 
       - name: Run integration tests
