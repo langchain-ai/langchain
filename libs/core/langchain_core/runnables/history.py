@@ -372,6 +372,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     ) -> List[BaseMessage]:
         from langchain_core.messages import BaseMessage
 
+        # If dictionary, try to pluck the single key representing messages
         if isinstance(input_val, dict):
             if self.input_messages_key:
                 key = self.input_messages_key
@@ -381,15 +382,21 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 key = "input"
             input_val = input_val[key]
 
+        # If value is a string, convert to a human message
         if isinstance(input_val, str):
             from langchain_core.messages import HumanMessage
 
             return [HumanMessage(content=input_val)]
+        # If value is a single message, convert to a list
         elif isinstance(input_val, BaseMessage):
             return [input_val]
+        # If value is a list or tuple...
         elif isinstance(input_val, (list, tuple)):
+            # Handle empty case
             if len(input_val) == 0:
-                return input_val
+                return list(input_val)
+            # If is a list of list, then return the first value
+            # This occurs for chat models - since we batch inputs
             if isinstance(input_val[0], list):
                 if len(input_val) != 1:
                     raise ValueError()
@@ -406,6 +413,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     ) -> List[BaseMessage]:
         from langchain_core.messages import BaseMessage
 
+        # If dictionary, try to pluck the single key representing messages
         if isinstance(output_val, dict):
             if self.output_messages_key:
                 key = self.output_messages_key
@@ -424,15 +432,10 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             from langchain_core.messages import AIMessage
 
             return [AIMessage(content=output_val)]
+        # If value is a single message, convert to a list
         elif isinstance(output_val, BaseMessage):
             return [output_val]
         elif isinstance(output_val, (list, tuple)):
-            if len(output_val) == 0:
-                return output_val
-            if isinstance(output_val[0], list):
-                if len(output_val) != 1:
-                    raise ValueError()
-                return output_val[0]
             return list(output_val)
         else:
             raise ValueError()
