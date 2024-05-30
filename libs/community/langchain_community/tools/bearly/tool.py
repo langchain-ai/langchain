@@ -59,7 +59,7 @@ If you have any files outputted write them to "output/" relative to the executio
 path. Output can only be read from the directory, stdout, and stdin. \
 Do not use things like plot.show() as it will \
 not work instead write them out `output/` and a link to the file will be returned. \
-print() any output and results so you can capture the output."""  # noqa: T201
+print() any output and results so you can capture the output."""
 
 
 class FileInfo(BaseModel):

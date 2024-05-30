@@ -65,9 +65,9 @@ from langchain_core.runnables import (
     ensure_config,
 )
 from langchain_core.runnables.config import (
+    _set_config_context,
     patch_config,
     run_in_executor,
-    var_child_runnable_config,
 )
 from langchain_core.runnables.utils import accepts_context
 
@@ -402,7 +402,7 @@ class ChildTool(BaseTool):
                 callbacks=run_manager.get_child(),
             )
             context = copy_context()
-            context.run(var_child_runnable_config.set, child_config)
+            context.run(_set_config_context, child_config)
             parsed_input = self._parse_input(tool_input)
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
@@ -502,7 +502,7 @@ class ChildTool(BaseTool):
                 callbacks=run_manager.get_child(),
             )
             context = copy_context()
-            context.run(var_child_runnable_config.set, child_config)
+            context.run(_set_config_context, child_config)
             coro = (
                 context.run(
                     self._arun, *tool_args, run_manager=run_manager, **tool_kwargs
@@ -837,8 +837,7 @@ class StructuredTool(BaseTool):
 
         # Description example:
         # search_api(query: str) - Searches the API for the query.
-        sig = signature(source_function)
-        description_ = f"{name}{sig} - {description_.strip()}"
+        description_ = f"{description_.strip()}"
         _args_schema = args_schema
         if _args_schema is None and infer_schema:
             # schema name is appended within function
@@ -1057,7 +1056,16 @@ def render_text_description(tools: List[BaseTool]) -> str:
         search: This tool is used for search
         calculator: This tool is used for math
     """
-    return "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
+    descriptions = []
+    for tool in tools:
+        if hasattr(tool, "func") and tool.func:
+            sig = signature(tool.func)
+            description = f"{tool.name}{sig} - {tool.description}"
+        else:
+            description = f"{tool.name} - {tool.description}"
+
+        descriptions.append(description)
+    return "\n".join(descriptions)
 
 
 def render_text_description_and_args(tools: List[BaseTool]) -> str:
@@ -1074,7 +1082,12 @@ args: {"expression": {"type": "string"}}
     tool_strings = []
     for tool in tools:
         args_schema = str(tool.args)
-        tool_strings.append(f"{tool.name}: {tool.description}, args: {args_schema}")
+        if hasattr(tool, "func") and tool.func:
+            sig = signature(tool.func)
+            description = f"{tool.name}{sig} - {tool.description}"
+        else:
+            description = f"{tool.name} - {tool.description}"
+        tool_strings.append(f"{description}, args: {args_schema}")
     return "\n".join(tool_strings)
 
 
