@@ -92,14 +92,14 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Install dependencies
-        working-directory: ${{ matrix.working-directory }}
+        working-directory: langchain/${{ matrix.working-directory }}
         shell: bash
         run: |
           echo "Running scheduled tests, installing dependencies with poetry..."
           poetry install --with=test_integration,test
 
       - name: Run integration tests
-        working-directory: ${{ matrix.working-directory }}
+        working-directory: langchain/${{ matrix.working-directory }}
         shell: bash
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -121,7 +121,7 @@ jobs:
           make integration_test
 
       - name: Ensure the tests did not create any additional files
-        working-directory: ${{ matrix.working-directory }}
+        working-directory: langchain/${{ matrix.working-directory }}
         shell: bash
         run: |
           set -eu
