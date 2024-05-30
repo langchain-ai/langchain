@@ -94,6 +94,7 @@ jobs:
       - name: Install dependencies
         run: |
           echo "Running scheduled tests, installing dependencies with poetry..."
+          echo "$(ls)"
           cd ../${{ matrix.working-directory }}
           poetry install --with=test_integration,test
 
