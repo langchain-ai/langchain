@@ -53,10 +53,6 @@ jobs:
           repository: langchain-ai/langchain-aws
           path: langchain-aws
 
-      - name: debug
-        run: |
-          ls
-
       - name: Move libs
         run: |
           rm -rf \
@@ -129,7 +125,7 @@ jobs:
             langchain/libs/partners/aws
 
       - name: Ensure the tests did not create any additional files
-        working-directory: .
+        working-directory: langchain
         run: |
           set -eu
 
