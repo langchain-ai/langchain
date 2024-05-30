@@ -116,7 +116,7 @@ jobs:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
         run: |
           cd langchain/${{ matrix.working-directory }}
-          make integration_test
+          make integration_tests
 
       - name: Remove external libraries
         run: | 
