@@ -129,8 +129,6 @@ jobs:
 
       - name: Ensure the tests did not create any additional files
         run: |
-          cd langchain/${{ matrix.working-directory }}
-          
           set -eu
 
           STATUS="$(git status)"
