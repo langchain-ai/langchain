@@ -188,3 +188,4 @@ developer_utils/
 prof
 *.epub
 smart_merge.py
+file::memory*
