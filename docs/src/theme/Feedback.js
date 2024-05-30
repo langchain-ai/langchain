@@ -195,7 +195,7 @@ export default function Feedback() {
   };
 
   const newGithubIssueURL = pathname
-    ? `https://github.com/langchain-ai/langchain/issues/new?assignees=&labels=03+-+Documentation&projects=&template=documentation.yml&title=DOC%3A+%3CIssue+related+to+${pathname}%3E`
+    ? `https://github.com/langchain-ai/langchain/issues/new?assignees=&labels=03+-+Documentation&projects=&template=documentation.yml&title=DOC%3A+%3CIssue+related+to+${pathname}%3E&url=https://python.langchain.com${pathname}`
     : "https://github.com/langchain-ai/langchain/issues/new?assignees=&labels=03+-+Documentation&projects=&template=documentation.yml&title=DOC%3A+%3CPlease+write+a+comprehensive+title+after+the+%27DOC%3A+%27+prefix%3E";
 
   return (

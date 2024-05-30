@@ -6,6 +6,7 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import openai
+from langchain_core.language_models.chat_models import LangSmithParams
 from langchain_core.outputs import ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -80,7 +81,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """  # noqa: E501
+    """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
         
@@ -177,7 +178,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     'azure_endpoint="https://xxx.openai.azure.com/", '
                     'azure_deployment="my-deployment"\n\n'
                     "Or you can equivalently specify:\n\n"
-                    'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'  # noqa: E501
+                    'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'
                 )
         client_params = {
             "api_version": values["openai_api_version"],
@@ -227,6 +228,16 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "openai_api_type": self.openai_api_type,
             "openai_api_version": self.openai_api_version,
         }
+
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get the parameters used to invoke the model."""
+        params = super()._get_ls_params(stop=stop, **kwargs)
+        params["ls_provider"] = "azure"
+        if self.deployment_name:
+            params["ls_model_name"] = self.deployment_name
+        return params
 
     def _create_chat_result(
         self, response: Union[dict, openai.BaseModel]
