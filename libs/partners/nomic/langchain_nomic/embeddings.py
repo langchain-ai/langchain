@@ -22,6 +22,7 @@ class NomicEmbeddings(Embeddings):
         self,
         *,
         model: str,
+        nomic_api_key: Optional[str] = ...,
         dimensionality: Optional[int] = ...,
         inference_mode: Literal["remote"] = ...,
     ):
@@ -32,6 +33,7 @@ class NomicEmbeddings(Embeddings):
         self,
         *,
         model: str,
+        nomic_api_key: Optional[str] = ...,
         dimensionality: Optional[int] = ...,
         inference_mode: Literal["local", "dynamic"],
         device: Optional[str] = ...,
@@ -43,6 +45,7 @@ class NomicEmbeddings(Embeddings):
         self,
         *,
         model: str,
+        nomic_api_key: Optional[str] = ...,
         dimensionality: Optional[int] = ...,
         inference_mode: str,
         device: Optional[str] = ...,
@@ -136,6 +139,7 @@ class NomicMultimodalEmbeddings(NomicEmbeddings):
             model=text_model,
             nomic_api_key=nomic_api_key,
             dimensionality=dimensionality,
+            inference_mode="remote",
         )
         self.vision_model = vision_model
 
