@@ -406,7 +406,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
     def _get_len_safe_embeddings(
-        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
+        self, texts: List[str], *, chunk_size: Optional[int] = None, **kwargs: Any
     ) -> List[List[float]]:
         """
         Generate length-safe embeddings for a list of texts.
@@ -417,7 +417,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         Args:
             texts (List[str]): A list of texts to embed.
-            engine (str): The engine or model to use for embeddings.
             chunk_size (Optional[int]): The size of chunks for processing embeddings.
 
         Returns:
@@ -455,7 +454,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
     async def _aget_len_safe_embeddings(
-        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
+        self, texts: List[str], *, chunk_size: Optional[int] = None, **kwargs: Any
     ) -> List[List[float]]:
         """
         Asynchronously generate length-safe embeddings for a list of texts.
@@ -466,7 +465,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         Args:
             texts (List[str]): A list of texts to embed.
-            engine (str): The engine or model to use for embeddings.
             chunk_size (Optional[int]): The size of chunks for processing embeddings.
 
         Returns:
@@ -530,9 +528,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             return embeddings
 
         # NOTE: to keep things simple, we assume the list may contain texts longer
-        #       than the maximum context and use length-safe embedding function.
-        engine = cast(str, self.deployment)
-        return self._get_len_safe_embeddings(texts, engine=engine)
+        # than the maximum context and use length-safe embedding function.
+        return self._get_len_safe_embeddings(texts)
 
     async def aembed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
@@ -561,8 +558,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
-        engine = cast(str, self.deployment)
-        return await self._aget_len_safe_embeddings(texts, engine=engine)
+        return await self._aget_len_safe_embeddings(texts)
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.

@@ -33,7 +33,7 @@ def test_langchain_openai_embeddings_dimensions() -> None:
 
 def test_langchain_openai_embeddings_equivalent_to_raw() -> None:
     documents = ["disallowed special token '<|endoftext|>'"]
-    embedding = OpenAIEmbeddings()
+    embedding = OpenAIEmbeddings(model="text-embedding-3-small")
 
     lc_output = embedding.embed_documents(documents)[0]
     direct_output = (
@@ -42,12 +42,12 @@ def test_langchain_openai_embeddings_equivalent_to_raw() -> None:
         .data[0]
         .embedding
     )
-    assert np.isclose(lc_output, direct_output).all()
+    assert lc_output == direct_output
 
 
 async def test_langchain_openai_embeddings_equivalent_to_raw_async() -> None:
     documents = ["disallowed special token '<|endoftext|>'"]
-    embedding = OpenAIEmbeddings()
+    embedding = OpenAIEmbeddings(model="text-embedding-3-small")
 
     lc_output = (await embedding.aembed_documents(documents))[0]
     client = openai.AsyncOpenAI()
@@ -56,4 +56,4 @@ async def test_langchain_openai_embeddings_equivalent_to_raw_async() -> None:
         .data[0]
         .embedding
     )
-    assert np.isclose(lc_output, direct_output).all()
+    assert lc_output == direct_output
