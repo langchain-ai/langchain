@@ -34,6 +34,8 @@ jobs:
     name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: langchain
       - uses: actions/checkout@v4
         with:
           repository: langchain-ai/langchain-google
