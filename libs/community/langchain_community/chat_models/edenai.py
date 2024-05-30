@@ -18,7 +18,6 @@ from typing import (
 )
 
 from aiohttp import ClientSession
-from langchain_community.utilities.requests import Requests
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -33,10 +32,12 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    InvalidToolCall,
-    ToolMessage,
     HumanMessage,
+    InvalidToolCall,
     SystemMessage,
+    ToolCall,
+    ToolCallChunk,
+    ToolMessage,
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
@@ -56,17 +57,19 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
+from langchain_community.utilities.requests import Requests
 
-def _result_to_chunked_message(generated_result):
+
+def _result_to_chunked_message(generated_result: ChatResult) -> ChatGenerationChunk:
     message = generated_result.generations[0].message
     if isinstance(message, AIMessage) and message.tool_calls is not None:
         tool_call_chunks = [
-            {
-                "name": tool_call["name"],
-                "args": json.dumps(tool_call["args"]),
-                "id": tool_call["id"],
-                "index": idx,
-            }
+            ToolCallChunk(
+                name=tool_call["name"],
+                args=json.dumps(tool_call["args"]),
+                id=tool_call["id"],
+                index=idx,
+            )
             for idx, tool_call in enumerate(message.tool_calls)
         ]
         message_chunk = AIMessageChunk(
@@ -99,7 +102,7 @@ def _extract_edenai_tool_results_from_messages(
     Get the last langchain tools messages to transform them into edenai tool_results
     Returns tool_results and messages without the extracted tool messages
     """
-    tool_results = []
+    tool_results: List[Dict[str, Any]] = []
     other_messages = messages[:]
     for msg in reversed(messages):
         if isinstance(msg, ToolMessage):
@@ -145,7 +148,7 @@ def _format_edenai_messages(messages: List[BaseMessage]) -> Dict[str, Any]:
     }
 
 
-def _format_tool_calls_to_edenai_tool_calls(message) -> List:
+def _format_tool_calls_to_edenai_tool_calls(message: BaseMessage) -> List:
     tool_calls = getattr(message, "tool_calls", [])
     invalid_tool_calls = getattr(message, "invalid_tool_calls", [])
     edenai_tool_calls = []
@@ -176,8 +179,8 @@ def _format_tool_calls_to_edenai_tool_calls(message) -> List:
 
 
 def _extract_tool_calls_from_edenai_response(
-    provider_response: Dict[str, Any]
-) -> Tuple[List[Dict[str, Any]], List[InvalidToolCall]]:
+    provider_response: Dict[str, Any],
+) -> Tuple[List[ToolCall], List[InvalidToolCall]]:
     tool_calls = []
     invalid_tool_calls = []
 
@@ -187,11 +190,11 @@ def _extract_tool_calls_from_edenai_response(
         for raw_tool_call in raw_tool_calls:
             try:
                 tool_calls.append(
-                    {
-                        "name": raw_tool_call["name"],
-                        "args": json.loads(raw_tool_call["arguments"]),
-                        "id": raw_tool_call["id"],
-                    }
+                    ToolCall(
+                        name=raw_tool_call["name"],
+                        args=json.loads(raw_tool_call["arguments"]),
+                        id=raw_tool_call["id"],
+                    )
                 )
             except json.JSONDecodeError as exc:
                 invalid_tool_calls.append(
@@ -438,9 +441,8 @@ class ChatEdenAI(BaseChatModel):
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
-        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
         llm = self.bind_tools([schema], tool_choice="required")
-        if is_pydantic_schema:
+        if isinstance(schema, type) and issubclass(schema, BaseModel):
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[schema], first_tool_only=True
             )
@@ -599,12 +601,26 @@ class ChatEdenAI(BaseChatModel):
                     llm_output=data,
                 )
 
-    def _stream_with_tools_as_generate(self, *args, **kwargs):
+    def _stream_with_tools_as_generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]],
+        run_manager: Optional[CallbackManagerForLLMRun],
+        **kwargs: Any,
+    ) -> ChatGenerationChunk:
         warnings.warn("stream: Tool use is not yet supported in streaming mode.")
-        result = self._generate(*args, **kwargs)
+        result = self._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
         return _result_to_chunked_message(result)
 
-    async def _astream_with_tools_as_agenerate(self, *args, **kwargs):
+    async def _astream_with_tools_as_agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]],
+        run_manager: Optional[AsyncCallbackManagerForLLMRun],
+        **kwargs: Any,
+    ) -> ChatGenerationChunk:
         warnings.warn("stream: Tool use is not yet supported in streaming mode.")
-        result = await self._agenerate(*args, **kwargs)
+        result = await self._agenerate(
+            messages, stop=stop, run_manager=run_manager, **kwargs
+        )
         return _result_to_chunked_message(result)
