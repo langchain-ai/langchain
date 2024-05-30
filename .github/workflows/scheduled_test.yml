@@ -114,6 +114,7 @@ jobs:
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
           COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           cd langchain/${{ matrix.working-directory }}
           make integration_tests
