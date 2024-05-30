@@ -10,6 +10,7 @@ env:
 
 jobs:
   build:
+    name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -31,7 +32,6 @@ jobs:
           - "libs/partners/aws"
           - "libs/partners/nvidia-ai-endpoints"
 
-    name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -92,14 +92,12 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Install dependencies
-        shell: bash
         run: |
           echo "Running scheduled tests, installing dependencies with poetry..."
           cd ../${{ matrix.working-directory }}
           poetry install --with=test_integration,test
 
       - name: Run integration tests
-        shell: bash
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -121,7 +119,6 @@ jobs:
           make integration_test
 
       - name: Ensure the tests did not create any additional files
-        shell: bash
         run: |
           cd langchain/${{ matrix.working-directory }}
           
