@@ -66,6 +66,7 @@ jobs:
           - "libs/partners/google-vertexai"
           - "libs/partners/google-genai"
           - "libs/partners/aws"
+          - "libs/partners/nvidia-ai-endpoints"
 
     name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     steps:
