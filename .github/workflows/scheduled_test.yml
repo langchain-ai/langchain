@@ -51,6 +51,10 @@ jobs:
           repository: langchain-ai/langchain-aws
           path: langchain-aws
 
+      - name: debug
+        run: |
+          ls
+
       - name: Move libs
         run: |
           rm -rf \
