@@ -62,6 +62,8 @@ if __name__ == "__main__":
         elif file.startswith("libs/cli"):
             # todo: add cli makefile
             pass
+        elif file.startswith("libs/streamlit_agent"):
+            pass
         elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]
             if os.path.isdir(f"libs/partners/{partner_dir}") and [
