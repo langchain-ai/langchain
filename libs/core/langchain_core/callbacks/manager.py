@@ -1918,7 +1918,7 @@ def _configure(
     )
 
     run_tree = get_run_tree_context()
-    parent_run_id = None if run_tree is None else getattr(run_tree, "id")
+    parent_run_id = None if run_tree is None else run_tree.id
     callback_manager = callback_manager_cls(handlers=[], parent_run_id=parent_run_id)
     if inheritable_callbacks or local_callbacks:
         if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
@@ -1929,10 +1929,22 @@ def _configure(
                 parent_run_id=parent_run_id,
             )
         else:
+            parent_run_id_ = inheritable_callbacks.parent_run_id
+            # Break ties between the external tracing context and inherited context
+            if parent_run_id is not None:
+                if parent_run_id_ is None:
+                    parent_run_id_ = parent_run_id
+                # If the LC parent has already been reflected
+                # in the run tree, we know the run_tree is either the
+                # same parent or a child of the parent.
+                elif run_tree and str(parent_run_id_) in run_tree.dotted_order:
+                    parent_run_id_ = parent_run_id
+                # Otherwise, we assume the LC context has progressed
+                # beyond the run tree and we should not inherit the parent.
             callback_manager = callback_manager_cls(
                 handlers=inheritable_callbacks.handlers.copy(),
                 inheritable_handlers=inheritable_callbacks.inheritable_handlers.copy(),
-                parent_run_id=inheritable_callbacks.parent_run_id,
+                parent_run_id=parent_run_id_,
                 tags=inheritable_callbacks.tags.copy(),
                 inheritable_tags=inheritable_callbacks.inheritable_tags.copy(),
                 metadata=inheritable_callbacks.metadata.copy(),
