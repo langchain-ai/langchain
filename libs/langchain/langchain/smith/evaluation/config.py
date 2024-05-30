@@ -133,7 +133,7 @@ class RunEvalConfig(BaseModel):
     as `EvaluatorType.QA`, the evaluator type string ("qa"), or a configuration for a
     given evaluator
     (e.g., 
-    :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`)."""  # noqa: E501
+    :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`)."""
     custom_evaluators: Optional[List[CUSTOM_EVALUATOR_TYPE]] = None
     """Custom evaluators to apply to the dataset run."""
     batch_evaluators: Optional[List[BATCH_EVALUATOR_LIKE]] = None

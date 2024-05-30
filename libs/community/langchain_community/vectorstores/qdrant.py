@@ -1681,7 +1681,7 @@ class Qdrant(VectorStore):
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
                     f"If you want to reuse it, please set `vector_name` to any of the "
                     f"existing named vectors: "
-                    f"{', '.join(current_vector_config.keys())}."  # noqa
+                    f"{', '.join(current_vector_config.keys())}."
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
@@ -1846,7 +1846,7 @@ class Qdrant(VectorStore):
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
                     f"If you want to reuse it, please set `vector_name` to any of the "
                     f"existing named vectors: "
-                    f"{', '.join(current_vector_config.keys())}."  # noqa
+                    f"{', '.join(current_vector_config.keys())}."
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )

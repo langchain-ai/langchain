@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel
@@ -142,11 +142,12 @@ class TitanTakeoffEmbed(Embeddings):
 
     def _embed(
         self, input: Union[List[str], str], consumer_group: Optional[str]
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """Embed text.
 
         Args:
-            input (List[str]): prompt/document or list of prompts/documents to embed
+            input (Union[List[str], str]): prompt/document or list of prompts/documents
+            to embed
             consumer_group (Optional[str]): what consumer group to send the embedding
             request to. If not specified and there is only one
             consumer group specified during initialization, it will be used. If there
