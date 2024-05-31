@@ -1,3 +1,7 @@
+""" Kafka-based chat message history by using confluent-kafka-python.
+    confluent-kafka-python is under Apache 2.0 license.
+    https://github.com/confluentinc/confluent-kafka-python
+"""
 from __future__ import annotations
 
 import json
@@ -10,9 +14,8 @@ from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import BaseMessage, message_to_dict, messages_from_dict
 
 if TYPE_CHECKING:
-    from confluent_kafka import OFFSET_BEGINNING, OFFSET_END, Consumer, TopicPartition
-    from confluent_kafka.admin import AdminClient, NewTopic
-
+    from confluent_kafka import TopicPartition
+    from confluent_kafka.admin import AdminClient
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +26,7 @@ DEFAULT_REPLICATION_FACTOR = 1
 DEFAULT_PARTITION = 3
 
 
-class ConsumeStartPos(Enum):
+class ConsumeStartPosition(Enum):
     """Consume start position for Kafka consumer to get chat history messages.
     LAST_CONSUMED: Continue from the last consumed offset.
     EARLIEST: Start consuming from the beginning.
@@ -45,6 +48,7 @@ def ensure_topic_exists(
     """Create topic if it doesn't exist, and return the number of partitions.
     If the topic already exists, we don't change the topic configuration.
     """
+    from confluent_kafka.admin import NewTopic
 
     try:
         topic_metadata = admin_client.list_topics().topics
@@ -91,7 +95,7 @@ class KafkaChatMessageHistory(BaseChatMessageHistory):
     ):
         """
         Args:
-            session_id: The ID for single chat session.
+            session_id: The ID for single chat session. It is used as Kafka topic name.
             bootstrap_servers:
                 Comma-separated host/port pairs to establish connection to Kafka cluster
                 https://kafka.apache.org/documentation.html#adminclientconfigs_bootstrap.servers
@@ -104,6 +108,7 @@ class KafkaChatMessageHistory(BaseChatMessageHistory):
         """
         try:
             from confluent_kafka import Producer
+            from confluent_kafka.admin import AdminClient
         except (ImportError, ModuleNotFoundError):
             raise ImportError(
                 "Could not import confluent_kafka package. "
@@ -121,7 +126,7 @@ class KafkaChatMessageHistory(BaseChatMessageHistory):
     def add_messages(
         self,
         messages: Sequence[BaseMessage],
-        flush_timeout_seconds: Optional[float] = None,
+        flush_timeout_seconds: float = 5.0,
     ) -> None:
         """Add messages to the chat history by producing to the Kafka topic."""
         try:
@@ -137,32 +142,30 @@ class KafkaChatMessageHistory(BaseChatMessageHistory):
             logger.error(f"Failed to add messages to Kafka: {e}")
             raise e
 
-    def messages_by_pos(
+    def __read_messages(
         self,
-        consume_start_pos: ConsumeStartPos = ConsumeStartPos.LAST_CONSUMED,
-        max_message_count: Optional[int] = 100,
-        max_time_sec: Optional[float] = 60.0,
+        consume_start_pos: ConsumeStartPosition,
+        max_message_count: Optional[int],
+        max_time_sec: Optional[float],
     ) -> List[BaseMessage]:
         """Retrieve messages from Kafka topic for the session.
            Please note this method is stateful. Internally, it uses Kafka consumer
-           to consume messages, and maintains the commit offset.
+           to consume messages, and maintains the consumed offset.
 
          Args:
-              consume_start_pos:
-                Consuming start position for Kafka consumer.
-                Default LAST_CONSUMED, which means resuming from last consumed message.
-                To read from beginning, use EARLIEST to reset to beginning and consume.
-                To read from latest message, use LATEST.
+              consume_start_pos: Start position for Kafka consumer.
               max_message_count: Maximum number of messages to consume.
               max_time_sec:      Time limit in seconds to consume messages.
         Returns:
-              List of BaseMessage objects.
+              List of messages.
         """
+        from confluent_kafka import OFFSET_BEGINNING, OFFSET_END, Consumer
+
         consumer_config = {
             BOOTSTRAP_SERVERS_CONFIG: self.bootstrap_servers,
             "group.id": self.session_id,
             "auto.offset.reset": "latest"
-            if consume_start_pos == ConsumeStartPos.LATEST
+            if consume_start_pos == ConsumeStartPosition.LATEST
             else "earliest",
         }
 
@@ -173,22 +176,22 @@ class KafkaChatMessageHistory(BaseChatMessageHistory):
                 p.offset = OFFSET_BEGINNING
             assigned_consumer.assign(assigned_partitions)
 
-        def assign_end(
+        def assign_latest(
             assigned_consumer: Consumer, assigned_partitions: list[TopicPartition]
         ) -> None:
             for p in assigned_partitions:
                 p.offset = OFFSET_END
             assigned_consumer.assign(assigned_partitions)
 
-        assign_callback = None
-        if consume_start_pos == ConsumeStartPos.EARLIEST:
-            assign_callback = assign_beginning
-        elif consume_start_pos == ConsumeStartPos.LATEST:
-            assign_callback = assign_end
-
         messages: List[dict] = []
-        with Consumer(consumer_config) as consumer:
-            consumer.subscribe([self.session_id], on_assign=assign_callback)
+        consumer = Consumer(consumer_config)
+        try:
+            if consume_start_pos == ConsumeStartPosition.EARLIEST:
+                consumer.subscribe([self.session_id], on_assign=assign_beginning)
+            elif consume_start_pos == ConsumeStartPosition.LATEST:
+                consumer.subscribe([self.session_id], on_assign=assign_latest)
+            else:
+                consumer.subscribe([self.session_id])
             start_time_sec = time.time()
             while True:
                 if (
@@ -209,18 +212,82 @@ class KafkaChatMessageHistory(BaseChatMessageHistory):
                     logger.warning("Empty message value")
                     continue
                 messages.append(json.loads(message.value()))
+        except Exception as e:
+            logger.error(f"Failed to consume messages from Kafka: {e}")
+            raise e
+        finally:
+            consumer.close()
 
         return messages_from_dict(messages)
 
+    def messages_from_beginning(
+        self, max_message_count: Optional[int] = 5, max_time_sec: Optional[float] = 5.0
+    ) -> List[BaseMessage]:
+        """Retrieve messages from Kafka topic from the beginning.
+        This method resets the consumer to the beginning and consumes messages.
+
+             Args:
+                 max_message_count: Maximum number of messages to consume.
+                 max_time_sec:      Time limit in seconds to consume messages.
+             Returns:
+                 List of messages.
+        """
+        return self.__read_messages(
+            consume_start_pos=ConsumeStartPosition.EARLIEST,
+            max_message_count=max_message_count,
+            max_time_sec=max_time_sec,
+        )
+
+    def messages_from_latest(
+        self, max_message_count: Optional[int] = 5, max_time_sec: Optional[float] = 5.0
+    ) -> List[BaseMessage]:
+        """Retrieve messages from Kafka topic from end.
+        This method resets the consumer to the latest offset and consumes messages.
+
+             Args:
+                 max_message_count: Maximum number of messages to consume.
+                 max_time_sec:      Time limit in seconds to consume messages.
+             Returns:
+                 List of messages.
+        """
+
+        return self.__read_messages(
+            consume_start_pos=ConsumeStartPosition.LATEST,
+            max_message_count=max_message_count,
+            max_time_sec=max_time_sec,
+        )
+
+    def messages_from_last_consumed(
+        self, max_message_count: Optional[int] = 5, max_time_sec: Optional[float] = 5.0
+    ) -> List[BaseMessage]:
+        """Retrieve messages from Kafka topic from the last consumed message.
+        Please note this method is stateful. Internally, it uses Kafka consumer
+        to consume messages, and maintains the commit offset.
+
+          Args:
+               max_message_count: Maximum number of messages to consume.
+               max_time_sec:      Time limit in seconds to consume messages.
+          Returns:
+               List of messages.
+        """
+
+        return self.__read_messages(
+            consume_start_pos=ConsumeStartPosition.LAST_CONSUMED,
+            max_message_count=max_message_count,
+            max_time_sec=max_time_sec,
+        )
+
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
-        """Retrieve the messages for the session, from Kafka topic continuously
-        from last consumed message. This method is stateful and maintains
-        consumed(committed) offset based on consumer group. To consume from the
-        beginning, use messages_by_pos with ConsumeStartPos.EARLIEST to reset
-        position to beginning. To read from latest message, use ConsumeStartPos.LATEST.
         """
-        return self.messages_by_pos(consume_start_pos=ConsumeStartPos.LAST_CONSUMED)
+        Retrieve the messages for the session, from Kafka topic continuously
+        from last consumed message. This method is stateful and maintains
+        consumed(committed) offset based on consumer group.
+        Alternatively, use messages_from_last_consumed() with specified parameters.
+        Use messages_from_beginning() to read from the earliest message.
+        Use messages_from_latest() to read from the latest message.
+        """
+        return self.messages_from_last_consumed()
 
     def clear(self) -> None:
         """Clear the chat history by deleting the Kafka topic."""
