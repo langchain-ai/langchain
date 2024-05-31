@@ -43,6 +43,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_message_histories.in_memory import (
         ChatMessageHistory,
     )
+    from langchain_community.chat_message_histories.kafka import (
+        KafkaChatMessageHistory,
+    )
     from langchain_community.chat_message_histories.momento import (
         MomentoChatMessageHistory,
     )
@@ -84,9 +87,6 @@ if TYPE_CHECKING:
     )
     from langchain_community.chat_message_histories.zep_cloud import (
         ZepCloudChatMessageHistory,
-    )
-    from langchain_community.chat_message_histories.kafka import (
-        KafkaChatMessageHistory,
     )
 
 __all__ = [
