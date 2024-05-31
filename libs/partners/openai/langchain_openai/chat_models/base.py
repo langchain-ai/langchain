@@ -1219,7 +1219,6 @@ class ChatOpenAI(BaseChatOpenAI):
             AIMessageChunk(content=' programmation', id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
             AIMessageChunk(content='.', id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
             AIMessageChunk(content='', response_metadata={'finish_reason': 'stop'}, id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
-            AIMessageChunk(content='', id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0', usage_metadata={'input_tokens': 31, 'output_tokens': 5, 'total_tokens': 36})
 
         .. code-block:: python
 
@@ -1231,7 +1230,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
         .. code-block:: python
 
-            AIMessageChunk(content="J'adore la programmation.", response_metadata={'finish_reason': 'stop'}, id='run-bf917526-7f58-4683-84f7-36a6b671d140', usage_metadata={'input_tokens': 31, 'output_tokens': 5, 'total_tokens': 36})
+            AIMessageChunk(content="J'adore la programmation.", response_metadata={'finish_reason': 'stop'}, id='run-bf917526-7f58-4683-84f7-36a6b671d140')
 
     Async:
         .. code-block:: python
@@ -1352,6 +1351,33 @@ class ChatOpenAI(BaseChatOpenAI):
         .. code-block:: python
 
             {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
+
+        When streaming, set the ``stream_options`` model kwarg:
+
+        .. code-block:: python
+
+            stream = llm.stream(messages, stream_options={"include_usage": True})
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full.usage_metadata
+
+        .. code-block:: python
+
+            {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
+
+        Alternatively, setting ``stream_options`` when instantiating the model can be
+        useful when incorporating ``ChatOpenAI`` into LCEL chains-- or when using
+        methods like ``.with_structured_output``, which generate chains under the
+        hood.
+
+        .. code-block:: python
+
+            llm = ChatOpenAI(
+                model="gpt-4o",
+                model_kwargs={"stream_options": {"include_usage": True}},
+            )
+            structured_llm = llm.with_structured_output(...)
 
     Logprobs:
         .. code-block:: python
