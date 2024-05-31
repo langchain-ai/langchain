@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field
@@ -98,10 +98,7 @@ def merge_content(
     elif isinstance(second_content, List):
         # If both are lists
         merged_list = merge_lists(first_content, second_content)
-        # Satisfy type-checker
-        if merged_list is None:
-            raise Exception("Failed to merge message chunk contents.")
-        return merged_list
+        return cast(list, merged_list)
     # If the first content is a list, and the second content is a string
     else:
         # If the last element of the first content is a string
