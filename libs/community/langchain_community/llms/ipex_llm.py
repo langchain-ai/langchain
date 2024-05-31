@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional, Literal
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
@@ -43,6 +43,7 @@ class IpexLLM(LLM):
         tokenizer_id: Optional[str] = None,
         load_in_4bit: bool = True,
         load_in_low_bit: Optional[str] = None,
+        device_map: Literal['cpu','xpu'] = 'cpu',
         **kwargs: Any,
     ) -> LLM:
         """
@@ -72,6 +73,7 @@ class IpexLLM(LLM):
             low_bit_model=False,
             load_in_4bit=load_in_4bit,
             load_in_low_bit=load_in_low_bit,
+            device_map=device_map,
             model_kwargs=model_kwargs,
             kwargs=kwargs,
         )
@@ -83,6 +85,7 @@ class IpexLLM(LLM):
         model_kwargs: Optional[dict] = None,
         *,
         tokenizer_id: Optional[str] = None,
+        device_map: Literal['cpu','xpu'] = 'cpu',
         **kwargs: Any,
     ) -> LLM:
         """
@@ -106,6 +109,7 @@ class IpexLLM(LLM):
             low_bit_model=True,
             load_in_4bit=False,  # not used for low-bit model
             load_in_low_bit=None,  # not used for low-bit model
+            device_map=device_map,
             model_kwargs=model_kwargs,
             kwargs=kwargs,
         )
@@ -118,6 +122,7 @@ class IpexLLM(LLM):
         load_in_4bit: bool = False,
         load_in_low_bit: Optional[str] = None,
         low_bit_model: bool = False,
+        device_map: Literal['cpu','xpu'] = "cpu",
         model_kwargs: Optional[dict] = None,
         kwargs: Optional[dict] = None,
     ) -> Any:
@@ -186,6 +191,15 @@ class IpexLLM(LLM):
                 model_kwargs=_model_kwargs,
             )
 
+        # Set "cpu" as default device
+
+        if device_map not in ["cpu", "xpu"]:
+            raise ValueError(
+                "IpexLLM currently only supports device to be "
+                f"'cpu' or 'xpu', but you have: {device_map}."
+            )
+        model.to(device_map)
+        
         return cls(
             model_id=model_id,
             model=model,
@@ -234,7 +248,7 @@ class IpexLLM(LLM):
         if self.streaming:
             from transformers import TextStreamer
 
-            input_ids = self.tokenizer.encode(prompt, return_tensors="pt")
+            input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.model.device)
             streamer = TextStreamer(
                 self.tokenizer, skip_prompt=True, skip_special_tokens=True
             )
@@ -260,7 +274,7 @@ class IpexLLM(LLM):
             text = self.tokenizer.decode(output[0], skip_special_tokens=True)
             return text
         else:
-            input_ids = self.tokenizer.encode(prompt, return_tensors="pt")
+            input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.model.device)
             if stop is not None:
                 from transformers.generation.stopping_criteria import (
                     StoppingCriteriaList,
