@@ -19,7 +19,7 @@ _CONTENT: List = [
     {"type": "tool_use", "input": {"baz": "a"}, "id": "2", "name": "_Foo2"},
 ]
 
-_RESULT: List = [ChatGeneration(message=AIMessage(_CONTENT))]
+_RESULT: List = [ChatGeneration(message=AIMessage(_CONTENT))]  # type: ignore[misc]
 
 
 class _Foo1(BaseModel):
@@ -50,7 +50,7 @@ def test_tools_output_parser_args_only() -> None:
     assert expected == actual
 
     expected = []
-    actual = output_parser.parse_result([ChatGeneration(message=AIMessage(""))])
+    actual = output_parser.parse_result([ChatGeneration(message=AIMessage(""))])  # type: ignore[misc]
     assert expected == actual
 
 
@@ -61,7 +61,7 @@ def test_tools_output_parser_first_tool_only() -> None:
     assert expected == actual
 
     expected = None
-    actual = output_parser.parse_result([ChatGeneration(message=AIMessage(""))])
+    actual = output_parser.parse_result([ChatGeneration(message=AIMessage(""))])  # type: ignore[misc]
     assert expected == actual
 
 
