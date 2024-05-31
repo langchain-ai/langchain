@@ -17,9 +17,9 @@ class ChatCompletionsOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
         """Return the output parser type for serialization."""
         return "mlflow_simplified_chat_completions"
 
-    def parse(self, text: BaseMessage) -> Dict[str, Any]:
+    def parse(self, text: str) -> Dict[str, Any]:
         return asdict(ChatCompletionResponse(
-            choices=[ChainCompletionChoice(message=Message(content=text.content))]
+            choices=[ChainCompletionChoice(message=Message(content=text))]
         ))
     
 class StringResponseOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
@@ -35,5 +35,5 @@ class StringResponseOutputParser(BaseTransformOutputParser[Dict[str, Any]]):
         """Return the output parser type for serialization."""
         return "mlflow_simplified_str_object"
 
-    def parse(self, text: BaseMessage) -> Dict[str, Any]:
-        return asdict(StringResponse(content=text.content))
+    def parse(self, text: str) -> Dict[str, Any]:
+        return asdict(StringResponse(content=text))
