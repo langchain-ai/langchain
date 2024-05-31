@@ -43,7 +43,7 @@ def _load_template(var_name: str, config: dict) -> dict:
         template_path = Path(config.pop(f"{var_name}_path"))
         # Load the template.
         if template_path.suffix == ".txt":
-            with open(template_path) as f:
+            with open(template_path, "r", encoding="utf-8") as f:
                 template = f.read()
         else:
             raise ValueError
