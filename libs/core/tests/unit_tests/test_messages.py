@@ -181,6 +181,12 @@ def test_complex_ai_message_chunks() -> None:
         == AIMessageChunk(content=[{"index": 0, "text": "I am indeed."}])
     ), "Concatenating when both content arrays are dicts with the same index should merge"  # noqa: E501
 
+    assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
+        content=[{"text": " indeed."}]
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am"}, {"text": " indeed."}]
+    ), "Concatenating when one chunk is missing an index should not merge or throw"  # noqa: E501
+
     assert (
         AIMessageChunk(content=[{"index": 0, "text": "I am"}])
         + AIMessageChunk(content=[{"index": 2, "text": " indeed."}])
