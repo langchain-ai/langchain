@@ -83,7 +83,7 @@ TEXT_OPERATORS = {
     "$ilike",
 }
 
-LOGICAL_OPERATORS = {"$and", "$or"}
+LOGICAL_OPERATORS = {"$and", "$or", "$not"}
 
 SUPPORTED_OPERATORS = (
     set(COMPARISONS_TO_NATIVE)
@@ -851,21 +851,21 @@ class PGVector(VectorStore):
         """
         if isinstance(filters, dict):
             if len(filters) == 1:
-                # The only operators allowed at the top level are $AND and $OR
+                # The only operators allowed at the top level are $AND, $OR, and $NOT
                 # First check if an operator or a field
                 key, value = list(filters.items())[0]
                 if key.startswith("$"):
                     # Then it's an operator
-                    if key.lower() not in ["$and", "$or"]:
+                    if key.lower() not in ["$and", "$or", "$not"]:
                         raise ValueError(
-                            f"Invalid filter condition. Expected $and or $or "
+                            f"Invalid filter condition. Expected $and, $or or $not "
                             f"but got: {key}"
                         )
                 else:
                     # Then it's a field
                     return self._handle_field_filter(key, filters[key])
 
-                # Here we handle the $and and $or operators
+                # Here we handle the $and, $or, and $not operators
                 if not isinstance(value, list):
                     raise ValueError(
                         f"Expected a list, but got {type(value)} for value: {value}"
@@ -892,6 +892,14 @@ class PGVector(VectorStore):
                             "Invalid filter condition. Expected a dictionary "
                             "but got an empty dictionary"
                         )
+                elif key.lower() == "$not":
+                    not_conditions = [
+                        self._create_filter_clause(item) for item in value
+                    ]
+                    not_ = sqlalchemy.and_(
+                        *[sqlalchemy.not_(condition) for condition in not_conditions]
+                    )
+                    return not_
                 else:
                     raise ValueError(
                         f"Invalid filter condition. Expected $and or $or "
