@@ -20,7 +20,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {boolean} [hideMistral] - Whether or not to hide Mistral chat model.
  * @property {boolean} [hideGoogle] - Whether or not to hide Google VertexAI chat model.
  * @property {boolean} [hideTogether] - Whether or not to hide Together chat model.
- * @property {boolean} [hideMicrosoft] - Whether or not to hide Microsoft Azure OpenAI chat model.
+ * @property {boolean} [hideAzure] - Whether or not to hide Microsoft Azure OpenAI chat model.
  * @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
  */
 
@@ -43,7 +43,7 @@ export default function ChatModelTabs(props) {
     hideMistral,
     hideGoogle,
     hideTogether,
-    hideMicrosoft,
+    hideAzure,
     customVarName,
   } = props;
 
@@ -130,13 +130,13 @@ export default function ChatModelTabs(props) {
       shouldHide: hideTogether,
     },
     {
-      value: "Microsoft",
-      label: "Microsoft",
-      text: `from langchain_openai import AzureChatOpenAI\n\n# The deployment is built from gpt-3.5-turbo${llmVarName} = AzureChatOpenAI(${azureParamsOrDefault})`,
+      value: "Azure",
+      label: "Azure",
+      text: `from langchain_openai import AzureChatOpenAI\n\n${llmVarName} = AzureChatOpenAI(${azureParamsOrDefault})`,
       apiKeyName: "AZURE_OPENAI_API_KEY",
       packageName: "langchain-openai",
       default: false,
-      shouldHide: hideMicrosoft,
+      shouldHide: hideAzure,
     },
   ];
 
