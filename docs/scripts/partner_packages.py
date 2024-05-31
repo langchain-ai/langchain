@@ -82,6 +82,19 @@ def get_package_metadata(github_slug, package) -> PartnerPackage:
     return pack
 
 
+def get_nonstandard_package_metadata(
+    package_name: str, repo_slug: str
+) -> PartnerPackage:
+    return PartnerPackage(
+        name=package_name,
+        version="",
+        description="An integration package implemented completely by a partner",
+        authors=[],
+        url=f"https://github.com/{repo_slug}",
+        license="",
+    )
+
+
 def get_integration_packages_info() -> list[PartnerPackage]:
     if not PACKAGE_METADATA_FILE.exists():
         logger.warning(f"The packages file {PACKAGE_METADATA_FILE} does not exist.")
@@ -106,7 +119,14 @@ def get_integration_packages_info() -> list[PartnerPackage]:
                     and "partners" in package["path"]
                     or repo["name"] != "langchain"
                 ):
-                    package_info = get_package_metadata(repo["slug"], package)
+                    try:
+                        package_info = get_package_metadata(repo["slug"], package)
+                    except ValueError:
+                        # if the package metadata cannot be retrieved, assume
+                        # that the package metadata is not in the standard format
+                        package_info = get_nonstandard_package_metadata(
+                            package["name"], repo["slug"]
+                        )
                     integration_packages.append(package_info)
 
         return integration_packages

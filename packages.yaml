@@ -115,3 +115,54 @@ repos:
         path: .
 
   # Partner integration repositories NOT in the langchain-ai organization:
+  # Google repositories:
+  - name: langchain-google-alloydb-pg-python
+    slug: googleapis/langchain-google-alloydb-pg-python
+    packages:
+      - name: langchain-google-alloydb-pg-python
+        path: src/langchain_google_alloydb_pg_python
+  - name: langchain-google-bigtable-python
+    slug: googleapis/langchain-google-bigtable-python
+    packages:
+      - name: langchain-google-bigtable
+        path: src/langchain_google_bigtable
+  - name: langchain-google-cloud-sql-mysql-python
+    slug: googleapis/langchain-google-cloud-sql-mysql-python
+    packages:
+      - name: langchain-google-cloud-sql-mysql
+        path: src/langchain_google_cloud_sql_mysql
+  - name: langchain-google-cloud-sql-mssql-python
+    slug: googleapis/langchain-google-cloud-sql-mssql-python
+    packages:
+      - name: langchain-google-cloud-sql-mssql
+        path: src/langchain_google_cloud_sql_mssql
+  - name: langchain-google-cloud-sql-pg-python
+    slug: googleapis/langchain-google-cloud-sql-pg-python
+    packages:
+      - name: langchain-google-cloud-sql-pg
+        path: src/langchain_google_cloud_sql_pg
+  - name: langchain-google-datastore-python
+    slug: googleapis/langchain-google-datastore-python
+    packages:
+      - name: langchain-google-datastore
+        path: src/langchain_google_datastore
+  - name: langchain-google-el-carro-python
+    slug: googleapis/langchain-google-el-carro-python
+    packages:
+      - name: langchain-google-el-carro
+        path: src/langchain_google_el_carro
+  - name: langchain-google-firestore-python
+    slug: googleapis/langchain-google-firestore-python
+    packages:
+      - name: langchain-google-firestore
+        path: src/langchain_google_firestore
+  - name: langchain-google-memorystore-redis-python
+    slug: googleapis/langchain-google-memorystore-redis-python
+    packages:
+      - name: langchain-google-memorystore-redis
+        path: src/langchain_google_memorystore_redis
+  - name: langchain-google-spanner-python
+    slug: googleapis/langchain-google-spanner-python
+    packages:
+      - name: langchain-google-spanner
+        path: src/langchain_google_spanner
