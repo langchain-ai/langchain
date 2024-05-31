@@ -92,5 +92,6 @@ filterwarnings = [
   'ignore:The method `ChatGroq.with_structured_output` is in beta',
   # Maintain support for pydantic 1.X
   'default:The `dict` method is deprecated; use `model_dump` instead:DeprecationWarning',
+  "ignore:tool_choice='any' is not currently supported. Converting to 'auto'.",
 ]
 asyncio_mode = "auto"

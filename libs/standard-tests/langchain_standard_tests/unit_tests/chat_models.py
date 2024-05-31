@@ -9,6 +9,8 @@ from langchain_core.tools import tool
 
 
 class Person(BaseModel):
+    """Record attributes of a person."""
+
     name: str = Field(..., description="The name of the person.")
     age: int = Field(..., description="The age of the person.")
 
@@ -20,8 +22,8 @@ def my_adder_tool(a: int, b: int) -> int:
 
 
 class ChatModelTests(ABC):
-    @abstractmethod
     @property
+    @abstractmethod
     def chat_model_class(self) -> Type[BaseChatModel]:
         ...
 
@@ -101,9 +103,8 @@ class ChatModelUnitTests(ChatModelTests):
     def test_bind_tool_pydantic(
         self,
         model: BaseChatModel,
-        chat_model_has_tool_calling: bool,
     ) -> None:
-        if not chat_model_has_tool_calling:
+        if not self.has_tool_calling:
             return
 
         tool_model = model.bind_tools(

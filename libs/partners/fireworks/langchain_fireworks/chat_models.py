@@ -282,6 +282,8 @@ class ChatFireworks(BaseChatModel):
     """Model name to use."""
     temperature: float = 0.0
     """What sampling temperature to use."""
+    stop: Optional[Union[str, List[str]]] = Field(None, alias="stop_sequences")
+    """Default stop sequences."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     fireworks_api_key: SecretStr = Field(default=None, alias="api_key")
@@ -300,6 +302,8 @@ class ChatFireworks(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
+    max_retries: Optional[int] = None
+    """Maximum number of retries to make when generating."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -344,6 +348,9 @@ class ChatFireworks(BaseChatModel):
             values["client"] = Fireworks(**client_params).chat.completions
         if not values.get("async_client"):
             values["async_client"] = AsyncFireworks(**client_params).chat.completions
+        if values["max_retries"]:
+            values["client"]._max_retries = values["max_retries"]
+            values["async_client"]._max_retries = values["max_retries"]
         return values
 
     @property
@@ -354,6 +361,7 @@ class ChatFireworks(BaseChatModel):
             "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
+            "stop": self.stop,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
@@ -443,8 +451,6 @@ class ChatFireworks(BaseChatModel):
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = self._default_params
         if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
