@@ -87,6 +87,15 @@ export default function ChatModelTabs(props) {
       shouldHide: hideAnthropic,
     },
     {
+      value: "Azure",
+      label: "Azure",
+      text: `from langchain_openai import AzureChatOpenAI\n\n${llmVarName} = AzureChatOpenAI(${azureParamsOrDefault})`,
+      apiKeyName: "AZURE_OPENAI_API_KEY",
+      packageName: "langchain-openai",
+      default: false,
+      shouldHide: hideAzure,
+    },
+    {
       value: "Google",
       label: "Google",
       text: `from langchain_google_vertexai import ChatVertexAI\n\n${llmVarName} = ChatVertexAI(${googleParamsOrDefault})`,
@@ -130,15 +139,6 @@ export default function ChatModelTabs(props) {
       packageName: "langchain-openai",
       default: false,
       shouldHide: hideTogether,
-    },
-    {
-      value: "Azure",
-      label: "Azure",
-      text: `from langchain_openai import AzureChatOpenAI\n\n${llmVarName} = AzureChatOpenAI(${azureParamsOrDefault})`,
-      apiKeyName: "AZURE_OPENAI_API_KEY",
-      packageName: "langchain-openai",
-      default: false,
-      shouldHide: hideAzure,
     },
   ];
 
