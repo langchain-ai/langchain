@@ -203,6 +203,16 @@ def _get_search_client(
             # don't use semantic search
             semantic_search = None
 
+        # Create the encryption key with the configuration
+        if search_resource_encryption_key is not None:
+            search_resource_encryption_key = SearchResourceEncryptionKey(
+                key_name="default_key_name",
+                key_version="default_key_version",
+                vault_uri="https://default-keyvault-name.vault.azure.net",
+            )
+        else:
+            search_resource_encryption_key = None
+
         # Create the search index with the semantic settings and vector search
         index = SearchIndex(
             name=index_name,
@@ -221,6 +231,7 @@ def _get_search_client(
         index_name=index_name,
         credential=credential,
         user_agent=user_agent,
+        encryption_key=search_resource_encryption_key,
     )
 
 

@@ -263,18 +263,24 @@ def mock_default_index_with_encryption_key(*args, **kwargs):  # type: ignore[no-
         ),
     )
 
+
 def create_vector_store_with_encryption_key() -> AzureSearch:
+    from azure.search.documents.indexes.models import SearchResourceEncryptionKey
+
     return AzureSearch(
         azure_search_endpoint=DEFAULT_ENDPOINT,
         azure_search_key=DEFAULT_KEY,
         index_name=DEFAULT_INDEX_NAME,
         embedding_function=DEFAULT_EMBEDDING_MODEL,
-        encryption_key_name=DEFAULT_ENCRYPTION_KEY_NAME,
-        encryption_key_version=DEFAULT_ENCRYPTION_KEY_VERSION,
-        encryption_key_vault_uri=DEFAULT_ENCRYPTION_KEY_VAULT_URI,
+        encryption_key=SearchResourceEncryptionKey(
+            key_name=DEFAULT_ENCRYPTION_KEY_NAME,
+            key_version=DEFAULT_ENCRYPTION_KEY_VERSION,
+            vault_uri=DEFAULT_ENCRYPTION_KEY_VAULT_URI,
+        ),
     )
 
-@pytest.mark.requires("azure.search.documents")
+
+@pytest.mark.requires("azure.search.documents.indexes.models")
 def test_init_existing_index_with_encryption_key():
     from azure.search.documents.indexes import SearchIndexClient
     from azure.search.documents.indexes.models import SearchResourceEncryptionKey
@@ -290,17 +296,13 @@ def test_init_existing_index_with_encryption_key():
             azure_search_key=DEFAULT_KEY,
             index_name=DEFAULT_INDEX_NAME,
             embedding_function=DEFAULT_EMBEDDING_MODEL,
-            encryption_key_name=DEFAULT_ENCRYPTION_KEY_NAME,
-            encryption_key_version=DEFAULT_ENCRYPTION_KEY_VERSION,
-            encryption_key_vault_uri=DEFAULT_ENCRYPTION_KEY_VAULT_URI,
+            search_resource_encryption_key=SearchResourceEncryptionKey(
+                key_name=DEFAULT_ENCRYPTION_KEY_NAME,
+                key_version=DEFAULT_ENCRYPTION_KEY_VERSION,
+                vault_uri=DEFAULT_ENCRYPTION_KEY_VAULT_URI),
         )
 
         assert vector_store.client is not None
-        assert vector_store.encryption_key is not None
-        assert isinstance(vector_store.encryption_key, SearchResourceEncryptionKey)
-        assert vector_store.encryption_key.key_name == DEFAULT_ENCRYPTION_KEY_NAME
-        assert vector_store.encryption_key.key_version == DEFAULT_ENCRYPTION_KEY_VERSION
-        assert vector_store.encryption_key.vault_uri == DEFAULT_ENCRYPTION_KEY_VAULT_URI
 
 @pytest.mark.requires("azure.search.documents")
 def test_init_new_index_with_encryption_key():
@@ -335,8 +337,3 @@ def test_init_new_index_with_encryption_key():
         assert json.dumps(created_index.as_dict()) == json.dumps(
             mock_default_index().as_dict()
         )
-        assert vector_store.encryption_key is not None
-        assert isinstance(vector_store.encryption_key, SearchResourceEncryptionKey)
-        assert vector_store.encryption_key.key_name == DEFAULT_ENCRYPTION_KEY_NAME
-        assert vector_store.encryption_key.key_version == DEFAULT_ENCRYPTION_KEY_VERSION
-        assert vector_store.encryption_key.vault_uri == DEFAULT_ENCRYPTION_KEY_VAULT_URI
