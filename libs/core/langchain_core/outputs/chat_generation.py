@@ -61,7 +61,7 @@ class ChatGenerationChunk(ChatGeneration):
 
     message: BaseMessageChunk
     # Override type to be ChatGeneration, ignore mypy error as this is intentional
-    type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"  # type: ignore[assignment] # noqa: E501
+    type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
     @classmethod
