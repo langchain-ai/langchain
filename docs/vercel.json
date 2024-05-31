@@ -42,6 +42,10 @@
       "destination": "/v0.2/docs/introduction/"
     },
     {
+      "source": "/docs/integrations/:path(.*/?)*",
+      "destination": "/v0.2/docs/integrations/:path*"
+    },
+    {
       "source": "/docs/:path(.*/?)*",
       "destination": "/v0.1/docs/:path*"
     },
