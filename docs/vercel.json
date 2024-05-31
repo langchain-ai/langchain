@@ -14,8 +14,8 @@
   ],
   "redirects": [
     {
-      "source": "/docs/integrations/llms/llm_caching(/?)",
-      "destination": "docs/integration/llm_caching/"
+      "source": "/v0.2/docs/integrations/llms/llm_caching(/?)",
+      "destination": "/v0.2/docs/integrations/llm_caching/"
     },
     {
       "source": "/docs/how_to/tool_calls_multi_modal(/?)",
