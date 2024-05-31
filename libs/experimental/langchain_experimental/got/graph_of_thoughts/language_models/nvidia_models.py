@@ -40,7 +40,7 @@ class nvidia_ai_endpoints(AbstractLanguageModel):
         # The temperature of a model is defined as the randomness of the model's output.
         self.temperature: float = self.config["temperature"]
         # The  top_p is the probability mass that the model will use to select tokens.
-        self.top_p = self.config["top_p"]
+        self.top_p = self.config["top_p"] if self.config["top_p"] != "" else None
         # The maximum number of tokens to generate in the chat completion.
         self.max_tokens: int = self.config["max_tokens"]
 

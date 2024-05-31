@@ -4,7 +4,7 @@
         "prompt_token_cost": 0.0,
         "response_token_cost": 0.0,
         "temperature": 1,
-        "top_p": None,
+        "top_p": "",
         "max_tokens": 2048
     },
     "llama3-70b-instruct" : {
@@ -12,11 +12,11 @@
         "prompt_token_cost": 0.0,
         "response_token_cost": 0.0,
         "temperature": 1,
-        "top_p": None,
+        "top_p": "",
         "max_tokens": 2048
     },
-    "gpt-4o" : {
-        "model_id": "gpt-4o",
+    "gpt-4o-2024-05-13" : {
+        "model_id": "gpt-4o-2024-05-13",
         "prompt_token_cost": 0.0,
         "response_token_cost": 0.0,
         "temperature": 1,

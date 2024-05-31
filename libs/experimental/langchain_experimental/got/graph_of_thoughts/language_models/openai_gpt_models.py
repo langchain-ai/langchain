@@ -14,7 +14,7 @@ from langchain_openai import ChatOpenAI
 
 
 
-class nvidia_ai_endpoints(AbstractLanguageModel):
+class GPTmodels(AbstractLanguageModel):
     """
     The Gemini class handles interactions with the Gemini models using the provided configuration.
 
@@ -22,7 +22,7 @@ class nvidia_ai_endpoints(AbstractLanguageModel):
     """
 
     def __init__(
-        self, config_path: str = "", model_name: str = "", cache: bool = False
+        self, config_path: str = "", model_name: str = "", cache: bool = False, api_key: str = ""
     ) -> None:
         """
         Initialize the Gemini instance with configuration, model details, and caching options.
@@ -40,10 +40,9 @@ class nvidia_ai_endpoints(AbstractLanguageModel):
         self.model_id: str = self.config["model_id"]
         # The temperature of a model is defined as the randomness of the model's output.
         self.temperature: float = self.config["temperature"]
-        # The  top_p is the probability mass that the model will use to select tokens.
-        self.top_p = self.config["top_p"]
         # The maximum number of tokens to generate in the chat completion.
         self.max_tokens: int = self.config["max_tokens"]
+        self.api_key: str = api_key
 
 
     def load_llm(self, ) -> Any:
@@ -56,7 +55,8 @@ class nvidia_ai_endpoints(AbstractLanguageModel):
 
         llm = ChatOpenAI(model_name = self.model_id, 
                         max_tokens= self.max_tokens, 
-                        temperature = self.temperature
+                        temperature = self.temperature,
+                        api_key = self.api_key
                         )
 
         return llm

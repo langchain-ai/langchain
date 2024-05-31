@@ -21,7 +21,7 @@ from graph_of_thoughts.parser import Parser
 from graph_of_thoughts.prompter import Prompter
 
 # from libs.core.langchain_core.prompts.prompt import PromptTemplate
-from libs.core.langchain_core.output_parsers.string import StrOutputParser
+from langchain_core.output_parsers.string import StrOutputParser
 
 class OperationType(Enum):
     """
