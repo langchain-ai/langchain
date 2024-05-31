@@ -76,7 +76,7 @@ repos:
     packages:
       - name: langchain-astradb
         path: libs/astradb
-  - name: google
+  - name: langchain-google
     slug: langchain-ai/langchain-google
     packages:
       - name: langchain-google-community
@@ -85,29 +85,29 @@ repos:
         path: libs/genai
       - name: langchain-google-vertexai
         path: libs/vertexai
-  - name: weaviate
+  - name: langchain-weaviate
     slug: langchain-ai/langchain-weaviate
     packages:
       - name: langchain-weaviate
         path: libs/weaviate
-  - name: cohere
+  - name: langchain-cohere
     slug: langchain-ai/langchain-cohere
     packages:
       - name: langchain-cohere
         path: libs/cohere
-  - name: elastic
+  - name: langchain-elastic
     slug: langchain-ai/langchain-elastic
     packages:
       - name: langchain-elasticsearch
         path: libs/elasticsearch
-  - name: nvidia
+  - name: langchain-nvidia
     slug: langchain-ai/langchain-nvidia
     packages:
       - name: langchain-nvidia-ai-endpoints
         path: libs/ai-endpoints
       - name: langchain-nvidia-trt
         path: libs/trt
-  - name: postgres
+  - name: langchain-postgres
     slug: langchain-ai/langchain-postgres
     packages:
       - name: langchain-postgres
