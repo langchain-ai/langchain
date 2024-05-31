@@ -420,7 +420,7 @@ def create_simple_model(
         """Represents a graph document consisting of nodes and relationships."""
 
         nodes: Optional[List[SimpleNode]] = Field(description="List of nodes")  # type: ignore
-        relationships: Optional[List[SimpleRelationship]] = Field(
+        relationships: Optional[List[SimpleRelationship]] = Field(  # type: ignore
             description="List of relationships"
         )
 
@@ -653,7 +653,7 @@ class LLMGraphTransformer:
                     "native function calling."
                 )
             try:
-                import json_repair
+                import json_repair  # type: ignore
 
                 self.json_repair = json_repair
             except ImportError:
