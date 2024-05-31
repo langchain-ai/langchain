@@ -183,6 +183,14 @@ def test_complex_ai_message_chunks() -> None:
 
     assert (
         AIMessageChunk(content=[{"index": 0, "text": "I am"}])
+        + AIMessageChunk(content=[{"index": 2, "text": " indeed."}])
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am"}, {"index": 2, "text": " indeed."}]
+        )
+    ), "Concatenating when both content arrays are dicts with a gap between indexes should not result in a holey array"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am"}])
         + AIMessageChunk(content=[{"index": 1, "text": " indeed."}])
         == AIMessageChunk(
             content=[{"index": 0, "text": "I am"}, {"index": 1, "text": " indeed."}]

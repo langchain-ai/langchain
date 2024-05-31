@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field
 from langchain_core.utils import get_bolded_text
-from langchain_core.utils._merge import merge_dicts
+from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
@@ -97,31 +97,11 @@ def merge_content(
             return return_list + second_content
     elif isinstance(second_content, List):
         # If both are lists
-        final_content = first_content.copy()
-        for part in second_content:
-            # If not all parts in second chunk are dicts, unclear what to do,
-            # so just return naive merge
-            if not isinstance(part, Dict):
-                return first_content + second_content
-            part_index = part.get("index")
-            if isinstance(part_index, int) and part_index >= 0:
-                if part_index > len(final_content) - 1:
-                    final_content.extend([None] * (part_index - len(final_content) + 1))
-                if final_content[part_index] is None:
-                    final_content[part_index] = part
-                elif isinstance(final_content[part_index], Dict):
-                    final_content[part_index] = merge_dicts(
-                        final_content[part_index], part
-                    )
-                else:
-                    # Unclear what to do if first part is a string and second is a dict,
-                    # so merge naively
-                    return first_content + second_content
-            # If not all parts in second chunk have an index field
-            # just return naive merge
-            else:
-                return first_content + second_content
-        return final_content
+        merged_list = merge_lists(first_content, second_content)
+        # Satisfy type-checker
+        if merged_list is None:
+            raise Exception("Failed to merge message chunk contents.")
+        return merged_list
     # If the first content is a list, and the second content is a string
     else:
         # If the last element of the first content is a string
