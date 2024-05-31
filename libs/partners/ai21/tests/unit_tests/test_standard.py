@@ -10,11 +10,11 @@ from langchain_ai21 import ChatAI21
 
 
 class TestAI21J2(ChatModelUnitTests):
-    @pytest.fixture
+    @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatAI21
 
-    @pytest.fixture
+    @property
     def chat_model_params(self) -> dict:
         return {
             "model": "j2-ultra",
@@ -22,23 +22,16 @@ class TestAI21J2(ChatModelUnitTests):
         }
 
     @pytest.mark.xfail(reason="Not implemented.")
-    def test_standard_params(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-    ) -> None:
-        super().test_standard_params(
-            chat_model_class,
-            chat_model_params,
-        )
+    def test_standard_params(self, model: BaseChatModel) -> None:
+        super().test_standard_params(model)
 
 
 class TestAI21Jamba(ChatModelUnitTests):
-    @pytest.fixture
+    @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatAI21
 
-    @pytest.fixture
+    @property
     def chat_model_params(self) -> dict:
         return {
             "model": "jamba-instruct",
@@ -46,12 +39,5 @@ class TestAI21Jamba(ChatModelUnitTests):
         }
 
     @pytest.mark.xfail(reason="Not implemented.")
-    def test_standard_params(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-    ) -> None:
-        super().test_standard_params(
-            chat_model_class,
-            chat_model_params,
-        )
+    def test_standard_params(self, model: BaseChatModel) -> None:
+        super().test_standard_params(model)

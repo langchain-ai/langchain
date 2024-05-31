@@ -78,6 +78,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert len(result.content) > 0
 
     def test_usage_metadata(self, model: BaseChatModel) -> None:
+        if not self.returns_usage_metadata:
+            pytest.skip("Not implemented.")
         result = model.invoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
@@ -89,13 +91,12 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_tool_message_histories_string_content(
         self,
         model: BaseChatModel,
-        chat_model_has_tool_calling: bool,
     ) -> None:
         """
         Test that message histories are compatible with string tool contents
         (e.g. OpenAI).
         """
-        if not chat_model_has_tool_calling:
+        if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
         model_with_tools = model.bind_tools([my_adder_tool], tool_choice="any")
         function_name = "my_adder_tool"
@@ -126,13 +127,12 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_tool_message_histories_list_content(
         self,
         model: BaseChatModel,
-        chat_model_has_tool_calling: bool,
     ) -> None:
         """
         Test that message histories are compatible with list tool contents
         (e.g. Anthropic).
         """
-        if not chat_model_has_tool_calling:
+        if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
         model_with_tools = model.bind_tools([my_adder_tool], tool_choice="any")
         function_name = "my_adder_tool"
@@ -171,12 +171,11 @@ class ChatModelIntegrationTests(ChatModelTests):
     def test_structured_few_shot_examples(
         self,
         model: BaseChatModel,
-        chat_model_has_tool_calling: bool,
     ) -> None:
         """
         Test that model can process few-shot examples with tool calls.
         """
-        if not chat_model_has_tool_calling:
+        if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
         model_with_tools = model.bind_tools([my_adder_tool], tool_choice="any")
         function_name = "my_adder_tool"

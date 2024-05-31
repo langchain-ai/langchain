@@ -45,27 +45,31 @@ class ChatModelTests(ABC):
             **{**self.standard_chat_model_params, **self.chat_model_params}
         )
 
-    @pytest.fixture
-    def chat_model_has_tool_calling(
-        self, chat_model_class: Type[BaseChatModel]
+    @property
+    def has_tool_calling(
+        self,
     ) -> bool:
-        return chat_model_class.bind_tools is not BaseChatModel.bind_tools
+        return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
-    @pytest.fixture
-    def chat_model_has_structured_output(
-        self, chat_model_class: Type[BaseChatModel]
+    @property
+    def has_structured_output(
+        self,
     ) -> bool:
         return (
-            chat_model_class.with_structured_output
+            self.chat_model_class.with_structured_output
             is not BaseChatModel.with_structured_output
         )
 
-    @pytest.fixture
-    def chat_model_supports_image_inputs(self) -> bool:
+    @property
+    def supports_image_inputs(self) -> bool:
         return False
 
-    @pytest.fixture
-    def chat_model_supports_video_inputs(self) -> bool:
+    @property
+    def supports_video_inputs(self) -> bool:
+        return False
+
+    @property
+    def returns_usage_metadata(self) -> bool:
         return False
 
 
@@ -76,13 +80,13 @@ class ChatModelUnitTests(ChatModelTests):
         params["api_key"] = "test"
         return params
 
-    def test_chat_model_init(self) -> None:
+    def test_init(self) -> None:
         model = self.chat_model_class(
             **{**self.standard_chat_model_params, **self.chat_model_params}
         )
         assert model is not None
 
-    def test_chat_model_init_streaming(
+    def test_init_streaming(
         self,
     ) -> None:
         model = self.chat_model_class(
@@ -94,7 +98,7 @@ class ChatModelUnitTests(ChatModelTests):
         )
         assert model is not None
 
-    def test_chat_model_bind_tool_pydantic(
+    def test_bind_tool_pydantic(
         self,
         model: BaseChatModel,
         chat_model_has_tool_calling: bool,
@@ -108,13 +112,12 @@ class ChatModelUnitTests(ChatModelTests):
         assert isinstance(tool_model, RunnableBinding)
 
     @pytest.mark.parametrize("schema", [Person, Person.schema()])
-    def test_chat_model_with_structured_output(
+    def test_with_structured_output(
         self,
         model: BaseChatModel,
-        chat_model_has_structured_output: bool,
         schema: Any,
     ) -> None:
-        if not chat_model_has_structured_output:
+        if not self.has_structured_output:
             return
 
         assert model.with_structured_output(schema) is not None
