@@ -327,9 +327,10 @@ def test_init_new_index_with_encryption_key():
             azure_search_key=DEFAULT_KEY,
             index_name=DEFAULT_INDEX_NAME,
             embedding_function=DEFAULT_EMBEDDING_MODEL,
-            encryption_key_name=DEFAULT_ENCRYPTION_KEY_NAME,
-            encryption_key_version=DEFAULT_ENCRYPTION_KEY_VERSION,
-            encryption_key_vault_uri=DEFAULT_ENCRYPTION_KEY_VAULT_URI,
+            search_resource_encryption_key=SearchResourceEncryptionKey(
+                key_name=DEFAULT_ENCRYPTION_KEY_NAME,
+                key_version=DEFAULT_ENCRYPTION_KEY_VERSION,
+                vault_uri=DEFAULT_ENCRYPTION_KEY_VAULT_URI),
         )
 
         assert vector_store.client is not None
