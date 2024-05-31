@@ -22,7 +22,7 @@ from typing import (
 )
 
 import anthropic
-from langchain_core._api import beta, deprecated
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -522,10 +522,7 @@ class ChatAnthropic(BaseChatModel):
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 )
                 return generate_from_stream(stream_iter)
-        if _tools_in_params(params):
-            data = self._client.beta.tools.messages.create(**params)
-        else:
-            data = self._client.messages.create(**params)
+        data = self._client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
     async def _agenerate(
@@ -546,13 +543,9 @@ class ChatAnthropic(BaseChatModel):
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 )
                 return await agenerate_from_stream(stream_iter)
-        if _tools_in_params(params):
-            data = await self._async_client.beta.tools.messages.create(**params)
-        else:
-            data = await self._async_client.messages.create(**params)
+        data = await self._async_client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
-    @beta()
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
