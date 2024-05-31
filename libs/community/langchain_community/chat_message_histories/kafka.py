@@ -83,7 +83,50 @@ def ensure_topic_exists(
 
 
 class KafkaChatMessageHistory(BaseChatMessageHistory):
-    """Chat message history stored in Kafka."""
+    """Chat message history stored in Kafka.
+
+    Recommended usage:
+    # Set up KafkaChatMessageHistory
+    history = KafkaChatMessageHistory(
+        session_id="your_session_id",
+        bootstrap_servers="host:port",
+    )
+
+    # Add messages
+    history.add_messages([message1, message2, message3, ...])
+
+    # Retrieve messages
+    message_batch_0 = history.messages
+
+    # retrieve messages after message_batch_0
+    message_batch_1 = history.messages
+
+    # Reset to beginning and retrieve messages
+    messages_from_beginning = history.messages_from_beginning()
+
+    Retrieving messages is stateful. Internally, it uses Kafka consumer to read.
+    The consumed offset is maintained persistently.
+
+    To retrieve messages, you can use the following methods:
+    - `messages`:
+        continue consuming chat messages from last one.
+    - `messages_from_beginning`:
+        reset the consumer to the beginning of the chat history and return messages.
+        Optional parameters:
+        1. `max_message_count`: maximum number of messages to return.
+        2. `max_time_sec`: maximum time in seconds to wait for messages.
+    - `messages_from_latest`:
+        reset to end of the chat history and try consuming messages.
+        Optional parameters same as above.
+    - `messages_from_last_consumed`:
+        continuing from the last consumed message, similar to `messages`.
+        Optional parameters same as above.
+
+    `max_message_count` and `max_time_sec` are used to avoid blocking indefinitely
+     when retrieving messages. As a result, the method to retrieve messages may not
+     return all messages. Change `max_message_count` and `max_time_sec` to retrieve
+     all history messages.
+    """
 
     def __init__(
         self,
@@ -241,14 +284,13 @@ class KafkaChatMessageHistory(BaseChatMessageHistory):
     def messages_from_latest(
         self, max_message_count: Optional[int] = 5, max_time_sec: Optional[float] = 5.0
     ) -> List[BaseMessage]:
-        """Retrieve messages from Kafka topic from end.
-        This method resets the consumer to the latest offset and consumes messages.
+        """Reset to the end offset. Try to consume messages if available.
 
-             Args:
-                 max_message_count: Maximum number of messages to consume.
-                 max_time_sec:      Time limit in seconds to consume messages.
-             Returns:
-                 List of messages.
+        Args:
+            max_message_count: Maximum number of messages to consume.
+            max_time_sec:      Time limit in seconds to consume messages.
+        Returns:
+            List of messages.
         """
 
         return self.__read_messages(
@@ -301,5 +343,7 @@ class KafkaChatMessageHistory(BaseChatMessageHistory):
             raise e
 
     def close(self) -> None:
-        """Close the resources."""
+        """Release the resources.
+        Nothing to be released at this moment.
+        """
         pass
