@@ -21,14 +21,12 @@ from langchain.memory.chat_memory import BaseChatMemory
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 DEFAULT_HISTORY_TEMPLATE = """
+Current date and time: {current_time}.
+
 Potentially relevant excerpts of previous conversations (timestamped):
 {previous_history}
 
 (You do not need to use these pieces of information if not relevant.)
-
-Current date and time: {current_time}.
-
-Current conversation:
 """
 
 TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S %Z"
