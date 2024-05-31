@@ -283,20 +283,20 @@ def create_simple_model(
     relationship_properties: Union[bool, List[str]] = False,
 ) -> Type[_Graph]:
     """
-    Create a simple graph model with optional constraints on node 
+    Create a simple graph model with optional constraints on node
     and relationship types.
 
     Args:
-        node_labels (Optional[List[str]]): Specifies the allowed node types. 
+        node_labels (Optional[List[str]]): Specifies the allowed node types.
             Defaults to None, allowing all node types.
-        rel_types (Optional[List[str]]): Specifies the allowed relationship types. 
+        rel_types (Optional[List[str]]): Specifies the allowed relationship types.
             Defaults to None, allowing all relationship types.
-        node_properties (Union[bool, List[str]]): Specifies if node properties should 
-            be included. If a list is provided, only properties with keys in the list 
+        node_properties (Union[bool, List[str]]): Specifies if node properties should
+            be included. If a list is provided, only properties with keys in the list
             will be included. If True, all properties are included. Defaults to False.
-        relationship_properties (Union[bool, List[str]]): Specifies if relationship 
-            properties should be included. If a list is provided, only properties with 
-            keys in the list will be included. If True, all properties are included. 
+        relationship_properties (Union[bool, List[str]]): Specifies if relationship
+            properties should be included. If a list is provided, only properties with
+            keys in the list will be included. If True, all properties are included.
             Defaults to False.
         llm_type (Optional[str]): The type of the language model. Defaults to None.
             Only openai supports enum param: openai-chat.
@@ -388,8 +388,10 @@ def create_simple_model(
         ),
     }
     if relationship_properties:
-        if isinstance(relationship_properties, list) and \
-              "id" in relationship_properties:
+        if (
+            isinstance(relationship_properties, list)
+            and "id" in relationship_properties
+        ):
             raise ValueError(
                 "The relationship property 'id' is reserved and cannot be used."
             )
@@ -412,9 +414,7 @@ def create_simple_model(
             Optional[List[RelationshipProperty]],
             Field(None, description="List of relationship properties"),
         )
-    SimpleRelationship = create_model(
-        "SimpleRelationship", **relationship_fields
-    )  # type: ignore
+    SimpleRelationship = create_model("SimpleRelationship", **relationship_fields)  # type: ignore
 
     class DynamicGraph(_Graph):
         """Represents a graph document consisting of nodes and relationships."""
@@ -436,9 +436,7 @@ def map_to_base_node(node: Any) -> Node:
     return Node(id=node.id, type=node.type, properties=properties)
 
 
-def map_to_base_relationship(
-    rel: Any
-) -> Relationship:
+def map_to_base_relationship(rel: Any) -> Relationship:
     """Map the SimpleRelationship to the base Relationship."""
     source = Node(id=rel.source_node_id, type=rel.source_node_type)
     target = Node(id=rel.target_node_id, type=rel.target_node_type)
@@ -447,10 +445,7 @@ def map_to_base_relationship(
         for p in rel.properties:
             properties[format_property_key(p.key)] = p.value
     return Relationship(
-        source=source,
-        target=target,
-        type=rel.type,
-        properties=properties
+        source=source, target=target, type=rel.type, properties=properties
     )
 
 
