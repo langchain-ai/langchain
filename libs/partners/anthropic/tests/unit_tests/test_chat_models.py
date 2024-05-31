@@ -4,7 +4,7 @@ import os
 from typing import Any, Callable, Dict, Literal, Type, cast
 
 import pytest
-from anthropic.types import ContentBlock, Message, Usage
+from anthropic.types import Message, TextBlock, Usage
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
@@ -79,7 +79,7 @@ def test_anthropic_initialization() -> None:
 def test__format_output() -> None:
     anthropic_msg = Message(
         id="foo",
-        content=[ContentBlock(type="text", text="bar")],
+        content=[TextBlock(type="text", text="bar")],
         model="baz",
         role="assistant",
         stop_reason=None,
