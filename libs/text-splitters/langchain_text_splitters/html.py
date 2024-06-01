@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import os
 import pathlib
 from io import BytesIO, StringIO
 from typing import Any, Dict, Iterable, List, Optional, Tuple, TypedDict, cast
