@@ -14,8 +14,8 @@
   ],
   "redirects": [
     {
-      "source": "/docs/integrations/llms/llm_caching(/?)",
-      "destination": "docs/integration/llm_caching/"
+      "source": "/v0.2/docs/integrations/llms/llm_caching(/?)",
+      "destination": "/v0.2/docs/integrations/llm_caching/"
     },
     {
       "source": "/docs/how_to/tool_calls_multi_modal(/?)",
@@ -40,6 +40,10 @@
     {
       "source": "/docs/get_started/introduction(/?)",
       "destination": "/v0.2/docs/introduction/"
+    },
+    {
+      "source": "/docs/integrations/:path(.*/?)*",
+      "destination": "/v0.2/docs/integrations/:path*"
     },
     {
       "source": "/docs/:path(.*/?)*",
