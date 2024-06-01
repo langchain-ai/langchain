@@ -1479,7 +1479,7 @@ async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
     ]
     mock.reset_mock()
 
-    assert seq.invoke("hello", my_kwarg="value") == 5
+    assert seq.invoke("hello", my_kwarg="value") == 5  # type: ignore[call-arg]
     assert mock.call_args_list == [
         mocker.call("hello", my_kwarg="value"),
         mocker.call(5),

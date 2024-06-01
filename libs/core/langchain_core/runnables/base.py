@@ -2553,6 +2553,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                             )
                             for rm, config in zip(run_managers, configs)
                         ],
+                        return_exceptions=return_exceptions,
                         **(kwargs if i == 0 else {}),
                     )
 
@@ -2681,6 +2682,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                             )
                             for rm, config in zip(run_managers, configs)
                         ],
+                        return_exceptions=return_exceptions,
                         **(kwargs if i == 0 else {}),
                     )
         # finish the root runs
