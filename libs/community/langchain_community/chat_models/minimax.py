@@ -11,6 +11,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
+    agenerate_from_stream,
     generate_from_stream,
 )
 from langchain_core.messages import (
@@ -138,7 +139,7 @@ class MiniMaxChat(BaseChatModel):
     """Total probability mass of tokens to consider at each step."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    minimax_api_host: Optional[str] = Field(
+    minimax_api_host: str = Field(
         default="https://api.minimax.chat/v1/text/chatcompletion_v2", alias="base_url"
     )
     minimax_group_id: Optional[str] = Field(default=None, alias="group_id")
@@ -188,7 +189,7 @@ class MiniMaxChat(BaseChatModel):
         }
         return ChatResult(generations=generations, llm_output=llm_output)
 
-    def _create_payload_parameters(
+    def _create_payload_parameters(  # type: ignore[no-untyped-def]
         self, messages: List[BaseMessage], is_stream: bool = False, **kwargs
     ) -> Dict[str, Any]:
         """Create API request body parameters."""
@@ -234,8 +235,11 @@ class MiniMaxChat(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         payload = self._create_payload_parameters(messages, **kwargs)
+        api_key = ""
+        if self.minimax_api_key is not None:
+            api_key = self.minimax_api_key.get_secret_value()
         headers = {
-            "Authorization": f"Bearer {self.minimax_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
         import httpx
@@ -255,8 +259,11 @@ class MiniMaxChat(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         """Stream the chat response in chunks."""
         payload = self._create_payload_parameters(messages, is_stream=True, **kwargs)
+        api_key = ""
+        if self.minimax_api_key is not None:
+            api_key = self.minimax_api_key.get_secret_value()
         headers = {
-            "Authorization": f"Bearer {self.minimax_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
         import httpx
@@ -306,10 +313,13 @@ class MiniMaxChat(BaseChatModel):
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
-            return generate_from_stream(stream_iter)
+            return await agenerate_from_stream(stream_iter)
         payload = self._create_payload_parameters(messages, **kwargs)
+        api_key = ""
+        if self.minimax_api_key is not None:
+            api_key = self.minimax_api_key.get_secret_value()
         headers = {
-            "Authorization": f"Bearer {self.minimax_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
         import httpx
@@ -327,8 +337,11 @@ class MiniMaxChat(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         payload = self._create_payload_parameters(messages, is_stream=True, **kwargs)
+        api_key = ""
+        if self.minimax_api_key is not None:
+            api_key = self.minimax_api_key.get_secret_value()
         headers = {
-            "Authorization": f"Bearer {self.minimax_api_key.get_secret_value()}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
         import httpx
