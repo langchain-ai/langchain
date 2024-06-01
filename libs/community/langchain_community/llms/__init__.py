@@ -443,6 +443,11 @@ def _import_openllm() -> Type[BaseLLM]:
 
     return OpenLLM
 
+def _import_openllm_client() -> Type[BaseLLM]:
+    from langchain_community.llms.openllm import OpenLLMAPI
+
+    return OpenLLMAPI
+
 
 def _import_openlm() -> Type[BaseLLM]:
     from langchain_community.llms.openlm import OpenLM
@@ -783,6 +788,8 @@ def __getattr__(name: str) -> Any:
         return _import_openai_chat()
     elif name == "OpenLLM":
         return _import_openllm()
+    elif name == "OpenLLMAPI":
+        return _import_openllm_client()
     elif name == "OpenLM":
         return _import_openlm()
     elif name == "PaiEasEndpoint":
@@ -1045,7 +1052,7 @@ def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
         "vertexai": _import_vertex,
         "vertexai_model_garden": _import_vertex_model_garden,
         "openllm": _import_openllm,
-        "openllm_client": _import_openllm,
+        "openllm_client": _import_openllm_client,
         "vllm": _import_vllm,
         "vllm_openai": _import_vllm_openai,
         "watsonxllm": _import_watsonxllm,

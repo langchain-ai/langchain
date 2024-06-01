@@ -15,40 +15,61 @@ Install the OpenLLM package via PyPI:
 pip install openllm
 ```
 
+> [!NOTE]
+> OpenLLM will require GPU to run locally. If you already have a OpenLLM server running elsewhere, you might want to install `openllm-client` instead.
+> ```bash
+> pip install openllm-client
+> ```
+
 ## LLM
 
 OpenLLM supports a wide range of open-source LLMs as well as serving users' own
-fine-tuned LLMs. Use `openllm model` command to see all available models that
-are pre-optimized for OpenLLM.
+fine-tuned LLMs.
 
 ## Wrappers
 
-There is a OpenLLM Wrapper which supports loading LLM in-process or accessing a
-remote OpenLLM server:
+There is a `OpenLLM` Wrapper which supports loading LLM in-process:
 
 ```python
 from langchain_community.llms import OpenLLM
 ```
 
+For a remote OpenLLM server, one might be interested in using `OpenLLMAPI`:
+
+```python
+from langchain_community.llms import OpenLLMAPI
+```
+
 ### Wrapper for OpenLLM server
 
-This wrapper supports connecting to an OpenLLM server via HTTP or gRPC. The
+This wrapper supports connecting to an OpenLLM server. The
 OpenLLM server can run either locally or on the cloud.
 
 To try it out locally, start an OpenLLM server:
 
 ```bash
-openllm start flan-t5
+openllm start microsoft/Phi-3-mini-4k-instruct --trust-remote-code
 ```
 
 Wrapper usage:
 
 ```python
-from langchain_community.llms import OpenLLM
+from langchain_community.llms import OpenLLMAPI
 
-llm = OpenLLM(server_url='http://localhost:3000')
+llm = OpenLLMAPI(server_url='http://localhost:3000')
 
-llm("What is the difference between a duck and a goose? And why there are so many Goose in Canada?")
+llm.invoke("What is the difference between a duck and a goose? And why there are so many Goose in Canada?")
+
+# in async context
+await llm.ainvoke("What is the difference between a duck and a goose? And why there are so many Goose in Canada?")
+
+# streaming
+for it in llm.stream("What is the difference between a duck and a goose? And why there are so many Goose in Canada?"):
+    print(it, flush=True, end='')
+
+# asynchronous streaming
+async for it in llm.astream("What is the difference between a duck and a goose? And why there are so many Goose in Canada?"):
+    print(it, flush=True, end='')
 ```
 
 ### Wrapper for Local Inference
@@ -59,10 +80,13 @@ running inference.
 ```python
 from langchain_community.llms import OpenLLM
 
-llm = OpenLLM(model_name="dolly-v2", model_id='databricks/dolly-v2-7b')
+llm = OpenLLM(model_id='microsoft/Phi-3-mini-4k-instruct', trust_remote_code=True)
 
-llm("What is the difference between a duck and a goose? And why there are so many Goose in Canada?")
+llm.invoke("What is the difference between a duck and a goose? And why there are so many Goose in Canada?")
 ```
+
+> [!NOTE]
+> Currently, local inference will support only batch or one-shot generation (synchronous).
 
 ### Usage
 
