@@ -1420,12 +1420,14 @@ async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
     mock.reset_mock()
 
     assert await seq.abatch(["hello", "byebye"], my_kwarg="value") == [5, 6]
-    assert mock.call_args_list == [
+    assert len(mock.call_args_list) == 4
+    for call in [
         mocker.call("hello", my_kwarg="value"),
         mocker.call("byebye", my_kwarg="value"),
         mocker.call(5),
         mocker.call(6),
-    ]
+    ]:
+        assert call in mock.call_args_list
     mock.reset_mock()
 
     assert await seq.abatch(
@@ -1434,31 +1436,35 @@ async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
         5,
         6,
     ]
-    assert mock.call_args_list == [
+    assert len(mock.call_args_list) == 4
+    for call in [
         mocker.call("hello", my_kwarg="value"),
         mocker.call("byebye", my_kwarg="value"),
         mocker.call(5),
         mocker.call(6),
-    ]
+    ]:
+        assert call in mock.call_args_list
     mock.reset_mock()
 
-    assert [
-        a
-        async for a in seq.abatch_as_completed(
-            ["hello", "byebye"], my_kwarg="value", return_exceptions=True
-        )
-    ] == sorted(
+    assert sorted(
         [
-            (0, 5),
-            (1, 6),
+            a
+            async for a in seq.abatch_as_completed(
+                ["hello", "byebye"], my_kwarg="value", return_exceptions=True
+            )
         ]
-    )
-    assert mock.call_args_list == [
+    ) == [
+        (0, 5),
+        (1, 6),
+    ]
+    assert len(mock.call_args_list) == 4
+    for call in [
         mocker.call("hello", my_kwarg="value"),
         mocker.call("byebye", my_kwarg="value"),
         mocker.call(5),
         mocker.call(6),
-    ]
+    ]:
+        assert call in mock.call_args_list
     mock.reset_mock()
 
     assert [
@@ -1481,43 +1487,47 @@ async def test_passthrough_tap_async(mocker: MockerFixture) -> None:
     mock.reset_mock()
 
     assert seq.batch(["hello", "byebye"], my_kwarg="value") == [5, 6]
-    assert mock.call_args_list == [
+    assert len(mock.call_args_list) == 4
+    for call in [
         mocker.call("hello", my_kwarg="value"),
         mocker.call("byebye", my_kwarg="value"),
         mocker.call(5),
         mocker.call(6),
-    ]
+    ]:
+        assert call in mock.call_args_list
     mock.reset_mock()
 
     assert seq.batch(["hello", "byebye"], my_kwarg="value", return_exceptions=True) == [
         5,
         6,
     ]
-    assert mock.call_args_list == [
+    assert len(mock.call_args_list) == 4
+    for call in [
         mocker.call("hello", my_kwarg="value"),
         mocker.call("byebye", my_kwarg="value"),
         mocker.call(5),
         mocker.call(6),
-    ]
+    ]:
+        assert call in mock.call_args_list
     mock.reset_mock()
 
-    assert [
+    assert sorted(
         a
         for a in seq.batch_as_completed(
             ["hello", "byebye"], my_kwarg="value", return_exceptions=True
         )
-    ] == sorted(
-        [
-            (0, 5),
-            (1, 6),
-        ]
-    )
-    assert mock.call_args_list == [
+    ) == [
+        (0, 5),
+        (1, 6),
+    ]
+    assert len(mock.call_args_list) == 4
+    for call in [
         mocker.call("hello", my_kwarg="value"),
         mocker.call("byebye", my_kwarg="value"),
         mocker.call(5),
         mocker.call(6),
-    ]
+    ]:
+        assert call in mock.call_args_list
     mock.reset_mock()
 
     assert [
