@@ -423,15 +423,18 @@ class OracleVS(VectorStore):
         if client.thin == True:
             if oracledb.__version__ == "2.1.0":
                 raise Exception("Oracle DB python thin client driver version 2.1.0 not supported")
-            else if _compare_version(oracledb.__version__, "2.2.0"):
+            elif _compare_version(oracledb.__version__, "2.2.0"):
                 self.insert_mode = "clob"
             else:
                 self.insert_mode = "array"
         else:
-            if _compare_version(oracledb.clientversion(), "23.4"):
+            if _compare_version('.'.join(map(str, oracledb.clientversion())), "23.4"):
                 self.insert_mode = "clob"
             else:
                 self.insert_mode = "array"
+            
+            if _compare_version(oracledb.__version__, "2.1.0"):
+                self.insert_mode = "clob"
 
         try:
             """Initialize with oracledb client."""
