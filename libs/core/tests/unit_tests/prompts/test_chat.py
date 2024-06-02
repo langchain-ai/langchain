@@ -149,6 +149,29 @@ def test_create_system_message_prompt_list_template() -> None:
     )
 
 
+def test_create_system_message_prompt_list_template_partial_variables_not_null() -> (
+    None
+):
+    graph_creator_content1 = """
+    This is the prompt for the first test:
+    {variables}
+    """
+    graph_creator_content2 = """
+    This is the prompt for the second test:
+        {variables}
+        """
+
+    try:
+        graph_analyst_template = SystemMessagePromptTemplate.from_template(
+            template=[graph_creator_content1, graph_creator_content2],
+            input_variables=["variables"],
+            partial_variables={"variables": "foo"},
+        )
+        graph_analyst_template.format(variables="foo")
+    except ValueError as e:
+        assert str(e) == "Partial variables are not supported for list of templates."
+
+
 def test_message_prompt_template_from_template_file() -> None:
     expected = ChatMessagePromptTemplate(
         prompt=PromptTemplate(
