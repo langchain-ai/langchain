@@ -139,6 +139,22 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
                 openai_api_base="http://localhost:8080"
             )
 
+    Specifying proxy:
+        .. code-block:: python
+
+            from langchain_community.embeddings import LocalAIEmbeddings
+            import openai
+            import httpx
+            openai = LocalAIEmbeddings(
+                openai_api_key="random-string",
+                client=openai.OpenAI(
+                    base_url="http://localhost:8080",
+                    http_client=openai.DefaultHttpxClient(
+                        proxies="http://localhost:8899",
+                        transport=httpx.HTTPTransport(local_address="0.0.0.0"),
+                    ),
+                    api_key="random-string").embeddings
+            )
     """
 
     client: Any = None  #: :meta private:
@@ -146,8 +162,6 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     deployment: str = model
     openai_api_version: Optional[str] = None
     openai_api_base: Optional[str] = None
-    # to support explicit proxy for LocalAI
-    openai_proxy: Optional[str] = None
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
     openai_api_key: Optional[str] = None
@@ -207,12 +221,6 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_API_BASE",
             default="",
         )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
-        )
 
         default_api_version = ""
         values["openai_api_version"] = get_from_dict_or_env(
@@ -240,8 +248,8 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
                 # "default_query": values["default_query"],
                 # "http_client": values["http_client"],
             }
-            # if not values.get("client"):
-            values["client"] = openai.OpenAI(**client_params).embeddings
+            if not values.get("client"):
+                values["client"] = openai.OpenAI(**client_params).embeddings
 
             # values["client"] = openai.Embedding
         except ImportError:
@@ -263,17 +271,6 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             # "api_version": self.openai_api_version,
             **self.model_kwargs,
         }
-        if self.openai_proxy:
-            import openai
-
-            # TODO: The 'openai.proxy' option isn't read in the client API. You will need to pass it when you instantiate the client, e.g. 'OpenAI(proxy={
-            #                 "http": self.openai_proxy,
-            #                 "https": self.openai_proxy,
-            #             })'
-            # openai.proxy = {
-            #                 "http": self.openai_proxy,
-            #                 "https": self.openai_proxy,
-            #             }  # type: ignore[assignment]
         return openai_args
 
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:
@@ -306,7 +303,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
                 input=[text],
                 **self._invocation_params,
             )
-        )["data"][0]["embedding"]
+        ).data[0].embedding
 
     def embed_documents(
         self, texts: List[str], chunk_size: Optional[int] = 0
