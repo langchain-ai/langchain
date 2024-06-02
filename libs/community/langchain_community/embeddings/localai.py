@@ -46,11 +46,11 @@ def _create_retry_decorator(embeddings: LocalAIEmbeddings) -> Callable[[Any], An
         stop=stop_after_attempt(embeddings.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.APITimeoutError)
+            | retry_if_exception_type(openai.APIError)
+            | retry_if_exception_type(openai.APIConnectionError)
+            | retry_if_exception_type(openai.RateLimitError)
+            | retry_if_exception_type(openai.InternalServerError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -68,11 +68,11 @@ def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
         stop=stop_after_attempt(embeddings.max_retries),
         wait=wait_exponential(multiplier=1, min=min_seconds, max=max_seconds),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.APITimeoutError)
+            | retry_if_exception_type(openai.APIError)
+            | retry_if_exception_type(openai.APIConnectionError)
+            | retry_if_exception_type(openai.RateLimitError)
+            | retry_if_exception_type(openai.InternalServerError)
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -90,10 +90,10 @@ def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
 
 # https://stackoverflow.com/questions/76469415/getting-embeddings-of-length-1-from-langchain-openaiembeddings
 def _check_response(response: dict) -> dict:
-    if any(len(d["embedding"]) == 1 for d in response["data"]):
+    if any(len(d.embedding) == 1 for d in response.data):
         import openai
 
-        raise openai.error.APIError("LocalAI API returned an empty embedding")
+        raise openai.APIError("LocalAI API returned an empty embedding")
     return response
 
 
@@ -229,8 +229,20 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         )
         try:
             import openai
+            client_params = {
+                "api_key": values["openai_api_key"],
+                "organization": values["openai_organization"],
+                "base_url": values["openai_api_base"],
+                "timeout": values["request_timeout"],
+                "max_retries": values["max_retries"],
+                #"default_headers": values["default_headers"],
+                #"default_query": values["default_query"],
+                #"http_client": values["http_client"],
+            }
+            #if not values.get("client"):
+            values["client"] = openai.OpenAI(**client_params).embeddings
 
-            values["client"] = openai.Embedding
+            #values["client"] = openai.Embedding
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
@@ -242,21 +254,25 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     def _invocation_params(self) -> Dict:
         openai_args = {
             "model": self.model,
-            "request_timeout": self.request_timeout,
-            "headers": self.headers,
-            "api_key": self.openai_api_key,
-            "organization": self.openai_organization,
-            "api_base": self.openai_api_base,
-            "api_version": self.openai_api_version,
+            #"request_timeout": self.request_timeout,
+            #"headers": self.headers,
+            #"api_key": self.openai_api_key,
+            #"organization": self.openai_organization,
+            #"api_base": self.openai_api_base,
+            #"api_version": self.openai_api_version,
             **self.model_kwargs,
         }
         if self.openai_proxy:
             import openai
 
-            openai.proxy = {
-                "http": self.openai_proxy,
-                "https": self.openai_proxy,
-            }  # type: ignore[assignment]
+            # TODO: The 'openai.proxy' option isn't read in the client API. You will need to pass it when you instantiate the client, e.g. 'OpenAI(proxy={
+            #                 "http": self.openai_proxy,
+            #                 "https": self.openai_proxy,
+            #             })'
+            # openai.proxy = {
+            #                 "http": self.openai_proxy,
+            #                 "https": self.openai_proxy,
+            #             }  # type: ignore[assignment]
         return openai_args
 
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:
@@ -270,7 +286,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             self,
             input=[text],
             **self._invocation_params,
-        )["data"][0]["embedding"]
+        ).data[0].embedding
 
     async def _aembedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to LocalAI's embedding endpoint."""
