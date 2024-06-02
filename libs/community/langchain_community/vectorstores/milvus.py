@@ -5,6 +5,7 @@ from typing import Any, Iterable, List, Optional, Tuple, Union
 from uuid import uuid4
 
 import numpy as np
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -22,6 +23,11 @@ DEFAULT_MILVUS_CONNECTION = {
 }
 
 
+@deprecated(
+    since="0.2.0",
+    removal="0.3.0",
+    alternative_import="langchain_milvus.MilvusVectorStore",
+)
 class Milvus(VectorStore):
     """`Milvus` vector store.
 
