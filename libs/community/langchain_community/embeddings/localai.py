@@ -229,20 +229,21 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         )
         try:
             import openai
+
             client_params = {
                 "api_key": values["openai_api_key"],
                 "organization": values["openai_organization"],
                 "base_url": values["openai_api_base"],
                 "timeout": values["request_timeout"],
                 "max_retries": values["max_retries"],
-                #"default_headers": values["default_headers"],
-                #"default_query": values["default_query"],
-                #"http_client": values["http_client"],
+                # "default_headers": values["default_headers"],
+                # "default_query": values["default_query"],
+                # "http_client": values["http_client"],
             }
-            #if not values.get("client"):
+            # if not values.get("client"):
             values["client"] = openai.OpenAI(**client_params).embeddings
 
-            #values["client"] = openai.Embedding
+            # values["client"] = openai.Embedding
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
@@ -254,12 +255,12 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
     def _invocation_params(self) -> Dict:
         openai_args = {
             "model": self.model,
-            #"request_timeout": self.request_timeout,
-            #"headers": self.headers,
-            #"api_key": self.openai_api_key,
-            #"organization": self.openai_organization,
-            #"api_base": self.openai_api_base,
-            #"api_version": self.openai_api_version,
+            # "request_timeout": self.request_timeout,
+            # "headers": self.headers,
+            # "api_key": self.openai_api_key,
+            # "organization": self.openai_organization,
+            # "api_base": self.openai_api_base,
+            # "api_version": self.openai_api_version,
             **self.model_kwargs,
         }
         if self.openai_proxy:
@@ -282,11 +283,15 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
             # replace newlines, which can negatively affect performance.
             text = text.replace("\n", " ")
-        return embed_with_retry(
-            self,
-            input=[text],
-            **self._invocation_params,
-        ).data[0].embedding
+        return (
+            embed_with_retry(
+                self,
+                input=[text],
+                **self._invocation_params,
+            )
+            .data[0]
+            .embedding
+        )
 
     async def _aembedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to LocalAI's embedding endpoint."""
