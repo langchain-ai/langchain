@@ -114,7 +114,7 @@ async def async_embed_with_retry(embeddings: LocalAIEmbeddings, **kwargs: Any) -
 
     @_async_retry_decorator(embeddings)
     async def _async_embed_with_retry(**kwargs: Any) -> Any:
-        response = await embeddings.client.acreate(**kwargs)
+        response = await embeddings.async_client.create(**kwargs)
         return _check_response(response)
 
     return await _async_embed_with_retry(**kwargs)
@@ -157,7 +157,8 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    client: Any = None  #: :meta private:
+    client: Any = None #: :meta private:
+    async_client: Any = None #: :meta private:
     model: str = "text-embedding-ada-002"
     deployment: str = model
     openai_api_version: Optional[str] = None
@@ -250,8 +251,8 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             }
             if not values.get("client"):
                 values["client"] = openai.OpenAI(**client_params).embeddings
-
-            # values["client"] = openai.Embedding
+            if not values.get("async_client"):
+                values["async_client"] = openai.AsyncOpenAI(**client_params).embeddings
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
