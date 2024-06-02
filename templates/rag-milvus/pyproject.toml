@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rag-milvus"
-version = "0.1.0"
+version = "0.1.1"
 description = "RAG using Milvus"
 authors = []
 readme = "README.md"
@@ -11,7 +11,7 @@ langchain = "^0.1"
 langchain-core = "^0.1"
 langchain-openai = "^0.1"
 langchain-community = "^0.0.30"
-pymilvus = "^2.4"
+pymilvus = "^2.4.3"
 scipy = "^1.9"
 
 [tool.poetry.group.dev.dependencies]
