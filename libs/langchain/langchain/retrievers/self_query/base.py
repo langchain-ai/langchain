@@ -148,6 +148,14 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
             if isinstance(vectorstore, PineconeVectorStore):
                 return PineconeTranslator()
 
+        try:
+            from langchain_mongodb import MongoDBAtlasVectorSearch
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, MongoDBAtlasVectorSearch):
+                return MongoDBAtlasTranslator()
+
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
             f" not supported."
