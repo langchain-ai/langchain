@@ -15,6 +15,8 @@ def load_llm_from_config(config: dict, **kwargs: Any) -> BaseLLM:
     """Load LLM from Config Dict."""
     if "_type" not in config:
         raise ValueError("Must specify an LLM Type in config")
+    # we don't need type
+    config.pop("type")
     config_type = config.pop("_type")
 
     type_to_cls_dict = get_type_to_cls_dict()
