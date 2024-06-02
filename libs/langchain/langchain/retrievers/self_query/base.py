@@ -156,6 +156,14 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
             if isinstance(vectorstore, MongoDBAtlasVectorSearch):
                 return MongoDBAtlasTranslator()
 
+        try:
+            from langchain_chroma import Chroma
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, Chroma):
+                return ChromaTranslator()
+
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
             f" not supported."
