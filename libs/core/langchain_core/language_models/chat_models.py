@@ -370,7 +370,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def _get_llm_string(self, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
         if self.is_lc_serializable():
-            params = {**kwargs, **{"stop": stop, "type":"chat"}}
+            params = {**kwargs, **{"stop": stop, "type": "chat"}}
             param_string = str(sorted([(k, v) for k, v in params.items()]))
             llm_string = dumps(self)
             return llm_string + "---" + param_string
