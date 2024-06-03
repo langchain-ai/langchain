@@ -32,7 +32,6 @@ class IdentifyingParams(TypedDict):
     """Parameters for identifying a model as a typed dict."""
 
     model_id: Optional[str]
-    dtype: str
     quantize: Optional[Literal["awq", "gptq", "squeezellm"]]
     serialization: Literal["safetensors", "legacy"]
     trust_remote_code: bool
@@ -68,10 +67,10 @@ class OpenLLMAPI(LLM):
     llm_kwargs: Dict[str, Any]
     """Keyword arguments to be passed to openllm.LLM"""
 
-    _sync_client: Optional[openllm.HTTPClient] = PrivateAttr(
+    _sync_client: openllm.HTTPClient = PrivateAttr(
         default=None
     )  #: :meta private:
-    _async_client: Optional[openllm.AsyncHTTPClient] = PrivateAttr(
+    _async_client: openllm.AsyncHTTPClient = PrivateAttr(
         default=None
     )  #: :meta private:
 
@@ -94,7 +93,9 @@ class OpenLLMAPI(LLM):
 
         llm_kwargs = llm_kwargs or {}
 
-        super().__init__(server_url=server_url, timeout=timeout, llm_kwargs=llm_kwargs)
+        super().__init__(server_url=server_url,  # mypy: ignore 
+                         timeout=timeout, 
+                         llm_kwargs=llm_kwargs)
 
         self._sync_client = openllm_client.HTTPClient(
             address=server_url, timeout=timeout
@@ -106,13 +107,15 @@ class OpenLLMAPI(LLM):
     @property
     def _identifying_params(self) -> IdentifyingParams:
         """Get the identifying parameters."""
+        if self._sync_client is None:
+            raise ValueError("OpenLLMAPI is not initialized correctly.")
         self.llm_kwargs.update(self._sync_client._config)
-        model_id = self._sync_client._metadata.model_dump()["model_id"]
-        return dict(
-            server_url=self.server_url,
+        return IdentifyingParams(
             llm_kwargs=self.llm_kwargs,
-            model_id=model_id,
-            timeout=self.timeout,
+            model_id=self._sync_client._metadata.model_id,
+            trust_remote_code=self._sync_client._metadata.trust_remote_code,
+            quantize=self._sync_client._metadata.quantise,
+            serialization=self._sync_client._metadata.serialisation,
         )
 
     @property
@@ -307,7 +310,7 @@ class OpenLLM(BaseLLM):
         return values
 
     @property
-    def _identifying_params(self) -> IdentifyingParams:
+    def _identifying_params(self) -> Dict[str, Any]:
         model_id = self.model_id
         try:
             self.llm_kwargs.update(
@@ -315,7 +318,7 @@ class OpenLLM(BaseLLM):
             )
         except (TypeError, json.JSONDecodeError):
             pass
-        return IdentifyingParams(
+        return dict(
             llm_kwargs=self.llm_kwargs,
             model_id=model_id,
             dtype=self.dtype,
