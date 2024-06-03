@@ -40,6 +40,10 @@ class PQRetriever(BaseRetriever):
     """Number of results to return."""
     relevancy_threshold: Optional[float] = None
     """Threshold for relevancy."""
+    subspace: int = 4
+    """No of subspaces to be created, should be a multiple of embedding shape"""
+    clusters: int = 256
+    """No of clusters to be created"""
 
     class Config:
 
@@ -56,6 +60,7 @@ class PQRetriever(BaseRetriever):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> PQRetriever:
+
         index = create_index(texts, embeddings)
         return cls(
             embeddings=embeddings,
@@ -91,8 +96,11 @@ class PQRetriever(BaseRetriever):
             )
         
         query_embeds = np.array(self.embeddings.embed_query(query))
-        pq = PQ(M=4, K=256).fit(vecs=self.index, iter=20, seed=123)  
-
+        try:
+            pq = PQ(M=self.subspace, K=self.clusters).fit(vecs=self.index, iter=20, seed=123)  
+        except AssertionError:
+            raise RuntimeError("subspace should be divisible by embedding size")
+        
         index_code = pq.encode(vecs=self.index)
         dt = pq.dtable(query=query_embeds)
         dists = dt.adist(codes=index_code)
