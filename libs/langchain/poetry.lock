@@ -1029,21 +1029,6 @@ test = ["certifi", "pretend", "pytest (>=6.2.0)", "pytest-benchmark", "pytest-co
 test-randomorder = ["pytest-randomly"]
 
 [[package]]
-name = "dataclasses-json"
-version = "0.6.6"
-description = "Easily serialize dataclasses to and from JSON."
-optional = false
-python-versions = "<4.0,>=3.7"
-files = [
-    {file = "dataclasses_json-0.6.6-py3-none-any.whl", hash = "sha256:e54c5c87497741ad454070ba0ed411523d46beb5da102e221efb873801b0ba85"},
-    {file = "dataclasses_json-0.6.6.tar.gz", hash = "sha256:0c09827d26fffda27f1be2fed7a7a01a29c5ddcd2eb6393ad5ebf9d77e9deae8"},
-]
-
-[package.dependencies]
-marshmallow = ">=3.18.0,<4.0.0"
-typing-inspect = ">=0.4.0,<1"
-
-[[package]]
 name = "debugpy"
 version = "1.8.1"
 description = "An implementation of the Debug Adapter Protocol for Python"
@@ -2877,25 +2862,6 @@ files = [
     {file = "MarkupSafe-2.1.5-cp39-cp39-win_amd64.whl", hash = "sha256:fa173ec60341d6bb97a89f5ea19c85c5643c1e7dedebc22f5181eb73573142c5"},
     {file = "MarkupSafe-2.1.5.tar.gz", hash = "sha256:d283d37a890ba4c1ae73ffadf8046435c76e7bc2247bbb63c00bd1a709c6544b"},
 ]
-
-[[package]]
-name = "marshmallow"
-version = "3.21.2"
-description = "A lightweight library for converting complex datatypes to and from native Python datatypes."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "marshmallow-3.21.2-py3-none-any.whl", hash = "sha256:70b54a6282f4704d12c0a41599682c5c5450e843b9ec406308653b47c59648a1"},
-    {file = "marshmallow-3.21.2.tar.gz", hash = "sha256:82408deadd8b33d56338d2182d455db632c6313aa2af61916672146bb32edc56"},
-]
-
-[package.dependencies]
-packaging = ">=17.0"
-
-[package.extras]
-dev = ["marshmallow[tests]", "pre-commit (>=3.5,<4.0)", "tox"]
-docs = ["alabaster (==0.7.16)", "autodocsumm (==0.2.12)", "sphinx (==7.3.7)", "sphinx-issues (==4.1.0)", "sphinx-version-warning (==1.1.2)"]
-tests = ["pytest", "pytz", "simplejson"]
 
 [[package]]
 name = "matplotlib-inline"
@@ -6336,7 +6302,7 @@ files = [
 name = "typing-inspect"
 version = "0.9.0"
 description = "Runtime inspection utilities for typing module."
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "typing_inspect-0.9.0-py3-none-any.whl", hash = "sha256:9ee6fc59062311ef8547596ab6b955e1b8aa46242d854bfc78f4f6b0eff35f9f"},
@@ -6744,4 +6710,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5272a69c31a53bce59a1c83a45e5eae118f0880e00247bb96c4c41e9730250bc"
+content-hash = "e03a8e97d8e096a7ddeb592e00d1a8cdf0db3438d022e464e045b7d1dfa4f35c"

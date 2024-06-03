@@ -23,7 +23,6 @@ numpy = "^1"
 aiohttp = "^3.8.3"
 tenacity = "^8.1.0"
 async-timeout = {version = "^4.0.0", python = "<3.11"}
-dataclasses-json = ">= 0.5.7, < 0.7"
 azure-core = {version = "^1.26.4", optional=true}
 manifest-ml = {version = "^0.0.1", optional = true}
 transformers = {version = "^4", optional = true}
