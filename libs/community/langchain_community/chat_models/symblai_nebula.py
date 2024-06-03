@@ -1,4 +1,5 @@
 import json
+from json import JSONDecodeError
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
 import requests
@@ -66,7 +67,7 @@ class ChatNebula(BaseChatModel):
                 content="You are a helpful assistant."
             ),
             HumanMessage(
-                content="Answer the following question. How can I help save the world."
+                "Answer the following question. How can I help save the world."
             ),
             ]
             chat.invoke(messages)
@@ -142,7 +143,7 @@ class ChatNebula(BaseChatModel):
             chunk_decoded = chunk_response.decode()[6:]
             try:
                 chunk = json.loads(chunk_decoded)
-            except:
+            except JSONDecodeError:
                 continue
             token = chunk["delta"]
             cg_chunk = ChatGenerationChunk(message=AIMessageChunk(content=token))
@@ -179,7 +180,7 @@ class ChatNebula(BaseChatModel):
                     chunk_decoded = chunk_response.decode()[6:]
                     try:
                         chunk = json.loads(chunk_decoded)
-                    except:
+                    except JSONDecodeError:
                         continue
                     token = chunk["delta"]
                     cg_chunk = ChatGenerationChunk(
