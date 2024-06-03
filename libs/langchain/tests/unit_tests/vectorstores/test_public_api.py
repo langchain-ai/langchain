@@ -66,7 +66,7 @@ _EXPECTED = [
     "Typesense",
     "USearch",
     "Vald",
-    "Vearch",
+    "VearchDb",
     "Vectara",
     "VectorStore",
     "VespaStore",
