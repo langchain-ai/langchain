@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 from langchain_core.callbacks.base import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
-from langchain_core.pydantic_v1 import Extra, root_validator
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 
@@ -21,7 +21,7 @@ class DashScopeRerank(BaseDocumentCompressor):
     top_n: Optional[int] = 3
     """Number of documents to return."""
 
-    dashscope_api_key: Optional[str] = None
+    dashscope_api_key: Optional[str] = Field(None, alias="api_key")
     """DashScope API key. Must be specified directly or via environment variable 
         DASHSCOPE_API_KEY."""
 
@@ -30,6 +30,7 @@ class DashScopeRerank(BaseDocumentCompressor):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
+        allow_population_by_field_name = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
