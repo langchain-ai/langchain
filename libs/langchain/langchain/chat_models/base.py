@@ -53,7 +53,7 @@ def init_model(
                 - accounts/fireworks... -> fireworks
                 - gemini... -> google_vertexai
         kwargs: Additional keyword args to pass to
-            <<selected ChatModel>>.__init__(model=model_name, **kwargs).
+            ``<<selected ChatModel>>.__init__(model=model_name, **kwargs)``.
 
     Returns:
         The BaseChatModel corresponding to the model_name and model_provider specified.
