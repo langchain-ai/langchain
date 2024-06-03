@@ -237,7 +237,9 @@ class OpenLLMAPI(LLM):
 class OpenLLM(BaseLLM):
     """OpenLLM class supports running localized LLM.
 
-    Note that since openllm>=0.5, you will be required to have GPU in order to use this class. If you have a OpenLLM server running elsewhere, you should use OpenLLMAPI instead.
+    Note that since openllm>=0.5, you will be required to have GPU
+    in order to use this class. If you have a OpenLLM server running
+    elsewhere, you should use OpenLLMAPI instead.
 
     To use, you should have the openllm library installed:
 
@@ -263,17 +265,21 @@ class OpenLLM(BaseLLM):
     bentomodel: Optional[bentoml.Model] = None
     """Private model saved under BentoML model store."""
     dtype: str = "auto"
-    """How to configure dtype for this given model. Default to auto to let openllm automatically infer from given GPU."""
+    """Configure dtype for this given model. Default to auto."""
     quantize: Optional[Literal["awq", "gptq", "squeezellm"]] = None
-    """Optional quantization methods to use with this LLM. See OpenLLM's --quantize options from `openllm start` for more information."""
+    """Optional quantization methods to use with this LLM.
+    See OpenLLM's --quantize options from `openllm start` for more information."""
     serialization: Literal["safetensors", "legacy"] = "safetensors"
-    """Optional serialization methods for this LLM to be save as. Default to 'safetensors', but will fallback to PyTorch pickle `.bin` on some models."""
+    """Optional serialization methods for this LLM to be save as.
+    Default to 'safetensors', but will fallback to PyTorch pickle `.bin`
+    on some models."""
     trust_remote_code: bool = False
-    """If the model requires external code execution, then pass 'trust_remote_code=True'. Synonymous to HF's trust_remote_code."""
+    """If the model requires external code execution, then
+    pass 'trust_remote_code=True'. Synonymous to HF's trust_remote_code."""
     llm_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to be passed to openllm.LLM"""
 
-    llm: Any #: :meta private:
+    llm: Any  #: :meta private:
 
     class Config:
         extra = "forbid"
@@ -291,7 +297,7 @@ class OpenLLM(BaseLLM):
         values["llm"] = openllm.LLM.from_model(
             values["model_id"],
             dtype=values["dtype"],
-            bentomodel=values['bentomodel'],
+            bentomodel=values["bentomodel"],
             quantise=values["quantize"],
             serialisation=values["serialization"],
             trust_remote_code=values["trust_remote_code"],

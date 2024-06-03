@@ -443,6 +443,7 @@ def _import_openllm() -> Type[BaseLLM]:
 
     return OpenLLM
 
+
 def _import_openllm_client() -> Type[BaseLLM]:
     from langchain_community.llms.openllm import OpenLLMAPI
 
