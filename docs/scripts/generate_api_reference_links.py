@@ -79,7 +79,7 @@ def main():
                 .replace(".md", "/")
             )
 
-            doc_url = f"https://python.langchain.com/docs/{relative_path}"
+            doc_url = f"https://python.langchain.com/v0.2/docs/{relative_path}"
             for import_info in file_imports:
                 doc_title = import_info["title"]
                 class_name = import_info["imported"]
@@ -97,7 +97,7 @@ def main():
 
 def _get_doc_title(data: str, file_name: str) -> str:
     try:
-        return re.findall(r"^#\s+(.*)", data, re.MULTILINE)[0]
+        return re.findall(r"^#\s*(.*)", data, re.MULTILINE)[0]
     except IndexError:
         pass
     # Parse the rst-style titles
