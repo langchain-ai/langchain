@@ -191,11 +191,9 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
 
 
 def _check_pkg(pkg: str) -> None:
-    try:
-        importlib.import_module(pkg)
-    except ImportError as e:
+    if not importlib.util.find_spec(pkg):
         pkg_kebab = pkg.replace("_", "-")
         raise ImportError(
             f"Unable to import {pkg_kebab}. Please install with "
             f"`pip install -U {pkg_kebab}`"
-        ) from e
+        )
