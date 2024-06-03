@@ -902,7 +902,7 @@ class PGVector(VectorStore):
                     return not_
                 else:
                     raise ValueError(
-                        f"Invalid filter condition. Expected $and or $or "
+                        f"Invalid filter condition. Expected $and, $or or $not "
                         f"but got: {key}"
                     )
             elif len(filters) > 1:
