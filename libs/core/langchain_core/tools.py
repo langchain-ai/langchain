@@ -65,9 +65,9 @@ from langchain_core.runnables import (
     ensure_config,
 )
 from langchain_core.runnables.config import (
+    _set_config_context,
     patch_config,
     run_in_executor,
-    var_child_runnable_config,
 )
 from langchain_core.runnables.utils import accepts_context
 
@@ -402,7 +402,7 @@ class ChildTool(BaseTool):
                 callbacks=run_manager.get_child(),
             )
             context = copy_context()
-            context.run(var_child_runnable_config.set, child_config)
+            context.run(_set_config_context, child_config)
             parsed_input = self._parse_input(tool_input)
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
@@ -502,7 +502,7 @@ class ChildTool(BaseTool):
                 callbacks=run_manager.get_child(),
             )
             context = copy_context()
-            context.run(var_child_runnable_config.set, child_config)
+            context.run(_set_config_context, child_config)
             coro = (
                 context.run(
                     self._arun, *tool_args, run_manager=run_manager, **tool_kwargs
