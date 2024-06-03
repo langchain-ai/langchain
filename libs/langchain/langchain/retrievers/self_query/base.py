@@ -64,13 +64,11 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     from langchain_community.query_constructors.weaviate import WeaviateTranslator
     from langchain_community.vectorstores import (
         AstraDB,
-        Chroma,
         DashVector,
         DatabricksVectorSearch,
         DeepLake,
         Dingo,
         Milvus,
-        MongoDBAtlasVectorSearch,
         MyScale,
         OpenSearchVectorSearch,
         PGVector,
@@ -83,7 +81,13 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Weaviate,
     )
     from langchain_community.vectorstores import (
+        Chroma as CommunityChroma,
+    )
+    from langchain_community.vectorstores import (
         ElasticsearchStore as ElasticsearchStoreCommunity,
+    )
+    from langchain_community.vectorstores import (
+        MongoDBAtlasVectorSearch as CommunityMongoDBAtlasVectorSearch,
     )
     from langchain_community.vectorstores import (
         Pinecone as CommunityPinecone,
@@ -93,7 +97,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         AstraDB: AstraDBTranslator,
         PGVector: PGVectorTranslator,
         CommunityPinecone: PineconeTranslator,
-        Chroma: ChromaTranslator,
+        CommunityChroma: ChromaTranslator,
         DashVector: DashvectorTranslator,
         Dingo: DingoDBTranslator,
         Weaviate: WeaviateTranslator,
@@ -106,7 +110,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         SupabaseVectorStore: SupabaseVectorTranslator,
         TimescaleVector: TimescaleVectorTranslator,
         OpenSearchVectorSearch: OpenSearchTranslator,
-        MongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
+        CommunityMongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
     }
     if isinstance(vectorstore, DatabricksVectorSearch):
         return DatabricksVectorSearchTranslator()
