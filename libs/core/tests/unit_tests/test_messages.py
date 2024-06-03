@@ -162,6 +162,48 @@ def test_chat_message_chunks() -> None:
     ), "Other MessageChunk + ChatMessageChunk should be a MessageChunk as the left side"
 
 
+def test_complex_ai_message_chunks() -> None:
+    assert AIMessageChunk(content=["I am"], id="ai4") + AIMessageChunk(
+        content=[" indeed."]
+    ) == AIMessageChunk(
+        id="ai4", content=["I am", " indeed."]
+    ), "Content concatenation with arrays of strings should naively combine"
+
+    assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
+        content=" indeed."
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am"}, " indeed."]
+    ), "Concatenating mixed content arrays should naively combine them"
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am"}])
+        + AIMessageChunk(content=[{"index": 0, "text": " indeed."}])
+        == AIMessageChunk(content=[{"index": 0, "text": "I am indeed."}])
+    ), "Concatenating when both content arrays are dicts with the same index should merge"  # noqa: E501
+
+    assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
+        content=[{"text": " indeed."}]
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am"}, {"text": " indeed."}]
+    ), "Concatenating when one chunk is missing an index should not merge or throw"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am"}])
+        + AIMessageChunk(content=[{"index": 2, "text": " indeed."}])
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am"}, {"index": 2, "text": " indeed."}]
+        )
+    ), "Concatenating when both content arrays are dicts with a gap between indexes should not result in a holey array"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am"}])
+        + AIMessageChunk(content=[{"index": 1, "text": " indeed."}])
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am"}, {"index": 1, "text": " indeed."}]
+        )
+    ), "Concatenating when both content arrays are dicts with separate indexes should not merge"  # noqa: E501
+
+
 def test_function_message_chunks() -> None:
     assert FunctionMessageChunk(
         name="hello", content="I am", id="ai5"
