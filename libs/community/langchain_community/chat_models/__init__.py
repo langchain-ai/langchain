@@ -145,6 +145,7 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.sparkllm import (
         ChatSparkLLM,
     )
+    from langchain_community.chat_models.symblai_nebula import ChatNebula
     from langchain_community.chat_models.tongyi import (
         ChatTongyi,
     )
@@ -190,6 +191,7 @@ __all__ = [
     "ChatMLflowAIGateway",
     "ChatMaritalk",
     "ChatMlflow",
+    "ChatNebula",
     "ChatOllama",
     "ChatOpenAI",
     "ChatPerplexity",
