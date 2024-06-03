@@ -203,9 +203,9 @@ def _get_python_function_required_args(function: Callable) -> List[str]:
 
     is_function_type = isinstance(function, FunctionType)
     is_method_type = isinstance(function, MethodType)
-    if is_function_type and required[0] == "self":
+    if required and is_function_type and required[0] == "self":
         required = required[1:]
-    elif is_method_type and required[0] == "cls":
+    elif required and is_method_type and required[0] == "cls":
         required = required[1:]
     return required
 

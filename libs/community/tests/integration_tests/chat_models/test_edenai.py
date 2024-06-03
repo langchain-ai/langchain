@@ -13,7 +13,7 @@ from langchain_community.chat_models.edenai import (
 @pytest.mark.scheduled
 def test_chat_edenai() -> None:
     """Test ChatEdenAI wrapper."""
-    chat = ChatEdenAI(
+    chat = ChatEdenAI(  # type: ignore[call-arg]
         provider="openai", model="gpt-3.5-turbo", temperature=0, max_tokens=1000
     )
     message = HumanMessage(content="Who are you ?")
@@ -25,7 +25,7 @@ def test_chat_edenai() -> None:
 @pytest.mark.scheduled
 def test_edenai_generate() -> None:
     """Test generate method of edenai."""
-    chat = ChatEdenAI(provider="google")
+    chat = ChatEdenAI(provider="google")  # type: ignore[call-arg]
     chat_messages: List[List[BaseMessage]] = [
         [HumanMessage(content="What is the meaning of life?")]
     ]
@@ -42,7 +42,7 @@ def test_edenai_generate() -> None:
 @pytest.mark.scheduled
 async def test_edenai_async_generate() -> None:
     """Test async generation."""
-    chat = ChatEdenAI(provider="google", max_tokens=50)
+    chat = ChatEdenAI(provider="google", max_tokens=50)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     result: LLMResult = await chat.agenerate([[message], [message]])
     assert isinstance(result, LLMResult)
@@ -55,7 +55,7 @@ async def test_edenai_async_generate() -> None:
 @pytest.mark.scheduled
 def test_edenai_streaming() -> None:
     """Test streaming EdenAI chat."""
-    llm = ChatEdenAI(provider="openai", max_tokens=50)
+    llm = ChatEdenAI(provider="openai", max_tokens=50)  # type: ignore[call-arg]
 
     for chunk in llm.stream("Generate a high fantasy story."):
         assert isinstance(chunk.content, str)
@@ -64,7 +64,7 @@ def test_edenai_streaming() -> None:
 @pytest.mark.scheduled
 async def test_edenai_astream() -> None:
     """Test streaming from EdenAI."""
-    llm = ChatEdenAI(provider="openai", max_tokens=50)
+    llm = ChatEdenAI(provider="openai", max_tokens=50)  # type: ignore[call-arg]
 
     async for token in llm.astream("Generate a high fantasy story."):
         assert isinstance(token.content, str)

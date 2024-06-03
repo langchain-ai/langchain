@@ -7,20 +7,13 @@ from typing import Any, Iterable, List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.utils import guard_import
 from langchain_core.vectorstores import VectorStore
 
 
 def import_lancedb() -> Any:
     """Import lancedb package."""
-
-    try:
-        import lancedb
-    except ImportError as e:
-        raise ImportError(
-            "Could not import pinecone lancedb package. "
-            "Please install it with `pip install lancedb`."
-        ) from e
-    return lancedb
+    return guard_import("lancedb")
 
 
 class LanceDB(VectorStore):
@@ -64,7 +57,7 @@ class LanceDB(VectorStore):
         mode: Optional[str] = "overwrite",
     ):
         """Initialize with Lance DB vectorstore"""
-        lancedb = import_lancedb()
+        lancedb = guard_import("lancedb")
         self._embedding = embedding
         self._vector_key = vector_key
         self._id_key = id_key

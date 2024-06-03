@@ -13,7 +13,7 @@ from langchain_community.tools.edenai import EdenAiObjectDetectionTool
 
 def test_edenai_call() -> None:
     """Test simple call to edenai's object detection endpoint."""
-    object_detection = EdenAiObjectDetectionTool(providers=["google"])
+    object_detection = EdenAiObjectDetectionTool(providers=["google"])  # type: ignore[call-arg]
 
     output = object_detection.invoke("https://static.javatpoint.com/images/objects.jpg")
 

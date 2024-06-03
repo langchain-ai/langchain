@@ -4,6 +4,7 @@ import importlib.util
 import logging
 from typing import Any, List, Mapping, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
@@ -22,6 +23,11 @@ DEFAULT_BATCH_SIZE = 4
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.0.37",
+    removal="0.3",
+    alternative_import="from rom langchain_huggingface.llms import HuggingFacePipeline",
+)
 class HuggingFacePipeline(BaseLLM):
     """HuggingFace Pipeline API.
 
@@ -206,7 +212,7 @@ class HuggingFacePipeline(BaseLLM):
                     cuda_device_count,
                 )
         if device is not None and device_map is not None and backend == "openvino":
-            logger.warning("Please set device for OpenVINO through: " "'model_kwargs'")
+            logger.warning("Please set device for OpenVINO through: `model_kwargs`")
         if "trust_remote_code" in _model_kwargs:
             _model_kwargs = {
                 k: v for k, v in _model_kwargs.items() if k != "trust_remote_code"

@@ -11,7 +11,6 @@ from langchain_core.tracers.stdout import (
 
 from langchain._api import create_importer
 from langchain.callbacks.tracers.logging import LoggingCallbackHandler
-from langchain.callbacks.tracers.wandb import WandbTracer
 
 if TYPE_CHECKING:
     from langchain_community.callbacks.tracers.wandb import WandbTracer

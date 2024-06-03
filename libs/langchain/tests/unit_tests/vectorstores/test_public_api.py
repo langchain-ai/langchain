@@ -42,6 +42,7 @@ _EXPECTED = [
     "MyScale",
     "MyScaleSettings",
     "Neo4jVector",
+    "NeuralDBClientVectorStore",
     "NeuralDBVectorStore",
     "OpenSearchVectorSearch",
     "PGEmbedding",

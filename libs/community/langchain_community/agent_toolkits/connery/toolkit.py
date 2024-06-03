@@ -45,6 +45,6 @@ class ConneryToolkit(BaseToolkit):
             ConneryToolkit: The Connery Toolkit.
         """
 
-        instance = cls(tools=connery_service.list_actions())
+        instance = cls(tools=connery_service.list_actions())  # type: ignore[arg-type]
 
         return instance

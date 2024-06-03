@@ -72,7 +72,7 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
                 f"Invalid value for 'file_naming_func': {file_naming_func}"
             )
 
-        super().__init__(
+        super().__init__(  # type: ignore[call-arg]
             model=model,
             file_extension=file_extension,
             api_url=f"{self._HUGGINGFACE_API_URL_ROOT}/{model}",
