@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain"
-version = "0.2.0"
+version = "0.2.1"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -114,7 +114,7 @@ python-dotenv = "^1.0.0"
 cassio = "^0.1.0"
 langchain-core = {path = "../core", develop = true}
 langchain-text-splitters = {path = "../text-splitters", develop = true}
-langchainhub = "^0.1.15"
+langchainhub = "^0.1.16"
 
 [tool.poetry.group.lint]
 optional = true

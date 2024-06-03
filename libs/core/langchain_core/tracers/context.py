@@ -33,10 +33,10 @@ if TYPE_CHECKING:
 tracing_callback_var: Any = None
 tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(
     "tracing_callback_v2", default=None
-)  # noqa: E501
+)
 run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVar(
     "run_collector", default=None
-)  # noqa: E501
+)
 
 
 @contextmanager
