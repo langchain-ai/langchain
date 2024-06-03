@@ -97,7 +97,7 @@ class PQRetriever(BaseRetriever):
         
         query_embeds = np.array(self.embeddings.embed_query(query))
         try:
-            pq = PQ(M=self.subspace, K=self.clusters).fit(vecs=self.index, iter=20, seed=123)  
+            pq = PQ(M=self.subspace, Ks=self.clusters).fit(vecs=self.index)  
         except AssertionError:
             raise RuntimeError("subspace should be divisible by embedding size")
         
