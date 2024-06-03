@@ -2,22 +2,19 @@ from __future__ import annotations
 
 import json
 import uuid
-from typing import (TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple,
-                    Type)
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+
 from vearch.config import Config
 from vearch.core.vearch import Vearch
 from vearch.schema.field import Field
 from vearch.schema.index import HNSWIndex, ScalarIndex
 from vearch.schema.space import SpaceSchema
 from vearch.utils import DataType, MetricType, VectorInfo
-
-if TYPE_CHECKING:
-    import vearch
 
 DEFAULT_TOPN = 4
 
@@ -33,15 +30,11 @@ class VearchDb(VectorStore):
         table_name: str = _DEFAULT_TABLE_NAME,
         **kwargs: Any,
     ) -> None:
-        """Initialize vearch vector store
         """
-        try:
-            import vearch
-        except ImportError:
-            raise ValueError(
-                "Could not import suitable python package. "
-                "Please install it with `pip install pyvearch."
-            )
+        Initialize vearch vector store.
+        Please install it with `pip install pyvearch.
+        """
+    
         if path_or_url is None:
             raise ValueError("Please input router url of vearch")
         if not db_name:
