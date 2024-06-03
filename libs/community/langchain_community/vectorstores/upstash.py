@@ -63,8 +63,9 @@ class UpstashVectorStore(VectorStore):
         async_index: Optional[AsyncIndex] = None,
         index_url: Optional[str] = None,
         index_token: Optional[str] = None,
-        namespace: Optional[str] = "",
         embedding: Optional[Union[Embeddings, bool]] = None,
+        *,
+        namespace: str = "",
     ):
         """
         Constructor for UpstashVectorStore.
@@ -80,11 +81,11 @@ class UpstashVectorStore(VectorStore):
             functions are needed
             index_url: URL of the UpstashVector index.
             index_token: Token of the UpstashVector index.
-            namespace: Namespace to use from the index.
             embedding: Embeddings object or a boolean. When false, no embedding
                 is applied. If true, Upstash embeddings are used. When Upstash
                 embeddings are used, text is sent directly to Upstash and
                 embedding is applied there instead of embedding in Langchain.
+            namespace: Namespace to use from the index.
 
         Example:
             .. code-block:: python
@@ -192,6 +193,7 @@ class UpstashVectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -233,6 +235,7 @@ class UpstashVectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -275,6 +278,7 @@ class UpstashVectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -335,6 +339,7 @@ class UpstashVectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         batch_size: int = 32,
         embedding_chunk_size: int = 1000,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -395,6 +400,7 @@ class UpstashVectorStore(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -421,6 +427,7 @@ class UpstashVectorStore(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -462,6 +469,7 @@ class UpstashVectorStore(VectorStore):
         embedding: Union[List[float], str],
         k: int = 4,
         filter: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -498,6 +506,7 @@ class UpstashVectorStore(VectorStore):
         embedding: Union[List[float], str],
         k: int = 4,
         filter: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -534,6 +543,7 @@ class UpstashVectorStore(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -558,6 +568,7 @@ class UpstashVectorStore(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -582,6 +593,7 @@ class UpstashVectorStore(VectorStore):
         embedding: Union[List[float], str],
         k: int = 4,
         filter: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -606,6 +618,7 @@ class UpstashVectorStore(VectorStore):
         embedding: Union[List[float], str],
         k: int = 4,
         filter: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -630,6 +643,7 @@ class UpstashVectorStore(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -645,6 +659,7 @@ class UpstashVectorStore(VectorStore):
         query: str,
         k: int = 4,
         filter: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
@@ -662,6 +677,7 @@ class UpstashVectorStore(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -728,6 +744,7 @@ class UpstashVectorStore(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -796,6 +813,7 @@ class UpstashVectorStore(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -836,6 +854,7 @@ class UpstashVectorStore(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         filter: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
@@ -883,6 +902,7 @@ class UpstashVectorStore(VectorStore):
         async_index: Optional[AsyncIndex] = None,
         index_url: Optional[str] = None,
         index_token: Optional[str] = None,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> UpstashVectorStore:
@@ -930,11 +950,12 @@ class UpstashVectorStore(VectorStore):
         embedding_chunk_size: int = 1000,
         batch_size: int = 32,
         text_key: str = "text",
-        namespace: Optional[str] = None,
         index: Optional[Index] = None,
         async_index: Optional[AsyncIndex] = None,
         index_url: Optional[str] = None,
         index_token: Optional[str] = None,
+        *,
+        namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> UpstashVectorStore:
         """Create a new UpstashVectorStore from a list of texts.
@@ -976,6 +997,7 @@ class UpstashVectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         delete_all: Optional[bool] = None,
         batch_size: Optional[int] = 1000,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
@@ -1006,6 +1028,7 @@ class UpstashVectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         delete_all: Optional[bool] = None,
         batch_size: Optional[int] = 1000,
+        *,
         namespace: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
