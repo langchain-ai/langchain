@@ -140,15 +140,15 @@ class IpexLLM(LLM):
 
         _tokenizer_id = tokenizer_id or model_id
         # Set "cpu" as default device
-        if "device" not in model_kwargs:
-            model_kwargs["device"] = "cpu"
+        if "device" not in _model_kwargs:
+            _model_kwargs["device"] = "cpu"
 
-        if model_kwargs["device"] not in ["cpu", "xpu"]:
+        if _model_kwargs["device"] not in ["cpu", "xpu"]:
             raise ValueError(
                 "IpexLLMBgeEmbeddings currently only supports device to be "
-                f"'cpu' or 'xpu', but you have: {model_kwargs['device']}."
+                f"'cpu' or 'xpu', but you have: {_model_kwargs['device']}."
             )
-        device = model_kwargs.pop("device")
+        device = _model_kwargs.pop("device")
 
         try:
             tokenizer = AutoTokenizer.from_pretrained(_tokenizer_id, **_model_kwargs)
