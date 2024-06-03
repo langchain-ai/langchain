@@ -80,7 +80,7 @@ def invoke_cosine_similarity_top_k_score_threshold(X, Y):
 def test_cosine_similarity_top_k_and_score_threshold(
     X: List[List[float]], Y: List[List[float]]
 ) -> None:
-    if importlib.util.findspec("simsimd"):
+    if importlib.util.find_spec("simsimd"):
         raise ValueError("test should be run without simsimd installed.")
     invoke_cosine_similarity_top_k_score_threshold(X, Y)
 
