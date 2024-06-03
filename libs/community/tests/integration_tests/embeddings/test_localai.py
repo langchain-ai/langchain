@@ -1,8 +1,8 @@
-import asyncio
 
 import pytest
 
 from langchain_community.embeddings import LocalAIEmbeddings
+
 
 @pytest.mark.requires("openai")
 @pytest.mark.vcr
