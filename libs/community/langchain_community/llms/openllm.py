@@ -91,8 +91,8 @@ class OpenLLMAPI(LLM):
 
         llm_kwargs = llm_kwargs or {}
 
-        super().__init__(
-            server_url=server_url,  # mypy: ignore
+        super().__init__(  # type: ignore
+            server_url=server_url,
             timeout=timeout,
             llm_kwargs=llm_kwargs,
         )
@@ -207,7 +207,7 @@ class OpenLLMAPI(LLM):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         try:
