@@ -67,9 +67,7 @@ class OpenLLMAPI(LLM):
     llm_kwargs: Dict[str, Any]
     """Keyword arguments to be passed to openllm.LLM"""
 
-    _sync_client: openllm.HTTPClient = PrivateAttr(
-        default=None
-    )  #: :meta private:
+    _sync_client: openllm.HTTPClient = PrivateAttr(default=None)  #: :meta private:
     _async_client: openllm.AsyncHTTPClient = PrivateAttr(
         default=None
     )  #: :meta private:
@@ -93,9 +91,11 @@ class OpenLLMAPI(LLM):
 
         llm_kwargs = llm_kwargs or {}
 
-        super().__init__(server_url=server_url,  # mypy: ignore 
-                         timeout=timeout, 
-                         llm_kwargs=llm_kwargs)
+        super().__init__(
+            server_url=server_url,  # mypy: ignore
+            timeout=timeout,
+            llm_kwargs=llm_kwargs,
+        )
 
         self._sync_client = openllm_client.HTTPClient(
             address=server_url, timeout=timeout
