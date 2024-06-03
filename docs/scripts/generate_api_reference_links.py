@@ -31,6 +31,8 @@ def find_files(path):
     """Find all MDX files in the given path"""
     # Check if is file first
     if os.path.isfile(path):
+        if ".ipynb_checkpoints" in path:
+            return
         yield path
         return
     for root, _, files in os.walk(path):
@@ -147,7 +149,7 @@ def replace_imports(file):
                 except AttributeError as e:
                     logger.warning(f"Could not find module for {class_name}, {e}")
                     continue
-                except ImportError as e:
+                except Exception as e:
                     logger.warning(f"Failed to load for class {class_name}, {e}")
                     continue
                 if len(module_path.split(".")) < 2:
