@@ -88,6 +88,7 @@ def test_save_load_lowbit(model_id: str) -> None:
     output = loaded_llm.invoke("Hello!")
     assert isinstance(output, str)
 
+
 @skip_if_no_model_ids
 @pytest.mark.parametrize(
     "model_id",
