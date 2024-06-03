@@ -77,14 +77,16 @@ def invoke_cosine_similarity_top_k_score_threshold(X, Y):
 
 
 def test_cosine_similarity_top_k_and_score_threshold(
-        X: List[List[float]], Y: List[List[float]]
+    X: List[List[float]], Y: List[List[float]]
 ) -> None:
+    if importlib.util.findspec("simsimd"):
+        raise ValueError("test should be run without simsimd installed.")
     invoke_cosine_similarity_top_k_score_threshold(X, Y)
 
 
+@pytest.mark.requires("simsimd")
 def test_cosine_similarity_top_k_and_score_threshold_with_simsimd(
-        X: List[List[float]], Y: List[List[float]]
+    X: List[List[float]], Y: List[List[float]]
 ) -> None:
     # Same test, but ensuring simsimd is available in the project through the import.
-    import simsimd
     invoke_cosine_similarity_top_k_score_threshold(X, Y)
