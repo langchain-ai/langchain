@@ -60,9 +60,10 @@ class UnstructuredHtmlEvaluator(PlaywrightEvaluator):
     """Evaluate the page HTML content using the `unstructured` library."""
 
     def __init__(
-        self, 
-        remove_selectors: Optional[List[str]] = None, 
-        scraped_selectors: Optional[List[str]] = None
+        self,
+        remove_selectors: Optional[List[str]] = None,
+        *,
+        scraped_selectors: Optional[List[str]] = None,
     ):
         """Initialize UnstructuredHtmlEvaluator."""
         try:
@@ -87,15 +88,18 @@ class UnstructuredHtmlEvaluator(PlaywrightEvaluator):
                     element.evaluate("element => element.remove()")
 
         if self.scraped_selectors is not None:
-          selectors = ','.join(self.scraped_selectors)
-          outer_html = page.evaluate("(selectors)"
-                                   "=> [...document.querySelectorAll(selectors)]"
-                                   ".map(node => node.outerHTML)"
-                                   ".join('')", selectors)
-          page.evaluate(
+            selectors = ",".join(self.scraped_selectors)
+            outer_html = page.evaluate(
+                "(selectors)"
+                "=> [...document.querySelectorAll(selectors)]"
+                ".map(node => node.outerHTML)"
+                ".join('')",
+                selectors,
+            )
+            page.evaluate(
                 """(html) => { document.querySelector('body').innerHTML = html }""",
-                outer_html
-          )
+                outer_html,
+            )
 
         page_source = page.content()
         elements = partition_html(text=page_source)
@@ -112,17 +116,20 @@ class UnstructuredHtmlEvaluator(PlaywrightEvaluator):
             for element in elements:
                 if await element.is_visible():
                     await element.evaluate("element => element.remove()")
-        
+
         if self.scraped_selectors is not None:
-          selectors = ','.join(self.scraped_selectors)
-          outer_html = await page.evaluate("(selectors)" 
-                                    "=> [...document.querySelectorAll(selectors)]"
-                                    ".map(node => node.outerHTML)"
-                                    ".join('')", selectors)
-          await page.evaluate(
-              """(html) => { document.querySelector('body').innerHTML = html }""",
-              outer_html
-          )
+            selectors = ",".join(self.scraped_selectors)
+            outer_html = await page.evaluate(
+                "(selectors)"
+                "=> [...document.querySelectorAll(selectors)]"
+                ".map(node => node.outerHTML)"
+                ".join('')",
+                selectors,
+            )
+            await page.evaluate(
+                """(html) => { document.querySelector('body').innerHTML = html }""",
+                outer_html,
+            )
         page_source = await page.content()
         elements = partition_html(text=page_source)
         return "\n\n".join([str(el) for el in elements])
@@ -164,10 +171,12 @@ class PlaywrightURLLoader(BaseLoader):
         scraped_selectors: Optional[List[str]] = None,
         evaluator: Optional[PlaywrightEvaluator] = None,
         proxy: Optional[Dict[str, str]] = None,
-        user_agent: Optional[str] = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-                                     'AppleWebKit/537.36 (KHTML, like Gecko)'
-                                     'Chrome/58.0.3029.110'
-                                     'Safari/537.36')
+        user_agent: Optional[str] = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+            "AppleWebKit/537.36 (KHTML, like Gecko)"
+            "Chrome/58.0.3029.110"
+            "Safari/537.36"
+        ),
     ):
         """Load a list of URLs using Playwright."""
         try:
@@ -186,13 +195,14 @@ class PlaywrightURLLoader(BaseLoader):
 
         if remove_selectors or scraped_selectors and evaluator:
             raise ValueError(
-                "`remove_selectors or scraped_selectors` and `evaluator`" 
+                "`remove_selectors or scraped_selectors` and `evaluator`"
                 "cannot be both not None"
             )
 
         # Use the provided evaluator, if any, otherwise, use the default.
-        self.evaluator = evaluator or UnstructuredHtmlEvaluator(remove_selectors, 
-                                                                scraped_selectors)
+        self.evaluator = evaluator or UnstructuredHtmlEvaluator(
+            remove_selectors, scraped_selectors
+        )
 
     def lazy_load(self) -> Iterator[Document]:
         """Load the specified URLs using Playwright and create Document instances.
