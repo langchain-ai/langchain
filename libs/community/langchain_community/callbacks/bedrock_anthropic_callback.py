@@ -77,13 +77,13 @@ class BedrockAnthropicTokenUsageCallbackHandler(BaseCallbackHandler):
         if response.llm_output is None:
             return None
 
-        if "usage" not in response.llm_output:
+        if "token_usage" not in response.llm_output:
             with self._lock:
                 self.successful_requests += 1
             return None
 
         # compute tokens and cost for this request
-        token_usage = response.llm_output["usage"]
+        token_usage = response.llm_output["token_usage"]
         completion_tokens = token_usage.get("completion_tokens", 0)
         prompt_tokens = token_usage.get("prompt_tokens", 0)
         total_tokens = token_usage.get("total_tokens", 0)

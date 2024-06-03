@@ -84,6 +84,7 @@ def test_bedrock_combine_llm_output() -> None:
     model = BedrockChat(model_id=model_id, client=client)
     final_output = model._combine_llm_outputs(llm_outputs)  # type: ignore[arg-type]
     assert final_output["model_id"] == model_id
-    assert final_output["usage"]["completion_tokens"] == 2
-    assert final_output["usage"]["prompt_tokens"] == 4
-    assert final_output["usage"]["total_tokens"] == 6
+    assert final_output["model_name"] == model_id
+    assert final_output["token_usage"]["completion_tokens"] == 2
+    assert final_output["token_usage"]["prompt_tokens"] == 4
+    assert final_output["token_usage"]["total_tokens"] == 6
