@@ -474,7 +474,7 @@ class BaseRunManager(RunManagerMixin):
             BaseRunManager: The noop manager.
         """
         return cls(
-            run_id=uuid.uuid4(),
+            run_id=uuid.uuid1(),
             handlers=[],
             inheritable_handlers=[],
             tags=[],
@@ -1199,7 +1199,7 @@ class CallbackManager(BaseCallbackManager):
         managers = []
         for i, prompt in enumerate(prompts):
             # Can't have duplicate runs with the same run ID (if provided)
-            run_id_ = run_id if i == 0 and run_id is not None else uuid.uuid4()
+            run_id_ = run_id if i == 0 and run_id is not None else uuid.uuid1()
             handle_event(
                 self.handlers,
                 "on_llm_start",
@@ -1253,7 +1253,7 @@ class CallbackManager(BaseCallbackManager):
                 run_id_ = run_id
                 run_id = None
             else:
-                run_id_ = uuid.uuid4()
+                run_id_ = uuid.uuid1()
             handle_event(
                 self.handlers,
                 "on_chat_model_start",
@@ -1300,7 +1300,7 @@ class CallbackManager(BaseCallbackManager):
             CallbackManagerForChainRun: The callback manager for the chain run.
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = uuid.uuid1()
         handle_event(
             self.handlers,
             "on_chain_start",
@@ -1352,7 +1352,7 @@ class CallbackManager(BaseCallbackManager):
             CallbackManagerForToolRun: The callback manager for the tool run.
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = uuid.uuid1()
 
         handle_event(
             self.handlers,
@@ -1389,7 +1389,7 @@ class CallbackManager(BaseCallbackManager):
     ) -> CallbackManagerForRetrieverRun:
         """Run when retriever starts running."""
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = uuid.uuid1()
 
         handle_event(
             self.handlers,
@@ -1550,7 +1550,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                 run_id_ = run_id
                 run_id = None
             else:
-                run_id_ = uuid.uuid4()
+                run_id_ = uuid.uuid1()
 
             tasks.append(
                 ahandle_event(
@@ -1611,7 +1611,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                 run_id_ = run_id
                 run_id = None
             else:
-                run_id_ = uuid.uuid4()
+                run_id_ = uuid.uuid1()
 
             tasks.append(
                 ahandle_event(
@@ -1663,7 +1663,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                 for the chain run.
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = uuid.uuid1()
 
         await ahandle_event(
             self.handlers,
@@ -1711,7 +1711,7 @@ class AsyncCallbackManager(BaseCallbackManager):
                 for the tool run.
         """
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = uuid.uuid1()
 
         await ahandle_event(
             self.handlers,
@@ -1747,7 +1747,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     ) -> AsyncCallbackManagerForRetrieverRun:
         """Run when retriever starts running."""
         if run_id is None:
-            run_id = uuid.uuid4()
+            run_id = uuid.uuid1()
 
         await ahandle_event(
             self.handlers,

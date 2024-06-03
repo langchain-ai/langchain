@@ -29,7 +29,7 @@ class BaseModeration:
         self.unique_id = unique_id
         self.chat_message_index = 0
         self.run_manager = run_manager
-        self.chain_id = str(uuid.uuid4())
+        self.chain_id = str(uuid.uuid1())
 
     def _convert_prompt_to_text(self, prompt: Any) -> str:
         input_text = str()

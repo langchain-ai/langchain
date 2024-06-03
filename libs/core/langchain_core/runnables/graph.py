@@ -228,7 +228,7 @@ class Graph:
         return bool(self.nodes)
 
     def next_id(self) -> str:
-        return uuid4().hex
+        return uuid1().hex
 
     def add_node(
         self, data: Union[Type[BaseModel], RunnableType], id: Optional[str] = None

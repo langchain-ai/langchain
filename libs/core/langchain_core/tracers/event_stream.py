@@ -796,7 +796,7 @@ async def _astream_events_implementation_v2(
 
     # Assign the stream handler to the config
     config = ensure_config(config)
-    run_id = cast(UUID, config.setdefault("run_id", uuid4()))
+    run_id = cast(UUID, config.setdefault("run_id", uuid1()))
     callbacks = config.get("callbacks")
     if callbacks is None:
         config["callbacks"] = [event_streamer]

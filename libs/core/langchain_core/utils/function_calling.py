@@ -416,7 +416,7 @@ def tool_example_to_messages(
     for tool_call in tool_calls:
         openai_tool_calls.append(
             {
-                "id": str(uuid.uuid4()),
+                "id": str(uuid.uuid1()),
                 "type": "function",
                 "function": {
                     # The name of the function right now corresponds to the name
