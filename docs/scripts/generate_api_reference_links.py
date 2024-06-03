@@ -30,15 +30,18 @@ _DOCS_DIR = _CURRENT_PATH / "docs"
 def find_files(path):
     """Find all MDX files in the given path"""
     # Check if is file first
+    if ".ipynb_checkpoints" in str(path):
+        return
     if os.path.isfile(path):
-        if ".ipynb_checkpoints" in path:
-            return
         yield path
         return
     for root, _, files in os.walk(path):
         for file in files:
             if file.endswith(".mdx") or file.endswith(".md"):
-                yield os.path.join(root, file)
+                full = os.path.join(root, file)
+                if ".ipynb_checkpoints" in str(full):
+                    continue
+                yield full
 
 
 def get_full_module_name(module_path, class_name):
