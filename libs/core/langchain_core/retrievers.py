@@ -343,16 +343,16 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         Returns:
             List of relevant documents
         """
-        return self.invoke(
-            query,
-            {
-                "callbacks": callbacks,
-                "tags": tags,
-                "metadata": metadata,
-                "run_name": run_name,
-            },
-            **kwargs,
-        )
+        config: RunnableConfig = {}
+        if callbacks:
+            config["callbacks"] = callbacks
+        if tags:
+            config["tags"] = tags
+        if metadata:
+            config["metadata"] = metadata
+        if run_name:
+            config["run_name"] = run_name
+        return self.invoke(query, config, **kwargs)
 
     @deprecated(since="0.1.46", alternative="ainvoke", removal="0.3.0")
     async def aget_relevant_documents(
@@ -384,13 +384,13 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         Returns:
             List of relevant documents
         """
-        return await self.ainvoke(
-            query,
-            {
-                "callbacks": callbacks,
-                "tags": tags,
-                "metadata": metadata,
-                "run_name": run_name,
-            },
-            **kwargs,
-        )
+        config: RunnableConfig = {}
+        if callbacks:
+            config["callbacks"] = callbacks
+        if tags:
+            config["tags"] = tags
+        if metadata:
+            config["metadata"] = metadata
+        if run_name:
+            config["run_name"] = run_name
+        return await self.ainvoke(query, config, **kwargs)
