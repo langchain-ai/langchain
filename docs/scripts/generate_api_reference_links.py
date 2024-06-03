@@ -149,7 +149,7 @@ def replace_imports(file):
                 except AttributeError as e:
                     logger.warning(f"Could not find module for {class_name}, {e}")
                     continue
-                except Exception as e:
+                except ImportError as e:
                     logger.warning(f"Failed to load for class {class_name}, {e}")
                     continue
                 if len(module_path.split(".")) < 2:
