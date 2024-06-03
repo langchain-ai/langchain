@@ -609,7 +609,7 @@ class LLMGraphTransformer:
         else:
             nodes_set = set()
             relationships = []
-            parsed_json = self.json_repair.loads(raw_schema.content)
+            parsed_json = self.json_repair.loads(raw_schema)
             for rel in parsed_json:
                 # Nodes need to be deduplicated using a set
                 nodes_set.add((rel["head"], rel["head_type"]))
