@@ -64,6 +64,7 @@ class AsyncHtmlLoader(BaseLoader):
         ignore_load_errors: bool = False,
         *,
         preserve_order: bool = True,
+        trust_env: bool = False,
     ):
         """Initialize with a webpage path."""
 
@@ -104,6 +105,8 @@ class AsyncHtmlLoader(BaseLoader):
         self.ignore_load_errors = ignore_load_errors
         self.preserve_order = preserve_order
 
+        self.trust_env = trust_env
+
     def _fetch_valid_connection_docs(self, url: str) -> Any:
         if self.ignore_load_errors:
             try:
@@ -126,7 +129,7 @@ class AsyncHtmlLoader(BaseLoader):
     async def _fetch(
         self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
     ) -> str:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(trust_env=self.trust_env) as session:
             for i in range(retries):
                 try:
                     async with session.get(

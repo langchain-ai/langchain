@@ -76,7 +76,7 @@ def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -
         if p.param_schema:
             schema = spec.get_schema(p.param_schema)
         else:
-            media_type_schema = list(p.content.values())[0].media_type_schema  # type: ignore  # noqa: E501
+            media_type_schema = list(p.content.values())[0].media_type_schema  # type: ignore
             schema = spec.get_schema(media_type_schema)
         if p.description and not schema.description:
             schema.description = p.description
@@ -237,7 +237,7 @@ class SimpleRequestChain(Chain):
         else:
             try:
                 response = api_response.json()
-            except Exception:  # noqa: E722
+            except Exception:
                 response = api_response.text
         return {self.output_key: response}
 
@@ -280,7 +280,7 @@ def get_openapi_chain(
                 break
             except ImportError as e:
                 raise e
-            except Exception:  # noqa: E722
+            except Exception:
                 pass
         if isinstance(spec, str):
             raise ValueError(f"Unable to parse spec from source {spec}")

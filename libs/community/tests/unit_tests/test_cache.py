@@ -22,7 +22,7 @@ except ImportError:
 from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.outputs import Generation, LLMResult
 
-from langchain_community.cache import SQLAlchemyCache  # noqa: E402
+from langchain_community.cache import SQLAlchemyCache
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 

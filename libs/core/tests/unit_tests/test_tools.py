@@ -626,7 +626,7 @@ def test_exception_handling_callable() -> None:
     expected = "foo bar"
 
     def handling(e: ToolException) -> str:
-        return expected  # noqa: E731
+        return expected
 
     _tool = _FakeExceptionTool(handle_tool_error=handling)
     actual = _tool.run({})
@@ -657,7 +657,7 @@ async def test_async_exception_handling_callable() -> None:
     expected = "foo bar"
 
     def handling(e: ToolException) -> str:
-        return expected  # noqa: E731
+        return expected
 
     _tool = _FakeExceptionTool(handle_tool_error=handling)
     actual = await _tool.arun({})
@@ -723,7 +723,7 @@ def test_validation_error_handling_callable() -> None:
     expected = "foo bar"
 
     def handling(e: ValidationError) -> str:
-        return expected  # noqa: E731
+        return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
     actual = _tool.run({})
@@ -785,7 +785,7 @@ async def test_async_validation_error_handling_callable() -> None:
     expected = "foo bar"
 
     def handling(e: ValidationError) -> str:
-        return expected  # noqa: E731
+        return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
     actual = await _tool.arun({})
