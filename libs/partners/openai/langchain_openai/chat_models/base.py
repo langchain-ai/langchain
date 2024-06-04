@@ -1141,16 +1141,16 @@ class ChatOpenAI(BaseChatOpenAI):
             streaming (``{"include_usage": True}``).
 
     Key init args — client params:
-        timeout:
+        timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
-        max_retries:
+        max_retries: int
             Max number of retries.
-        api_key:
+        api_key: Optional[str]
             OpenAI API key. If not passed in will be read from env var OPENAI_API_KEY.
-        base_url:
-            Base URL for PAI requests. Only specify if using a proxy or service
+        base_url: Optional[str]
+            Base URL for API requests. Only specify if using a proxy or service
             emulator.
-        organization:
+        organization: Optional[str]
             OpenAI organization ID. If not passed in will be read from env
             var OPENAI_ORG_ID.
 
