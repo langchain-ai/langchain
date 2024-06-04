@@ -635,7 +635,7 @@ class VDMS(VectorStore):
         ids = ids if ids is not None else [str(uuid.uuid4()) for _ in paths]
 
         # Set embeddings
-        embeddings = self.video_db._embed_video(paths=paths)
+        embeddings = self._embed_video(paths=paths)
 
         if metadatas is None:
             metadatas = [{} for _ in paths]
