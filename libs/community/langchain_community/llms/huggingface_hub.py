@@ -20,7 +20,11 @@ VALID_TASKS_DICT = {
 }
 
 
-@deprecated("0.0.21", removal="0.3.0", alternative="HuggingFaceEndpoint")
+@deprecated(
+    "0.0.21",
+    removal="0.3.0",
+    alternative_import="from langchain_huggingface import HuggingFaceEndpoint",
+)
 class HuggingFaceHub(LLM):
     """HuggingFaceHub  models.
     ! This class is deprecated, you should use HuggingFaceEndpoint instead.
