@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 import requests
+from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
 
@@ -17,6 +18,11 @@ DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
 DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索相关文章："
 
 
+@deprecated(
+    since="0.2.2",
+    removal="0.3.0",
+    alternative_import="from langchain_huggingface import HuggingFaceEmbeddings",
+)
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
 
