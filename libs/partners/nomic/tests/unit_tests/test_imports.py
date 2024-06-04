@@ -2,7 +2,6 @@ from langchain_nomic import __all__
 
 EXPECTED_ALL = [
     "NomicEmbeddings",
-    "NomicMultimodalEmbeddings",
 ]
 
 

@@ -60,6 +60,7 @@ class NomicEmbeddings(Embeddings):
         dimensionality: Optional[int] = None,
         inference_mode: str = "remote",
         device: Optional[str] = None,
+        vision_model: Optional[str] = None,
     ):
         """Initialize NomicEmbeddings model.
 
@@ -83,6 +84,7 @@ class NomicEmbeddings(Embeddings):
         self.dimensionality = dimensionality
         self.inference_mode = inference_mode
         self.device = device
+        self.vision_model = vision_model
 
     def embed(self, texts: List[str], *, task_type: str) -> List[List[float]]:
         """Embed texts.
@@ -124,24 +126,6 @@ class NomicEmbeddings(Embeddings):
             texts=[text],
             task_type="search_query",
         )[0]
-
-
-class NomicMultimodalEmbeddings(NomicEmbeddings):
-    def __init__(
-        self,
-        *,
-        text_model: str,
-        vision_model: str,
-        nomic_api_key: Optional[str] = None,
-        dimensionality: Optional[int] = None,
-    ):
-        super().__init__(
-            model=text_model,
-            nomic_api_key=nomic_api_key,
-            dimensionality=dimensionality,
-            inference_mode="remote",
-        )
-        self.vision_model = vision_model
 
     def embed_image(self, uris: List[str]) -> List[List[float]]:
         return embed.image(

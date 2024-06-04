@@ -1,3 +1,3 @@
-from langchain_nomic.embeddings import NomicEmbeddings, NomicMultimodalEmbeddings
+from langchain_nomic.embeddings import NomicEmbeddings
 
-__all__ = ["NomicEmbeddings", "NomicMultimodalEmbeddings"]
+__all__ = ["NomicEmbeddings"]
