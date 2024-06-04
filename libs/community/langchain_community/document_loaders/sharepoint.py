@@ -66,9 +66,9 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                 raise ValueError(f"There isn't a folder with path {self.folder_path}.")
             for blob in self._load_from_folder(target_folder):
                 if self.load_auth is True:
+                    file_id = str(blob.metadata.get("id"))
+                    auth_identities = self.authorized_identities(file_id)
                     for parsed_blob in blob_parser.lazy_parse(blob):
-                        file_id = blob.metadata.get("id")
-                        auth_identities = self.authorized_identities(file_id)
                         parsed_blob.metadata["authorized_identities"] = auth_identities
                         yield parsed_blob
                 else:
@@ -78,10 +78,10 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             if not isinstance(target_folder, Folder):
                 raise ValueError(f"There isn't a folder with path {self.folder_path}.")
             for blob in self._load_from_folder(target_folder):
+                file_id = str(blob.metadata.get("id"))
+                auth_identities = self.authorized_identities(file_id)
                 if self.load_auth is True:
                     for parsed_blob in blob_parser.lazy_parse(blob):
-                        file_id = blob.metadata.get("id")
-                        auth_identities = self.authorized_identities(file_id)
                         parsed_blob.metadata["authorized_identities"] = auth_identities
                         yield parsed_blob
                 else:
@@ -89,9 +89,9 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
         if self.object_ids:
             for blob in self._load_from_object_ids(drive, self.object_ids):
                 if self.load_auth is True:
+                    file_id = str(blob.metadata.get("id"))
+                    auth_identities = self.authorized_identities(file_id)
                     for parsed_blob in blob_parser.lazy_parse(blob):
-                        file_id = blob.metadata.get("id")
-                        auth_identities = self.authorized_identities(file_id)
                         parsed_blob.metadata["authorized_identities"] = auth_identities
                         yield parsed_blob
                 else:
@@ -114,23 +114,21 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
         )
         headers = {"Authorization": f"Bearer {access_token}"}
         response = requests.request("GET", url, headers=headers)
-        groups_list = response.json()
+        access_list = response.json()
 
         group_names = []
 
-        for group_data in groups_list.get("value"):
-            if group_data.get("grantedToV2"):
-                if group_data.get("grantedToV2").get("siteGroup"):
-                    site_data = group_data.get("grantedToV2").get("siteGroup")
-                    group_names.append(site_data.get("displayName"))
-                elif group_data.get("grantedToV2").get("group") or (
-                    group_data.get("grantedToV2").get("user")
-                ):
-                    site_data = group_data.get("grantedToV2").get("group") or (
-                        group_data.get("grantedToV2").get("user")
-                    )
-                    group_names.append(site_data.get("displayName"))
-
+        for access_data in access_list.get("value"):
+            if access_data.get("grantedToV2"):
+                site_data = (
+                    (access_data.get("grantedToV2").get("siteUser"))
+                    or (access_data.get("grantedToV2").get("user"))
+                    or (access_data.get("grantedToV2").get("group"))
+                )
+                if site_data:
+                    email = site_data.get("email")
+                    if email:
+                        group_names.append(email)
         return group_names
 
     def _fetch_access_token(self) -> Any:
