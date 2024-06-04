@@ -239,32 +239,38 @@ class YoutubeLoader(BaseLoader):
                 for t in transcript_pieces
             ]
         elif self.transcript_format == TranscriptFormat.CHUNKS:
-            def make_chunk_document(chunk_pieces: List[dict],
-                                    chunk_start_seconds: int) -> Document:
+            def make_chunk_document(
+                chunk_pieces: List[dict], chunk_start_seconds: int
+            ) -> Document:
                 """Create Document from chunk of transcript pieces."""
                 m, s = divmod(chunk_start_seconds, 60)
                 h, m = divmod(m, 60)
                 return Document(
-                    page_content=' '.join(
-                        c['text'].strip(' ') for c in chunk_pieces),
+                    page_content=" ".join(c["text"].strip(" ") for c in chunk_pieces),
                     metadata={
-                        'start_seconds': chunk_start_seconds,
-                        'start_timestamp': f'{h:02d}:{m:02d}:{s:02d}',
+                        "start_seconds": chunk_start_seconds,
+                        "start_timestamp": f"{h:02d}:{m:02d}:{s:02d}",
                         **metadata,
-                        'source':  # replace video ID with URL to start time
-                            f'https://www.youtube.com/watch?v={self.video_id}'
-                            f'&t={chunk_start_seconds}s'})
+                        "source":
+                        # replace video ID with URL to start time
+                            f"https://www.youtube.com/watch?v={self.video_id}"
+                            f"&t={chunk_start_seconds}s"
+                    },
+                )
 
             documents: List[Document] = []
             chunk_pieces = []
             chunk_start_seconds = 0
             chunk_time_limit = self.chunk_size_seconds
             for transcript_piece in transcript_pieces:
-                if (transcript_piece['start'] +
-                        transcript_piece['duration'] > chunk_time_limit):
+                if (
+                    transcript_piece["start"] + transcript_piece["duration"]
+                    > chunk_time_limit
+                ):
                     if chunk_pieces:
-                        documents.append(make_chunk_document(
-                            chunk_pieces, chunk_start_seconds))
+                        documents.append(
+                            make_chunk_document(chunk_pieces, chunk_start_seconds)
+                        )
                         chunk_pieces = []
                     chunk_start_seconds = chunk_time_limit
                     chunk_time_limit += self.chunk_size_seconds
@@ -272,8 +278,7 @@ class YoutubeLoader(BaseLoader):
 
             # handle chunk pieces left over from last iteration
             if chunk_pieces:
-                documents.append(make_chunk_document(
-                    chunk_pieces, chunk_start_seconds))
+                documents.append(make_chunk_document(chunk_pieces, chunk_start_seconds))
 
             return documents
         else:
