@@ -306,21 +306,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             history_chain = RunnablePassthrough.assign(
                 **{messages_key: history_chain}
             ).with_config(run_name="insert_history")
-        # bound = (
-        #     history_chain
-        #     | runnable.with_listeners(
-        #         on_end=self._exit_history,
-        #     ).with_alisteners(on_end=self._aexit_history)
-        # ).with_config(run_name="RunnableWithMessageHistory")
-
-        bound = RunnableLambda(
-            # sync path,
-            history_chain | runnable.with_listeners(
-                on_end=self._exit_history,
-            ).with_config(run_name="RunnableWithMessageHistory"),
-            # async path
-            history_chain | runnable.with_alisteners(on_end=self._aexit_history),
-        )
+        bound = (
+            history_chain | runnable.with_listeners(on_end=self._exit_history)
+        ).with_config(run_name="RunnableWithMessageHistory")
 
         if history_factory_config:
             _config_specs = history_factory_config
