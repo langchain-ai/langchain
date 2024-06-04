@@ -18,6 +18,9 @@ __all__ = [
 ]
 
 
+# FOR CONTRIBUTORS: If adding support for a new provider, please append the provider
+# name to the supported list in the docstring below. Do *not* change the order of the
+# existing providers.
 @beta()
 def init_chat_model(
     model: str, *, model_provider: Optional[str] = None, **kwargs: Any
@@ -33,25 +36,25 @@ def init_chat_model(
                 - openai (langchain-openai)
                 - anthropic (langchain-anthropic)
                 - azure_openai (langchain-openai)
-                - cohere (langchain-cohere)
                 - google_vertexai (langchain-google-vertexai)
                 - google_genai (langchain-google-genai)
+                - bedrock (langchain-aws)
+                - cohere (langchain-cohere)
                 - fireworks (langchain-fireworks)
-                - ollama (langchain-community)
                 - together (langchain-together)
                 - mistralai (langchain-mistralai)
                 - huggingface (langchain-huggingface)
                 - groq (langchain-groq)
-                - bedrock (langchain-aws)
+                - ollama (langchain-community)
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
                 - gpt-3... or gpt-4... -> openai
                 - claude... -> anthropic
-                - command... -> cohere
                 - amazon.... -> bedrock
-                - accounts/fireworks... -> fireworks
                 - gemini... -> google_vertexai
+                - command... -> cohere
+                - accounts/fireworks... -> fireworks
         kwargs: Additional keyword args to pass to
             ``<<selected ChatModel>>.__init__(model=model_name, **kwargs)``.
 
