@@ -156,12 +156,17 @@ class VectorStore(ABC):
         """Return docs most similar to query using specified search type."""
         if search_type == "similarity":
             return self.similarity_search(query, **kwargs)
+        elif search_type == "similarity_score_threshold":
+            docs_and_similarities = self.similarity_search_with_relevance_scores(
+                query, **kwargs
+            )
+            return [doc for doc, _ in docs_and_similarities]
         elif search_type == "mmr":
             return self.max_marginal_relevance_search(query, **kwargs)
         else:
             raise ValueError(
                 f"search_type of {search_type} not allowed. Expected "
-                "search_type to be 'similarity' or 'mmr'."
+                "search_type to be 'similarity', 'similarity_score_threshold' or 'mmr'."
             )
 
     async def asearch(
@@ -170,12 +175,17 @@ class VectorStore(ABC):
         """Return docs most similar to query using specified search type."""
         if search_type == "similarity":
             return await self.asimilarity_search(query, **kwargs)
+        elif search_type == "similarity_score_threshold":
+            docs_and_similarities = await self.asimilarity_search_with_relevance_scores(
+                query, **kwargs
+            )
+            return [doc for doc, _ in docs_and_similarities]
         elif search_type == "mmr":
             return await self.amax_marginal_relevance_search(query, **kwargs)
         else:
             raise ValueError(
                 f"search_type of {search_type} not allowed. Expected "
-                "search_type to be 'similarity' or 'mmr'."
+                "search_type to be 'similarity', 'similarity_score_threshold' or 'mmr'."
             )
 
     @abstractmethod
