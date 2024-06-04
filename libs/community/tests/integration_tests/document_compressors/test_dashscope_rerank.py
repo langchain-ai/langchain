@@ -6,7 +6,7 @@ from langchain_community.document_compressors.dashscope_rerank import (
 
 
 def test_rerank() -> None:
-    reranker = DashScopeRerank()
+    reranker = DashScopeRerank(api_key=None)
     docs = [
         Document(page_content="量子计算是计算科学的一个前沿领域"),
         Document(page_content="预训练语言模型的发展给文本排序模型带来了新的进展"),
