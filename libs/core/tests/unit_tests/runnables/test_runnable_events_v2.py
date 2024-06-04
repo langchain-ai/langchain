@@ -1883,8 +1883,8 @@ async def test_with_explicit_config() -> None:
     infinite_cycle = cycle([AIMessage(content="hello world", id="ai3")])
     model = GenericFakeChatModel(messages=infinite_cycle)
 
-    @RunnableLambda
-    async def say_hello(query: str, config):
+    @tool
+    async def say_hello(query: str, callbacks):
         """Use this tool to look up which items are in the given place."""
 
         @RunnableLambda
@@ -1893,11 +1893,7 @@ async def test_with_explicit_config() -> None:
             return x
 
         chain = passthrough_to_trigger_issue | model.with_config(
-            {
-                "run_name": "Get Items LLM",
-                "tags": ["tool_llm"],
-                "callbacks": config["callbacks"],
-            }
+            {"tags": ["hello"], "callbacks": callbacks}
         )
 
         return await chain.ainvoke(query)
