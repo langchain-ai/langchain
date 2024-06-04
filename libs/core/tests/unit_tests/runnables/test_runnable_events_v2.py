@@ -38,6 +38,7 @@ from langchain_core.runnables import (
     RunnableGenerator,
     RunnableLambda,
     ensure_config,
+    RunnableMap,
 )
 from langchain_core.runnables.config import get_callback_manager_for_config
 from langchain_core.runnables.history import RunnableWithMessageHistory
@@ -1876,3 +1877,33 @@ async def test_runnable_generator() -> None:
             "tags": [],
         },
     ]
+
+
+async def test_with_explicit_config() -> None:
+    """Test astream events with explicit callbacks being passed."""
+    from langchain_core.prompts import ChatPromptTemplate
+
+    infinite_cycle = cycle([AIMessage(content="hello world", id="ai3")])
+    model = GenericFakeChatModel(messages=infinite_cycle)
+
+    @tool
+    async def say_hello(query: str, callbacks):
+        """Use this tool to look up which items are in the given place."""
+        template = ChatPromptTemplate.from_messages(
+            [("human", "what items are in {place}")]
+        )
+
+        chain = template | model.with_config(
+            {"run_name": "Get Items LLM", "tags": ["tool_llm"], "callbacks": callbacks}
+        )
+        return await chain.ainvoke(
+            {"place": query},
+        )
+
+    events = await _collect_events(say_hello.astream_events("meow", version="v2"))
+
+    assert [
+        event["data"]["chunk"].content
+        for event in events
+        if event["event"] == "on_chat_model_stream"
+    ] == ["hello", " ", "world"]
