@@ -49,6 +49,7 @@ langchain = { path = "libs/langchain/", develop = true }
 langchain-experimental = { path = "libs/experimental/", develop = true }
 langchain-openai = { path = "libs/partners/openai", develop = true }
 ipykernel = "^6.29.2"
+pytest = "==8.2.2"
 
 [tool.poetry.group.test.dependencies]
 
