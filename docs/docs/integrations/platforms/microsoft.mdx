@@ -1,3 +1,7 @@
+---
+keywords: [azure]
+---
+
 # Microsoft
 
 All functionality related to `Microsoft Azure` and other `Microsoft` products.
@@ -270,6 +274,26 @@ See a [usage example](/docs/integrations/retrievers/azure_ai_search).
 ```python
 from langchain.retrievers import AzureAISearchRetriever
 ```
+
+## Tools
+
+### Azure Container Apps dynamic sessions
+
+We need to get the `POOL_MANAGEMENT_ENDPOINT` environment variable from the Azure Container Apps service.
+See the instructions [here](https://python.langchain.com/v0.2/docs/integrations/tools/azure_dynamic_sessions/#setup).
+
+We need to install a python package.
+
+```bash
+pip install langchain-azure-dynamic-sessions
+```
+
+See a [usage example](/docs/integrations/tools/azure_dynamic_sessions).
+
+```python
+from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
+```
+
 
 ## Toolkits
 

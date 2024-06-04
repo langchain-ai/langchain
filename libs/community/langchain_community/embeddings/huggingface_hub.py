@@ -2,6 +2,7 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
@@ -9,6 +10,11 @@ DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"
 VALID_TASKS = ("feature-extraction",)
 
 
+@deprecated(
+    since="0.2.2",
+    removal="0.3.0",
+    alternative_import="from langchain_huggingface import HuggingFaceEndpointEmbeddings",  # noqa: E501
+)
 class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     """HuggingFaceHub embedding models.
 
