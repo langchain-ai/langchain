@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -273,7 +274,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
 
         for key in kwargs:
             if key in kwargs_to_ignore:
-                logger.warning(f"WARNING: Parameter {key} is not supported in kwargs.")
+                warnings.warn(f"WARNING: Parameter {key} is not supported in kwargs.")
                 keys_to_remove.append(key)
 
         for key in keys_to_remove:
