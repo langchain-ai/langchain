@@ -1,5 +1,4 @@
-import re
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Sequence
+from typing import Any, Dict, Iterator, List, Optional, Sequence
 from abc import ABC, abstractmethod
 import json
 
@@ -8,17 +7,16 @@ from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, Chat
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_community.llms.utils import enforce_stop_tokens
 
-from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 
 from langchain_core.pydantic_v1 import Extra
 from langchain_community.llms.oci_generative_ai import OCIGenAIBase
 
 
-# command-r params e.g. docs, provider, remove is stream from base, command -r no support for stop
-
+# oci 2.127 new message roles caps, new sys role, llamaindex incompatability
+# stream issues: (1) command-r stream hangs at end with stop (2) stream cohere command does not remove stop
+# test with dedicated cluster
+# command-r tools ?
 class Provider(ABC):
     @property
     @abstractmethod
@@ -59,15 +57,15 @@ class CohereProvider(Provider):
             ) from ex
 
         self.oci_chat_request = models.CohereChatRequest
-        self.oci_chat_message = models.CohereMessage
+        self.oci_chat_message = {"USER": models.CohereUserMessage, "CHATBOT": models.CohereChatBotMessage, "SYSTEM": models.CohereSystemMessage}
         self.chat_api_format = models.BaseChatRequest.API_FORMAT_COHERE
 
     def chat_response_to_text(self, response: Any) -> str:
         return response.data.chat_response.text
 
     def chat_stream_to_text(self, event_data: Dict) -> str:
-        if 'text' in event_data:
-            return event_data['text']
+        if "text" in event_data and "finishReason" not in event_data:
+            return event_data["text"]
         else:
             return ""
         
@@ -83,13 +81,14 @@ class CohereProvider(Provider):
         elif isinstance(message, AIMessage):
             return "CHATBOT"
         elif isinstance(message, SystemMessage):
-            return "USER"
+            return "SYSTEM"
         else:
             raise ValueError(f"Got unknown type {message}")
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
 
-        oci_chat_history = [self.oci_chat_message(role=self.get_role(msg), message=msg.content) for msg in messages[:-1]]
+        oci_chat_history = [self.oci_chat_message[self.get_role(msg)](message=msg.content) for msg in messages[:-1]]
+        #oci_chat_history = [self.oci_chat_message(role=self.get_role(msg), message=msg.content) for msg in messages[:-1]]
         oci_params = {
             "message": messages[-1].content,
             "chat_history": oci_chat_history,
@@ -120,7 +119,10 @@ class MetaProvider(Provider):
         return response.data.chat_response.choices[0].message.content[0].text
 
     def chat_stream_to_text(self, event_data: Dict) -> str:
-        return event_data["message"]['content'][0]['text']
+        if "message" in event_data:
+            return event_data["message"]["content"][0]["text"]
+        else:
+            return ""
 
     def chat_generation_info(self, response: Any) -> Dict[str, Any]:
         return {
@@ -131,11 +133,11 @@ class MetaProvider(Provider):
     def get_role(self, message: BaseMessage) -> str:
         # meta only supports alternating user/assistant roles
         if isinstance(message, HumanMessage):
-            return "user"
+            return "USER"
         elif isinstance(message, AIMessage):
-            return "assistant"
+            return "ASSISTANT"
         elif isinstance(message, SystemMessage):
-            return "user"
+            return "SYSTEM"
         else:
             raise ValueError(f"Got unknown type {message}")
 

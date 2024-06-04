@@ -13,8 +13,6 @@ from langchain_community.llms.utils import enforce_stop_tokens
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 VALID_PROVIDERS = ("cohere", "meta")
 
-# stop, callback manager, command-r params
-
 class OCIAuthType(Enum):
     """OCI authentication types as enumerator."""
 
@@ -65,11 +63,6 @@ class OCIGenAIBase(BaseModel, ABC):
 
     is_stream: bool = False
     """Whether to stream back partial progress"""
-
-    llm_stop_sequence_mapping: Mapping[str, str] = {
-        "cohere": "stop_sequences",
-        "meta": "stop",
-    }
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -216,10 +209,14 @@ class OCIGenAI(LLM, OCIGenAIBase):
             "cohere": models.CohereLlmInferenceRequest,
             "meta": models.LlamaLlmInferenceRequest,
         }
+        llm_stop_sequence_mapping = {
+            "cohere": "stop_sequences",
+            "meta": "stop",
+        }
         provider = self._get_provider()
         _model_kwargs = self.model_kwargs or {}
         if stop is not None:
-            _model_kwargs[self.llm_stop_sequence_mapping[provider]] = stop
+            _model_kwargs[llm_stop_sequence_mapping[provider]] = stop
 
         if self.model_id.startswith(CUSTOM_ENDPOINT_PREFIX):
             serving_mode = models.DedicatedServingMode(endpoint_id=self.model_id)
