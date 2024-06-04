@@ -1,6 +1,6 @@
 import pytest
 
-from langchain.chat_models.base import __all__, init_model
+from langchain.chat_models.base import __all__, init_chat_model
 
 EXPECTED_ALL = [
     "BaseChatModel",
@@ -34,14 +34,14 @@ def test_all_imports() -> None:
     ],
 )
 def test_init_model(model_name: str, model_provider: str) -> None:
-    init_model(model_name, model_provider=model_provider, api_key="foo")
+    init_chat_model(model_name, model_provider=model_provider, api_key="foo")
 
 
 def test_init_missing_dep() -> None:
     with pytest.raises(ImportError):
-        init_model("gpt-4o", model_provider="openai")
+        init_chat_model("gpt-4o", model_provider="openai")
 
 
 def test_init_unknown_provider() -> None:
     with pytest.raises(ValueError):
-        init_model("foo", model_provider="bar")
+        init_chat_model("foo", model_provider="bar")
