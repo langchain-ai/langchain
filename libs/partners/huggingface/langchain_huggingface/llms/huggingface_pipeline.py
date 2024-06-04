@@ -85,6 +85,7 @@ class HuggingFacePipeline(BaseLLM):
         """Construct the pipeline object from model_id and task."""
         try:
             from transformers import (  # type: ignore[import]
+                AutoConfig,
                 AutoModelForCausalLM,
                 AutoModelForSeq2SeqLM,
                 AutoTokenizer,
@@ -125,10 +126,35 @@ class HuggingFacePipeline(BaseLLM):
                         model = OVModelForCausalLM.from_pretrained(
                             model_id, export=True, **_model_kwargs
                         )
+                elif backend == "ipex":
+                    try:
+                        from optimum.intel.ipex import (  # type: ignore[import]
+                            IPEXModelForCausalLM,
+                        )
+                        import torch
+                    except ImportError:
+                        raise ValueError(
+                            "Could not import optimum-intel python package. "
+                            "Please install it with: "
+                            "pip install --upgrade --upgrade-strategy eager 'optimum[ipex]' "
+                            "or follow installation instructions from https://github.com/huggingface/optimum-intel?tab=readme-ov-file#installation "
+                        )
+                    try:
+                        # use TorchScript model
+                        config = AutoConfig.from_pretrained(model_id)
+                        export = not getattr(config, "torchscript", False)
+                    except RuntimeError:
+                        logger.warning("We will use IPEXModel with export=True to export the model")
+                        export = True
+                    model = IPEXModelForCausalLM.from_pretrained(
+                            model_id,export=export, **_model_kwargs, torch_dtype=torch.bfloat16 #keep or remove the dtype????
+                        )
+
                 else:
                     model = AutoModelForCausalLM.from_pretrained(
                         model_id, **_model_kwargs
                     )
+
             elif task in ("text2text-generation", "summarization", "translation"):
                 if backend == "openvino":
                     try:
@@ -152,9 +178,12 @@ class HuggingFacePipeline(BaseLLM):
                             model_id, export=True, **_model_kwargs
                         )
                 else:
-                    model = AutoModelForSeq2SeqLM.from_pretrained(
-                        model_id, **_model_kwargs
-                    )
+                    if backend == "ipex":
+                        logger.warning("IPEX backend is not supported for this task.")
+                    else:
+                        model = AutoModelForSeq2SeqLM.from_pretrained(
+                            model_id, **_model_kwargs
+                        )
             else:
                 raise ValueError(
                     f"Got invalid task {task}, "
