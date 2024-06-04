@@ -30,12 +30,13 @@ def test_initialization() -> None:
             model="claude-instant-1.2",
             anthropic_api_key="xyz",
             default_request_timeout=2,
-            base_url="https://github.com/langchain-ai/langchain/issues/22296",
+            base_url="https://api.anthropic.com",
         ),
     ]:
         assert model.model == "claude-instant-1.2"
         assert cast(SecretStr, model.anthropic_api_key).get_secret_value() == "xyz"
         assert model.default_request_timeout == 2.0
+        assert model.anthropic_api_url == "https://api.anthropic.com"
 
 
 @pytest.mark.requires("anthropic")
