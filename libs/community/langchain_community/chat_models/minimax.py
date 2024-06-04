@@ -159,9 +159,6 @@ class MiniMaxChat(BaseChatModel):
         values["minimax_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "minimax_api_key", "MINIMAX_API_KEY")
         )
-        values["minimax_group_id"] = get_from_dict_or_env(
-            values, "minimax_group_id", "MINIMAX_GROUP_ID"
-        )
         # Get custom api url from environment.
         values["minimax_api_host"] = get_from_dict_or_env(
             values,

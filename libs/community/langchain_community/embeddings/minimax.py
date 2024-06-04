@@ -5,7 +5,13 @@ from typing import Any, Callable, Dict, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
+from langchain_core.pydantic_v1 import (
+    BaseModel,
+    Extra,
+    Field,
+    SecretStr,
+    root_validator,
+)
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from tenacity import (
     before_sleep_log,
@@ -47,8 +53,8 @@ def embed_with_retry(embeddings: MiniMaxEmbeddings, *args: Any, **kwargs: Any) -
 class MiniMaxEmbeddings(BaseModel, Embeddings):
     """MiniMax's embedding service.
 
-    To use, you should have the environment variable ``MINIMAX_GROUP_ID`` and
-    ``MINIMAX_API_KEY`` set with your API token, or pass it as a named parameter to
+    To use, you should have the environment variable ``MINIMAX_API_KEY``
+    set with your API token, or pass it as a named parameter to
     the constructor.
 
     Example:
@@ -75,25 +81,23 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
     """For embed_query"""
 
     minimax_group_id: Optional[str] = None
-    """Group ID for MiniMax API."""
-    minimax_api_key: Optional[SecretStr] = None
+    """[DEPRECATED, keeping it for for backward compatibility] 
+        Group ID for MiniMax API."""
+    minimax_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """API Key for MiniMax API."""
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+        allow_population_by_field_name = True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that group id and api key exists in environment."""
-        minimax_group_id = get_from_dict_or_env(
-            values, "minimax_group_id", "MINIMAX_GROUP_ID"
-        )
         minimax_api_key = convert_to_secret_str(
             get_from_dict_or_env(values, "minimax_api_key", "MINIMAX_API_KEY")
         )
-        values["minimax_group_id"] = minimax_group_id
         values["minimax_api_key"] = minimax_api_key
         return values
 
@@ -114,14 +118,8 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
             "Content-Type": "application/json",
         }
 
-        params = {
-            "GroupId": self.minimax_group_id,
-        }
-
         # send request
-        response = requests.post(
-            self.endpoint_url, params=params, headers=headers, json=payload
-        )
+        response = requests.post(self.endpoint_url, headers=headers, json=payload)
         parsed_response = response.json()
 
         # check for errors
