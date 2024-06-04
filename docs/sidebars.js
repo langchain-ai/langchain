@@ -353,6 +353,7 @@ module.exports = {
             id: "integrations/stores/index",
           },
         },
+        "integrations/llm_caching",
       ],
       link: {
         type: "generated-index",

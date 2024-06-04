@@ -22,7 +22,7 @@ class RootListenersTracer(BaseTracer):
         on_end: Optional[Listener],
         on_error: Optional[Listener],
     ) -> None:
-        super().__init__()
+        super().__init__(_schema_format="original+chat")
 
         self.config = config
         self._arg_on_start = on_start
