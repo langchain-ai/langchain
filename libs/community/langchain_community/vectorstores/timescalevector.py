@@ -66,7 +66,7 @@ class TimescaleVector(VectorStore):
                 collection_name=COLLECTION_NAME,
                 service_url=SERVICE_URL,
             )
-    """  # noqa: E501
+    """
 
     def __init__(
         self,
