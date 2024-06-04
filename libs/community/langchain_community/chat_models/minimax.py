@@ -127,7 +127,6 @@ class MiniMaxChat(BaseChatModel):
             **self.model_kwargs,
         }
 
-    _client: Any
     model: str = "abab6.5-chat"
     """Model name to use."""
     max_tokens: int = 256
