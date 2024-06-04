@@ -72,7 +72,12 @@ def pebblo_retrieval_qa(retriever: FakeRetriever) -> PebbloRetrievalQA:
     Create a PebbloRetrievalQA instance
     """
     pebblo_retrieval_qa = PebbloRetrievalQA.from_chain_type(
-        llm=FakeLLM(), chain_type="stuff", retriever=retriever
+        llm=FakeLLM(),
+        chain_type="stuff",
+        retriever=retriever,
+        owner="owner",
+        description="description",
+        app_name="app_name",
     )
 
     return pebblo_retrieval_qa
@@ -114,6 +119,9 @@ def test_validate_vectorstore(
         llm=FakeLLM(),
         chain_type="stuff",
         retriever=retriever,
+        owner="owner",
+        description="description",
+        app_name="app_name",
     )
 
     # validate_vectorstore method should raise a ValueError for unsupported vectorstores
@@ -122,6 +130,9 @@ def test_validate_vectorstore(
             llm=FakeLLM(),
             chain_type="stuff",
             retriever=unsupported_retriever,
+            owner="owner",
+            description="description",
+            app_name="app_name",
         )
     assert (
         "Vectorstore must be an instance of one of the supported vectorstores"
