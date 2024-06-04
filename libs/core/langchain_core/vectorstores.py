@@ -646,9 +646,8 @@ class VectorStore(ABC):
                 search_kwargs={'filter': {'paper_title':'GPT-4 Technical Report'}}
             )
         """
-        tags = kwargs.pop("tags", None) or []
-        tags.extend(self._get_retriever_tags())
-        return VectorStoreRetriever(vectorstore=self, **kwargs, tags=tags)
+        tags = kwargs.pop("tags", None) or [] + self._get_retriever_tags()
+        return VectorStoreRetriever(vectorstore=self, tags=tags, **kwargs)
 
 
 class VectorStoreRetriever(BaseRetriever):
