@@ -88,7 +88,8 @@ def _is_assistants_builtin_tool(
     Args:
         tool : Tool that needs to be determined
     Returns:
-        A boolean response of true or false indicating if the tool corresponds to OpenAI Assistants built-in.
+        A boolean response of true or false indicating if the tool corresponds to
+        OpenAI Assistants built-in.
     """
     assistants_builtin_tools = ("code_interpreter", "retrieval")
     return (
