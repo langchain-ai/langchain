@@ -635,6 +635,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        elif language in Language._value2member_map_:
+            raise ValueError(f"Language {language} is not implemented yet!")
         else:
             raise ValueError(
                 f"Language {language} is not supported! "
