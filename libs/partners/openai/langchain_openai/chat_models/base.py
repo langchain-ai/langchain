@@ -1148,7 +1148,7 @@ class ChatOpenAI(BaseChatOpenAI):
         api_key:
             OpenAI API key. If not passed in will be read from env var OPENAI_API_KEY.
         base_url:
-            Base URL for PAI requests. Only specify if using a proxy or service
+            Base URL for API requests. Only specify if using a proxy or service
             emulator.
         organization:
             OpenAI organization ID. If not passed in will be read from env
