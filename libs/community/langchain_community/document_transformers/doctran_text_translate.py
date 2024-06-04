@@ -67,15 +67,16 @@ class DoctranTextTranslator(BaseDocumentTransformer):
             openai_api_key=self.openai_api_key, openai_model=self.openai_api_model
         )
 
-        parse_tasks = [self._aparse_document(doctran, i, doc) 
-                       for i, doc in enumerate(documents)]
+        parse_tasks = [
+            self._aparse_document(doctran, i, doc) for i, doc in enumerate(documents)
+        ]
         parsed_results = await asyncio.gather(*parse_tasks)
 
         parsed_results.sort(key=lambda x: x[0])
         doctran_docs = [doc for _, doc in parsed_results]
 
         translate_tasks = [
-            self._atranslate_document(i, doc, self.language) 
+            self._atranslate_document(i, doc, self.language)
             for i, doc in enumerate(doctran_docs)
         ]
         translated_results = await asyncio.gather(*translate_tasks)
@@ -87,7 +88,6 @@ class DoctranTextTranslator(BaseDocumentTransformer):
             Document(page_content=doc.transformed_content, metadata=doc.metadata)
             for doc in translated_docs
         ]
-     
 
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
