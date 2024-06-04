@@ -493,7 +493,7 @@ class ChatOpenAI(BaseChatModel):
         ):
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
-            if len(chunk["choices"]) == 0:
+            if chunk is None or chunk["choices"] is None or len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
             chunk = _convert_delta_to_message_chunk(
