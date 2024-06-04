@@ -1,4 +1,4 @@
-import importlib
+from importlib import util
 from typing import Any, Optional
 
 from langchain_core._api import beta
@@ -194,7 +194,7 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
 
 
 def _check_pkg(pkg: str) -> None:
-    if not importlib.util.find_spec(pkg):
+    if not util.find_spec(pkg):
         pkg_kebab = pkg.replace("_", "-")
         raise ImportError(
             f"Unable to import {pkg_kebab}. Please install with "
