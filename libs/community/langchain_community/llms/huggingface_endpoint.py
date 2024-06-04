@@ -25,7 +25,7 @@ VALID_TASKS = (
 @deprecated(
     since="0.0.37",
     removal="0.3",
-    alternative_import="from langchain_huggingface.llms import HuggingFaceEndpoint",
+    alternative_import="from langchain_huggingface import HuggingFaceEndpoint",
 )
 class HuggingFaceEndpoint(LLM):
     """

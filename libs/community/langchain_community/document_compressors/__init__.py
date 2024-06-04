@@ -14,12 +14,16 @@ if TYPE_CHECKING:
     from langchain_community.document_compressors.openvino_rerank import (
         OpenVINOReranker,
     )
+    from langchain_community.document_compressors.rankllm_rerank import (
+        RankLLMRerank,
+    )
 
 
 _module_lookup = {
     "LLMLinguaCompressor": "langchain_community.document_compressors.llmlingua_filter",
     "OpenVINOReranker": "langchain_community.document_compressors.openvino_rerank",
     "JinaRerank": "langchain_community.document_compressors.jina_rerank",
+    "RankLLMRerank": "langchain_community.document_compressors.rankllm_rerank",
     "FlashrankRerank": "langchain_community.document_compressors.flashrank_rerank",
 }
 
@@ -31,4 +35,10 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
-__all__ = ["LLMLinguaCompressor", "OpenVINOReranker", "FlashrankRerank", "JinaRerank"]
+__all__ = [
+    "LLMLinguaCompressor",
+    "OpenVINOReranker",
+    "FlashrankRerank",
+    "JinaRerank",
+    "RankLLMRerank",
+]

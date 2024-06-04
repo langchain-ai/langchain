@@ -103,7 +103,7 @@ class ArxivAPIWrapper(BaseModel):
 
         Args:
             query: a plaintext search query
-        """  # noqa: E501
+        """
         try:
             if self.is_arxiv_identifier(query):
                 results = self.arxiv_search(
@@ -142,7 +142,7 @@ class ArxivAPIWrapper(BaseModel):
 
         Args:
             query: a plaintext search query
-        """  # noqa: E501
+        """
         try:
             if self.is_arxiv_identifier(query):
                 results = self.arxiv_search(
