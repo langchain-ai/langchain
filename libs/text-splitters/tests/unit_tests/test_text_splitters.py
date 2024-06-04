@@ -1619,6 +1619,37 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars() -> None:
     assert docs[2].metadata["Header 2"] == "Baz"
 
 
+@pytest.mark.requires("lxml")
+@pytest.mark.requires("bs4")
+def test_section_splitter_accepts_a_relative_path() -> None:
+    html_string = """<html><body><p>Foo</p></body></html>"""
+    test_file = Path("tests/test_data/test_splitter.xslt")
+    assert test_file.is_file()
+
+    sec_splitter = HTMLSectionSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
+        xslt_path=test_file.as_posix(),
+    )
+
+    sec_splitter.split_text(html_string)
+
+
+@pytest.mark.requires("lxml")
+@pytest.mark.requires("bs4")
+def test_section_splitter_accepts_an_absolute_path() -> None:
+    html_string = """<html><body><p>Foo</p></body></html>"""
+    test_file = Path("tests/test_data/test_splitter.xslt").absolute()
+    assert test_file.is_absolute()
+    assert test_file.is_file()
+
+    sec_splitter = HTMLSectionSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
+        xslt_path=test_file.as_posix(),
+    )
+
+    sec_splitter.split_text(html_string)
+
+
 def test_split_json() -> None:
     """Test json text splitter"""
     max_chunk = 800
