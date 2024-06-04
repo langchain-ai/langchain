@@ -306,9 +306,25 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             history_chain = RunnablePassthrough.assign(
                 **{messages_key: history_chain}
             ).with_config(run_name="insert_history")
-        bound = (
+        bound_sync = (
             history_chain | runnable.with_listeners(on_end=self._exit_history)
         ).with_config(run_name="RunnableWithMessageHistory")
+
+        bound_async = (
+            history_chain | runnable.with_alisteners(on_end=self._aexit_history)
+        ).with_config(run_name="RunnableWithMessageHistory")
+
+        def bound(*args, **kwargs):
+            return bound_sync.invoke(*args, **kwargs)
+
+        async def abound(*args, **kwargs):
+
+            return await bound_async.ainvoke(*args, **kwargs)
+
+        bound = RunnableLambda(
+            bound,
+            abound,
+        )
 
         if history_factory_config:
             _config_specs = history_factory_config
@@ -482,6 +498,23 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         output_val = load(run.outputs)
         output_messages = self._get_output_messages(output_val)
         hist.add_messages(input_messages + output_messages)
+
+    async def _aexit_history(self, run: Run, config: RunnableConfig) -> None:
+        hist: BaseChatMessageHistory = config["configurable"]["message_history"]
+
+        # Get the input messages
+        inputs = load(run.inputs)
+        input_messages = self._get_input_messages(inputs)
+        # If historic messages were prepended to the input messages, remove them to
+        # avoid adding duplicate messages to history.
+        if not self.history_messages_key:
+            historic_messages = config["configurable"]["message_history"].messages
+            input_messages = input_messages[len(historic_messages) :]
+
+        # Get the output messages
+        output_val = load(run.outputs)
+        output_messages = self._get_output_messages(output_val)
+        await hist.aadd_messages(input_messages + output_messages)
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
         config = super()._merge_configs(*configs)
