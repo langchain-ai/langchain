@@ -610,7 +610,7 @@ class LLMGraphTransformer:
             nodes_set = set()
             relationships = []
             if not isinstance(raw_schema, str):
-                raw_schema = raw_schema.get("content", raw_schema)
+                raw_schema = raw_schema.content
             parsed_json = self.json_repair.loads(raw_schema)
             for rel in parsed_json:
                 # Nodes need to be deduplicated using a set
