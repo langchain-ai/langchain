@@ -642,8 +642,8 @@ class Runnable(Generic[Input, Output], ABC):
     @overload
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Any,
@@ -653,8 +653,8 @@ class Runnable(Generic[Input, Output], ABC):
     @overload
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[True],
         **kwargs: Any,
@@ -663,8 +663,8 @@ class Runnable(Generic[Input, Output], ABC):
 
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
@@ -746,8 +746,8 @@ class Runnable(Generic[Input, Output], ABC):
     @overload
     def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Optional[Any],
@@ -757,8 +757,8 @@ class Runnable(Generic[Input, Output], ABC):
     @overload
     def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[True],
         **kwargs: Optional[Any],
@@ -767,8 +767,8 @@ class Runnable(Generic[Input, Output], ABC):
 
     async def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
@@ -4506,8 +4506,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @overload
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Any,
@@ -4517,8 +4517,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @overload
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[True],
         **kwargs: Any,
@@ -4527,13 +4527,13 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
 
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
-        if isinstance(config, list):
+        if isinstance(config, Sequence):
             configs = cast(
                 List[RunnableConfig],
                 [self._merge_configs(conf) for conf in config],
@@ -4559,8 +4559,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @overload
     def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Optional[Any],
@@ -4570,8 +4570,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @overload
     def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[True],
         **kwargs: Optional[Any],
@@ -4580,13 +4580,13 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
 
     async def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
-        if isinstance(config, list):
+        if isinstance(config, Sequence):
             configs = cast(
                 List[RunnableConfig],
                 [self._merge_configs(conf) for conf in config],
