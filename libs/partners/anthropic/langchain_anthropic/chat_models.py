@@ -249,13 +249,13 @@ class ChatAnthropic(BaseChatModel):
             Max number of tokens to generate.
 
     Key init args — client params:
-        timeout:
+        timeout: Optional[float]
             Timeout for requests.
-        max_retries:
+        max_retries: int
             Max number of retries if a request fails.
-        api_key:
+        api_key: Optional[str]
             Anthropic API key. If not passed in will be read from env var ANTHROPIC_API_KEY.
-        base_url:
+        base_url: Optional[str]
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
 
