@@ -446,7 +446,7 @@ class ChatAnthropic(BaseChatModel):
                     elif k == "usage":
                         input_tokens = v.get("input_tokens", 0)
                         output_tokens = v.get("output_tokens", 0)
-                        if k not in full_generation_info:
+                        if "usage" not in full_generation_info:
                             full_generation_info[k] = v
                             usage_metadata = UsageMetadata(
                                 input_tokens=input_tokens,
@@ -454,7 +454,6 @@ class ChatAnthropic(BaseChatModel):
                                 total_tokens=input_tokens + output_tokens,
                             )
                         else:
-                            full_generation_info[k]["output_tokens"] += output_tokens
                             seen_input_tokens = full_generation_info[k].get(
                                 "input_tokens", 0
                             )
@@ -521,7 +520,7 @@ class ChatAnthropic(BaseChatModel):
                     elif k == "usage":
                         input_tokens = v.get("input_tokens", 0)
                         output_tokens = v.get("output_tokens", 0)
-                        if k not in full_generation_info:
+                        if "usage" not in full_generation_info:
                             full_generation_info[k] = v
                             usage_metadata = UsageMetadata(
                                 input_tokens=input_tokens,
@@ -529,7 +528,6 @@ class ChatAnthropic(BaseChatModel):
                                 total_tokens=input_tokens + output_tokens,
                             )
                         else:
-                            full_generation_info[k]["output_tokens"] += output_tokens
                             seen_input_tokens = full_generation_info[k].get(
                                 "input_tokens", 0
                             )
