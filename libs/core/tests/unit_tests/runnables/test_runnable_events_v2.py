@@ -1898,7 +1898,9 @@ async def test_with_explicit_config() -> None:
 
         return await chain.ainvoke(query)
 
-    events = await _collect_events(say_hello.astream_events("meow", version="v2"))
+    events = await _collect_events(
+        say_hello.astream_events("meow", version="v2")  # type: ignore
+    )
 
     assert [
         event["data"]["chunk"].content
