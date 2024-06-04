@@ -1054,6 +1054,8 @@ class AzureSearch(VectorStore):
         query: str,
         k: int = 4,
         score_type: Literal["score", "reranker_score"] = "score",
+        *,
+        score_threshold: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
@@ -1070,7 +1072,6 @@ class AzureSearch(VectorStore):
             List[Tuple[Document, float]]: A list of documents and their
                 corresponding scores.
         """
-        score_threshold = kwargs.pop("score_threshold", None)
         docs_and_scores = self.semantic_hybrid_search_with_score_and_rerank(
             query, k=k, **kwargs
         )
@@ -1092,6 +1093,8 @@ class AzureSearch(VectorStore):
         query: str,
         k: int = 4,
         score_type: Literal["score", "reranker_score"] = "score",
+        *,
+        score_threshold: Optional[float] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """
@@ -1108,7 +1111,6 @@ class AzureSearch(VectorStore):
             List[Tuple[Document, float]]: A list of documents and their
                 corresponding scores.
         """
-        score_threshold = kwargs.pop("score_threshold", None)
         docs_and_scores = await self.asemantic_hybrid_search_with_score_and_rerank(
             query, k=k, **kwargs
         )
