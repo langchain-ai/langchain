@@ -7,7 +7,7 @@ EXPECTED_ALL = [
     "SimpleChatModel",
     "agenerate_from_stream",
     "generate_from_stream",
-    "init_model",
+    "init_chat_model",
 ]
 
 
@@ -33,7 +33,7 @@ def test_all_imports() -> None:
         ("mixtral-8x7b-32768", "groq"),
     ],
 )
-def test_init_model(model_name: str, model_provider: str) -> None:
+def test_init_chat_model(model_name: str, model_provider: str) -> None:
     init_chat_model(model_name, model_provider=model_provider, api_key="foo")
 
 
