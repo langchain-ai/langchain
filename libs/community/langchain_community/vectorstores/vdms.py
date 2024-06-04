@@ -404,7 +404,7 @@ class VDMS(VectorStore):
 
         if metadata:
             props.update(metadata)
-        if document:
+        if document in [None, ""]:
             props["content"] = document
 
         for k in props.keys():
@@ -597,7 +597,7 @@ class VDMS(VectorStore):
     def add_videos(
         self,
         paths: List[str],
-        texts: Optional[List[dict]] = None,
+        texts: Optional[List[str]] = None,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = 1,
@@ -621,7 +621,7 @@ class VDMS(VectorStore):
             List of ids from adding videos into the vectorstore.
         """
         if texts is None:
-            texts = [None for _ in paths]
+            texts = ["" for _ in paths]
 
         if add_path and metadatas:
             for midx, path in enumerate(paths):
@@ -875,7 +875,9 @@ class VDMS(VectorStore):
             response, response_array, max_dist = self.get_k_candidates(
                 setname, fetch_k, results, all_blobs, normalize=normalize_distance
             )
-            if command_str not in response[0] or (command_str in response[0] and response[0][command_str]["returned"] == 0):
+            if command_str not in response[0] or (
+                command_str in response[0] and response[0][command_str]["returned"] == 0
+            ):
                 return [], []
 
             # (3) Intersection of (1) & (2) using ids
@@ -1110,7 +1112,9 @@ class VDMS(VectorStore):
             # No results returned
             return []
         else:
-            embedding_list = [list(_bytes2embedding(result)) for result in results[0][1]]
+            embedding_list = [
+                list(_bytes2embedding(result)) for result in results[0][1]
+            ]
 
             mmr_selected = maximal_marginal_relevance(
                 np.array(embedding, dtype=np.float32),
@@ -1121,7 +1125,9 @@ class VDMS(VectorStore):
 
             candidates = _results_to_docs(results)
 
-            selected_results = [r for i, r in enumerate(candidates) if i in mmr_selected]
+            selected_results = [
+                r for i, r in enumerate(candidates) if i in mmr_selected
+            ]
             return selected_results
 
     def max_marginal_relevance_search_with_score(
@@ -1202,7 +1208,9 @@ class VDMS(VectorStore):
             # No results returned
             return []
         else:
-            embedding_list = [list(_bytes2embedding(result)) for result in results[0][1]]
+            embedding_list = [
+                list(_bytes2embedding(result)) for result in results[0][1]
+            ]
 
             mmr_selected = maximal_marginal_relevance(
                 np.array(embedding, dtype=np.float32),
