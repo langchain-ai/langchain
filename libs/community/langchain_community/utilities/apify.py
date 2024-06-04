@@ -17,6 +17,7 @@ class ApifyWrapper(BaseModel):
 
     apify_client: Any
     apify_client_async: Any
+    apify_api_token: Optional[str] = None
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

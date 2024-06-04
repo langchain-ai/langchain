@@ -153,6 +153,10 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.llm_rails import (
         LLMRails,
     )
+    from langchain_community.vectorstores.manticore_search import (
+        ManticoreSearch,
+        ManticoreSearchSettings,
+    )
     from langchain_community.vectorstores.marqo import (
         Marqo,
     )
@@ -290,6 +294,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.zep import (
         ZepVectorStore,
     )
+    from langchain_community.vectorstores.zep_cloud import (
+        ZepCloudVectorStore,
+    )
     from langchain_community.vectorstores.zilliz import (
         Zilliz,
     )
@@ -341,6 +348,8 @@ __all__ = [
     "LLMRails",
     "LanceDB",
     "Lantern",
+    "ManticoreSearch",
+    "ManticoreSearchSettings",
     "Marqo",
     "MatchingEngine",
     "Meilisearch",
@@ -389,6 +398,7 @@ __all__ = [
     "Weaviate",
     "Yellowbrick",
     "ZepVectorStore",
+    "ZepCloudVectorStore",
     "Zilliz",
 ]
 
@@ -439,6 +449,8 @@ _module_lookup = {
     "LLMRails": "langchain_community.vectorstores.llm_rails",
     "LanceDB": "langchain_community.vectorstores.lancedb",
     "Lantern": "langchain_community.vectorstores.lantern",
+    "ManticoreSearch": "langchain_community.vectorstores.manticore_search",
+    "ManticoreSearchSettings": "langchain_community.vectorstores.manticore_search",
     "Marqo": "langchain_community.vectorstores.marqo",
     "MatchingEngine": "langchain_community.vectorstores.matching_engine",
     "Meilisearch": "langchain_community.vectorstores.meilisearch",
@@ -487,6 +499,7 @@ _module_lookup = {
     "Weaviate": "langchain_community.vectorstores.weaviate",
     "Yellowbrick": "langchain_community.vectorstores.yellowbrick",
     "ZepVectorStore": "langchain_community.vectorstores.zep",
+    "ZepCloudVectorStore": "langchain_community.vectorstores.zep_cloud",
     "Zilliz": "langchain_community.vectorstores.zilliz",
 }
 
