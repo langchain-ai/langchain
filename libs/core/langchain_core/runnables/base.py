@@ -45,6 +45,7 @@ from langchain_core.load.serializable import (
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables.config import (
     RunnableConfig,
+    _set_config_context,
     acall_func_with_variable_args,
     call_func_with_variable_args,
     ensure_config,
@@ -55,7 +56,6 @@ from langchain_core.runnables.config import (
     merge_configs,
     patch_config,
     run_in_executor,
-    var_child_runnable_config,
 )
 from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.schema import StreamEvent
@@ -391,9 +391,15 @@ class Runnable(Generic[Input, Output], ABC):
         from langchain_core.runnables.graph import Graph
 
         graph = Graph()
-        input_node = graph.add_node(self.get_input_schema(config))
+        try:
+            input_node = graph.add_node(self.get_input_schema(config))
+        except TypeError:
+            input_node = graph.add_node(create_model(self.get_name("Input")))
         runnable_node = graph.add_node(self)
-        output_node = graph.add_node(self.get_output_schema(config))
+        try:
+            output_node = graph.add_node(self.get_output_schema(config))
+        except TypeError:
+            output_node = graph.add_node(create_model(self.get_name("Output")))
         graph.add_edge(input_node, runnable_node)
         graph.add_edge(runnable_node, output_node)
         return graph
@@ -517,7 +523,7 @@ class Runnable(Generic[Input, Output], ABC):
                 json_and_bytes_chain.invoke("[1, 2, 3]")
                 # -> {"json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
 
-        """  # noqa: E501
+        """
         from langchain_core.runnables.passthrough import RunnablePick
 
         return self | RunnablePick(keys)
@@ -636,8 +642,8 @@ class Runnable(Generic[Input, Output], ABC):
     @overload
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Any,
@@ -647,8 +653,8 @@ class Runnable(Generic[Input, Output], ABC):
     @overload
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[True],
         **kwargs: Any,
@@ -657,8 +663,8 @@ class Runnable(Generic[Input, Output], ABC):
 
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
@@ -740,8 +746,8 @@ class Runnable(Generic[Input, Output], ABC):
     @overload
     def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Optional[Any],
@@ -751,8 +757,8 @@ class Runnable(Generic[Input, Output], ABC):
     @overload
     def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[True],
         **kwargs: Optional[Any],
@@ -761,8 +767,8 @@ class Runnable(Generic[Input, Output], ABC):
 
     async def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
@@ -1497,7 +1503,7 @@ class Runnable(Generic[Input, Output], ABC):
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
-            context.run(var_child_runnable_config.set, child_config)
+            context.run(_set_config_context, child_config)
             output = cast(
                 Output,
                 context.run(
@@ -1545,7 +1551,7 @@ class Runnable(Generic[Input, Output], ABC):
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
-            context.run(var_child_runnable_config.set, child_config)
+            context.run(_set_config_context, child_config)
             coro = acall_func_with_variable_args(
                 func, input, config, run_manager, **kwargs
             )
@@ -1754,7 +1760,7 @@ class Runnable(Generic[Input, Output], ABC):
             if accepts_run_manager(transformer):
                 kwargs["run_manager"] = run_manager
             context = copy_context()
-            context.run(var_child_runnable_config.set, child_config)
+            context.run(_set_config_context, child_config)
             iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
             if stream_handler := next(
                 (
@@ -1854,7 +1860,7 @@ class Runnable(Generic[Input, Output], ABC):
             if accepts_run_manager(transformer):
                 kwargs["run_manager"] = run_manager
             context = copy_context()
-            context.run(var_child_runnable_config.set, child_config)
+            context.run(_set_config_context, child_config)
             iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
 
             if stream_handler := next(
@@ -2373,7 +2379,9 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 name=self.name,
             )
 
-    def invoke(self, input: Input, config: Optional[RunnableConfig] = None) -> Output:
+    def invoke(
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Output:
         from langchain_core.beta.runnables.context import config_with_context
 
         # setup callbacks and context
@@ -2390,13 +2398,14 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         # invoke all steps in sequence
         try:
             for i, step in enumerate(self.steps):
-                input = step.invoke(
-                    input,
-                    # mark each step as a child run
-                    patch_config(
-                        config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
-                    ),
+                # mark each step as a child run
+                config = patch_config(
+                    config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
                 )
+                if i == 0:
+                    input = step.invoke(input, config, **kwargs)
+                else:
+                    input = step.invoke(input, config)
         # finish the root run
         except BaseException as e:
             run_manager.on_chain_error(e)
@@ -2427,13 +2436,14 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         # invoke all steps in sequence
         try:
             for i, step in enumerate(self.steps):
-                input = await step.ainvoke(
-                    input,
-                    # mark each step as a child run
-                    patch_config(
-                        config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
-                    ),
+                # mark each step as a child run
+                config = patch_config(
+                    config, callbacks=run_manager.get_child(f"seq:step:{i+1}")
                 )
+                if i == 0:
+                    input = await step.ainvoke(input, config, **kwargs)
+                else:
+                    input = await step.ainvoke(input, config)
         # finish the root run
         except BaseException as e:
             await run_manager.on_chain_error(e)
@@ -2513,7 +2523,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                             if i not in failed_inputs_map
                         ],
                         return_exceptions=return_exceptions,
-                        **kwargs,
+                        **(kwargs if stepidx == 0 else {}),
                     )
                     # If an input failed, add it to the map
                     for i, inp in zip(remaining_idxs, inputs):
@@ -2543,6 +2553,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                             )
                             for rm, config in zip(run_managers, configs)
                         ],
+                        return_exceptions=return_exceptions,
+                        **(kwargs if i == 0 else {}),
                     )
 
         # finish the root runs
@@ -2640,7 +2652,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                             if i not in failed_inputs_map
                         ],
                         return_exceptions=return_exceptions,
-                        **kwargs,
+                        **(kwargs if stepidx == 0 else {}),
                     )
                     # If an input failed, add it to the map
                     for i, inp in zip(remaining_idxs, inputs):
@@ -2670,6 +2682,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                             )
                             for rm, config in zip(run_managers, configs)
                         ],
+                        return_exceptions=return_exceptions,
+                        **(kwargs if i == 0 else {}),
                     )
         # finish the root runs
         except BaseException as e:
@@ -2698,6 +2712,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         input: Iterator[Input],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> Iterator[Output]:
         from langchain_core.beta.runnables.context import config_with_context
 
@@ -2708,14 +2723,14 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         # steps that don't natively support transforming an input stream will
         # buffer input in memory until all available, and then start emitting output
         final_pipeline = cast(Iterator[Output], input)
-        for step in steps:
-            final_pipeline = step.transform(
-                final_pipeline,
-                patch_config(
-                    config,
-                    callbacks=run_manager.get_child(f"seq:step:{steps.index(step)+1}"),
-                ),
+        for idx, step in enumerate(steps):
+            config = patch_config(
+                config, callbacks=run_manager.get_child(f"seq:step:{idx+1}")
             )
+            if idx == 0:
+                final_pipeline = step.transform(final_pipeline, config, **kwargs)
+            else:
+                final_pipeline = step.transform(final_pipeline, config)
 
         for output in final_pipeline:
             yield output
@@ -2725,6 +2740,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         input: AsyncIterator[Input],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
+        **kwargs: Any,
     ) -> AsyncIterator[Output]:
         from langchain_core.beta.runnables.context import aconfig_with_context
 
@@ -2736,14 +2752,15 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         # steps that don't natively support transforming an input stream will
         # buffer input in memory until all available, and then start emitting output
         final_pipeline = cast(AsyncIterator[Output], input)
-        for step in steps:
-            final_pipeline = step.atransform(
-                final_pipeline,
-                patch_config(
-                    config,
-                    callbacks=run_manager.get_child(f"seq:step:{steps.index(step)+1}"),
-                ),
+        for idx, step in enumerate(steps):
+            config = patch_config(
+                config,
+                callbacks=run_manager.get_child(f"seq:step:{idx+1}"),
             )
+            if idx == 0:
+                final_pipeline = step.atransform(final_pipeline, config, **kwargs)
+            else:
+                final_pipeline = step.atransform(final_pipeline, config)
         async for output in final_pipeline:
             yield output
 
@@ -4489,8 +4506,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @overload
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Any,
@@ -4500,8 +4517,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @overload
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[True],
         **kwargs: Any,
@@ -4510,13 +4527,13 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
 
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
-        if isinstance(config, list):
+        if isinstance(config, Sequence):
             configs = cast(
                 List[RunnableConfig],
                 [self._merge_configs(conf) for conf in config],
@@ -4542,8 +4559,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @overload
     def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Optional[Any],
@@ -4553,8 +4570,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @overload
     def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[True],
         **kwargs: Optional[Any],
@@ -4563,13 +4580,13 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
 
     async def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
-        if isinstance(config, list):
+        if isinstance(config, Sequence):
             configs = cast(
                 List[RunnableConfig],
                 [self._merge_configs(conf) for conf in config],

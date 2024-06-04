@@ -120,6 +120,7 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.mlx import (
         ChatMLX,
     )
+    from langchain_community.chat_models.octoai import ChatOctoAI
     from langchain_community.chat_models.ollama import (
         ChatOllama,
     )
@@ -171,6 +172,7 @@ __all__ = [
     "ChatBaichuan",
     "ChatCohere",
     "ChatCoze",
+    "ChatOctoAI",
     "ChatDatabricks",
     "ChatDeepInfra",
     "ChatEverlyAI",
@@ -271,6 +273,3 @@ def __getattr__(name: str) -> Any:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-__all__ = list(_module_lookup.keys())
