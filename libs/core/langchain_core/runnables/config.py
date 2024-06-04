@@ -305,12 +305,12 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                         base["callbacks"] = mngr
                     else:
                         # base_callbacks is also a manager
-                        base["callbacks"] = base_callbacks.__class__(
+
+                        manager = base_callbacks.__class__(
                             parent_run_id=base_callbacks.parent_run_id
                             or these_callbacks.parent_run_id,
-                            handlers=base_callbacks.handlers + these_callbacks.handlers,
-                            inheritable_handlers=base_callbacks.inheritable_handlers
-                            + these_callbacks.inheritable_handlers,
+                            handlers=[],
+                            inheritable_handlers=[],
                             tags=list(set(base_callbacks.tags + these_callbacks.tags)),
                             inheritable_tags=list(
                                 set(
@@ -323,6 +323,20 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                                 **these_callbacks.metadata,
                             },
                         )
+
+                        handlers = base_callbacks.handlers + these_callbacks.handlers
+                        inheritable_handlers = (
+                            base_callbacks.inheritable_handlers
+                            + these_callbacks.inheritable_handlers
+                        )
+
+                        for handler in handlers:
+                            manager.add_handler(handler)
+
+                        for handler in inheritable_handlers:
+                            manager.add_handler(handler, inherit=True)
+
+                        base["callbacks"] = manager
             else:
                 base[key] = config[key] or base.get(key)  # type: ignore
     return base
