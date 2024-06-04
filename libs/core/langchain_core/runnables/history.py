@@ -308,7 +308,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             ).with_config(run_name="insert_history")
         bound_sync = (
             history_chain | runnable.with_listeners(on_end=self._exit_history)
-        ).with_config(run_name="RunnableWithMessageHistory")
+        ).with_config(run_name="SyncRunnableWithMessageHistory")
 
         bound_async = (
             history_chain | runnable.with_alisteners(on_end=self._aexit_history)
@@ -318,13 +318,12 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             return bound_sync.invoke(*args, **kwargs)
 
         async def abound(*args, **kwargs):
-
             return await bound_async.ainvoke(*args, **kwargs)
 
         bound = RunnableLambda(
             bound,
             abound,
-        )
+        ).with_config(run_name="RunnableWithMessageHistory")
 
         if history_factory_config:
             _config_specs = history_factory_config
