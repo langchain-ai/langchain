@@ -11,6 +11,7 @@ def wrapper():
         api_key="fake_api_key", yandex_folder_id="fake_folder_id"
     )
 
+
 @responses.activate
 def test_yandex_search_results_success(wrapper):
     """Success API call"""
@@ -60,6 +61,7 @@ def test_yandex_search_results_success(wrapper):
     assert results[1]["title"] == "Example Title 2"
     assert results[1]["snippet"] == "Another Example Snippet"
 
+
 @responses.activate
 def test_yandex_search_results_failure(wrapper):
     """API error."""
@@ -88,6 +90,7 @@ def test_yandex_search_results_failure(wrapper):
 
     results = wrapper._yandex_search_results("test query")
     assert len(results) == 0
+
 
 @responses.activate
 def test_yandex_search_empty_query(wrapper):

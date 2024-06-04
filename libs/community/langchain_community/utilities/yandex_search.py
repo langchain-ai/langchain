@@ -137,12 +137,15 @@ class YandexSearchAPIWrapper(BaseModel):
                             passage_text = "".join(text_parts).strip()
 
                     item = {
-                        "url": doc.find("url").text 
-                            if doc.find("url") is not None else "",
-                        "title": "".join(doc.find("title").itertext()) 
-                            if doc.find("title") is not None else "",
-                        "domain": doc.find("domain").text 
-                            if doc.find("domain") is not None else "",
+                        "url": doc.find("url").text
+                        if doc.find("url") is not None
+                        else "",
+                        "title": "".join(doc.find("title").itertext())
+                        if doc.find("title") is not None
+                        else "",
+                        "domain": doc.find("domain").text
+                        if doc.find("domain") is not None
+                        else "",
                         "snippet": passage_text,
                     }
                     items.append(item)
@@ -160,12 +163,8 @@ class YandexSearchAPIWrapper(BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the API key exists in the environment."""
-        api_key = get_from_dict_or_env(
-            values, "api_key", "YANDEX_API_KEY"
-        )
-        folder_id = get_from_dict_or_env(
-            values, "yandex_folder_id", "YANDEX_FOLDER_ID"
-        )
+        api_key = get_from_dict_or_env(values, "api_key", "YANDEX_API_KEY")
+        folder_id = get_from_dict_or_env(values, "yandex_folder_id", "YANDEX_FOLDER_ID")
         values["api_key"] = api_key
         values["yandex_folder_id"] = folder_id
 
