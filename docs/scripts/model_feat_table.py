@@ -96,6 +96,12 @@ CHAT_MODEL_FEAT_TABLE = {
         "package": "langchain-community",
         "link": "/docs/integrations/chat/vllm/",
     },
+    "ChatEdenAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-community",
+        "link": "/docs/integrations/chat/edenai/",
+    },
 }
 
 
