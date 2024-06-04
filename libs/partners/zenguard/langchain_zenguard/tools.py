@@ -41,7 +41,7 @@ class ZenGuardTool(BaseTool):
     _ZENGUARD_API_URL_ROOT = "https://api.zenguard.ai/"
     _ZENGUARD_API_KEY_ENV_NAME = "ZENGUARD_API_KEY"
 
-    @validator("api_key", pre=True, always=True)
+    @validator("zenguard_api_key", pre=True, always=True, check_fields=False)
     def set_api_key(cls, v):
         if v is None:
             v = os.getenv(cls._ZENGUARD_API_KEY_ENV_NAME)
@@ -69,7 +69,7 @@ class ZenGuardTool(BaseTool):
                 postfix = "v1/detect"
                 json = {
                     "messages": prompts,
-                    "in_parallel": True,
+                    "in_parallel": in_parallel,
                     "detectors": detectors,
                 }
             response = requests.post(
@@ -83,5 +83,5 @@ class ZenGuardTool(BaseTool):
         except (requests.HTTPError, requests.Timeout) as e:
             return {"error": str(e)}
         
-    def _convert_detector_to_api(detector: Detector):
-        return DetectorAPI[f"{Detector.title}"].value
+    def _convert_detector_to_api(self, detector: Detector):
+        return DetectorAPI[detector.name].value
