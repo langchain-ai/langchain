@@ -52,9 +52,51 @@ class TestOllamaFunctions(unittest.TestCase):
 
         res = model.invoke("What's the weather in San Francisco?")
 
-        function_call = res.additional_kwargs.get("function_call")
-        assert function_call
-        self.assertEqual(function_call.get("name"), "get_current_weather")
+        self.assertIsInstance(res, AIMessage)
+        res = AIMessage(**res.__dict__)
+        tool_calls = res.tool_calls
+        assert tool_calls
+        tool_call = tool_calls[0]
+        assert tool_call
+        self.assertEqual("get_current_weather", tool_call.get("name"))
+
+    def test_default_ollama_functions_default_response(self) -> None:
+        base_model = OllamaFunctions(model="llama3", format="json")
+
+        # bind functions
+        model = base_model.bind_tools(
+            tools=[
+                {
+                    "name": "get_current_weather",
+                    "description": "Get the current weather in a given location",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "location": {
+                                "type": "string",
+                                "description": "The city and state, "
+                                "e.g. San Francisco, CA",
+                            },
+                            "unit": {
+                                "type": "string",
+                                "enum": ["celsius", "fahrenheit"],
+                            },
+                        },
+                        "required": ["location"],
+                    },
+                }
+            ]
+        )
+
+        res = model.invoke("What is the capital of France?")
+
+        self.assertIsInstance(res, AIMessage)
+        res = AIMessage(**res.__dict__)
+        tool_calls = res.tool_calls
+        if len(tool_calls) > 0:
+            tool_call = tool_calls[0]
+            assert tool_call
+            self.assertEqual("__conversational_response", tool_call.get("name"))
 
     def test_ollama_structured_output(self) -> None:
         model = OllamaFunctions(model="phi3")

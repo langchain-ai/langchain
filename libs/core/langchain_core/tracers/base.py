@@ -48,7 +48,9 @@ class BaseTracer(BaseCallbackHandler, ABC):
     def __init__(
         self,
         *,
-        _schema_format: Literal["original", "streaming_events"] = "original",
+        _schema_format: Literal[
+            "original", "streaming_events", "original+chat"
+        ] = "original",
         **kwargs: Any,
     ) -> None:
         """Initialize the tracer.
@@ -63,6 +65,8 @@ class BaseTracer(BaseCallbackHandler, ABC):
                    for internal usage. It will likely change in the future, or
                    be deprecated entirely in favor of a dedicated async tracer
                    for streaming events.
+                - 'original+chat' is a format that is the same as 'original'
+                   except it does NOT raise an attribute error on_chat_model_start
             kwargs: Additional keyword arguments that will be passed to
                     the super class.
         """
@@ -163,7 +167,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         **kwargs: Any,
     ) -> Run:
         """Start a trace for an LLM run."""
-        if self._schema_format != "streaming_events":
+        if self._schema_format not in ("streaming_events", "original+chat"):
             # Please keep this un-implemented for backwards compatibility.
             # When it's unimplemented old tracers that use the "original" format
             # fallback on the on_llm_start method implementation if they
@@ -360,7 +364,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def _get_chain_inputs(self, inputs: Any) -> Any:
         """Get the inputs for a chain run."""
-        if self._schema_format == "original":
+        if self._schema_format in ("original", "original+chat"):
             return inputs if isinstance(inputs, dict) else {"input": inputs}
         elif self._schema_format == "streaming_events":
             return {
@@ -371,7 +375,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
 
     def _get_chain_outputs(self, outputs: Any) -> Any:
         """Get the outputs for a chain run."""
-        if self._schema_format == "original":
+        if self._schema_format in ("original", "original+chat"):
             return outputs if isinstance(outputs, dict) else {"output": outputs}
         elif self._schema_format == "streaming_events":
             return {
@@ -436,7 +440,7 @@ class BaseTracer(BaseCallbackHandler, ABC):
         if metadata:
             kwargs.update({"metadata": metadata})
 
-        if self._schema_format == "original":
+        if self._schema_format in ("original", "original+chat"):
             inputs = {"input": input_str}
         elif self._schema_format == "streaming_events":
             inputs = {"input": inputs}
