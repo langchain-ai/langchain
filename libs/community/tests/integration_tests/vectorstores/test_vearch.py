@@ -1,7 +1,7 @@
 # flake8: noqa
 
+from langchain_community.vectorstores import VearchDb
 from langchain_core.documents import Document
-from langchain_community.vectorstores.vearch import Vearch
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
@@ -31,7 +31,7 @@ def test_vearch() -> None:
             )
         },
     ]
-    vearch_db = Vearch.from_texts(
+    vearch_db = VearchDb.from_texts(
         texts=texts,
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
@@ -79,7 +79,7 @@ def test_vearch_add_texts() -> None:
             "three_body.txt"
         },
     ]
-    vearch_db = Vearch.from_texts(
+    vearch_db = VearchDb.from_texts(
         texts=texts,
         embedding=FakeEmbeddings(),
         metadatas=metadatas,
