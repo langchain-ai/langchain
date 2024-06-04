@@ -13,7 +13,7 @@ skip_if_no_model_ids = pytest.mark.skipif(
     not model_ids_to_test, reason="TEST_IPEXLLM_MODEL_IDS environment variable not set."
 )
 model_ids_to_test = [model_id.strip() for model_id in model_ids_to_test.split(",")]  # type: ignore
-device = os.getenv("TEST_IPEXLLM_BGE_EMBEDDING_MODEL_DEVICE") or "cpu"
+device = os.getenv("TEST_IPEXLLM_MODEL_DEVICE") or "cpu"
 
 
 def load_model(model_id: str) -> Any:
