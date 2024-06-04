@@ -1,8 +1,11 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
+from langchain_core.pydantic_v1 import Field
+
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
+from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
@@ -404,3 +407,48 @@ def test_using_custom_config_specs() -> None:
             ]
         ),
     }
+
+
+class AsyncChatMessageHistory(BaseChatMessageHistory, BaseModel):
+    """In memory implementation of chat message history.
+
+    Stores messages in an in memory list.
+    """
+
+    messages: List[BaseMessage] = Field(default_factory=list)
+
+    async def aadd_message(self, message: BaseMessage) -> None:
+        """Add a self-created message to the store"""
+        self.messages.append(message)
+
+    def clear(self) -> None:
+        self.messages = []
+
+
+def _get_get_async_session_history(
+    *,
+    store: Optional[Dict[str, Any]] = None,
+) -> Callable[..., AsyncChatMessageHistory]:
+    chat_history_store = store if store is not None else {}
+
+    def get_session_history(session_id: str, **kwargs: Any) -> AsyncChatMessageHistory:
+        if session_id not in chat_history_store:
+            chat_history_store[session_id] = AsyncChatMessageHistory()
+        return chat_history_store[session_id]
+
+    return get_session_history
+
+
+async def test_async_input_messages() -> None:
+    runnable = RunnableLambda(
+        lambda messages: "you said: "
+        + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
+    )
+    store: Dict = {}
+    get_session_history = _get_get_async_session_history(store=store)
+    with_history = RunnableWithMessageHistory(runnable, get_session_history)
+    config: RunnableConfig = {"configurable": {"session_id": "1"}}
+    output = await with_history.ainvoke([HumanMessage(content="hello")], config)
+    assert output == "you said: hello"
+    output = await with_history.ainvoke([HumanMessage(content="good bye")], config)
+    assert output == "you said: hello\ngood bye"
