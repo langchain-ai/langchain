@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union, cast
 
 import numpy as np
 from langchain_core.documents import Document
@@ -328,7 +328,9 @@ class UpstashVectorStore(VectorStore):
             for batch in batch_iterate(
                 batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
             ):
-                self._index.upsert(vectors=batch, namespace=namespace, **kwargs)
+                self._index.upsert(
+                    vectors=batch, namespace=cast(str, namespace), **kwargs
+                )
 
         return ids
 
@@ -390,7 +392,7 @@ class UpstashVectorStore(VectorStore):
                 batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
             ):
                 await self._async_index.upsert(
-                    vectors=batch, namespace=namespace, **kwargs
+                    vectors=batch, namespace=cast(str, namespace), **kwargs
                 )
 
         return ids
@@ -412,12 +414,10 @@ class UpstashVectorStore(VectorStore):
             k: Number of Documents to return. Defaults to 4.
             filter: Optional metadata filter in str format
             namespace: Namespace to use from the index.
+
         Returns:
             List of Documents most similar to the query and score for each
         """
-        if namespace is None:
-            namespace = self._namespace
-
         return self.similarity_search_by_vector_with_score(
             self._embed_query(query), k=k, filter=filter, namespace=namespace, **kwargs
         )
@@ -443,9 +443,6 @@ class UpstashVectorStore(VectorStore):
         Returns:
             List of Documents most similar to the query and score for each
         """
-        if namespace is None:
-            namespace = self._namespace
-
         return await self.asimilarity_search_by_vector_with_score(
             self._embed_query(query), k=k, filter=filter, namespace=namespace, **kwargs
         )
@@ -798,7 +795,6 @@ class UpstashVectorStore(VectorStore):
             [item.vector for item in results],
             k=k,
             lambda_mult=lambda_mult,
-            namespace=namespace,
         )
         selected = [results[i].metadata for i in mmr_selected]
         return [
@@ -903,7 +899,7 @@ class UpstashVectorStore(VectorStore):
         index_url: Optional[str] = None,
         index_token: Optional[str] = None,
         *,
-        namespace: Optional[str] = None,
+        namespace: str = "",
         **kwargs: Any,
     ) -> UpstashVectorStore:
         """Create a new UpstashVectorStore from a list of texts.
@@ -955,7 +951,7 @@ class UpstashVectorStore(VectorStore):
         index_url: Optional[str] = None,
         index_token: Optional[str] = None,
         *,
-        namespace: Optional[str] = None,
+        namespace: str = "",
         **kwargs: Any,
     ) -> UpstashVectorStore:
         """Create a new UpstashVectorStore from a list of texts.
