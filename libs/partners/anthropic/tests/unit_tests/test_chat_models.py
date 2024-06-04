@@ -25,8 +25,8 @@ os.environ["ANTHROPIC_API_KEY"] = "foo"
 def test_initialization() -> None:
     """Test chat model initialization."""
     for model in [
-        ChatAnthropic(model_name="claude-instant-1.2", api_key="xyz", timeout=2),
-        ChatAnthropic(
+        ChatAnthropic(model_name="claude-instant-1.2", api_key="xyz", timeout=2),  # type: ignore[arg-type]
+        ChatAnthropic(  # type: ignore[call-arg, call-arg, call-arg]
             model="claude-instant-1.2",
             anthropic_api_key="xyz",
             default_request_timeout=2,
@@ -39,32 +39,32 @@ def test_initialization() -> None:
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_name_param() -> None:
-    llm = ChatAnthropic(model_name="foo")
+    llm = ChatAnthropic(model_name="foo")  # type: ignore[call-arg, call-arg]
     assert llm.model == "foo"
 
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_param() -> None:
-    llm = ChatAnthropic(model="foo")
+    llm = ChatAnthropic(model="foo")  # type: ignore[call-arg]
     assert llm.model == "foo"
 
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_kwargs() -> None:
-    llm = ChatAnthropic(model_name="foo", model_kwargs={"foo": "bar"})
+    llm = ChatAnthropic(model_name="foo", model_kwargs={"foo": "bar"})  # type: ignore[call-arg, call-arg]
     assert llm.model_kwargs == {"foo": "bar"}
 
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_invalid_model_kwargs() -> None:
     with pytest.raises(ValueError):
-        ChatAnthropic(model="foo", model_kwargs={"max_tokens_to_sample": 5})
+        ChatAnthropic(model="foo", model_kwargs={"max_tokens_to_sample": 5})  # type: ignore[call-arg]
 
 
 @pytest.mark.requires("anthropic")
 def test_anthropic_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
-        llm = ChatAnthropic(model="foo", foo="bar")
+        llm = ChatAnthropic(model="foo", foo="bar")  # type: ignore[call-arg, call-arg]
     assert llm.model_kwargs == {"foo": "bar"}
 
 
@@ -73,7 +73,7 @@ def test_anthropic_initialization() -> None:
     """Test anthropic initialization."""
     # Verify that chat anthropic can be initialized using a secret key provided
     # as a parameter rather than an environment variable.
-    ChatAnthropic(model="test", anthropic_api_key="test")
+    ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
 
 
 def test__format_output() -> None:
@@ -90,7 +90,7 @@ def test__format_output() -> None:
     expected = ChatResult(
         generations=[
             ChatGeneration(
-                message=AIMessage(
+                message=AIMessage(  # type: ignore[misc]
                     "bar",
                     usage_metadata={
                         "input_tokens": 2,
@@ -108,16 +108,16 @@ def test__format_output() -> None:
             "usage": {"input_tokens": 2, "output_tokens": 1},
         },
     )
-    llm = ChatAnthropic(model="test", anthropic_api_key="test")
+    llm = ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
     actual = llm._format_output(anthropic_msg)
     assert expected == actual
 
 
 def test__merge_messages() -> None:
     messages = [
-        SystemMessage("foo"),
-        HumanMessage("bar"),
-        AIMessage(
+        SystemMessage("foo"),  # type: ignore[misc]
+        HumanMessage("bar"),  # type: ignore[misc]
+        AIMessage(  # type: ignore[misc]
             [
                 {"text": "baz", "type": "text"},
                 {
@@ -137,14 +137,14 @@ def test__merge_messages() -> None:
                 },
             ]
         ),
-        ToolMessage("buz output", tool_call_id="1"),
-        ToolMessage("blah output", tool_call_id="2"),
-        HumanMessage("next thing"),
+        ToolMessage("buz output", tool_call_id="1"),  # type: ignore[misc]
+        ToolMessage("blah output", tool_call_id="2"),  # type: ignore[misc]
+        HumanMessage("next thing"),  # type: ignore[misc]
     ]
     expected = [
-        SystemMessage("foo"),
-        HumanMessage("bar"),
-        AIMessage(
+        SystemMessage("foo"),  # type: ignore[misc]
+        HumanMessage("bar"),  # type: ignore[misc]
+        AIMessage(  # type: ignore[misc]
             [
                 {"text": "baz", "type": "text"},
                 {
@@ -164,7 +164,7 @@ def test__merge_messages() -> None:
                 },
             ]
         ),
-        HumanMessage(
+        HumanMessage(  # type: ignore[misc]
             [
                 {"type": "tool_result", "content": "buz output", "tool_use_id": "1"},
                 {"type": "tool_result", "content": "blah output", "tool_use_id": "2"},
@@ -178,15 +178,15 @@ def test__merge_messages() -> None:
 
 def test__merge_messages_mutation() -> None:
     original_messages = [
-        HumanMessage([{"type": "text", "text": "bar"}]),
-        HumanMessage("next thing"),
+        HumanMessage([{"type": "text", "text": "bar"}]),  # type: ignore[misc]
+        HumanMessage("next thing"),  # type: ignore[misc]
     ]
     messages = [
-        HumanMessage([{"type": "text", "text": "bar"}]),
-        HumanMessage("next thing"),
+        HumanMessage([{"type": "text", "text": "bar"}]),  # type: ignore[misc]
+        HumanMessage("next thing"),  # type: ignore[misc]
     ]
     expected = [
-        HumanMessage(
+        HumanMessage(  # type: ignore[misc]
             [{"type": "text", "text": "bar"}, {"type": "text", "text": "next thing"}]
         ),
     ]
@@ -305,13 +305,13 @@ def test_convert_to_anthropic_tool(
 
 
 def test__format_messages_with_tool_calls() -> None:
-    system = SystemMessage("fuzz")
-    human = HumanMessage("foo")
-    ai = AIMessage(
+    system = SystemMessage("fuzz")  # type: ignore[misc]
+    human = HumanMessage("foo")  # type: ignore[misc]
+    ai = AIMessage(  # type: ignore[misc]
         "",
         tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
     )
-    tool = ToolMessage(
+    tool = ToolMessage(  # type: ignore[misc]
         "blurb",
         tool_call_id="1",
     )
@@ -344,15 +344,15 @@ def test__format_messages_with_tool_calls() -> None:
 
 
 def test__format_messages_with_str_content_and_tool_calls() -> None:
-    system = SystemMessage("fuzz")
-    human = HumanMessage("foo")
+    system = SystemMessage("fuzz")  # type: ignore[misc]
+    human = HumanMessage("foo")  # type: ignore[misc]
     # If content and tool_calls are specified and content is a string, then both are
     # included with content first.
-    ai = AIMessage(
+    ai = AIMessage(  # type: ignore[misc]
         "thought",
         tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
     )
-    tool = ToolMessage("blurb", tool_call_id="1")
+    tool = ToolMessage("blurb", tool_call_id="1")  # type: ignore[misc]
     messages = [system, human, ai, tool]
     expected = (
         "fuzz",
@@ -383,15 +383,15 @@ def test__format_messages_with_str_content_and_tool_calls() -> None:
 
 
 def test__format_messages_with_list_content_and_tool_calls() -> None:
-    system = SystemMessage("fuzz")
-    human = HumanMessage("foo")
+    system = SystemMessage("fuzz")  # type: ignore[misc]
+    human = HumanMessage("foo")  # type: ignore[misc]
     # If content and tool_calls are specified and content is a list, then content is
     # preferred.
-    ai = AIMessage(
+    ai = AIMessage(  # type: ignore[misc]
         [{"type": "text", "text": "thought"}],
         tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
     )
-    tool = ToolMessage(
+    tool = ToolMessage(  # type: ignore[misc]
         "blurb",
         tool_call_id="1",
     )
@@ -418,10 +418,10 @@ def test__format_messages_with_list_content_and_tool_calls() -> None:
 
 def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
     """Show that tool_calls are preferred to tool_use blocks when both have same id."""
-    system = SystemMessage("fuzz")
-    human = HumanMessage("foo")
+    system = SystemMessage("fuzz")  # type: ignore[misc]
+    human = HumanMessage("foo")  # type: ignore[misc]
     # NOTE: tool_use block in contents and tool_calls have different arguments.
-    ai = AIMessage(
+    ai = AIMessage(  # type: ignore[misc]
         [
             {"type": "text", "text": "thought"},
             {
@@ -433,7 +433,7 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
         ],
         tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "BUZZ"}}],
     )
-    tool = ToolMessage("blurb", tool_call_id="1")
+    tool = ToolMessage("blurb", tool_call_id="1")  # type: ignore[misc]
     messages = [system, human, ai, tool]
     expected = (
         "fuzz",
@@ -465,7 +465,7 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
 
 def test_anthropic_api_key_is_secret_string() -> None:
     """Test that the API key is stored as a SecretStr."""
-    chat_model = ChatAnthropic(
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
         model="claude-3-opus-20240229",
         anthropic_api_key="secret-api-key",
     )
@@ -477,7 +477,7 @@ def test_anthropic_api_key_masked_when_passed_from_env(
 ) -> None:
     """Test that the API key is masked when passed from an environment variable."""
     monkeypatch.setenv("ANTHROPIC_API_KEY ", "secret-api-key")
-    chat_model = ChatAnthropic(
+    chat_model = ChatAnthropic(  # type: ignore[call-arg]
         model="claude-3-opus-20240229",
     )
     print(chat_model.anthropic_api_key, end="")  # noqa: T201
@@ -490,7 +490,7 @@ def test_anthropic_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
     """Test that the API key is masked when passed via the constructor."""
-    chat_model = ChatAnthropic(
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
         model="claude-3-opus-20240229",
         anthropic_api_key="secret-api-key",
     )
@@ -502,7 +502,7 @@ def test_anthropic_api_key_masked_when_passed_via_constructor(
 
 def test_anthropic_uses_actual_secret_value_from_secretstr() -> None:
     """Test that the actual secret value is correctly retrieved."""
-    chat_model = ChatAnthropic(
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
         model="claude-3-opus-20240229",
         anthropic_api_key="secret-api-key",
     )
@@ -519,7 +519,7 @@ class GetWeather(BaseModel):
 
 
 def test_anthropic_bind_tools_tool_choice() -> None:
-    chat_model = ChatAnthropic(
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
         model="claude-3-opus-20240229",
         anthropic_api_key="secret-api-key",
     )
