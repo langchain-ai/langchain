@@ -193,6 +193,41 @@ These providers have separate `langchain-{provider}` packages for improved versi
         logger.warning(f"{output_file} file updated with the package table.")
 
 
+def verify_package_list(package_metadata_file: Path, package_root_dir: Path):
+    """Verify that all packages in the source code also presented in the package metadata file and vice versa.
+
+    Verify only packages that are in the `package_root_dir` directory of `langchain` repo."""
+    with open(package_metadata_file, "r") as f:
+        data = yaml.safe_load(f)
+
+        if data["kind"] != "Package discovery":
+            raise ValueError(
+                f"The kind of the packages file should be 'Package discovery' but it is {data['kind']}."
+            )
+        if data["version"] != "v1":
+            raise ValueError(
+                f"The version of the packages file should be v1 but it is {data['version']}."
+            )
+        integration_packages = []
+        for repo in data["repos"]:
+            for package in repo["packages"]:
+                if repo["name"] == "langchain" and "partners" in package["path"]:
+                    integration_packages.append(package["path"].split("/")[-1])
+
+    package_root_dirs = [
+        package_dir.name
+        for package_dir in os.scandir(package_root_dir)
+        if package_dir.is_dir() and package_dir.name != "partners"
+    ]
+
+    if set(integration_packages) != set(package_root_dirs):
+        raise ValueError(
+            f"The packages in the source code and in the package metadata file are not the same. "
+            f"Source code packages: {package_root_dirs}. "
+            f"Package metadata packages: {integration_packages}."
+        )
+
+
 def main():
     # extract the package metadata:
     integration_packages = get_integration_packages_info()
@@ -203,3 +238,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # package_root_dir = ROOT_DIR / "libs" / "partners"
+    # verify_package_list(PACKAGE_METADATA_FILE, package_root_dir)
