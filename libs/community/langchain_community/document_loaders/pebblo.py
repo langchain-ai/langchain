@@ -327,17 +327,16 @@ class PebbloSafeLoader(BaseLoader):
             try:
                 headers.update({"x-api-key": self.api_key})
                 if pebblo_resp:
-                    pebblo_resp_docs = json.loads(pebblo_resp.text).get("ai_apps_data")
+                    pebblo_server_version = json.loads(pebblo_resp.text).get(
+                        "pebblo_server_version"
+                    )
                     payload.update(
                         {
-                            "pebblo_server_version": pebblo_resp_docs.get(
-                                "pebbloServerVersion"
-                            ),
-                            "pebblo_client_version": pebblo_resp_docs.get(
-                                "pebbloClientVersion"
-                            ),
+                            "pebblo_server_version": pebblo_server_version,
+                            "pebblo_client_version": payload["plugin_version"],
                         }
                     )
+                    payload.pop("plugin_version")
                 pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}{APP_DISCOVER_URL}"
                 pebblo_cloud_response = requests.post(
                     pebblo_cloud_url, headers=headers, json=payload, timeout=20

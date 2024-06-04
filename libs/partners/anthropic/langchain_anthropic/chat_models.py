@@ -22,7 +22,7 @@ from typing import (
 )
 
 import anthropic
-from langchain_core._api import beta, deprecated
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -104,7 +104,7 @@ def _merge_messages(
         curr = curr.copy(deep=True)
         if isinstance(curr, ToolMessage):
             if isinstance(curr.content, str):
-                curr = HumanMessage(
+                curr = HumanMessage(  # type: ignore[misc]
                     [
                         {
                             "type": "tool_result",
@@ -114,7 +114,7 @@ def _merge_messages(
                     ]
                 )
             else:
-                curr = HumanMessage(curr.content)
+                curr = HumanMessage(curr.content)  # type: ignore[misc]
         last = merged[-1] if merged else None
         if isinstance(last, HumanMessage) and isinstance(curr, HumanMessage):
             if isinstance(last.content, str):
@@ -425,7 +425,7 @@ class ChatAnthropic(BaseChatModel):
                 ]
                 message_chunk = AIMessageChunk(
                     content=message.content,
-                    tool_call_chunks=tool_call_chunks,
+                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
                 )
                 yield ChatGenerationChunk(message=message_chunk)
             else:
@@ -464,7 +464,7 @@ class ChatAnthropic(BaseChatModel):
                 ]
                 message_chunk = AIMessageChunk(
                     content=message.content,
-                    tool_call_chunks=tool_call_chunks,
+                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
                 )
                 yield ChatGenerationChunk(message=message_chunk)
             else:
@@ -522,10 +522,7 @@ class ChatAnthropic(BaseChatModel):
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 )
                 return generate_from_stream(stream_iter)
-        if _tools_in_params(params):
-            data = self._client.beta.tools.messages.create(**params)
-        else:
-            data = self._client.messages.create(**params)
+        data = self._client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
     async def _agenerate(
@@ -546,13 +543,9 @@ class ChatAnthropic(BaseChatModel):
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 )
                 return await agenerate_from_stream(stream_iter)
-        if _tools_in_params(params):
-            data = await self._async_client.beta.tools.messages.create(**params)
-        else:
-            data = await self._async_client.messages.create(**params)
+        data = await self._async_client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
-    @beta()
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
