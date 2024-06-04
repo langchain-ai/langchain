@@ -1,3 +1,4 @@
+import os
 import asyncio
 import logging
 import warnings
@@ -16,6 +17,7 @@ from typing import (
 
 import aiohttp
 import requests
+from langchain_community.utils.user_agent import get_user_agent
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
@@ -23,7 +25,7 @@ from langchain_community.document_loaders.base import BaseLoader
 logger = logging.getLogger(__name__)
 
 default_header_template = {
-    "User-Agent": "",
+    "User-Agent": get_user_agent(),
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*"
     ";q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
