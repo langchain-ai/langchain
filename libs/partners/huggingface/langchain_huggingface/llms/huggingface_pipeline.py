@@ -128,27 +128,33 @@ class HuggingFacePipeline(BaseLLM):
                         )
                 elif backend == "ipex":
                     try:
+                        import torch
                         from optimum.intel.ipex import (  # type: ignore[import]
                             IPEXModelForCausalLM,
                         )
-                        import torch
                     except ImportError:
                         raise ValueError(
                             "Could not import optimum-intel python package. "
                             "Please install it with: "
-                            "pip install --upgrade --upgrade-strategy eager 'optimum[ipex]' "
-                            "or follow installation instructions from https://github.com/huggingface/optimum-intel?tab=readme-ov-file#installation "
+                            "pip install 'optimum[ipex]' "
+                            "or follow installation instructions from: "
+                            " https://github.com/rbrugaro/optimum-intel "
                         )
                     try:
                         # use TorchScript model
                         config = AutoConfig.from_pretrained(model_id)
                         export = not getattr(config, "torchscript", False)
                     except RuntimeError:
-                        logger.warning("We will use IPEXModel with export=True to export the model")
+                        logger.warning(
+                            "We will use IPEXModel with export=True to export the model"
+                        )
                         export = True
                     model = IPEXModelForCausalLM.from_pretrained(
-                            model_id,export=export, **_model_kwargs, torch_dtype=torch.bfloat16 #keep or remove the dtype????
-                        )
+                        model_id,
+                        export=export,
+                        **_model_kwargs,
+                        torch_dtype=torch.bfloat16,  # keep or remove the dtype????
+                    )
 
                 else:
                     model = AutoModelForCausalLM.from_pretrained(
