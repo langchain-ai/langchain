@@ -22,7 +22,7 @@ from typing import (
 )
 
 import anthropic
-from langchain_core._api import beta, deprecated
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -30,6 +30,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
+    LangSmithParams,
     agenerate_from_stream,
     generate_from_stream,
 )
@@ -103,7 +104,7 @@ def _merge_messages(
         curr = curr.copy(deep=True)
         if isinstance(curr, ToolMessage):
             if isinstance(curr.content, str):
-                curr = HumanMessage(
+                curr = HumanMessage(  # type: ignore[misc]
                     [
                         {
                             "type": "tool_result",
@@ -113,7 +114,7 @@ def _merge_messages(
                     ]
                 )
             else:
-                curr = HumanMessage(curr.content)
+                curr = HumanMessage(curr.content)  # type: ignore[misc]
         last = merged[-1] if merged else None
         if isinstance(last, HumanMessage) and isinstance(curr, HumanMessage):
             if isinstance(last.content, str):
@@ -171,50 +172,45 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
             content = []
             for item in message.content:
                 if isinstance(item, str):
-                    content.append(
-                        {
-                            "type": "text",
-                            "text": item,
-                        }
-                    )
+                    content.append({"type": "text", "text": item})
                 elif isinstance(item, dict):
                     if "type" not in item:
                         raise ValueError("Dict content item must have a type key")
                     elif item["type"] == "image_url":
                         # convert format
                         source = _format_image(item["image_url"]["url"])
-                        content.append(
-                            {
-                                "type": "image",
-                                "source": source,
-                            }
-                        )
+                        content.append({"type": "image", "source": source})
                     elif item["type"] == "tool_use":
-                        item.pop("text", None)
-                        content.append(item)
+                        # If a tool_call with the same id as a tool_use content block
+                        # exists, the tool_call is preferred.
+                        if isinstance(message, AIMessage) and item["id"] in [
+                            tc["id"] for tc in message.tool_calls
+                        ]:
+                            overlapping = [
+                                tc
+                                for tc in message.tool_calls
+                                if tc["id"] == item["id"]
+                            ]
+                            content.extend(
+                                _lc_tool_calls_to_anthropic_tool_use_blocks(overlapping)
+                            )
+                        else:
+                            item.pop("text", None)
+                            content.append(item)
                     elif item["type"] == "text":
                         text = item.get("text", "")
                         # Only add non-empty strings for now as empty ones are not
                         # accepted.
                         # https://github.com/anthropics/anthropic-sdk-python/issues/461
                         if text.strip():
-                            content.append(
-                                {
-                                    "type": "text",
-                                    "text": text,
-                                }
-                            )
+                            content.append({"type": "text", "text": text})
                     else:
                         content.append(item)
                 else:
                     raise ValueError(
                         f"Content items must be str or dict, instead was: {type(item)}"
                     )
-        elif (
-            isinstance(message, AIMessage)
-            and not isinstance(message.content, list)
-            and message.tool_calls
-        ):
+        elif isinstance(message, AIMessage) and message.tool_calls:
             content = (
                 []
                 if not message.content
@@ -227,28 +223,244 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
         else:
             content = message.content
 
-        formatted_messages.append(
-            {
-                "role": role,
-                "content": content,
-            }
-        )
+        formatted_messages.append({"role": role, "content": content})
     return system, formatted_messages
 
 
 class ChatAnthropic(BaseChatModel):
-    """Anthropic chat model.
+    """Anthropic chat model integration.
 
-    To use, you should have the environment variable ``ANTHROPIC_API_KEY``
-    set with your API key, or pass it as a named parameter to the constructor.
+    See https://docs.anthropic.com/en/docs/models-overview for a list of the latest models.
 
-    Example:
+    Setup:
+        Install ``langchain-anthropic`` and set environment variable ``ANTHROPIC_API_KEY``.
+
+        .. code-block:: bash
+
+            pip install -U langchain-anthropic
+            export ANTHROPIC_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: str
+            Name of Anthropic model to use. E.g. "claude-3-sonnet-20240229".
+        temperature: float
+            Sampling temperature. Ranges from 0.0 to 1.0.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
+
+    Key init args — client params:
+        timeout: Optional[float]
+            Timeout for requests.
+        max_retries: int
+            Max number of retries if a request fails.
+        api_key: Optional[str]
+            Anthropic API key. If not passed in will be read from env var ANTHROPIC_API_KEY.
+        base_url: Optional[str]
+            Base URL for API requests. Only specify if using a proxy or service
+            emulator.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_anthropic import ChatAnthropic
 
-            model = ChatAnthropic(model='claude-3-opus-20240229')
-    """
+            llm = ChatAnthropic(
+                model="claude-3-sonnet-20240229",
+                temperature=0,
+                max_tokens=1024,
+                timeout=None,
+                max_retries=2,
+                # api_key="...",
+                # base_url="...",
+                # other params...
+            )
+
+    **NOTE**: Any param which is not explicitly supported will be passed directly to the
+    ``anthropic.Anthropic.messages.create(...)`` API every time to the model is
+    invoked. For example:
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+            import anthropic
+
+            ChatAnthropic(..., extra_headers={}).invoke(...)
+
+            # results in underlying API call of:
+
+            anthropic.Anthropic(..).messages.create(..., extra_headers={})
+
+            # which is also equivalent to:
+
+            ChatAnthropic(...).invoke(..., extra_headers={})
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "You are a helpful translator. Translate the user sentence to French."),
+                ("human", "I love programming."),
+            ]
+            llm.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-sonnet-20240229', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in llm.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            AIMessageChunk(content='J', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content="'", id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content='a', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content='ime', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content=' la', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content=' programm', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content='ation', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content='.', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+
+        .. code-block:: python
+
+            stream = llm.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block:: python
+
+            AIMessageChunk(content="J'aime la programmation.", id='run-b34faef0-882f-4869-a19c-ed2b856e6361')
+
+    Async:
+        .. code-block:: python
+
+            await llm.ainvoke(messages)
+
+            # stream:
+            # async for chunk in (await llm.astream(messages))
+
+            # batch:
+            # await llm.abatch([messages])
+
+        .. code-block:: python
+
+            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-sonnet-20240229', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
+
+    Tool calling:
+        .. code-block:: python
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+            class GetPopulation(BaseModel):
+                '''Get the current population in a given location'''
+
+                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+            ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
+            ai_msg.tool_calls
+
+        .. code-block:: python
+
+            [{'name': 'GetWeather',
+              'args': {'location': 'Los Angeles, CA'},
+              'id': 'toolu_01KzpPEAgzura7hpBqwHbWdo'},
+             {'name': 'GetWeather',
+              'args': {'location': 'New York, NY'},
+              'id': 'toolu_01JtgbVGVJbiSwtZk3Uycezx'},
+             {'name': 'GetPopulation',
+              'args': {'location': 'Los Angeles, CA'},
+              'id': 'toolu_01429aygngesudV9nTbCKGuw'},
+             {'name': 'GetPopulation',
+              'args': {'location': 'New York, NY'},
+              'id': 'toolu_01JPktyd44tVMeBcPPnFSEJG'}]
+
+        See ``ChatAnthropic.bind_tools()`` method for more.
+
+    Structured output:
+        .. code-block:: python
+
+            from typing import Optional
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+            class Joke(BaseModel):
+                '''Joke to tell user.'''
+
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke")
+                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
+            structured_llm = llm.with_structured_output(Joke)
+            structured_llm.invoke("Tell me a joke about cats")
+
+        .. code-block:: python
+
+            Joke(setup='Why was the cat sitting on the computer?', punchline='To keep an eye on the mouse!', rating=None)
+
+        See ``ChatAnthropic.with_structured_output()`` for more.
+
+    Image input:
+        .. code-block:: python
+
+            import base64
+            import httpx
+            from langchain_core.messages import HumanMessage
+
+            image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+            image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+            message = HumanMessage(
+                content=[
+                    {"type": "text", "text": "describe the weather in this image"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    },
+                ],
+            )
+            ai_msg = llm.invoke([message])
+            ai_msg.content
+
+        .. code-block:: python
+
+            "The image depicts a sunny day with a partly cloudy sky. The sky is a brilliant blue color with scattered white clouds drifting across. The lighting and cloud patterns suggest pleasant, mild weather conditions. The scene shows a grassy field or meadow with a wooden boardwalk trail leading through it, indicating an outdoor setting on a nice day well-suited for enjoying nature."
+
+    Token usage:
+        .. code-block:: python
+
+            ai_msg = llm.invoke(messages)
+            ai_msg.usage_metadata
+
+        .. code-block:: python
+
+            {'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36}
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = llm.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {'id': 'msg_013xU6FHEGEq76aP4RgFerVT',
+             'model': 'claude-3-sonnet-20240229',
+             'stop_reason': 'end_turn',
+             'stop_sequence': None,
+             'usage': {'input_tokens': 25, 'output_tokens': 11}}
+
+    """  # noqa: E501
 
     class Config:
         """Configuration for this pydantic object."""
@@ -280,7 +492,12 @@ class ChatAnthropic(BaseChatModel):
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
-    anthropic_api_url: Optional[str] = None
+    anthropic_api_url: Optional[str] = Field(None, alias="base_url")
+    """Base URL for API requests. Only specify if using a proxy or service emulator.
+    
+    If a value isn't passed in and environment variable ANTHROPIC_BASE_URL is set, value
+    will be read from there.
+    """
 
     anthropic_api_key: Optional[SecretStr] = Field(None, alias="api_key")
     """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
@@ -326,6 +543,23 @@ class ChatAnthropic(BaseChatModel):
             "default_request_timeout": self.default_request_timeout,
         }
 
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get the parameters used to invoke the model."""
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        ls_params = LangSmithParams(
+            ls_provider="anthropic",
+            ls_model_name=self.model,
+            ls_model_type="chat",
+            ls_temperature=params.get("temperature", self.temperature),
+        )
+        if ls_max_tokens := params.get("max_tokens", self.max_tokens):
+            ls_params["ls_max_tokens"] = ls_max_tokens
+        if ls_stop := stop or params.get("stop", None):
+            ls_params["ls_stop"] = ls_stop
+        return ls_params
+
     @root_validator(pre=True)
     def build_extra(cls, values: Dict) -> Dict:
         extra = values.get("model_kwargs", {})
@@ -345,6 +579,7 @@ class ChatAnthropic(BaseChatModel):
         api_url = (
             values.get("anthropic_api_url")
             or os.environ.get("ANTHROPIC_API_URL")
+            or os.environ.get("ANTHROPIC_BASE_URL")
             or "https://api.anthropic.com"
         )
         values["anthropic_api_url"] = api_url
@@ -417,7 +652,7 @@ class ChatAnthropic(BaseChatModel):
                 ]
                 message_chunk = AIMessageChunk(
                     content=message.content,
-                    tool_call_chunks=tool_call_chunks,
+                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
                 )
                 yield ChatGenerationChunk(message=message_chunk)
             else:
@@ -456,7 +691,7 @@ class ChatAnthropic(BaseChatModel):
                 ]
                 message_chunk = AIMessageChunk(
                     content=message.content,
-                    tool_call_chunks=tool_call_chunks,
+                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
                 )
                 yield ChatGenerationChunk(message=message_chunk)
             else:
@@ -485,6 +720,12 @@ class ChatAnthropic(BaseChatModel):
             )
         else:
             msg = AIMessage(content=content)
+        # Collect token usage
+        msg.usage_metadata = {
+            "input_tokens": data.usage.input_tokens,
+            "output_tokens": data.usage.output_tokens,
+            "total_tokens": data.usage.input_tokens + data.usage.output_tokens,
+        }
         return ChatResult(
             generations=[ChatGeneration(message=msg)],
             llm_output=llm_output,
@@ -508,10 +749,7 @@ class ChatAnthropic(BaseChatModel):
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 )
                 return generate_from_stream(stream_iter)
-        if _tools_in_params(params):
-            data = self._client.beta.tools.messages.create(**params)
-        else:
-            data = self._client.messages.create(**params)
+        data = self._client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
     async def _agenerate(
@@ -532,16 +770,16 @@ class ChatAnthropic(BaseChatModel):
                     messages, stop=stop, run_manager=run_manager, **kwargs
                 )
                 return await agenerate_from_stream(stream_iter)
-        if _tools_in_params(params):
-            data = await self._async_client.beta.tools.messages.create(**params)
-        else:
-            data = await self._async_client.messages.create(**params)
+        data = await self._async_client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
-    @beta()
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[Dict[str, str], Literal["any", "auto"], str]
+        ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -551,6 +789,15 @@ class ChatAnthropic(BaseChatModel):
                 Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
                 models, callables, and BaseTools will be automatically converted to
                 their schema dictionary representation.
+            tool_choice: Which tool to require the model to call.
+                Options are:
+                    name of the tool (str): calls corresponding tool;
+                    "auto" or None: automatically selects a tool (including no tool);
+                    "any": force at least one tool to be called;
+                    or a dict of the form:
+                        {"type": "tool", "name": "tool_name"},
+                        or {"type: "any"},
+                        or {"type: "auto"};
             **kwargs: Any additional parameters to bind.
 
         Example:
@@ -564,9 +811,14 @@ class ChatAnthropic(BaseChatModel):
 
                     location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
+                class GetPrice(BaseModel):
+                    '''Get the price of a specific product.'''
+
+                    product: str = Field(..., description="The product to look up.")
+
 
                 llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
-                llm_with_tools = llm.bind_tools([GetWeather])
+                llm_with_tools = llm.bind_tools([GetWeather, GetPrice])
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
                 # -> AIMessage(
                 #     content=[
@@ -576,8 +828,64 @@ class ChatAnthropic(BaseChatModel):
                 #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-3-opus-20240229', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
                 #     id='run-87b1331e-9251-4a68-acef-f0a018b639cc-0'
                 # )
+
+        Example — force tool call with tool_choice 'any':
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+                from langchain_core.pydantic_v1 import BaseModel, Field
+
+                class GetWeather(BaseModel):
+                    '''Get the current weather in a given location'''
+
+                    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+                class GetPrice(BaseModel):
+                    '''Get the price of a specific product.'''
+
+                    product: str = Field(..., description="The product to look up.")
+
+
+                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="any")
+                llm_with_tools.invoke("what is the weather like in San Francisco",)
+
+
+        Example — force specific tool call with tool_choice '<name_of_tool>':
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+                from langchain_core.pydantic_v1 import BaseModel, Field
+
+                class GetWeather(BaseModel):
+                    '''Get the current weather in a given location'''
+
+                    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+                class GetPrice(BaseModel):
+                    '''Get the price of a specific product.'''
+
+                    product: str = Field(..., description="The product to look up.")
+
+
+                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
+                llm_with_tools.invoke("what is the weather like in San Francisco",)
         """  # noqa: E501
         formatted_tools = [convert_to_anthropic_tool(tool) for tool in tools]
+        if not tool_choice:
+            pass
+        elif isinstance(tool_choice, dict):
+            kwargs["tool_choice"] = tool_choice
+        elif isinstance(tool_choice, str) and tool_choice in ("any", "auto"):
+            kwargs["tool_choice"] = {"type": tool_choice}
+        elif isinstance(tool_choice, str):
+            kwargs["tool_choice"] = {"type": "tool", "name": tool_choice}
+        else:
+            raise ValueError(
+                f"Unrecognized 'tool_choice' type {tool_choice=}. Expected dict, "
+                f"str, or None."
+            )
         return self.bind(tools=formatted_tools, **kwargs)
 
     def with_structured_output(
@@ -683,7 +991,7 @@ class ChatAnthropic(BaseChatModel):
                 # }
 
         """  # noqa: E501
-        llm = self.bind_tools([schema])
+        llm = self.bind_tools([schema], tool_choice="any")
         if isinstance(schema, type) and issubclass(schema, BaseModel):
             output_parser = ToolsOutputParser(
                 first_tool_only=True, pydantic_schemas=[schema]

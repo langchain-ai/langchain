@@ -32,7 +32,7 @@ class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
 
     Documents should be created and documents should be uploaded
         in a separate flow, and this retriever uses only Document AI
-        schema_id provided to search for revelant documents.
+        schema_id provided to search for relevant documents.
 
     More info: https://cloud.google.com/document-ai-warehouse.
     """

@@ -97,7 +97,7 @@ class TavilySearchAPIWrapper(BaseModel):
                 content: The content of the result.
                 score: The score of the result.
                 raw_content: The raw content of the result.
-        """  # noqa: E501
+        """
         raw_search_results = self.raw_results(
             query,
             max_results=max_results,

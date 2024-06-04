@@ -1,6 +1,7 @@
 from langchain_community.embeddings import __all__, _module_lookup
 
 EXPECTED_ALL = [
+    "ClovaEmbeddings",
     "OpenAIEmbeddings",
     "AnyscaleEmbeddings",
     "AzureOpenAIEmbeddings",
@@ -54,6 +55,7 @@ EXPECTED_ALL = [
     "LocalAIEmbeddings",
     "AwaEmbeddings",
     "HuggingFaceBgeEmbeddings",
+    "IpexLLMBgeEmbeddings",
     "ErnieEmbeddings",
     "JavelinAIGatewayEmbeddings",
     "OllamaEmbeddings",

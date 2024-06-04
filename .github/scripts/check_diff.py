@@ -91,4 +91,4 @@ if __name__ == "__main__":
     }
     for key, value in outputs.items():
         json_output = json.dumps(value)
-        print(f"{key}={json_output}")  # noqa: T201
+        print(f"{key}={json_output}")

@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Type
+from typing import List, Literal, Optional, Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError
 from langchain_core.tools import tool
 
 
@@ -89,3 +89,29 @@ class ChatModelUnitTests(ABC):
         model = chat_model_class(**chat_model_params)
         assert model is not None
         assert model.with_structured_output(Person) is not None
+
+    def test_standard_params(
+        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
+    ) -> None:
+        class ExpectedParams(BaseModel):
+            ls_provider: str
+            ls_model_name: str
+            ls_model_type: Literal["chat"]
+            ls_temperature: Optional[float]
+            ls_max_tokens: Optional[int]
+            ls_stop: Optional[List[str]]
+
+        model = chat_model_class(**chat_model_params)
+        ls_params = model._get_ls_params()
+        try:
+            ExpectedParams(**ls_params)
+        except ValidationError as e:
+            pytest.fail(f"Validation error: {e}")
+
+        # Test optional params
+        model = chat_model_class(max_tokens=10, stop=["test"], **chat_model_params)
+        ls_params = model._get_ls_params()
+        try:
+            ExpectedParams(**ls_params)
+        except ValidationError as e:
+            pytest.fail(f"Validation error: {e}")

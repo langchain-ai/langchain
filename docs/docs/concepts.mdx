@@ -1,3 +1,7 @@
+---
+keywords: [prompt, documents, chatprompttemplate, prompttemplate, invoke, lcel, tool, tools, embedding, embeddings, vector, vectorstore, llm, loader, retriever, retrievers]
+---
+
 # Conceptual guide
 
 import ThemedImage from '@theme/ThemedImage';
@@ -33,18 +37,18 @@ Key partner packages are separated out (see below).
 This contains all integrations for various components (LLMs, vectorstores, retrievers).
 All dependencies in this package are optional to keep the package as lightweight as possible.
 
-### [`langgraph`](/docs/langgraph)
+### [`langgraph`](https://langchain-ai.github.io/langgraph)
 
 `langgraph` is an extension of `langchain` aimed at
 building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
 
-LangGraph exposes high level interfaces for creating common types of agents, as well as a low-level API for constructing more contr
+LangGraph exposes high level interfaces for creating common types of agents, as well as a low-level API for composing custom flows.
 
 ### [`langserve`](/docs/langserve)
 
 A package to deploy LangChain chains as REST APIs. Makes it easy to get a production ready API up and running.
 
-### [LangSmith](/docs/langsmith)
+### [LangSmith](https://docs.smith.langchain.com)
 
 A developer platform that lets you debug, test, evaluate, and monitor LLM applications.
 
@@ -66,7 +70,7 @@ LCEL was designed from day 1 to **support putting prototypes in production, with
 When you build your chains with LCEL you get the best possible time-to-first-token (time elapsed until the first chunk of output comes out). For some chains this means eg. we stream tokens straight from an LLM to a streaming output parser, and you get back parsed, incremental chunks of output at the same rate as the LLM provider outputs the raw tokens.
 
 **Async support**
-Any chain built with LCEL can be called both with the synchronous API (eg. in your Jupyter notebook while prototyping) as well as with the asynchronous API (eg. in a [LangServe](/docs/langsmith) server). This enables using the same code for prototypes and in production, with great performance, and the ability to handle many concurrent requests in the same server.
+Any chain built with LCEL can be called both with the synchronous API (eg. in your Jupyter notebook while prototyping) as well as with the asynchronous API (eg. in a [LangServe](/docs/langserve/) server). This enables using the same code for prototypes and in production, with great performance, and the ability to handle many concurrent requests in the same server.
 
 **Optimized parallel execution**
 Whenever your LCEL chains have steps that can be executed in parallel (eg if you fetch documents from multiple retrievers) we automatically do it, both in the sync and the async interfaces, for the smallest possible latency.
@@ -80,9 +84,9 @@ For more complex chains it’s often very useful to access the results of interm
 **Input and output schemas**
 Input and output schemas give every LCEL chain Pydantic and JSONSchema schemas inferred from the structure of your chain. This can be used for validation of inputs and outputs, and is an integral part of LangServe.
 
-[**Seamless LangSmith tracing**](/docs/langsmith)
+[**Seamless LangSmith tracing**](https://docs.smith.langchain.com)
 As your chains get more and more complex, it becomes increasingly important to understand what exactly is happening at every step.
-With LCEL, **all** steps are automatically logged to [LangSmith](/docs/langsmith/) for maximum observability and debuggability.
+With LCEL, **all** steps are automatically logged to [LangSmith](https://docs.smith.langchain.com/) for maximum observability and debuggability.
 
 [**Seamless LangServe deployment**](/docs/langserve)
 Any chain created with LCEL can be easily deployed using [LangServe](/docs/langserve).
@@ -128,13 +132,14 @@ LangChain provides standard, extendable interfaces and external integrations for
 Some components LangChain implements, some components we rely on third-party integrations for, and others are a mix.
 
 ### Chat models
+
 Language models that use a sequence of messages as inputs and return chat messages as outputs (as opposed to using plain text).
 These are traditionally newer models (older models are generally `LLMs`, see above).
 Chat models support the assignment of distinct roles to conversation messages, helping to distinguish messages from the AI, users, and instructions such as system messages.
 
-Although the underlying models are messages in, message out, the LangChain wrappers also allow these models to take a string as input.
-This makes them interchangeable with LLMs (and simpler to use).
-When a string is passed in as input, it will be converted to a HumanMessage under the hood before being passed to the underlying model.
+Although the underlying models are messages in, message out, the LangChain wrappers also allow these models to take a string as input. This means you can easily use chat models in place of LLMs.
+
+When a string is passed in as input, it is converted to a HumanMessage and then passed to the underlying model.
 
 LangChain does not provide any ChatModels, rather we rely on third party integrations.
 
@@ -143,7 +148,14 @@ We have some standardized parameters when constructing ChatModels:
 
 ChatModels also accept other parameters that are specific to that integration.
 
+:::important
+**Tool Calling** Some chat models have been fine-tuned for tool calling and provide a dedicated API for tool calling.
+Generally, such models are better at tool calling than non-fine-tuned models, and are recommended for use cases that require tool calling.
+Please see the [tool calling section](/docs/concepts/#functiontool-calling) for more information.
+:::
+
 ### LLMs
+
 Language models that takes a string as input and returns a string.
 These are traditionally older models (newer models generally are `ChatModels`, see below).
 
@@ -166,7 +178,7 @@ The `content` property describes the content of the message.
 This can be a few different things:
 
 - A string (most models deal this type of content)
-- A List of dictionaries (this is used for multi-modal input, where the dictionary contains information about that input type and that input location)
+- A List of dictionaries (this is used for multimodal input, where the dictionary contains information about that input type and that input location)
 
 #### HumanMessage
 
@@ -239,7 +251,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 prompt_template = ChatPromptTemplate.from_messages([
     ("system", "You are a helpful assistant"),
-    ("user", "Tell me a joke about {topic}"
+    ("user", "Tell me a joke about {topic}")
 ])
 
 prompt_template.invoke({"topic": "cats"})
@@ -409,22 +421,30 @@ Retrievers can be created from vectorstores, but are also broad enough to includ
 Retrievers accept a string query as input and return a list of Document's as output.
 
 ### Tools
-Tools are interfaces that an agent, chain, or LLM can use to interact with the world.
-They combine a few things:
+
+Tools are interfaces that an agent, a chain, or a chat model / LLM can use to interact with the world.
+
+A tool consists of the following components:
 
 1. The name of the tool
-2. A description of what the tool is
+2. A description of what the tool does
 3. JSON schema of what the inputs to the tool are
 4. The function to call
-5. Whether the result of a tool should be returned directly to the user
+5. Whether the result of a tool should be returned directly to the user (only relevant for agents)
 
-It is useful to have all this information because this information can be used to build action-taking systems! The name, description, and JSON schema can be used to prompt the LLM so it knows how to specify what action to take, and then the function to call is equivalent to taking that action.
+The name, description and JSON schema are provided as context
+to the LLM, allowing the LLM to determine how to use the tool
+appropriately.
 
-The simpler the input to a tool is, the easier it is for an LLM to be able to use it.
-Many agents will only work with tools that have a single string input.
+Given a list of available tools and a prompt, an LLM can request
+that one or more tools be invoked with appropriate arguments.
 
-Importantly, the name, description, and JSON schema (if used) are all used in the prompt. Therefore, it is really important that they are clear and describe exactly how the tool should be used. You may need to change the default name, description, or JSON schema if the LLM is not understanding how to use the tool.
+Generally, when designing tools to be used by a chat model or LLM, it is important to keep in mind the following:
 
+- Chat models that have been fine-tuned for tool calling will be better at tool calling than non-fine-tuned models.
+- Non fine-tuned models may not be able to use tools at all, especially if the tools are complex or require multiple tool calls.
+- Models will perform better if the tools have well-chosen names, descriptions, and JSON schemas.
+- Simpler tools are generally easier for models to use than more complex tools.
 
 ### Toolkits
 
@@ -460,6 +480,82 @@ If you are still using AgentExecutor, do not fear: we still have a guide on [how
 It is recommended, however, that you start to transition to LangGraph.
 In order to assist in this we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent)
 
+### Multimodal
+
+Some models are multimodal, accepting images, audio and even video as inputs. These are still less common, meaning model providers haven't standardized on the "best" way to define the API. Multimodal **outputs** are even less common. As such, we've kept our multimodal abstractions fairly light weight and plan to further solidify the multimodal APIs and interaction patterns as the field matures.
+
+In LangChain, most chat models that support multimodal inputs also accept those values in OpenAI's content blocks format. So far this is restricted to image inputs. For models like Gemini which support video and other bytes input, the APIs also support the native, model-specific representations.
+
+### Callbacks
+
+LangChain provides a callbacks system that allows you to hook into the various stages of your LLM application. This is useful for logging, monitoring, streaming, and other tasks.
+
+You can subscribe to these events by using the `callbacks` argument available throughout the API. This argument is list of handler objects, which are expected to implement one or more of the methods described below in more detail.
+
+#### Callback Events
+
+| Event            | Event Trigger                               | Associated Method     |
+|------------------|---------------------------------------------|-----------------------|
+| Chat model start | When a chat model starts                    | `on_chat_model_start` |
+| LLM start        | When a llm starts                           | `on_llm_start`        |
+| LLM new token    | When an llm OR chat model emits a new token | `on_llm_new_token`    |
+| LLM ends         | When an llm OR chat model ends              | `on_llm_end`          |
+| LLM errors       | When an llm OR chat model errors            | `on_llm_error`        |
+| Chain start      | When a chain starts running                 | `on_chain_start`      |
+| Chain end        | When a chain ends                           | `on_chain_end`        |
+| Chain error      | When a chain errors                         | `on_chain_error`      |
+| Tool start       | When a tool starts running                  | `on_tool_start`       |
+| Tool end         | When a tool ends                            | `on_tool_end`         |
+| Tool error       | When a tool errors                          | `on_tool_error`       |
+| Agent action     | When an agent takes an action               | `on_agent_action`     |
+| Agent finish     | When an agent ends                          | `on_agent_finish`     |
+| Retriever start  | When a retriever starts                     | `on_retriever_start`  |
+| Retriever end    | When a retriever ends                       | `on_retriever_end`    |
+| Retriever error  | When a retriever errors                     | `on_retriever_error`  |
+| Text             | When arbitrary text is run                  | `on_text`             |
+| Retry            | When a retry event is run                   | `on_retry`            |
+
+#### Callback handlers
+
+Callback handlers can either be `sync` or `async`:
+
+* Sync callback handlers implement the [BaseCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_core.callbacks.base.BaseCallbackHandler.html) interface.
+* Async callback handlers implement the [AsyncCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_core.callbacks.base.AsyncCallbackHandler.html) interface.
+
+During run-time LangChain configures an appropriate callback manager (e.g., [CallbackManager](https://api.python.langchain.com/en/latest/callbacks/langchain_core.callbacks.manager.CallbackManager.html) or [AsyncCallbackManager](https://api.python.langchain.com/en/latest/callbacks/langchain_core.callbacks.manager.AsyncCallbackManager.html) which will be responsible for calling the appropriate method on each "registered" callback handler when the event is triggered.
+
+#### Passing callbacks
+
+The `callbacks` property is available on most objects throughout the API (Models, Tools, Agents, etc.) in two different places:
+
+The callbacks are available on most objects throughout the API (Models, Tools, Agents, etc.) in two different places:
+
+- **Request time callbacks**: Passed at the time of the request in addition to the input data.
+    Available on all standard `Runnable` objects. These callbacks are INHERITED by all children
+    of the object they are defined on. For example, `chain.invoke({"number": 25}, {"callbacks": [handler]})`.
+- **Constructor callbacks**: `chain = TheNameOfSomeChain(callbacks=[handler])`. These callbacks
+    are passed as arguments to the constructor of the object. The callbacks are scoped
+    only to the object they are defined on, and are **not** inherited by any children of the object.
+
+:::warning
+Constructor callbacks are scoped only to the object they are defined on. They are **not** inherited by children
+of the object.
+:::
+
+If you're creating a custom chain or runnable, you need to remember to propagate request time
+callbacks to any child objects.
+
+:::important Async in Python<=3.10
+
+Any `RunnableLambda`, a `RunnableGenerator`, or `Tool` that invokes other runnables
+and is running async in python<=3.10, will have to propagate callbacks to child
+objects manually. This is because LangChain cannot automatically propagate
+callbacks to child objects in this case.
+
+This is a common reason why you may fail to see events being emitted from custom
+runnables or tools.
+:::
+
 ## Techniques
 
 ### Function/tool calling
@@ -494,11 +590,17 @@ receive the tool call, execute it, and return the output to the LLM to inform it
 response. LangChain includes a suite of [built-in tools](/docs/integrations/tools/)
 and supports several methods for defining your own [custom tools](/docs/how_to/custom_tools).
 
+LangChain provides a standardized interface for tool calling that is consistent across different models.
+
+The standard interface consists of:
+
+* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call.
+* `AIMessage.tool_calls`: an attribute on the `AIMessage` returned from the model for accessing the tool calls requested by the model.
+
 There are two main use cases for function/tool calling:
 
 - [How to return structured data from an LLM](/docs/how_to/structured_output/)
 - [How to use a model to call tools](/docs/how_to/tool_calling/)
-
 
 ### Retrieval
 
@@ -550,3 +652,7 @@ Table columns:
 | Character  | [CharacterTextSplitter](/docs/how_to/character_text_splitter/)                                                                                                                | A user defined character                                                                                        |               | Splits text based on a user defined character. One of the simpler methods.                                                                                                                                                                                                   |
 | Semantic Chunker (Experimental) | [SemanticChunker](/docs/how_to/semantic-chunker/)                                                                                                                             | Sentences                                                                                                       |               | First splits on sentences. Then combines ones next to each other if they are semantically similar enough. Taken from [Greg Kamradt](https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/tutorials/LevelsOfTextSplitting/5_Levels_Of_Text_Splitting.ipynb) |
 | Integration: AI21 Semantic | [AI21SemanticTextSplitter](/docs/integrations/document_transformers/ai21_semantic_text_splitter/)                                                                                                                    |    ✅           | Identifies distinct topics that form coherent pieces of text and splits along those.                                                                                                                                                                                         |
+
+
+
+

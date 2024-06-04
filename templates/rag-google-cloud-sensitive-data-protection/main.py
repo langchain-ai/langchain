@@ -6,4 +6,4 @@ if __name__ == "__main__":
         "is 555-555-5555. And my email is lovely.pirate@gmail.com. Have a nice day.",
         "chat_history": [],
     }
-    print(chain.invoke(query))  # noqa: T201
+    print(chain.invoke(query))

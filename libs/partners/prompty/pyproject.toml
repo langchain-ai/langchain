@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-prompty"
-version = "0.0.1"
+version = "0.0.2"
 description = "An integration package connecting Prompty and LangChain"
 authors = []
 readme = "README.md"
@@ -27,8 +27,8 @@ syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 langchain-core = { path = "../../core", develop = true }
-langchain = {path = "../../langchain", develop = true}
-langchain-text-splitters = {path = "../../text-splitters", develop = true}
+langchain = { path = "../../langchain", develop = true }
+langchain-text-splitters = { path = "../../text-splitters", develop = true }
 
 [tool.poetry.group.codespell]
 optional = true

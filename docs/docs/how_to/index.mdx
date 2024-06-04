@@ -7,35 +7,41 @@ sidebar_class_name: hidden
 
 Here you’ll find answers to “How do I….?” types of questions.
 These guides are *goal-oriented* and *concrete*; they're meant to help you complete a specific task.
-For conceptual explanations see [Conceptual Guides](/docs/concepts/).
+For conceptual explanations see the [Conceptual guide](/docs/concepts/).
 For end-to-end walkthroughs see [Tutorials](/docs/tutorials).
-For comprehensive descriptions of every class and function see [API Reference](https://api.python.langchain.com/en/latest/).
+For comprehensive descriptions of every class and function see the [API Reference](https://api.python.langchain.com/en/latest/).
+
+## Installation
+
+- [How to: install LangChain packages](/docs/how_to/installation/)
 
 ## Key features
 
 This highlights functionality that is core to using LangChain.
 
-- [How to: return structured data from an LLM](/docs/how_to/structured_output/)
-- [How to: use a chat model to call tools](/docs/how_to/tool_calling/)
+- [How to: return structured data from a model](/docs/how_to/structured_output/)
+- [How to: use a model to call tools](/docs/how_to/tool_calling/)
 - [How to: stream runnables](/docs/how_to/streaming)
 - [How to: debug your LLM apps](/docs/how_to/debugging/)
 
 ## LangChain Expression Language (LCEL)
 
-LangChain Expression Language is a way to create arbitrary custom chains. It is built on the Runnable protocol.
+[LangChain Expression Language](/docs/concepts/#langchain-expression-language-lcel) is a way to create arbitrary custom chains. It is built on the [Runnable](https://api.python.langchain.com/en/latest/runnables/langchain_core.runnables.base.Runnable.html) protocol.
+
+[**LCEL cheatsheet**](/docs/how_to/lcel_cheatsheet/): For a quick overview of how to use the main LCEL primitives.
 
 - [How to: chain runnables](/docs/how_to/sequence)
 - [How to: stream runnables](/docs/how_to/streaming)
 - [How to: invoke runnables in parallel](/docs/how_to/parallel/)
-- [How to: attach runtime arguments to a runnable](/docs/how_to/binding/)
-- [How to: run custom functions](/docs/how_to/functions)
-- [How to: pass through arguments from one step to the next](/docs/how_to/passthrough)
-- [How to: add values to a chain's state](/docs/how_to/assign)
-- [How to: configure a chain at runtime](/docs/how_to/configure)
-- [How to: add message history](/docs/how_to/message_history)
-- [How to: route execution within a chain](/docs/how_to/routing)
+- [How to: add default invocation args to runnables](/docs/how_to/binding/)
+- [How to: turn any function into a runnable](/docs/how_to/functions)
+- [How to: pass through inputs from one chain step to the next](/docs/how_to/passthrough)
+- [How to: configure runnable behavior at runtime](/docs/how_to/configure)
+- [How to: add message history (memory) to a chain](/docs/how_to/message_history)
+- [How to: route between sub-chains](/docs/how_to/routing)
+- [How to: create a dynamic (self-constructing) chain](/docs/how_to/dynamic_chain/)
 - [How to: inspect runnables](/docs/how_to/inspect)
-- [How to: add fallbacks](/docs/how_to/fallbacks)
+- [How to: add fallbacks to a runnable](/docs/how_to/fallbacks)
 
 ## Components
 
@@ -145,7 +151,7 @@ Retrievers are responsible for taking a query and returning relevant documents.
 - [How to: write a custom retriever class](/docs/how_to/custom_retriever)
 - [How to: add similarity scores to retriever results](/docs/how_to/add_scores_retriever)
 - [How to: combine the results from multiple retrievers](/docs/how_to/ensemble_retriever)
-- [How to: reorder retrieved results to put most relevant documents not in the middle](/docs/how_to/long_context_reorder)
+- [How to: reorder retrieved results to mitigate the "lost in the middle" effect](/docs/how_to/long_context_reorder)
 - [How to: generate multiple embeddings per document](/docs/how_to/multi_vector)
 - [How to: retrieve the whole document for a chunk](/docs/how_to/parent_document_retriever)
 - [How to: generate metadata filters](/docs/how_to/self_query)
@@ -162,17 +168,18 @@ Indexing is the process of keeping your vectorstore in-sync with the underlying 
 
 LangChain Tools contain a description of the tool (to pass to the language model) as well as the implementation of the function to call).
 
-- [How to: use LangChain tools](/docs/how_to/tools)
+- [How to: create custom tools](/docs/how_to/custom_tools)
+- [How to: use built-in tools and built-in toolkits](/docs/how_to/tools_builtin)
 - [How to: use a chat model to call tools](/docs/how_to/tool_calling/)
-- [How to: use LangChain toolkits](/docs/how_to/toolkits)
-- [How to: define a custom tool](/docs/how_to/custom_tools)
-- [How to: convert LangChain tools to OpenAI functions](/docs/how_to/tools_as_openai_functions)
-- [How to: use tools without function calling](/docs/how_to/tools_prompting)
-- [How to: let the LLM choose between multiple tools](/docs/how_to/tools_multiple)
+- [How to: add ad-hoc tool calling capability to LLMs and chat models](/docs/how_to/tools_prompting)
 - [How to: add a human in the loop to tool usage](/docs/how_to/tools_human)
-- [How to: do parallel tool use](/docs/how_to/tools_parallel)
 - [How to: handle errors when calling tools](/docs/how_to/tools_error)
-- [How to: call tools using multi-modal data](/docs/how_to/tool_calls_multi_modal)
+
+### Multimodal
+
+- [How to: pass multimodal data directly to models](/docs/how_to/multimodal_inputs/)
+- [How to: use multimodal prompts](/docs/how_to/multimodal_prompts/)
+
 
 ### Agents
 
@@ -185,6 +192,14 @@ For in depth how-to guides for agents, please check out [LangGraph](https://gith
 - [How to: use legacy LangChain Agents (AgentExecutor)](/docs/how_to/agent_executor)
 - [How to: migrate from legacy LangChain agents to LangGraph](/docs/how_to/migrate_agent)
 
+### Callbacks
+
+- [How to: pass in callbacks at runtime](/docs/how_to/callbacks_runtime)
+- [How to: attach callbacks to a module](/docs/how_to/callbacks_attach)
+- [How to: pass callbacks into a module constructor](/docs/how_to/callbacks_constructor)
+- [How to: create custom callback handlers](/docs/how_to/custom_callbacks)
+- [How to: use callbacks in async environments](/docs/how_to/callbacks_async)
+
 ### Custom
 
 All of LangChain components can easily be extended to support your own versions.
@@ -194,6 +209,7 @@ All of LangChain components can easily be extended to support your own versions.
 - [How to: write a custom retriever class](/docs/how_to/custom_retriever)
 - [How to: write a custom document loader](/docs/how_to/document_loader_custom)
 - [How to: write a custom output parser class](/docs/how_to/output_parser_custom)
+- [How to: create custom callback handlers](/docs/how_to/custom_callbacks)
 - [How to: define a custom tool](/docs/how_to/custom_tools)
 
 
