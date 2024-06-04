@@ -55,6 +55,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Bagel",
         "BESVectorStore",
         "BigQueryVectorSearch",
+        "CSSVectorStore",
         "Cassandra",
         "Chroma",
         "CouchbaseVectorStore",
