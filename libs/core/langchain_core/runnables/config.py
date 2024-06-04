@@ -18,6 +18,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Sequence,
     TypeVar,
     Union,
     cast,
@@ -159,7 +160,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
 
 
 def get_config_list(
-    config: Optional[Union[RunnableConfig, List[RunnableConfig]]], length: int
+    config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]], length: int
 ) -> List[RunnableConfig]:
     """Get a list of configs from a single config or a list of configs.
 
@@ -179,13 +180,13 @@ def get_config_list(
     """
     if length < 0:
         raise ValueError(f"length must be >= 0, but got {length}")
-    if isinstance(config, list) and len(config) != length:
+    if isinstance(config, Sequence) and len(config) != length:
         raise ValueError(
             f"config must be a list of the same length as inputs, "
             f"but got {len(config)} configs for {length} inputs"
         )
 
-    if isinstance(config, list):
+    if isinstance(config, Sequence):
         return list(map(ensure_config, config))
     if length > 1 and isinstance(config, dict) and config.get("run_id") is not None:
         warnings.warn(
