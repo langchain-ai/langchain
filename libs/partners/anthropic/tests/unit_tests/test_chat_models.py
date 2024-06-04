@@ -25,11 +25,12 @@ os.environ["ANTHROPIC_API_KEY"] = "foo"
 def test_initialization() -> None:
     """Test chat model initialization."""
     for model in [
-        ChatAnthropic(model_name="claude-instant-1.2", api_key="xyz", timeout=2),  # type: ignore[arg-type]
+        ChatAnthropic(model_name="claude-instant-1.2", api_key="xyz", timeout=2),  # type: ignore[arg-type, call-arg]
         ChatAnthropic(  # type: ignore[call-arg, call-arg, call-arg]
             model="claude-instant-1.2",
             anthropic_api_key="xyz",
             default_request_timeout=2,
+            base_url="https://github.com/langchain-ai/langchain/issues/22296",
         ),
     ]:
         assert model.model == "claude-instant-1.2"
