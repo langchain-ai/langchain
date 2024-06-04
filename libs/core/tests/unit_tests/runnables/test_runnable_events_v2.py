@@ -24,6 +24,7 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     HumanMessage,
     SystemMessage,
 )
@@ -1884,7 +1885,7 @@ async def test_with_explicit_config() -> None:
     model = GenericFakeChatModel(messages=infinite_cycle)
 
     @tool
-    async def say_hello(query: str, callbacks):
+    async def say_hello(query: str, callbacks: Callbacks) -> BaseMessage:
         """Use this tool to look up which items are in the given place."""
 
         @RunnableLambda
