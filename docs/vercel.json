@@ -14,6 +14,14 @@
   ],
   "redirects": [
     {
+      "source": "/v0.2/docs/integrations/llms/llm_caching(/?)",
+      "destination": "/v0.2/docs/integrations/llm_caching/"
+    },
+    {
+      "source": "/docs/how_to/tool_calls_multi_modal(/?)",
+      "destination": "/docs/how_to/multimodal_inputs/"
+    },
+    {
       "source": "/v0.2/docs/langsmith(/?)",
       "destination": "https://docs.smith.langchain.com/"
     },
@@ -32,6 +40,10 @@
     {
       "source": "/docs/get_started/introduction(/?)",
       "destination": "/v0.2/docs/introduction/"
+    },
+    {
+      "source": "/docs/integrations/:path(.*/?)*",
+      "destination": "/v0.2/docs/integrations/:path*"
     },
     {
       "source": "/docs/:path(.*/?)*",

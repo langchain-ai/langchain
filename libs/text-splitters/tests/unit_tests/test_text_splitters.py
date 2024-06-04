@@ -115,6 +115,50 @@ def test_character_text_splitter_keep_separator_regex(
 @pytest.mark.parametrize(
     "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
 )
+def test_character_text_splitter_keep_separator_regex_start(
+    separator: str, is_separator_regex: bool
+) -> None:
+    """Test splitting by characters while keeping the separator
+    that is a regex special character and placing it at the start of each chunk.
+    """
+    text = "foo.bar.baz.123"
+    splitter = CharacterTextSplitter(
+        separator=separator,
+        chunk_size=1,
+        chunk_overlap=0,
+        keep_separator="start",
+        is_separator_regex=is_separator_regex,
+    )
+    output = splitter.split_text(text)
+    expected_output = ["foo", ".bar", ".baz", ".123"]
+    assert output == expected_output
+
+
+@pytest.mark.parametrize(
+    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+)
+def test_character_text_splitter_keep_separator_regex_end(
+    separator: str, is_separator_regex: bool
+) -> None:
+    """Test splitting by characters while keeping the separator
+    that is a regex special character and placing it at the end of each chunk.
+    """
+    text = "foo.bar.baz.123"
+    splitter = CharacterTextSplitter(
+        separator=separator,
+        chunk_size=1,
+        chunk_overlap=0,
+        keep_separator="end",
+        is_separator_regex=is_separator_regex,
+    )
+    output = splitter.split_text(text)
+    expected_output = ["foo.", "bar.", "baz.", "123"]
+    assert output == expected_output
+
+
+@pytest.mark.parametrize(
+    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+)
 def test_character_text_splitter_discard_separator_regex(
     separator: str, is_separator_regex: bool
 ) -> None:
@@ -1573,6 +1617,37 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars() -> None:
         "Baz \n Some text about Baz \n \n \n Some concluding text about Foo"
     )
     assert docs[2].metadata["Header 2"] == "Baz"
+
+
+@pytest.mark.requires("lxml")
+@pytest.mark.requires("bs4")
+def test_section_splitter_accepts_a_relative_path() -> None:
+    html_string = """<html><body><p>Foo</p></body></html>"""
+    test_file = Path("tests/test_data/test_splitter.xslt")
+    assert test_file.is_file()
+
+    sec_splitter = HTMLSectionSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
+        xslt_path=test_file.as_posix(),
+    )
+
+    sec_splitter.split_text(html_string)
+
+
+@pytest.mark.requires("lxml")
+@pytest.mark.requires("bs4")
+def test_section_splitter_accepts_an_absolute_path() -> None:
+    html_string = """<html><body><p>Foo</p></body></html>"""
+    test_file = Path("tests/test_data/test_splitter.xslt").absolute()
+    assert test_file.is_absolute()
+    assert test_file.is_file()
+
+    sec_splitter = HTMLSectionSplitter(
+        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
+        xslt_path=test_file.as_posix(),
+    )
+
+    sec_splitter.split_text(html_string)
 
 
 def test_split_json() -> None:

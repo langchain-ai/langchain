@@ -81,7 +81,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """  # noqa: E501
+    """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
         
@@ -178,7 +178,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     'azure_endpoint="https://xxx.openai.azure.com/", '
                     'azure_deployment="my-deployment"\n\n'
                     "Or you can equivalently specify:\n\n"
-                    'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'  # noqa: E501
+                    'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'
                 )
         client_params = {
             "api_version": values["openai_api_version"],

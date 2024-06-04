@@ -181,19 +181,22 @@ class UpstageLayoutAnalysisParser(BaseBlobParser):
 
             result = response.json().get("elements", [])
 
+            elements = [
+                element for element in result if element["category"] not in self.exclude
+            ]
+
+            return elements
+
         except requests.RequestException as req_err:
             # Handle any request-related exceptions
             print(f"Request Exception: {req_err}")
+            raise ValueError(f"Failed to send request: {req_err}")
         except json.JSONDecodeError as json_err:
             # Handle JSON decode errors
             print(f"JSON Decode Error: {json_err}")
             raise ValueError(f"Failed to decode JSON response: {json_err}")
 
-        elements = [
-            element for element in result if element["category"] not in self.exclude
-        ]
-
-        return elements
+        return []
 
     def _split_and_request(
         self,

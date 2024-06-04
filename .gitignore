@@ -178,3 +178,4 @@ _dist
 docs/docs/templates
 
 prof
+virtualenv/
