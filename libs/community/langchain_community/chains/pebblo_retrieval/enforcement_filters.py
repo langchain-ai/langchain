@@ -1,13 +1,13 @@
 """
 Identity & Semantic Enforcement filters for PebbloRetrievalQA chain:
 
-This module contains methods for applying Identity and Semantic Enforcement filters 
-in the PebbloRetrievalQA chain. 
-These filters are used to control the retrieval of documents based on authorization and 
-semantic context. 
-The Identity Enforcement filter ensures that only authorized identities can access 
-certain documents, while the Semantic Enforcement filter controls document retrieval 
-based on semantic context. 
+This module contains methods for applying Identity and Semantic Enforcement filters
+in the PebbloRetrievalQA chain.
+These filters are used to control the retrieval of documents based on authorization and
+semantic context.
+The Identity Enforcement filter ensures that only authorized identities can access
+certain documents, while the Semantic Enforcement filter controls document retrieval
+based on semantic context.
 
 The methods in this module are designed to work with different types of vector stores.
 """
