@@ -32,10 +32,13 @@ api_docs_build:
 	poetry run python docs/api_reference/create_api_rst.py
 	cd docs/api_reference && poetry run make html
 
+API_PKG ?= text-splitters
+
 api_docs_quick_preview:
-	poetry run python docs/api_reference/create_api_rst.py text-splitters
+	poetry run pip install "pydantic<2"
+	poetry run python docs/api_reference/create_api_rst.py $(API_PKG)
 	cd docs/api_reference && poetry run make html
-	open docs/api_reference/_build/html/text_splitters_api_reference.html
+	open docs/api_reference/_build/html/$(shell echo $(API_PKG) | sed 's/-/_/g')_api_reference.html
 
 ## api_docs_clean: Clean the API Reference documentation build artifacts.
 api_docs_clean:

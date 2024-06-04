@@ -20,6 +20,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {boolean} [hideMistral] - Whether or not to hide Mistral chat model.
  * @property {boolean} [hideGoogle] - Whether or not to hide Google VertexAI chat model.
  * @property {boolean} [hideTogether] - Whether or not to hide Together chat model.
+ * @property {boolean} [hideAzure] - Whether or not to hide Microsoft Azure OpenAI chat model.
  * @property {string} [customVarName] - Custom variable name for the model. Defaults to `model`.
  */
 
@@ -35,6 +36,7 @@ export default function ChatModelTabs(props) {
     mistralParams,
     googleParams,
     togetherParams,
+    azureParams,
     hideOpenai,
     hideAnthropic,
     hideCohere,
@@ -42,6 +44,7 @@ export default function ChatModelTabs(props) {
     hideMistral,
     hideGoogle,
     hideTogether,
+    hideAzure,
     customVarName,
   } = props;
 
@@ -57,7 +60,10 @@ export default function ChatModelTabs(props) {
   const googleParamsOrDefault = googleParams ?? `model="gemini-pro"`;
   const togetherParamsOrDefault =
     togetherParams ??
-    `\n    base_url="https://api.together.xyz/v1",\n    api_key=os.environ["TOGETHER_API_KEY"],\n    model="mistralai/Mixtral-8x7B-Instruct-v0.1",`;
+    `\n    base_url="https://api.together.xyz/v1",\n    api_key=os.environ["TOGETHER_API_KEY"],\n    model="mistralai/Mixtral-8x7B-Instruct-v0.1",\n`;
+  const azureParamsOrDefault =
+    azureParams ??
+    `\n    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],\n    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],\n    openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],\n`;
 
   const llmVarName = customVarName ?? "model";
 
@@ -79,6 +85,15 @@ export default function ChatModelTabs(props) {
       packageName: "langchain-anthropic",
       default: false,
       shouldHide: hideAnthropic,
+    },
+    {
+      value: "Azure",
+      label: "Azure",
+      text: `from langchain_openai import AzureChatOpenAI\n\n${llmVarName} = AzureChatOpenAI(${azureParamsOrDefault})`,
+      apiKeyName: "AZURE_OPENAI_API_KEY",
+      packageName: "langchain-openai",
+      default: false,
+      shouldHide: hideAzure,
     },
     {
       value: "Google",
