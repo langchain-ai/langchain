@@ -104,7 +104,7 @@ def _merge_messages(
         curr = curr.copy(deep=True)
         if isinstance(curr, ToolMessage):
             if isinstance(curr.content, str):
-                curr = HumanMessage(
+                curr = HumanMessage(  # type: ignore[misc]
                     [
                         {
                             "type": "tool_result",
@@ -114,7 +114,7 @@ def _merge_messages(
                     ]
                 )
             else:
-                curr = HumanMessage(curr.content)
+                curr = HumanMessage(curr.content)  # type: ignore[misc]
         last = merged[-1] if merged else None
         if isinstance(last, HumanMessage) and isinstance(curr, HumanMessage):
             if isinstance(last.content, str):
@@ -425,7 +425,7 @@ class ChatAnthropic(BaseChatModel):
                 ]
                 message_chunk = AIMessageChunk(
                     content=message.content,
-                    tool_call_chunks=tool_call_chunks,
+                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
                 )
                 yield ChatGenerationChunk(message=message_chunk)
             else:
@@ -464,7 +464,7 @@ class ChatAnthropic(BaseChatModel):
                 ]
                 message_chunk = AIMessageChunk(
                     content=message.content,
-                    tool_call_chunks=tool_call_chunks,
+                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
                 )
                 yield ChatGenerationChunk(message=message_chunk)
             else:
