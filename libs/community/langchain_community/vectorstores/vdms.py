@@ -204,6 +204,14 @@ class VDMS(VectorStore):
             p_str += " to be an Embeddings object"
             raise ValueError(p_str)
 
+    def _embed_video(self, paths: List[str]) -> List[List[float]]:
+        if self.embedding is not None and hasattr(self.embedding, "embed_video"):
+            return self.embedding.embed_video(paths=paths)
+        else:
+            raise ValueError(
+                "Must provide `embedding` which has attribute `embed_image`"
+            )
+
     def _embed_image(self, uris: List[str]) -> List[List[float]]:
         if self.embedding is not None and hasattr(self.embedding, "embed_image"):
             return self.embedding.embed_image(uris=uris)
@@ -546,7 +554,7 @@ class VDMS(VectorStore):
 
         Args:
             uris: List of paths to the images to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
+            metadatas: Optional list of metadatas associated with the images.
             ids: Optional list of unique IDs.
             batch_size (int): Number of concurrent requests to send to the server.
             add_path: Bool to add image path as metadata
@@ -578,6 +586,62 @@ class VDMS(VectorStore):
 
         self.add_from(
             texts=b64_texts,
+            embeddings=embeddings,
+            ids=ids,
+            metadatas=metadatas,
+            batch_size=batch_size,
+            **kwargs,
+        )
+        return ids
+
+    def add_videos(
+        self,
+        paths: List[str],
+        texts: Optional[List[dict]] = None,
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        batch_size: int = 1,
+        add_path: Optional[bool] = True,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run videos through the embeddings and add to the vectorstore.
+
+        Videos are added as embeddings (AddDescriptor) instead of separate
+        entity (AddVideo) within VDMS to leverage similarity search capability
+
+        Args:
+            paths: List of paths to the videos to add to the vectorstore.
+            metadatas: Optional list of text associated with the videos.
+            metadatas: Optional list of metadatas associated with the videos.
+            ids: Optional list of unique IDs.
+            batch_size (int): Number of concurrent requests to send to the server.
+            add_path: Bool to add video path as metadata
+
+        Returns:
+            List of ids from adding videos into the vectorstore.
+        """
+        if texts is None:
+            texts = [None for _ in paths]
+
+        if add_path and metadatas:
+            for midx, path in enumerate(paths):
+                metadatas[midx]["video_path"] = path
+        elif add_path:
+            metadatas = []
+            for path in paths:
+                metadatas.append({"video_path": path})
+
+        # Populate IDs
+        ids = ids if ids is not None else [str(uuid.uuid4()) for _ in paths]
+
+        # Set embeddings
+        embeddings = self.video_db._embed_video(paths=paths)
+
+        if metadatas is None:
+            metadatas = [{} for _ in paths]
+
+        self.add_from(
+            texts=texts,
             embeddings=embeddings,
             ids=ids,
             metadatas=metadatas,
