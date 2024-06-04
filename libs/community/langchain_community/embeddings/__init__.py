@@ -104,6 +104,7 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.infinity_local import (
         InfinityEmbeddingsLocal,
     )
+    from langchain_community.embeddings.ipex_llm import IpexLLMBgeEmbeddings
     from langchain_community.embeddings.itrex import (
         QuantizedBgeEmbeddings,
     )
@@ -258,6 +259,7 @@ __all__ = [
     "HuggingFaceInstructEmbeddings",
     "InfinityEmbeddings",
     "InfinityEmbeddingsLocal",
+    "IpexLLMBgeEmbeddings",
     "JavelinAIGatewayEmbeddings",
     "JinaEmbeddings",
     "JohnSnowLabsEmbeddings",
@@ -336,6 +338,7 @@ _module_lookup = {
     "HuggingFaceInstructEmbeddings": "langchain_community.embeddings.huggingface",
     "InfinityEmbeddings": "langchain_community.embeddings.infinity",
     "InfinityEmbeddingsLocal": "langchain_community.embeddings.infinity_local",
+    "IpexLLMBgeEmbeddings": "langchain_community.embeddings.ipex_llm",
     "JavelinAIGatewayEmbeddings": "langchain_community.embeddings.javelin_ai_gateway",
     "JinaEmbeddings": "langchain_community.embeddings.jina",
     "JohnSnowLabsEmbeddings": "langchain_community.embeddings.johnsnowlabs",
