@@ -1991,12 +1991,12 @@ async def test_parent_run_id_assignment() -> None:
         return x
 
     @RunnableLambda
-    async def child(x: str, config) -> str:
+    async def child(x: str, config: RunnableConfig) -> str:
         config["run_id"] = uuid.UUID(int=9)
         return await grandchild.ainvoke(x, config)
 
     @RunnableLambda
-    async def parent(x: str, config) -> str:
+    async def parent(x: str, config: RunnableConfig) -> str:
         config["run_id"] = uuid.UUID(int=8)
         return await child.ainvoke(x, config)
 
