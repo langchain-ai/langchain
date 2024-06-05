@@ -32,7 +32,7 @@ class ZenGuardInput(BaseModel):
 
 class ZenGuardTool(BaseTool):
     name = "ZenGuard"
-    description = "Fastest LLM Security Guardrails"
+    description = "The Fastest GenAI Guardrails"
     args_schema = ZenGuardInput
     return_direct = True
 
