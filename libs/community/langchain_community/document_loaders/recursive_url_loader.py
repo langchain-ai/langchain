@@ -170,7 +170,6 @@ class RecursiveUrlLoader(BaseLoader):
         self.timeout = timeout
         self.prevent_outside = prevent_outside if prevent_outside is not None else True
         self.link_regex = link_regex
-        self._lock = asyncio.Lock() if self.use_async else None
         self.headers = headers
         self.check_response_status = check_response_status
         self.continue_on_failure = continue_on_failure
@@ -250,7 +249,7 @@ class RecursiveUrlLoader(BaseLoader):
             visited: A set of visited URLs.
             depth: To reach the current url, how many pages have been visited.
         """
-        if not self.use_async or not self._lock:
+        if not self.use_async:
             raise ValueError(
                 "Async functions forbidden when not initialized with `use_async`"
             )
@@ -277,8 +276,7 @@ class RecursiveUrlLoader(BaseLoader):
                 headers=self.headers,
             )
         )
-        async with self._lock:
-            visited.add(url)
+        visited.add(url)
         try:
             async with session.get(url) as response:
                 text = await response.text()
@@ -317,14 +315,13 @@ class RecursiveUrlLoader(BaseLoader):
 
             # Recursively call the function to get the children of the children
             sub_tasks = []
-            async with self._lock:
-                to_visit = set(sub_links).difference(visited)
-                for link in to_visit:
-                    sub_tasks.append(
-                        self._async_get_child_links_recursive(
-                            link, visited, session=session, depth=depth + 1
-                        )
+            to_visit = set(sub_links).difference(visited)
+            for link in to_visit:
+                sub_tasks.append(
+                    self._async_get_child_links_recursive(
+                        link, visited, session=session, depth=depth + 1
                     )
+                )
             next_results = await asyncio.gather(*sub_tasks)
             for sub_result in next_results:
                 if isinstance(sub_result, Exception) or sub_result is None:
