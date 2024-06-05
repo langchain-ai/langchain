@@ -4,7 +4,8 @@ import threading
 from typing import Any, Dict, List
 
 from langchain_core.callbacks import BaseCallbackHandler
-from langchain_core.outputs import LLMResult
+from langchain_core.messages import AIMessage
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 MODEL_COST_PER_1K_TOKENS = {
     # GPT-4o input
@@ -210,19 +211,51 @@ class OpenAICallbackHandler(BaseCallbackHandler):
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Collect token usage."""
-        if response.llm_output is None:
-            return None
+        # Check for usage_metadata (langchain-core >= 0.2.2)
+        try:
+            generation = response.generations[0][0]
+        except IndexError:
+            generation = None
+        if isinstance(generation, ChatGeneration):
+            try:
+                message = generation.message
+                if isinstance(message, AIMessage):
+                    usage_metadata = message.usage_metadata
+                else:
+                    usage_metadata = None
+            except AttributeError:
+                usage_metadata = None
+        else:
+            usage_metadata = None
+        if usage_metadata:
+            token_usage = {"total_tokens": usage_metadata["total_tokens"]}
+            completion_tokens = usage_metadata["output_tokens"]
+            prompt_tokens = usage_metadata["input_tokens"]
+            if response.llm_output is None:
+                # model name (and therefore cost) is unavailable in
+                # streaming responses
+                model_name = ""
+            else:
+                model_name = standardize_model_name(
+                    response.llm_output.get("model_name", "")
+                )
 
-        if "token_usage" not in response.llm_output:
-            with self._lock:
-                self.successful_requests += 1
-            return None
+        else:
+            if response.llm_output is None:
+                return None
 
-        # compute tokens and cost for this request
-        token_usage = response.llm_output["token_usage"]
-        completion_tokens = token_usage.get("completion_tokens", 0)
-        prompt_tokens = token_usage.get("prompt_tokens", 0)
-        model_name = standardize_model_name(response.llm_output.get("model_name", ""))
+            if "token_usage" not in response.llm_output:
+                with self._lock:
+                    self.successful_requests += 1
+                return None
+
+            # compute tokens and cost for this request
+            token_usage = response.llm_output["token_usage"]
+            completion_tokens = token_usage.get("completion_tokens", 0)
+            prompt_tokens = token_usage.get("prompt_tokens", 0)
+            model_name = standardize_model_name(
+                response.llm_output.get("model_name", "")
+            )
         if model_name in MODEL_COST_PER_1K_TOKENS:
             completion_cost = get_openai_token_cost_for_model(
                 model_name, completion_tokens, is_completion=True

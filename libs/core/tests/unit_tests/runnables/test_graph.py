@@ -1,3 +1,5 @@
+from typing import Optional
+
 from syrupy import SnapshotAssertion
 
 from langchain_core.language_models import FakeListLLM
@@ -5,7 +7,7 @@ from langchain_core.output_parsers.list import CommaSeparatedListOutputParser
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.xml import XMLOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.runnables.base import Runnable
+from langchain_core.runnables.base import Runnable, RunnableConfig
 
 
 def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
@@ -687,3 +689,47 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
     assert graph.draw_ascii() == snapshot(name="ascii")
     assert graph.draw_mermaid() == snapshot(name="mermaid")
     assert graph.draw_mermaid(with_styles=False) == snapshot(name="mermaid-simple")
+
+
+def test_runnable_get_graph_with_invalid_input_type() -> None:
+    """Test that error isn't raised when getting graph with invalid input type."""
+
+    class InvalidInputTypeRunnable(Runnable[int, int]):
+        @property
+        def InputType(self) -> type:
+            raise TypeError()
+
+        def invoke(
+            self,
+            input: int,
+            config: Optional[RunnableConfig] = None,
+        ) -> int:
+            return input
+
+    runnable = InvalidInputTypeRunnable()
+    # check whether runnable.invoke works
+    assert runnable.invoke(1) == 1
+    # check whether runnable.get_graph works
+    runnable.get_graph()
+
+
+def test_runnable_get_graph_with_invalid_output_type() -> None:
+    """Test that error is't raised when getting graph with invalid output type."""
+
+    class InvalidOutputTypeRunnable(Runnable[int, int]):
+        @property
+        def OutputType(self) -> type:
+            raise TypeError()
+
+        def invoke(
+            self,
+            input: int,
+            config: Optional[RunnableConfig] = None,
+        ) -> int:
+            return input
+
+    runnable = InvalidOutputTypeRunnable()
+    # check whether runnable.invoke works
+    assert runnable.invoke(1) == 1
+    # check whether runnable.get_graph works
+    runnable.get_graph()

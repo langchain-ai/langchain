@@ -24,6 +24,7 @@ CHAT_MODEL_FEAT_TABLE = {
     "ChatMistralAI": {
         "tool_calling": True,
         "structured_output": True,
+        "json_model": True,
         "package": "langchain-mistralai",
         "link": "/docs/integrations/chat/mistralai/",
     },
@@ -94,6 +95,12 @@ CHAT_MODEL_FEAT_TABLE = {
         "local": True,
         "package": "langchain-community",
         "link": "/docs/integrations/chat/vllm/",
+    },
+    "ChatEdenAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-community",
+        "link": "/docs/integrations/chat/edenai/",
     },
 }
 

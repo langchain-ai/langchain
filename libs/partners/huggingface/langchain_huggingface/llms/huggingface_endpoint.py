@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.callbacks import (
@@ -9,7 +10,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
 
@@ -167,16 +168,17 @@ class HuggingFaceEndpoint(LLM):
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
-        try:
-            huggingfacehub_api_token = get_from_dict_or_env(
-                values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
-            )
-            login(token=huggingfacehub_api_token)
-        except Exception as e:
-            raise ValueError(
-                "Could not authenticate with huggingface_hub. "
-                "Please check your API token."
-            ) from e
+        huggingfacehub_api_token = values["huggingfacehub_api_token"] or os.getenv(
+            "HUGGINGFACEHUB_API_TOKEN"
+        )
+        if huggingfacehub_api_token is not None:
+            try:
+                login(token=huggingfacehub_api_token)
+            except Exception as e:
+                raise ValueError(
+                    "Could not authenticate with huggingface_hub. "
+                    "Please check your API token."
+                ) from e
 
         from huggingface_hub import AsyncInferenceClient, InferenceClient
 
