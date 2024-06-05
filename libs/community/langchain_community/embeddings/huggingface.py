@@ -21,7 +21,7 @@ DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索�
 @deprecated(
     since="0.2.2",
     removal="0.3.0",
-    alternative_import="from langchain_huggingface import HuggingFaceEmbeddings",
+    alternative_import="langchain_huggingface.HuggingFaceEmbeddings",
 )
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
