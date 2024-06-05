@@ -4,7 +4,7 @@ from typing import Generator
 from unittest.mock import Mock
 
 import pytest
-from ai21 import AI21Client, AI21EnvConfig
+from ai21 import AI21Client
 from ai21.models import (
     AnswerResponse,
     ChatOutput,
