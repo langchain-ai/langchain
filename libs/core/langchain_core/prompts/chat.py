@@ -553,7 +553,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     formatted: Union[str, ImageURL] = prompt.format(**inputs)
                     content.append({"type": "text", "text": formatted})
                 elif isinstance(prompt, ImagePromptTemplate):
-                    formatted = prompt.format(**inputs)
+                    formatted = prompt.format(**kwargs)
                     content.append({"type": "image_url", "image_url": formatted})
             return self._msg_class(
                 content=content, additional_kwargs=self.additional_kwargs
