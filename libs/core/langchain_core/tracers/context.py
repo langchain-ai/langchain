@@ -21,7 +21,6 @@ from langsmith.run_helpers import get_run_tree_context
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 from langchain_core.tracers.schemas import TracerSessionV1
-from langchain_core.utils.env import env_var_is_set
 
 if TYPE_CHECKING:
     from langsmith import Client as LangSmithClient

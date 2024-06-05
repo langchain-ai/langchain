@@ -1,10 +1,11 @@
 import json
 import sys
 import time
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from langsmith import Client, traceable
+from langsmith.run_helpers import tracing_context
 
 from langchain_core.runnables.base import RunnableLambda
 from langchain_core.tracers.langchain import LangChainTracer
@@ -168,3 +169,31 @@ async def test_config_traceable_async_handoff() -> None:
             )
         last_dotted_order = dotted_order
         parent_run_id = id_
+
+
+@patch("langchain_core.tracers.langchain.get_client")
+@pytest.mark.parametrize("enabled", [None, True, False])
+@pytest.mark.parametrize("env", ["", "true"])
+def test_tracing_enable_disable(mock_get_client: MagicMock, enabled: bool, env: str):
+    mock_session = MagicMock()
+    mock_client_ = Client(session=mock_session, api_key="test")
+    mock_get_client.return_value = mock_client_
+
+    def my_func(a: int) -> int:
+        return a + 1
+
+    env_on = env == "true"
+    with patch.dict("os.environ", {"LANGSMITH_TRACING": env}):
+        with tracing_context(enabled=enabled):
+            RunnableLambda(my_func).invoke(1)
+
+        time.sleep(0.3)
+        mock_posts = _get_posts(mock_client_)
+        if enabled is True:
+            assert len(mock_posts) == 1
+        elif enabled is False:
+            assert not mock_posts
+        elif env_on:
+            assert len(mock_posts) == 1
+        else:
+            assert not mock_posts
