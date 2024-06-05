@@ -404,7 +404,7 @@ class VDMS(VectorStore):
 
         if metadata:
             props.update(metadata)
-        if document in [None, ""]:
+        if document not in [None, ""]:
             props["content"] = document
 
         for k in props.keys():
