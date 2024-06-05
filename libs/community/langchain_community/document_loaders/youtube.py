@@ -225,7 +225,7 @@ class YoutubeLoader(BaseLoader):
         if self.translation is not None:
             transcript = transcript.translate(self.translation)
 
-        transcript_pieces = transcript.fetch()
+        transcript_pieces: list[dict[str, Any]] = transcript.fetch()
 
         if self.transcript_format == TranscriptFormat.TEXT:
             transcript = " ".join([t["text"].strip(" ") for t in transcript_pieces])
@@ -239,6 +239,7 @@ class YoutubeLoader(BaseLoader):
                 for t in transcript_pieces
             ]
         elif self.transcript_format == TranscriptFormat.CHUNKS:
+
             def make_chunk_document(
                 chunk_pieces: List[dict], chunk_start_seconds: int
             ) -> Document:
@@ -253,13 +254,13 @@ class YoutubeLoader(BaseLoader):
                         **metadata,
                         "source":
                         # replace video ID with URL to start time
-                            f"https://www.youtube.com/watch?v={self.video_id}"
-                            f"&t={chunk_start_seconds}s"
+                        f"https://www.youtube.com/watch?v={self.video_id}"
+                        f"&t={chunk_start_seconds}s",
                     },
                 )
 
             documents: List[Document] = []
-            chunk_pieces = []
+            chunk_pieces: list[dict[str, Any]] = []
             chunk_start_seconds = 0
             chunk_time_limit = self.chunk_size_seconds
             for transcript_piece in transcript_pieces:
