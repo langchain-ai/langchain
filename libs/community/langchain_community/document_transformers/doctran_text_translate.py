@@ -37,13 +37,17 @@ class DoctranTextTranslator(BaseDocumentTransformer):
         )
         self.language = language
 
-    async def _aparse_document(self, doctran, index, doc):
+    async def _aparse_document(
+        self, doctran: Any, index: int, doc: Document
+    ) -> tuple[int, Any]:
         parsed_doc = await asyncio.to_thread(
             doctran.parse, content=doc.page_content, metadata=doc.metadata
         )
         return index, parsed_doc
 
-    async def _atranslate_document(self, index, doc, language):
+    async def _atranslate_document(
+        self, index: int, doc: Any, language: str
+    ) -> tuple[int, Any]:
         translated_doc = await asyncio.to_thread(
             doc.translate(language=language).execute
         )
