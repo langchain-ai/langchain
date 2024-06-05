@@ -515,7 +515,8 @@ def log_results(arxiv_id2type2key2urls):
 def generate_arxiv_references_page(file_name: Path, papers: list[ArxivPaper]) -> None:
     with open(file_name, "w") as f:
         # Write the table headers
-        f.write("""# arXiv
+        f.write(
+            """# arXiv
             
 LangChain implements the latest research in the field of Natural Language Processing.
 This page contains `arXiv` papers referenced in the LangChain Documentation, API Reference,
@@ -525,7 +526,8 @@ This page contains `arXiv` papers referenced in the LangChain Documentation, API
 
 | arXiv id / Title | Authors | Published date 🔻 | LangChain Documentation|
 |------------------|---------|-------------------|------------------------|
-""")
+"""
+        )
         for paper in papers:
             refs = []
             if paper.referencing_doc2url:
@@ -595,7 +597,8 @@ This page contains `arXiv` papers referenced in the LangChain Documentation, API
                     if el
                 ]
             )
-            f.write(f"""
+            f.write(
+                f"""
 ## {paper.title}
 
 - **arXiv id:** {paper.arxiv_id}
@@ -608,7 +611,8 @@ This page contains `arXiv` papers referenced in the LangChain Documentation, API
 {refs}
 
 **Abstract:** {paper.abstract}
-                """)
+                """
+            )
 
     logger.warning(f"Created the {file_name} file with {len(papers)} arXiv references.")
 
