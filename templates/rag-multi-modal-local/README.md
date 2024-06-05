@@ -41,12 +41,16 @@ The first time you run the app, it will automatically download the multimodal em
 
 You can choose alternative models in `rag_chroma_multi_modal/ingest.py`, such as `OpenCLIPEmbeddings`.
 ```
+langchain_experimental.open_clip import OpenCLIPEmbeddings
+
+embedding_function=OpenCLIPEmbeddings(
+        model_name="ViT-H-14", checkpoint="laion2b_s32b_b79k"
+        )
+
 vectorstore_mmembd = Chroma(
     collection_name="multi-modal-rag",
     persist_directory=str(re_vectorstore_path),
-    embedding_function=NomicMultimodalEmbeddings(
-        vision_model="nomic-embed-vision-v1", text_model="nomic-embed-text-v1"
-        )
+    embedding_function=embedding_function
 )
 ```
 
