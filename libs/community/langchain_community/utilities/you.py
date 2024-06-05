@@ -44,11 +44,11 @@ class YouDocument(BaseModel):
 
 
 class YouSearchAPIWrapper(BaseModel):
-    """Wrapper for you.com Search API.
+    """Wrapper for you.com Search and News API.
 
     To connect to the You.com api requires an API key which
     you can get at https://api.you.com.
-    You can check out the docs at https://documentation.you.com.
+    You can check out the docs at https://documentation.you.com/api-reference/.
 
     You need to set the environment variable `YDC_API_KEY` for retriever to operate.
 
@@ -56,33 +56,48 @@ class YouSearchAPIWrapper(BaseModel):
     ----------
     ydc_api_key: str, optional
         you.com api key, if YDC_API_KEY is not set in the environment
+    endpoint_type: str, optional
+        you.com endpoints: search, news, rag;
+        `web` and `snippet` alias `search`
+        `rag` returns `{'message': 'Forbidden'}`
+        @todo `news` endpoint
     num_web_results: int, optional
         The max number of web results to return, must be under 20
+    count: int, optional
+        Alias of `num_web_results`
     safesearch: str, optional
         Safesearch settings, one of off, moderate, strict, defaults to moderate
     country: str, optional
-        Country code, ex: 'US' for united states, see api docs for list
+        Country code, ex: 'US' for United States, see api docs for list
+    search_lang: str, optional
+        Language to search in, ex: 'en' for English, see api docs for list
+    ui_lang: str, optional
+        Language for the UI, ex: 'en' for English, see api docs for list
     k: int, optional
         max number of Documents to return using `results()`
     n_hits: int, optional, deprecated
         Alias for num_web_results
     n_snippets_per_hit: int, optional
         limit the number of snippets returned per hit
-    endpoint_type: str, optional
-        you.com endpoints: search, news, rag;
-        `web` and `snippet` alias `search`
-        `rag` returns `{'message': 'Forbidden'}`
-        @todo `news` endpoint
     """
 
     ydc_api_key: Optional[str] = None
-    num_web_results: Optional[int] = None
-    safesearch: Optional[str] = None
-    country: Optional[str] = None
-    k: Optional[int] = None
-    n_snippets_per_hit: Optional[int] = None
+
     # @todo deprecate `snippet`, not part of API
     endpoint_type: Literal["search", "news", "rag", "snippet"] = "search"
+
+    # Common fields between Search and News API
+    num_web_results: Optional[int] = Field(None, alias="count")
+    safesearch: Optional[Literal["off", "moderate", "strict"]] = None
+    country: Optional[str] = None
+
+    # News API specific fields
+    search_lang: Optional[str] = None
+    ui_lang: Optional[str] = None
+    spellcheck: Optional[bool] = None
+
+    k: Optional[int] = None
+    n_snippets_per_hit: Optional[int] = None
     # should deprecate n_hits
     n_hits: Optional[int] = None
 
