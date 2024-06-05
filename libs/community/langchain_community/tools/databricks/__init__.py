@@ -1,3 +1,3 @@
-from langchain_community.tools.databricks.tool import UCFunctionTool, UCFunctionTools
+from langchain_community.tools.databricks.tool import UCFunctionToolkit
 
-__all__ = ["UCFunctionTools", "UCFunctionTool"]
+__all__ = ["UCFunctionToolkit"]

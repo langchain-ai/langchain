@@ -1,14 +1,12 @@
 import json
 from dataclasses import dataclass
 from io import StringIO
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import pandas as pd
-
-if TYPE_CHECKING:
-    from databricks.sdk import WorkspaceClient
-    from databricks.sdk.service.catalog import ColumnTypeName, FunctionInfo
-    from databricks.sdk.service.sql import StatementParameterListItem, StatementState
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.catalog import ColumnTypeName, FunctionInfo
+from databricks.sdk.service.sql import StatementParameterListItem, StatementState
 
 
 def is_scalar(function: FunctionInfo) -> bool:
