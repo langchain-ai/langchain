@@ -2,10 +2,12 @@ import json
 from datetime import date, datetime
 from decimal import Decimal
 from hashlib import md5
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
-from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.catalog import FunctionInfo
+if TYPE_CHECKING:
+    from databricks.sdk import WorkspaceClient
+    from databricks.sdk.service.catalog import FunctionInfo
+
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.tools import BaseTool
 
@@ -48,8 +50,8 @@ def uc_type_to_pydantic_type(uc_type_json: Union[str, Dict[str, Any]]) -> Type:
         if type == "array":
             element_type = uc_type_to_pydantic_type(uc_type_json["elementType"])
             if uc_type_json["containsNull"]:
-                element_type = Optional[element_type]
-            return List[element_type]
+                element_type = Optional[element_type]  # type: ignore
+            return List[element_type]  # type: ignore
         elif type == "map":
             key_type = uc_type_json["keyType"]
             assert key_type == "string", TypeError(
@@ -57,14 +59,14 @@ def uc_type_to_pydantic_type(uc_type_json: Union[str, Dict[str, Any]]) -> Type:
             )
             value_type = uc_type_to_pydantic_type(uc_type_json["valueType"])
             if uc_type_json["valueContainsNull"]:
-                value_type = Optional[value_type]
-            return Dict[str, value_type]
+                value_type: Type = Optional[value_type]  # type: ignore
+            return Dict[str, value_type]  # type: ignore
         elif type == "struct":
             fields = {}
             for field in uc_type_json["fields"]:
                 field_type = uc_type_to_pydantic_type(field["type"])
                 if field.get("nullable"):
-                    field_type = Optional[field_type]
+                    field_type = Optional[field_type]  # type: ignore
                 comment = (
                     uc_type_json["metadata"].get("comment")
                     if "metadata" in uc_type_json
@@ -73,7 +75,7 @@ def uc_type_to_pydantic_type(uc_type_json: Union[str, Dict[str, Any]]) -> Type:
                 fields[field["name"]] = (field_type, Field(..., description=comment))
             uc_type_json_str = json.dumps(uc_type_json, sort_keys=True)
             type_hash = md5(uc_type_json_str.encode()).hexdigest()[:8]
-            return create_model(f"Struct_{type_hash}", **fields)
+            return create_model(f"Struct_{type_hash}", **fields)  # type: ignore
         else:
             raise TypeError(f"Unknown type {uc_type_json}. Try upgrading this package.")
 
@@ -89,9 +91,9 @@ def generate_args_schema(function: FunctionInfo) -> Optional[Type[BaseModel]]:
         type_json = json.loads(p.type_json)["type"]
         pydantic_type = uc_type_to_pydantic_type(type_json)
         description = p.comment
-        default = ...
+        default: Any = ...
         if p.parameter_default:
-            pydantic_type = Optional[pydantic_type]
+            pydantic_type = Optional[pydantic_type]  # type: ignore
             default = None
             # TODO: Convert default value string to the correct type.
             # We might need to use statement execution API
@@ -107,7 +109,7 @@ def generate_args_schema(function: FunctionInfo) -> Optional[Type[BaseModel]]:
         )
     return create_model(
         f"{function.catalog_name}__{function.schema_name}__{function.name}__params",
-        **fields,
+        **fields,  # type: ignore
     )
 
 
@@ -130,7 +132,7 @@ class UCFunctionTool(BaseTool):
         function_name: str,
         warehouse_id: str,
         workspace_client: Optional[WorkspaceClient] = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         if workspace_client is None:
             workspace_client = WorkspaceClient()
@@ -138,7 +140,7 @@ class UCFunctionTool(BaseTool):
         name = get_tool_name(function)
         description = function.comment or ""
         args_schema = generate_args_schema(function)
-        super().__init__(
+        super().__init__(  # type: ignore
             function=function,
             warehouse_id=warehouse_id,
             workspace_client=workspace_client,
