@@ -44,7 +44,7 @@ def test_create_kv_store(sql_store: SQLStore) -> None:
     assert fetched_doc.metadata == {"key": "value"}
 
 
-@pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_async_create_kv_store(async_sql_store: SQLStore) -> None:
     """Test that a docstore is created from a base store."""
     docstore = create_kv_docstore(async_sql_store)
@@ -71,7 +71,7 @@ def test_sample_sql_docstore(sql_store: SQLStore) -> None:
     assert [key for key in sql_store.yield_keys()] == ["key2"]
 
 
-@pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_async_sample_sql_docstore(async_sql_store: SQLStore) -> None:
     # Set values for keys
     await async_sql_store.amset([("key1", b"value1"), ("key2", b"value2")])
