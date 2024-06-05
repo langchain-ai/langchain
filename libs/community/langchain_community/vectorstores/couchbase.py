@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 @deprecated(
-    since="0.2.2",
+    since="0.2.4",
     removal="0.3.0",
     alternative_import="langchain_couchbase.CouchbaseVectorStore",
 )
