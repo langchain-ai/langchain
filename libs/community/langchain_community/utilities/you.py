@@ -2,6 +2,8 @@
 
 In order to set this up, follow instructions at:
 """
+
+import warnings
 from typing import Any, Dict, List, Literal, Optional
 
 import aiohttp
@@ -70,9 +72,11 @@ class YouSearchAPIWrapper(BaseModel):
     country: str, optional
         Country code, ex: 'US' for United States, see api docs for list
     search_lang: str, optional
-        Language to search in, ex: 'en' for English, see api docs for list
+        (News API) Language codes, ex: 'en' for English, see api docs for list
     ui_lang: str, optional
-        Language for the UI, ex: 'en' for English, see api docs for list
+        (News API) User interface language for the response, ex: 'en' for English, see api docs for list
+    spellcheck: bool, optional
+        (News API) Whether to spell check query or not, defaults to True
     k: int, optional
         max number of Documents to return using `results()`
     n_hits: int, optional, deprecated
@@ -108,6 +112,44 @@ class YouSearchAPIWrapper(BaseModel):
         values["ydc_api_key"] = ydc_api_key
 
         return values
+
+    @root_validator
+    def warn_if_set_fields_have_no_effect(cls, values) -> Dict:
+        if values["endpoint_type"] != "news":
+            news_api_fields = ("search_lang", "ui_lang", "spellcheck")
+            for field in news_api_fields:
+                if values[field]:
+                    warnings.warn(
+                        (
+                            f"News API-specific field '{field}' is set but "
+                            f"`endpoint_type=\"{values['endpoint_type']}\"`. "
+                            "This will have no effect."
+                        ),
+                        UserWarning,
+                    )
+        if values["endpoint_type"] not in ("search", "snippet"):
+            if values["n_snippets_per_hit"]:
+                warnings.warn(
+                    (
+                        "Field 'n_snippets_per_hit' only has effect on "
+                        '`endpoint_type="search"`.'
+                    ),
+                    UserWarning,
+                )
+        return values
+
+    @root_validator
+    def warn_if_deprecated_endpoints_are_used(cls, values) -> Dict:
+        if values["endpoint_type"] == "snippets":
+            warnings.warn(
+                (
+                    f"`endpoint_type=\"{values['endpoint_type']}\"` is deprecated. "
+                    'Use `endpoint_type="search"` instead.'
+                ),
+                DeprecationWarning,
+            )
+        return values
+
 
     def _parse_results(self, raw_search_results: Dict) -> List[Document]:
         """
