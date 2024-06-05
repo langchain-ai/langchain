@@ -265,6 +265,7 @@ class HuggingFacePipeline(BaseLLM):
         # List to hold all results
         text_generations: List[str] = []
         pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
+        skip_prompt = kwargs.get("skip_prompt", False)
 
         for i in range(0, len(prompts), self.batch_size):
             batch_prompts = prompts[i : i + self.batch_size]
@@ -294,7 +295,8 @@ class HuggingFacePipeline(BaseLLM):
                         f"Got invalid task {self.pipeline.task}, "
                         f"currently only {VALID_TASKS} are supported"
                     )
-
+                if skip_prompt:
+                    text = text[len(batch_prompts[j]) :]
                 # Append the processed text to results
                 text_generations.append(text)
 
