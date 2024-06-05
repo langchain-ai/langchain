@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-community"
-version = "0.2.2"
+version = "0.2.3"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -291,6 +291,7 @@ extended_testing = [
  "pyjwt",
  "oracledb",
  "simsimd",
+ "aiosqlite"
 ]
 
 [tool.ruff]
