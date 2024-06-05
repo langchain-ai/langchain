@@ -134,6 +134,7 @@ class RecursiveUrlLoader(BaseLoader):
             prevent_outside: If True, prevent loading from urls which are not children
                 of the root url.
             link_regex: Regex for extracting sub-links from the raw html of a web page.
+            headers: Default request headers to use for all requests.
             check_response_status: If True, check HTTP response status and skip
                 URLs with error responses (400-599).
             continue_on_failure: If True, continue if getting or parsing a link raises
