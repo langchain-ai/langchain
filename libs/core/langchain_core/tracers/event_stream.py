@@ -54,6 +54,7 @@ class RunInfo(TypedDict):
     metadata: Dict[str, Any]
     run_type: str
     inputs: NotRequired[Any]
+    parent_run_id: Optional[UUID]
 
 
 def _assign_name(name: Optional[str], serialized: Dict[str, Any]) -> str:
@@ -105,6 +106,22 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
 
+    def _get_parent_ids(self, run_id: UUID) -> List[str]:
+        """Get the parent IDs of a run (non-recursively) cast to strings."""
+        parent_ids = []
+
+        run_info = self.run_map.get(run_id)
+
+        while run_info is not None:
+            parent_run_id: Optional[UUID] = run_info.get("parent_run_id")
+            if parent_run_id is not None:
+                parent_ids.append(parent_run_id)
+                run_info = self.run_map.get(parent_run_id)
+            else:
+                break
+
+        return [str(parent_id) for parent_id in parent_ids]
+
     def _send(self, event: StreamEvent, event_type: str) -> None:
         """Send an event to the stream."""
         if self.root_event_filter.include_event(event, event_type):
@@ -140,6 +157,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
                 "data": {},
+                "parent_ids": self._get_parent_ids(run_id),
             }
             self._send({**event, "data": {"chunk": first}}, run_info["run_type"])
             yield cast(T, first)
@@ -181,6 +199,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
                 "data": {},
+                "parent_ids": self._get_parent_ids(run_id),
             }
             self._send({**event, "data": {"chunk": first}}, run_info["run_type"])
             yield cast(T, first)
@@ -219,6 +238,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "name": name_,
             "run_type": run_type,
             "inputs": {"messages": messages},
+            "parent_run_id": parent_run_id,
         }
 
         self._send(
@@ -231,6 +251,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type,
         )
@@ -256,6 +277,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "name": name_,
             "run_type": run_type,
             "inputs": {"prompts": prompts},
+            "parent_run_id": parent_run_id,
         }
 
         self._send(
@@ -270,6 +292,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type,
         )
@@ -319,6 +342,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_info["run_type"],
         )
@@ -371,6 +395,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_info["run_type"],
         )
@@ -396,6 +421,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "metadata": metadata or {},
             "name": name_,
             "run_type": run_type_,
+            "parent_run_id": parent_run_id,
         }
 
         data: EventData = {}
@@ -416,6 +442,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type_,
         )
@@ -449,6 +476,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type,
         )
@@ -486,6 +514,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             "tool",
         )
@@ -511,6 +540,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             "tool",
         )
@@ -536,6 +566,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "name": name_,
             "run_type": run_type,
             "inputs": {"query": query},
+            "parent_run_id": parent_run_id,
         }
 
         self._send(
@@ -550,6 +581,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type,
         )
@@ -571,6 +603,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_info["run_type"],
         )
@@ -660,6 +693,7 @@ async def _astream_events_implementation_v1(
                 data={
                     "input": input,
                 },
+                parent_ids=[],  # Not supported in v1
             )
 
             if _root_event_filter.include_event(event, state["type"]):
@@ -722,6 +756,7 @@ async def _astream_events_implementation_v1(
                 tags=log_entry["tags"],
                 metadata=log_entry["metadata"],
                 data=data,
+                parent_ids=[],  #  Not supported in v1
             )
 
         # Finally, we take care of the streaming output from the root chain
@@ -747,6 +782,7 @@ async def _astream_events_implementation_v1(
                 metadata=root_metadata,
                 name=root_name,
                 data=data,
+                parent_ids=[],  # Not supported in v1
             )
             if _root_event_filter.include_event(event, state["type"]):
                 yield event
@@ -763,6 +799,7 @@ async def _astream_events_implementation_v1(
         data={
             "output": state["final_output"],
         },
+        parent_ids=[],  # Not supported in v1
     )
     if _root_event_filter.include_event(event, state["type"]):
         yield event
