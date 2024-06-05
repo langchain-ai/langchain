@@ -401,7 +401,7 @@ class AzureSearch(VectorStore):
             False otherwise.
         """
         if ids:
-            res = self.client.delete_documents([{"id": i} for i in ids])
+            res = self.client.delete_documents([{FIELDS_ID: i} for i in ids])
             return len(res) > 0
         else:
             return False
