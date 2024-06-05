@@ -687,7 +687,7 @@ class AzureSearch(VectorStore):
             embedding, "", k, filters=filters, **kwargs
         )
 
-        return _results_to_documents(results)
+        return await _aresults_to_documents(results)
 
     def max_marginal_relevance_search_with_score(
         self,
@@ -833,7 +833,7 @@ class AzureSearch(VectorStore):
             embedding, query, k, filters=filters, **kwargs
         )
 
-        return _results_to_documents(results)
+        return await _aresults_to_documents(results)
 
     def hybrid_search_with_relevance_scores(
         self,
@@ -1239,7 +1239,7 @@ class AzureSearch(VectorStore):
             **kwargs,
         )
         # Get Semantic Answers
-        semantic_answers = results.get_answers() or []
+        semantic_answers = (await results.get_answers()) or []
         semantic_answers_dict: Dict = {}
         for semantic_answer in semantic_answers:
             semantic_answers_dict[semantic_answer.key] = {
@@ -1556,6 +1556,18 @@ def _results_to_documents(
             float(result["@search.score"]),
         )
         for result in results
+    ]
+    return docs
+
+async def _aresults_to_documents(
+        results: AsyncSearchItemPaged[Dict],
+) -> List[Tuple[Document, float]]:
+    docs = [
+        (
+            _result_to_document(result),
+            float(result["@search.score"]),
+        )
+        async for result in results
     ]
     return docs
 
