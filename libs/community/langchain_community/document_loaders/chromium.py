@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import AsyncIterator, Iterator, List
+from typing import AsyncIterator, Iterator, List, Optional
 
 from langchain_core.documents import Document
 
@@ -15,7 +15,11 @@ class AsyncChromiumLoader(BaseLoader):
     headless instance of the Chromium."""
 
     def __init__(
-        self, urls: List[str], *, headless: bool = True, user_agent: str = None
+        self,
+        urls: List[str],
+        *,
+        headless: bool = True,
+        user_agent: Optional[str] = None,
     ):
         """Initialize the loader with a list of URL paths.
 

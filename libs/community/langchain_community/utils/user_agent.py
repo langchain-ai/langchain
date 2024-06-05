@@ -4,7 +4,7 @@ import os
 log = logging.getLogger(__name__)
 
 
-def get_user_agent():
+def get_user_agent() -> str:
     """Get user agent from environment variable."""
     env_user_agent = os.environ.get("USER_AGENT")
     if not env_user_agent:
