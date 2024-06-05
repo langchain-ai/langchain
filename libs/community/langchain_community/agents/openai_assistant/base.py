@@ -507,8 +507,10 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "tool_resources", "run_metadata")
+            if k in ("instructions", "model", "tools", "run_metadata")
         }
+        if tool_resources := input.get("tool_resources"):
+            thread["tool_resources"] = tool_resources
         run = self.client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
             thread=thread,
@@ -532,8 +534,10 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         params = {
             k: v
             for k, v in input.items()
-            if k in ("instructions", "model", "tools", "tool_resources", "run_metadata")
+            if k in ("instructions", "model", "tools", "run_metadata")
         }
+        if tool_resources := input.get("tool_resources"):
+            thread["tool_resources"] = tool_resources
         run = await self.async_client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
             thread=thread,
