@@ -124,6 +124,8 @@ class ChatGroq(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
+    stop: Optional[Union[str, List[str]]] = Field(None, alias="stop_sequences")
+    """Default stop sequences."""
     default_headers: Union[Mapping[str, str], None] = None
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
@@ -446,6 +448,7 @@ class ChatGroq(BaseChatModel):
             "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
+            "stop": self.stop,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
