@@ -502,6 +502,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             "name": name_,
             "run_type": "tool",
             "inputs": inputs,
+            "parent_run_id": parent_run_id,
         }
 
         self._send(
