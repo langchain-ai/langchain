@@ -137,7 +137,7 @@ class Cassandra(VectorStore):
             keyspace=keyspace,
             table=table_name,
             vector_dimension=embedding_dimension,
-            metadata_indexing=metadata_indexing or "all",
+            metadata_indexing=metadata_indexing,
             primary_key_type="TEXT",
             skip_provisioning=setup_mode == SetupMode.OFF,
             **kwargs,
