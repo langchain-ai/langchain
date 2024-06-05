@@ -755,7 +755,7 @@ class AzureSearch(VectorStore):
             embedding, "", fetch_k, filters=filters, **kwargs
         )
 
-        return _reorder_results_with_maximal_marginal_relevance(
+        return await _areorder_results_with_maximal_marginal_relevance(
             results, query_embedding=np.array(embedding), lambda_mult=lambda_mult, k=k
         )
 
@@ -935,7 +935,7 @@ class AzureSearch(VectorStore):
             embedding, query, fetch_k, filters=filters, **kwargs
         )
 
-        return _reorder_results_with_maximal_marginal_relevance(
+        return await _areorder_results_with_maximal_marginal_relevance(
             results, query_embedding=np.array(embedding), lambda_mult=lambda_mult, k=k
         )
 
@@ -1280,7 +1280,7 @@ class AzureSearch(VectorStore):
                 float(result["@search.score"]),
                 float(result["@search.reranker_score"]),
             )
-            for result in results
+            async for result in results
         ]
         return docs
 
@@ -1559,8 +1559,9 @@ def _results_to_documents(
     ]
     return docs
 
+
 async def _aresults_to_documents(
-        results: AsyncSearchItemPaged[Dict],
+    results: AsyncSearchItemPaged[Dict],
 ) -> List[Tuple[Document, float]]:
     docs = [
         (
@@ -1586,6 +1587,39 @@ def _reorder_results_with_maximal_marginal_relevance(
             result[FIELDS_CONTENT_VECTOR],
         )
         for result in results
+    ]
+    documents, scores, vectors = map(list, zip(*docs))
+
+    # Get the new order of results.
+    new_ordering = maximal_marginal_relevance(
+        query_embedding, vectors, k=k, lambda_mult=lambda_mult
+    )
+
+    # Reorder the values and return.
+    ret: List[Tuple[Document, float]] = []
+    for x in new_ordering:
+        # Function can return -1 index
+        if x == -1:
+            break
+        ret.append((documents[x], scores[x]))  # type: ignore
+
+    return ret
+
+
+async def _areorder_results_with_maximal_marginal_relevance(
+    results: AsyncSearchItemPaged[Dict],
+    query_embedding: np.ndarray,
+    lambda_mult: float = 0.5,
+    k: int = 4,
+) -> List[Tuple[Document, float]]:
+    # Convert results to Document objects
+    docs = [
+        (
+            _result_to_document(result),
+            float(result["@search.score"]),
+            result[FIELDS_CONTENT_VECTOR],
+        )
+        async for result in results
     ]
     documents, scores, vectors = map(list, zip(*docs))
 
