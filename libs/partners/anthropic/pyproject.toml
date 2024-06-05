@@ -41,10 +41,9 @@ optional = true
 
 [tool.poetry.group.lint.dependencies]
 ruff = ">=0.2.2,<1"
-mypy = "^0.991"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
+mypy = "^1"
 langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]
