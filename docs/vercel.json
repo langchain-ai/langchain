@@ -10,6 +10,14 @@
     {
       "source": "/v0.1/:path(.*/?)*",
       "destination": "https://langchain-v01.vercel.app/v0.1/:path*"
+    },
+    {
+      "source": "/robots.txt(/?)",
+      "destination": "/v0.2/robots.txt/"
+    },
+    {
+      "source": "/sitemap.xml(/?)",
+      "destination": "/v0.2/sitemap.xml/"
     }
   ],
   "redirects": [
