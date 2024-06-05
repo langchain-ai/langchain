@@ -4369,6 +4369,33 @@ class RunnableEach(RunnableEachBase[Input, Output]):
             )
         )
 
+    def with_alisteners(
+        self,
+        *,
+        on_start: Optional[AsyncListener] = None,
+        on_end: Optional[AsyncListener] = None,
+        on_error: Optional[AsyncListener] = None,
+    ) -> RunnableEach[Input, Output]:
+        """
+        Bind async lifecycle listeners to a Runnable, returning a new Runnable.
+
+        on_start: Called asynchronously before the runnable starts running,
+                  with the Run object.
+        on_end: Called asynchronously after the runnable finishes running,
+                with the Run object.
+        on_error: Called asynchronously if the runnable throws an error,
+                with the Run object.
+
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+        """
+        return RunnableEach(
+            bound=self.bound.with_alisteners(
+                on_start=on_start, on_end=on_end, on_error=on_error
+            )
+        )
+
 
 class RunnableBindingBase(RunnableSerializable[Input, Output]):
     """Runnable that delegates calls to another Runnable with a set of kwargs.

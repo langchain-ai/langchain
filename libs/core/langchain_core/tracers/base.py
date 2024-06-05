@@ -21,7 +21,7 @@ from tenacity import RetryCallState
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
-from langchain_core.tracers.abstract_base_tracer import AbstractBaseTracer
+from langchain_core.tracers.core import _TracerCore
 from langchain_core.tracers.schemas import Run
 
 if TYPE_CHECKING:
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class BaseTracer(AbstractBaseTracer, BaseCallbackHandler, ABC):
+class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
     """Base interface for tracers."""
 
     @abstractmethod
@@ -357,7 +357,7 @@ class BaseTracer(AbstractBaseTracer, BaseCallbackHandler, ABC):
         return self
 
 
-class AsyncBaseTracer(AbstractBaseTracer, AsyncCallbackHandler, ABC):
+class AsyncBaseTracer(_TracerCore, AsyncCallbackHandler, ABC):
     """Async Base interface for tracers."""
 
     @abstractmethod

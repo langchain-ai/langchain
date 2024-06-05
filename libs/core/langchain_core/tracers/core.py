@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 SCHEMA_FORMAT_TYPE = Literal["original", "streaming_events"]
 
 
-class AbstractBaseTracer(ABC):
+class _TracerCore(ABC):
     """
     Abstract base class for tracers
     This class provides common methods, and reusable methods for tracers.
@@ -404,7 +404,6 @@ class AbstractBaseTracer(ABC):
         else:
             raise AssertionError(f"Invalid format: {self._schema_format}")
 
-
         return Run(
             id=run_id,
             parent_run_id=parent_run_id,
@@ -500,11 +499,11 @@ class AbstractBaseTracer(ABC):
         retrieval_run.events.append({"name": "error", "time": retrieval_run.end_time})
         return retrieval_run
 
-    def __deepcopy__(self, memo: dict) -> AbstractBaseTracer:
+    def __deepcopy__(self, memo: dict) -> _TracerCore:
         """Deepcopy the tracer."""
         return self
 
-    def __copy__(self) -> AbstractBaseTracer:
+    def __copy__(self) -> _TracerCore:
         """Copy the tracer."""
         return self
 
