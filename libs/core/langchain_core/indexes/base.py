@@ -1,7 +1,17 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast, \
-    AsyncIterable
+from typing import (
+    Any,
+    AsyncIterable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 from langchain_core.documents import Document
 from langchain_core.indexes.types import DeleteResponse, UpsertResponse
@@ -81,6 +91,7 @@ class Index(BaseStore[str, Document], ABC):
     ) -> UpsertResponse:
         """Upsert documents to index."""
 
+    # FOR CONTRIBUTORS: Overwrite this in Index child classes that support native async upsertions.
     async def aupsert(
         self,
         documents: AsyncIterable[Document],
@@ -88,7 +99,7 @@ class Index(BaseStore[str, Document], ABC):
         ids: Optional[AsyncIterable[str]] = None,
         **kwargs: Any,
     ) -> UpsertResponse:
-        """Upsert documents to index."""
+        """Upsert documents to index. Default implementation, runs sync upsert() in async executor."""
         # TODO: how to convert AsyncIterable -> Iterable
         return await run_in_executor(None, self.upsert, documents, ids=ids, **kwargs)
 
@@ -104,8 +115,10 @@ class Index(BaseStore[str, Document], ABC):
            documents that were successfully deleted and the ones that failed to be
            deleted.
         """
+
+    # FOR CONTRIBUTORS: Overwrite this in Index child classes that support native async deletions.
     async def adelete_by_ids(self, ids: AsyncIterable[str]) -> DeleteResponse:
-        """Upsert documents to index."""
+        """Upsert documents to index. Default implementation, runs sync delete_by_ids() in async executor."""
         return await run_in_executor(None, self.delete_by_ids, ids)
 
     @abstractmethod
@@ -119,8 +132,13 @@ class Index(BaseStore[str, Document], ABC):
            Document
         """
 
-    async def alazy_get_by_ids(self, ids: AsyncIterable[str]) -> AsyncIterable[Document]:
+    # FOR CONTRIBUTORS: Overwrite this in Index child classes that support native async get.
+    async def alazy_get_by_ids(
+        self, ids: AsyncIterable[str]
+    ) -> AsyncIterable[Document]:
         """Lazily get documents by id.
+
+        Default implementation, runs sync () in async executor.
 
         Args:
             ids: IDs of the documents to get.
@@ -128,7 +146,7 @@ class Index(BaseStore[str, Document], ABC):
         Yields:
            Document
         """
-
+        return await run_in_executor(None, self.lazy_get_by_ids, ids)
 
     def get_by_ids(self, ids: Iterable[str]) -> List[Document]:
         """Get documents by id.
@@ -140,6 +158,12 @@ class Index(BaseStore[str, Document], ABC):
            A list of the requested Documents.
         """
         return list(self.lazy_get_by_ids(ids))
+
+    async def aget_by_ids(self, ids: AsyncIterable[str]) -> List[Document]:
+        docs = []
+        async for doc in await self.alazy_get_by_ids(ids):
+            docs.append(doc)
+        return docs
 
     def delete(
         self,
@@ -177,6 +201,42 @@ class Index(BaseStore[str, Document], ABC):
             )
         return self.delete_by_ids(ids)
 
+    async def adelete(
+        self,
+        *,
+        ids: Optional[AsyncIterable[str]] = None,
+        filters: Union[
+            StructuredQuery, Dict[str, Any], List[Dict[str, Any]], None
+        ] = None,
+        **kwargs: Any,
+    ) -> DeleteResponse:
+        """Default implementation only supports deletion by id.
+
+        Override this method if the integration supports deletion by other parameters.
+
+        Args:
+            ids: IDs of the documents to delete. Must be specified.
+            **kwargs: Other keywords args not supported by default. Will be ignored.
+
+        Returns:
+           A dict ``{"succeeded": [...], "failed": [...]}`` with the IDs of the
+           documents that were successfully deleted and the ones that failed to be
+           deleted.
+
+        Raises:
+            ValueError: if ids are not provided.
+        """
+        if ids is None:
+            raise ValueError("Must provide ids to delete.")
+        if filters:
+            kwargs = {"filters": filters, **kwargs}
+        if kwargs:
+            warnings.warn(
+                "Only deletion by ids is supported for this integration, all other "
+                f"arguments are ignored. Received {kwargs=}"
+            )
+        return await self.adelete_by_ids(ids)
+
     def lazy_get(
         self,
         *,
@@ -211,6 +271,40 @@ class Index(BaseStore[str, Document], ABC):
             )
         return self.lazy_get_by_ids(ids)
 
+    async def alazy_get(
+        self,
+        *,
+        ids: Optional[AsyncIterable[str]] = None,
+        filters: Union[
+            StructuredQuery, Dict[str, Any], List[Dict[str, Any]], None
+        ] = None,
+        **kwargs: Any,
+    ) -> AsyncIterable[Document]:
+        """Default implementation only supports get by id.
+
+        Override this method if the integration supports get by other parameters.
+
+        Args:
+            ids: IDs of the documents to get. Must be specified.
+            **kwargs: Other keywords args not supported by default. Will be ignored.
+
+        Yields:
+           Document.
+
+        Raises:
+            ValueError: if ids are not provided.
+        """
+        if ids is None:
+            raise ValueError("Must provide ids to get.")
+        if filters:
+            kwargs = {"filters": filters, **kwargs}
+        if kwargs:
+            warnings.warn(
+                "Only deletion by ids is supported for this integration, all other "
+                f"arguments are ignored. Received {kwargs=}"
+            )
+        return await self.alazy_get_by_ids(ids)
+
     def get(
         self,
         *,
@@ -235,6 +329,34 @@ class Index(BaseStore[str, Document], ABC):
             ValueError: if ids are not provided.
         """
         return list(self.lazy_get(ids=ids, filters=filters, **kwargs))
+
+    async def aget(
+        self,
+        *,
+        ids: Optional[AsyncIterable[str]] = None,
+        filters: Union[
+            StructuredQuery, Dict[str, Any], List[Dict[str, Any]], None
+        ] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Default implementation only supports get by id.
+
+        Override this method if the integration supports get by other parameters.
+
+        Args:
+            ids: IDs of the documents to get. Must be specified.
+            **kwargs: Other keywords args not supported by default. Will be ignored.
+
+        Returns:
+           A list of the requested Documents.
+
+        Raises:
+            ValueError: if ids are not provided.
+        """
+        docs = []
+        async for doc in await self.alazy_get(ids=ids, filters=filters, **kwargs):
+            docs.append(doc)
+        return docs
 
     def mget(self, keys: Sequence[str]) -> List[Optional[Document]]:
         return cast(List[Optional[Document]], self.get_by_ids(keys))  # type: ignore[arg-type]
