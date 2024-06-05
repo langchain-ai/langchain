@@ -5,6 +5,7 @@ You'll need to set WATSONX_APIKEY and WATSONX_PROJECT_ID environment variables.
 
 import os
 
+from ibm_watsonx_ai import Credentials  # type: ignore
 from ibm_watsonx_ai.foundation_models import Model, ModelInference  # type: ignore
 from ibm_watsonx_ai.foundation_models.utils.enums import (  # type: ignore
     DecodingMethods,
@@ -135,12 +136,12 @@ def test_watsonxllm_invoke_from_wx_model() -> None:
 
 
 def test_watsonxllm_invoke_from_wx_model_inference() -> None:
+    credentials = Credentials(
+        api_key=WX_APIKEY, url="https://us-south.ml.cloud.ibm.com"
+    )
     model = ModelInference(
         model_id=MODEL_ID,
-        credentials={
-            "apikey": WX_APIKEY,
-            "url": "https://us-south.ml.cloud.ibm.com",
-        },
+        credentials=credentials,
         project_id=WX_PROJECT_ID,
     )
     watsonxllm = WatsonxLLM(watsonx_model=model)

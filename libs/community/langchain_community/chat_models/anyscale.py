@@ -127,7 +127,7 @@ class ChatAnyscale(ChatOpenAI):
             import openai
 
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`.",
             ) from e

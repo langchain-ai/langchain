@@ -38,6 +38,135 @@ def test_prompt_from_template() -> None:
     assert prompt == expected_prompt
 
 
+def test_mustache_prompt_from_template() -> None:
+    """Test prompts can be constructed from a template."""
+    # Single input variable.
+    template = "This is a {{foo}} test."
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(foo="bar") == "This is a bar test."
+    assert prompt.input_variables == ["foo"]
+    assert prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"foo": {"title": "Foo", "type": "string"}},
+    }
+
+    # Multiple input variables.
+    template = "This {{bar}} is a {{foo}} test."
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(bar="baz", foo="bar") == "This baz is a bar test."
+    assert prompt.input_variables == ["bar", "foo"]
+    assert prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {
+            "bar": {"title": "Bar", "type": "string"},
+            "foo": {"title": "Foo", "type": "string"},
+        },
+    }
+
+    # Multiple input variables with repeats.
+    template = "This {{bar}} is a {{foo}} test {{foo}}."
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(bar="baz", foo="bar") == "This baz is a bar test bar."
+    assert prompt.input_variables == ["bar", "foo"]
+    assert prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {
+            "bar": {"title": "Bar", "type": "string"},
+            "foo": {"title": "Foo", "type": "string"},
+        },
+    }
+
+    # Nested variables.
+    template = "This {{obj.bar}} is a {{obj.foo}} test {{foo}}."
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(obj={"bar": "foo", "foo": "bar"}, foo="baz") == (
+        "This foo is a bar test baz."
+    )
+    assert prompt.input_variables == ["foo", "obj"]
+    assert prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {
+            "foo": {"title": "Foo", "type": "string"},
+            "obj": {"$ref": "#/definitions/obj"},
+        },
+        "definitions": {
+            "obj": {
+                "title": "obj",
+                "type": "object",
+                "properties": {
+                    "foo": {"title": "Foo", "type": "string"},
+                    "bar": {"title": "Bar", "type": "string"},
+                },
+            }
+        },
+    }
+
+    # . variables
+    template = "This {{.}} is a test."
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(foo="baz") == ("This {'foo': 'baz'} is a test.")
+    assert prompt.input_variables == []
+    assert prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {},
+    }
+
+    # section/context variables
+    template = """This{{#foo}}
+        {{bar}}
+    {{/foo}}is a test."""
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(foo={"bar": "yo"}) == (
+        """This
+        yo
+    is a test."""
+    )
+    assert prompt.input_variables == ["foo"]
+    assert prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"foo": {"$ref": "#/definitions/foo"}},
+        "definitions": {
+            "foo": {
+                "title": "foo",
+                "type": "object",
+                "properties": {"bar": {"title": "Bar", "type": "string"}},
+            }
+        },
+    }
+
+    # section/context variables with repeats
+    template = """This{{#foo}}
+        {{bar}}
+    {{/foo}}is a test."""
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(foo=[{"bar": "yo"}, {"bar": "hello"}]) == (
+        """This
+        yo
+    
+        hello
+    is a test."""
+    )
+    assert prompt.input_variables == ["foo"]
+    assert prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"foo": {"$ref": "#/definitions/foo"}},
+        "definitions": {
+            "foo": {
+                "title": "foo",
+                "type": "object",
+                "properties": {"bar": {"title": "Bar", "type": "string"}},
+            }
+        },
+    }
+
+
 def test_prompt_from_template_with_partial_variables() -> None:
     """Test prompts can be constructed from a template with partial variables."""
     # given
@@ -345,6 +474,25 @@ def test_prompt_invoke_with_metadata() -> None:
     )
     tracer = RunCollectorCallbackHandler()
     result = prompt.invoke(
+        {"foo": "bar"}, {"metadata": {"foo": "bar"}, "callbacks": [tracer]}
+    )
+    assert result.to_string() == "This is a bar test."
+    assert len(tracer.traced_runs) == 1
+    assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}  # type: ignore
+    assert tracer.traced_runs[0].tags == ["tag1", "tag2"]  # type: ignore
+
+
+async def test_prompt_ainvoke_with_metadata() -> None:
+    """Test prompt can be invoked with metadata."""
+    template = "This is a {foo} test."
+    prompt = PromptTemplate(
+        input_variables=["foo"],
+        template=template,
+        metadata={"version": "1"},
+        tags=["tag1", "tag2"],
+    )
+    tracer = RunCollectorCallbackHandler()
+    result = await prompt.ainvoke(
         {"foo": "bar"}, {"metadata": {"foo": "bar"}, "callbacks": [tracer]}
     )
     assert result.to_string() == "This is a bar test."

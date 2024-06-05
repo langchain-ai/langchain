@@ -1,13 +1,11 @@
 from pathlib import Path
 from typing import List
 
-from langchain.chains.openai_functions import create_structured_output_chain
-from langchain_community.chat_models import ChatOpenAI
 from langchain_community.document_loaders import TextLoader
-from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.graphs import Neo4jGraph
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import TokenTextSplitter
 from neo4j.exceptions import ClientError
 
@@ -116,10 +114,10 @@ questions_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-question_chain = create_structured_output_chain(Questions, llm, questions_prompt)
+question_chain = questions_prompt | llm.with_structured_output(Questions)
 
 for i, parent in enumerate(parent_documents):
-    questions = question_chain.run(parent.page_content).questions
+    questions = question_chain.invoke(parent.page_content).questions
     params = {
         "parent_id": i,
         "questions": [

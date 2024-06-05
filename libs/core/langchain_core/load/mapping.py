@@ -126,12 +126,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "agents",
         "AgentActionMessageLog",
     ),
-    ("langchain", "schema", "agent", "OpenAIToolAgentAction"): (
+    ("langchain", "schema", "agent", "ToolAgentAction"): (
         "langchain",
         "agents",
         "output_parsers",
-        "openai_tools",
-        "OpenAIToolAgentAction",
+        "tools",
+        "ToolAgentAction",
     ),
     ("langchain", "prompts", "chat", "BaseMessagePromptTemplate"): (
         "langchain_core",
@@ -235,21 +235,19 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "AzureChatOpenAI",
     ),
     ("langchain", "chat_models", "bedrock", "BedrockChat"): (
-        "langchain",
+        "langchain_aws",
         "chat_models",
         "bedrock",
-        "BedrockChat",
+        "ChatBedrock",
     ),
     ("langchain", "chat_models", "anthropic", "ChatAnthropic"): (
-        "langchain",
+        "langchain_anthropic",
         "chat_models",
-        "anthropic",
         "ChatAnthropic",
     ),
     ("langchain", "chat_models", "fireworks", "ChatFireworks"): (
-        "langchain",
+        "langchain_fireworks",
         "chat_models",
-        "fireworks",
         "ChatFireworks",
     ),
     ("langchain", "chat_models", "google_palm", "ChatGooglePalm"): (
@@ -312,15 +310,14 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "BaseOpenAI",
     ),
     ("langchain", "llms", "bedrock", "Bedrock"): (
-        "langchain",
+        "langchain_aws",
         "llms",
         "bedrock",
-        "Bedrock",
+        "BedrockLLM",
     ),
     ("langchain", "llms", "fireworks", "Fireworks"): (
-        "langchain",
+        "langchain_fireworks",
         "llms",
-        "fireworks",
         "Fireworks",
     ),
     ("langchain", "llms", "google_palm", "GooglePalm"): (
@@ -527,6 +524,13 @@ _OG_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "prompts",
         "image",
         "ImagePromptTemplate",
+    ),
+    ("langchain", "schema", "agent", "OpenAIToolAgentAction"): (
+        "langchain",
+        "agents",
+        "output_parsers",
+        "openai_tools",
+        "OpenAIToolAgentAction",
     ),
 }
 
@@ -970,5 +974,11 @@ _JS_SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "messages",
         "tool",
         "ToolMessageChunk",
+    ),
+    ("langchain_core", "prompts", "image", "ImagePromptTemplate"): (
+        "langchain_core",
+        "prompts",
+        "image",
+        "ImagePromptTemplate",
     ),
 }

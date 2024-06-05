@@ -10,7 +10,6 @@ metadatas = [
         "is_active": True,
         "tags": ["a", "b"],
         "location": [1.0, 2.0],
-        "info": {"address": "123 main st", "phone": "123-456-7890"},
         "id": 1,
         "height": 10.0,  # Float column
         "happiness": 0.9,  # Float column
@@ -23,7 +22,6 @@ metadatas = [
         "is_active": False,
         "tags": ["b", "c"],
         "location": [2.0, 3.0],
-        "info": {"address": "456 main st", "phone": "123-456-7890"},
         "id": 2,
         "height": 5.7,  # Float column
         "happiness": 0.8,  # Float column
@@ -36,7 +34,6 @@ metadatas = [
         "is_active": True,
         "tags": ["b", "d"],
         "location": [3.0, 4.0],
-        "info": {"address": "789 main st", "phone": "123-456-7890"},
         "id": 3,
         "height": 2.4,  # Float column
         "happiness": None,

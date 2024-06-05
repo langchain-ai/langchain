@@ -14,7 +14,7 @@ import contextlib
 import functools
 import inspect
 import warnings
-from typing import Any, Callable, Generator, Type, TypeVar
+from typing import Any, Callable, Generator, Type, TypeVar, Union, cast
 
 from langchain_core._api.internal import is_caller_internal
 
@@ -30,7 +30,7 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
 # PUBLIC API
 
 
-T = TypeVar("T", Type, Callable)
+T = TypeVar("T", bound=Union[Type, Callable[..., Any]])
 
 
 def deprecated(
@@ -44,6 +44,7 @@ def deprecated(
     obj_type: str = "",
     addendum: str = "",
     removal: str = "",
+    package: str = "",
 ) -> Callable[[T], T]:
     """Decorator to mark a function, a class, or a property as deprecated.
 
@@ -109,6 +110,7 @@ def deprecated(
         _alternative_import: str = alternative_import,
         _pending: bool = pending,
         _addendum: str = addendum,
+        _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
 
@@ -124,6 +126,7 @@ def deprecated(
                 obj_type=_obj_type,
                 addendum=_addendum,
                 removal=removal,
+                package=_package,
             )
 
         warned = False
@@ -153,16 +156,16 @@ def deprecated(
                 emit_warning()
             return await wrapped(*args, **kwargs)
 
+        _package = _package or obj.__module__.split(".")[0].replace("_", "-")
+
         if isinstance(obj, type):
             if not _obj_type:
                 _obj_type = "class"
             wrapped = obj.__init__  # type: ignore
-            _name = _name or (
-                f"{obj.__module__}.{obj.__name__}" if obj.__module__ else obj.__name__
-            )
+            _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(_: Any, new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Finalize the deprecation of a class."""
                 try:
                     obj.__doc__ = new_doc
@@ -182,54 +185,60 @@ def deprecated(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return obj
+                return cast(T, obj)
 
         elif isinstance(obj, property):
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or obj.fget.__name__
+            _name = _name or obj.fget.__qualname__
             old_doc = obj.__doc__
 
-            class _deprecated_property(type(obj)):  # type: ignore
+            class _deprecated_property(property):
                 """A deprecated property."""
 
-                def __get__(self, instance, owner=None):  # type: ignore
+                def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+                    super().__init__(fget, fset, fdel, doc)
+                    self.__orig_fget = fget
+                    self.__orig_fset = fset
+                    self.__orig_fdel = fdel
+
+                def __get__(self, instance, owner=None):
                     if instance is not None or owner is not None:
                         emit_warning()
-                    return super().__get__(instance, owner)
+                    return self.fget(instance)
 
-                def __set__(self, instance, value):  # type: ignore
+                def __set__(self, instance, value):
                     if instance is not None:
                         emit_warning()
-                    return super().__set__(instance, value)
+                    return self.fset(instance, value)
 
-                def __delete__(self, instance):  # type: ignore
+                def __delete__(self, instance):
                     if instance is not None:
                         emit_warning()
-                    return super().__delete__(instance)
+                    return self.fdel(instance)
 
-                def __set_name__(self, owner, set_name):  # type: ignore
+                def __set_name__(self, owner, set_name):
                     nonlocal _name
                     if _name == "<lambda>":
                         _name = set_name
 
-            def finalize(_: Any, new_doc: str) -> Any:  # type: ignore
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> Any:
                 """Finalize the property."""
                 return _deprecated_property(
                     fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
                 )
 
         else:
+            _name = _name or obj.__qualname__
             if not _obj_type:
-                _obj_type = "function"
+                # edge case: when a function is within another function
+                # within a test, this will call it a "method" not a "function"
+                _obj_type = "function" if "." not in _name else "method"
             wrapped = obj
-            _name = _name or obj.__name__  # type: ignore
             old_doc = wrapped.__doc__
 
-            def finalize(  # type: ignore
-                wrapper: Callable[..., Any], new_doc: str
-            ) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
                 """Wrap the wrapped function using the wrapper and update the docstring.
 
                 Args:
@@ -241,7 +250,7 @@ def deprecated(
                 """
                 wrapper = functools.wraps(wrapped)(wrapper)
                 wrapper.__doc__ = new_doc
-                return wrapper
+                return cast(T, wrapper)
 
         old_doc = inspect.cleandoc(old_doc or "").strip("\n")
 
@@ -257,7 +266,9 @@ def deprecated(
             addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
-        package = _name.split(".")[0].replace("_", "-") if "." in _name else None
+        package = (
+            _package or _name.split(".")[0].replace("_", "-") if "." in _name else None
+        )
         since_str = f"{package}=={since}" if package else since
         new_doc = (
             f"[*Deprecated*] {old_doc}\n"
@@ -267,9 +278,10 @@ def deprecated(
         )
 
         if inspect.iscoroutinefunction(obj):
-            return finalize(awarning_emitting_wrapper, new_doc)
+            finalized = finalize(awarning_emitting_wrapper, new_doc)
         else:
-            return finalize(warning_emitting_wrapper, new_doc)
+            finalized = finalize(warning_emitting_wrapper, new_doc)
+        return cast(T, finalized)
 
     return deprecate
 
@@ -294,6 +306,7 @@ def warn_deprecated(
     obj_type: str = "",
     addendum: str = "",
     removal: str = "",
+    package: str = "",
 ) -> None:
     """Display a standardized deprecation.
 
@@ -343,7 +356,11 @@ def warn_deprecated(
 
     if not message:
         message = ""
-        package = name.split(".")[0].replace("_", "-") if "." in name else "LangChain"
+        _package = (
+            package or name.split(".")[0].replace("_", "-")
+            if "." in name
+            else "LangChain"
+        )
 
         if obj_type:
             message += f"The {obj_type} `{name}`"
@@ -353,14 +370,14 @@ def warn_deprecated(
         if pending:
             message += " will be deprecated in a future version"
         else:
-            message += f" was deprecated in {package} {since}"
+            message += f" was deprecated in {_package} {since}"
 
             if removal:
                 message += f" and will be removed {removal}"
 
         if alternative_import:
             alt_package = alternative_import.split(".")[0].replace("_", "-")
-            if alt_package == package:
+            if alt_package == _package:
                 message += f". Use {alternative_import} instead."
             else:
                 alt_module, alt_name = alternative_import.rsplit(".", 1)

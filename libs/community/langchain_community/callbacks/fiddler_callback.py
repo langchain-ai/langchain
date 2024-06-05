@@ -4,6 +4,7 @@ from uuid import UUID
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
+from langchain_core.utils import guard_import
 
 from langchain_community.callbacks.utils import import_pandas
 
@@ -54,14 +55,7 @@ _dataset_dict = {
 
 def import_fiddler() -> Any:
     """Import the fiddler python package and raise an error if it is not installed."""
-    try:
-        import fiddler  # noqa: F401
-    except ImportError:
-        raise ImportError(
-            "To use fiddler callback handler you need to have `fiddler-client`"
-            "package installed. Please install it with `pip install fiddler-client`"
-        )
-    return fiddler
+    return guard_import("fiddler", pip_name="fiddler-client")
 
 
 # First, define custom callback handler implementations
@@ -131,46 +125,45 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
                 dataset_info.columns[i].data_type = self.fdl.DataType.CATEGORY
                 dataset_info.columns[i].possible_values = [SUCCESS, FAILURE]
 
-        if self.model not in self.fiddler_client.get_dataset_names(self.project):
-            print(  # noqa: T201
-                f"adding dataset {self.model} to project {self.project}."
-                "This only has to be done once."
-            )
-            try:
-                self.fiddler_client.upload_dataset(
-                    project_id=self.project,
-                    dataset_id=self.model,
-                    dataset={"train": self._df},
-                    info=dataset_info,
-                )
-            except Exception as e:
-                print(  # noqa: T201
-                    f"Error adding dataset {self.model}: {e}."
-                    "Fiddler integration will not work."
-                )
-                raise e
-
-        model_info = self.fdl.ModelInfo.from_dataset_info(
-            dataset_info=dataset_info,
-            dataset_id="train",
-            model_task=self.fdl.ModelTask.LLM,
-            features=[PROMPT, CONTEXT, RESPONSE],
-            target=FEEDBACK,
-            metadata_cols=[
-                RUN_ID,
-                TOTAL_TOKENS,
-                PROMPT_TOKENS,
-                COMPLETION_TOKENS,
-                MODEL_NAME,
-                DURATION,
-            ],
-            custom_features=self.custom_features,
-        )
-
         if self.model not in self.fiddler_client.get_model_names(self.project):
+            if self.model not in self.fiddler_client.get_dataset_names(self.project):
+                print(  # noqa: T201
+                    f"adding dataset {self.model} to project {self.project}."
+                    "This only has to be done once."
+                )
+                try:
+                    self.fiddler_client.upload_dataset(
+                        project_id=self.project,
+                        dataset_id=self.model,
+                        dataset={"train": self._df},
+                        info=dataset_info,
+                    )
+                except Exception as e:
+                    print(  # noqa: T201
+                        f"Error adding dataset {self.model}: {e}."
+                        "Fiddler integration will not work."
+                    )
+                    raise e
+
+            model_info = self.fdl.ModelInfo.from_dataset_info(
+                dataset_info=dataset_info,
+                dataset_id="train",
+                model_task=self.fdl.ModelTask.LLM,
+                features=[PROMPT, CONTEXT, RESPONSE],
+                target=FEEDBACK,
+                metadata_cols=[
+                    RUN_ID,
+                    TOTAL_TOKENS,
+                    PROMPT_TOKENS,
+                    COMPLETION_TOKENS,
+                    MODEL_NAME,
+                    DURATION,
+                ],
+                custom_features=self.custom_features,
+            )
             print(  # noqa: T201
                 f"adding model {self.model} to project {self.project}."
-                "This only has to be done once."  # noqa: T201
+                "This only has to be done once."
             )
             try:
                 self.fiddler_client.add_model(
@@ -182,7 +175,7 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
             except Exception as e:
                 print(  # noqa: T201
                     f"Error adding model {self.model}: {e}."
-                    "Fiddler integration will not work."  # noqa: T201
+                    "Fiddler integration will not work."
                 )
                 raise e
 
@@ -286,7 +279,13 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
                 df[key] = [value] * prompt_count if isinstance(value, int) else value
 
         try:
-            self.fiddler_client.publish_events_batch(self.project, self.model, df)
+            if df.shape[0] > 1:
+                self.fiddler_client.publish_events_batch(self.project, self.model, df)
+            else:
+                df_dict = df.to_dict(orient="records")
+                self.fiddler_client.publish_event(
+                    self.project, self.model, event=df_dict[0]
+                )
         except Exception as e:
             print(  # noqa: T201
                 f"Error publishing events to fiddler: {e}. continuing..."

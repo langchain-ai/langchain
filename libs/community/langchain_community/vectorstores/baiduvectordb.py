@@ -163,6 +163,7 @@ class BaiduVectorDB(VectorStore):
                 self.field_vector,
                 self.mochowenum.FieldType.FLOAT_VECTOR,
                 dimension=self.table_params.dimension,
+                not_null=True,
             )
         )
         fields.append(schema.Field(self.field_text, self.mochowenum.FieldType.STRING))
@@ -358,7 +359,7 @@ class BaiduVectorDB(VectorStore):
                 doc = Document(
                     page_content=row_data.get(self.field_text), metadata=meta
                 )
-                pair = (doc, result.get("distance", 0.0))
+                pair = (doc, result.get("score", 0.0))
                 ret.append(pair)
         return ret
 

@@ -1,13 +1,12 @@
 from inspect import signature
 from typing import List, Optional, Sequence, Union
 
+from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import (
     BaseDocumentCompressor,
     BaseDocumentTransformer,
     Document,
 )
-
-from langchain.callbacks.manager import Callbacks
 
 
 class DocumentCompressorPipeline(BaseDocumentCompressor):

@@ -8,7 +8,7 @@ NAMESPACE_UUID = uuid.UUID(int=1984)
 
 
 class RecordManager(ABC):
-    """An abstract base class representing the interface for a record manager."""
+    """Abstract base class for a record manager."""
 
     def __init__(
         self,

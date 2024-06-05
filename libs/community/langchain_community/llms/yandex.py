@@ -54,6 +54,9 @@ class _BaseYandexGPT(Serializable):
     """Maximum number of retries to make when generating."""
     sleep_interval: float = 1.0
     """Delay between API requests"""
+    disable_request_logging: bool = False
+    """YandexGPT API logs all request data by default. 
+    If you provide personal data, confidential information, disable logging."""
     _grpc_metadata: Sequence
 
     @property
@@ -104,6 +107,13 @@ class _BaseYandexGPT(Serializable):
             values[
                 "model_uri"
             ] = f"gpt://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+        if values["disable_request_logging"]:
+            values["_grpc_metadata"].append(
+                (
+                    "x-data-logging-enabled",
+                    "false",
+                )
+            )
         return values
 
 
@@ -186,16 +196,29 @@ def _make_request(
     try:
         import grpc
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
-            CompletionOptions,
-            Message,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
-            CompletionRequest,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
-            TextGenerationServiceStub,
-        )
+
+        try:
+            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (  # noqa: E501
+                TextGenerationServiceStub,
+            )
+        except ModuleNotFoundError:
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
+                TextGenerationServiceStub,
+            )
     except ImportError as e:
         raise ImportError(
             "Please install YandexCloud SDK  with `pip install yandexcloud` \
@@ -222,17 +245,31 @@ async def _amake_request(self: YandexGPT, prompt: str) -> str:
 
         import grpc
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
-            CompletionOptions,
-            Message,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
-            CompletionRequest,
-            CompletionResponse,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
-            TextGenerationAsyncServiceStub,
-        )
+
+        try:
+            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+                CompletionResponse,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (  # noqa: E501
+                TextGenerationAsyncServiceStub,
+            )
+        except ModuleNotFoundError:
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+                CompletionResponse,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
+                TextGenerationAsyncServiceStub,
+            )
         from yandex.cloud.operation.operation_service_pb2 import GetOperationRequest
         from yandex.cloud.operation.operation_service_pb2_grpc import (
             OperationServiceStub,

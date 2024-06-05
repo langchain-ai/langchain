@@ -1,0 +1,50 @@
+name: test_doc_imports
+
+on:
+  workflow_call:
+
+env:
+  POETRY_VERSION: "1.7.1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.11"
+    name: "check doc imports #${{ matrix.python-version }}"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+        uses: "./.github/actions/poetry_setup"
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+          cache-key: core
+
+      - name: Install dependencies
+        shell: bash
+        run: poetry install --with test
+
+      - name: Install langchain editable
+        run: |
+          poetry run pip install -e libs/core libs/langchain libs/community libs/experimental
+
+      - name: Check doc imports
+        shell: bash
+        run: |
+          poetry run python docs/scripts/check_imports.py
+
+      - name: Ensure the test did not create any additional files
+        shell: bash
+        run: |
+          set -eu
+
+          STATUS="$(git status)"
+          echo "$STATUS"
+
+          # grep will exit non-zero if the target message isn't found,
+          # and `set -e` above will cause the step to fail.
+          echo "$STATUS" | grep 'nothing to commit, working tree clean'

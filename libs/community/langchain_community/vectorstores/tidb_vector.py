@@ -10,6 +10,8 @@ DEFAULT_TiDB_VECTOR_TABLE_NAME = "langchain_vector"
 
 
 class TiDBVectorStore(VectorStore):
+    """TiDB Vector Store."""
+
     def __init__(
         self,
         connection_string: str,

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-core"
-version = "0.1.33-rc.1"
+version = "0.2.4"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -11,12 +11,10 @@ repository = "https://github.com/langchain-ai/langchain"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 pydantic = ">=1,<3"
-langsmith = "^0.1.0"
+langsmith = "^0.1.66"
 tenacity = "^8.1.0"
 jsonpatch = "^1.33"
-anyio = ">=3,<5"
 PyYAML = ">=5.3"
-requests = "^2"
 packaging = "^23.2"
 jinja2 = { version = "^3", optional = true }
 
@@ -81,6 +79,11 @@ select = [
 [tool.mypy]
 disallow_untyped_defs = "True"
 exclude = ["notebooks", "examples", "example_data", "langchain_core/pydantic"]
+
+[[tool.mypy.overrides]]
+# conditional dependencies introduced by langsmith-sdk
+module = ["numpy", "pytest"]
+ignore_missing_imports = true
 
 [tool.coverage.run]
 omit = ["tests/*"]

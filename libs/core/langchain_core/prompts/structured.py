@@ -33,7 +33,10 @@ from langchain_core.runnables.base import (
 
 @beta()
 class StructuredPrompt(ChatPromptTemplate):
+    """Structured prompt template for a language model."""
+
     schema_: Union[Dict, Type[BaseModel]]
+    """Schema for the structured prompt."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:

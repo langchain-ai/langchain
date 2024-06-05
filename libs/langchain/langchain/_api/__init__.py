@@ -16,6 +16,7 @@ from .deprecation import (
     surface_langchain_deprecation_warnings,
     warn_deprecated,
 )
+from .module_import import create_importer
 
 __all__ = [
     "deprecated",
@@ -23,4 +24,5 @@ __all__ = [
     "suppress_langchain_deprecation_warning",
     "surface_langchain_deprecation_warnings",
     "warn_deprecated",
+    "create_importer",
 ]

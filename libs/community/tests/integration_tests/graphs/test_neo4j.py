@@ -266,10 +266,100 @@ def test_neo4j_filtering_labels() -> None:
     # Remove all constraints
     graph.query("CALL apoc.schema.assert({}, {})")
     graph.query(
-        "CREATE (:`_Bloom_Scene_`)-[:_Bloom_HAS_SCENE_]->(:`_Bloom_Perspective_`)"
+        """
+        CREATE (:_Bloom_Scene_ {property_a: 'a'})
+        -[:_Bloom_HAS_SCENE_ {property_b: 'b'}]
+        ->(:_Bloom_Perspective_)
+        """
     )
     graph.refresh_schema()
 
-    # Assert both are empty
+    # Assert all are empty
     assert graph.structured_schema["node_props"] == {}
+    assert graph.structured_schema["rel_props"] == {}
     assert graph.structured_schema["relationships"] == []
+
+
+def test_driver_config() -> None:
+    """Test that neo4j works with driver config."""
+    url = os.environ.get("NEO4J_URI")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(
+        url=url,
+        username=username,
+        password=password,
+        driver_config={"max_connection_pool_size": 1},
+    )
+    graph.query("RETURN 'foo'")
+
+
+def test_enhanced_schema() -> None:
+    """Test that neo4j works with driver config."""
+    url = os.environ.get("NEO4J_URI")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(
+        url=url, username=username, password=password, enhanced_schema=True
+    )
+    graph.query("MATCH (n) DETACH DELETE n")
+    graph.add_graph_documents(test_data)
+    graph.refresh_schema()
+    expected_output = {
+        "node_props": {
+            "foo": [
+                {
+                    "property": "id",
+                    "type": "STRING",
+                    "values": ["foo"],
+                    "distinct_count": 1,
+                }
+            ],
+            "bar": [
+                {
+                    "property": "id",
+                    "type": "STRING",
+                    "values": ["bar"],
+                    "distinct_count": 1,
+                }
+            ],
+        },
+        "rel_props": {},
+        "relationships": [{"start": "foo", "type": "REL", "end": "bar"}],
+    }
+    # remove metadata portion of schema
+    del graph.structured_schema["metadata"]
+    assert graph.structured_schema == expected_output
+
+
+def test_enhanced_schema_exception() -> None:
+    """Test no error with weird schema."""
+    url = os.environ.get("NEO4J_URI")
+    username = os.environ.get("NEO4J_USERNAME")
+    password = os.environ.get("NEO4J_PASSWORD")
+    assert url is not None
+    assert username is not None
+    assert password is not None
+
+    graph = Neo4jGraph(
+        url=url, username=username, password=password, enhanced_schema=True
+    )
+    graph.query("MATCH (n) DETACH DELETE n")
+    graph.query("CREATE (:Node {foo:'bar'})," "(:Node {foo: 1}), (:Node {foo: [1,2]})")
+    graph.refresh_schema()
+    expected_output = {
+        "node_props": {"Node": [{"property": "foo", "type": "STRING"}]},
+        "rel_props": {},
+        "relationships": [],
+    }
+    # remove metadata portion of schema
+    del graph.structured_schema["metadata"]
+    assert graph.structured_schema == expected_output

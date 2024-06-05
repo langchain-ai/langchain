@@ -200,7 +200,7 @@ class ConfluenceLoader(BaseLoader):
         if errors:
             raise ValueError(f"Error(s) while validating input: {errors}")
         try:
-            from atlassian import Confluence  # noqa: F401
+            from atlassian import Confluence
         except ImportError:
             raise ImportError(
                 "`atlassian` package not found, please run "
@@ -316,7 +316,7 @@ class ConfluenceLoader(BaseLoader):
                 limit=limit,
                 max_pages=max_pages,
                 status="any" if include_archived_content else "current",
-                expand=content_format.value,
+                expand=f"{content_format.value},version",
             )
             yield from self.process_pages(
                 pages,
@@ -349,7 +349,7 @@ class ConfluenceLoader(BaseLoader):
                 limit=limit,
                 max_pages=max_pages,
                 include_archived_spaces=include_archived_content,
-                expand=content_format.value,
+                expand=f"{content_format.value},version",
             )
             yield from self.process_pages(
                 pages,
@@ -613,8 +613,8 @@ class ConfluenceLoader(BaseLoader):
         ocr_languages: Optional[str] = None,
     ) -> str:
         try:
-            import pytesseract  # noqa: F401
-            from pdf2image import convert_from_bytes  # noqa: F401
+            import pytesseract
+            from pdf2image import convert_from_bytes
         except ImportError:
             raise ImportError(
                 "`pytesseract` or `pdf2image` package not found, "
@@ -647,8 +647,8 @@ class ConfluenceLoader(BaseLoader):
         ocr_languages: Optional[str] = None,
     ) -> str:
         try:
-            import pytesseract  # noqa: F401
-            from PIL import Image  # noqa: F401
+            import pytesseract
+            from PIL import Image
         except ImportError:
             raise ImportError(
                 "`pytesseract` or `Pillow` package not found, "
@@ -673,7 +673,7 @@ class ConfluenceLoader(BaseLoader):
 
     def process_doc(self, link: str) -> str:
         try:
-            import docx2txt  # noqa: F401
+            import docx2txt
         except ImportError:
             raise ImportError(
                 "`docx2txt` package not found, please run `pip install docx2txt`"
@@ -697,7 +697,7 @@ class ConfluenceLoader(BaseLoader):
         import os
 
         try:
-            import xlrd  # noqa: F401
+            import xlrd
 
         except ImportError:
             raise ImportError("`xlrd` package not found, please run `pip install xlrd`")
@@ -749,10 +749,10 @@ class ConfluenceLoader(BaseLoader):
         ocr_languages: Optional[str] = None,
     ) -> str:
         try:
-            import pytesseract  # noqa: F401
-            from PIL import Image  # noqa: F401
-            from reportlab.graphics import renderPM  # noqa: F401
-            from svglib.svglib import svg2rlg  # noqa: F401
+            import pytesseract
+            from PIL import Image
+            from reportlab.graphics import renderPM
+            from svglib.svglib import svg2rlg
         except ImportError:
             raise ImportError(
                 "`pytesseract`, `Pillow`, `reportlab` or `svglib` package not found, "

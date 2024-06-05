@@ -47,6 +47,11 @@ def test_tool_choice() -> None:
         "name": "Erick",
     }
     assert tool_call["type"] == "function"
+    assert isinstance(resp.tool_calls, list)
+    assert len(resp.tool_calls) == 1
+    tool_call = resp.tool_calls[0]
+    assert tool_call["name"] == "MyTool"
+    assert tool_call["args"] == {"age": 27, "name": "Erick"}
 
 
 def test_tool_choice_bool() -> None:
