@@ -21,7 +21,7 @@ def _vectorstore_from_texts(
     metadatas: Optional[List[dict]] = None,
     embedding_class: Type[Embeddings] = ConsistentFakeEmbeddings,
     drop: bool = True,
-    metadata_indexing: Optional[Union[Tuple[str, Iterable[str]], str]] = None,
+    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
     table_name: Optional[str] = None,
 ) -> Cassandra:
     from cassandra.cluster import Cluster
@@ -67,7 +67,7 @@ async def _vectorstore_from_texts_async(
     metadatas: Optional[List[dict]] = None,
     embedding_class: Type[Embeddings] = ConsistentFakeEmbeddings,
     drop: bool = True,
-    metadata_indexing: Optional[Union[Tuple[str, Iterable[str]], str]] = None,
+    metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
     table_name: Optional[str] = None,
 ) -> Cassandra:
     from cassandra.cluster import Cluster

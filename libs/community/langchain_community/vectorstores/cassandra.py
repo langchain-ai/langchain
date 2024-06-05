@@ -59,7 +59,7 @@ class Cassandra(VectorStore):
         *,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
         setup_mode: SetupMode = SetupMode.SYNC,
-        metadata_indexing: Optional[Union[Tuple[str, Iterable[str]], str]] = None,
+        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
     ) -> None:
         """Apache Cassandra(R) for vector-store workloads.
 
@@ -132,15 +132,12 @@ class Cassandra(VectorStore):
         elif setup_mode == SetupMode.SYNC:
             embedding_dimension = self._get_embedding_dimension()
 
-        if metadata_indexing is None:
-            metadata_indexing = "all"
-
         self.table = MetadataVectorCassandraTable(
             session=session,
             keyspace=keyspace,
             table=table_name,
             vector_dimension=embedding_dimension,
-            metadata_indexing=metadata_indexing,
+            metadata_indexing=metadata_indexing or "all",
             primary_key_type="TEXT",
             skip_provisioning=setup_mode == SetupMode.OFF,
             **kwargs,
@@ -900,7 +897,7 @@ class Cassandra(VectorStore):
         batch_size: int = 16,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_indexing: Optional[Union[Tuple[str, Iterable[str]], str]] = None,
+        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from raw texts.
@@ -952,7 +949,7 @@ class Cassandra(VectorStore):
         concurrency: int = 16,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_indexing: Optional[Union[Tuple[str, Iterable[str]], str]] = None,
+        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from raw texts.
@@ -1004,7 +1001,7 @@ class Cassandra(VectorStore):
         batch_size: int = 16,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_indexing: Optional[Union[Tuple[str, Iterable[str]], str]] = None,
+        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from a document list.
@@ -1057,7 +1054,7 @@ class Cassandra(VectorStore):
         concurrency: int = 16,
         ttl_seconds: Optional[int] = None,
         body_index_options: Optional[List[Tuple[str, Any]]] = None,
-        metadata_indexing: Optional[Union[Tuple[str, Iterable[str]], str]] = None,
+        metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
         **kwargs: Any,
     ) -> CVST:
         """Create a Cassandra vectorstore from a document list.
