@@ -28,7 +28,12 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
-    name: "make test #${{ matrix.python-version }}"
+        sqlalchemy-version:
+          - "latest"
+        include:
+          - sqlalchemy-version: "1.4"
+            python-version: "3.11"
+    name: "make test #${{ matrix.python-version }}${{ matrix.sqlalchemy-version != 'latest' && format(' sqlalchemy {0}', matrix.sqlalchemy-version) || '' }}"
     steps:
       - uses: actions/checkout@v4
 
@@ -51,6 +56,11 @@ jobs:
           LANGCHAIN_LOCATION: ${{ inputs.langchain-location }}
         run: |
           poetry run pip install -e "$LANGCHAIN_LOCATION"
+
+      - name: Overwrite sqlalchemy version to ${{ matrix.sqlalchemy-version }}
+        if: ${{ matrix.sqlalchemy-version != 'latest' }}
+        run: |
+          poetry run pip install sqlalchemy~=${{ matrix.sqlalchemy-version }}
 
       - name: Run core tests
         shell: bash
