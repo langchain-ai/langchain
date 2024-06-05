@@ -71,21 +71,20 @@ class JSONLoader(BaseLoader):
         """Load and return documents from the JSON file."""
         index = 0
         if self._json_lines:
-            with self.file_path.open(encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        for doc in self._parse(line, index):
-                            yield doc
-                            index += 1
+            f_json = json.loads(self.file_path.read_text())
+            for line in f_json:
+                if line:
+                    for doc in self._parse(line, index):
+                        yield doc
+                        index += 1
         else:
             for doc in self._parse(self.file_path.read_text(encoding="utf-8"), index):
                 yield doc
                 index += 1
 
-    def _parse(self, content: str, index: int) -> Iterator[Document]:
+    def _parse(self, content: dict, index: int) -> Iterator[Document]:
         """Convert given content to documents."""
-        data = self._jq_schema.input(json.loads(content))
+        data = self._jq_schema.input(content)
 
         # Perform some validation
         # This is not a perfect validation, but it should catch most cases
