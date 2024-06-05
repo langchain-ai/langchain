@@ -192,9 +192,12 @@ class YouSearchAPIWrapper(BaseModel):
 
         # return news results
         if self.endpoint_type == "news":
+            news_results = raw_search_results["news"]["results"]
+            if self.k is not None:
+                news_results = news_results[: self.k]
             return [
                 Document(page_content=result["description"], metadata=result)
-                for result in raw_search_results["news"]["results"]
+                for result in news_results
             ]
 
         docs = []
