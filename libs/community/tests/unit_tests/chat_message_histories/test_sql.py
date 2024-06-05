@@ -82,7 +82,7 @@ def test_add_messages(
     assert messages[1].content == "Hi there!"
 
 
-@pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_async_add_messages(
     asql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
@@ -129,7 +129,7 @@ def test_multiple_sessions(
     assert messages[2].content == "Whats cracking?"
 
 
-@pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_async_multiple_sessions(
     asql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
@@ -178,7 +178,7 @@ def test_clear_messages(
     assert len(other_history.messages) == 1
 
 
-@pytest.mark.asyncio
+@pytest.mark.requires("aiosqlite")
 async def test_async_clear_messages(
     asql_histories: Tuple[SQLChatMessageHistory, SQLChatMessageHistory],
 ) -> None:
