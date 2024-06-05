@@ -586,6 +586,20 @@ class AzureSearch(VectorStore):
             raise ValueError(f"search_type of {search_type} not allowed.")
         return docs
 
+    def similarity_search_with_score(
+        self, query: str, *, k: int = 4, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Run similarity search with distance."""
+        search_type = kwargs.get("search_type", self.search_type)
+        if search_type == "similarity":
+            return self.vector_search_with_score(query, k=k, **kwargs)
+        elif search_type == "hybrid":
+            return self.hybrid_search_with_score(query, k=k, **kwargs)
+        elif search_type == "semantic_hybrid":
+            return self.semantic_hybrid_search_with_score(query, k=k, **kwargs)
+        else:
+            raise ValueError(f"search_type of {search_type} not allowed.")
+
     async def asimilarity_search(
         self,
         query: str,
@@ -604,6 +618,20 @@ class AzureSearch(VectorStore):
         else:
             raise ValueError(f"search_type of {search_type} not allowed.")
         return docs
+
+    async def asimilarity_search_with_score(
+        self, query: str, *, k: int = 4, **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Run similarity search with distance."""
+        search_type = kwargs.get("search_type", self.search_type)
+        if search_type == "similarity":
+            return await self.avector_search_with_score(query, k=k, **kwargs)
+        elif search_type == "hybrid":
+            return await self.ahybrid_search_with_score(query, k=k, **kwargs)
+        elif search_type == "semantic_hybrid":
+            return await self.asemantic_hybrid_search_with_score(query, k=k, **kwargs)
+        else:
+            raise ValueError(f"search_type of {search_type} not allowed.")
 
     def similarity_search_with_relevance_scores(
         self,
