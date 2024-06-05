@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-text-splitters"
-version = "0.2.0"
+version = "0.2.1"
 description = "LangChain text splitting utilities"
 authors = []
 license = "MIT"

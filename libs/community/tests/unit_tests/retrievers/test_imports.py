@@ -43,6 +43,7 @@ EXPECTED_ALL = [
     "WebResearchRetriever",
     "YouRetriever",
     "ZepRetriever",
+    "ZepCloudRetriever",
     "ZillizRetriever",
     "DocArrayRetriever",
     "NeuralDBRetriever",

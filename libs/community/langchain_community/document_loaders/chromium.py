@@ -1,10 +1,11 @@
 import asyncio
 import logging
-from typing import AsyncIterator, Iterator, List
+from typing import AsyncIterator, Iterator, List, Optional
 
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
+from langchain_community.utils.user_agent import get_user_agent
 
 logger = logging.getLogger(__name__)
 
@@ -13,18 +14,26 @@ class AsyncChromiumLoader(BaseLoader):
     """Scrape HTML pages from URLs using a
     headless instance of the Chromium."""
 
-    def __init__(self, urls: List[str], *, headless: bool = True):
+    def __init__(
+        self,
+        urls: List[str],
+        *,
+        headless: bool = True,
+        user_agent: Optional[str] = None,
+    ):
         """Initialize the loader with a list of URL paths.
 
         Args:
             urls: A list of URLs to scrape content from.
             headless: Whether to run browser in headless mode.
+            user_agent: The user agent to use for the browser
 
         Raises:
             ImportError: If the required 'playwright' package is not installed.
         """
         self.urls = urls
         self.headless = headless
+        self.user_agent = user_agent or get_user_agent()
 
         try:
             import playwright  # noqa: F401
@@ -52,7 +61,7 @@ class AsyncChromiumLoader(BaseLoader):
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=self.headless)
             try:
-                page = await browser.new_page()
+                page = await browser.new_page(user_agent=self.user_agent)
                 await page.goto(url)
                 results = await page.content()  # Simply get the HTML content
                 logger.info("Content scraped")
