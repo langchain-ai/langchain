@@ -74,7 +74,6 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
     assert test_group_deps == sorted(
         [
-            "aiosqlite",
             "duckdb-engine",
             "freezegun",
             "langchain-core",
