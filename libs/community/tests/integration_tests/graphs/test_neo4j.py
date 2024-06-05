@@ -267,8 +267,8 @@ def test_neo4j_filtering_labels() -> None:
     graph.query("CALL apoc.schema.assert({}, {})")
     graph.query(
         """
-        CREATE (:_Bloom_Scene_{property_a: 'a'})
-        -[:_Bloom_HAS_SCENE_{property_b: 'b'}]
+        CREATE (:_Bloom_Scene_ {property_a: 'a'})
+        -[:_Bloom_HAS_SCENE_ {property_b: 'b'}]
         ->(:_Bloom_Perspective_)
         """
     )
