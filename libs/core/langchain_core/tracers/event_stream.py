@@ -230,10 +230,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         parent_run_id: Optional[UUID],
         name_: str,
         run_type: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Update the run info."""
-        info = {
+        info: RunInfo = {
             "tags": tags or [],
             "metadata": metadata or {},
             "name": name_,
