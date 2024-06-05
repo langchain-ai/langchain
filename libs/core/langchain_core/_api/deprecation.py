@@ -100,10 +100,12 @@ def deprecated(
                 pass
     """
 
-    if (
-        alternative_import
-        and "." not in alternative_import
-        or " " in alternative_import
+    if pending and removal:
+        raise ValueError("A pending deprecation cannot have a scheduled removal")
+    if alternative and alternative_import:
+        raise ValueError("Cannot specify both alternative and alternative_import")
+    if alternative_import and (
+        "." not in alternative_import or " " in alternative_import
     ):
         raise ValueError(
             "alternative_import must be a fully qualified module path, e.g. "
@@ -347,12 +349,6 @@ def warn_deprecated(
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
     """
-    if pending and removal:
-        raise ValueError("A pending deprecation cannot have a scheduled removal")
-    if alternative and alternative_import:
-        raise ValueError("Cannot specify both alternative and alternative_import")
-    if alternative_import and "." not in alternative_import:
-        raise ValueError("alternative_import must be a fully qualified module path")
 
     if not pending:
         if not removal:
