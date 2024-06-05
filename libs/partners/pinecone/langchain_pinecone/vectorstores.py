@@ -155,20 +155,27 @@ class PineconeVectorStore(VectorStore):
             chunk_ids = ids[i : i + embedding_chunk_size]
             chunk_metadatas = metadatas[i : i + embedding_chunk_size]
             embeddings = self._embedding.embed_documents(chunk_texts)
-            async_res = [
+            vector_tuples = zip(chunk_ids, embeddings, chunk_metadatas)
+            if async_req:
+                # Runs the pinecone upsert asynchronously.
+                async_res = [
+                    self._index.upsert(
+                        vectors=batch_vector_tuples,
+                        namespace=namespace,
+                        async_req=async_req,
+                        **kwargs,
+                    )
+                    for batch_vector_tuples in batch_iterate(batch_size, vector_tuples)
+                ]
+                [res.get() for res in async_res]
+            else:
                 self._index.upsert(
-                    vectors=batch,
+                    vectors=vector_tuples,
                     namespace=namespace,
                     async_req=async_req,
                     **kwargs,
                 )
-                for batch in batch_iterate(
-                    batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
-                )
-            ]
-            if async_req:
-                [res.get() for res in async_res]
-
+                
         return ids
 
     def similarity_search_with_score(
@@ -406,6 +413,7 @@ class PineconeVectorStore(VectorStore):
         upsert_kwargs: Optional[dict] = None,
         pool_threads: int = 4,
         embeddings_chunk_size: int = 1000,
+        async_req: bool = True,
         **kwargs: Any,
     ) -> PineconeVectorStore:
         """Construct Pinecone wrapper from raw documents.
@@ -445,6 +453,7 @@ class PineconeVectorStore(VectorStore):
             namespace=namespace,
             batch_size=batch_size,
             embedding_chunk_size=embeddings_chunk_size,
+            async_req=async_req,
             **(upsert_kwargs or {}),
         )
         return pinecone
