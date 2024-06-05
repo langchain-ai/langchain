@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 @deprecated(
     since="0.0.37",
     removal="0.3",
-    alternative_import="from langchain_huggingface import HuggingFacePipeline",
+    alternative_import="langchain_huggingface.HuggingFacePipeline",
 )
 class HuggingFacePipeline(BaseLLM):
     """HuggingFace Pipeline API.
