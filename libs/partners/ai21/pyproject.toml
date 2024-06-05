@@ -12,7 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.48,<0.3"
+langchain-core = "^0.2.4"
 langchain-text-splitters = "^0.2.0"
 ai21 = "^2.4.1"
 
