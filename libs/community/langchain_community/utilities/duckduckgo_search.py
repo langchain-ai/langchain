@@ -15,26 +15,26 @@ class DuckDuckGoSearchAPIWrapper(BaseModel):
     """
 
     region: Optional[str] = "wt-wt"
-    '''
+    """
     See https://pypi.org/project/duckduckgo-search/#regions
-    '''
+    """
     safesearch: str = "moderate"
-    '''
+    """
     Options: strict, moderate, off
-    '''
+    """
     time: Optional[str] = "y"
-    '''
+    """
     Options: d, w, m, y
-    '''
+    """
     max_results: int = 5
     backend: str = "api"
-    '''
+    """
     Options: api, html, lite
-    '''
-    source: str = "text"  
-    '''
+    """
+    source: str = "text"
+    """
     Options: text, news
-    '''
+    """
 
     class Config:
         """Configuration for this pydantic object."""
