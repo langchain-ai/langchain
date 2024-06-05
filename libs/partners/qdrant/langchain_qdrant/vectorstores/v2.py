@@ -5,7 +5,7 @@ from qdrant_client import QdrantClient, AsyncQdrantClient
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.indexes.types import AddResponse
+from langchain_core.indexes.types import UpsertResponse
 from langchain_core.retrievers.v2 import RetrievalResponse
 from langchain_core.vectorstores.v2 import VectorStoreV2
 
@@ -85,7 +85,7 @@ class QdrantV2(VectorStoreV2):
         ids: Optional[Union[List[str], Tuple[str]]] = None,
         batch_size: int = 64,
         **kwargs: Any,
-    ) -> AddResponse:
+    ) -> UpsertResponse:
 
         added_ids = []
         for batch_ids, points in self._generate_rest_batches(
@@ -96,7 +96,7 @@ class QdrantV2(VectorStoreV2):
             )
             added_ids.extend(batch_ids)
 
-        return AddResponse(succeeded=added_ids, failed=[])
+        return UpsertResponse(succeeded=added_ids, failed=[])
 
     def _retrieve(
         self,

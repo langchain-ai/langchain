@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 from langchain_core.documents import Document
-from langchain_core.indexes.types import AddResponse, DeleteResponse
+from langchain_core.indexes.types import DeleteResponse, UpsertResponse
 from langchain_core.stores import BaseStore
 from langchain_core.structured_query import StructuredQuery
 
@@ -18,7 +18,7 @@ class Index(BaseStore[str, Document], ABC):
             from uuid import uuid4
 
             from langchain_core.documents import Document
-            from langchain_core.indexes import AddResponse, DeleteResponse, Index
+            from langchain_core.indexes import UpsertResponse, DeleteResponse, Index
 
             def uuid4_generator() -> Iterable[str]:
                 while True:
@@ -29,19 +29,19 @@ class Index(BaseStore[str, Document], ABC):
                 def __init__(self) -> None:
                     self.store = {}
 
-                def add(
+                def upsert(
                     self,
                     documents: Iterable[Document],
                     *,
                     ids: Optional[Iterable[str]] = None,
                     **kwargs: Any,
-                ) -> AddResponse:
+                ) -> UpsertResponse:
                     ids = ids or uuid4_generator()
                     succeeded = []
                     for id_, doc in zip(ids, documents):
                         self.store[id_] = doc
                         succeeded.append(id_)
-                    return AddResponse(succeeded=succeeded, failed=[])
+                    return UpsertResponse(succeeded=succeeded, failed=[])
 
                 def delete_by_ids(self, ids: Iterable[str]) -> DeleteResponse:
                     succeeded = []
@@ -69,14 +69,14 @@ class Index(BaseStore[str, Document], ABC):
     """  # noqa: E501
 
     @abstractmethod
-    def add(
+    def upsert(
         self,
         documents: Iterable[Document],
         *,
         ids: Optional[Iterable[str]] = None,
         **kwargs: Any,
-    ) -> AddResponse:
-        """Add documents to index."""
+    ) -> UpsertResponse:
+        """Upsert documents to index."""
 
     @abstractmethod
     def delete_by_ids(self, ids: Iterable[str]) -> DeleteResponse:
@@ -217,6 +217,3 @@ class Index(BaseStore[str, Document], ABC):
 
     def mdelete(self, keys: Sequence[str]) -> None:
         self.delete_by_ids(keys)  # type: ignore[arg-type]
-
-    # QUESTION: do we need Index.update or Index.upsert? should Index.add just do that?
-    # QUESTION: should we support lazy versions of operations?

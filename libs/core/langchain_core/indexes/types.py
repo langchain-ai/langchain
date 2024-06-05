@@ -1,7 +1,7 @@
 from typing import List, TypedDict
 
 
-class AddResponse(TypedDict):
+class UpsertResponse(TypedDict):
     succeeded: List[str]
     failed: List[str]
 
