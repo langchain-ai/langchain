@@ -1986,19 +1986,22 @@ async def test_astream_events_from_custom_runnable() -> None:
 async def test_parent_run_id_assignment() -> None:
     """Test assignment of parent run id."""
 
-    @RunnableLambda
+    # Type ignores in the code below need to be investigated.
+    # Looks like a typing issue when using RunnableLambda as a decorator
+    # with async functions.
+    @RunnableLambda  # type: ignore
     async def grandchild(x: str) -> str:
         return x
 
-    @RunnableLambda
+    @RunnableLambda  # type: ignore
     async def child(x: str, config: RunnableConfig) -> str:
         config["run_id"] = uuid.UUID(int=9)
-        return await grandchild.ainvoke(x, config)
+        return await grandchild.ainvoke(x, config)  # type: ignore
 
-    @RunnableLambda
+    @RunnableLambda  # type: ignore
     async def parent(x: str, config: RunnableConfig) -> str:
         config["run_id"] = uuid.UUID(int=8)
-        return await child.ainvoke(x, config)
+        return await child.ainvoke(x, config)  # type: ignore
 
     bond = uuid.UUID(int=7)
     events = await _collect_events(
