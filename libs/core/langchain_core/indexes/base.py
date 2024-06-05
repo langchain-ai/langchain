@@ -1,9 +1,11 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast, \
+    AsyncIterable
 
 from langchain_core.documents import Document
 from langchain_core.indexes.types import DeleteResponse, UpsertResponse
+from langchain_core.runnables import run_in_executor
 from langchain_core.stores import BaseStore
 from langchain_core.structured_query import StructuredQuery
 
@@ -71,12 +73,24 @@ class Index(BaseStore[str, Document], ABC):
     @abstractmethod
     def upsert(
         self,
+        # TODO: Iterable or Iterator?
         documents: Iterable[Document],
         *,
         ids: Optional[Iterable[str]] = None,
         **kwargs: Any,
     ) -> UpsertResponse:
         """Upsert documents to index."""
+
+    async def aupsert(
+        self,
+        documents: AsyncIterable[Document],
+        *,
+        ids: Optional[AsyncIterable[str]] = None,
+        **kwargs: Any,
+    ) -> UpsertResponse:
+        """Upsert documents to index."""
+        # TODO: how to convert AsyncIterable -> Iterable
+        return await run_in_executor(None, self.upsert, documents, ids=ids, **kwargs)
 
     @abstractmethod
     def delete_by_ids(self, ids: Iterable[str]) -> DeleteResponse:
@@ -90,6 +104,9 @@ class Index(BaseStore[str, Document], ABC):
            documents that were successfully deleted and the ones that failed to be
            deleted.
         """
+    async def adelete_by_ids(self, ids: AsyncIterable[str]) -> DeleteResponse:
+        """Upsert documents to index."""
+        return await run_in_executor(None, self.delete_by_ids, ids)
 
     @abstractmethod
     def lazy_get_by_ids(self, ids: Iterable[str]) -> Iterable[Document]:
@@ -101,6 +118,17 @@ class Index(BaseStore[str, Document], ABC):
         Yields:
            Document
         """
+
+    async def alazy_get_by_ids(self, ids: AsyncIterable[str]) -> AsyncIterable[Document]:
+        """Lazily get documents by id.
+
+        Args:
+            ids: IDs of the documents to get.
+
+        Yields:
+           Document
+        """
+
 
     def get_by_ids(self, ids: Iterable[str]) -> List[Document]:
         """Get documents by id.
