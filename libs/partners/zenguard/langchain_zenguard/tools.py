@@ -47,8 +47,8 @@ class ZenGuardTool(BaseTool):
             v = os.getenv(cls._ZENGUARD_API_KEY_ENV_NAME)
         if v is None:
             raise ValidationError(
-                "The api_key tool option must be set either "
-                "by passing api_key to the tool or by setting "
+                "The zenguard_api_key tool option must be set either "
+                "by passing zenguard_api_key to the tool or by setting "
                 f"the f{cls._ZENGUARD_API_KEY_ENV_NAME} environment variable"
             )
         return v
