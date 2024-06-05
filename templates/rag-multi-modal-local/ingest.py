@@ -21,7 +21,9 @@ re_vectorstore_path = vectorstore.relative_to(Path.cwd())
 
 # Load embedding function
 print("Loading embedding function")
-embedding = NomicMultimodalEmbeddings(vision_model="nomic-embed-vision-v1", text_model="nomic-embed-text-v1")
+embedding = NomicMultimodalEmbeddings(
+    vision_model="nomic-embed-vision-v1", text_model="nomic-embed-text-v1"
+)
 
 # Create chroma
 vectorstore_mmembd = Chroma(
