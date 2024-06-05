@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from time import sleep, monotonic
+from time import monotonic, sleep
 from typing import Any, Dict, List, Optional
 
 import pytest
@@ -34,7 +34,9 @@ class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
         """Patched insert_texts that waits for data to be indexed before returning"""
         ids = super()._insert_texts(texts, metadatas)
         start = monotonic()
-        while len(ids) != self.similarity_search("sandwich") and (monotonic() - start <= TIMEOUT):
+        while len(ids) != self.similarity_search("sandwich") and (
+            monotonic() - start <= TIMEOUT
+        ):
             sleep(INTERVAL)
         return ids
 

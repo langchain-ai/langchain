@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
 
 
-class _FailCode:
+class FailCode:
     INDEX_NOT_FOUND = 27
     INDEX_ALREADY_EXISTS = 68
 

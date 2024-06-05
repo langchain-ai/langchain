@@ -2,9 +2,6 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from pymongo.collection import Collection
-from pymongo.errors import CollectionInvalid, OperationFailure
-
-from langchain_mongodb.utils import _FailCode
 
 logger = logging.getLogger(__file__)
 
@@ -55,19 +52,10 @@ def create_vector_search_index(
         "type": "vectorSearch",
     }
 
-    try:
-        result = db.command(
-            {"createSearchIndexes": collection.name, "indexes": [index_definition]}
-        )
-        logger.info(result)
-    except CollectionInvalid:
-        logger.error(
-            "Index %s already exists,"
-            " will not attempt to index creation;"
-            " consider setting update = True to update"
-            " an existing vector search index",
-            index_name,
-        )
+    result = db.command(
+        {"createSearchIndexes": collection.name, "indexes": [index_definition]}
+    )
+    logger.info(result)
 
 
 def drop_vector_search_index(collection: Collection, index_name: str) -> None:
@@ -77,12 +65,9 @@ def drop_vector_search_index(collection: Collection, index_name: str) -> None:
         collection (Collection): MongoDB Collection with index to be dropped
         index_name (str): Name of the MongoDB index
     """
-    try:
-        collection.database.command(
-            {"dropSearchIndex": collection.name, "name": index_name}
-        )
-    except OperationFailure:
-        logger.error("Index Name %s not found; no delete scheduled", index_name)
+    collection.database.command(
+        {"dropSearchIndex": collection.name, "name": index_name}
+    )
 
 
 def update_vector_search_index(
@@ -105,28 +90,16 @@ def update_vector_search_index(
     """
     db = collection.database
 
-    try:
-        result = db.command(
-            {
-                "updateSearchIndex": collection.name,
-                "name": index_name,
-                "definition": _create_index_definition(
-                    dimensions=dimensions,
-                    path=path,
-                    similarity=similarity,
-                    filters=filters,
-                ),
-            }
-        )
-        logger.info(result)
-    except OperationFailure as e:
-        if e.code == _FailCode.INDEX_NOT_FOUND:
-            logger.error(
-                "Index %s does not exist."
-                " will not attempt to update;"
-                " consider setting update = False to create"
-                " a new vector search index",
-                index_name,
-            )
-        else:
-            raise
+    result = db.command(
+        {
+            "updateSearchIndex": collection.name,
+            "name": index_name,
+            "definition": _create_index_definition(
+                dimensions=dimensions,
+                path=path,
+                similarity=similarity,
+                filters=filters,
+            ),
+        }
+    )
+    logger.info(result)
