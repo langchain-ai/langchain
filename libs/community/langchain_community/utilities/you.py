@@ -150,6 +150,36 @@ class YouSearchAPIWrapper(BaseModel):
             )
         return values
 
+    def _generate_params(self, query: str, **kwargs) -> Dict:
+        """
+        Parse parameters required for different You.com APIs.
+
+        Args:
+            query: The query to search for.
+        """
+        params = {
+            "safesearch": self.safesearch,
+            "country": self.country,
+            **kwargs,
+        }
+
+        # Add endpoint-specific params
+        if self.endpoint_type in ("search", "snippet"):
+            params.update(
+                query=query,
+                num_web_results=self.num_web_results,
+            )
+        elif self.endpoint_type == "news":
+            params.update(
+                q=query,
+                count=self.num_web_results,
+                search_lang=self.search_lang,
+                ui_lang=self.ui_lang,
+                spellcheck=self.spellcheck,
+            )
+
+        params = {k: v for k, v in params.items() if v is not None}
+        return params
 
     def _parse_results(self, raw_search_results: Dict) -> List[Document]:
         """
@@ -195,26 +225,10 @@ class YouSearchAPIWrapper(BaseModel):
 
         Args:
             query: The query to search for.
-            num_web_results: The maximum number of results to return.
-            safesearch: Safesearch settings,
-              one of off, moderate, strict, defaults to moderate
-            country: Country code
         Returns: YouAPIOutput
         """
         headers = {"X-API-Key": self.ydc_api_key or ""}
-        params = {
-            "query": query,
-            "num_web_results": self.num_web_results,
-            "safesearch": self.safesearch,
-            "country": self.country,
-            **kwargs,
-        }
-
-        params = {k: v for k, v in params.items() if v is not None}
-        # news endpoint expects `q` instead of `query`
-        if self.endpoint_type == "news":
-            params["q"] = params["query"]
-            del params["query"]
+        params = self._generate_params(query, **kwargs)
 
         # @todo deprecate `snippet`, not part of API
         if self.endpoint_type == "snippet":
@@ -249,18 +263,7 @@ class YouSearchAPIWrapper(BaseModel):
         """Get results from the you.com Search API asynchronously."""
 
         headers = {"X-API-Key": self.ydc_api_key or ""}
-        params = {
-            "query": query,
-            "num_web_results": self.num_web_results,
-            "safesearch": self.safesearch,
-            "country": self.country,
-            **kwargs,
-        }
-        params = {k: v for k, v in params.items() if v is not None}
-        # news endpoint expects `q` instead of `query`
-        if self.endpoint_type == "news":
-            params["q"] = params["query"]
-            del params["query"]
+        params = self._generate_params(query, **kwargs)
 
         # @todo deprecate `snippet`, not part of API
         if self.endpoint_type == "snippet":
