@@ -1,6 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 from langchain_core.documents import Document
 from langchain_core.indexes.types import AddResponse, DeleteResponse
@@ -14,12 +14,15 @@ class Index(BaseStore[str, Document], ABC):
     Example:
         .. code-block:: python
 
-            from typing import Any, Iterator, List, Optional, Sequence, Tuple, Union
+            from typing import Any, Iterator, List, Optional, Sequence, Tuple, Union, Iterable
             from uuid import uuid4
 
             from langchain_core.documents import Document
-            from langchain_core.vectorstores_v2 import AddResponse, DeleteResponse, Index
+            from langchain_core.indexes import AddResponse, DeleteResponse, Index
 
+            def uuid4_generator() -> Iterable[str]:
+                while True:
+                    yield str(uuid4())
 
             class DictIndex(Index):
 
@@ -28,29 +31,33 @@ class Index(BaseStore[str, Document], ABC):
 
                 def add(
                     self,
-                    documents: Sequence[Document],
+                    documents: Iterable[Document],
                     *,
-                    ids: Optional[Union[List[str], Tuple[str]]] = None,
+                    ids: Optional[Iterable[str]] = None,
                     **kwargs: Any,
                 ) -> AddResponse:
-                    ids = ids or [str(uuid4()) for _ in documents]
-                    self.store.update(dict(zip(ids, documents)))
-                    return AddResponse(succeeded=list(ids), failed=[])
+                    ids = ids or uuid4_generator()
+                    succeeded = []
+                    for id_, doc in zip(ids, documents):
+                        self.store[id_] = doc
+                        succeeded.append(id_)
+                    return AddResponse(succeeded=succeeded, failed=[])
 
-                def delete_by_ids(self, ids: Union[List[str], Tuple[str]]) -> DeleteResponse:
+                def delete_by_ids(self, ids: Iterable[str]) -> DeleteResponse:
                     succeeded = []
                     failed = []
-                    for id in ids:
+                    for id_ in ids:
                         try:
-                            del self.store[id]
+                            del self.store[id_]
                         except Exception:
-                            failed.append(id)
+                            failed.append(id_)
                         else:
-                            succeeded.append(id)
+                            succeeded.append(id_)
                     return DeleteResponse(succeeded=succeeded, failed=failed)
 
-                def get_by_ids(self, ids: Union[List[str], Tuple[str]]) -> List[Document]:
-                    return [self.store[id] for id in ids]
+                def lazy_get_by_ids(self, ids: Iterable[str]) -> Iterable[Document]:
+                    for id in ids:
+                        yield self.store[id]
 
                 def yield_keys(
                     self, *, prefix: Optional[str] = None
@@ -64,15 +71,15 @@ class Index(BaseStore[str, Document], ABC):
     @abstractmethod
     def add(
         self,
-        documents: Sequence[Document],
+        documents: Iterable[Document],
         *,
-        ids: Optional[Union[List[str], Tuple[str]]] = None,
+        ids: Optional[Iterable[str]] = None,
         **kwargs: Any,
     ) -> AddResponse:
         """Add documents to index."""
 
     @abstractmethod
-    def delete_by_ids(self, ids: Union[List[str], Tuple[str]]) -> DeleteResponse:
+    def delete_by_ids(self, ids: Iterable[str]) -> DeleteResponse:
         """Delete documents by id.
 
         Args:
@@ -85,7 +92,17 @@ class Index(BaseStore[str, Document], ABC):
         """
 
     @abstractmethod
-    def get_by_ids(self, ids: Union[List[str], Tuple[str]]) -> List[Document]:
+    def lazy_get_by_ids(self, ids: Iterable[str]) -> Iterable[Document]:
+        """Lazily get documents by id.
+
+        Args:
+            ids: IDs of the documents to get.
+
+        Yields:
+           Document
+        """
+
+    def get_by_ids(self, ids: Iterable[str]) -> List[Document]:
         """Get documents by id.
 
         Args:
@@ -94,11 +111,12 @@ class Index(BaseStore[str, Document], ABC):
         Returns:
            A list of the requested Documents.
         """
+        return list(self.lazy_get_by_ids(ids))
 
     def delete(
         self,
         *,
-        ids: Optional[Union[List[str], Tuple[str]]] = None,
+        ids: Optional[Iterable[str]] = None,
         filters: Union[
             StructuredQuery, Dict[str, Any], List[Dict[str, Any]], None
         ] = None,
@@ -131,10 +149,44 @@ class Index(BaseStore[str, Document], ABC):
             )
         return self.delete_by_ids(ids)
 
+    def lazy_get(
+        self,
+        *,
+        ids: Optional[Iterable[str]] = None,
+        filters: Union[
+            StructuredQuery, Dict[str, Any], List[Dict[str, Any]], None
+        ] = None,
+        **kwargs: Any,
+    ) -> Iterable[Document]:
+        """Default implementation only supports get by id.
+
+        Override this method if the integration supports get by other parameters.
+
+        Args:
+            ids: IDs of the documents to get. Must be specified.
+            **kwargs: Other keywords args not supported by default. Will be ignored.
+
+        Yields:
+           Document.
+
+        Raises:
+            ValueError: if ids are not provided.
+        """
+        if ids is None:
+            raise ValueError("Must provide ids to get.")
+        if filters:
+            kwargs = {"filters": filters, **kwargs}
+        if kwargs:
+            warnings.warn(
+                "Only deletion by ids is supported for this integration, all other "
+                f"arguments are ignored. Received {kwargs=}"
+            )
+        return self.lazy_get_by_ids(ids)
+
     def get(
         self,
         *,
-        ids: Optional[Union[List[str], Tuple[str]]] = None,
+        ids: Optional[Iterable[str]] = None,
         filters: Union[
             StructuredQuery, Dict[str, Any], List[Dict[str, Any]], None
         ] = None,
@@ -154,16 +206,7 @@ class Index(BaseStore[str, Document], ABC):
         Raises:
             ValueError: if ids are not provided.
         """
-        if ids is None:
-            raise ValueError("Must provide ids to get.")
-        if filters:
-            kwargs = {"filters": filters, **kwargs}
-        if kwargs:
-            warnings.warn(
-                "Only deletion by ids is supported for this integration, all other "
-                f"arguments are ignored. Received {kwargs=}"
-            )
-        return self.get_by_ids(ids)
+        return list(self.lazy_get(ids=ids, filters=filters, **kwargs))
 
     def mget(self, keys: Sequence[str]) -> List[Optional[Document]]:
         return cast(List[Optional[Document]], self.get_by_ids(keys))  # type: ignore[arg-type]
