@@ -459,7 +459,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                                 )
                             input_variables = [vars[0]]
                         else:
-                            input_variables = None
+                            input_variables = []
                         img_template = {"url": img_template}
                         img_template_obj = ImagePromptTemplate(
                             input_variables=input_variables, template=img_template
@@ -471,7 +471,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                                 img_template["url"], "f-string"
                             )
                         else:
-                            input_variables = None
+                            input_variables = []
                         img_template_obj = ImagePromptTemplate(
                             input_variables=input_variables, template=img_template
                         )
