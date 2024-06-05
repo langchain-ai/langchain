@@ -98,8 +98,9 @@ class ChatAI21(BaseChatModel, AI21Base):
             "top_p": self.top_p,
             "top_k_return": self.top_k_return,
             "n": self.n,
-            "stop_sequences": self.stop,
         }
+        if self.stop:
+            base_params["stop_sequences"] = self.stop
 
         if self.count_penalty is not None:
             base_params["count_penalty"] = self.count_penalty.to_dict()
