@@ -10,7 +10,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-pydantic = ">=1,<3"
+pydantic = "^2"
 langsmith = "^0.1.66"
 tenacity = "^8.1.0"
 jsonpatch = "^1.33"
