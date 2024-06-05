@@ -22,13 +22,11 @@ def _vectorstore_from_texts(
     embedding_class: Type[Embeddings] = ConsistentFakeEmbeddings,
     drop: bool = True,
     metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
-    table_name: Optional[str] = None,
+    table_name: str = "vector_test_table",
 ) -> Cassandra:
     from cassandra.cluster import Cluster
 
     keyspace = "vector_test_keyspace"
-    if table_name is None:
-        table_name = "vector_test_table"
     # get db connection
     if "CASSANDRA_CONTACT_POINTS" in os.environ:
         contact_points = [
@@ -68,13 +66,11 @@ async def _vectorstore_from_texts_async(
     embedding_class: Type[Embeddings] = ConsistentFakeEmbeddings,
     drop: bool = True,
     metadata_indexing: Union[Tuple[str, Iterable[str]], str] = "all",
-    table_name: Optional[str] = None,
+    table_name: str = "vector_test_table",
 ) -> Cassandra:
     from cassandra.cluster import Cluster
 
     keyspace = "vector_test_keyspace"
-    if table_name is None:
-        table_name = "vector_test_table"
     # get db connection
     if "CASSANDRA_CONTACT_POINTS" in os.environ:
         contact_points = [
