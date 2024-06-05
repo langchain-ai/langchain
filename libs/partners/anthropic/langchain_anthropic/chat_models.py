@@ -882,6 +882,9 @@ def _make_chat_generation_chunk(
                 )
             else:
                 seen_input_tokens = full_generation_info[k].get("input_tokens", 0)
+                # Anthropic returns the same input token count for each message in a stream.
+                # To avoid double counting, we only count the input tokens once.
+                # After that, we set the input tokens to zero.
                 new_input_tokens = 0 if seen_input_tokens else input_tokens
                 usage_metadata = UsageMetadata(
                     input_tokens=new_input_tokens,
