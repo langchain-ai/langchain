@@ -1,9 +1,12 @@
+import json
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from pathlib import Path
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.load import dumpd, load
 from langchain_core.vectorstores import VectorStore
 
 from langchain_community.utils.math import cosine_similarity
@@ -64,22 +67,42 @@ class InMemoryVectorStore(VectorStore):
     ) -> List[str]:
         return self.add_texts(texts, metadatas, **kwargs)
 
+    def _similarity_search_with_score_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        filter: Optional[Callable[[Document], bool]] = None,
+        **kwargs: Any,
+    ) -> List[Tuple[Document, float, List[float]]]:
+        result = []
+        for doc in self.store.values():
+            vector = doc["vector"]
+            similarity = float(cosine_similarity([embedding], [vector]).item(0))
+            result.append(
+                (
+                    Document(page_content=doc["text"], metadata=doc["metadata"]),
+                    similarity,
+                    vector,
+                )
+            )
+        result.sort(key=lambda x: x[1], reverse=True)
+        if filter is not None:
+            result = [r for r in result if filter(r[0])]
+        return result[:k]
+
     def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
         k: int = 4,
+        filter: Optional[Callable[[Document], bool]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        docs_with_similarity = []
-        for doc in self.store.values():
-            similarity = float(cosine_similarity([embedding], [doc["vector"]]).item(0))
-            docs_with_similarity.append(
-                (
-                    Document(page_content=doc["text"], metadata=doc["metadata"]),
-                    similarity,
-                )
+        return [
+            (doc, similarity)
+            for doc, similarity, _ in self._similarity_search_with_score_by_vector(
+                embedding=embedding, k=k, filter=filter, **kwargs
             )
-        docs_with_similarity.sort(key=lambda x: x[1], reverse=True)
-        return docs_with_similarity[:k]
+        ]
 
     def similarity_search_with_score(
         self,
@@ -91,6 +114,7 @@ class InMemoryVectorStore(VectorStore):
         docs = self.similarity_search_with_score_by_vector(
             embedding,
             k,
+            **kwargs,
         )
         return docs
 
@@ -108,6 +132,7 @@ class InMemoryVectorStore(VectorStore):
         docs_and_scores = self.similarity_search_with_score_by_vector(
             embedding,
             k,
+            **kwargs,
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -134,31 +159,19 @@ class InMemoryVectorStore(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
-        docs_with_similarity = []
-        for doc in self.store.values():
-            similarity = float(cosine_similarity([embedding], [doc["vector"]]).item(0))
-            docs_with_similarity.append(
-                (
-                    doc,
-                    similarity,
-                )
-            )
-        docs_with_similarity.sort(key=lambda x: x[1], reverse=True)
-        prefetch_hits = docs_with_similarity[:fetch_k]
+        prefetch_hits = self._similarity_search_with_score_by_vector(
+            embedding=embedding,
+            k=fetch_k,
+            **kwargs,
+        )
 
         mmr_chosen_indices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
-            [doc["vector"] for doc, _ in prefetch_hits],
+            [vector for _, _, vector in prefetch_hits],
             k=k,
             lambda_mult=lambda_mult,
         )
-        return [
-            Document(
-                page_content=prefetch_hits[idx][0]["text"],
-                metadata=prefetch_hits[idx][0]["metadata"],
-            )
-            for idx in mmr_chosen_indices
-        ]
+        return [prefetch_hits[idx][0] for idx in mmr_chosen_indices]
 
     def max_marginal_relevance_search(
         self,
@@ -174,6 +187,7 @@ class InMemoryVectorStore(VectorStore):
             k,
             fetch_k,
             lambda_mult=lambda_mult,
+            **kwargs,
         )
 
     @classmethod
@@ -199,3 +213,20 @@ class InMemoryVectorStore(VectorStore):
         **kwargs: Any,
     ) -> "InMemoryVectorStore":
         return cls.from_texts(texts, embedding, metadatas, **kwargs)
+
+    @classmethod
+    def load(
+        cls, path: str, embedding: Embeddings, **kwargs: Any
+    ) -> "InMemoryVectorStore":
+        _path: Path = Path(path)
+        with _path.open("r") as f:
+            store = load(json.load(f))
+        vectorstore = cls(embedding=embedding, **kwargs)
+        vectorstore.store = store
+        return vectorstore
+
+    def dump(self, path: str) -> None:
+        _path: Path = Path(path)
+        _path.parent.mkdir(exist_ok=True, parents=True)
+        with _path.open("w") as f:
+            json.dump(dumpd(self.store), f, indent=2)
