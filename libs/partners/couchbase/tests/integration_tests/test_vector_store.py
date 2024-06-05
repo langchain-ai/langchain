@@ -8,7 +8,7 @@ import pytest
 from langchain_core.documents import Document
 
 from langchain_couchbase import CouchbaseVectorStore
-from tests.integration_tests.vectorstores.fake_embeddings import (
+from tests.utils import (
     ConsistentFakeEmbeddings,
 )
 
@@ -69,7 +69,6 @@ def delete_documents(
     cluster.query(query).execute()
 
 
-@pytest.mark.requires("couchbase")
 @pytest.mark.skipif(
     not set_all_env_vars(), reason="Missing Couchbase environment variables"
 )
