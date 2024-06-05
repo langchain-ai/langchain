@@ -291,6 +291,7 @@ extended_testing = [
  "pyjwt",
  "oracledb",
  "simsimd",
+ "aiosqlite"
 ]
 
 [tool.ruff]
