@@ -144,6 +144,19 @@ class ChatModelIntegrationTests(ABC):
         assert isinstance(result.usage_metadata["output_tokens"], int)
         assert isinstance(result.usage_metadata["total_tokens"], int)
 
+    def test_stop_sequence(
+        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
+    ) -> None:
+        model = chat_model_class(**chat_model_params)
+        result = model.invoke("hi", stop=["you"])
+        assert isinstance(result, AIMessage)
+        assert "you" not in result.content
+
+        model = chat_model_class(**chat_model_params, stop=["you"])
+        result = model.invoke("hi")
+        assert isinstance(result, AIMessage)
+        assert "you" not in result.content
+
     def test_tool_message_histories_string_content(
         self,
         chat_model_class: Type[BaseChatModel],
