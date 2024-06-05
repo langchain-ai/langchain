@@ -178,7 +178,7 @@ class HuggingFaceEndpoint(LLM):
                 values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN"
             )
             login(token=huggingfacehub_api_token)
-        except Exception as e:
+        except Exception:
             huggingfacehub_api_token=None
 
         from huggingface_hub import AsyncInferenceClient, InferenceClient
