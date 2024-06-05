@@ -228,18 +228,239 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
 
 
 class ChatAnthropic(BaseChatModel):
-    """Anthropic chat model.
+    """Anthropic chat model integration.
 
-    To use, you should have the environment variable ``ANTHROPIC_API_KEY``
-    set with your API key, or pass it as a named parameter to the constructor.
+    See https://docs.anthropic.com/en/docs/models-overview for a list of the latest models.
 
-    Example:
+    Setup:
+        Install ``langchain-anthropic`` and set environment variable ``ANTHROPIC_API_KEY``.
+
+        .. code-block:: bash
+
+            pip install -U langchain-anthropic
+            export ANTHROPIC_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: str
+            Name of Anthropic model to use. E.g. "claude-3-sonnet-20240229".
+        temperature: float
+            Sampling temperature. Ranges from 0.0 to 1.0.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
+
+    Key init args — client params:
+        timeout: Optional[float]
+            Timeout for requests.
+        max_retries: int
+            Max number of retries if a request fails.
+        api_key: Optional[str]
+            Anthropic API key. If not passed in will be read from env var ANTHROPIC_API_KEY.
+        base_url: Optional[str]
+            Base URL for API requests. Only specify if using a proxy or service
+            emulator.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_anthropic import ChatAnthropic
 
-            model = ChatAnthropic(model='claude-3-opus-20240229')
-    """
+            llm = ChatAnthropic(
+                model="claude-3-sonnet-20240229",
+                temperature=0,
+                max_tokens=1024,
+                timeout=None,
+                max_retries=2,
+                # api_key="...",
+                # base_url="...",
+                # other params...
+            )
+
+    **NOTE**: Any param which is not explicitly supported will be passed directly to the
+    ``anthropic.Anthropic.messages.create(...)`` API every time to the model is
+    invoked. For example:
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+            import anthropic
+
+            ChatAnthropic(..., extra_headers={}).invoke(...)
+
+            # results in underlying API call of:
+
+            anthropic.Anthropic(..).messages.create(..., extra_headers={})
+
+            # which is also equivalent to:
+
+            ChatAnthropic(...).invoke(..., extra_headers={})
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "You are a helpful translator. Translate the user sentence to French."),
+                ("human", "I love programming."),
+            ]
+            llm.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-sonnet-20240229', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in llm.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            AIMessageChunk(content='J', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content="'", id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content='a', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content='ime', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content=' la', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content=' programm', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content='ation', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content='.', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+
+        .. code-block:: python
+
+            stream = llm.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block:: python
+
+            AIMessageChunk(content="J'aime la programmation.", id='run-b34faef0-882f-4869-a19c-ed2b856e6361')
+
+    Async:
+        .. code-block:: python
+
+            await llm.ainvoke(messages)
+
+            # stream:
+            # async for chunk in (await llm.astream(messages))
+
+            # batch:
+            # await llm.abatch([messages])
+
+        .. code-block:: python
+
+            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-sonnet-20240229', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
+
+    Tool calling:
+        .. code-block:: python
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+            class GetPopulation(BaseModel):
+                '''Get the current population in a given location'''
+
+                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+            ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
+            ai_msg.tool_calls
+
+        .. code-block:: python
+
+            [{'name': 'GetWeather',
+              'args': {'location': 'Los Angeles, CA'},
+              'id': 'toolu_01KzpPEAgzura7hpBqwHbWdo'},
+             {'name': 'GetWeather',
+              'args': {'location': 'New York, NY'},
+              'id': 'toolu_01JtgbVGVJbiSwtZk3Uycezx'},
+             {'name': 'GetPopulation',
+              'args': {'location': 'Los Angeles, CA'},
+              'id': 'toolu_01429aygngesudV9nTbCKGuw'},
+             {'name': 'GetPopulation',
+              'args': {'location': 'New York, NY'},
+              'id': 'toolu_01JPktyd44tVMeBcPPnFSEJG'}]
+
+        See ``ChatAnthropic.bind_tools()`` method for more.
+
+    Structured output:
+        .. code-block:: python
+
+            from typing import Optional
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+            class Joke(BaseModel):
+                '''Joke to tell user.'''
+
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke")
+                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
+            structured_llm = llm.with_structured_output(Joke)
+            structured_llm.invoke("Tell me a joke about cats")
+
+        .. code-block:: python
+
+            Joke(setup='Why was the cat sitting on the computer?', punchline='To keep an eye on the mouse!', rating=None)
+
+        See ``ChatAnthropic.with_structured_output()`` for more.
+
+    Image input:
+        .. code-block:: python
+
+            import base64
+            import httpx
+            from langchain_core.messages import HumanMessage
+
+            image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+            image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+            message = HumanMessage(
+                content=[
+                    {"type": "text", "text": "describe the weather in this image"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    },
+                ],
+            )
+            ai_msg = llm.invoke([message])
+            ai_msg.content
+
+        .. code-block:: python
+
+            "The image depicts a sunny day with a partly cloudy sky. The sky is a brilliant blue color with scattered white clouds drifting across. The lighting and cloud patterns suggest pleasant, mild weather conditions. The scene shows a grassy field or meadow with a wooden boardwalk trail leading through it, indicating an outdoor setting on a nice day well-suited for enjoying nature."
+
+    Token usage:
+        .. code-block:: python
+
+            ai_msg = llm.invoke(messages)
+            ai_msg.usage_metadata
+
+        .. code-block:: python
+
+            {'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36}
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = llm.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {'id': 'msg_013xU6FHEGEq76aP4RgFerVT',
+             'model': 'claude-3-sonnet-20240229',
+             'stop_reason': 'end_turn',
+             'stop_sequence': None,
+             'usage': {'input_tokens': 25, 'output_tokens': 11}}
+
+    """  # noqa: E501
 
     class Config:
         """Configuration for this pydantic object."""
@@ -271,7 +492,12 @@ class ChatAnthropic(BaseChatModel):
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
-    anthropic_api_url: Optional[str] = None
+    anthropic_api_url: Optional[str] = Field(None, alias="base_url")
+    """Base URL for API requests. Only specify if using a proxy or service emulator.
+    
+    If a value isn't passed in and environment variable ANTHROPIC_BASE_URL is set, value
+    will be read from there.
+    """
 
     anthropic_api_key: Optional[SecretStr] = Field(None, alias="api_key")
     """Automatically read from env var `ANTHROPIC_API_KEY` if not provided."""
@@ -353,6 +579,7 @@ class ChatAnthropic(BaseChatModel):
         api_url = (
             values.get("anthropic_api_url")
             or os.environ.get("ANTHROPIC_API_URL")
+            or os.environ.get("ANTHROPIC_BASE_URL")
             or "https://api.anthropic.com"
         )
         values["anthropic_api_url"] = api_url
