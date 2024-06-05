@@ -548,44 +548,43 @@ class BaseChatOpenAI(BaseChatModel):
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-   def _create_chat_result(
-    self, response: Union[dict, openai.BaseModel]
-) -> ChatResult:
-    generations = []
-    if not isinstance(response, dict):
-        response = response.model_dump()
+    def _create_chat_result(
+        self, response: Union[dict, openai.BaseModel]
+    ) -> ChatResult:
+        generations = []
+        if not isinstance(response, dict):
+            response = response.model_dump()
 
-    # Sometimes the AI Model calling will get error, we should raise it.
-    # Otherwise, the next code 'choices.extend(response["choices"])'
-    # will throw a "TypeError: 'NoneType' object is not iterable" error
-    # to mask the true error. Because 'response["choices"]' is None.
-    if response.get("error"):
-        raise ValueError(response.get("error"))
+        # Sometimes the AI Model calling will get error, we should raise it.
+        # Otherwise, the next code 'choices.extend(response["choices"])'
+        # will throw a "TypeError: 'NoneType' object is not iterable" error
+        # to mask the true error. Because 'response["choices"]' is None.
+        if response.get("error"):
+            raise ValueError(response.get("error"))
 
-    token_usage = response.get("usage", {})
-    for res in response["choices"]:
-        message = _convert_dict_to_message(res["message"])
-        if token_usage and isinstance(message, AIMessage):
-            message.usage_metadata = {
-                "input_tokens": token_usage.get("prompt_tokens", 0),
-                "output_tokens": token_usage.get("completion_tokens", 0),
-                "total_tokens": token_usage.get("total_tokens", 0),
-            }
-        generation_info = dict(finish_reason=res.get("finish_reason"))
-        if "logprobs" in res:
-            generation_info["logprobs"] = res["logprobs"]
-        gen = ChatGeneration(
-            message=message,
-            generation_info=generation_info,
-        )
-        generations.append(gen)
-    llm_output = {
-        "token_usage": token_usage,
-        "model_name": response.get("model", self.model_name),
-        "system_fingerprint": response.get("system_fingerprint", ""),
-    }
-    return ChatResult(generations=generations, llm_output=llm_output)
-
+        token_usage = response.get("usage", {})
+        for res in response["choices"]:
+            message = _convert_dict_to_message(res["message"])
+            if token_usage and isinstance(message, AIMessage):
+                message.usage_metadata = {
+                    "input_tokens": token_usage.get("prompt_tokens", 0),
+                    "output_tokens": token_usage.get("completion_tokens", 0),
+                    "total_tokens": token_usage.get("total_tokens", 0),
+                }
+            generation_info = dict(finish_reason=res.get("finish_reason"))
+            if "logprobs" in res:
+                generation_info["logprobs"] = res["logprobs"]
+            gen = ChatGeneration(
+                message=message,
+                generation_info=generation_info,
+            )
+            generations.append(gen)
+        llm_output = {
+            "token_usage": token_usage,
+            "model_name": response.get("model", self.model_name),
+            "system_fingerprint": response.get("system_fingerprint", ""),
+        }
+        return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _astream(
         self,
