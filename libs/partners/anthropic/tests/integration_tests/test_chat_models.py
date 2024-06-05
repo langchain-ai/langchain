@@ -88,6 +88,22 @@ async def test_astream() -> None:
         == full.usage_metadata["total_tokens"]
     )
 
+    # Check assumption that each chunk has identical input token counts.
+    # This assumption is baked into _make_chat_generation_chunk.
+    params: dict = {
+        "model": MODEL_NAME,
+        "max_tokens": 1024,
+        "messages": [{"role": "user", "content": "I'm Pickle Rick"}],
+    }
+    all_input_tokens = set()
+    async with llm._async_client.messages.stream(**params) as stream:
+        async for _ in stream.text_stream:
+            message_dump = stream.current_message_snapshot.model_dump()
+            if input_tokens := message_dump.get("usage", {}).get("input_tokens"):
+                assert input_tokens > 0
+                all_input_tokens.add(input_tokens)
+                assert len(all_input_tokens) == 1
+
 
 async def test_abatch() -> None:
     """Test streaming tokens from ChatAnthropicMessages."""
