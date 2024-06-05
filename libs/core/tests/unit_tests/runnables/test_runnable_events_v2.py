@@ -2005,7 +2005,6 @@ async def test_parent_run_id_assignment() -> None:
         parent.astream_events("hello", {"run_id": bond}, version="v2"),
         with_nulled_ids=False,
     )
-
     assert events == [
         {
             "data": {"input": "hello"},
@@ -2042,7 +2041,10 @@ async def test_parent_run_id_assignment() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "grandchild",
-            "parent_ids": [],
+            "parent_ids": [
+                "00000000-0000-0000-0000-000000000008",
+                "00000000-0000-0000-0000-000000000007",
+            ],
             "run_id": "00000000-0000-0000-0000-000000000009",
             "tags": [],
         },
@@ -2051,7 +2053,7 @@ async def test_parent_run_id_assignment() -> None:
             "event": "on_chain_end",
             "metadata": {},
             "name": "child",
-            "parent_ids": [],
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
             "run_id": "00000000-0000-0000-0000-000000000008",
             "tags": [],
         },

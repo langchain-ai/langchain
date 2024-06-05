@@ -13,6 +13,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Tuple,
     TypeVar,
     Union,
     cast,
@@ -88,7 +89,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Initialize the tracer."""
         super().__init__(*args, **kwargs)
         # Map of run ID to run info.
+        # the entry corresponding to a given run id is cleaned
+        # up when each corresponding run ends.
         self.run_map: Dict[UUID, RunInfo] = {}
+        # The callback event that corresponds to the end of a parent run
+        # may be invoked BEFORE the callback event that corresponds to the end
+        # of a child run, which results in clean up of run_map.
+        # So we keep track of the mapping between children and parent run IDs
+        # in a separate container. This container is GCed when the tracer is GCed.
+        self.parent_map: Dict[UUID, Optional[UUID]] = {}
+
         self.is_tapped: Dict[UUID, Any] = {}
 
         # Filter which events will be sent over the queue.
@@ -109,18 +119,13 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     def _get_parent_ids(self, run_id: UUID) -> List[str]:
         """Get the parent IDs of a run (non-recursively) cast to strings."""
         parent_ids = []
+        parent_id = self.parent_map[run_id]
 
-        run_info = self.run_map.get(run_id)
+        while parent_id is not None:
+            parent_ids.append(str(parent_id))
+            parent_id = self.parent_map[parent_id]
 
-        while run_info is not None:
-            parent_run_id: Optional[UUID] = run_info.get("parent_run_id")
-            if parent_run_id is not None:
-                parent_ids.append(parent_run_id)
-                run_info = self.run_map.get(parent_run_id)
-            else:
-                break
-
-        return [str(parent_id) for parent_id in parent_ids]
+        return parent_ids
 
     def _send(self, event: StreamEvent, event_type: str) -> None:
         """Send an event to the stream."""
@@ -217,6 +222,35 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             for chunk in output:
                 yield chunk
 
+    def _write_run_start_info(
+        self,
+        run_id: UUID,
+        *,
+        tags: Optional[List[str]],
+        metadata: Optional[Dict[str, Any]],
+        parent_run_id: Optional[UUID],
+        name_: str,
+        run_type: str,
+        **kwargs,
+    ) -> None:
+        """Update the run info."""
+        info = {
+            "tags": tags or [],
+            "metadata": metadata or {},
+            "name": name_,
+            "run_type": run_type,
+            "parent_run_id": parent_run_id,
+        }
+
+        if "inputs" in kwargs:
+            # Handle inputs in a special case to allow inputs to be an
+            # optionally provided and distinguish between missing value
+            # vs. None value.
+            info["inputs"] = kwargs["inputs"]
+
+        self.run_map[run_id] = info
+        self.parent_map[run_id] = parent_run_id
+
     async def on_chat_model_start(
         self,
         serialized: Dict[str, Any],
@@ -232,14 +266,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Start a trace for an LLM run."""
         name_ = _assign_name(name, serialized)
         run_type = "chat_model"
-        self.run_map[run_id] = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": run_type,
-            "inputs": {"messages": messages},
-            "parent_run_id": parent_run_id,
-        }
+
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type=run_type,
+            inputs={"messages": messages},
+        )
 
         self._send(
             {
@@ -271,14 +307,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Start a trace for an LLM run."""
         name_ = _assign_name(name, serialized)
         run_type = "llm"
-        self.run_map[run_id] = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": run_type,
-            "inputs": {"prompts": prompts},
-            "parent_run_id": parent_run_id,
-        }
+
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type=run_type,
+            inputs={"prompts": prompts},
+        )
 
         self._send(
             {
@@ -308,7 +346,6 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     ) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
         run_info = self.run_map.get(run_id)
-
         chunk_: Union[GenerationChunk, BaseMessageChunk]
 
         if run_info is None:
@@ -416,13 +453,6 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Start a trace for a chain run."""
         name_ = _assign_name(name, serialized)
         run_type_ = run_type or "chain"
-        run_info: RunInfo = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": run_type_,
-            "parent_run_id": parent_run_id,
-        }
 
         data: EventData = {}
 
@@ -430,9 +460,17 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         # cases.
         if inputs != {"input": ""}:
             data["input"] = inputs
-            run_info["inputs"] = inputs
+            kwargs["inputs"] = inputs
 
-        self.run_map[run_id] = run_info
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type=run_type_,
+            **kwargs,
+        )
 
         self._send(
             {
@@ -496,14 +534,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     ) -> None:
         """Start a trace for a tool run."""
         name_ = _assign_name(name, serialized)
-        self.run_map[run_id] = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": "tool",
-            "inputs": inputs,
-            "parent_run_id": parent_run_id,
-        }
+
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type="tool",
+            inputs=inputs,
+        )
 
         self._send(
             {
@@ -561,14 +601,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Run when Retriever starts running."""
         name_ = _assign_name(name, serialized)
         run_type = "retriever"
-        self.run_map[run_id] = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": run_type,
-            "inputs": {"query": query},
-            "parent_run_id": parent_run_id,
-        }
+
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type=run_type,
+            inputs={"query": query},
+        )
 
         self._send(
             {
