@@ -566,7 +566,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.2.0"
+version = "0.2.4"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -575,7 +575,7 @@ develop = true
 
 [package.dependencies]
 jsonpatch = "^1.33"
-langsmith = "^0.1.0"
+langsmith = "^0.1.66"
 packaging = "^23.2"
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
@@ -590,7 +590,7 @@ url = "../../core"
 
 [[package]]
 name = "langchain-openai"
-version = "0.1.7"
+version = "0.1.8"
 description = "An integration package connecting OpenAI and LangChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -598,8 +598,8 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = ">=0.2.0,<0.3"
-openai = "^1.24.0"
+langchain-core = ">=0.2.2,<0.3"
+openai = "^1.26.0"
 tiktoken = ">=0.7,<1"
 
 [package.source]
@@ -625,13 +625,13 @@ url = "../../standard-tests"
 
 [[package]]
 name = "langsmith"
-version = "0.1.58"
+version = "0.1.69"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.58-py3-none-any.whl", hash = "sha256:1148cc836ec99d1b2f37cd2fa3014fcac213bb6bad798a2b21bb9111c18c9768"},
-    {file = "langsmith-0.1.58.tar.gz", hash = "sha256:a5060933c1fb3006b498ec849677993329d7e6138bdc2ec044068ab806e09c39"},
+    {file = "langsmith-0.1.69-py3-none-any.whl", hash = "sha256:3d7bd6fadb0852fc4cd2e7cf8a1593306046900052da3970bb2b48ed21cc73d8"},
+    {file = "langsmith-0.1.69.tar.gz", hash = "sha256:0146764904a8e479620b7e73efcba1cf172b621799564dd7e7342859c05c264a"},
 ]
 
 [package.dependencies]
@@ -1679,4 +1679,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "56a2a28556d4f5076e4f309982dc83926555e54816178de52c18b9c9993e236d"
+content-hash = "6ce59c865654905e4232fc5ed3564768d6d94e71cb8323dbb914b902c86f5abf"
