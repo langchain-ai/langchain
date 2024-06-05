@@ -94,6 +94,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Vald",
         "VDMS",
         "Vearch",
+        "Vectara",
         "VespaStore",
         "VLite",
         "Weaviate",
