@@ -100,6 +100,16 @@ def deprecated(
                 pass
     """
 
+    if (
+        alternative_import
+        and "." not in alternative_import
+        or " " in alternative_import
+    ):
+        raise ValueError(
+            "alternative_import must be a fully qualified module path, e.g. "
+            "`package.module.Class`"
+        )
+
     def deprecate(
         obj: T,
         *,
