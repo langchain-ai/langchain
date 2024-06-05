@@ -73,7 +73,76 @@ chat.invoke(
 
 > If you are going to place system prompt here, then it will override your system prompt that was fixed while deploying the application from the platform. 
 
-> Please note that the current version of ChatPremAI does not support parameters: [n](https://platform.openai.com/docs/api-reference/chat/create#chat-create-n) and [stop](https://platform.openai.com/docs/api-reference/chat/create#chat-create-stop). 
+> You can find all the optional parameters [here](https://docs.premai.io/get-started/sdk#optional-parameters). Any parameters other than [these supported parameters](https://docs.premai.io/get-started/sdk#optional-parameters) will be automatically removed before calling the model.
+
+
+### Native RAG Support with Prem Repositories
+
+Prem Repositories which allows users to upload documents (.txt, .pdf etc) and connect those repositories to the LLMs. You can think Prem repositories as native RAG, where each repository can be considered as a vector database. You can connect multiple repositories. You can learn more about repositories [here](https://docs.premai.io/get-started/repositories).
+
+Repositories are also supported in langchain premai. Here is how you can do it. 
+
+```python 
+
+query = "what is the diameter of individual Galaxy"
+repository_ids = [1991, ]
+repositories = dict(
+    ids=repository_ids,
+    similarity_threshold=0.3,
+    limit=3
+)
+```
+
+First we start by defining our repository with some repository ids. Make sure that the ids are valid repository ids. You can learn more about how to get the repository id [here](https://docs.premai.io/get-started/repositories). 
+
+> Please note: Similar like `model_name` when you invoke the argument `repositories`, then you are potentially overriding the repositories connected in the launchpad. 
+
+Now, we connect the repository with our chat object to invoke RAG based generations. 
+
+```python 
+response = chat.invoke(query, max_tokens=100, repositories=repositories)
+
+print(response.content)
+print(json.dumps(response.response_metadata, indent=4))
+```
+
+This is how an output looks like. 
+
+```bash
+The diameters of individual galaxies range from 80,000-150,000 light-years.
+{
+    "document_chunks": [
+        {
+            "repository_id": 1991,
+            "document_id": 1307,
+            "chunk_id": 173926,
+            "document_name": "Kegy 202 Chapter 2",
+            "similarity_score": 0.586126983165741,
+            "content": "n thousands\n                                                                                                                                               of           light-years. The diameters of individual\n                                                                                                                                               galaxies range from 80,000-150,000 light\n                                                                                                                       "
+        },
+        {
+            "repository_id": 1991,
+            "document_id": 1307,
+            "chunk_id": 173925,
+            "document_name": "Kegy 202 Chapter 2",
+            "similarity_score": 0.4815782308578491,
+            "content": "                                                for development of galaxies. A galaxy contains\n                                                                                                                                               a large number of stars. Galaxies spread over\n                                                                                                                                               vast distances that are measured in thousands\n                                       "
+        },
+        {
+            "repository_id": 1991,
+            "document_id": 1307,
+            "chunk_id": 173916,
+            "document_name": "Kegy 202 Chapter 2",
+            "similarity_score": 0.38112708926200867,
+            "content": " was separated from the               from each other as the balloon expands.\n  solar surface. As the passing star moved away,             Similarly, the distance between the galaxies is\n  the material separated from the solar surface\n  continued to revolve around the sun and it\n  slowly condensed into planets. Sir James Jeans\n  and later Sir Harold Jeffrey supported thisnot to be republishedalso found to be increasing and thereby, the\n                                                             universe is"
+        }
+    ]
+}
+```
+
+So, this also means that you do not need to make your own RAG pipeline when using the Prem Platform. Prem uses it's own RAG technology to deliver best in class performance for Retrieval Augmented Generations.
+
+> Ideally, you do not need to connect Repository IDs here to get Retrieval Augmented Generations. You can still get the same result if you have connected the repositories in prem platform. 
 
 ### Streaming
 
@@ -101,6 +170,8 @@ for chunk in chat.stream(
 ```
 
 This will stream tokens one after the other.
+
+> Please note: As of now, RAG with streaming is not supported. However we still support it with our API. You can learn more about that [here](https://docs.premai.io/get-started/chat-completion-sse). 
 
 ## PremEmbeddings
 
