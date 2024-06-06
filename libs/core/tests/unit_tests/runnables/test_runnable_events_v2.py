@@ -2081,6 +2081,42 @@ async def test_parent_run_id_assignment() -> None:
     ]
 
 
+async def test_bad_parent_ids() -> None:
+    """Test handling of situation where a run id is duplicated in the run tree."""
+
+    # Type ignores in the code below need to be investigated.
+    # Looks like a typing issue when using RunnableLambda as a decorator
+    # with async functions.
+    @RunnableLambda  # type: ignore
+    async def child(x: str) -> str:
+        return x
+
+    @RunnableLambda  # type: ignore
+    async def parent(x: str, config: RunnableConfig) -> str:
+        config["run_id"] = uuid.UUID(int=7)
+        return await child.ainvoke(x, config)  # type: ignore
+
+    bond = uuid.UUID(int=7)
+    events = await _collect_events(
+        parent.astream_events("hello", {"run_id": bond}, version="v2"),
+        with_nulled_ids=False,
+    )
+    # Includes only a partial list of events since the run ID gets duplicated
+    # between parent and child run ID and the callback handler throws an exception.
+    # The exception does not get bubbled up to the user.
+    assert events == [
+        {
+            "data": {"input": "hello"},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "parent",
+            "parent_ids": [],
+            "run_id": "00000000-0000-0000-0000-000000000007",
+            "tags": [],
+        }
+    ]
+
+
 async def test_runnable_generator() -> None:
     """Test async events from sync lambda."""
 

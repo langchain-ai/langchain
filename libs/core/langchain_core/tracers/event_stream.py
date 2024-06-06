@@ -118,12 +118,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     def _get_parent_ids(self, run_id: UUID) -> List[str]:
         """Get the parent IDs of a run (non-recursively) cast to strings."""
         parent_ids = []
-        parent_id = self.parent_map[run_id]
 
-        while parent_id is not None:
-            parent_ids.append(str(parent_id))
-            parent_id = self.parent_map[parent_id]
-
+        while parent_id := self.parent_map.get(run_id):
+            str_parent_id = str(parent_id)
+            if str_parent_id in parent_ids:
+                raise AssertionError(
+                    f"Parent ID {parent_id} is already in the parent_ids list. "
+                    f"This should never happen."
+                )
+            parent_ids.append(str_parent_id)
+            run_id = parent_id
         return parent_ids
 
     def _send(self, event: StreamEvent, event_type: str) -> None:
