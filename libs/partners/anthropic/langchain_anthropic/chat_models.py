@@ -492,7 +492,7 @@ class ChatAnthropic(BaseChatModel):
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
-    stop: Optional[List[str]] = Field(None, alias="stop_sequences")
+    stop_sequences: Optional[List[str]] = Field(None, alias="stop")
     """Default stop sequences."""
 
     anthropic_api_url: Optional[str] = Field(None, alias="base_url")
@@ -614,7 +614,7 @@ class ChatAnthropic(BaseChatModel):
     ) -> Dict:
         # get system prompt if any
         system, formatted_messages = _format_messages(messages)
-        stop_sequences = stop or self.stop
+        stop_sequences = stop or self.stop_sequences
         rtn = {
             "model": self.model,
             "max_tokens": self.max_tokens,
