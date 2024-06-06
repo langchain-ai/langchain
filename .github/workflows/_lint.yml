@@ -70,6 +70,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: |
           poetry install --with lint,typing
+          poetry run pip install "pydantic>=1,<2"
 
       - name: Install langchain editable
         working-directory: ${{ inputs.working-directory }}
