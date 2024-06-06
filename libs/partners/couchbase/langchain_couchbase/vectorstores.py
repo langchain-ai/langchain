@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
 import uuid
-from functools import partial
 from typing import (
     Any,
-    Callable,
     Dict,
     Iterable,
     List,
@@ -291,16 +288,6 @@ class CouchbaseVectorStore(VectorStore):
 
         return doc_ids
 
-    async def aadd_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
-    ) -> List[str]:
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(self.add_texts, **kwargs), texts, metadatas
-        )
-
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete documents from the vector store by ids.
 
@@ -336,11 +323,6 @@ class CouchbaseVectorStore(VectorStore):
     def embeddings(self) -> Embeddings:
         """Return the query embedding object."""
         return self._embedding_function
-
-    async def adelete(
-        self, ids: Optional[List[str]] = None, **kwargs: Any
-    ) -> Optional[bool]:
-        raise NotImplementedError
 
     def _format_metadata(self, row_fields: Dict[str, Any]) -> Dict[str, Any]:
         """Helper method to format the metadata from the Couchbase Search API.
@@ -390,15 +372,6 @@ class CouchbaseVectorStore(VectorStore):
             query_embedding, k, search_options, **kwargs
         )
         return [doc for doc, _ in docs_with_scores]
-
-    async def asimilarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        # This is a temporary workaround to make the similarity search
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search, query, k=k, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
 
     def similarity_search_with_score_by_vector(
         self,
@@ -505,15 +478,6 @@ class CouchbaseVectorStore(VectorStore):
         )
         return docs_with_score
 
-    async def asimilarity_search_with_score(
-        self, *args: Any, **kwargs: Any
-    ) -> List[Tuple[Document, float]]:
-        # This is a temporary workaround to make the similarity search
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search_with_score, *args, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
-
     def similarity_search_by_vector(
         self,
         embedding: List[float],
@@ -541,66 +505,6 @@ class CouchbaseVectorStore(VectorStore):
             embedding, k, search_options, **kwargs
         )
         return [doc for doc, _ in docs_with_score]
-
-    async def asimilarity_search_by_vector(
-        self, embedding: List[float], k: int = 4, **kwargs: Any
-    ) -> List[Document]:
-        # This is a temporary workaround to make the similarity search
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
-        func = partial(self.similarity_search_by_vector, embedding, k=k, **kwargs)
-        return await asyncio.get_event_loop().run_in_executor(None, func)
-
-    def max_marginal_relevance_search(
-        self,
-        query: str,
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        **kwargs: Any,
-    ) -> List[Document]:
-        raise NotImplementedError
-
-    async def amax_marginal_relevance_search(
-        self,
-        query: str,
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        **kwargs: Any,
-    ) -> List[Document]:
-        # This is a temporary workaround to make the similarity search
-        # asynchronous. The proper solution is to make the similarity search
-        # asynchronous in the vector store implementations.
-        func = partial(
-            self.max_marginal_relevance_search,
-            query,
-            k=k,
-            fetch_k=fetch_k,
-            lambda_mult=lambda_mult,
-            **kwargs,
-        )
-        return await asyncio.get_event_loop().run_in_executor(None, func)
-
-    def max_marginal_relevance_search_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        **kwargs: Any,
-    ) -> List[Document]:
-        raise NotImplementedError
-
-    async def amax_marginal_relevance_search_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        **kwargs: Any,
-    ) -> List[Document]:
-        raise NotImplementedError
 
     @classmethod
     def _from_kwargs(
@@ -709,18 +613,3 @@ class CouchbaseVectorStore(VectorStore):
         )
 
         return vector_store
-
-    @classmethod
-    async def afrom_texts(
-        cls: Type[CouchbaseVectorStore],
-        texts: List[str],
-        embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
-    ) -> CouchbaseVectorStore:
-        return await asyncio.get_running_loop().run_in_executor(
-            None, partial(cls.from_texts, **kwargs), texts, embedding, metadatas
-        )
-
-    def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        raise NotImplementedError
