@@ -1216,13 +1216,13 @@ url = "../text-splitters"
 
 [[package]]
 name = "langsmith"
-version = "0.1.73"
+version = "0.1.74"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.73-py3-none-any.whl", hash = "sha256:38bfcce2cfcf0b2da2e9628b903c9e768e1ce59d450e8a584514c1638c595e93"},
-    {file = "langsmith-0.1.73.tar.gz", hash = "sha256:0055471cb1fddb76ec65499716764ad0b0314affbdf33ff1f72ad5e2d6a3b224"},
+    {file = "langsmith-0.1.74-py3-none-any.whl", hash = "sha256:c47e5f2d7a01939c7e1fb94328759e5d0158f89cbd411fcb185c4176a9a75e44"},
+    {file = "langsmith-0.1.74.tar.gz", hash = "sha256:a9457731caf3001c76b909af8b0649a6bf4f265d5ebdeeb023cd253967ef1de8"},
 ]
 
 [package.dependencies]
@@ -2951,4 +2951,4 @@ extended-testing = ["jinja2"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "1bc1fff85e1e0750b9736ee70ffd6c66f8b4f139a2c58c9958aaa21dff595b00"
+content-hash = "7482f45ec69c08c44242ab39b5adf08ce0b0d3573fcf16f341aba3b208bf6c63"

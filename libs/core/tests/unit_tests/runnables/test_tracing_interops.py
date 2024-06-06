@@ -173,7 +173,9 @@ async def test_config_traceable_async_handoff() -> None:
 @patch("langchain_core.tracers.langchain.get_client")
 @pytest.mark.parametrize("enabled", [None, True, False])
 @pytest.mark.parametrize("env", ["", "true"])
-def test_tracing_enable_disable(mock_get_client: MagicMock, enabled: bool, env: str):
+def test_tracing_enable_disable(
+    mock_get_client: MagicMock, enabled: bool, env: str
+) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(
         session=mock_session, api_key="test", auto_batch_tracing=False
