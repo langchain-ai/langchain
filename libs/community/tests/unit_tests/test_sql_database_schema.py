@@ -75,12 +75,12 @@ def test_sql_database_run() -> None:
     with pytest.warns(Warning) as records:
         db = SQLDatabase(engine, schema="schema_a")
 
-    # Metadata creation with duckdb raises a warning at the moment about reflection.
+    # Metadata creation with duckdb raises 3 warnings at the moment about reflection.
     # As a stop-gap to increase strictness of pytest to fail on warnings, we'll
-    # explicitly catch the warning and assert that it's the one we expect.
+    # explicitly catch the warnings and assert that it's the one we expect.
     # We may need to revisit at a later stage and determine why a warning is being
     # raised here.
-    assert len(records) == 1
+    assert len(records) == 3
     assert isinstance(records[0].message, Warning)
     assert (
         records[0].message.args[0]
