@@ -58,7 +58,7 @@ class YouSearchAPIWrapper(BaseModel):
     ----------
     ydc_api_key: str, optional
         you.com api key, if YDC_API_KEY is not set in the environment
-    endpoint_type: str, optional
+    endpoint: str, optional
         you.com endpoints: search, news, rag;
         `web` and `snippet` alias `search`
         `rag` returns `{'message': 'Forbidden'}`
@@ -118,24 +118,24 @@ class YouSearchAPIWrapper(BaseModel):
 
     @root_validator
     def warn_if_set_fields_have_no_effect(cls, values) -> Dict:
-        if values["endpoint_type"] != "news":
+        if values["endpoint"] != "news":
             news_api_fields = ("search_lang", "ui_lang", "spellcheck")
             for field in news_api_fields:
                 if values[field]:
                     warnings.warn(
                         (
                             f"News API-specific field '{field}' is set but "
-                            f"`endpoint_type=\"{values['endpoint_type']}\"`. "
+                            f"`endpoint=\"{values['endpoint']}\"`. "
                             "This will have no effect."
                         ),
                         UserWarning,
                     )
-        if values["endpoint_type"] not in ("search", "snippet"):
+        if values["endpoint"] not in ("search", "snippet"):
             if values["n_snippets_per_hit"]:
                 warnings.warn(
                     (
                         "Field 'n_snippets_per_hit' only has effect on "
-                        '`endpoint_type="search"`.'
+                        '`endpoint="search"`.'
                     ),
                     UserWarning,
                 )
@@ -143,11 +143,11 @@ class YouSearchAPIWrapper(BaseModel):
 
     @root_validator
     def warn_if_deprecated_endpoints_are_used(cls, values) -> Dict:
-        if values["endpoint_type"] == "snippets":
+        if values["endpoint"] == "snippets":
             warnings.warn(
                 (
-                    f"`endpoint_type=\"{values['endpoint_type']}\"` is deprecated. "
-                    'Use `endpoint_type="search"` instead.'
+                    f"`endpoint=\"{values['endpoint']}\"` is deprecated. "
+                    'Use `endpoint="search"` instead.'
                 ),
                 DeprecationWarning,
             )
