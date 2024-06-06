@@ -62,6 +62,11 @@ CHAT_MODEL_FEAT_TABLE = {
         "package": "langchain-google-vertexai",
         "link": "/docs/integrations/chat/google_vertex_ai_palm/",
     },
+    "ChatGoogleGenerativeAI": {
+        "tool_calling": True,
+        "package": "langchain-google-genai",
+        "link": "/docs/integrations/chat/google_generative_ai/",
+    },
     "ChatGroq": {
         "tool_calling": True,
         "structured_output": True,
