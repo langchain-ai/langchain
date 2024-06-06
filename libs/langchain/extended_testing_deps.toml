@@ -1,1 +1,11 @@
-
+[tool.poetry.dependencies]
+langchain-openai = { path = "../partners/openai", develop = true }
+langchain-anthropic = { path = "../partners/anthropic", develop = true }
+langchain-fireworks = { path = "../partners/fireworks", develop = true }
+langchain-together = { path = "../partners/together", develop = true }
+langchain-mistralai = { path = "../partners/mistralai", develop = true }
+langchain-groq = { path = "../partners/groq", develop = true }
+jsonschema = { version = "^4.22.0" }
+numexpr = { version = "^2.8.6" }
+rapidfuzz = { version = "^3.1.1" }
+aiosqlite = { version = "^0.19.0" }
