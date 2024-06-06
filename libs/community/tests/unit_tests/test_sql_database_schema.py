@@ -81,10 +81,12 @@ def test_sql_database_run() -> None:
     # We may need to revisit at a later stage and determine why a warning is being
     # raised here.
     assert len(records) == 3
-    assert isinstance(records[0].message, Warning)
-    assert (
-        records[0].message.args[0]
+    for record in records:
+        assert isinstance(record.message, Warning)
+    assert any(
+        record.message.args[0]
         == "duckdb-engine doesn't yet support reflection on indices"
+        for record in records
     )
 
     command = 'select user_name from "user" where user_id = 13'
