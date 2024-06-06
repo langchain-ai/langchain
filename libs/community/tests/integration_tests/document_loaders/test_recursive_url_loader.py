@@ -32,7 +32,7 @@ def test_async_recursive_url_loader_deterministic() -> None:
 
 
 def test_sync_recursive_url_loader() -> None:
-    url = "https://docs.python.org/3.9/"
+    url = "https://python.langchain.com/"
     loader = RecursiveUrlLoader(
         url,
         extractor=lambda _: "placeholder",

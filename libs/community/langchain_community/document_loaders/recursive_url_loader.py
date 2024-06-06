@@ -199,7 +199,8 @@ class RecursiveUrlLoader(BaseLoader):
         if depth + 1 < self.max_depth:
             for link in self._extract_sub_links(text, url):
                 if link not in visited:
-                    yield from self._lazy_load_recursive(link, visited, depth=depth + 1)
+                    for doc in self._lazy_load_recursive(link, visited, depth=depth + 1):
+                        yield doc
                 if link not in visited:
                     raise ValueError
 

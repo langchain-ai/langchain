@@ -121,4 +121,4 @@ def extract_sub_links(
                 continue
 
         results.append(path)
-    return results
+    return sorted(results)
