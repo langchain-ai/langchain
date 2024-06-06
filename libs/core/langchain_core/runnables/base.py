@@ -959,6 +959,11 @@ class Runnable(Generic[Input, Output], ABC):
             the runnable that emitted the event.
             A child runnable that gets invoked as part of the execution of a
             parent runnable is assigned its own unique ID.
+        - ``parent_ids``: **List[str]** - The IDs of the parent runnables that
+            generated the event. The root runnable will have an empty list.
+            The order of the parent IDs is from the root to the immediate parent.
+            Only available for v2 version of the API. The v1 version of the API
+            will return an empty list.
         - ``tags``: **Optional[List[str]]** - The tags of the runnable that generated
             the event.
         - ``metadata``: **Optional[Dict[str, Any]]** - The metadata of the runnable
@@ -1051,7 +1056,8 @@ class Runnable(Generic[Input, Output], ABC):
                 event async for event in chain.astream_events("hello", version="v2")
             ]
 
-            # will produce the following events (run_id has been omitted for brevity):
+            # will produce the following events (run_id, and parent_ids
+            # has been omitted for brevity):
             [
                 {
                     "data": {"input": "hello"},

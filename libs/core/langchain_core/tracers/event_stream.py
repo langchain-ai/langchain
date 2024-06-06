@@ -54,6 +54,7 @@ class RunInfo(TypedDict):
     metadata: Dict[str, Any]
     run_type: str
     inputs: NotRequired[Any]
+    parent_run_id: Optional[UUID]
 
 
 def _assign_name(name: Optional[str], serialized: Dict[str, Any]) -> str:
@@ -87,7 +88,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Initialize the tracer."""
         super().__init__(*args, **kwargs)
         # Map of run ID to run info.
+        # the entry corresponding to a given run id is cleaned
+        # up when each corresponding run ends.
         self.run_map: Dict[UUID, RunInfo] = {}
+        # The callback event that corresponds to the end of a parent run
+        # may be invoked BEFORE the callback event that corresponds to the end
+        # of a child run, which results in clean up of run_map.
+        # So we keep track of the mapping between children and parent run IDs
+        # in a separate container. This container is GCed when the tracer is GCed.
+        self.parent_map: Dict[UUID, Optional[UUID]] = {}
+
         self.is_tapped: Dict[UUID, Any] = {}
 
         # Filter which events will be sent over the queue.
@@ -104,6 +114,17 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         memory_stream = _MemoryStream[StreamEvent](loop)
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
+
+    def _get_parent_ids(self, run_id: UUID) -> List[str]:
+        """Get the parent IDs of a run (non-recursively) cast to strings."""
+        parent_ids = []
+        parent_id = self.parent_map[run_id]
+
+        while parent_id is not None:
+            parent_ids.append(str(parent_id))
+            parent_id = self.parent_map[parent_id]
+
+        return parent_ids
 
     def _send(self, event: StreamEvent, event_type: str) -> None:
         """Send an event to the stream."""
@@ -140,6 +161,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
                 "data": {},
+                "parent_ids": self._get_parent_ids(run_id),
             }
             self._send({**event, "data": {"chunk": first}}, run_info["run_type"])
             yield cast(T, first)
@@ -181,6 +203,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
                 "data": {},
+                "parent_ids": self._get_parent_ids(run_id),
             }
             self._send({**event, "data": {"chunk": first}}, run_info["run_type"])
             yield cast(T, first)
@@ -198,6 +221,35 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             for chunk in output:
                 yield chunk
 
+    def _write_run_start_info(
+        self,
+        run_id: UUID,
+        *,
+        tags: Optional[List[str]],
+        metadata: Optional[Dict[str, Any]],
+        parent_run_id: Optional[UUID],
+        name_: str,
+        run_type: str,
+        **kwargs: Any,
+    ) -> None:
+        """Update the run info."""
+        info: RunInfo = {
+            "tags": tags or [],
+            "metadata": metadata or {},
+            "name": name_,
+            "run_type": run_type,
+            "parent_run_id": parent_run_id,
+        }
+
+        if "inputs" in kwargs:
+            # Handle inputs in a special case to allow inputs to be an
+            # optionally provided and distinguish between missing value
+            # vs. None value.
+            info["inputs"] = kwargs["inputs"]
+
+        self.run_map[run_id] = info
+        self.parent_map[run_id] = parent_run_id
+
     async def on_chat_model_start(
         self,
         serialized: Dict[str, Any],
@@ -213,13 +265,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Start a trace for an LLM run."""
         name_ = _assign_name(name, serialized)
         run_type = "chat_model"
-        self.run_map[run_id] = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": run_type,
-            "inputs": {"messages": messages},
-        }
+
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type=run_type,
+            inputs={"messages": messages},
+        )
 
         self._send(
             {
@@ -231,6 +286,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type,
         )
@@ -250,13 +306,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Start a trace for an LLM run."""
         name_ = _assign_name(name, serialized)
         run_type = "llm"
-        self.run_map[run_id] = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": run_type,
-            "inputs": {"prompts": prompts},
-        }
+
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type=run_type,
+            inputs={"prompts": prompts},
+        )
 
         self._send(
             {
@@ -270,6 +329,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type,
         )
@@ -285,7 +345,6 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     ) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
         run_info = self.run_map.get(run_id)
-
         chunk_: Union[GenerationChunk, BaseMessageChunk]
 
         if run_info is None:
@@ -319,6 +378,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_info["run_type"],
         )
@@ -371,6 +431,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_info["run_type"],
         )
@@ -391,12 +452,6 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Start a trace for a chain run."""
         name_ = _assign_name(name, serialized)
         run_type_ = run_type or "chain"
-        run_info: RunInfo = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": run_type_,
-        }
 
         data: EventData = {}
 
@@ -404,9 +459,17 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         # cases.
         if inputs != {"input": ""}:
             data["input"] = inputs
-            run_info["inputs"] = inputs
+            kwargs["inputs"] = inputs
 
-        self.run_map[run_id] = run_info
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type=run_type_,
+            **kwargs,
+        )
 
         self._send(
             {
@@ -416,6 +479,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type_,
         )
@@ -449,6 +513,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type,
         )
@@ -468,13 +533,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     ) -> None:
         """Start a trace for a tool run."""
         name_ = _assign_name(name, serialized)
-        self.run_map[run_id] = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": "tool",
-            "inputs": inputs,
-        }
+
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type="tool",
+            inputs=inputs,
+        )
 
         self._send(
             {
@@ -486,6 +554,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             "tool",
         )
@@ -511,6 +580,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             "tool",
         )
@@ -530,13 +600,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         """Run when Retriever starts running."""
         name_ = _assign_name(name, serialized)
         run_type = "retriever"
-        self.run_map[run_id] = {
-            "tags": tags or [],
-            "metadata": metadata or {},
-            "name": name_,
-            "run_type": run_type,
-            "inputs": {"query": query},
-        }
+
+        self._write_run_start_info(
+            run_id,
+            tags=tags,
+            metadata=metadata,
+            parent_run_id=parent_run_id,
+            name_=name_,
+            run_type=run_type,
+            inputs={"query": query},
+        )
 
         self._send(
             {
@@ -550,6 +623,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_type,
         )
@@ -571,6 +645,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
             },
             run_info["run_type"],
         )
@@ -660,6 +735,7 @@ async def _astream_events_implementation_v1(
                 data={
                     "input": input,
                 },
+                parent_ids=[],  # Not supported in v1
             )
 
             if _root_event_filter.include_event(event, state["type"]):
@@ -722,6 +798,7 @@ async def _astream_events_implementation_v1(
                 tags=log_entry["tags"],
                 metadata=log_entry["metadata"],
                 data=data,
+                parent_ids=[],  #  Not supported in v1
             )
 
         # Finally, we take care of the streaming output from the root chain
@@ -747,6 +824,7 @@ async def _astream_events_implementation_v1(
                 metadata=root_metadata,
                 name=root_name,
                 data=data,
+                parent_ids=[],  # Not supported in v1
             )
             if _root_event_filter.include_event(event, state["type"]):
                 yield event
@@ -763,6 +841,7 @@ async def _astream_events_implementation_v1(
         data={
             "output": state["final_output"],
         },
+        parent_ids=[],  # Not supported in v1
     )
     if _root_event_filter.include_event(event, state["type"]):
         yield event
