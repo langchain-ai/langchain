@@ -1,7 +1,3 @@
----
-keywords: [prompt, documents, chatprompttemplate, prompttemplate, invoke, lcel, tool, tools, embedding, embeddings, vector, vectorstore, llm, loader, retriever, retrievers]
----
-
 # Conceptual guide
 
 import ThemedImage from '@theme/ThemedImage';
@@ -62,6 +58,7 @@ A developer platform that lets you debug, test, evaluate, and monitor LLM applic
 />
 
 ## LangChain Expression Language (LCEL)
+<span data-heading-keywords="lcel"></span>
 
 LangChain Expression Language, or LCEL, is a declarative way to chain LangChain components.
 LCEL was designed from day 1 to **support putting prototypes in production, with no code changes**, from the simplest “prompt + LLM” chain to the most complex chains (we’ve seen folks successfully run LCEL chains with 100s of steps in production). To highlight a few of the reasons you might want to use LCEL:
@@ -92,6 +89,7 @@ With LCEL, **all** steps are automatically logged to [LangSmith](https://docs.sm
 Any chain created with LCEL can be easily deployed using [LangServe](/docs/langserve).
 
 ### Runnable interface
+<span data-heading-keywords="invoke"></span>
 
 To make it as easy as possible to create custom chains, we've implemented a ["Runnable"](https://api.python.langchain.com/en/stable/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) protocol. Many LangChain components implement the `Runnable` protocol, including chat models, LLMs, output parsers, retrievers, prompt templates, and more. There are also several useful primitives for working with runnables, which you can read about below.
 
@@ -132,6 +130,7 @@ LangChain provides standard, extendable interfaces and external integrations for
 Some components LangChain implements, some components we rely on third-party integrations for, and others are a mix.
 
 ### Chat models
+<span data-heading-keywords="chat model,chat models"></span>
 
 Language models that use a sequence of messages as inputs and return chat messages as outputs (as opposed to using plain text).
 These are traditionally newer models (older models are generally `LLMs`, see above).
@@ -155,6 +154,7 @@ Please see the [tool calling section](/docs/concepts/#functiontool-calling) for 
 :::
 
 ### LLMs
+<span data-heading-keywords="llm,llms"></span>
 
 Language models that takes a string as input and returns a string.
 These are traditionally older models (newer models generally are `ChatModels`, see below).
@@ -218,6 +218,8 @@ This represents the result of a tool call. This is distinct from a FunctionMessa
 
 
 ### Prompt templates
+<span data-heading-keywords="prompt,prompttemplate,chatprompttemplate"></span>
+
 Prompt templates help to translate user input and parameters into instructions for a language model.
 This can be used to guide a model's response, helping it understand the context and generate relevant and coherent language-based output.
 
@@ -262,6 +264,7 @@ The first is a system message, that has no variables to format.
 The second is a HumanMessage, and will be formatted by the `topic` variable the user passes in.
 
 #### MessagesPlaceholder
+<span data-heading-keywords="messagesplaceholder"></span>
 
 This prompt template is responsible for adding a list of messages in a particular place.
 In the above ChatPromptTemplate, we saw how we could format two messages, each one a string.
@@ -301,6 +304,7 @@ Example Selectors are classes responsible for selecting and then formatting exam
 
 
 ### Output parsers
+<span data-heading-keywords="output parser"></span>
 
 :::note
 
@@ -354,6 +358,7 @@ This `ChatHistory` will keep track of inputs and outputs of the underlying chain
 Future interactions will then load those messages and pass them into the chain as part of the input.
 
 ### Documents
+<span data-heading-keywords="document,documents"></span>
 
 A Document object in LangChain contains information about some data. It has two attributes:
 
@@ -361,6 +366,7 @@ A Document object in LangChain contains information about some data. It has two 
 - `metadata: dict`: Arbitrary metadata associated with this document. Can track the document id, file name, etc.
 
 ### Document loaders
+<span data-heading-keywords="document loader,document loaders"></span>
 
 These classes load Document objects. LangChain has hundreds of integrations with various data sources to load data from: Slack, Notion, Google Drive, etc.
 
@@ -394,6 +400,8 @@ That means there are two different axes along which you can customize your text 
 2. How the chunk size is measured
 
 ### Embedding models
+<span data-heading-keywords="embedding,embeddings"></span>
+
 The Embeddings class is a class designed for interfacing with text embedding models. There are lots of embedding model providers (OpenAI, Cohere, Hugging Face, etc) - this class is designed to provide a standard interface for all of them.
 
 Embeddings create a vector representation of a piece of text. This is useful because it means we can think about text in the vector space, and do things like semantic search where we look for pieces of text that are most similar in the vector space.
@@ -401,6 +409,8 @@ Embeddings create a vector representation of a piece of text. This is useful bec
 The base Embeddings class in LangChain provides two methods: one for embedding documents and one for embedding a query. The former takes as input multiple texts, while the latter takes a single text. The reason for having these as two separate methods is that some embedding providers have different embedding methods for documents (to be searched over) vs queries (the search query itself).
 
 ### Vector stores
+<span data-heading-keywords="vector,vectorstore,vectorstores,vector store,vector stores"></span>
+
 One of the most common ways to store and search over unstructured data is to embed it and store the resulting embedding vectors,
 and then at query time to embed the unstructured query and retrieve the embedding vectors that are 'most similar' to the embedded query.
 A vector store takes care of storing embedded data and performing vector search for you.
@@ -413,6 +423,8 @@ retriever = vectorstore.as_retriever()
 ```
 
 ### Retrievers
+<span data-heading-keywords="retriever,retrievers"></span>
+
 A retriever is an interface that returns documents given an unstructured query.
 It is more general than a vector store.
 A retriever does not need to be able to store documents, only to return (or retrieve) them.
@@ -421,6 +433,7 @@ Retrievers can be created from vectorstores, but are also broad enough to includ
 Retrievers accept a string query as input and return a list of Document's as output.
 
 ### Tools
+<span data-heading-keywords="tool,tools"></span>
 
 Tools are interfaces that an agent, a chain, or a chat model / LLM can use to interact with the world.
 

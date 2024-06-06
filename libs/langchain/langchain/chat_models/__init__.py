@@ -21,6 +21,7 @@ import warnings
 from langchain_core._api import LangChainDeprecationWarning
 
 from langchain._api.interactive_env import is_interactive_env
+from langchain.chat_models.base import init_chat_model
 
 
 def __getattr__(name: str) -> None:
@@ -41,6 +42,7 @@ def __getattr__(name: str) -> None:
 
 
 __all__ = [
+    "init_chat_model",
     "ChatOpenAI",
     "BedrockChat",
     "AzureChatOpenAI",
