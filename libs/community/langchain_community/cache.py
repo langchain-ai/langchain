@@ -2274,8 +2274,9 @@ class AzureCosmosDBMongoVCoreSemanticCache(BaseCache):
         if not isinstance(value, enum_type) and not isinstance(value, str):
             raise ValueError(f"Invalid enum value: {value}. Expected {enum_type}.")
         if value not in enum_type.__members__.values():
-            raise ValueError(f"Invalid enum value: {value}. "
-                             f"Expected one of: {list(enum_type)}.")
+            raise ValueError(
+                f"Invalid enum value: {value}. Expected one of: {list(enum_type)}."
+            )
 
 
 class OpenSearchSemanticCache(BaseCache):
