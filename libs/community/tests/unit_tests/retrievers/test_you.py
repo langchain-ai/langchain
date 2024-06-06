@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 import responses
-
 from langchain_community.retrievers.you import YouRetriever
 
 from ..utilities.test_you import (
@@ -58,7 +57,7 @@ class TestYouRetriever:
 
         query = "Test news text"
         # ensure limit on number of docs returned
-        you_wrapper = YouRetriever(endpoint_type="news", ydc_api_key="test")
+        you_wrapper = YouRetriever(endpoint="news", ydc_api_key="test")
         results = you_wrapper.results(query)
         expected_result = NEWS_RESPONSE_PARSED
         assert results == expected_result

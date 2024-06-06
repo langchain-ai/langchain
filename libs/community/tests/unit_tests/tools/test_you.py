@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 import responses
-
 from langchain_community.tools.you import YouSearchTool
 from langchain_community.utilities.you import YouSearchAPIWrapper
 
@@ -62,7 +61,7 @@ class TestYouSearchTool:
 
         query = "Test news text"
         you_tool = YouSearchTool(  # type: ignore[call-arg]
-            api_wrapper=YouSearchAPIWrapper(ydc_api_key="test", endpoint_type="news")
+            api_wrapper=YouSearchAPIWrapper(ydc_api_key="test", endpoint="news")
         )
         results = you_tool.invoke(query)
         expected_result = NEWS_RESPONSE_PARSED

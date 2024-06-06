@@ -89,7 +89,9 @@ class YouSearchAPIWrapper(BaseModel):
     ydc_api_key: Optional[str] = None
 
     # @todo deprecate `snippet`, not part of API
-    endpoint_type: Literal["search", "news", "rag", "snippet"] = "search"
+    endpoint: Literal["search", "news", "rag", "snippet"] = Field(
+        "search", alias="endpoint_type"
+    )
 
     # Common fields between Search and News API
     num_web_results: Optional[int] = Field(None, alias="count")
@@ -165,12 +167,12 @@ class YouSearchAPIWrapper(BaseModel):
         }
 
         # Add endpoint-specific params
-        if self.endpoint_type in ("search", "snippet"):
+        if self.endpoint in ("search", "snippet"):
             params.update(
                 query=query,
                 num_web_results=self.num_web_results,
             )
-        elif self.endpoint_type == "news":
+        elif self.endpoint == "news":
             params.update(
                 q=query,
                 count=self.num_web_results,
@@ -192,7 +194,7 @@ class YouSearchAPIWrapper(BaseModel):
         """
 
         # return news results
-        if self.endpoint_type == "news":
+        if self.endpoint == "news":
             news_results = raw_search_results["news"]["results"]
             if self.k is not None:
                 news_results = news_results[: self.k]
@@ -235,11 +237,11 @@ class YouSearchAPIWrapper(BaseModel):
         params = self._generate_params(query, **kwargs)
 
         # @todo deprecate `snippet`, not part of API
-        if self.endpoint_type == "snippet":
-            self.endpoint_type = "search"
+        if self.endpoint == "snippet":
+            self.endpoint = "search"
         response = requests.get(
             # type: ignore
-            f"{YOU_API_URL}/{self.endpoint_type}",
+            f"{YOU_API_URL}/{self.endpoint}",
             params=params,
             headers=headers,
         )
@@ -270,12 +272,12 @@ class YouSearchAPIWrapper(BaseModel):
         params = self._generate_params(query, **kwargs)
 
         # @todo deprecate `snippet`, not part of API
-        if self.endpoint_type == "snippet":
-            self.endpoint_type = "search"
+        if self.endpoint == "snippet":
+            self.endpoint = "search"
 
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url=f"{YOU_API_URL}/{self.endpoint_type}",
+                url=f"{YOU_API_URL}/{self.endpoint}",
                 params=params,
                 headers=headers,
             ) as res:
