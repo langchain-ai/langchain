@@ -1,7 +1,7 @@
 """Test ChatAnthropic chat model."""
 
 import json
-from typing import List
+from typing import List, Optional
 
 import pytest
 from langchain_core.callbacks import CallbackManager
@@ -9,6 +9,7 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -28,16 +29,80 @@ def test_stream() -> None:
     """Test streaming tokens from Anthropic."""
     llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
+    full: Optional[BaseMessageChunk] = None
+    chunks_with_input_token_counts = 0
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
+        full = token if full is None else full + token
+        assert isinstance(token, AIMessageChunk)
+        if token.usage_metadata is not None and token.usage_metadata.get(
+            "input_tokens"
+        ):
+            chunks_with_input_token_counts += 1
+    if chunks_with_input_token_counts != 1:
+        raise AssertionError(
+            "Expected exactly one chunk with input token counts. "
+            "AIMessageChunk aggregation adds counts. Check that "
+            "this is behaving properly."
+        )
+    # check token usage is populated
+    assert isinstance(full, AIMessageChunk)
+    assert full.usage_metadata is not None
+    assert full.usage_metadata["input_tokens"] > 0
+    assert full.usage_metadata["output_tokens"] > 0
+    assert full.usage_metadata["total_tokens"] > 0
+    assert (
+        full.usage_metadata["input_tokens"] + full.usage_metadata["output_tokens"]
+        == full.usage_metadata["total_tokens"]
+    )
 
 
 async def test_astream() -> None:
     """Test streaming tokens from Anthropic."""
     llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
+    full: Optional[BaseMessageChunk] = None
+    chunks_with_input_token_counts = 0
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
+        full = token if full is None else full + token
+        assert isinstance(token, AIMessageChunk)
+        if token.usage_metadata is not None and token.usage_metadata.get(
+            "input_tokens"
+        ):
+            chunks_with_input_token_counts += 1
+    if chunks_with_input_token_counts != 1:
+        raise AssertionError(
+            "Expected exactly one chunk with input token counts. "
+            "AIMessageChunk aggregation adds counts. Check that "
+            "this is behaving properly."
+        )
+    # check token usage is populated
+    assert isinstance(full, AIMessageChunk)
+    assert full.usage_metadata is not None
+    assert full.usage_metadata["input_tokens"] > 0
+    assert full.usage_metadata["output_tokens"] > 0
+    assert full.usage_metadata["total_tokens"] > 0
+    assert (
+        full.usage_metadata["input_tokens"] + full.usage_metadata["output_tokens"]
+        == full.usage_metadata["total_tokens"]
+    )
+
+    # Check assumption that each chunk has identical input token counts.
+    # This assumption is baked into _make_chat_generation_chunk.
+    params: dict = {
+        "model": MODEL_NAME,
+        "max_tokens": 1024,
+        "messages": [{"role": "user", "content": "I'm Pickle Rick"}],
+    }
+    all_input_tokens = set()
+    async with llm._async_client.messages.stream(**params) as stream:
+        async for _ in stream.text_stream:
+            message_dump = stream.current_message_snapshot.model_dump()
+            if input_tokens := message_dump.get("usage", {}).get("input_tokens"):
+                assert input_tokens > 0
+                all_input_tokens.add(input_tokens)
+                assert len(all_input_tokens) == 1
 
 
 async def test_abatch() -> None:
@@ -267,6 +332,17 @@ def test_tool_use() -> None:
     assert tool_call_chunk["name"] == "get_weather"
     assert isinstance(tool_call_chunk["args"], str)
     assert "location" in json.loads(tool_call_chunk["args"])
+
+    # Check usage metadata
+    assert gathered.usage_metadata is not None
+    assert gathered.usage_metadata["input_tokens"] > 0
+    assert gathered.usage_metadata["output_tokens"] > 0
+    assert gathered.usage_metadata["total_tokens"] > 0
+    assert (
+        gathered.usage_metadata["input_tokens"]
+        + gathered.usage_metadata["output_tokens"]
+        == gathered.usage_metadata["total_tokens"]
+    )
 
 
 def test_anthropic_with_empty_text_block() -> None:
