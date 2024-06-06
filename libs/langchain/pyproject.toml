@@ -22,6 +22,7 @@ PyYAML = ">=5.3"
 numpy = "^1"
 aiohttp = "^3.8.3"
 tenacity = "^8.1.0"
+async-timeout = { version = "^4.0.0", python = "<3.11" }
 
 [tool.poetry.group.test]
 optional = true
