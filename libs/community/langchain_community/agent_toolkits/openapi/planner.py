@@ -6,8 +6,10 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
 import yaml
+from langchain.memory import ReadOnlySharedMemory, SimpleMemory
 from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.memory import BaseMemory
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool, Tool
@@ -227,7 +229,9 @@ class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
 # Orchestrator, planner, controller.
 #
 def _create_api_planner_tool(
-    api_spec: ReducedOpenAPISpec, llm: BaseLanguageModel
+    api_spec: ReducedOpenAPISpec,
+    llm: BaseLanguageModel,
+    memory: Optional[BaseMemory] = None,
 ) -> Tool:
     from langchain.chains.llm import LLMChain
 
@@ -236,10 +240,10 @@ def _create_api_planner_tool(
     ]
     prompt = PromptTemplate(
         template=API_PLANNER_PROMPT,
-        input_variables=["query"],
+        input_variables=["query", "history"],
         partial_variables={"endpoints": "- " + "- ".join(endpoint_descriptions)},
     )
-    chain = LLMChain(llm=llm, prompt=prompt)
+    chain = LLMChain(llm=llm, prompt=prompt, memory=memory)
     tool = Tool(
         name=API_PLANNER_TOOL_NAME,
         description=API_PLANNER_TOOL_DESCRIPTION,
@@ -254,6 +258,7 @@ def _create_api_controller_agent(
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
     allow_dangerous_requests: bool,
+    memory: Optional[BaseMemory] = None,
 ) -> Any:
     from langchain.agents.agent import AgentExecutor
     from langchain.agents.mrkl.base import ZeroShotAgent
@@ -275,7 +280,7 @@ def _create_api_controller_agent(
     ]
     prompt = PromptTemplate(
         template=API_CONTROLLER_PROMPT,
-        input_variables=["input", "agent_scratchpad"],
+        input_variables=["input", "history", "agent_scratchpad"],
         partial_variables={
             "api_url": api_url,
             "api_docs": api_docs,
@@ -289,7 +294,9 @@ def _create_api_controller_agent(
         llm_chain=LLMChain(llm=llm, prompt=prompt),
         allowed_tools=[tool.name for tool in tools],
     )
-    return AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=True)
+    return AgentExecutor.from_agent_and_tools(
+        agent=agent, tools=tools, verbose=True, memory=memory
+    )
 
 
 def _create_api_controller_tool(
@@ -297,6 +304,7 @@ def _create_api_controller_tool(
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
     allow_dangerous_requests: bool,
+    memory: Optional[BaseMemory] = None,
 ) -> Tool:
     """Expose controller as a tool.
 
@@ -326,7 +334,12 @@ def _create_api_controller_tool(
                 raise ValueError(f"{endpoint_name} endpoint does not exist.")
 
         agent = _create_api_controller_agent(
-            base_url, docs_str, requests_wrapper, llm, allow_dangerous_requests
+            base_url,
+            docs_str,
+            requests_wrapper,
+            llm,
+            allow_dangerous_requests,
+            memory=memory,
         )
         return agent.run(plan_str)
 
@@ -341,7 +354,7 @@ def create_openapi_agent(
     api_spec: ReducedOpenAPISpec,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
-    shared_memory: Optional[Any] = None,
+    shared_memory: Optional[BaseMemory] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = True,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
@@ -368,15 +381,23 @@ def create_openapi_agent(
     from langchain.agents.mrkl.base import ZeroShotAgent
     from langchain.chains.llm import LLMChain
 
+    # Construct a readonly empty memory if shared_memory is not given
+    if shared_memory is None:
+        shared_memory = SimpleMemory(memories={"history": ""})
+
+    # Make memory readonly for api planner and controller. Chat history between user and
+    # agent should be remained unchanged in API planner and controller.
+    ro_memory = ReadOnlySharedMemory(memory=shared_memory)
+
     tools = [
-        _create_api_planner_tool(api_spec, llm),
+        _create_api_planner_tool(api_spec, llm, memory=ro_memory),
         _create_api_controller_tool(
-            api_spec, requests_wrapper, llm, allow_dangerous_requests
+            api_spec, requests_wrapper, llm, allow_dangerous_requests, memory=ro_memory
         ),
     ]
     prompt = PromptTemplate(
         template=API_ORCHESTRATOR_PROMPT,
-        input_variables=["input", "agent_scratchpad"],
+        input_variables=["input", "history", "agent_scratchpad"],
         partial_variables={
             "tool_names": ", ".join([tool.name for tool in tools]),
             "tool_descriptions": "\n".join(
@@ -385,7 +406,7 @@ def create_openapi_agent(
         },
     )
     agent = ZeroShotAgent(
-        llm_chain=LLMChain(llm=llm, prompt=prompt, memory=shared_memory),
+        llm_chain=LLMChain(llm=llm, prompt=prompt),
         allowed_tools=[tool.name for tool in tools],
         **kwargs,
     )
@@ -394,5 +415,6 @@ def create_openapi_agent(
         tools=tools,
         callback_manager=callback_manager,
         verbose=verbose,
+        memory=shared_memory,
         **(agent_executor_kwargs or {}),
     )

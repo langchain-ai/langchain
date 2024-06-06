@@ -61,6 +61,12 @@ Here are endpoints you can use. Do not reference any of the endpoints above.
 
 ----
 
+Take care of the following chat history. You should always make a new plan based on the previous conversations with user.
+
+{history}
+
+----
+
 User query: {query}
 Plan:"""
 API_PLANNER_TOOL_NAME = "api_planner"
@@ -79,6 +85,13 @@ Endpoints:
 
 Here are tools to execute requests against the API: {tool_descriptions}
 
+----
+
+Take care of the following chat history. You should always make a new plan based on the previous conversations with user.
+
+{history}
+
+----
 
 Starting below, you should follow this format:
 
@@ -113,6 +126,13 @@ You should never return information without executing the api_controller tool.
 
 Here are the tools to plan and execute API requests: {tool_descriptions}
 
+----
+
+Take care of the following chat history. You should always make a new plan based on the previous conversations with user.
+
+{history}
+
+----
 
 Starting below, you should follow this format:
 
