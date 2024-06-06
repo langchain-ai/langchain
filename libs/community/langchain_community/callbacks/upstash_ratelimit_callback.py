@@ -10,11 +10,6 @@ logger = logging.getLogger(__name__)
 try:
     from upstash_ratelimit import Ratelimit
 except ImportError as error:
-    logger.error(
-        "Could not import upstash_redis python package. "
-        "Please install it with `pip install upstash_redis`."
-        f"Received error: {error}"
-    )
     Ratelimit = None
 
 
