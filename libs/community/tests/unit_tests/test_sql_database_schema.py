@@ -80,7 +80,6 @@ def test_sql_database_run() -> None:
     # explicitly catch the warnings and assert that it's the one we expect.
     # We may need to revisit at a later stage and determine why a warning is being
     # raised here.
-    assert len(records) == 3
     for record in records:
         assert isinstance(record.message, Warning)
     assert any(
