@@ -11,7 +11,6 @@ from typing import (
     List,
     Optional,
     Tuple,
-    TypeVar,
     Union,
 )
 
@@ -62,7 +61,8 @@ class AzureCosmosDBMongoVCoreVectorSearch(VectorStore):
     Example:
         . code-block:: python
 
-            from langchain_community.vectorstores import AzureCosmosDBMongoVCoreVectorSearch
+            from langchain_community.vectorstores import
+            AzureCosmosDBMongoVCoreVectorSearch
             from langchain_community.embeddings.openai import OpenAIEmbeddings
             from pymongo import MongoClient
 
@@ -122,7 +122,8 @@ class AzureCosmosDBMongoVCoreVectorSearch(VectorStore):
         application_name: str = "LANGCHAIN_PYTHON",
         **kwargs: Any,
     ) -> AzureCosmosDBMongoVCoreVectorSearch:
-        """Creates an Instance of AzureCosmosDBMongoVCoreVectorSearch from a Connection String
+        """Creates an Instance of AzureCosmosDBMongoVCoreVectorSearch
+        from a Connection String
 
         Args:
             connection_string: The MongoDB vCore instance connection string
