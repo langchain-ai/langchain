@@ -19,6 +19,7 @@ from uuid import UUID
 from tenacity import RetryCallState
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
+from langchain_core.exceptions import TracerException  # noqa
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
 from langchain_core.tracers.core import _TracerCore
