@@ -37,7 +37,7 @@ def _metadata_extractor(
     except ImportError:
         logger.warning(
             "The bs4 package is required for default metadata extraction. "
-            "Please install it with `pip install bs4`."
+            "Please install it with `pip install -U beautifulsoup4`."
         )
         return metadata
     soup = BeautifulSoup(raw_html, "html.parser")
@@ -51,7 +51,7 @@ def _metadata_extractor(
 
 
 class RecursiveUrlLoader(BaseLoader):
-    """Load all child links from a URL page.
+    """Recursively load all child links from a root URL.
 
     **Security Note**: This loader is a crawler that will start crawling
         at a given URL and then expand to crawl child links recursively.
@@ -79,64 +79,164 @@ class RecursiveUrlLoader(BaseLoader):
         GET request to an endpoint on Bob's site. Both sites are hosted on the
         same host, so such a request would not be prevented by default.
 
-        See https://python.langchain.com/docs/security
-    
+        See https://python.langchain.com/v0.2/docs/security/
+
+    Setup:
+
+        This class has no required additional dependencies. You can optionally install
+        ``beautifulsoup4`` for richer default metadata extraction:
+
+        .. code-block:: bash
+
+            pip install -U beautifulsoup4
+
     Instantiate:
         .. code-block:: python
-            from langchain_community.document_loaders.recursive_url_loader import RecursiveUrlLoader
 
-            url = "https://docs.python.org/3.9/"
+            from langchain_community.document_loaders import RecursiveUrlLoader
+
             loader = RecursiveUrlLoader(
-                url=url
+                "https://docs.python.org/3.9/",
+                # max_depth=2,
+                # use_async=False,
+                # extractor=None,
+                # metadata_extractor=None,
+                # exclude_dirs=(),
+                # timeout=10,
+                # check_response_status=True,
+                # continue_on_failure=True,
+                # prevent_outside=True,
+                # base_url=None,
+                # ...
             )
-    
-    Normal Load:
+
+    Load:
+        Use ``.load()`` to synchronously load into memory all Documents, with one
+        Document per visited URL. Starting from the initial URL, we recurse through
+        all linked URLs up to the specified max_depth.
+
         .. code-block:: python
+
             docs = loader.load()
             print(docs[0].page_content[:100])
             print(docs[0].metadata)
 
         .. code-block:: python
+
             <!DOCTYPE html>
 
             <html xmlns="http://www.w3.org/1999/xhtml">
             <head>
                 <meta charset="utf-8" /><
             {'source': 'https://docs.python.org/3.9/', 'content_type': 'text/html', 'title': '3.9.19 Documentation', 'language': None}
-    
-    
-    Async Load:
+
+    Async load:
         .. code-block:: python
+
             docs = await loader.aload()
             print(docs[0].page_content[:100])
             print(docs[0].metadata)
 
         .. code-block:: python
+
             <!DOCTYPE html>
 
             <html xmlns="http://www.w3.org/1999/xhtml">
             <head>
                 <meta charset="utf-8" /><
             {'source': 'https://docs.python.org/3.9/', 'content_type': 'text/html', 'title': '3.9.19 Documentation', 'language': None}
-            
-    Lazy Load:
+
+    Lazy load:
         .. code-block:: python
+
             docs = []
             docs_lazy = loader.lazy_load()
+
+            # async variant:
+            # docs_lazy = await loader.alazy_load()
+
             for doc in docs_lazy:
                 docs.append(doc)
             print(docs[0].page_content[:100])
             print(docs[0].metadata)
 
         .. code-block:: python
+
             <!DOCTYPE html>
 
             <html xmlns="http://www.w3.org/1999/xhtml">
             <head>
                 <meta charset="utf-8" /><
             {'source': 'https://docs.python.org/3.9/', 'content_type': 'text/html', 'title': '3.9.19 Documentation', 'language': None}
-            
-    """
+
+    Content parsing / extraction:
+        By default the loader sets the raw HTML from each link as the Document page
+        content. To parse this HTML into a more human/LLM-friendly format you can pass
+        in a custom ``extractor`` method:
+
+            .. code-block:: python
+
+                # This example uses `beautifulsoup4` and `lxml`
+                import re
+
+                from bs4 import BeautifulSoup
+                from langchain_community.document_loaders import RecursiveUrlLoader
+
+
+                def bs4_extractor(html: str) -> str:
+                    soup = BeautifulSoup(html, "lxml")
+                    return re.sub(r"\n\n+", "\n\n", soup.text).strip()
+
+                loader = RecursiveUrlLoader(
+                    "https://docs.python.org/3.9/",
+                    extractor=bs4_extractor,
+                )
+                print(loader.load()[0].page_content)
+
+
+            .. code-block:: python
+
+                3.9.19 Documentation
+
+                Download
+                Download these documents
+                Docs by version
+
+                Python 3.13 (in development)
+                Python 3.12 (stable)
+                Python 3.11 (security-fixes)
+                Python 3.10 (security-fixes)
+                Python 3.9 (securit
+
+    Metadata extraction:
+        Similarly to content extraction, you can specify a metadata extraction function
+        to customize how Document metadata is extracted from the HTTP response.
+
+        .. code-block:: python
+
+            from typing import Union
+
+            import aiohttp
+            import requests
+            from langchain_community.document_loaders import RecursiveUrlLoader
+
+            def simple_metadata_extractor(
+                raw_html: str, url: str, response: Union[requests.Response, aiohttp.ClientResponse]
+            ) -> dict:
+                content_type = getattr(response, "headers").get("Content-Type", "")
+                return {"source": url, "content_type": content_type}
+
+            loader = RecursiveUrlLoader(
+                "https://docs.python.org/3.9/",
+                metadata_extractor=simple_metadata_extractor,
+            )
+            loader.load()[0].metadata
+
+        .. code-block:: python
+
+            {'source': 'https://docs.python.org/3.9/', 'content_type': 'text/html'}
+
+    """  # noqa: E501
 
     def __init__(
         self,
@@ -165,10 +265,10 @@ class RecursiveUrlLoader(BaseLoader):
             use_async: Whether to use asynchronous loading.
                 If True, lazy_load function will not be lazy, but it will still work in the
                 expected way, just not lazy.
-            extractor: A function to extract document contents from raw html.
+            extractor: A function to extract document contents from raw HTML.
                 When extract function returns an empty string, the document is
-                ignored.
-            metadata_extractor: A function to extract metadata from args: raw html, the
+                ignored. Default returns the raw HTML.
+            metadata_extractor: A function to extract metadata from args: raw HTML, the
                 source url, and the requests.Response/aiohttp.ClientResponse object
                 (args in that order).
                 Default extractor will attempt to use BeautifulSoup4 to extract the
@@ -310,13 +410,6 @@ class RecursiveUrlLoader(BaseLoader):
                 "Async functions forbidden when not initialized with `use_async`"
             )
 
-        try:
-            import aiohttp
-        except ImportError:
-            raise ImportError(
-                "The aiohttp package is required for the RecursiveUrlLoader. "
-                "Please install it with `pip install aiohttp`."
-            )
         if depth >= self.max_depth:
             return []
 
