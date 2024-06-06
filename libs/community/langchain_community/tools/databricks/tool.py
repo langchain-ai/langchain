@@ -165,10 +165,10 @@ class UCFunctionToolkit(BaseToolkit):
                 )
                 for f in functions:
                     assert f.full_name is not None
-                    self.include(f.full_name)
+                    self.include(f.full_name, **kwargs)
             else:
                 if name not in self.tools:
-                    self.tools[name] = self._make_tool(name)
+                    self.tools[name] = self._make_tool(name, **kwargs)
         return self
 
     def _make_tool(self, function_name: str, **kwargs: Any) -> BaseTool:
