@@ -6,7 +6,6 @@ import asyncio
 import uuid
 from functools import partial
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -17,12 +16,14 @@ from typing import (
     Type,
 )
 
+import couchbase.search as search
+from couchbase.cluster import Cluster
+from couchbase.exceptions import DocumentExistsException, DocumentNotFoundException
+from couchbase.options import SearchOptions
+from couchbase.vector_search import VectorQuery, VectorSearch
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
-
-if TYPE_CHECKING:
-    from couchbase.cluster import Cluster
 
 
 class CouchbaseVectorStore(VectorStore):
@@ -165,14 +166,6 @@ class CouchbaseVectorStore(VectorStore):
             scoped_index (optional[bool]): specify whether the index is a scoped index.
                 Set to True by default.
         """
-        try:
-            from couchbase.cluster import Cluster
-        except ImportError as e:
-            raise ImportError(
-                "Could not import couchbase python package. "
-                "Please install couchbase SDK  with `pip install couchbase`."
-            ) from e
-
         if not isinstance(cluster, Cluster):
             raise ValueError(
                 f"cluster should be an instance of couchbase.Cluster, "
@@ -260,7 +253,6 @@ class CouchbaseVectorStore(VectorStore):
         Returns:
             List[str]:List of ids from adding the texts into the vectorstore.
         """
-        from couchbase.exceptions import DocumentExistsException
 
         if not batch_size:
             batch_size = self.DEFAULT_BATCH_SIZE
@@ -320,7 +312,6 @@ class CouchbaseVectorStore(VectorStore):
             bool: True if all the documents were deleted successfully, False otherwise.
 
         """
-        from couchbase.exceptions import DocumentNotFoundException
 
         if ids is None:
             raise ValueError("No document ids provided to delete.")
@@ -432,9 +423,6 @@ class CouchbaseVectorStore(VectorStore):
         Returns:
             List of (Document, score) that are the most similar to the query vector.
         """
-        import couchbase.search as search
-        from couchbase.options import SearchOptions
-        from couchbase.vector_search import VectorQuery, VectorSearch
 
         fields = kwargs.get("fields", ["*"])
 
