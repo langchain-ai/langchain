@@ -386,7 +386,7 @@ def tool_example_to_messages(
                 '''Information about a person.'''
                 name: Optional[str] = Field(..., description="The name of the person")
                 hair_color: Optional[str] = Field(
-                    ..., description="The color of the peron's eyes if known"
+                    ..., description="The color of the person's eyes if known"
                 )
                 height_in_meters: Optional[str] = Field(
                     ..., description="Height in METERs"
