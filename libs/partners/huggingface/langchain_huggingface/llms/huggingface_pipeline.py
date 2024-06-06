@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import logging
+import re
 from typing import Any, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -293,6 +294,8 @@ class HuggingFacePipeline(BaseLLM):
                     )
                 if skip_prompt:
                     text = text[len(batch_prompts[j]) :]
+                if stop is not None:
+                    text = re.split("|".join(stop), text, maxsplit=1)[0]
                 # Append the processed text to results
                 text_generations.append(text)
 

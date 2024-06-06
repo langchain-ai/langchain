@@ -10,6 +10,8 @@ from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
 from langchain_core.pydantic_v1 import Extra
 
+from langchain_community.llms.utils import enforce_stop_tokens
+
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
 VALID_TASKS = (
@@ -297,6 +299,8 @@ class HuggingFacePipeline(BaseLLM):
                     )
                 if skip_prompt:
                     text = text[len(batch_prompts[j]) :]
+                if stop is not None:
+                    text = enforce_stop_tokens(text, stop)
                 # Append the processed text to results
                 text_generations.append(text)
 
