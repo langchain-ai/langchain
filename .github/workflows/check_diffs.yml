@@ -124,7 +124,8 @@ jobs:
         run: |
           echo "Running extended tests, installing dependencies with poetry..."
           poetry install --with test
-          poetry run pip install -r extended_requirements.txt
+          poetry run pip install uv
+          poetry run uv pip install -r extended_testing_deps.toml
 
       - name: Run extended tests
         run: make extended_tests
