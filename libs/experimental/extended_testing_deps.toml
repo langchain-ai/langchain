@@ -1,1 +1,9 @@
-
+[tool.poetry.dependencies]
+presidio-anonymizer = { version = "^2.2.352" }
+presidio-analyzer = { version = "^2.2.352" }
+faker = { version = "^19.3.1" }
+vowpal-wabbit-next = { version = "0.6.0" }
+sentence-transformers = { version = "^2" }
+jinja2 = { version = "^3" }
+pandas = { version = "^2.0.1" }
+tabulate = { version = "^0.9.0" }
