@@ -55,7 +55,7 @@ class DuckDuckGoSearchResults(BaseTool):
     backend: str = "text"
     args_schema: Type[BaseModel] = DDGInput
     keys_to_include: Optional[List[str]] = None
-    seperator_between_results: str = ", "
+    results_separator: str = ", "
 
     def _run(
         self,
@@ -63,10 +63,10 @@ class DuckDuckGoSearchResults(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        res = self.default_api_wrapper_to_str(self.api_wrapper.results(query, self.max_results, source=self.backend))
+        res = self.api_wrapper.results(query, self.max_results, source=self.backend)
         res_strs = [", ".join([f"{k}: {v}" for k, v in d.items() 
                     if not self.keys_to_include or k in self.keys_to_include]) for d in res]
-        return self.seperator_between_results.join([f"[{rs}]" for rs in res_strs])
+        return self.results_separator.join([f"[{rs}]" for rs in res_strs])
 
 
 def DuckDuckGoSearchTool(*args: Any, **kwargs: Any) -> DuckDuckGoSearchRun:
