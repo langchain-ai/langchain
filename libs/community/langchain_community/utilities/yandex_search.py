@@ -171,7 +171,11 @@ class YandexSearchAPIWrapper(BaseModel):
         return values
 
     def run(
-        self, query: str, filter: str = None, lr: int = None, l10n: str = None
+        self, 
+        query: str, 
+        filter: Optional[str] = None, 
+        lr: Optional[int] = None, 
+        l10n: Optional[str] = None
     ) -> str:
         """
         Run query through Yandex Search and parse result.
