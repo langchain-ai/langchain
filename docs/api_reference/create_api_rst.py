@@ -128,11 +128,11 @@ def _load_package_modules(
     of the modules/packages are part of the package vs. 3rd party or built-in.
 
     Parameters:
-        package_directory: Path to the package directory.
-        submodule: Optional name of submodule to load.
+        package_directory (Union[str, Path]): Path to the package directory.
+        submodule (Optional[str]): Optional name of submodule to load.
 
     Returns:
-        list: A list of loaded module objects.
+        Dict[str, ModuleMembers]: A dictionary where keys are module names and values are ModuleMembers objects.
     """
     package_path = (
         Path(package_directory)
