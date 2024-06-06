@@ -7,7 +7,7 @@ from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
-DEFAULT_BGE_MODEL = "BAAI/bge-large-en"
+DEFAULT_BGE_MODEL = "BAAI/bge-large-en-v1.5"
 DEFAULT_EMBED_INSTRUCTION = "Represent the document for retrieval: "
 DEFAULT_QUERY_INSTRUCTION = (
     "Represent the question for retrieving supporting documents: "
