@@ -1,10 +1,11 @@
 import pytest
 from langchain_core.documents import Document
+
 from langchain_community.embeddings import FakeEmbeddings
 from langchain_community.retrievers.product_quantization import PQRetriever
 
-class TestPQRetriever:
 
+class TestPQRetriever:
     @pytest.mark.requires("nanopq")
     def test_from_texts(self) -> None:
         input_texts = ["I have a pen.", "Do you have a pen?", "I have a bag."]
@@ -12,7 +13,7 @@ class TestPQRetriever:
             texts=input_texts, embeddings=FakeEmbeddings(size=100)
         )
         assert len(pq_retriever.texts) == 3
-    
+
     @pytest.mark.requires("nanopq")
     def test_from_documents(self) -> None:
         input_docs = [
@@ -30,7 +31,6 @@ class TestPQRetriever:
         ]
         assert pq_retriever.metadatas == [{"page": 1}, {"page": 2}, {"page": 3}]
 
-    
     @pytest.mark.requires("nanopq")
     def invalid_subspace_error(self) -> None:
         input_texts = ["I have a pen.", "Do you have a pen?", "I have a bag."]

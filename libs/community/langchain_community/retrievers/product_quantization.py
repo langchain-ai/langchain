@@ -51,7 +51,6 @@ class PQRetriever(BaseRetriever):
 
         arbitrary_types_allowed = True
 
-    
     @classmethod
     def from_texts(
         cls,
@@ -60,7 +59,6 @@ class PQRetriever(BaseRetriever):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> PQRetriever:
-
         index = create_index(texts, embeddings)
         return cls(
             embeddings=embeddings,
@@ -68,7 +66,7 @@ class PQRetriever(BaseRetriever):
             texts=texts,
             metadatas=metadatas,
             **kwargs,
-        ) 
+        )
 
     @classmethod
     def from_documents(
@@ -82,25 +80,22 @@ class PQRetriever(BaseRetriever):
             texts=texts, embeddings=embeddings, metadatas=metadatas, **kwargs
         )
 
-
     def _get_relevant_documents(
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-
         try:
             from nanopq import PQ
         except ImportError:
             raise ImportError(
-                "Could not import nanopq, please install with `pip install "
-                "nanopq`."
+                "Could not import nanopq, please install with `pip install " "nanopq`."
             )
-        
+
         query_embeds = np.array(self.embeddings.embed_query(query))
         try:
-            pq = PQ(M=self.subspace, Ks=self.clusters).fit(vecs=self.index)  
+            pq = PQ(M=self.subspace, Ks=self.clusters).fit(vecs=self.index)
         except AssertionError:
             raise RuntimeError("subspace should be divisible by embedding size")
-        
+
         index_code = pq.encode(vecs=self.index)
         dt = pq.dtable(query=query_embeds)
         dists = dt.adist(codes=index_code)
@@ -114,5 +109,5 @@ class PQRetriever(BaseRetriever):
             )
             for row in sorted_ix[0 : self.k]
         ]
-        
+
         return top_k_results
