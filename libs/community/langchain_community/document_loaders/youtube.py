@@ -99,8 +99,8 @@ class GoogleApiClient:
         return creds
 
 
-ALLOWED_SCHEMAS = {"http", "https"}
-ALLOWED_NETLOCK = {
+ALLOWED_SCHEMES = {"http", "https"}
+ALLOWED_NETLOCS = {
     "youtu.be",
     "m.youtube.com",
     "youtube.com",
@@ -111,13 +111,13 @@ ALLOWED_NETLOCK = {
 
 
 def _parse_video_id(url: str) -> Optional[str]:
-    """Parse a youtube url and return the video id if valid, otherwise None."""
+    """Parse a YouTube URL and return the video ID if valid, otherwise None."""
     parsed_url = urlparse(url)
 
-    if parsed_url.scheme not in ALLOWED_SCHEMAS:
+    if parsed_url.scheme not in ALLOWED_SCHEMES:
         return None
 
-    if parsed_url.netloc not in ALLOWED_NETLOCK:
+    if parsed_url.netloc not in ALLOWED_NETLOCS:
         return None
 
     path = parsed_url.path
@@ -141,7 +141,7 @@ def _parse_video_id(url: str) -> Optional[str]:
 
 
 class TranscriptFormat(Enum):
-    """Transcript format."""
+    """Output formats of transcripts from `YoutubeLoader`."""
 
     TEXT = "text"
     LINES = "lines"
@@ -149,7 +149,7 @@ class TranscriptFormat(Enum):
 
 
 class YoutubeLoader(BaseLoader):
-    """Load `YouTube` transcripts."""
+    """Load `YouTube` video transcripts."""
 
     def __init__(
         self,
@@ -176,22 +176,24 @@ class YoutubeLoader(BaseLoader):
 
     @staticmethod
     def extract_video_id(youtube_url: str) -> str:
-        """Extract video id from common YT urls."""
+        """Extract video ID from common YouTube URLs."""
         video_id = _parse_video_id(youtube_url)
         if not video_id:
             raise ValueError(
-                f"Could not determine the video ID for the URL {youtube_url}"
+                f'Could not determine the video ID for the URL "{youtube_url}".'
             )
         return video_id
 
     @classmethod
     def from_youtube_url(cls, youtube_url: str, **kwargs: Any) -> YoutubeLoader:
-        """Given youtube URL, load video."""
+        """Given a YouTube URL, construct a loader.
+        See `YoutubeLoader()` constructor for a list of keyword arguments.
+        """
         video_id = cls.extract_video_id(youtube_url)
         return cls(video_id, **kwargs)
 
     def load(self) -> List[Document]:
-        """Load documents."""
+        """Load YouTube transcripts into `Document` objects."""
         try:
             from youtube_transcript_api import (
                 NoTranscriptFound,
@@ -200,7 +202,7 @@ class YoutubeLoader(BaseLoader):
             )
         except ImportError:
             raise ImportError(
-                "Could not import youtube_transcript_api python package. "
+                'Could not import "youtube_transcript_api" Python package. '
                 "Please install it with `pip install youtube-transcript-api`."
             )
 
@@ -278,7 +280,7 @@ class YoutubeLoader(BaseLoader):
                 chunk_pieces.append(transcript_piece)
 
             # handle chunk pieces left over from last iteration
-            if chunk_pieces:
+            if len(chunk_pieces) > 0:
                 documents.append(make_chunk_document(chunk_pieces, chunk_start_seconds))
 
             return documents
@@ -288,12 +290,12 @@ class YoutubeLoader(BaseLoader):
     def _get_video_info(self) -> dict:
         """Get important video information.
 
-        Components are:
+        Components include:
             - title
             - description
-            - thumbnail url,
+            - thumbnail URL,
             - publish_date
-            - channel_author
+            - channel author
             - and more.
         """
         try:
@@ -301,7 +303,7 @@ class YoutubeLoader(BaseLoader):
 
         except ImportError:
             raise ImportError(
-                "Could not import pytube python package. "
+                'Could not import "pytube" Python package. '
                 "Please install it with `pip install pytube`."
             )
         yt = YouTube(f"https://www.youtube.com/watch?v={self.video_id}")
