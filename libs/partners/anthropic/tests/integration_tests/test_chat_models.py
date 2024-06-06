@@ -92,6 +92,18 @@ async def test_astream() -> None:
         == full.usage_metadata["total_tokens"]
     )
 
+    # test usage metadata can be excluded
+    llm = ChatAnthropic(model=MODEL_NAME, stream_usage=False)
+    async for token in llm.astream("hi"):
+        assert isinstance(token, AIMessageChunk)
+        assert token.usage_metadata is None
+    # check we override with kwarg
+    llm = ChatAnthropic(model=MODEL_NAME)
+    assert llm.stream_usage
+    async for token in llm.astream("hi", stream_usage=False):
+        assert isinstance(token, AIMessageChunk)
+        assert token.usage_metadata is None
+
 
 async def test_abatch() -> None:
     """Test streaming tokens from ChatAnthropicMessages."""

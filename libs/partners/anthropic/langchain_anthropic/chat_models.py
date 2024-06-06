@@ -514,6 +514,11 @@ class ChatAnthropic(BaseChatModel):
     streaming: bool = False
     """Whether to use streaming or not."""
 
+    stream_usage: bool = True
+    """Whether to include usage metadata in streaming output. If True, additional
+    message chunks will be generated during the stream including usage metadata.
+    """
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
@@ -637,8 +642,12 @@ class ChatAnthropic(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        stream_usage: Optional[bool] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        if stream_usage is None:
+            stream_usage = self.stream_usage
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         if _tools_in_params(params):
             result = self._generate(
@@ -666,7 +675,9 @@ class ChatAnthropic(BaseChatModel):
             return
         stream = self._client.messages.create(**params, stream=True)
         for event in stream:
-            msg = _make_message_chunk_from_anthropic_event(event)
+            msg = _make_message_chunk_from_anthropic_event(
+                event, stream_usage=stream_usage
+            )
             if msg is not None:
                 chunk = ChatGenerationChunk(message=msg)
                 if run_manager and isinstance(msg.content, str):
@@ -678,8 +689,12 @@ class ChatAnthropic(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
+        stream_usage: Optional[bool] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        if stream_usage is None:
+            stream_usage = self.stream_usage
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         if _tools_in_params(params):
             warnings.warn("stream: Tool use is not yet supported in streaming mode.")
@@ -708,7 +723,9 @@ class ChatAnthropic(BaseChatModel):
             return
         stream = await self._async_client.messages.create(**params, stream=True)
         async for event in stream:
-            msg = _make_message_chunk_from_anthropic_event(event)
+            msg = _make_message_chunk_from_anthropic_event(
+                event, stream_usage=stream_usage
+            )
             if msg is not None:
                 chunk = ChatGenerationChunk(message=msg)
                 if run_manager and isinstance(msg.content, str):
@@ -1077,9 +1094,11 @@ def _lc_tool_calls_to_anthropic_tool_use_blocks(
 
 def _make_message_chunk_from_anthropic_event(
     event: anthropic.types.RawMessageStreamEvent,
+    *,
+    stream_usage: bool = True,
 ) -> Optional[AIMessageChunk]:
     message_chunk: Optional[AIMessageChunk] = None
-    if event.type == "message_start":
+    if event.type == "message_start" and stream_usage:
         input_tokens = event.message.usage.input_tokens
         message_chunk = AIMessageChunk(
             content="",
@@ -1093,7 +1112,7 @@ def _make_message_chunk_from_anthropic_event(
     elif event.type == "content_block_delta" and event.delta.type == "text_delta":
         text = event.delta.text
         message_chunk = AIMessageChunk(content=text)
-    elif event.type == "message_delta":
+    elif event.type == "message_delta" and stream_usage:
         output_tokens = event.usage.output_tokens
         message_chunk = AIMessageChunk(
             content="",
