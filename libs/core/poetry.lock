@@ -1197,7 +1197,7 @@ files = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.2.0"
+version = "0.2.1"
 description = "LangChain text splitting utilities"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1206,9 +1206,6 @@ develop = true
 
 [package.dependencies]
 langchain-core = "^0.2.0"
-
-[package.extras]
-extended-testing = ["beautifulsoup4 (>=4.12.3,<5.0.0)", "lxml (>=4.9.3,<6.0)"]
 
 [package.source]
 type = "directory"
@@ -2945,10 +2942,7 @@ files = [
 docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-itertools", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy", "pytest-ruff (>=0.2.1)"]
 
-[extras]
-extended-testing = ["jinja2"]
-
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "295d19f7796343e914654d3b2ecc95100c35726a01ccdbb1faa353f1caa2036c"
+content-hash = "0fcf4292cd7fbf92dfb5103bd3281a511184b01f07324e651145f43431567c3b"
