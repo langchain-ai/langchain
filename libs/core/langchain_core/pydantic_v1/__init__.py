@@ -14,7 +14,7 @@ from importlib import metadata
 try:
     from pydantic.v1 import *  # noqa: F403 # type: ignore
 except ImportError:
-    from pydantic import *  # noqa: F403 # type: ignore
+    from pydantic import *  # type: ignore # noqa: F403
 
 
 try:
