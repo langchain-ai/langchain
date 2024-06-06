@@ -30,7 +30,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         if PYDANTIC_MAJOR_VERSION == 2:
             try:
                 if issubclass(self.pydantic_object, pydantic.BaseModel):
-                    return self.pydantic_object.model_validate(obj)
+                    return self.pydantic_object.model_validate(obj)  # type: ignore
                 elif issubclass(self.pydantic_object, pydantic.v1.BaseModel):
                     return self.pydantic_object.parse_obj(obj)
                 else:
