@@ -53,7 +53,9 @@ class _TracerCore(ABC):
     def __init__(
         self,
         *,
-        _schema_format: Literal["original", "streaming_events"] = "original",
+        _schema_format: Literal[
+            "original", "streaming_events", "original+chat"
+        ] = "original",
         **kwargs: Any,
     ) -> None:
         """Initialize the tracer.
