@@ -2,12 +2,13 @@ import json
 from datetime import date, datetime
 from decimal import Decimal
 from hashlib import md5
-from typing import Any, Dict, List, Optional, Self, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.catalog import FunctionInfo
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.tools import BaseTool, BaseToolkit, StructuredTool
+from typing_extensions import Self
 
 from langchain_community.tools.databricks._execution import execute_function
 
