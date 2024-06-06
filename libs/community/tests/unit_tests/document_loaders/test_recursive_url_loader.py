@@ -11,19 +11,26 @@ import requests_mock
 
 from langchain_community.document_loaders.recursive_url_loader import RecursiveUrlLoader
 
+fake_url = f"https://{uuid.uuid4()}.com"
 link_to_one_two = """
 <div><a href="/one">link_to_one</a></div>
 <div><a href="/two">link_to_two</a></div>
 """
+link_to_two = '<div><a href="../two">link_to_two</a></div>'
 link_to_three = '<div><a href="../three">link_to_three</a></div>'
-no_links = "<p>no links<p>"
-
-fake_url = f"https://{uuid.uuid4()}.com"
+link_to_three_four_five = f"""
+<div><a href="{fake_url}/three">link_to_three</a></div>
+<div><a href="../four">link_to_four</a></div>
+<div><a href="../five/foo">link_to_five</a></div>
+"""
+link_to_index = f'<div><a href="{fake_url}">link_to_index</a></div>'
 URL_TO_HTML = {
     fake_url: link_to_one_two,
     f"{fake_url}/one": link_to_three,
-    f"{fake_url}/two": link_to_three,
-    f"{fake_url}/three": no_links,
+    f"{fake_url}/two": link_to_three_four_five,
+    f"{fake_url}/three": link_to_two,
+    f"{fake_url}/four": link_to_index,
+    f"{fake_url}/five/foo": link_to_three_four_five,
 }
 
 
@@ -44,7 +51,7 @@ class MockGet:
         return self
 
 
-@pytest.mark.parametrize(("max_depth", "expected_docs"), [(1, 1), (2, 3), (3, 4)])
+@pytest.mark.parametrize(("max_depth", "expected_docs"), [(1, 1), (2, 3), (3, 6)])
 @pytest.mark.parametrize("use_async", [False, True])
 def test_lazy_load(
     mocker: Any, max_depth: int, expected_docs: int, use_async: bool
