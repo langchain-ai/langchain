@@ -23,7 +23,9 @@ class ReducedOpenAPISpec:
     endpoints: List[Tuple[str, str, dict]]
 
 
-def reduce_openapi_spec(spec: dict, dereference: bool = True) -> ReducedOpenAPISpec:
+def reduce_openapi_spec(
+    spec: dict, dereference: bool = True, include_optional_params: bool = False
+) -> ReducedOpenAPISpec:
     """Simplify/distill/minify a spec somehow.
 
     I want a smaller target for retrieval and (more importantly)
@@ -56,7 +58,7 @@ def reduce_openapi_spec(spec: dict, dereference: bool = True) -> ReducedOpenAPIS
             out["parameters"] = [
                 parameter
                 for parameter in docs.get("parameters", [])
-                if parameter.get("required")
+                if parameter.get("required") or include_optional_params
             ]
         if "200" in docs["responses"]:
             out["responses"] = docs["responses"]["200"]
