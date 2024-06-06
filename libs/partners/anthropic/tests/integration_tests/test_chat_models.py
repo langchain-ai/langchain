@@ -93,14 +93,14 @@ async def test_astream() -> None:
     )
 
     # test usage metadata can be excluded
-    llm = ChatAnthropic(model=MODEL_NAME, stream_usage=False)
-    async for token in llm.astream("hi"):
+    model = ChatAnthropic(model_name=MODEL_NAME, stream_usage=False)  # type: ignore[call-arg]
+    async for token in model.astream("hi"):
         assert isinstance(token, AIMessageChunk)
         assert token.usage_metadata is None
     # check we override with kwarg
-    llm = ChatAnthropic(model=MODEL_NAME)
-    assert llm.stream_usage
-    async for token in llm.astream("hi", stream_usage=False):
+    model = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg]
+    assert model.stream_usage
+    async for token in model.astream("hi", stream_usage=False):
         assert isinstance(token, AIMessageChunk)
         assert token.usage_metadata is None
 
