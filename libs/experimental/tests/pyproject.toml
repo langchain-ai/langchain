@@ -1,3 +1,12 @@
+[tool.poetry]
+name = "langchain-experimental"
+version = "0.0.60"
+description = "Building applications with LLMs through composability"
+authors = []
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/langchain-ai/langchain"
+
 [tool.poetry.dependencies]
 presidio-anonymizer = { version = "^2.2.352" }
 presidio-analyzer = { version = "^2.2.352" }
