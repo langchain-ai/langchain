@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 try:
     from upstash_ratelimit import Ratelimit, Response
-except ImportError as error:
+except ImportError:
     Ratelimit, Response = None, None
 
 

@@ -9,7 +9,7 @@ from langchain_core.outputs import LLMResult
 logger = logging.getLogger(__name__)
 try:
     from upstash_ratelimit import Ratelimit
-except ImportError as error:
+except ImportError:
     Ratelimit = None
 
 
