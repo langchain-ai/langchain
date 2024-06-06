@@ -1,22 +1,26 @@
 import json
 from dataclasses import dataclass
 from io import StringIO
-from typing import Any, Dict, List, Literal, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
 
 import pandas as pd
-from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.catalog import ColumnTypeName, FunctionInfo
-from databricks.sdk.service.sql import StatementParameterListItem, StatementState
+
+if TYPE_CHECKING:
+    from databricks.sdk import WorkspaceClient
+    from databricks.sdk.service.catalog import FunctionInfo
+    from databricks.sdk.service.sql import StatementParameterListItem
 
 
-def is_scalar(function: FunctionInfo) -> bool:
+def is_scalar(function: "FunctionInfo") -> bool:
+    from databricks.sdk.service.catalog import ColumnTypeName
+
     return function.data_type != ColumnTypeName.TABLE_TYPE
 
 
 @dataclass
 class ParameterizedStatement:
     statement: str
-    parameters: List[StatementParameterListItem]
+    parameters: List["StatementParameterListItem"]
 
 
 @dataclass
@@ -37,8 +41,11 @@ class FunctionExecutionResult:
 
 
 def get_execute_function_sql_stmt(
-    function: FunctionInfo, json_params: Dict[str, Any]
+    function: "FunctionInfo", json_params: Dict[str, Any]
 ) -> ParameterizedStatement:
+    from databricks.sdk.service.catalog import ColumnTypeName
+    from databricks.sdk.service.sql import StatementParameterListItem
+
     parts = []
     output_params = []
     if is_scalar(function):
@@ -100,14 +107,16 @@ def get_execute_function_sql_stmt(
 
 
 def execute_function(
-    ws: WorkspaceClient,
+    ws: "WorkspaceClient",
     warehouse_id: str,
-    function: FunctionInfo,
+    function: "FunctionInfo",
     parameters: Dict[str, Any],
 ) -> FunctionExecutionResult:
     """
     Execute a function with the given arguments and return the result.
     """
+    from databricks.sdk.service.sql import StatementState
+
     # TODO: async so we can run functions in parallel
     parametrized_statement = get_execute_function_sql_stmt(function, parameters)
     # TODO: configurable limits

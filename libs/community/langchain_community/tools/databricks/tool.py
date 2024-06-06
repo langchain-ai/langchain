@@ -2,13 +2,15 @@ import json
 from datetime import date, datetime
 from decimal import Decimal
 from hashlib import md5
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
-from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.catalog import FunctionInfo
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
 from langchain_core.tools import BaseTool, BaseToolkit, StructuredTool
 from typing_extensions import Self
+
+if TYPE_CHECKING:
+    from databricks.sdk import WorkspaceClient
+    from databricks.sdk.service.catalog import FunctionInfo
 
 from langchain_community.tools.databricks._execution import execute_function
 
@@ -76,7 +78,7 @@ def _uc_type_to_pydantic_type(uc_type_json: Union[str, Dict[str, Any]]) -> Type:
             raise TypeError(f"Unknown type {uc_type_json}. Try upgrading this package.")
 
 
-def _generate_args_schema(function: FunctionInfo) -> Type[BaseModel]:
+def _generate_args_schema(function: "FunctionInfo") -> Type[BaseModel]:
     if function.input_params is None:
         return BaseModel
     params = function.input_params.parameters
@@ -109,11 +111,22 @@ def _generate_args_schema(function: FunctionInfo) -> Type[BaseModel]:
     )
 
 
-def _get_tool_name(function: FunctionInfo) -> str:
+def _get_tool_name(function: "FunctionInfo") -> str:
     tool_name = f"{function.catalog_name}__{function.schema_name}__{function.name}"[
         -64:
     ]
     return tool_name
+
+
+def _get_default_workspace_client() -> "WorkspaceClient":
+    try:
+        from databricks.sdk import WorkspaceClient
+    except ImportError as e:
+        raise ImportError(
+            "Could not import databricks-sdk python package. "
+            "Please install it with `pip install databricks-sdk`."
+        ) from e
+    return WorkspaceClient()
 
 
 class UCFunctionToolkit(BaseToolkit):
@@ -121,8 +134,9 @@ class UCFunctionToolkit(BaseToolkit):
         description="The ID of a Databricks SQL Warehouse to execute functions."
     )
 
-    workspace_client: WorkspaceClient = Field(
-        default_factory=WorkspaceClient, description="Databricks workspace client."
+    workspace_client: "WorkspaceClient" = Field(
+        default_factory=_get_default_workspace_client,
+        description="Databricks workspace client.",
     )
 
     tools: Dict[str, BaseTool] = Field(default_factory=dict)
