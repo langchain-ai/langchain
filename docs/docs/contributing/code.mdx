@@ -216,7 +216,7 @@ any side effects (no warnings, no errors, no exceptions).
 
 To introduce the dependency to a library, please do the following:
 
-1. Open extended_testing_requirements.toml and add the dependency
+1. Open extended_testing_deps.txt and add the dependency
 2. Add a unit test that the very least attempts to import the new code. Ideally, the unit
 test makes use of lightweight fixtures to test the logic of the code.
 3. Please use the `@pytest.mark.requires(package_name)` decorator for any unit tests that require the dependency.
