@@ -1,4 +1,4 @@
-"""Test AzureCosmosDBVectorSearch functionality."""
+"""Test AzureCosmosDBNoSqlVectorSearch functionality."""
 import logging
 import os
 from time import sleep

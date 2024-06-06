@@ -7152,8 +7152,8 @@
     "langchain_community.vectorstores.TencentVectorDB"
   ],
   [
-    "langchain.vectorstores.AzureCosmosDBVectorSearch",
-    "langchain_community.vectorstores.AzureCosmosDBVectorSearch"
+    "langchain.vectorstores.AzureCosmosDBMongoVCoreVectorSearch",
+    "langchain_community.vectorstores.AzureCosmosDBMongoVCoreVectorSearch"
   ],
   [
     "langchain.vectorstores.alibabacloud_opensearch.AlibabaCloudOpenSearchSettings",
@@ -7184,12 +7184,12 @@
     "langchain_community.vectorstores.AwaDB"
   ],
   [
-    "langchain.vectorstores.azure_cosmos_db.CosmosDBSimilarityType",
-    "langchain_community.vectorstores.azure_cosmos_db.CosmosDBSimilarityType"
+    "langchain.vectorstores.azure_cosmos_db_mongo_vcore.CosmosDBSimilarityType",
+    "langchain_community.vectorstores.azure_cosmos_db_mongo_vcore.CosmosDBSimilarityType"
   ],
   [
-    "langchain.vectorstores.azure_cosmos_db.AzureCosmosDBVectorSearch",
-    "langchain_community.vectorstores.AzureCosmosDBVectorSearch"
+    "langchain.vectorstores.azure_cosmos_db_mongo_vcore.AzureCosmosDBMongoVCoreVectorSearch",
+    "langchain_community.vectorstores.AzureCosmosDBMongoVCoreVectorSearch"
   ],
   [
     "langchain.vectorstores.azuresearch.AzureSearch",

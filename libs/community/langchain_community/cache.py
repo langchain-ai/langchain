@@ -54,7 +54,7 @@ from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
 from langchain_community.utilities.cassandra import SetupMode as CassandraSetupMode
-from langchain_community.vectorstores.azure_cosmos_db import (
+from langchain_community.vectorstores.azure_cosmos_db_mongo_vcore import (
     CosmosDBSimilarityType,
     CosmosDBVectorSearchType,
 )
@@ -79,7 +79,7 @@ from langchain_community.utilities.astradb import (
 from langchain_community.utilities.astradb import (
     _AstraDBCollectionEnvironment,
 )
-from langchain_community.vectorstores import AzureCosmosDBVectorSearch
+from langchain_community.vectorstores import AzureCosmosDBMongoVCoreVectorSearch
 from langchain_community.vectorstores import (
     OpenSearchVectorSearch as OpenSearchVectorStore,
 )
@@ -2078,7 +2078,7 @@ class AstraDBSemanticCache(BaseCache):
         await self.async_collection.clear()
 
 
-class AzureCosmosDBSemanticCache(BaseCache):
+class AzureCosmosDBMongoVCoreSemanticCache(BaseCache):
     """Cache that uses Cosmos DB Mongo vCore vector-store backend"""
 
     DEFAULT_DATABASE_NAME = "CosmosMongoVCoreCacheDB"
@@ -2164,14 +2164,14 @@ class AzureCosmosDBSemanticCache(BaseCache):
         self.ef_construction = ef_construction
         self.ef_search = ef_search
         self.score_threshold = score_threshold
-        self._cache_dict: Dict[str, AzureCosmosDBVectorSearch] = {}
+        self._cache_dict: Dict[str, AzureCosmosDBMongoVCoreVectorSearch] = {}
         self.application_name = application_name
 
     def _index_name(self, llm_string: str) -> str:
         hashed_index = _hash(llm_string)
         return f"cache:{hashed_index}"
 
-    def _get_llm_cache(self, llm_string: str) -> AzureCosmosDBVectorSearch:
+    def _get_llm_cache(self, llm_string: str) -> AzureCosmosDBMongoVCoreVectorSearch:
         index_name = self._index_name(llm_string)
 
         namespace = self.database_name + "." + self.collection_name
@@ -2183,7 +2183,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
         # create new vectorstore client for the specific llm string
         if self.cosmosdb_client:
             collection = self.cosmosdb_client[self.database_name][self.collection_name]
-            self._cache_dict[index_name] = AzureCosmosDBVectorSearch(
+            self._cache_dict[index_name] = AzureCosmosDBMongoVCoreVectorSearch(
                 collection=collection,
                 embedding=self.embedding,
                 index_name=index_name,
@@ -2191,7 +2191,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
         else:
             self._cache_dict[
                 index_name
-            ] = AzureCosmosDBVectorSearch.from_connection_string(
+            ] = AzureCosmosDBMongoVCoreVectorSearch.from_connection_string(
                 connection_string=self.cosmosdb_connection_string,
                 namespace=namespace,
                 embedding=self.embedding,
@@ -2269,8 +2269,12 @@ class AzureCosmosDBSemanticCache(BaseCache):
 
     @staticmethod
     def _validate_enum_value(value: Any, enum_type: Type[Enum]) -> None:
-        if not isinstance(value, enum_type):
+        # if not isinstance(value, enum_type):
+        #     raise ValueError(f"Invalid enum value: {value}. Expected {enum_type}.")
+        if not isinstance(value, enum_type) and not isinstance(value, str):
             raise ValueError(f"Invalid enum value: {value}. Expected {enum_type}.")
+        if value not in enum_type.__members__.values():
+            raise ValueError(f"Invalid enum value: {value}. Expected one of: {list(enum_type)}.")
 
 
 class OpenSearchSemanticCache(BaseCache):

@@ -47,14 +47,12 @@ class CosmosDBVectorSearchType(str, Enum):
     """HNSW vector index"""
 
 
-CosmosDBDocumentType = TypeVar("CosmosDBDocumentType", bound=Dict[str, Any])
-
 logger = logging.getLogger(__name__)
 
 DEFAULT_INSERT_BATCH_SIZE = 128
 
 
-class AzureCosmosDBVectorSearch(VectorStore):
+class AzureCosmosDBMongoVCoreVectorSearch(VectorStore):
     """`Azure Cosmos DB for MongoDB vCore` vector store.
 
     To use, you should have both:
@@ -64,19 +62,19 @@ class AzureCosmosDBVectorSearch(VectorStore):
     Example:
         . code-block:: python
 
-            from langchain_community.vectorstores import AzureCosmosDBVectorSearch
+            from langchain_community.vectorstores import AzureCosmosDBMongoVCoreVectorSearch
             from langchain_community.embeddings.openai import OpenAIEmbeddings
             from pymongo import MongoClient
 
             mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
             collection = mongo_client["<db_name>"]["<collection_name>"]
             embeddings = OpenAIEmbeddings()
-            vectorstore = AzureCosmosDBVectorSearch(collection, embeddings)
+            vectorstore = AzureCosmosDBMongoVCoreVectorSearch(collection, embeddings)
     """
 
     def __init__(
         self,
-        collection: Collection[CosmosDBDocumentType],
+        collection: Collection,
         embedding: Embeddings,
         *,
         index_name: str = "vectorSearchIndex",
@@ -84,7 +82,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         embedding_key: str = "vectorContent",
         application_name: str = "LANGCHAIN_PYTHON",
     ):
-        """Constructor for AzureCosmosDBVectorSearch
+        """Constructor for AzureCosmosDBMongoVCoreVectorSearch
 
         Args:
             collection: MongoDB collection to add the texts to.
@@ -123,8 +121,8 @@ class AzureCosmosDBVectorSearch(VectorStore):
         embedding: Embeddings,
         application_name: str = "LANGCHAIN_PYTHON",
         **kwargs: Any,
-    ) -> AzureCosmosDBVectorSearch:
-        """Creates an Instance of AzureCosmosDBVectorSearch from a Connection String
+    ) -> AzureCosmosDBMongoVCoreVectorSearch:
+        """Creates an Instance of AzureCosmosDBMongoVCoreVectorSearch from a Connection String
 
         Args:
             connection_string: The MongoDB vCore instance connection string
@@ -359,9 +357,9 @@ class AzureCosmosDBVectorSearch(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        collection: Optional[Collection[CosmosDBDocumentType]] = None,
+        collection: Optional[Collection] = None,
         **kwargs: Any,
-    ) -> AzureCosmosDBVectorSearch:
+    ) -> AzureCosmosDBMongoVCoreVectorSearch:
         if collection is None:
             raise ValueError("Must provide 'collection' named parameter.")
         vectorstore = cls(collection, embedding, **kwargs)
@@ -583,5 +581,5 @@ class AzureCosmosDBVectorSearch(VectorStore):
         )
         return docs
 
-    def get_collection(self) -> Collection[CosmosDBDocumentType]:
+    def get_collection(self) -> Collection:
         return self._collection
