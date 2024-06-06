@@ -662,8 +662,11 @@ class ChatAnthropic(BaseChatModel):
             else:
                 yield cast(ChatGenerationChunk, result.generations[0])
             return
-        with self._client.messages.stream(**params) as stream:
-            for text in stream.text_stream:
+        stream = self._client.messages.create(**params, stream=True)
+        for event in stream:
+            # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
+            if event.type == "content_block_delta" and event.delta.type == "text_delta":
+                text = event.delta.text
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
                 if run_manager:
                     run_manager.on_llm_new_token(text, chunk=chunk)
@@ -701,8 +704,11 @@ class ChatAnthropic(BaseChatModel):
             else:
                 yield cast(ChatGenerationChunk, result.generations[0])
             return
-        async with self._async_client.messages.stream(**params) as stream:
-            async for text in stream.text_stream:
+        stream = await self._async_client.messages.create(**params, stream=True)
+        async for event in stream:
+            # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
+            if event.type == "content_block_delta" and event.delta.type == "text_delta":
+                text = event.delta.text
                 chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
                 if run_manager:
                     await run_manager.on_llm_new_token(text, chunk=chunk)
