@@ -175,7 +175,7 @@ class PineconeVectorStore(VectorStore):
                     async_req=async_req,
                     **kwargs,
                 )
-                
+
         return ids
 
     def similarity_search_with_score(
