@@ -1876,3 +1876,34 @@ async def test_runnable_generator() -> None:
             "tags": [],
         },
     ]
+
+
+async def test_with_explicit_config() -> None:
+    """Test astream events with explicit callbacks being passed."""
+    infinite_cycle = cycle([AIMessage(content="hello world", id="ai3")])
+    model = GenericFakeChatModel(messages=infinite_cycle)
+
+    @tool
+    async def say_hello(query: str, callbacks: Callbacks) -> BaseMessage:
+        """Use this tool to look up which items are in the given place."""
+
+        @RunnableLambda
+        def passthrough_to_trigger_issue(x: str) -> str:
+            """Add passthrough to trigger issue."""
+            return x
+
+        chain = passthrough_to_trigger_issue | model.with_config(
+            {"tags": ["hello"], "callbacks": callbacks}
+        )
+
+        return await chain.ainvoke(query)
+
+    events = await _collect_events(
+        say_hello.astream_events("meow", version="v2")  # type: ignore
+    )
+
+    assert [
+        event["data"]["chunk"].content
+        for event in events
+        if event["event"] == "on_chat_model_stream"
+    ] == ["hello", " ", "world"]
