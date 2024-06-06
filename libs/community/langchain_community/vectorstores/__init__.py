@@ -417,7 +417,7 @@ _module_lookup = {
     "AtlasDB": "langchain_community.vectorstores.atlas",
     "AwaDB": "langchain_community.vectorstores.awadb",
     "AzureCosmosDBNoSqlVectorSearch": "langchain_community.vectorstores.azure_cosmos_db_no_sql",  # noqa: E501
-    "AzureCosmosDBMongoVCoreVectorSearch": "langchain_community.vectorstores.azure_cosmos_db_mongo_vcore",
+    "AzureCosmosDBMongoVCoreVectorSearch": "langchain_community.vectorstores.azure_cosmos_db_mongo_vcore",  # noqa: E501
     "AzureSearch": "langchain_community.vectorstores.azuresearch",
     "BaiduVectorDB": "langchain_community.vectorstores.baiduvectordb",
     "BESVectorStore": "langchain_community.vectorstores.baiducloud_vector_search",
