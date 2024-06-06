@@ -1,6 +1,7 @@
 from langchain_pinecone import __all__
 
 EXPECTED_ALL = [
+    "PineconeEmbeddings",
     "PineconeVectorStore",
     "Pinecone",
 ]
