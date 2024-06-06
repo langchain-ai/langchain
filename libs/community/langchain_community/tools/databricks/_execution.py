@@ -3,8 +3,6 @@ from dataclasses import dataclass
 from io import StringIO
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional
 
-import pandas as pd
-
 if TYPE_CHECKING:
     from databricks.sdk import WorkspaceClient
     from databricks.sdk.service.catalog import FunctionInfo
@@ -115,6 +113,13 @@ def execute_function(
     """
     Execute a function with the given arguments and return the result.
     """
+    try:
+        import pandas as pd
+    except ImportError as e:
+        raise ImportError(
+            "Could not import pandas python package. "
+            "Please install it with `pip install pandas`."
+        ) from e
     from databricks.sdk.service.sql import StatementState
 
     # TODO: async so we can run functions in parallel
