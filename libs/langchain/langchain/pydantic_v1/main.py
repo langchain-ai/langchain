@@ -1,3 +1,5 @@
+# type: ignore
+
 try:
     from pydantic.v1.main import *  # noqa: F403
 except ImportError:
