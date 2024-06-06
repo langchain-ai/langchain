@@ -75,7 +75,7 @@ class RunProcessor:
         :return: The converted Span.
         """
         attributes = {**run.extra} if run.extra else {}
-        attributes["execution_order"] = run.execution_order
+        attributes["execution_order"] = run.execution_order  # type: ignore
 
         return self.trace_tree.Span(
             span_id=str(run.id) if run.id is not None else None,
