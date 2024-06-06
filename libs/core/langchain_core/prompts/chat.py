@@ -470,7 +470,9 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                         for key in ["url", "path", "detail"]:
                             if key in img_template:
                                 input_variables.extend(
-                                    get_template_variables(img_template[key], "f-string")
+                                    get_template_variables(
+                                        img_template[key], "f-string"
+                                    )
                                 )
                         img_template_obj = ImagePromptTemplate(
                             input_variables=input_variables, template=img_template
