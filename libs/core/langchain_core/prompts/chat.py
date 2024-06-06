@@ -466,12 +466,12 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                         )
                     elif isinstance(img_template, dict):
                         img_template = dict(img_template)
-                        if "url" in img_template:
-                            input_variables = get_template_variables(
-                                img_template["url"], "f-string"
-                            )
-                        else:
-                            input_variables = None
+                        input_variables = []
+                        for key in ["url", "path", "detail"]:
+                            if key in img_template:
+                                input_variables.extend(
+                                    get_template_variables(img_template[key], "f-string")
+                                )
                         img_template_obj = ImagePromptTemplate(
                             input_variables=input_variables, template=img_template
                         )
