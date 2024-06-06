@@ -581,7 +581,7 @@ class BaseChatOpenAI(BaseChatModel):
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
-            "model_name": self.model_name,
+            "model_name": response.get("model", self.model_name),
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         return ChatResult(generations=generations, llm_output=llm_output)
