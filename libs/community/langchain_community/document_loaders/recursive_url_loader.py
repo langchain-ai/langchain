@@ -80,6 +80,62 @@ class RecursiveUrlLoader(BaseLoader):
         same host, so such a request would not be prevented by default.
 
         See https://python.langchain.com/docs/security
+    
+    Instantiate:
+        .. code-block:: python
+            from langchain_community.document_loaders.recursive_url_loader import RecursiveUrlLoader
+
+            url = "https://docs.python.org/3.9/"
+            loader = RecursiveUrlLoader(
+                url=url
+            )
+    
+    Normal Load:
+        .. code-block:: python
+            docs = loader.load()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+            <!DOCTYPE html>
+
+            <html xmlns="http://www.w3.org/1999/xhtml">
+            <head>
+                <meta charset="utf-8" /><
+            {'source': 'https://docs.python.org/3.9/', 'content_type': 'text/html', 'title': '3.9.19 Documentation', 'language': None}
+    
+    
+    Async Load:
+        .. code-block:: python
+            docs = await loader.aload()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+            <!DOCTYPE html>
+
+            <html xmlns="http://www.w3.org/1999/xhtml">
+            <head>
+                <meta charset="utf-8" /><
+            {'source': 'https://docs.python.org/3.9/', 'content_type': 'text/html', 'title': '3.9.19 Documentation', 'language': None}
+            
+    Lazy Load:
+        .. code-block:: python
+            docs = []
+            docs_lazy = loader.lazy_load()
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+            <!DOCTYPE html>
+
+            <html xmlns="http://www.w3.org/1999/xhtml">
+            <head>
+                <meta charset="utf-8" /><
+            {'source': 'https://docs.python.org/3.9/', 'content_type': 'text/html', 'title': '3.9.19 Documentation', 'language': None}
+            
     """
 
     def __init__(
@@ -107,7 +163,7 @@ class RecursiveUrlLoader(BaseLoader):
             url: The URL to crawl.
             max_depth: The max depth of the recursive loading.
             use_async: Whether to use asynchronous loading.
-                If True, this function will not be lazy, but it will still work in the
+                If True, lazy_load function will not be lazy, but it will still work in the
                 expected way, just not lazy.
             extractor: A function to extract document contents from raw html.
                 When extract function returns an empty string, the document is
