@@ -41,9 +41,6 @@ class DuckDuckGoSearchRun(BaseTool):
 
 class DuckDuckGoSearchResults(BaseTool):
     """Tool that queries the DuckDuckGo search API and gets back json."""
-    def default_api_wrapper_to_str(res):
-        res_strs = [", ".join([f"{k}: {v}" for k, v in d.items()]) for d in res]
-        return ", ".join([f"[{rs}]" for rs in res_strs])
 
     name: str = "duckduckgo_results_json"
     description: str = (
@@ -57,7 +54,8 @@ class DuckDuckGoSearchResults(BaseTool):
     )
     backend: str = "text"
     args_schema: Type[BaseModel] = DDGInput
-    api_wrapper_to_str: Callable[[List[Dict[str, str]]], str] = default_api_wrapper_to_str
+    keys_to_include: Optional[List[str]] = None
+    seperator_between_results: str = ", "
 
     def _run(
         self,
@@ -65,7 +63,9 @@ class DuckDuckGoSearchResults(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        return self.default_api_wrapper_to_str(self.api_wrapper.results(query, self.max_results, source=self.backend))
+        res = self.default_api_wrapper_to_str(self.api_wrapper.results(query, self.max_results, source=self.backend))
+        res_strs = [", ".join([f"{k}: {v}" for k, v in d.items() if not self.keys_to_include or k in self.keys_to_include]) for d in res]
+        return self.seperator_between_results.join([f"[{rs}]" for rs in res_strs])
 
 
 def DuckDuckGoSearchTool(*args: Any, **kwargs: Any) -> DuckDuckGoSearchRun:
