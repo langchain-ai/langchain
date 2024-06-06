@@ -1,7 +1,7 @@
 """Tool for the DuckDuckGo search API."""
 
 import warnings
-from typing import Any, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -41,6 +41,9 @@ class DuckDuckGoSearchRun(BaseTool):
 
 class DuckDuckGoSearchResults(BaseTool):
     """Tool that queries the DuckDuckGo search API and gets back json."""
+    def default_api_wrapper_to_str(res):
+        res_strs = [", ".join([f"{k}: {v}" for k, v in d.items()]) for d in res]
+        return ", ".join([f"[{rs}]" for rs in res_strs])
 
     name: str = "duckduckgo_results_json"
     description: str = (
@@ -54,6 +57,7 @@ class DuckDuckGoSearchResults(BaseTool):
     )
     backend: str = "text"
     args_schema: Type[BaseModel] = DDGInput
+    api_wrapper_to_str: Callable[[List[Dict[str, str]]], str] = default_api_wrapper_to_str
 
     def _run(
         self,
@@ -61,9 +65,7 @@ class DuckDuckGoSearchResults(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> str:
         """Use the tool."""
-        res = self.api_wrapper.results(query, self.max_results, source=self.backend)
-        res_strs = [", ".join([f"{k}: {v}" for k, v in d.items()]) for d in res]
-        return ", ".join([f"[{rs}]" for rs in res_strs])
+        return self.default_api_wrapper_to_str(self.api_wrapper.results(query, self.max_results, source=self.backend))
 
 
 def DuckDuckGoSearchTool(*args: Any, **kwargs: Any) -> DuckDuckGoSearchRun:
