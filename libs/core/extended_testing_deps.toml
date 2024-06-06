@@ -1,0 +1,2 @@
+[tool.poetry.dependencies]
+jinja2 = { version = "^3" }
