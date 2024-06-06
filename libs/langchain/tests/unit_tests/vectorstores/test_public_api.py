@@ -9,7 +9,7 @@ _EXPECTED = [
     "AstraDB",
     "AtlasDB",
     "AwaDB",
-    "AzureCosmosDBMongoVCoreVectorSearch",
+    "AzureCosmosDBVectorSearch",
     "AzureSearch",
     "Bagel",
     "Cassandra",
