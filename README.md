@@ -106,7 +106,7 @@ Retrieval Augmented Generation involves [loading data](https://python.langchain.
 
 **🤖 Agents**
 
-Agents allow an LLM autonomy over how a task is accomplished. Agents make decisions about which Actions to take, then take that Action, observe the result, and repeat until the task is complete done. LangChain provides a [standard interface for agents](https://python.langchain.com/v0.2/docs/concepts/#agents) along with the [LangGraph](https://github.com/langchain-ai/langgraph) extension for building custom agents.
+Agents allow an LLM autonomy over how a task is accomplished. Agents make decisions about which Actions to take, then take that Action, observe the result, and repeat until the task is complete. LangChain provides a [standard interface for agents](https://python.langchain.com/v0.2/docs/concepts/#agents) along with the [LangGraph](https://github.com/langchain-ai/langgraph) extension for building custom agents.
 
 ## 📖 Documentation
 
