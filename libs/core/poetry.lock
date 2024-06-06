@@ -679,13 +679,22 @@ testing = ["flufl.flake8", "importlib-resources (>=1.3)", "jaraco.test (>=5.4)",
 
 [[package]]
 name = "importlib-resources"
+<<<<<<< HEAD
 version = "6.4.0"
+=======
+version = "6.3.0"
+>>>>>>> parent of 781aee006 (community, langchain, infra: revert store extended test deps outside of poetry (#19153))
 description = "Read resources from Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
+<<<<<<< HEAD
     {file = "importlib_resources-6.4.0-py3-none-any.whl", hash = "sha256:50d10f043df931902d4194ea07ec57960f66a80449ff867bfe782b4c486ba78c"},
     {file = "importlib_resources-6.4.0.tar.gz", hash = "sha256:cdb2b453b8046ca4e3798eb1d84f3cce1446a0e8e7b5ef4efb600f19fc398145"},
+=======
+    {file = "importlib_resources-6.3.0-py3-none-any.whl", hash = "sha256:783407aa1cd05550e3aa123e8f7cfaebee35ffa9cb0242919e2d1e4172222705"},
+    {file = "importlib_resources-6.3.0.tar.gz", hash = "sha256:166072a97e86917a9025876f34286f549b9caf1d10b35a1b372bffa1600c6569"},
+>>>>>>> parent of 781aee006 (community, langchain, infra: revert store extended test deps outside of poetry (#19153))
 ]
 
 [package.dependencies]
@@ -1208,22 +1217,34 @@ develop = true
 [package.dependencies]
 langchain-core = "^0.2.0"
 
+<<<<<<< HEAD
 [package.extras]
 extended-testing = ["beautifulsoup4 (>=4.12.3,<5.0.0)", "lxml (>=4.9.3,<6.0)"]
 
+=======
+>>>>>>> parent of 781aee006 (community, langchain, infra: revert store extended test deps outside of poetry (#19153))
 [package.source]
 type = "directory"
 url = "../text-splitters"
 
 [[package]]
 name = "langsmith"
+<<<<<<< HEAD
 version = "0.1.69"
+=======
+version = "0.1.24"
+>>>>>>> parent of 781aee006 (community, langchain, infra: revert store extended test deps outside of poetry (#19153))
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
+<<<<<<< HEAD
     {file = "langsmith-0.1.69-py3-none-any.whl", hash = "sha256:3d7bd6fadb0852fc4cd2e7cf8a1593306046900052da3970bb2b48ed21cc73d8"},
     {file = "langsmith-0.1.69.tar.gz", hash = "sha256:0146764904a8e479620b7e73efcba1cf172b621799564dd7e7342859c05c264a"},
+=======
+    {file = "langsmith-0.1.24-py3-none-any.whl", hash = "sha256:898ef5265bca8fc912f7fbf207e1d69cacd86055faecf6811bd42641e6319840"},
+    {file = "langsmith-0.1.24.tar.gz", hash = "sha256:432b829e763f5077df411bc59bb35449813f18174d2ebc8bbbb38427071d5e7d"},
+>>>>>>> parent of 781aee006 (community, langchain, infra: revert store extended test deps outside of poetry (#19153))
 ]
 
 [package.dependencies]
@@ -2957,10 +2978,11 @@ files = [
 docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-itertools", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy", "pytest-ruff (>=0.2.1)"]
 
-[extras]
-extended-testing = ["jinja2"]
-
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
+<<<<<<< HEAD
 content-hash = "40745c3aae8f648b7bc63bff85e26e5658567dec39f57149a7b1ba7637c93751"
+=======
+content-hash = "0ef8292504562c3c5f63362cc5a50cf010786366938656965ec650e0eb4904d9"
+>>>>>>> parent of 781aee006 (community, langchain, infra: revert store extended test deps outside of poetry (#19153))
