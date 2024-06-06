@@ -1034,9 +1034,11 @@ class Qdrant(VectorStore):
             **kwargs,
         )
         embeddings = [
-            result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
-            if self.vector_name is not None
-            else result.vector
+            (
+                result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
+                if self.vector_name is not None
+                else result.vector
+            )
             for result in results
         ]
         mmr_selected = maximal_marginal_relevance(
@@ -1107,9 +1109,11 @@ class Qdrant(VectorStore):
             **kwargs,
         )
         embeddings = [
-            result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
-            if self.vector_name is not None
-            else result.vector
+            (
+                result.vector.get(self.vector_name)  # type: ignore[index, union-attr]
+                if self.vector_name is not None
+                else result.vector
+            )
             for result in results
         ]
         mmr_selected = maximal_marginal_relevance(
@@ -1353,8 +1357,8 @@ class Qdrant(VectorStore):
     def from_existing_collection(
         cls: Type[Qdrant],
         embedding: Embeddings,
-        path: str,
         collection_name: str,
+        path: Optional[str] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
@@ -2138,9 +2142,11 @@ class Qdrant(VectorStore):
             points = [
                 models.PointStruct(
                     id=point_id,
-                    vector=vector
-                    if self.vector_name is None
-                    else {self.vector_name: vector},
+                    vector=(
+                        vector
+                        if self.vector_name is None
+                        else {self.vector_name: vector}
+                    ),
                     payload=payload,
                 )
                 for point_id, vector, payload in zip(
@@ -2178,9 +2184,11 @@ class Qdrant(VectorStore):
             points = [
                 models.PointStruct(
                     id=point_id,
-                    vector=vector
-                    if self.vector_name is None
-                    else {self.vector_name: vector},
+                    vector=(
+                        vector
+                        if self.vector_name is None
+                        else {self.vector_name: vector}
+                    ),
                     payload=payload,
                 )
                 for point_id, vector, payload in zip(
