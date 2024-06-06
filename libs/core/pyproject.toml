@@ -16,7 +16,6 @@ tenacity = "^8.1.0"
 jsonpatch = "^1.33"
 PyYAML = ">=5.3"
 packaging = "^23.2"
-jinja2 = { version = "^3", optional = true }
 
 [tool.poetry.group.lint]
 optional = true
@@ -66,7 +65,6 @@ optional = true
 dependencies = {}
 
 [tool.poetry.extras]
-extended_testing = ["jinja2"]
 
 [tool.ruff.lint]
 select = [
