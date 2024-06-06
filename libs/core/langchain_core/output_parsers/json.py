@@ -48,7 +48,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     def _get_schema(self, pydantic_object: Type[TBaseModel]) -> dict[str, Any]:
         if PYDANTIC_MAJOR_VERSION == 2:
             if issubclass(pydantic_object, pydantic.BaseModel):
-                return pydantic_object.model_json_schema()  # type: ignore
+                return pydantic_object.model_json_schema()
             elif issubclass(pydantic_object, pydantic.v1.BaseModel):
                 return pydantic_object.schema()
         return pydantic_object.schema()
