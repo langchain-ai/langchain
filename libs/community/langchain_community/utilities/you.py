@@ -74,7 +74,8 @@ class YouSearchAPIWrapper(BaseModel):
     search_lang: str, optional
         (News API) Language codes, ex: 'en' for English, see api docs for list
     ui_lang: str, optional
-        (News API) User interface language for the response, ex: 'en' for English, see api docs for list
+        (News API) User interface language for the response, ex: 'en' for English,
+                   see api docs for list
     spellcheck: bool, optional
         (News API) Whether to spell check query or not, defaults to True
     k: int, optional
