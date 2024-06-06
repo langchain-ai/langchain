@@ -301,6 +301,8 @@ class ChatFireworks(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
+    stop: Optional[List[str]] = Field(None, alias="stop_sequences")
+    """Default stop sequences."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -355,6 +357,7 @@ class ChatFireworks(BaseChatModel):
             "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
+            "stop": self.stop,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
@@ -461,8 +464,6 @@ class ChatFireworks(BaseChatModel):
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = self._default_params
         if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params

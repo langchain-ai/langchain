@@ -35,6 +35,8 @@ class ChatAI21(BaseChatModel, AI21Base):
         You can view the options at https://github.com/AI21Labs/ai21-python?tab=readme-ov-file#model-types"""
     num_results: int = 1
     """The number of responses to generate for a given prompt."""
+    stop: Optional[List[str]] = None
+    """Default stop sequences."""
 
     max_tokens: int = 16
     """The maximum number of tokens to generate for each response."""
@@ -97,6 +99,8 @@ class ChatAI21(BaseChatModel, AI21Base):
             "top_k_return": self.top_k_return,
             "n": self.n,
         }
+        if self.stop:
+            base_params["stop_sequences"] = self.stop
 
         if self.count_penalty is not None:
             base_params["count_penalty"] = self.count_penalty.to_dict()
