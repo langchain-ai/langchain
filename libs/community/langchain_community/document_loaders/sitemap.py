@@ -62,6 +62,46 @@ class SitemapLoader(WebBaseLoader):
         Use the filter URLs argument to limit which URLs can be loaded.
 
         See https://python.langchain.com/docs/security
+
+    Instantiate:
+        .. code-block:: python
+            from langchain_community.document_loaders.sitemap import SitemapLoader
+
+            url = "https://www.semrush.com/features/sitemap/"
+            sitemap_loader = SitemapLoader(web_path=url)
+
+    Normal Load:
+        .. code-block:: python
+            docs = sitemap_loader.load()
+            print(docs[0].page_content.replace('\n','')[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+                        Features | Semrush            Skip to content    Your browser is out of date. The site m
+            {'source': 'https://www.semrush.com/features/', 'loc': 'https://www.semrush.com/features/', 'changefreq': 'daily'}
+    
+    Async Load:
+        .. code-block:: python
+            docs = await sitemap_loader.aload()
+            print(docs[0].page_content.replace('\n','')[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+                        Features | Semrush            Skip to content    Your browser is out of date. The site m
+            {'source': 'https://www.semrush.com/features/', 'loc': 'https://www.semrush.com/features/', 'changefreq': 'daily'}
+
+    Lazy Load:
+        .. code-block:: python
+            docs = []
+            docs_lazy = sitemap_loader.lazy_load()
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content.replace('\n','')[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+                        Features | Semrush            Skip to content    Your browser is out of date. The site m
+            {'source': 'https://www.semrush.com/features/', 'loc': 'https://www.semrush.com/features/', 'changefreq': 'daily'}
     """
 
     def __init__(
@@ -216,3 +256,7 @@ class SitemapLoader(WebBaseLoader):
                 page_content=self.parsing_function(result),
                 metadata=self.meta_function(els[i], result),
             )
+    
+    async def aload(self) -> List[Document]:
+        """Load data into Document objects."""
+        return [document async for document in self.alazy_load()]
