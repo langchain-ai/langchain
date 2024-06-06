@@ -95,6 +95,7 @@ if TYPE_CHECKING:
         RunLog,
         RunLogPatch,
     )
+    from langchain_core.tracers.root_listeners import AsyncListener
     from langchain_core.tracers.schemas import Run
 
 
@@ -1317,6 +1318,86 @@ class Runnable(Generic[Input, Output], ABC):
                 lambda config: {
                     "callbacks": [
                         RootListenersTracer(
+                            config=config,
+                            on_start=on_start,
+                            on_end=on_end,
+                            on_error=on_error,
+                        )
+                    ],
+                }
+            ],
+        )
+
+    def with_alisteners(
+        self,
+        *,
+        on_start: Optional[AsyncListener] = None,
+        on_end: Optional[AsyncListener] = None,
+        on_error: Optional[AsyncListener] = None,
+    ) -> Runnable[Input, Output]:
+        """
+        Bind asynchronous lifecycle listeners to a Runnable, returning a new Runnable.
+
+        on_start: Asynchronously called before the runnable starts running.
+        on_end: Asynchronously called after the runnable finishes running.
+        on_error: Asynchronously called if the runnable throws an error.
+
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+
+        Example:
+
+        .. code-block:: python
+            from langchain_core.runnables import RunnableLambda
+            import time
+
+            async def test_runnable(time_to_sleep : int):
+                print(f"Runnable[{time_to_sleep}s]: starts at {format_t(time.time())}")
+                await asyncio.sleep(time_to_sleep)
+                print(f"Runnable[{time_to_sleep}s]: ends at {format_t(time.time())}")
+
+            async def fn_start(run_obj : Runnable):
+                print(f"on start callback starts at {format_t(time.time())}
+                await asyncio.sleep(3)
+                print(f"on start callback ends at {format_t(time.time())}")
+
+            async def fn_end(run_obj : Runnable):
+                print(f"on end callback starts at {format_t(time.time())}
+                await asyncio.sleep(2)
+                print(f"on end callback ends at {format_t(time.time())}")
+
+            runnable = RunnableLambda(test_runnable).with_alisteners(
+                on_start=fn_start,
+                on_end=fn_end
+            )
+            async def concurrent_runs():
+                await asyncio.gather(runnable.ainvoke(2), runnable.ainvoke(3))
+
+            asyncio.run(concurrent_runs())
+            Result:
+            on start callback starts at 2024-05-16T14:20:29.637053+00:00
+            on start callback starts at 2024-05-16T14:20:29.637150+00:00
+            on start callback ends at 2024-05-16T14:20:32.638305+00:00
+            on start callback ends at 2024-05-16T14:20:32.638383+00:00
+            Runnable[3s]: starts at 2024-05-16T14:20:32.638849+00:00
+            Runnable[5s]: starts at 2024-05-16T14:20:32.638999+00:00
+            Runnable[3s]: ends at 2024-05-16T14:20:35.640016+00:00
+            on end callback starts at 2024-05-16T14:20:35.640534+00:00
+            Runnable[5s]: ends at 2024-05-16T14:20:37.640169+00:00
+            on end callback starts at 2024-05-16T14:20:37.640574+00:00
+            on end callback ends at 2024-05-16T14:20:37.640654+00:00
+            on end callback ends at 2024-05-16T14:20:39.641751+00:00
+
+        """
+        from langchain_core.tracers.root_listeners import AsyncRootListenersTracer
+
+        return RunnableBinding(
+            bound=self,
+            config_factories=[
+                lambda config: {
+                    "callbacks": [
+                        AsyncRootListenersTracer(
                             config=config,
                             on_start=on_start,
                             on_end=on_end,
@@ -4290,6 +4371,33 @@ class RunnableEach(RunnableEachBase[Input, Output]):
         """
         return RunnableEach(
             bound=self.bound.with_listeners(
+                on_start=on_start, on_end=on_end, on_error=on_error
+            )
+        )
+
+    def with_alisteners(
+        self,
+        *,
+        on_start: Optional[AsyncListener] = None,
+        on_end: Optional[AsyncListener] = None,
+        on_error: Optional[AsyncListener] = None,
+    ) -> RunnableEach[Input, Output]:
+        """
+        Bind async lifecycle listeners to a Runnable, returning a new Runnable.
+
+        on_start: Called asynchronously before the runnable starts running,
+                  with the Run object.
+        on_end: Called asynchronously after the runnable finishes running,
+                with the Run object.
+        on_error: Called asynchronously if the runnable throws an error,
+                with the Run object.
+
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+        """
+        return RunnableEach(
+            bound=self.bound.with_alisteners(
                 on_start=on_start, on_end=on_end, on_error=on_error
             )
         )
