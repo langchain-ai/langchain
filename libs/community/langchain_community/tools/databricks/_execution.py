@@ -149,11 +149,10 @@ def execute_function(
         result is not None
     ), "Statement execution succeeded but no result was provided."
     data_array = result.data_array
-    assert (
-        data_array is not None
-    ), "Statement execution succeeded but no data was provided."
     if is_scalar(function):
-        value = str(data_array[0][0])
+        value = None
+        if data_array and len(data_array) > 0 and len(data_array[0]) > 0:
+            value = str(data_array[0][0])  # type: ignore
         return FunctionExecutionResult(
             format="SCALAR", value=value, truncated=truncated
         )
@@ -163,6 +162,8 @@ def execute_function(
             schema is not None and schema.columns is not None
         ), "Statement execution succeeded but no schema was provided."
         columns = [c.name for c in schema.columns]
+        if data_array is None:
+            data_array = []
         pdf = pd.DataFrame.from_records(data_array, columns=columns)
         csv_buffer = StringIO()
         pdf.to_csv(csv_buffer, index=False)
