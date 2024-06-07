@@ -190,8 +190,23 @@ class DeepInfra(LLM):
                     yield chunk
 
     def _handle_body_errors(self, body: str) -> None:
+        """
+        Example error response:
+        data: {"error_type": "validation_error", "error_message": "ConnectionError: ..."}
+        """
         if "error" in body:
-            raise Exception(f"DeepInfra Server: {body}")
+            try:
+                # Remove data: prefix if present
+                if body.startswith("data:"):
+                    body = body[len("data:") :]
+                error_data = json.loads(body)
+                error_message = error_data.get("error_message", "Unknown error")
+
+                raise Exception(
+                    f"DeepInfra Server Error: {error_message}"
+                )
+            except json.JSONDecodeError:
+                raise Exception(f"DeepInfra Server: {body}")
 
 
 def _parse_stream(rbody: Iterator[bytes]) -> Iterator[str]:
