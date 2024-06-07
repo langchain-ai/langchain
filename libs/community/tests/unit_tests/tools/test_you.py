@@ -62,7 +62,7 @@ class TestYouSearchTool:
 
         query = "Test news text"
         you_tool = YouSearchTool(  # type: ignore[call-arg]
-            api_wrapper=YouSearchAPIWrapper(ydc_api_key="test", endpoint="news")
+            api_wrapper=YouSearchAPIWrapper(ydc_api_key="test", endpoint_type="news")
         )
         results = you_tool.invoke(query)
         expected_result = NEWS_RESPONSE_PARSED

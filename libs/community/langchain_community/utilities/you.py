@@ -58,7 +58,7 @@ class YouSearchAPIWrapper(BaseModel):
     ----------
     ydc_api_key: str, optional
         you.com api key, if YDC_API_KEY is not set in the environment
-    endpoint: str, optional
+    endpoint_type: str, optional
         you.com endpoints: search, news, rag;
         `web` and `snippet` alias `search`
         `rag` returns `{'message': 'Forbidden'}`
@@ -89,9 +89,7 @@ class YouSearchAPIWrapper(BaseModel):
     ydc_api_key: Optional[str] = None
 
     # @todo deprecate `snippet`, not part of API
-    endpoint: Literal["search", "news", "rag", "snippet"] = Field(
-        "search", alias="endpoint_type"
-    )
+    endpoint_type: Literal["search", "news", "rag", "snippet"] = "search"
 
     # Common fields between Search and News API
     num_web_results: Optional[int] = Field(None, alias="count")
@@ -118,24 +116,24 @@ class YouSearchAPIWrapper(BaseModel):
 
     @root_validator
     def warn_if_set_fields_have_no_effect(cls, values) -> Dict:
-        if values["endpoint"] != "news":
+        if values["endpoint_type"] != "news":
             news_api_fields = ("search_lang", "ui_lang", "spellcheck")
             for field in news_api_fields:
                 if values[field]:
                     warnings.warn(
                         (
                             f"News API-specific field '{field}' is set but "
-                            f"`endpoint=\"{values['endpoint']}\"`. "
+                            f"`endpoint_type=\"{values['endpoint_type']}\"`. "
                             "This will have no effect."
                         ),
                         UserWarning,
                     )
-        if values["endpoint"] not in ("search", "snippet"):
+        if values["endpoint_type"] not in ("search", "snippet"):
             if values["n_snippets_per_hit"]:
                 warnings.warn(
                     (
                         "Field 'n_snippets_per_hit' only has effect on "
-                        '`endpoint="search"`.'
+                        '`endpoint_type="search"`.'
                     ),
                     UserWarning,
                 )
@@ -143,11 +141,11 @@ class YouSearchAPIWrapper(BaseModel):
 
     @root_validator
     def warn_if_deprecated_endpoints_are_used(cls, values) -> Dict:
-        if values["endpoint"] == "snippets":
+        if values["endpoint_type"] == "snippets":
             warnings.warn(
                 (
-                    f"`endpoint=\"{values['endpoint']}\"` is deprecated. "
-                    'Use `endpoint="search"` instead.'
+                    f"`endpoint_type=\"{values['endpoint_type']}\"` is deprecated. "
+                    'Use `endpoint_type="search"` instead.'
                 ),
                 DeprecationWarning,
             )
@@ -167,12 +165,12 @@ class YouSearchAPIWrapper(BaseModel):
         }
 
         # Add endpoint-specific params
-        if self.endpoint in ("search", "snippet"):
+        if self.endpoint_type in ("search", "snippet"):
             params.update(
                 query=query,
                 num_web_results=self.num_web_results,
             )
-        elif self.endpoint == "news":
+        elif self.endpoint_type == "news":
             params.update(
                 q=query,
                 count=self.num_web_results,
@@ -194,7 +192,7 @@ class YouSearchAPIWrapper(BaseModel):
         """
 
         # return news results
-        if self.endpoint == "news":
+        if self.endpoint_type == "news":
             news_results = raw_search_results["news"]["results"]
             if self.k is not None:
                 news_results = news_results[: self.k]
@@ -237,11 +235,11 @@ class YouSearchAPIWrapper(BaseModel):
         params = self._generate_params(query, **kwargs)
 
         # @todo deprecate `snippet`, not part of API
-        if self.endpoint == "snippet":
-            self.endpoint = "search"
+        if self.endpoint_type == "snippet":
+            self.endpoint_type = "search"
         response = requests.get(
             # type: ignore
-            f"{YOU_API_URL}/{self.endpoint}",
+            f"{YOU_API_URL}/{self.endpoint_type}",
             params=params,
             headers=headers,
         )
@@ -272,12 +270,12 @@ class YouSearchAPIWrapper(BaseModel):
         params = self._generate_params(query, **kwargs)
 
         # @todo deprecate `snippet`, not part of API
-        if self.endpoint == "snippet":
-            self.endpoint = "search"
+        if self.endpoint_type == "snippet":
+            self.endpoint_type = "search"
 
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                url=f"{YOU_API_URL}/{self.endpoint}",
+                url=f"{YOU_API_URL}/{self.endpoint_type}",
                 params=params,
                 headers=headers,
             ) as res:

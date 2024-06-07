@@ -102,7 +102,7 @@ def test_raw_results() -> None:
 
     query = "Test query text"
     # ensure default endpoint_type
-    you_wrapper = YouSearchAPIWrapper(endpoint="snippet", ydc_api_key="test")
+    you_wrapper = YouSearchAPIWrapper(endpoint_type="snippet", ydc_api_key="test")
     raw_results = you_wrapper.raw_results(query)
     expected_result = MOCK_RESPONSE_RAW
     assert raw_results == expected_result
@@ -130,7 +130,7 @@ def test_raw_results_news() -> None:
 
     query = "Test news text"
     # ensure limit on number of docs returned
-    you_wrapper = YouSearchAPIWrapper(endpoint="news", ydc_api_key="test")
+    you_wrapper = YouSearchAPIWrapper(endpoint_type="news", ydc_api_key="test")
     raw_results = you_wrapper.raw_results(query)
     expected_result = NEWS_RESPONSE_RAW
     assert raw_results == expected_result
@@ -183,7 +183,7 @@ def test_results_news() -> None:
 
     query = "Test news text"
     # ensure limit on number of docs returned
-    you_wrapper = YouSearchAPIWrapper(endpoint="news", ydc_api_key="test")
+    you_wrapper = YouSearchAPIWrapper(endpoint_type="news", ydc_api_key="test")
     raw_results = you_wrapper.results(query)
     expected_result = NEWS_RESPONSE_PARSED
     assert raw_results == expected_result
@@ -229,7 +229,7 @@ async def test_results_async() -> None:
 
 @pytest.mark.asyncio
 async def test_results_news_async() -> None:
-    instance = YouSearchAPIWrapper(endpoint="news", ydc_api_key="test_api_key")
+    instance = YouSearchAPIWrapper(endpoint_type="news", ydc_api_key="test_api_key")
 
     # Mock response object to simulate aiohttp response
     mock_response = AsyncMock()
