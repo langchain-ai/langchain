@@ -178,10 +178,8 @@ class RecursiveUrlLoader(BaseLoader):
 
                 # This example uses `beautifulsoup4` and `lxml`
                 import re
-
                 from bs4 import BeautifulSoup
                 from langchain_community.document_loaders import RecursiveUrlLoader
-
 
                 def bs4_extractor(html: str) -> str:
                     soup = BeautifulSoup(html, "lxml")
@@ -191,7 +189,7 @@ class RecursiveUrlLoader(BaseLoader):
                     "https://docs.python.org/3.9/",
                     extractor=bs4_extractor,
                 )
-                print(loader.load()[0].page_content)
+                print(loader.load()[0].page_content[:200])
 
 
             .. code-block:: python
@@ -214,10 +212,9 @@ class RecursiveUrlLoader(BaseLoader):
 
         .. code-block:: python
 
-            from typing import Union
-
             import aiohttp
             import requests
+            from typing import Union
             from langchain_community.document_loaders import RecursiveUrlLoader
 
             def simple_metadata_extractor(
@@ -235,6 +232,45 @@ class RecursiveUrlLoader(BaseLoader):
         .. code-block:: python
 
             {'source': 'https://docs.python.org/3.9/', 'content_type': 'text/html'}
+    
+    Filtering URLs:
+        You may not always want to pull every URL from a website. There are four parameters
+        that allow us to control what URLs we pull recursively. First, we can set the 
+        `prevent_outside` parameter to prevent URLs outside of the `base_url` from 
+        being pulled. Note that the `base_url` does not need to be the same as the URL we
+        pass in, as shown below. We can also use `link_regex` and `exclude_dirs` to be 
+        more specific with the URLs that we select. In this example, we only pull websites
+        from the python docs, which contain the string "index" somewhere and are not 
+        located in the FAQ section of the website.
+
+        .. code-block:: python
+        
+            from langchain_community.document_loaders import RecursiveUrlLoader
+
+            loader = RecursiveUrlLoader(
+                "https://docs.python.org/3.9/",
+                prevent_outside=True,
+                base_url="https://docs.python.org",
+                link_regex=r'<a\s+(?:[^>]*?\s+)?href="([^"]*(?=index)[^"]*)"',
+                exclude_dirs=['https://docs.python.org/3.9/faq']
+            )
+            docs = loader.load()
+
+        .. code-block:: python
+
+            ['https://docs.python.org/3.9/',
+            'https://docs.python.org/3.9/py-modindex.html',
+            'https://docs.python.org/3.9/genindex.html',
+            'https://docs.python.org/3.9/tutorial/index.html',
+            'https://docs.python.org/3.9/using/index.html',
+            'https://docs.python.org/3.9/extending/index.html',
+            'https://docs.python.org/3.9/installing/index.html',
+            'https://docs.python.org/3.9/library/index.html',
+            'https://docs.python.org/3.9/c-api/index.html',
+            'https://docs.python.org/3.9/howto/index.html',
+            'https://docs.python.org/3.9/distributing/index.html',
+            'https://docs.python.org/3.9/reference/index.html',
+            'https://docs.python.org/3.9/whatsnew/index.html']
 
     """  # noqa: E501
 
