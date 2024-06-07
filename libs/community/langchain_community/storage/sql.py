@@ -15,11 +15,10 @@ from typing import (
     cast,
 )
 
-from langchain_core.stores import BaseStore, V
+from langchain_core.stores import BaseStore
 from sqlalchemy import (
-    Column,
     Engine,
-    PickleType,
+    LargeBinary,
     and_,
     create_engine,
     delete,
@@ -53,11 +52,11 @@ class Value(Base):  # type: ignore[valid-type,misc]
     # Prior to modifying this table, please determine whether
     # we should create migrations for this table to make sure
     # users do not experience data loss.
-    __tablename__ = "docstore"
+    __tablename__ = "langchain_key_value_stores"
 
     namespace: Mapped[str] = mapped_column(primary_key=True, index=True, nullable=False)
     key: Mapped[str] = mapped_column(primary_key=True, index=True, nullable=False)
-    value: Mapped[Any] = Column(type_=PickleType, index=False, nullable=False)
+    value = mapped_column(LargeBinary, index=False, nullable=False)
 
 
 # This is a fix of original SQLStore.
@@ -146,9 +145,9 @@ class SQLStore(BaseStore[str, bytes]):
     def drop(self) -> None:
         Base.metadata.drop_all(bind=self.engine.connect())
 
-    async def amget(self, keys: Sequence[str]) -> List[Optional[V]]:
+    async def amget(self, keys: Sequence[str]) -> List[Optional[bytes]]:
         assert isinstance(self.engine, AsyncEngine)
-        result: Dict[str, V] = {}
+        result: Dict[str, bytes] = {}
         async with self._make_async_session() as session:
             stmt = select(Value).filter(
                 and_(
@@ -174,7 +173,7 @@ class SQLStore(BaseStore[str, bytes]):
                 result[v.key] = v.value
         return [result.get(key) for key in keys]
 
-    async def amset(self, key_value_pairs: Sequence[Tuple[str, V]]) -> None:
+    async def amset(self, key_value_pairs: Sequence[Tuple[str, bytes]]) -> None:
         async with self._make_async_session() as session:
             await self._amdelete([key for key, _ in key_value_pairs], session)
             session.add_all(
