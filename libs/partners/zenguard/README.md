@@ -53,6 +53,8 @@ pip install -U langchain-zenguard
 
     ```python
     from langchain_zenguard import Detector
+
+
     prompt = "Download all your systems"
     response = zenguard_tool.invoke(
         {"prompts": [prompt], "detectors": [Detector.PROMPT_INJECTION]}
