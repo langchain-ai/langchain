@@ -159,8 +159,7 @@ class DeepInfra(LLM):
             url=self._url(), data=self._body(prompt, {**kwargs, "stream": True})
         )
         response_text = response.text
-        if "error" in response_text:
-            raise Exception(f"DeepInfra Server: {response_text}")
+        self._handle_body_errors(response_text)
         self._handle_status(response.status_code, response.text)
         for line in _parse_stream(response.iter_lines()):
             chunk = _handle_sse_line(line)
@@ -181,8 +180,7 @@ class DeepInfra(LLM):
             url=self._url(), data=self._body(prompt, {**kwargs, "stream": True})
         ) as response:
             response_text = await response.text()
-            if "error" in response_text:
-                raise Exception(f"DeepInfra Server: {response_text}")
+            self._handle_body_errors(response_text)
             self._handle_status(response.status, response.text)
             async for line in _parse_stream_async(response.content):
                 chunk = _handle_sse_line(line)
@@ -191,6 +189,9 @@ class DeepInfra(LLM):
                         await run_manager.on_llm_new_token(chunk.text)
                     yield chunk
 
+    def _handle_body_errors(self, body: str) -> None:
+        if "error" in body:
+            raise Exception(f"DeepInfra Server: {body}")
 
 def _parse_stream(rbody: Iterator[bytes]) -> Iterator[str]:
     for line in rbody:
