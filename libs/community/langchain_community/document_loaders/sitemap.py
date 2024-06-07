@@ -65,13 +65,29 @@ class SitemapLoader(WebBaseLoader):
 
     Instantiate:
         .. code-block:: python
+
             from langchain_community.document_loaders.sitemap import SitemapLoader
 
             url = "https://www.semrush.com/features/sitemap/"
-            sitemap_loader = SitemapLoader(web_path=url)
+            sitemap_loader = SitemapLoader(
+                web_path=url,
+                # filter_urls=None,
+                # parsing_function=None,
+                # blocksize=None,
+                # blocknum=0,
+                # meta_function=None,
+                # is_local=False,
+                # continue_on_failure=False,
+                # restrict_to_same_domain=True,
+                # ...
+            )
 
-    Normal Load:
+    Load:
+        Use ``.load()`` to synchronously load into memory all Documents, with one
+        Document per URL in the site map.
+
         .. code-block:: python
+
             docs = sitemap_loader.load()
             print(docs[0].page_content.replace('\n','')[:100])
             print(docs[0].metadata)
@@ -80,8 +96,9 @@ class SitemapLoader(WebBaseLoader):
                         Features | Semrush            Skip to content    Your browser is out of date. The site m
             {'source': 'https://www.semrush.com/features/', 'loc': 'https://www.semrush.com/features/', 'changefreq': 'daily'}
     
-    Async Load:
+    Async load:
         .. code-block:: python
+
             docs = await sitemap_loader.aload()
             print(docs[0].page_content.replace('\n','')[:100])
             print(docs[0].metadata)
@@ -90,10 +107,15 @@ class SitemapLoader(WebBaseLoader):
                         Features | Semrush            Skip to content    Your browser is out of date. The site m
             {'source': 'https://www.semrush.com/features/', 'loc': 'https://www.semrush.com/features/', 'changefreq': 'daily'}
 
-    Lazy Load:
+    Lazy load:
         .. code-block:: python
+
             docs = []
             docs_lazy = sitemap_loader.lazy_load()
+
+            # async variant:
+            # docs_lazy = await loader.alazy_load()
+
             for doc in docs_lazy:
                 docs.append(doc)
             print(docs[0].page_content.replace('\n','')[:100])
@@ -102,6 +124,65 @@ class SitemapLoader(WebBaseLoader):
         .. code-block:: python
                         Features | Semrush            Skip to content    Your browser is out of date. The site m
             {'source': 'https://www.semrush.com/features/', 'loc': 'https://www.semrush.com/features/', 'changefreq': 'daily'}
+    
+    Content parsing:
+        By default the loader sets the Document page content as all the text contained
+        on the page. To fine tune our parser we can use the ``parsing_function`` parameter.
+    
+        .. code-block:: python
+
+            from bs4 import BeautifulSoup
+
+            def remove_title_elements(content: BeautifulSoup) -> str:
+                # Find all 'title' elements in the BeautifulSoup object
+                title_elements = content.find_all("title")
+
+                # Remove each 'title' element from the BeautifulSoup object
+                for element in title_elements:
+                    element.decompose()
+
+                return str(content.get_text())
+            
+            sitemap_loader = SitemapLoader(
+                "https://www.semrush.com/features/sitemap/",
+                parsing_function=remove_title_elements,
+            )
+            docs = sitemap_loader.load()
+            print(docs[0].page_content[:200].replace('\n',''))
+        
+        .. code-block:: python
+
+                    Skip to content    Your browser is out of date. The site might not be displayed correctly. Please
+
+    Filtering URLs:
+        By default our loader loads every single website on the site map. We can use four 
+        parameters to filter what URLs it pulls. We can pass a list of regexes to the
+        ``filter_urls`` parameter to match specific URLs. We can also use the ``blocksize``
+        and ``blocknum`` params to select a specific block of URLs out of the entire site 
+        map. We can also set the ``restrict_to_same_domain`` parameter to further restrict
+        what URLs get pulled.
+
+        .. code-block:: python
+
+            sitemap_loader = SitemapLoader(
+                "https://www.semrush.com/features/sitemap/",
+                restrict_to_same_domain=True,
+                filter_urls=['.*tools.*'],
+                blocksize=5,
+                blocknum=1
+            )
+            docs = sitemap_loader.load()
+            [doc.metadata['source'] for doc in docs]
+
+        .. code-block:: python
+
+            ['https://www.semrush.com/features/local-seo-tools/',
+            'https://www.semrush.com/features/link-building-and-prospecting-tools/',
+            'https://www.semrush.com/features/technical-seo-tools/',
+            'https://www.semrush.com/features/pr-monitoring-tools/',
+            'https://www.semrush.com/features/serp-tracking-tools/']
+
+
     """
 
     def __init__(
