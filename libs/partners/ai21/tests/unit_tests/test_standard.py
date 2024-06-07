@@ -21,17 +21,6 @@ class TestAI21J2(ChatModelUnitTests):
             "api_key": "test_api_key",
         }
 
-    @pytest.mark.xfail(reason="Not implemented.")
-    def test_standard_params(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-    ) -> None:
-        super().test_standard_params(
-            chat_model_class,
-            chat_model_params,
-        )
-
 
 class TestAI21Jamba(ChatModelUnitTests):
     @pytest.fixture
@@ -44,14 +33,3 @@ class TestAI21Jamba(ChatModelUnitTests):
             "model": "jamba-instruct",
             "api_key": "test_api_key",
         }
-
-    @pytest.mark.xfail(reason="Not implemented.")
-    def test_standard_params(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-    ) -> None:
-        super().test_standard_params(
-            chat_model_class,
-            chat_model_params,
-        )

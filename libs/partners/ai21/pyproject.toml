@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-ai21"
-version = "0.1.5"
+version = "0.1.6"
 description = "An integration package connecting AI21 and LangChain"
 authors = []
 readme = "README.md"
@@ -12,9 +12,9 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.48,<0.3"
+langchain-core = "^0.2.4"
 langchain-text-splitters = "^0.2.0"
-ai21 = "^2.2.5"
+ai21 = "^2.4.1"
 
 [tool.poetry.group.test]
 optional = true
