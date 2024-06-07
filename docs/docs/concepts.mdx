@@ -96,9 +96,9 @@ To make it as easy as possible to create custom chains, we've implemented a ["Ru
 This is a standard interface, which makes it easy to define custom chains as well as invoke them in a standard way.
 The standard interface includes:
 
-- [`stream`](#stream): stream back chunks of the response
-- [`invoke`](#invoke): call the chain on an input
-- [`batch`](#batch): call the chain on a list of inputs
+- `stream`: stream back chunks of the response
+- `invoke`: call the chain on an input
+- `batch`: call the chain on a list of inputs
 
 These also have corresponding async methods that should be used with [asyncio](https://docs.python.org/3/library/asyncio.html) `await` syntax for concurrency:
 
