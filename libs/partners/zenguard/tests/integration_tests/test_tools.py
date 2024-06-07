@@ -8,7 +8,7 @@ from langchain_zenguard import Detector, ZenGuardTool
 @pytest.fixture()
 def zenguard_tool():
     if os.getenv("ZENGUARD_API_KEY") is None:
-        raise ValueError("")
+        raise ValueError("ZENGUARD_API_KEY is not set in enviroment varibale")
     return ZenGuardTool()
 
 def assert_successful_response_not_detected(response):
