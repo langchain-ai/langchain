@@ -64,9 +64,8 @@ class YouSearchAPIWrapper(BaseModel):
         `rag` returns `{'message': 'Forbidden'}`
         @todo `news` endpoint
     num_web_results: int, optional
-        The max number of web results to return, must be under 20
-    count: int, optional
-        Alias of `num_web_results`
+        The max number of web results to return, must be under 20.
+        This is mapped to the `count` query parameter for the News API.
     safesearch: str, optional
         Safesearch settings, one of off, moderate, strict, defaults to moderate
     country: str, optional
@@ -92,7 +91,7 @@ class YouSearchAPIWrapper(BaseModel):
     endpoint_type: Literal["search", "news", "rag", "snippet"] = "search"
 
     # Common fields between Search and News API
-    num_web_results: Optional[int] = Field(None, alias="count")
+    num_web_results: Optional[int] = None
     safesearch: Optional[Literal["off", "moderate", "strict"]] = None
     country: Optional[str] = None
 
