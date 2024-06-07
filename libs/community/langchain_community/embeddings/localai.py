@@ -89,11 +89,13 @@ def _async_retry_decorator(embeddings: LocalAIEmbeddings) -> Any:
 
 
 # https://stackoverflow.com/questions/76469415/getting-embeddings-of-length-1-from-langchain-openaiembeddings
-def _check_response(response: dict) -> dict:
+def _check_response(response: Any) -> Any:
     if any(len(d.embedding) == 1 for d in response.data):
         import openai
 
-        raise openai.APIError("LocalAI API returned an empty embedding")
+        raise openai.APIError(
+            "LocalAI API returned an empty embedding", None, body=None
+        )
     return response
 
 
