@@ -236,9 +236,9 @@ class RecursiveUrlLoader(BaseLoader):
     Filtering URLs:
         You may not always want to pull every URL from a website. There are four parameters
         that allow us to control what URLs we pull recursively. First, we can set the 
-        `prevent_outside` parameter to prevent URLs outside of the `base_url` from 
-        being pulled. Note that the `base_url` does not need to be the same as the URL we
-        pass in, as shown below. We can also use `link_regex` and `exclude_dirs` to be 
+        ``prevent_outside`` parameter to prevent URLs outside of the ``base_url`` from 
+        being pulled. Note that the ``base_url`` does not need to be the same as the URL we
+        pass in, as shown below. We can also use ``link_regex`` and ``exclude_dirs`` to be 
         more specific with the URLs that we select. In this example, we only pull websites
         from the python docs, which contain the string "index" somewhere and are not 
         located in the FAQ section of the website.
