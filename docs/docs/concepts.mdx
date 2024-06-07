@@ -153,6 +153,8 @@ Generally, such models are better at tool calling than non-fine-tuned models, an
 Please see the [tool calling section](/docs/concepts/#functiontool-calling) for more information.
 :::
 
+For specifics on how to use chat models, see the [relevant how-to guides here](/docs/how_to/#chat-models).
+
 ### LLMs
 <span data-heading-keywords="llm,llms"></span>
 
@@ -164,6 +166,8 @@ This makes them interchangeable with ChatModels.
 When messages are passed in as input, they will be formatted into a string under the hood before being passed to the underlying model.
 
 LangChain does not provide any LLMs, rather we rely on third party integrations.
+
+For specifics on how to use LLMs, see the [relevant how-to guides here](/docs/how_to/#llms).
 
 ### Messages
 
@@ -228,7 +232,7 @@ Prompt Templates take as input a dictionary, where each key represents a variabl
 Prompt Templates output a PromptValue. This PromptValue can be passed to an LLM or a ChatModel, and can also be cast to a string or a list of messages.
 The reason this PromptValue exists is to make it easy to switch between strings and messages.
 
-There are a few different types of prompt templates
+There are a few different types of prompt templates:
 
 #### String PromptTemplates
 
@@ -296,12 +300,15 @@ prompt_template = ChatPromptTemplate.from_messages([
 ])
 ```
 
+For specifics on how to use prompt templates, see the [relevant how-to guides here](/docs/how_to/#prompt-templates).
+
 ### Example selectors
 One common prompting technique for achieving better performance is to include examples as part of the prompt.
 This gives the language model concrete examples of how it should behave.
 Sometimes these examples are hardcoded into the prompt, but for more advanced situations it may be nice to dynamically select them.
 Example Selectors are classes responsible for selecting and then formatting examples into prompts.
 
+For specifics on how to use example selectors, see the [relevant how-to guides here](/docs/how_to/#example-selectors).
 
 ### Output parsers
 <span data-heading-keywords="output parser"></span>
@@ -348,6 +355,8 @@ LangChain has lots of different types of output parsers. This is a list of outpu
 | [Datetime](https://api.python.langchain.com/en/latest/output_parsers/langchain.output_parsers.datetime.DatetimeOutputParser.html#langchain.output_parsers.datetime.DatetimeOutputParser)        |                    | ✅                             |           | `str` \| `Message`                 | `datetime.datetime`  | Parses response into a datetime string.                                                                                                                                                                                                                  |
 | [Structured](https://api.python.langchain.com/en/latest/output_parsers/langchain.output_parsers.structured.StructuredOutputParser.html#langchain.output_parsers.structured.StructuredOutputParser)      |                    | ✅                             |           | `str` \| `Message`                 | `Dict[str, str]`     | An output parser that returns structured information. It is less powerful than other output parsers since it only allows for fields to be strings. This can be useful when you are working with smaller LLMs.                                            |
 
+For specifics on how to use output parsers, see the [relevant how-to guides here](/docs/how_to/#output-parsers).
+
 ### Chat history
 Most LLM applications have a conversational interface.
 An essential component of a conversation is being able to refer to information introduced earlier in the conversation.
@@ -382,6 +391,8 @@ loader = CSVLoader(
 data = loader.load()
 ```
 
+For specifics on how to use document loaders, see the [relevant how-to guides here](/docs/how_to/#document-loaders).
+
 ### Text splitters
 
 Once you've loaded documents, you'll often want to transform them to better suit your application. The simplest example is you may want to split a long document into smaller chunks that can fit into your model's context window. LangChain has a number of built-in document transformers that make it easy to split, combine, filter, and otherwise manipulate documents.
@@ -399,6 +410,8 @@ That means there are two different axes along which you can customize your text 
 1. How the text is split
 2. How the chunk size is measured
 
+For specifics on how to use text splitters, see the [relevant how-to guides here](/docs/how_to/#text-splitters).
+
 ### Embedding models
 <span data-heading-keywords="embedding,embeddings"></span>
 
@@ -407,6 +420,8 @@ The Embeddings class is a class designed for interfacing with text embedding mod
 Embeddings create a vector representation of a piece of text. This is useful because it means we can think about text in the vector space, and do things like semantic search where we look for pieces of text that are most similar in the vector space.
 
 The base Embeddings class in LangChain provides two methods: one for embedding documents and one for embedding a query. The former takes as input multiple texts, while the latter takes a single text. The reason for having these as two separate methods is that some embedding providers have different embedding methods for documents (to be searched over) vs queries (the search query itself).
+
+For specifics on how to use embedding models, see the [relevant how-to guides here](/docs/how_to/#embedding-models).
 
 ### Vector stores
 <span data-heading-keywords="vector,vectorstore,vectorstores,vector store,vector stores"></span>
@@ -422,6 +437,8 @@ vectorstore = MyVectorStore()
 retriever = vectorstore.as_retriever()
 ```
 
+For specifics on how to use vector stores, see the [relevant how-to guides here](/docs/how_to/#vector-stores).
+
 ### Retrievers
 <span data-heading-keywords="retriever,retrievers"></span>
 
@@ -431,6 +448,8 @@ A retriever does not need to be able to store documents, only to return (or retr
 Retrievers can be created from vectorstores, but are also broad enough to include [Wikipedia search](/docs/integrations/retrievers/wikipedia/) and [Amazon Kendra](/docs/integrations/retrievers/amazon_kendra_retriever/).
 
 Retrievers accept a string query as input and return a list of Document's as output.
+
+For specifics on how to use retrievers, see the [relevant how-to guides here](/docs/how_to/#retrievers).
 
 ### Tools
 <span data-heading-keywords="tool,tools"></span>
@@ -458,6 +477,8 @@ Generally, when designing tools to be used by a chat model or LLM, it is importa
 - Non fine-tuned models may not be able to use tools at all, especially if the tools are complex or require multiple tool calls.
 - Models will perform better if the tools have well-chosen names, descriptions, and JSON schemas.
 - Simpler tools are generally easier for models to use than more complex tools.
+
+For specifics on how to use tools, see the [relevant how-to guides here](/docs/how_to/#tools).
 
 ### Toolkits
 
@@ -491,13 +512,15 @@ In order to solve that we built LangGraph to be this flexible, highly-controllab
 
 If you are still using AgentExecutor, do not fear: we still have a guide on [how to use AgentExecutor](/docs/how_to/agent_executor).
 It is recommended, however, that you start to transition to LangGraph.
-In order to assist in this we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent)
+In order to assist in this we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent).
 
 ### Multimodal
 
 Some models are multimodal, accepting images, audio and even video as inputs. These are still less common, meaning model providers haven't standardized on the "best" way to define the API. Multimodal **outputs** are even less common. As such, we've kept our multimodal abstractions fairly light weight and plan to further solidify the multimodal APIs and interaction patterns as the field matures.
 
 In LangChain, most chat models that support multimodal inputs also accept those values in OpenAI's content blocks format. So far this is restricted to image inputs. For models like Gemini which support video and other bytes input, the APIs also support the native, model-specific representations.
+
+For specifics on how to use multimodal models, see the [relevant how-to guides here](/docs/how_to/#multimodal).
 
 ### Callbacks
 
@@ -568,6 +591,8 @@ callbacks to child objects in this case.
 This is a common reason why you may fail to see events being emitted from custom
 runnables or tools.
 :::
+
+For specifics on how to use callbacks, see the [relevant how-to guides here](/docs/how_to/#callbacks).
 
 ## Techniques
 
@@ -640,6 +665,7 @@ LangChain provides several advanced retrieval types. A full list is below, along
 | [Multi-Query Retriever](/docs/how_to/MultiQueryRetriever/)     | Any                          | Yes                       | If users are asking questions that are complex and require multiple pieces of distinct information to respond                                 | This uses an LLM to generate multiple queries from the original one. This is useful when the original query needs pieces of information about multiple topics to be properly answered. By generating multiple queries, we can then fetch documents for each of them.                             |
 | [Ensemble](/docs/how_to/ensemble_retriever/)                  | Any                          | No                        | If you have multiple retrieval methods and want to try combining them.                                                                        | This fetches documents from multiple retrievers and then combines them.                                                                                                                                                                                                                          |
 
+For a high-level guide on retrieval, see this [tutorial on RAG](/docs/tutorials/rag/).
 
 ### Text splitting
 
