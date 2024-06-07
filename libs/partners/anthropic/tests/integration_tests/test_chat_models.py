@@ -104,6 +104,27 @@ async def test_astream() -> None:
         assert isinstance(token, AIMessageChunk)
         assert token.usage_metadata is None
 
+    # Check expected raw API output
+    async_client = model._async_client
+    params = {
+        "model": "claude-3-haiku-20240307",
+        "max_tokens": 1024,
+        "messages": [{"role": "user", "content": "hi"}],
+        "temperature": 0.0,
+    }
+    stream = await async_client.messages.create(**params, stream=True)
+    async for event in stream:
+        if event.type == "message_start":
+            assert event.message.usage.input_tokens > 1
+            # Note: this single output token included in message start event
+            # does not appear to contribute to overall output token counts. It
+            # is excluded from the total token count.
+            assert event.message.usage.output_tokens == 1
+        elif event.type == "message_delta":
+            assert event.usage.output_tokens > 1
+        else:
+            pass
+
 
 async def test_abatch() -> None:
     """Test streaming tokens from ChatAnthropicMessages."""
