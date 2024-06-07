@@ -87,13 +87,13 @@ class DeepInfra(LLM):
         if code >= 500:
             raise Exception(f"DeepInfra Server: Error {text}")
         elif code == 401:
-            raise Exception(f"DeepInfra Server: Unauthorized")
+            raise Exception("DeepInfra Server: Unauthorized")
         elif code == 403:
-            raise Exception(f"DeepInfra Server: Unauthorized")
+            raise Exception("DeepInfra Server: Unauthorized")
         elif code == 404:
             raise Exception(f"DeepInfra Server: Model not found {self.model_id}")
         elif code == 429:
-            raise Exception(f"DeepInfra Server: Rate limit exceeded")
+            raise Exception("DeepInfra Server: Rate limit exceeded")
         elif code >= 400:
             raise ValueError(f"DeepInfra received an invalid payload: {text}")
         elif code != 200:
@@ -192,6 +192,7 @@ class DeepInfra(LLM):
     def _handle_body_errors(self, body: str) -> None:
         if "error" in body:
             raise Exception(f"DeepInfra Server: {body}")
+
 
 def _parse_stream(rbody: Iterator[bytes]) -> Iterator[str]:
     for line in rbody:
