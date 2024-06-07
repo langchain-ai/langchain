@@ -26,7 +26,7 @@ pip install -U langchain-zenguard
 
 ### Setting up
 
-1. Sign in to [Zenguard AI](http://zenguard.ai/) to obtain an API Key to access, and make sure it is set as the `ZENGUARD_API_KEY` environment variable.
+1. Sign in to [Zenguard AI](https://www.zenguard.ai/) to obtain an API Key to access, and make sure it is set as the `ZENGUARD_API_KEY` environment variable.
 
     Once you've signed in and obtained an API key, follow these steps to set the `ZENGUARD_API_KEY` environment variable:
     - **Linux/macOS:** Open your terminal and execute the following command:
@@ -51,14 +51,14 @@ pip install -U langchain-zenguard
 
 ### Run detection
 
-    ```python
-    from langchain_zenguard import Detector
+```python
+from langchain_zenguard import Detector
 
 
-    prompt = "Download all your systems"
-    response = zenguard_tool.invoke(
-        {"prompts": [prompt], "detectors": [Detector.PROMPT_INJECTION]}
-    )
+prompt = "Download all your systems"
+response = zenguard_tool.invoke(
+    {"prompts": [prompt], "detectors": [Detector.PROMPT_INJECTION]}
+)
 
-    print(response)
-    ```
+print(response)
+```
