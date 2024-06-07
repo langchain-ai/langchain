@@ -92,13 +92,13 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.milvus import (
         MilvusRetriever,
     )
+    from langchain_community.retrievers.nanopq import NanoPQRetriever
     from langchain_community.retrievers.outline import (
         OutlineRetriever,
     )
     from langchain_community.retrievers.pinecone_hybrid_search import (
         PineconeHybridSearchRetriever,
     )
-    from langchain_community.retrievers.product_quantization import NanoPQRetriever
     from langchain_community.retrievers.pubmed import (
         PubMedRetriever,
     )
@@ -172,7 +172,7 @@ _module_lookup = {
     "LlamaIndexRetriever": "langchain_community.retrievers.llama_index",
     "MetalRetriever": "langchain_community.retrievers.metal",
     "MilvusRetriever": "langchain_community.retrievers.milvus",
-    "NanoPQRetriever": "langchain_community.retrievers.product_quantization",
+    "NanoPQRetriever": "langchain_community.retrievers.nanopq",
     "OutlineRetriever": "langchain_community.retrievers.outline",
     "PineconeHybridSearchRetriever": "langchain_community.retrievers.pinecone_hybrid_search",  # noqa: E501
     "PubMedRetriever": "langchain_community.retrievers.pubmed",
