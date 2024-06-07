@@ -44,7 +44,9 @@ class ZenGuardInput(BaseModel):
 
 class ZenGuardTool(BaseTool):
     name = "ZenGuard"
-    description = "The Fastest GenAI Guardrails"
+    description = (
+        "ZenGuard AI integration package. ZenGuard AI - the fastest GenAI guardrails."
+    )
     args_schema = ZenGuardInput
     return_direct = True
 
