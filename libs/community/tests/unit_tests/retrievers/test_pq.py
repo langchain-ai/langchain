@@ -2,14 +2,14 @@ import pytest
 from langchain_core.documents import Document
 
 from langchain_community.embeddings import FakeEmbeddings
-from langchain_community.retrievers.product_quantization import PQRetriever
+from langchain_community.retrievers.product_quantization import NanoPQRetriever
 
 
 class TestPQRetriever:
     @pytest.mark.requires("nanopq")
     def test_from_texts(self) -> None:
         input_texts = ["I have a pen.", "Do you have a pen?", "I have a bag."]
-        pq_retriever = PQRetriever.from_texts(
+        pq_retriever = NanoPQRetriever.from_texts(
             texts=input_texts, embeddings=FakeEmbeddings(size=100)
         )
         assert len(pq_retriever.texts) == 3
@@ -21,7 +21,7 @@ class TestPQRetriever:
             Document(page_content="Do you have a pen?", metadata={"page": 2}),
             Document(page_content="I have a bag.", metadata={"page": 3}),
         ]
-        pq_retriever = PQRetriever.from_documents(
+        pq_retriever = NanoPQRetriever.from_documents(
             documents=input_docs, embeddings=FakeEmbeddings(size=100)
         )
         assert pq_retriever.texts == [
@@ -34,7 +34,7 @@ class TestPQRetriever:
     @pytest.mark.requires("nanopq")
     def invalid_subspace_error(self) -> None:
         input_texts = ["I have a pen.", "Do you have a pen?", "I have a bag."]
-        pq_retriever = PQRetriever.from_texts(
+        pq_retriever = NanoPQRetriever.from_texts(
             texts=input_texts, embeddings=FakeEmbeddings(size=6)
         )
         with pytest.raises(RuntimeError):
