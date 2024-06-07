@@ -29,7 +29,14 @@ class TavilySearchResults(BaseTool):
     )
     api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)  # type: ignore[arg-type]
     max_results: int = 5
+    search_depth: Optional[str] = "advanced"
+    include_domains: Optional[List[str]] = []
+    exclude_domains: Optional[List[str]] = []
+    include_answer: Optional[bool] = False
+    include_raw_content: Optional[bool] = False
+    include_images: Optional[bool] = False
     args_schema: Type[BaseModel] = TavilyInput
+    
 
     def _run(
         self,
@@ -41,6 +48,12 @@ class TavilySearchResults(BaseTool):
             return self.api_wrapper.results(
                 query,
                 self.max_results,
+                self.search_depth,
+                self.include_domains,
+                self.exclude_domains,
+                self.include_answer,
+                self.include_raw_content,
+                self.include_images,
             )
         except Exception as e:
             return repr(e)
@@ -55,6 +68,12 @@ class TavilySearchResults(BaseTool):
             return await self.api_wrapper.results_async(
                 query,
                 self.max_results,
+                self.search_depth,
+                self.include_domains,
+                self.exclude_domains,
+                self.include_answer,
+                self.include_raw_content,
+                self.include_images,
             )
         except Exception as e:
             return repr(e)
