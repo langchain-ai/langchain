@@ -418,9 +418,9 @@ def _compact_module_full_name(doc_path: str) -> str:
     module = doc_path.split("#")[1].replace("module-", "")
     if module.count(".") > 2:
         # langchain_community.llms.oci_data_science_model_deployment_endpoint.OCIModelDeploymentTGI
-        # -> langchain_community.llms...OCIModelDeploymentTGI
+        # -> langchain_community...OCIModelDeploymentTGI
         module_parts = module.split(".")
-        module = f"{module_parts[0]}.{module_parts[1]}...{module_parts[-1]}"
+        module = f"{module_parts[0]}...{module_parts[-1]}"
     return module
 
 
@@ -521,6 +521,9 @@ def generate_arxiv_references_page(file_name: Path, papers: list[ArxivPaper]) ->
 LangChain implements the latest research in the field of Natural Language Processing.
 This page contains `arXiv` papers referenced in the LangChain Documentation, API Reference,
  Templates, and Cookbooks.
+
+From the opposite direction, scientists use LangChain in research and reference LangChain in the research papers. 
+Here you find [such papers](https://arxiv.org/search/?query=langchain&searchtype=all&source=header).
 
 ## Summary
 
