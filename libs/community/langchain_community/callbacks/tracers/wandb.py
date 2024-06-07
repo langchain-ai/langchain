@@ -146,12 +146,44 @@ class WandbTracer(BaseTracer):
         def create_trace(
             run: "Run", parent: Optional["Trace"] = None
         ) -> Optional["Trace"]:
+            """
+            Create a trace for a given run and its child runs.
+
+            Args:
+                run (Run): The run for which to create a trace.
+                parent (Optional[Trace]): The parent trace.
+                If provided, the created trace is added as a child to the parent trace.
+
+            Returns:
+                Optional[Trace]: The created trace.
+                 If an error occurs during the creation of the trace, None is returned.
+
+            Raises:
+                Exception: If an error occurs during the creation of the trace,
+                no exception is raised and a warning is printed.
+            """
+
             def get_metadata_dict(r: "Run") -> Dict[str, Any]:
+                """
+                Extract metadata from a given run.
+
+                This function extracts metadata from a given run
+                and returns it as a dictionary.
+
+                Args:
+                    r (Run): The run from which to extract metadata.
+
+                Returns:
+                    Dict[str, Any]: A dictionary containing the extracted metadata.
+                """
                 run_dict = json.loads(r.json())
                 metadata_dict = run_dict.get("metadata", {})
                 metadata_dict["run_id"] = run_dict.get("id")
                 metadata_dict["parent_run_id"] = run_dict.get("parent_run_id")
                 metadata_dict["tags"] = run_dict.get("tags")
+                metadata_dict["execution_order"] = run_dict.get(
+                    "dotted_order", ""
+                ).count(".")
                 return metadata_dict
 
             try:
