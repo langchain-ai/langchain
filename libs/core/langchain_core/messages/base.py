@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field
 from langchain_core.utils import get_bolded_text
-from langchain_core.utils._merge import merge_dicts
+from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
@@ -95,9 +95,10 @@ def merge_content(
         else:
             return_list: List[Union[str, Dict]] = [first_content]
             return return_list + second_content
-    # If both are lists, merge them naively
     elif isinstance(second_content, List):
-        return first_content + second_content
+        # If both are lists
+        merged_list = merge_lists(first_content, second_content)
+        return cast(list, merged_list)
     # If the first content is a list, and the second content is a string
     else:
         # If the last element of the first content is a string
