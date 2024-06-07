@@ -2,25 +2,15 @@
 from __future__ import annotations
 
 import json
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    TypedDict,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, TypedDict, Union
 
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 
 if TYPE_CHECKING:
     from wandb import Settings as WBSettings
-    from wandb.sdk.lib.paths import StrPath
     from wandb.sdk.data_types.trace_tree import Trace
+    from wandb.sdk.lib.paths import StrPath
     from wandb.wandb_run import Run as WBRun
 
 PRINT_WARNINGS = True
@@ -43,6 +33,7 @@ def _serialize_io(run_inputs: Optional[dict]) -> dict:
         else:
             serialized_inputs[key] = value
     return serialized_inputs
+
 
 class WandbRunArgs(TypedDict):
     """Arguments for the WandbTracer."""
@@ -152,7 +143,9 @@ class WandbTracer(BaseTracer):
         """Logs a LangChain Run to W*B as a W&B Trace."""
         self._ensure_run()
 
-        def create_trace(run: "Run", parent: "Trace" = None) -> Optional["Trace"]:
+        def create_trace(
+            run: "Run", parent: Optional["Trace"] = None
+        ) -> Optional["Trace"]:
             def get_metadata_dict(r: "Run") -> Dict[str, Any]:
                 run_dict = json.loads(r.json())
                 metadata_dict = run_dict.get("metadata", {})
@@ -160,14 +153,20 @@ class WandbTracer(BaseTracer):
                 metadata_dict["parent_run_id"] = run_dict.get("parent_run_id")
                 metadata_dict["tags"] = run_dict.get("tags")
                 return metadata_dict
-            try:
 
+            try:
                 trace_tree = self._trace_tree.Trace(
                     name=run.name,
-                    kind=run.run_type if run.run_type in ["llm", "chain", "tool"] else None,
+                    kind=run.run_type
+                    if run.run_type in ["llm", "chain", "tool"]
+                    else None,
                     status_code="error" if run.error else "success",
-                    start_time_ms=int(run.start_time.timestamp() * 1000),
-                    end_time_ms=int(run.end_time.timestamp() * 1000),
+                    start_time_ms=int(run.start_time.timestamp() * 1000)
+                    if run.start_time is not None
+                    else None,
+                    end_time_ms=int(run.end_time.timestamp() * 1000)
+                    if run.end_time is not None
+                    else None,
                     metadata=get_metadata_dict(run),
                     inputs=_serialize_io(run.inputs),
                     outputs=_serialize_io(run.outputs),
@@ -184,7 +183,9 @@ class WandbTracer(BaseTracer):
                     return parent
             except Exception as e:
                 if PRINT_WARNINGS:
-                    self._wandb.termwarn(f"WARNING: Failed to serialize trace for run due to: {e}")
+                    self._wandb.termwarn(
+                        f"WARNING: Failed to serialize trace for run due to: {e}"
+                    )
                 return None
 
         run_trace = create_trace(run)
