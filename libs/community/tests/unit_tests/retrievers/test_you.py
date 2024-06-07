@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 import responses
+
 from langchain_community.retrievers.you import YouRetriever
 
 from ..utilities.test_you import (

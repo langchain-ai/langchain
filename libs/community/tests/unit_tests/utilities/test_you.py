@@ -3,8 +3,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 import responses
-from langchain_community.utilities.you import YouSearchAPIWrapper
 from langchain_core.documents import Document
+
+from langchain_community.utilities.you import YouSearchAPIWrapper
 
 TEST_ENDPOINT = "https://api.ydc-index.io"
 

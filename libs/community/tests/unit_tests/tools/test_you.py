@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 import responses
+
 from langchain_community.tools.you import YouSearchTool
 from langchain_community.utilities.you import YouSearchAPIWrapper
 
