@@ -25,8 +25,8 @@ def create_index(contexts: List[str], embeddings: Embeddings) -> np.ndarray:
         return np.array(list(executor.map(embeddings.embed_query, contexts)))
 
 
-class PQRetriever(BaseRetriever):
-    """`PQ retriever."""
+class NanoPQRetriever(BaseRetriever):
+    """`NanoPQ retriever."""
 
     embeddings: Embeddings
     """Embeddings model to use."""
@@ -58,7 +58,7 @@ class PQRetriever(BaseRetriever):
         embeddings: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
-    ) -> PQRetriever:
+    ) -> NanoPQRetriever:
         index = create_index(texts, embeddings)
         return cls(
             embeddings=embeddings,
@@ -74,7 +74,7 @@ class PQRetriever(BaseRetriever):
         documents: Iterable[Document],
         embeddings: Embeddings,
         **kwargs: Any,
-    ) -> PQRetriever:
+    ) -> NanoPQRetriever:
         texts, metadatas = zip(*((d.page_content, d.metadata) for d in documents))
         return cls.from_texts(
             texts=texts, embeddings=embeddings, metadatas=metadatas, **kwargs
