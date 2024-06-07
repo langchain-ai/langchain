@@ -31,6 +31,7 @@ optional = true
 pytest = "^7.3.0"
 pytest-cov = "^4.1.0"
 pytest-dotenv = "^0.5.2"
+aiosqlite = "^0.19.0"
 duckdb-engine = "^0.11.0"
 pytest-watcher = "^0.2.6"
 freezegun = "^1.2.2"
