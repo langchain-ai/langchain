@@ -30,10 +30,10 @@ from typing import (
     Union,
 )
 
+from pydantic import BaseConfig, BaseModel
+from pydantic import create_model as _create_model_base
 from typing_extensions import TypeGuard
 
-from langchain_core.pydantic_v1 import BaseConfig, BaseModel
-from langchain_core.pydantic_v1 import create_model as _create_model_base
 from langchain_core.runnables.schema import StreamEvent
 
 Input = TypeVar("Input", contravariant=True)

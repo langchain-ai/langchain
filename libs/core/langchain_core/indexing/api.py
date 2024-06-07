@@ -24,10 +24,11 @@ from typing import (
     cast,
 )
 
+from pydantic import root_validator
+
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.indexing.base import RecordManager
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.vectorstores import VectorStore
 
 # Magic UUID to use as a namespace for hashing.

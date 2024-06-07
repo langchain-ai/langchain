@@ -21,6 +21,8 @@ from typing import (
     overload,
 )
 
+from pydantic import Field, root_validator
+
 from langchain_core._api import deprecated
 from langchain_core.load import Serializable
 from langchain_core.messages import (
@@ -38,7 +40,6 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import StringPromptTemplate, get_template_variables
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
 

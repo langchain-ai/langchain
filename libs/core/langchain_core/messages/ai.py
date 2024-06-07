@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Literal, Optional, Union
 
+from pydantic import root_validator
 from typing_extensions import TypedDict
 
 from langchain_core.messages.base import (
@@ -14,7 +15,6 @@ from langchain_core.messages.tool import (
     default_tool_chunk_parser,
     default_tool_parser,
 )
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import (
     parse_partial_json,

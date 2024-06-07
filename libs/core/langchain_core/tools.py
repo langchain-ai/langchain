@@ -30,6 +30,16 @@ from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from pydantic import (
+    BaseModel,
+    Extra,
+    Field,
+    ValidationError,
+    create_model,
+    root_validator,
+    validate_arguments,
+)
+
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -47,15 +57,6 @@ from langchain_core.prompts import (
     PromptTemplate,
     aformat_document,
     format_document,
-)
-from langchain_core.pydantic_v1 import (
-    BaseModel,
-    Extra,
-    Field,
-    ValidationError,
-    create_model,
-    root_validator,
-    validate_arguments,
 )
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (

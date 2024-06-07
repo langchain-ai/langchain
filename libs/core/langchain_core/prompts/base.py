@@ -18,6 +18,7 @@ from typing import (
 )
 
 import yaml
+from pydantic import BaseModel, Field, root_validator
 
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
@@ -25,7 +26,6 @@ from langchain_core.prompt_values import (
     PromptValue,
     StringPromptValue,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
 from langchain_core.runnables.utils import create_model

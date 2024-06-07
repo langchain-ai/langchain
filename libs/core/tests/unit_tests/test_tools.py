@@ -10,12 +10,12 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import pytest
+from pydantic import BaseModel, ValidationError
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel, ValidationError
 from langchain_core.runnables import ensure_config
 from langchain_core.tools import (
     BaseTool,

@@ -3,9 +3,9 @@ import warnings
 from typing import Any, Dict
 
 import pytest
+from pydantic import BaseModel
 
 from langchain_core._api.beta_decorator import beta, warn_beta
-from langchain_core.pydantic_v1 import BaseModel
 
 
 @pytest.mark.parametrize(

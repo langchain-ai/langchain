@@ -19,13 +19,14 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List, Sequence, Union
 
+from pydantic import BaseModel, Field
+
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
     get_buffer_string,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables import run_in_executor
 
 

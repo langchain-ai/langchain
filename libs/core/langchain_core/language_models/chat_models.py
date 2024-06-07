@@ -21,6 +21,7 @@ from typing import (
     cast,
 )
 
+from pydantic import Field, root_validator
 from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
@@ -53,12 +54,12 @@ from langchain_core.outputs import (
     RunInfo,
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 
 if TYPE_CHECKING:
-    from langchain_core.pydantic_v1 import BaseModel
+    from pydantic import BaseModel
+
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
 
