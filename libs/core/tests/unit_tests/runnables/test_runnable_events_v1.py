@@ -34,6 +34,10 @@ from tests.unit_tests.stubs import AnyStr
 
 def _with_nulled_run_id(events: Sequence[StreamEvent]) -> List[StreamEvent]:
     """Removes the run ids from events."""
+    for event in events:
+        assert "parent_ids" in event, "Parent ids should be present in the event."
+        assert event["parent_ids"] == [], "Parent ids should be empty."
+
     return cast(List[StreamEvent], [{**event, "run_id": ""} for event in events])
 
 
@@ -70,6 +74,7 @@ async def test_event_stream_with_simple_function_tool() -> None:
         {
             "event": "on_chain_start",
             "run_id": "",
+            "parent_ids": [],
             "name": "RunnableSequence",
             "tags": [],
             "metadata": {},
@@ -79,6 +84,7 @@ async def test_event_stream_with_simple_function_tool() -> None:
             "event": "on_chain_start",
             "name": "foo",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
             "metadata": {},
             "data": {},
@@ -87,6 +93,7 @@ async def test_event_stream_with_simple_function_tool() -> None:
             "event": "on_chain_stream",
             "name": "foo",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
             "metadata": {},
             "data": {"chunk": {"x": 5}},
@@ -95,6 +102,7 @@ async def test_event_stream_with_simple_function_tool() -> None:
             "event": "on_chain_end",
             "name": "foo",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
             "metadata": {},
             "data": {"input": {}, "output": {"x": 5}},
@@ -103,6 +111,7 @@ async def test_event_stream_with_simple_function_tool() -> None:
             "event": "on_tool_start",
             "name": "get_docs",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
             "metadata": {},
             "data": {"input": {"x": 5}},
@@ -111,6 +120,7 @@ async def test_event_stream_with_simple_function_tool() -> None:
             "event": "on_tool_end",
             "name": "get_docs",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
             "metadata": {},
             "data": {"input": {"x": 5}, "output": [Document(page_content="hello")]},
@@ -118,6 +128,7 @@ async def test_event_stream_with_simple_function_tool() -> None:
         {
             "event": "on_chain_stream",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
             "metadata": {},
             "name": "RunnableSequence",
@@ -127,6 +138,7 @@ async def test_event_stream_with_simple_function_tool() -> None:
             "event": "on_chain_end",
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
             "metadata": {},
             "data": {"output": [Document(page_content="hello")]},
@@ -151,6 +163,7 @@ async def test_event_stream_with_single_lambda() -> None:
             "metadata": {},
             "name": "reverse",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -159,6 +172,7 @@ async def test_event_stream_with_single_lambda() -> None:
             "metadata": {},
             "name": "reverse",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -167,6 +181,7 @@ async def test_event_stream_with_single_lambda() -> None:
             "metadata": {},
             "name": "reverse",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -192,6 +207,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -200,6 +216,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "metadata": {},
             "name": "1",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -208,6 +225,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "metadata": {},
             "name": "1",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -216,6 +234,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "metadata": {},
             "name": "2",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -224,6 +243,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "metadata": {},
             "name": "1",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -232,6 +252,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "metadata": {},
             "name": "2",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -240,6 +261,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "metadata": {},
             "name": "3",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:3"],
         },
         {
@@ -248,6 +270,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "metadata": {},
             "name": "2",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -256,6 +279,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "metadata": {},
             "name": "3",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:3"],
         },
         {
@@ -264,6 +288,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -272,6 +297,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "metadata": {},
             "name": "3",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:3"],
         },
         {
@@ -280,6 +306,7 @@ async def test_event_stream_with_triple_lambda() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -309,6 +336,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "metadata": {},
             "name": "1",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -317,6 +345,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "metadata": {},
             "name": "1",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -325,6 +354,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "metadata": {},
             "name": "1",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
     ]
@@ -341,6 +371,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "metadata": {},
             "name": "3",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_tag", "seq:step:3"],
         },
         {
@@ -349,6 +380,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "metadata": {},
             "name": "3",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_tag", "seq:step:3"],
         },
         {
@@ -357,6 +389,7 @@ async def test_event_stream_with_triple_lambda_test_filtering() -> None:
             "metadata": {},
             "name": "3",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_tag", "seq:step:3"],
         },
     ]
@@ -376,6 +409,7 @@ async def test_event_stream_with_lambdas_from_lambda() -> None:
             "metadata": {},
             "name": "my_lambda",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -384,6 +418,7 @@ async def test_event_stream_with_lambdas_from_lambda() -> None:
             "metadata": {},
             "name": "my_lambda",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -392,6 +427,7 @@ async def test_event_stream_with_lambdas_from_lambda() -> None:
             "metadata": {},
             "name": "my_lambda",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -420,6 +456,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
         {
@@ -428,6 +465,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
         {
@@ -436,6 +474,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
         {
@@ -444,6 +483,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
         {
@@ -452,6 +492,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
     ]
@@ -471,6 +512,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {},
             "name": "i_dont_stream",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -479,6 +521,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
         {
@@ -487,6 +530,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
         {
@@ -495,6 +539,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
         {
@@ -503,6 +548,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
         {
@@ -529,6 +575,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
         {
@@ -537,6 +584,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {},
             "name": "i_dont_stream",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -545,6 +593,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {},
             "name": "i_dont_stream",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -564,6 +613,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {},
             "name": "ai_dont_stream",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -572,6 +622,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
         {
@@ -580,6 +631,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
         {
@@ -588,6 +640,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
         {
@@ -596,6 +649,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
         {
@@ -622,6 +676,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {"a": "b", "ls_model_type": "chat", "ls_stop": "<stop_token>"},
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_model"],
         },
         {
@@ -630,6 +685,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {},
             "name": "ai_dont_stream",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -638,6 +694,7 @@ async def test_astream_events_from_model() -> None:
             "metadata": {},
             "name": "ai_dont_stream",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -686,6 +743,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "metadata": {"foo": "bar"},
             "name": "my_chain",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_chain"],
         },
         {
@@ -694,6 +752,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "metadata": {"foo": "bar"},
             "name": "my_template",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_chain", "my_template", "seq:step:1"],
         },
         {
@@ -710,6 +769,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "metadata": {"foo": "bar"},
             "name": "my_template",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_chain", "my_template", "seq:step:1"],
         },
         {
@@ -732,6 +792,7 @@ async def test_event_stream_with_simple_chain() -> None:
             },
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
@@ -745,6 +806,7 @@ async def test_event_stream_with_simple_chain() -> None:
             },
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
@@ -753,6 +815,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "metadata": {"foo": "bar"},
             "name": "my_chain",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_chain"],
         },
         {
@@ -766,6 +829,7 @@ async def test_event_stream_with_simple_chain() -> None:
             },
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
@@ -774,6 +838,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "metadata": {"foo": "bar"},
             "name": "my_chain",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_chain"],
         },
         {
@@ -787,6 +852,7 @@ async def test_event_stream_with_simple_chain() -> None:
             },
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
@@ -795,6 +861,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "metadata": {"foo": "bar"},
             "name": "my_chain",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_chain"],
         },
         {
@@ -833,6 +900,7 @@ async def test_event_stream_with_simple_chain() -> None:
             },
             "name": "my_model",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_chain", "my_model", "seq:step:2"],
         },
         {
@@ -841,6 +909,7 @@ async def test_event_stream_with_simple_chain() -> None:
             "metadata": {"foo": "bar"},
             "name": "my_chain",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_chain"],
         },
     ]
@@ -879,6 +948,7 @@ async def test_event_streaming_with_tools() -> None:
             "metadata": {},
             "name": "parameterless",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -887,6 +957,7 @@ async def test_event_streaming_with_tools() -> None:
             "metadata": {},
             "name": "parameterless",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -895,6 +966,7 @@ async def test_event_streaming_with_tools() -> None:
             "metadata": {},
             "name": "parameterless",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -907,6 +979,7 @@ async def test_event_streaming_with_tools() -> None:
             "metadata": {},
             "name": "with_callbacks",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -915,6 +988,7 @@ async def test_event_streaming_with_tools() -> None:
             "metadata": {},
             "name": "with_callbacks",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -923,6 +997,7 @@ async def test_event_streaming_with_tools() -> None:
             "metadata": {},
             "name": "with_callbacks",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -936,6 +1011,7 @@ async def test_event_streaming_with_tools() -> None:
             "metadata": {},
             "name": "with_parameters",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -944,6 +1020,7 @@ async def test_event_streaming_with_tools() -> None:
             "metadata": {},
             "name": "with_parameters",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -952,6 +1029,7 @@ async def test_event_streaming_with_tools() -> None:
             "metadata": {},
             "name": "with_parameters",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -966,6 +1044,7 @@ async def test_event_streaming_with_tools() -> None:
             "metadata": {},
             "name": "with_parameters_and_callbacks",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -974,6 +1053,7 @@ async def test_event_streaming_with_tools() -> None:
             "metadata": {},
             "name": "with_parameters_and_callbacks",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -982,6 +1062,7 @@ async def test_event_streaming_with_tools() -> None:
             "metadata": {},
             "name": "with_parameters_and_callbacks",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -1022,6 +1103,7 @@ async def test_event_stream_with_retriever() -> None:
             "metadata": {},
             "name": "HardCodedRetriever",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1035,6 +1117,7 @@ async def test_event_stream_with_retriever() -> None:
             "metadata": {},
             "name": "HardCodedRetriever",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1048,6 +1131,7 @@ async def test_event_stream_with_retriever() -> None:
             "metadata": {},
             "name": "HardCodedRetriever",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -1081,6 +1165,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1089,6 +1174,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "metadata": {},
             "name": "Retriever",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -1107,6 +1193,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "metadata": {},
             "name": "Retriever",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -1115,6 +1202,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "metadata": {},
             "name": "format_docs",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -1123,6 +1211,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "metadata": {},
             "name": "format_docs",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -1131,6 +1220,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1145,6 +1235,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "metadata": {},
             "name": "format_docs",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -1153,6 +1244,7 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -1184,6 +1276,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1192,6 +1285,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "metadata": {},
             "name": "concat",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -1200,6 +1294,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "metadata": {},
             "name": "concat",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -1208,6 +1303,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "metadata": {},
             "name": "reverse",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -1216,6 +1312,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "metadata": {},
             "name": "reverse",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -1224,6 +1321,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1232,6 +1330,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "metadata": {},
             "name": "reverse",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -1240,6 +1339,7 @@ async def test_event_stream_on_chain_with_tool() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -1278,6 +1378,7 @@ async def test_chain_ordering() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1286,6 +1387,7 @@ async def test_chain_ordering() -> None:
             "metadata": {},
             "name": "foo",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -1294,6 +1396,7 @@ async def test_chain_ordering() -> None:
             "metadata": {},
             "name": "foo",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -1302,6 +1405,7 @@ async def test_chain_ordering() -> None:
             "metadata": {},
             "name": "foo",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -1310,6 +1414,7 @@ async def test_chain_ordering() -> None:
             "metadata": {},
             "name": "bar",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -1318,6 +1423,7 @@ async def test_chain_ordering() -> None:
             "metadata": {},
             "name": "bar",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -1326,6 +1432,7 @@ async def test_chain_ordering() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1334,6 +1441,7 @@ async def test_chain_ordering() -> None:
             "metadata": {},
             "name": "bar",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -1342,6 +1450,7 @@ async def test_chain_ordering() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -1382,6 +1491,7 @@ async def test_event_stream_with_retry() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1390,6 +1500,7 @@ async def test_event_stream_with_retry() -> None:
             "metadata": {},
             "name": "success",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -1398,6 +1509,7 @@ async def test_event_stream_with_retry() -> None:
             "metadata": {},
             "name": "success",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -1406,6 +1518,7 @@ async def test_event_stream_with_retry() -> None:
             "metadata": {},
             "name": "fail",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -1414,6 +1527,7 @@ async def test_event_stream_with_retry() -> None:
             "metadata": {},
             "name": "success",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:1"],
         },
         {
@@ -1422,6 +1536,7 @@ async def test_event_stream_with_retry() -> None:
             "metadata": {},
             "name": "fail",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
     ]
@@ -1445,6 +1560,7 @@ async def test_with_llm() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1453,6 +1569,7 @@ async def test_with_llm() -> None:
             "metadata": {},
             "name": "my_template",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_template", "seq:step:1"],
         },
         {
@@ -1469,6 +1586,7 @@ async def test_with_llm() -> None:
             "metadata": {},
             "name": "my_template",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["my_template", "seq:step:1"],
         },
         {
@@ -1479,6 +1597,7 @@ async def test_with_llm() -> None:
             "metadata": {},
             "name": "FakeStreamingListLLM",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -1498,6 +1617,7 @@ async def test_with_llm() -> None:
             "metadata": {},
             "name": "FakeStreamingListLLM",
             "run_id": "",
+            "parent_ids": [],
             "tags": ["seq:step:2"],
         },
         {
@@ -1506,6 +1626,7 @@ async def test_with_llm() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1514,6 +1635,7 @@ async def test_with_llm() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1522,6 +1644,7 @@ async def test_with_llm() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1530,6 +1653,7 @@ async def test_with_llm() -> None:
             "metadata": {},
             "name": "RunnableSequence",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -1572,6 +1696,7 @@ async def test_events_astream_config() -> None:
             "metadata": {},
             "name": "RunnableConfigurableFields",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1580,6 +1705,7 @@ async def test_events_astream_config() -> None:
             "metadata": {},
             "name": "RunnableConfigurableFields",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1588,6 +1714,7 @@ async def test_events_astream_config() -> None:
             "metadata": {},
             "name": "RunnableConfigurableFields",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1596,6 +1723,7 @@ async def test_events_astream_config() -> None:
             "metadata": {},
             "name": "RunnableConfigurableFields",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
         {
@@ -1604,6 +1732,7 @@ async def test_events_astream_config() -> None:
             "metadata": {},
             "name": "RunnableConfigurableFields",
             "run_id": "",
+            "parent_ids": [],
             "tags": [],
         },
     ]
@@ -1688,6 +1817,7 @@ EXPECTED_EVENTS = [
         "metadata": {},
         "name": "add_one_proxy",
         "run_id": "",
+        "parent_ids": [],
         "tags": [],
     },
     {
@@ -1696,6 +1826,7 @@ EXPECTED_EVENTS = [
         "metadata": {},
         "name": "add_one",
         "run_id": "",
+        "parent_ids": [],
         "tags": [],
     },
     {
@@ -1704,6 +1835,7 @@ EXPECTED_EVENTS = [
         "metadata": {},
         "name": "add_one",
         "run_id": "",
+        "parent_ids": [],
         "tags": [],
     },
     {
@@ -1712,6 +1844,7 @@ EXPECTED_EVENTS = [
         "metadata": {},
         "name": "add_one",
         "run_id": "",
+        "parent_ids": [],
         "tags": [],
     },
     {
@@ -1720,6 +1853,7 @@ EXPECTED_EVENTS = [
         "metadata": {},
         "name": "add_one_proxy",
         "run_id": "",
+        "parent_ids": [],
         "tags": [],
     },
     {
@@ -1728,6 +1862,7 @@ EXPECTED_EVENTS = [
         "metadata": {},
         "name": "add_one_proxy",
         "run_id": "",
+        "parent_ids": [],
         "tags": [],
     },
 ]
