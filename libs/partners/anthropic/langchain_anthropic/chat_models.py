@@ -447,6 +447,24 @@ class ChatAnthropic(BaseChatModel):
 
             {'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36}
 
+        Message chunks containing token usage will be included during streaming by
+        default:
+
+        .. code-block:: python
+
+            stream = llm.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full.usage_metadata
+
+        .. code-block:: python
+
+            {'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36}
+
+        These can be disabled by setting ``stream_usage=False`` in the stream method,
+        or by setting ``stream_usage=False`` when initializing ChatAnthropic.
+
     Response metadata
         .. code-block:: python
 
@@ -1097,6 +1115,11 @@ def _make_message_chunk_from_anthropic_event(
     *,
     stream_usage: bool = True,
 ) -> Optional[AIMessageChunk]:
+    """Convert Anthropic event to AIMessageChunk.
+
+    Note that not all events will result in a message chunk. In these cases
+    we return None.
+    """
     message_chunk: Optional[AIMessageChunk] = None
     if event.type == "message_start" and stream_usage:
         input_tokens = event.message.usage.input_tokens
