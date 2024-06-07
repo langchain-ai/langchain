@@ -105,6 +105,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.llama_edge import (
         LlamaEdgeChatService,
     )
+    from langchain_community.chat_models.llamacpp import (
+        ChatLlamaCpp,
+    )
     from langchain_community.chat_models.maritalk import (
         ChatMaritalk,
     )
@@ -207,6 +210,7 @@ __all__ = [
     "HumanInputChatModel",
     "JinaChat",
     "LlamaEdgeChatService",
+    "ChatLlamaCpp",
     "MiniMaxChat",
     "PaiEasChatEndpoint",
     "PromptLayerChatOpenAI",
@@ -258,6 +262,7 @@ _module_lookup = {
     "HumanInputChatModel": "langchain_community.chat_models.human",
     "JinaChat": "langchain_community.chat_models.jinachat",
     "LlamaEdgeChatService": "langchain_community.chat_models.llama_edge",
+    "ChatLlamaCpp": "langchain_community.chat_models.llamacpp",
     "MiniMaxChat": "langchain_community.chat_models.minimax",
     "PaiEasChatEndpoint": "langchain_community.chat_models.pai_eas_endpoint",
     "PromptLayerChatOpenAI": "langchain_community.chat_models.promptlayer_openai",
