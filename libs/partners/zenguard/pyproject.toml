@@ -2,7 +2,7 @@
 name = "langchain-zenguard"
 version = "0.1.0"
 description = "An integration package connecting Zenguard and LangChain"
-authors = []
+authors = ["ZenGuard Team <hello@zenguard.ai>"]
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 license = "MIT"
