@@ -27,7 +27,7 @@ from typing import (
 )
 
 import yaml
-from pydantic import Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 from tenacity import (
     RetryCallState,
     before_sleep_log,
@@ -226,13 +226,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED]"""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
-    @root_validator()
+    @model_validator(mode="before")
+    @classmethod
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:

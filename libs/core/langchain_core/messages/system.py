@@ -16,7 +16,7 @@ class SystemMessage(BaseMessage):
         return ["langchain", "schema", "messages"]
 
 
-SystemMessage.update_forward_refs()
+SystemMessage.model_rebuild()
 
 
 class SystemMessageChunk(SystemMessage, BaseMessageChunk):

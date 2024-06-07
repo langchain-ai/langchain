@@ -5,7 +5,7 @@ import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
@@ -127,10 +127,12 @@ class PromptTemplate(StringPromptTemplate):
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
 
-    @root_validator()
+    @model_validator(mode="before")
+    @classmethod
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that template and input variables are consistent."""
-        if values["validate_template"]:
+        # TODO(EUGENE): APPLY
+        if values.get("validate_template", False):
             if values["template_format"] == "mustache":
                 raise ValueError("Mustache templates cannot be validated.")
             all_inputs = values["input_variables"] + list(values["partial_variables"])

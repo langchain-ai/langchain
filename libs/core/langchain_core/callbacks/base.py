@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, TypeVar, Union
 from uuid import UUID
 
+from pydantic import ConfigDict
 from tenacity import RetryCallState
 
 if TYPE_CHECKING:

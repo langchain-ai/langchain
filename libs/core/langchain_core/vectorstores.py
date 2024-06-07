@@ -39,7 +39,7 @@ from typing import (
     TypeVar,
 )
 
-from pydantic import Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
@@ -767,13 +767,10 @@ class VectorStoreRetriever(BaseRetriever):
         "similarity_score_threshold",
         "mmr",
     )
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
-    @root_validator()
+    @model_validator(mode="before")
+    @classmethod
     def validate_search_type(cls, values: Dict) -> Dict:
         """Validate search type."""
         search_type = values["search_type"]

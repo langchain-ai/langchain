@@ -28,7 +28,7 @@ class ToolMessage(BaseMessage):
         return ["langchain", "schema", "messages"]
 
 
-ToolMessage.update_forward_refs()
+ToolMessage.model_rebuild()
 
 
 class ToolMessageChunk(ToolMessage, BaseMessageChunk):

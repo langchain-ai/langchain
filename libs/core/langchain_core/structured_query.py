@@ -101,7 +101,7 @@ class Comparison(FilterDirective):
 
     comparator: Comparator
     attribute: str
-    value: Any
+    value: Any = None
 
     def __init__(
         self, comparator: Comparator, attribute: str, value: Any, **kwargs: Any
@@ -128,9 +128,9 @@ class StructuredQuery(Expr):
 
     query: str
     """Query string."""
-    filter: Optional[FilterDirective]
+    filter: Optional[FilterDirective] = None
     """Filtering expression."""
-    limit: Optional[int]
+    limit: Optional[int] = None
     """Limit on the number of results."""
 
     def __init__(

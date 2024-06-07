@@ -22,7 +22,7 @@ class FunctionMessage(BaseMessage):
         return ["langchain", "schema", "messages"]
 
 
-FunctionMessage.update_forward_refs()
+FunctionMessage.model_rebuild()
 
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):

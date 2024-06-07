@@ -20,7 +20,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
@@ -50,9 +50,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     default: RunnableSerializable[Input, Output]
 
     config: Optional[RunnableConfig] = None
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

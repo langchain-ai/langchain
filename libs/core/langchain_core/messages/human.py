@@ -19,7 +19,7 @@ class HumanMessage(BaseMessage):
         return ["langchain", "schema", "messages"]
 
 
-HumanMessage.update_forward_refs()
+HumanMessage.model_rebuild()
 
 
 class HumanMessageChunk(HumanMessage, BaseMessageChunk):

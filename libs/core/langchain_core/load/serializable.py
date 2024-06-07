@@ -10,7 +10,7 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 from typing_extensions import NotRequired
 
 
@@ -102,9 +102,7 @@ class Serializable(BaseModel, ABC):
         to the object.
         """
         return [*cls.get_lc_namespace(), cls.__name__]
-
-    class Config:
-        extra = "ignore"
+    model_config = ConfigDict(extra="ignore")
 
     def __repr_args__(self) -> Any:
         return [

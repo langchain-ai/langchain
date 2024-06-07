@@ -1689,7 +1689,7 @@ async def test_runnable_with_message_history() -> None:
         # the content in the store!
 
         # Using Any type here rather than List[BaseMessage] due to pydantic issue!
-        messages: Any
+        messages: Any = None
 
         def add_message(self, message: BaseMessage) -> None:
             """Add a self-created message to the store."""

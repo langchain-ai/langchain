@@ -13,7 +13,7 @@ from io import BufferedReader, BytesIO
 from pathlib import PurePath
 from typing import Any, Dict, Generator, Iterable, Mapping, Optional, Union, cast
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel, Field
 
 PathLike = Union[str, PurePath]
 
@@ -28,7 +28,7 @@ class Blob(BaseModel):
     Inspired by: https://developer.mozilla.org/en-US/docs/Web/API/Blob
     """
 
-    data: Union[bytes, str, None]
+    data: Union[bytes, str, None] = None
     """Raw data associated with the blob."""
     mimetype: Optional[str] = None
     """MimeType not to be confused with a file extension."""
@@ -42,10 +42,7 @@ class Blob(BaseModel):
 
     metadata: Dict[str, Any] = Field(default_factory=dict)
     """Metadata about the blob (e.g., source)"""
-
-    class Config:
-        arbitrary_types_allowed = True
-        frozen = True
+    model_config = ConfigDict(arbitrary_types_allowed=True, frozen=True)
 
     @property
     def source(self) -> Optional[str]:
@@ -60,7 +57,8 @@ class Blob(BaseModel):
             return cast(Optional[str], self.metadata["source"])
         return str(self.path) if self.path else None
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def check_blob_is_valid(cls, values: Mapping[str, Any]) -> Mapping[str, Any]:
         """Verify that either data or path is provided."""
         if "data" not in values and "path" not in values:

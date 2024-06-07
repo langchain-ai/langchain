@@ -14,6 +14,7 @@ from typing import Any, Dict, List
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.runnables import run_in_executor
+from pydantic import ConfigDict
 
 
 class BaseMemory(Serializable, ABC):
@@ -45,11 +46,7 @@ class BaseMemory(Serializable, ABC):
                 def clear(self) -> None:
                     pass
     """  # noqa: E501
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     @abstractmethod

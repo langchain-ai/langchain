@@ -18,7 +18,7 @@ from typing import (
 )
 
 import yaml
-from pydantic import BaseModel, Field, root_validator
+from pydantic import model_validator, ConfigDict, BaseModel, Field
 
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.prompt_values import (
@@ -68,11 +68,7 @@ class BasePromptTemplate(
     def is_lc_serializable(cls) -> bool:
         """Return whether this class is serializable."""
         return True
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     def OutputType(self) -> Any:
@@ -155,22 +151,24 @@ class BasePromptTemplate(
         """Create Prompt Value."""
         return self.format_prompt(**kwargs)
 
-    @root_validator()
+    @model_validator(mode="before")
+    @classmethod
     def validate_variable_names(cls, values: Dict) -> Dict:
         """Validate variable names do not include restricted names."""
-        if "stop" in values["input_variables"]:
+        # TODO(EUGENE): Apply
+        if "stop" in values.get("input_variables", []):
             raise ValueError(
                 "Cannot have an input variable named 'stop', as it is used internally,"
                 " please rename."
             )
-        if "stop" in values["partial_variables"]:
+        if "stop" in values.get("partial_variables", {}):
             raise ValueError(
                 "Cannot have an partial variable named 'stop', as it is used "
                 "internally, please rename."
             )
 
-        overall = set(values["input_variables"]).intersection(
-            values["partial_variables"]
+        overall = set(values.get("input_variables", [])).intersection(
+            values.get("partial_variables", [])
         )
         if overall:
             raise ValueError(

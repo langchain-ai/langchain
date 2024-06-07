@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
-from pydantic import Extra, Field
+from pydantic import ConfigDict, Field
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.utils import get_bolded_text
@@ -37,9 +37,7 @@ class BaseMessage(Serializable):
     id: Optional[str] = None
     """An optional unique identifier for the message. This should ideally be
     provided by the provider/model which created the message."""
-
-    class Config:
-        extra = Extra.allow
+    model_config = ConfigDict(extra="allow")
 
     def __init__(
         self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any

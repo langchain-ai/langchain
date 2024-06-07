@@ -3,7 +3,7 @@ import json
 from typing import Any, Dict, List, Optional, Type, Union
 
 import jsonpatch  # type: ignore[import]
-from pydantic import BaseModel, root_validator
+from pydantic import model_validator, BaseModel
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import (
@@ -184,7 +184,8 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
     determine which schema to use.
     """
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_schema(cls, values: Dict) -> Dict:
         schema = values["pydantic_schema"]
         if "args_only" not in values:

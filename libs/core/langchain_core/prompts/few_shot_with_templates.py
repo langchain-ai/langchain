@@ -2,7 +2,7 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import Extra, root_validator
+from pydantic import model_validator, ConfigDict
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
@@ -48,7 +48,8 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "few_shot_with_templates"]
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def check_examples_and_selector(cls, values: Dict) -> Dict:
         """Check that one and only one of examples/example_selector are provided."""
         examples = values.get("examples", None)
@@ -65,7 +66,8 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
         return values
 
-    @root_validator()
+    @model_validator(mode="before")
+    @classmethod
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix, and input variables are consistent."""
         if values["validate_template"]:
@@ -87,12 +89,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
                 - set(values["partial_variables"])
             )
         return values
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     def _get_examples(self, **kwargs: Any) -> List[dict]:
         if self.examples is not None:

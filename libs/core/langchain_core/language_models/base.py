@@ -17,7 +17,7 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, ConfigDict
 from typing_extensions import TypeAlias
 
 from langchain_core._api import deprecated
@@ -80,6 +80,7 @@ class BaseLanguageModel(
     All language model wrappers inherit from BaseLanguageModel.
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     cache: Union[BaseCache, bool, None] = None
     """Whether to cache the response.
     
@@ -103,6 +104,8 @@ class BaseLanguageModel(
     )
     """Optional encoder to use for counting tokens."""
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("verbose", pre=True, always=True)
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
         """If verbose is None, set it.

@@ -26,6 +26,7 @@ from langchain_core.runnables.base import (
 )
 from langchain_core.runnables.config import RunnableConfig, ensure_config, patch_config
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
+from pydantic import ConfigDict
 
 T = TypeVar("T")
 Values = Dict[Union[asyncio.Event, threading.Event], Any]
@@ -228,9 +229,7 @@ class ContextSet(RunnableSerializable):
     prefix: str = ""
 
     keys: Mapping[str, Optional[Runnable]]
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(
         self,
