@@ -26,9 +26,21 @@ class DetectorAPI(str, Enum):
     TOXICITY = "v1/detect/toxicity"
 
 class ZenGuardInput(BaseModel):
-    prompts: List[str] = Field(..., min_items=1, min_length=1)
-    detectors: List[Detector] = Field(..., min_items=1)
-    in_parallel: bool = Field(default=True)
+    prompts: List[str] = Field(
+        ...,
+        min_items=1,
+        min_length=1,
+        description="Prompt to check",
+    )
+    detectors: List[Detector] = Field(
+        ...,
+        min_items=1,
+        description="List of detectors by which you want to check the prompt",
+    )
+    in_parallel: bool = Field(
+        default=True,
+        description="Run prompt detection by the detector in parallel or sequentially",
+    )
 
 class ZenGuardTool(BaseTool):
     name = "ZenGuard"
