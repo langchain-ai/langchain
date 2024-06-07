@@ -179,7 +179,6 @@ class RecursiveUrlLoader(BaseLoader):
                 # This example uses `beautifulsoup4` and `lxml`
                 import re
                 from bs4 import BeautifulSoup
-                from langchain_community.document_loaders import RecursiveUrlLoader
 
                 def bs4_extractor(html: str) -> str:
                     soup = BeautifulSoup(html, "lxml")
@@ -215,7 +214,6 @@ class RecursiveUrlLoader(BaseLoader):
             import aiohttp
             import requests
             from typing import Union
-            from langchain_community.document_loaders import RecursiveUrlLoader
 
             def simple_metadata_extractor(
                 raw_html: str, url: str, response: Union[requests.Response, aiohttp.ClientResponse]
@@ -244,8 +242,6 @@ class RecursiveUrlLoader(BaseLoader):
         located in the FAQ section of the website.
 
         .. code-block:: python
-        
-            from langchain_community.document_loaders import RecursiveUrlLoader
 
             loader = RecursiveUrlLoader(
                 "https://docs.python.org/3.9/",
