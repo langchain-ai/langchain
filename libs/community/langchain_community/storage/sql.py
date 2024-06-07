@@ -45,7 +45,7 @@ def items_equal(x: Any, y: Any) -> bool:
     return x == y
 
 
-class Value(Base):  # type: ignore[valid-type,misc]
+class LangchainKeyValueStores(Base):  # type: ignore[valid-type,misc]
     """Table used to save values."""
 
     # ATTENTION:
@@ -149,10 +149,10 @@ class SQLStore(BaseStore[str, bytes]):
         assert isinstance(self.engine, AsyncEngine)
         result: Dict[str, bytes] = {}
         async with self._make_async_session() as session:
-            stmt = select(Value).filter(
+            stmt = select(LangchainKeyValueStores).filter(
                 and_(
-                    Value.key.in_(keys),
-                    Value.namespace == self.namespace,
+                    LangchainKeyValueStores.key.in_(keys),
+                    LangchainKeyValueStores.namespace == self.namespace,
                 )
             )
             for v in await session.scalars(stmt):
@@ -163,10 +163,10 @@ class SQLStore(BaseStore[str, bytes]):
         result = {}
 
         with self._make_sync_session() as session:
-            stmt = select(Value).filter(
+            stmt = select(LangchainKeyValueStores).filter(
                 and_(
-                    Value.key.in_(keys),
-                    Value.namespace == self.namespace,
+                    LangchainKeyValueStores.key.in_(keys),
+                    LangchainKeyValueStores.namespace == self.namespace,
                 )
             )
             for v in session.scalars(stmt):
@@ -178,7 +178,7 @@ class SQLStore(BaseStore[str, bytes]):
             await self._amdelete([key for key, _ in key_value_pairs], session)
             session.add_all(
                 [
-                    Value(namespace=self.namespace, key=k, value=v)
+                    LangchainKeyValueStores(namespace=self.namespace, key=k, value=v)
                     for k, v in key_value_pairs
                 ]
             )
@@ -190,26 +190,26 @@ class SQLStore(BaseStore[str, bytes]):
             self._mdelete(list(values.keys()), session)
             session.add_all(
                 [
-                    Value(namespace=self.namespace, key=k, value=v)
+                    LangchainKeyValueStores(namespace=self.namespace, key=k, value=v)
                     for k, v in values.items()
                 ]
             )
             session.commit()
 
     def _mdelete(self, keys: Sequence[str], session: Session) -> None:
-        stmt = delete(Value).filter(
+        stmt = delete(LangchainKeyValueStores).filter(
             and_(
-                Value.key.in_(keys),
-                Value.namespace == self.namespace,
+                LangchainKeyValueStores.key.in_(keys),
+                LangchainKeyValueStores.namespace == self.namespace,
             )
         )
         session.execute(stmt)
 
     async def _amdelete(self, keys: Sequence[str], session: AsyncSession) -> None:
-        stmt = delete(Value).filter(
+        stmt = delete(LangchainKeyValueStores).filter(
             and_(
-                Value.key.in_(keys),
-                Value.namespace == self.namespace,
+                LangchainKeyValueStores.key.in_(keys),
+                LangchainKeyValueStores.namespace == self.namespace,
             )
         )
         await session.execute(stmt)
@@ -226,8 +226,8 @@ class SQLStore(BaseStore[str, bytes]):
 
     def yield_keys(self, *, prefix: Optional[str] = None) -> Iterator[str]:
         with self._make_sync_session() as session:
-            for v in session.query(Value).filter(  # type: ignore
-                Value.namespace == self.namespace
+            for v in session.query(LangchainKeyValueStores).filter(  # type: ignore
+                LangchainKeyValueStores.namespace == self.namespace
             ):
                 if str(v.key).startswith(prefix or ""):
                     yield str(v.key)
@@ -235,7 +235,9 @@ class SQLStore(BaseStore[str, bytes]):
 
     async def ayield_keys(self, *, prefix: Optional[str] = None) -> AsyncIterator[str]:
         async with self._make_async_session() as session:
-            stmt = select(Value).filter(Value.namespace == self.namespace)
+            stmt = select(LangchainKeyValueStores).filter(
+                LangchainKeyValueStores.namespace == self.namespace
+            )
             for v in await session.scalars(stmt):
                 if str(v.key).startswith(prefix or ""):
                     yield str(v.key)
