@@ -1,4 +1,3 @@
-import json
 import os
 import re
 import warnings
@@ -667,34 +666,12 @@ class ChatAnthropic(BaseChatModel):
         if stream_usage is None:
             stream_usage = self.stream_usage
         params = self._format_params(messages=messages, stop=stop, **kwargs)
-        if _tools_in_params(params):
-            result = self._generate(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            message = result.generations[0].message
-            if isinstance(message, AIMessage) and message.tool_calls is not None:
-                tool_call_chunks = [
-                    {
-                        "name": tool_call["name"],
-                        "args": json.dumps(tool_call["args"]),
-                        "id": tool_call["id"],
-                        "index": idx,
-                    }
-                    for idx, tool_call in enumerate(message.tool_calls)
-                ]
-                message_chunk = AIMessageChunk(
-                    content=message.content,
-                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
-                    usage_metadata=message.usage_metadata,
-                )
-                yield ChatGenerationChunk(message=message_chunk)
-            else:
-                yield cast(ChatGenerationChunk, result.generations[0])
-            return
         stream = self._client.messages.create(**params, stream=True)
         for event in stream:
             msg = _make_message_chunk_from_anthropic_event(
-                event, stream_usage=stream_usage
+                event,
+                stream_usage=stream_usage,
+                coerce_content_to_string=(not _tools_in_params(params)),
             )
             if msg is not None:
                 chunk = ChatGenerationChunk(message=msg)
@@ -714,35 +691,12 @@ class ChatAnthropic(BaseChatModel):
         if stream_usage is None:
             stream_usage = self.stream_usage
         params = self._format_params(messages=messages, stop=stop, **kwargs)
-        if _tools_in_params(params):
-            warnings.warn("stream: Tool use is not yet supported in streaming mode.")
-            result = await self._agenerate(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
-            message = result.generations[0].message
-            if isinstance(message, AIMessage) and message.tool_calls is not None:
-                tool_call_chunks = [
-                    {
-                        "name": tool_call["name"],
-                        "args": json.dumps(tool_call["args"]),
-                        "id": tool_call["id"],
-                        "index": idx,
-                    }
-                    for idx, tool_call in enumerate(message.tool_calls)
-                ]
-                message_chunk = AIMessageChunk(
-                    content=message.content,
-                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
-                    usage_metadata=message.usage_metadata,
-                )
-                yield ChatGenerationChunk(message=message_chunk)
-            else:
-                yield cast(ChatGenerationChunk, result.generations[0])
-            return
         stream = await self._async_client.messages.create(**params, stream=True)
         async for event in stream:
             msg = _make_message_chunk_from_anthropic_event(
-                event, stream_usage=stream_usage
+                event,
+                stream_usage=stream_usage,
+                coerce_content_to_string=(not _tools_in_params(params)),
             )
             if msg is not None:
                 chunk = ChatGenerationChunk(message=msg)
@@ -1114,6 +1068,7 @@ def _make_message_chunk_from_anthropic_event(
     event: anthropic.types.RawMessageStreamEvent,
     *,
     stream_usage: bool = True,
+    coerce_content_to_string: bool = False,
 ) -> Optional[AIMessageChunk]:
     """Convert Anthropic event to AIMessageChunk.
 
@@ -1121,20 +1076,68 @@ def _make_message_chunk_from_anthropic_event(
     we return None.
     """
     message_chunk: Optional[AIMessageChunk] = None
+    # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
     if event.type == "message_start" and stream_usage:
         input_tokens = event.message.usage.input_tokens
         message_chunk = AIMessageChunk(
-            content="",
+            content="" if coerce_content_to_string else [],
             usage_metadata=UsageMetadata(
                 input_tokens=input_tokens,
                 output_tokens=0,
                 total_tokens=input_tokens,
             ),
         )
-    # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
-    elif event.type == "content_block_delta" and event.delta.type == "text_delta":
-        text = event.delta.text
-        message_chunk = AIMessageChunk(content=text)
+    elif (
+        event.type == "content_block_start"
+        and event.content_block is not None
+        and event.content_block.type == "tool_use"
+    ):
+        if coerce_content_to_string:
+            warnings.warn("Received unexpected tool content block.")
+        # TODO: Pass type through here
+        content_block = {
+            "index": event.index,
+            "id": event.content_block.id,
+            "name": event.content_block.name,
+            "input": event.content_block.input,
+        }
+        tool_call_chunk = {
+            "index": event.index,
+            "id": event.content_block.id,
+            "name": event.content_block.name,
+            "args": "",
+        }
+        message_chunk = AIMessageChunk(
+            content=[content_block],
+            tool_call_chunks=[tool_call_chunk],  # type: ignore
+        )
+    elif event.type == "content_block_delta":
+        if event.delta.type == "text_delta":
+            if coerce_content_to_string:
+                text = event.delta.text
+                message_chunk = AIMessageChunk(content=text)
+            else:
+                content_block = {
+                    "index": event.index,
+                    "text": event.delta.text,
+                }
+                message_chunk = AIMessageChunk(content=[content_block])
+        elif event.delta.type == "input_json_delta":
+            # TODO: Pass type through here
+            content_block = {
+                "index": event.index,
+                "partial_json": event.delta.partial_json,
+            }
+            tool_call_chunk = {
+                "index": event.index,
+                "id": None,
+                "name": None,
+                "args": event.delta.partial_json,
+            }
+            message_chunk = AIMessageChunk(
+                content=[content_block],
+                tool_call_chunks=[tool_call_chunk],  # type: ignore
+            )
     elif event.type == "message_delta" and stream_usage:
         output_tokens = event.usage.output_tokens
         message_chunk = AIMessageChunk(
