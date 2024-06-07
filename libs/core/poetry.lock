@@ -1197,7 +1197,7 @@ files = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.2.0"
+version = "0.2.1"
 description = "LangChain text splitting utilities"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -1207,22 +1207,19 @@ develop = true
 [package.dependencies]
 langchain-core = "^0.2.0"
 
-[package.extras]
-extended-testing = ["beautifulsoup4 (>=4.12.3,<5.0.0)", "lxml (>=4.9.3,<6.0)"]
-
 [package.source]
 type = "directory"
 url = "../text-splitters"
 
 [[package]]
 name = "langsmith"
-version = "0.1.65"
+version = "0.1.75"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.65-py3-none-any.whl", hash = "sha256:ab4487029240e69cca30da1065f1e9138e5a7ca2bbe8c697f0bd7d5839f71cf7"},
-    {file = "langsmith-0.1.65.tar.gz", hash = "sha256:d3c2eb2391478bd79989f02652cf66e29a7959d677614b6993a47cef43f7f43b"},
+    {file = "langsmith-0.1.75-py3-none-any.whl", hash = "sha256:d08b08dd6b3fa4da170377f95123d77122ef4c52999d10fff4ae08ff70d07aed"},
+    {file = "langsmith-0.1.75.tar.gz", hash = "sha256:61274e144ea94c297dd78ce03e6dfae18459fe9bd8ab5094d61a0c4816561279"},
 ]
 
 [package.dependencies]
@@ -2945,10 +2942,7 @@ files = [
 docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-itertools", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy", "pytest-ruff (>=0.2.1)"]
 
-[extras]
-extended-testing = ["jinja2"]
-
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "4feba718f092ba77ab3263f6002898eddf6661fcfdae8b29b607936abb7e33c9"
+content-hash = "0fcf4292cd7fbf92dfb5103bd3281a511184b01f07324e651145f43431567c3b"
