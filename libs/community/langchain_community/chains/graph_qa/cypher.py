@@ -261,8 +261,8 @@ class GraphCypherQAChain(Chain):
         qa_llm = qa_llm or llm
         if use_function_response:
             try:
-                qa_llm.bind_tools({})  # noqa: F401
-                qa_chain = response_prompt | qa_llm | StrOutputParser()
+                qa_llm.bind_tools({})  # type: ignore[union-attr]
+                qa_chain = response_prompt | qa_llm | StrOutputParser() # type: ignore
             except (NotImplementedError, AttributeError):
                 raise ValueError("Provided LLM does not support native tools/functions")
         else:
