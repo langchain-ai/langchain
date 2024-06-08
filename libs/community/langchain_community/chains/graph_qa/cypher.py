@@ -131,7 +131,9 @@ def construct_schema(
     )
 
 
-def get_function_response(question: str, context: Dict[str, Any]) -> List[BaseMessage]:
+def get_function_response(
+    question: str, context: List[Dict[str, Any]]
+) -> List[BaseMessage]:
     TOOL_ID = "call_H7fABDuzEau48T10Qn0Lsh0D"
     messages = [
         AIMessage(
