@@ -42,14 +42,6 @@ Do not add any other information that wasn't present in the tools, and use
 very concise style in interpreting results!
 """
 
-response_prompt = ChatPromptTemplate.from_messages(
-    [
-        SystemMessage(content=FUNCTION_RESPONSE_SYSTEM),
-        HumanMessagePromptTemplate.from_template("{question}"),
-        MessagesPlaceholder(variable_name="function_response"),
-    ]
-)
-
 
 def extract_cypher(text: str) -> str:
     """Extract Cypher code from a text.
@@ -264,6 +256,13 @@ class GraphCypherQAChain(Chain):
         if use_function_response:
             try:
                 qa_llm.bind_tools({})  # type: ignore[union-attr]
+                response_prompt = ChatPromptTemplate.from_messages(
+                    [
+                        SystemMessage(content=qa_prompt or FUNCTION_RESPONSE_SYSTEM),
+                        HumanMessagePromptTemplate.from_template("{question}"),
+                        MessagesPlaceholder(variable_name="function_response"),
+                    ]
+                )
                 qa_chain = response_prompt | qa_llm | StrOutputParser()  # type: ignore
             except (NotImplementedError, AttributeError):
                 raise ValueError("Provided LLM does not support native tools/functions")
