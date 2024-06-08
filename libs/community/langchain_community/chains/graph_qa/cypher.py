@@ -10,6 +10,7 @@ from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import (
     AIMessage,
+    BaseMessage,
     SystemMessage,
     ToolMessage,
 )
@@ -130,9 +131,7 @@ def construct_schema(
     )
 
 
-def get_function_response(
-    question: str, context: Dict[str, Any]
-) -> List[Union[AIMessage, ToolMessage]]:
+def get_function_response(question: str, context: Dict[str, Any]) -> List[BaseMessage]:
     TOOL_ID = "call_H7fABDuzEau48T10Qn0Lsh0D"
     messages = [
         AIMessage(
@@ -262,7 +261,7 @@ class GraphCypherQAChain(Chain):
         qa_llm = qa_llm or llm
         if use_function_response:
             try:
-                qa_llm.bind_tools({})
+                qa_llm.bind_tools({})  # noqa: F401
                 qa_chain = response_prompt | qa_llm | StrOutputParser()
             except (NotImplementedError, AttributeError):
                 raise ValueError("Provided LLM does not support native tools/functions")
