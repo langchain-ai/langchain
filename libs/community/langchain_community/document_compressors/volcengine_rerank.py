@@ -15,11 +15,11 @@ class VolcengineRerank(BaseDocumentCompressor):
     client: Any = None
     """Volcengine client to use for compressing documents."""
 
-    ak: Optional[str]
+    ak: Optional[str] = None
     """Access Key ID. 
     https://www.volcengine.com/docs/84313/1254553"""
 
-    sk: Optional[str]
+    sk: Optional[str] = None
     """Secret Access Key. 
     https://www.volcengine.com/docs/84313/1254553"""
 
