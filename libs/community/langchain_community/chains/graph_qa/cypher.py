@@ -349,15 +349,15 @@ class GraphCypherQAChain(Chain):
             intermediate_steps.append({"context": context})
             if self.use_function_response:
                 function_response = get_function_response(question, context)
-                final_result = self.qa_chain.invoke(
+                final_result = self.qa_chain.invoke(  # type: ignore
                     {"question": question, "function_response": function_response},
                 )
             else:
-                result = self.qa_chain.invoke(
+                result = self.qa_chain.invoke(  # type: ignore
                     {"question": question, "context": context},
                     callbacks=callbacks,
                 )
-                final_result = result[self.qa_chain.output_key]
+                final_result = result[self.qa_chain.output_key]  # type: ignore
 
         chain_result: Dict[str, Any] = {self.output_key: final_result}
         if self.return_intermediate_steps:
