@@ -216,6 +216,7 @@ class GraphCypherQAChain(Chain):
         qa_llm_kwargs: Optional[Dict[str, Any]] = None,
         cypher_llm_kwargs: Optional[Dict[str, Any]] = None,
         use_function_response: bool = False,
+        function_response_system: str = FUNCTION_RESPONSE_SYSTEM,
         **kwargs: Any,
     ) -> GraphCypherQAChain:
         """Initialize from LLM."""
@@ -258,7 +259,7 @@ class GraphCypherQAChain(Chain):
                 qa_llm.bind_tools({})  # type: ignore[union-attr]
                 response_prompt = ChatPromptTemplate.from_messages(
                     [
-                        SystemMessage(content=qa_prompt or FUNCTION_RESPONSE_SYSTEM),
+                        SystemMessage(content=function_response_system),
                         HumanMessagePromptTemplate.from_template("{question}"),
                         MessagesPlaceholder(variable_name="function_response"),
                     ]
