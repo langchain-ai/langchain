@@ -24,6 +24,7 @@ CHAT_MODEL_FEAT_TABLE = {
     "ChatMistralAI": {
         "tool_calling": True,
         "structured_output": True,
+        "json_model": True,
         "package": "langchain-mistralai",
         "link": "/docs/integrations/chat/mistralai/",
     },
@@ -61,6 +62,11 @@ CHAT_MODEL_FEAT_TABLE = {
         "package": "langchain-google-vertexai",
         "link": "/docs/integrations/chat/google_vertex_ai_palm/",
     },
+    "ChatGoogleGenerativeAI": {
+        "tool_calling": True,
+        "package": "langchain-google-genai",
+        "link": "/docs/integrations/chat/google_generative_ai/",
+    },
     "ChatGroq": {
         "tool_calling": True,
         "structured_output": True,
@@ -80,6 +86,7 @@ CHAT_MODEL_FEAT_TABLE = {
         "link": "/docs/integrations/chat/bedrock/",
     },
     "ChatHuggingFace": {
+        "tool_calling": True,
         "local": True,
         "package": "langchain-huggingface",
         "link": "/docs/integrations/chat/huggingface/",
@@ -94,6 +101,12 @@ CHAT_MODEL_FEAT_TABLE = {
         "package": "langchain-community",
         "link": "/docs/integrations/chat/vllm/",
     },
+    "ChatEdenAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-community",
+        "link": "/docs/integrations/chat/edenai/",
+    },
 }
 
 
@@ -102,6 +115,7 @@ LLM_TEMPLATE = """\
 sidebar_position: 1
 sidebar_class_name: hidden
 keywords: [compatibility]
+custom_edit_url:
 ---
 
 # LLMs
@@ -116,13 +130,14 @@ Each LLM integration can optionally provide native implementations for async, st
 
 {table}
 
-"""  # noqa: E501
+"""
 
 CHAT_MODEL_TEMPLATE = """\
 ---
 sidebar_position: 0
 sidebar_class_name: hidden
 keywords: [compatibility, bind_tools, tool calling, function calling, structured output, with_structured_output, json mode, local model]
+custom_edit_url:
 ---
 
 # Chat models
@@ -133,7 +148,7 @@ The following table shows all the chat models that support one or more advanced 
 
 {table}
 
-"""  # noqa: E501
+"""
 
 
 def get_llm_table():
