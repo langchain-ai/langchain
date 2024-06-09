@@ -626,6 +626,7 @@ class Milvus(VectorStore):
         pks: list[str] = []
 
         assert isinstance(self.col, Collection)
+        res: Collection
         if not self.enable_dynamic_field:
             for i in range(0, total_count, batch_size):
                 # Grab end index
@@ -636,7 +637,6 @@ class Milvus(VectorStore):
                 ]
                 # Insert into the collection.
                 try:
-                    res: Collection
                     res = self.col.insert(insert_list, timeout=timeout, **kwargs)
                     pks.extend(res.primary_keys)
                 except MilvusException as e:
@@ -648,7 +648,6 @@ class Milvus(VectorStore):
                     raise e
         else:
             try:
-                res: Collection
                 res = self.col.insert(metadatas, timeout=timeout, **kwargs)
                 pks.extend(res.primary_keys)
             except MilvusException as e:
