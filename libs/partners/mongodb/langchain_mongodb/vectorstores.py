@@ -1,3 +1,5 @@
+""" NEW ADDITIONS BEGIN AT LINE 500!! """
+
 from __future__ import annotations
 
 import logging
@@ -61,10 +63,16 @@ class MongoDBAtlasVectorSearch(VectorStore):
         collection: Collection[MongoDBDocumentType],
         embedding: Embeddings,
         *,
-        index_name: str = "default",
+        index_name: str = "vector_index",
         text_key: str = "text",
         embedding_key: str = "embedding",
         relevance_score_fn: str = "cosine",
+        strategy: str = "vector",
+        text_index_name: str = "text",
+        text_search_operator: str = "phrase",
+        text_penalty: int = 0,
+        vector_penalty: int = 0,
+        **kwargs,
     ):
         """
         Args:
@@ -76,11 +84,16 @@ class MongoDBAtlasVectorSearch(VectorStore):
             embedding_key: MongoDB field that will contain the embedding for
                 each document.
                 defaults to 'embedding'
-            index_name: Name of the Atlas Search index.
-                defaults to 'default'
+            index_name: Name of the Atlas Vector Search index.
             relevance_score_fn: The similarity score used for the index.
                 defaults to 'cosine'
-            Currently supported: 'euclidean', 'cosine', and 'dotProduct'.
+                Currently supported: 'euclidean', 'cosine', and 'dotProduct'.
+            strategy: Search index strategy to apply.  # TODO - Improve documentation
+                One of 'vector', 'text', or 'hybrid'.
+                defaults to 'vector'
+            text_index_name: If strategy in ["text", "hybrid"], one must provide the name of an Atlas Search Index
+            text_search_operator: A number of operators are available in the text search stage.
+                For details, see https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref
         """
         self._collection = collection
         self._embedding = embedding
@@ -88,7 +101,11 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self._text_key = text_key
         self._embedding_key = embedding_key
         self._relevance_score_fn = relevance_score_fn
-
+        self._strategy = strategy
+        self._text_index_name = text_index_name
+        self._text_search_operator = text_search_operator
+        self.text_penalty = text_penalty
+        self.vector_penalty = vector_penalty
     @property
     def embeddings(self) -> Embeddings:
         return self._embedding
@@ -295,7 +312,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         Returns:
             List of documents most similar to the query and their scores.
         """
-        additional = kwargs.get("additional")
+        additional = kwargs.get("additional")  # TODO - I vote for removing this.
         docs_and_scores = self.similarity_search_with_score(
             query,
             k=k,
@@ -489,3 +506,242 @@ class MongoDBAtlasVectorSearch(VectorStore):
             lambda_mult=lambda_mult,
             **kwargs,
         )
+
+    def similarity_search_extended(
+        self,
+        query: str,
+        k: int = 4,
+        pre_filter: Optional[Dict] = None,
+        post_filter_pipeline: Optional[List[Dict]] = None,
+        # strategy: str = "vector", # TODO - Where does this belong?
+        score: bool = True,
+        oversampling_factor: int = 100,
+        **kwargs: Any
+    ) -> List[Tuple[Document, float]]:
+        """Extended Query interface supporting Vector, Full-Text and Hybrid Search.
+
+        Each of the search types allows for filtering and permits a limit (k) of documents to return.
+
+        These efficient queries require search indexes to be created in MongoDB Atlas.
+
+        Built on Apache Lucene, Atlas Search eliminates the need to run a separate
+        search system alongside your database.
+
+        For details on search_type='vector', see the following:
+            https://www.mongodb.com/docs/atlas/atlas-vector-search/vector-search-stage/
+
+        For details on search_type='text', see
+            https://www.mongodb.com/docs/atlas/atlas-search/aggregation-stages/search/#mongodb-pipeline-pipe.-search
+
+        For details on search_type='hybrid', see
+            https://www.mongodb.com/docs/atlas/atlas-vector-search/tutorials/reciprocal-rank-fusion/
+
+
+         Args:
+            query: Text to look up documents similar to.
+            k: (Optional) number of documents to return. Defaults to 4.
+            pre_filter: (Optional) dictionary of argument(s) to prefilter document
+                fields on.
+            post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages
+                for postprocessing).
+            strategy: (Optional) One of "vector", "text", or "hybrid"
+            kwargs: Additional arguments are specific to the search_type
+
+        Returns:
+            List of documents most similar to the query and their scores.
+            Results contain only the
+
+         """
+
+        if self._strategy == "hybrid":
+
+            pipeline = []  # combined aggregate pipeline
+            query_vector = self._embedding.embed_query(query)
+
+            # Vector Search
+            vector_stage = {
+                '$vectorSearch': {
+                'index': self._index_name,
+                'path': self._embedding_key,
+                'queryVector': query_vector,
+                'numCandidates': k * oversampling_factor,
+                'limit': k,
+                'filter': {"$and": pre_filter} if pre_filter else None,
+                }
+            }
+            pipeline.append(vector_stage)
+
+            # Reciprocal Rank Stage: (score_field: str, query, query_embedding, penalty, project_fields)
+
+            pipeline.extend(self._reciprocal_rank_stage("vector_score", penalty=self.vector_penalty))
+
+            # Full-Text Search Stage
+            text_pipeline = [
+                self._text_search_stage(query=query),
+                {"$match": {"$and": pre_filter} if pre_filter else {}},
+                {"$limit": k},
+            ]
+            pipeline.extend(text_pipeline)
+            pipeline.extend(self._reciprocal_rank_stage("text_score", penalty=self.text_penalty))
+
+        elif self._strategy == "text":
+            text_stage = self._text_search_stage(query=query)
+            pipeline = [
+                text_stage,
+                {"$match": {"$and": pre_filter} if pre_filter else {}},
+                {"$set": {"score": {'$meta': 'searchScore'}}},
+                {"$limit": k},
+            ]
+        elif self._strategy == "vector":
+            embedding_vector = self._embedding.embed_query(query)
+            pipeline = []
+            raise NotImplementedError
+        else:
+            raise ValueError(f"{self._strategy} not understood. Expecting one of [vector, text, hybrid]")
+
+        # with self._collection.aggregate(pipeline) as cursor:
+        res = list(self._collection.aggregate(pipeline))
+
+        return res
+
+    def _reciprocal_rank_stage(self, score_field: str, penalty: float = 0, extra_fields: List[str] = None):
+        """Pipeline stage that ranks and weights scores.
+
+            Pushes documents retrieved from previous stage into a temporary sub-document.
+            It then unwinds to establish the rank to each and applies the penalty.
+        """
+        rrf_pipeline = [
+            {"$group": {"_id": None, "docs": {"$push": "$$ROOT"}}},
+            {"$unwind": {"path": "$docs", "includeArrayIndex": "rank"}},
+            {
+                "$addFields": {
+                    score_field: {"$divide": [1.0, {"$add": ["$rank", penalty, 1]}]}
+                }
+            }
+        ]
+        projection_fields = {self._text_key: f"$docs.{self._text_key}"}
+        projection_fields["_id"] = "$docs._id"
+        projection_fields[score_field] = 1
+        if extra_fields:
+            projection_fields.update({f"$docs.{key}" for key in extra_fields})
+
+        rrf_pipeline.append({'$project': projection_fields})
+        return rrf_pipeline
+
+
+    def _vector_search_stage(
+        self,
+        query_vector: List[float],
+        search_field: str,
+        search_index_name: str,
+        limit: int = 4,
+        oversampling_factor=10,
+        filters: List[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+
+        A vector search's pipeline looks like this.
+
+        pipeline = [
+            vector_search_stage,
+            {
+                '$project': self._project_fields(
+                    extra_fields={"score": {'$meta': 'vectorSearchScore'}}
+                )
+            },
+        ]
+
+        Within a Hybrid Search Pipeline, one would apply this stage like so.
+        like so:
+
+            vector_pipeline = [
+                vector_stage,
+                *self._reciprocal_rank_stage(search_field, score_field),
+            ]
+            self._add_stage_to_pipeline(hybrid_pipeline, vector_pipeline)
+
+        """
+
+        return {
+            '$vectorSearch': {
+                'index': search_index_name,
+                'path': search_field,
+                'queryVector': query_vector,
+                'numCandidates': limit * oversampling_factor,
+                'limit': limit,
+                'filter': {"$and": filters} if filters else None,
+            }
+        }
+
+
+
+    def _final_stage(self, scores_fields, limit):
+        """Sum individual scores, sort, and apply limit."""
+        doc_fields = self._column_infos.keys()
+        grouped_fields = {
+            key: {"$first": f"${key}"} for key in doc_fields if key != "_id"
+        }
+        best_score = {score: {'$max': f'${score}'} for score in scores_fields}
+        final_pipeline = [
+            {"$group": {"_id": "$_id", **grouped_fields, **best_score}},
+            {
+                "$project": {
+                    **{doc_field: 1 for doc_field in doc_fields},
+                    **{score: {"$ifNull": [f"${score}", 0]} for score in scores_fields},
+                }
+            },
+            {
+                "$addFields": {
+                    "score": {"$add": [f"${score}" for score in scores_fields]},
+                }
+            },
+            {"$sort": {"score": -1}},
+            {"$limit": limit},
+        ]
+        return final_pipeline
+
+    def _text_search_stage(self, query: str) -> Dict[str, Any]:
+        """Full-Text search.
+
+        query: Input text on which to search
+
+        The Atlas Search Index name is set in the class constructor,
+        as is the operator used to search index name
+        The aggregation pipeline looks like so:
+        """
+        return {
+            "$search": {
+                "index": self._text_index_name,
+                self._text_search_operator: {"query": query, "path": self._text_key},
+            }
+        }
+
+    def _text_search(
+            self,
+            query: str,
+            limit: int,
+            search_field: str = '',
+        ) -> Any:  # TODO
+            """Find documents in the index based on a text search query
+
+            :param query: The text to search for
+            :param limit: maximum number of documents to return
+            :param search_field: name of the field to search on
+            :return: a named tuple containing `documents` and `scores`
+            """
+            text_stage = self._text_search_stage(query=query, search_field=search_field)
+
+            pipeline = [
+                text_stage,
+                {
+                    '$project': self._project_fields(
+                        extra_fields={'score': {'$meta': 'searchScore'}}
+                    )
+                },
+                {"$limit": limit},
+            ]
+
+            with self._collection.aggregate(pipeline) as cursor:
+                documents, scores = self._mongo_to_docs(cursor)
+
+            return dict(documents=documents, scores=scores)  # TODO Update type
