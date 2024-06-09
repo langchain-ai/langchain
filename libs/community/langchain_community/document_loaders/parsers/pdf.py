@@ -155,7 +155,7 @@ class PDFMinerParser(BaseBlobParser):
             except ImportError:
                 raise ImportError(
                     "`pdfminer` package not found, please install it with "
-                    "`pip install pdfminer`"
+                    "`pip install pdfminer.six`"
                 )
 
             with blob.as_bytes_io() as pdf_file_obj:  # type: ignore[attr-defined]
