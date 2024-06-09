@@ -24,8 +24,8 @@ integration_test integration_tests:
 PYTHON_FILES=.
 MYPY_CACHE=.mypy_cache
 lint format: PYTHON_FILES=.
-lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/partners/__package_name_short__ --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
-lint_package: PYTHON_FILES=__module_name__
+lint_diff format_diff: PYTHON_FILES=$(shell git diff --relative=libs/partners/couchbase --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$')
+lint_package: PYTHON_FILES=langchain_couchbase
 lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
@@ -45,7 +45,7 @@ spell_check:
 spell_fix:
 	poetry run codespell --toml pyproject.toml -w
 
-check_imports: $(shell find __module_name__ -name '*.py')
+check_imports: $(shell find langchain_couchbase -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
 
 ######################
