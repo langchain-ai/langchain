@@ -641,7 +641,8 @@ class Milvus(VectorStore):
                     pks.extend(res.primary_keys)
                 except MilvusException as e:
                     logger.error(
-                        "Failed to insert batch starting at entity: %s/%s", i, total_count
+                        "Failed to insert batch starting at entity: %s/%s",
+                        i, total_count
                     )
                     raise e
         else:
