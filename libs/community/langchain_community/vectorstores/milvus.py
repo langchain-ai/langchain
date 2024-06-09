@@ -643,7 +643,7 @@ class Milvus(VectorStore):
                     logger.error(
                         "Failed to insert batch starting at entity: %s/%s",
                         i,
-                        total_count
+                        total_count,
                     )
                     raise e
         else:
@@ -652,8 +652,9 @@ class Milvus(VectorStore):
                 res = self.col.insert(metadatas, timeout=timeout, **kwargs)
                 pks.extend(res.primary_keys)
             except MilvusException as e:
-                logger.error("Failed to insert in Milvus for "
-                             "enable_dynamic_field enabled")
+                logger.error(
+                    "Failed to insert in Milvus for enable_dynamic_field enabled"
+                )
                 raise e
         return pks
 
