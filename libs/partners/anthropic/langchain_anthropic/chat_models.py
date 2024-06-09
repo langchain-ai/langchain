@@ -104,18 +104,15 @@ def _merge_messages(
     for curr in messages:
         curr = curr.copy(deep=True)
         if isinstance(curr, ToolMessage):
-            if isinstance(curr.content, str):
-                curr = HumanMessage(  # type: ignore[misc]
-                    [
-                        {
-                            "type": "tool_result",
-                            "content": curr.content,
-                            "tool_use_id": curr.tool_call_id,
-                        }
-                    ]
-                )
-            else:
-                curr = HumanMessage(curr.content)  # type: ignore[misc]
+            curr = HumanMessage(  # type: ignore[misc]
+                [
+                    {
+                        "type": "tool_result",
+                        "content": curr.content,
+                        "tool_use_id": curr.tool_call_id,
+                    }
+                ]
+            )
         last = merged[-1] if merged else None
         if isinstance(last, HumanMessage) and isinstance(curr, HumanMessage):
             if isinstance(last.content, str):
