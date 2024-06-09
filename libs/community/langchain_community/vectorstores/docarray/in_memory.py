@@ -15,7 +15,7 @@ class DocArrayInMemorySearch(DocArrayIndex):
     """In-memory `DocArray` storage for exact search.
 
     To use it, you should have the ``docarray`` package with version >=0.32.0 installed.
-    You can install it with `pip install "langchain[docarray]"`.
+    You can install it with `pip install docarray`.
     """
 
     @classmethod
