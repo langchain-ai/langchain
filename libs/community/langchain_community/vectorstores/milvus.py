@@ -140,6 +140,7 @@ class Milvus(VectorStore):
         replica_number: int = 1,
         timeout: Optional[float] = None,
         num_shards: Optional[int] = None,
+        enable_dynamic_field: bool = False,
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -199,6 +200,7 @@ class Milvus(VectorStore):
         self.replica_number = replica_number
         self.timeout = timeout
         self.num_shards = num_shards
+        self.enable_dynamic_field = enable_dynamic_field
 
         # Create the connection to the server
         if connection_args is None:
@@ -380,6 +382,7 @@ class Milvus(VectorStore):
             fields,
             description=self.collection_description,
             partition_key_field=self._partition_key_field,
+            enable_dynamic_field=self.enable_dynamic_field,
         )
 
         # Create the collection
@@ -593,17 +596,26 @@ class Milvus(VectorStore):
             for d in metadatas:  # type: ignore[union-attr]
                 insert_dict.setdefault(self._metadata_field, []).append(d)
         else:
-            # Collect the metadata into the insert dict.
             if metadatas is not None:
-                for d in metadatas:
-                    for key, value in d.items():
-                        keys = (
-                            [x for x in self.fields if x != self._primary_field]
-                            if self.auto_id
-                            else [x for x in self.fields]
-                        )
-                        if key in keys:
-                            insert_dict.setdefault(key, []).append(value)
+                if self.enable_dynamic_field:
+                    # Extend metadata with vector data
+                    # and other field in case of enable_dynamic_field
+                    for index, d in enumerate(metadatas):
+                        metadatas[index][self._text_field] = texts[index]
+                        metadatas[index][self._vector_field] = embeddings[index]
+                        if not self.auto_id:
+                            metadatas[index][self._primary_field] = ids
+                # Collect the metadata into the insert dict.
+                else:
+                    for d in metadatas:
+                        for key, value in d.items():
+                            keys = (
+                                [x for x in self.fields if x != self._primary_field]
+                                if self.auto_id
+                                else [x for x in self.fields]
+                            )
+                            if key in keys:
+                                insert_dict.setdefault(key, []).append(value)
 
         # Total insert count
         vectors: list = insert_dict[self._vector_field]
@@ -612,24 +624,35 @@ class Milvus(VectorStore):
         pks: list[str] = []
 
         assert isinstance(self.col, Collection)
-        for i in range(0, total_count, batch_size):
-            # Grab end index
-            end = min(i + batch_size, total_count)
-            # Convert dict to list of lists batch for insertion
-            insert_list = [
-                insert_dict[x][i:end] for x in self.fields if x in insert_dict
-            ]
-            # Insert into the collection.
+        if self.enable_dynamic_field:
             try:
                 res: Collection
-                timeout = self.timeout or timeout
-                res = self.col.insert(insert_list, timeout=timeout, **kwargs)
+                res = self.col.insert(metadatas, timeout=timeout, **kwargs)
                 pks.extend(res.primary_keys)
             except MilvusException as e:
                 logger.error(
-                    "Failed to insert batch starting at entity: %s/%s", i, total_count
+                    "Failed to insert "
                 )
                 raise e
+        else:
+            for i in range(0, total_count, batch_size):
+                # Grab end index
+                end = min(i + batch_size, total_count)
+                # Convert dict to list of lists batch for insertion
+                insert_list = [
+                    insert_dict[x][i:end] for x in self.fields if x in insert_dict
+                ]
+                # Insert into the collection.
+                try:
+                    res: Collection
+                    timeout = self.timeout or timeout
+                    res = self.col.insert(insert_list, timeout=timeout, **kwargs)
+                    pks.extend(res.primary_keys)
+                except MilvusException as e:
+                    logger.error(
+                        "Failed to insert batch starting at entity: %s/%s", i, total_count
+                    )
+                    raise e
         return pks
 
     def similarity_search(
