@@ -71,6 +71,8 @@ class Milvus(VectorStore):
         metadata_field (str): Name of the metadata field. Defaults to None.
             When metadata_field is specified,
             the document's metadata will store as json.
+         enable_dynamic_field (Optional[bool]): Whether to enable
+            dynamic schema or not
 
     The connection args used for this class comes in the form of a dict,
     here are a few of the options:
@@ -140,7 +142,7 @@ class Milvus(VectorStore):
         replica_number: int = 1,
         timeout: Optional[float] = None,
         num_shards: Optional[int] = None,
-        enable_dynamic_field: bool = False,
+        enable_dynamic_field: Optional[bool] = False,
     ):
         """Initialize the Milvus vector store."""
         try:
