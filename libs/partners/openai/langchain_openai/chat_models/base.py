@@ -228,7 +228,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 def _convert_delta_to_message_chunk(
-    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+    _dict: Mapping[str, Any],
+    response_metadata: dict[str, Any],
+    default_class: Type[BaseMessageChunk],
 ) -> BaseMessageChunk:
     id_ = _dict.get("id")
     role = cast(str, _dict.get("role"))
@@ -262,6 +264,7 @@ def _convert_delta_to_message_chunk(
             content=content,
             additional_kwargs=additional_kwargs,
             id=id_,
+            response_metadata=response_metadata,
             tool_call_chunks=tool_call_chunks,
         )
     elif role == "system" or default_class == SystemMessageChunk:
@@ -501,15 +504,28 @@ class BaseChatOpenAI(BaseChatModel):
                     choice = chunk["choices"][0]
                     if choice["delta"] is None:
                         continue
-                    chunk = _convert_delta_to_message_chunk(
-                        choice["delta"], default_chunk_class
-                    )
+
                     generation_info = {}
-                    if finish_reason := choice.get("finish_reason"):
-                        generation_info["finish_reason"] = finish_reason
+                    response_metadata = {}
+
                     logprobs = choice.get("logprobs")
                     if logprobs:
                         generation_info["logprobs"] = logprobs
+
+                    if finish_reason := choice.get("finish_reason"):
+                        generation_info["finish_reason"] = finish_reason
+                        response_metadata.update({
+                            "model": chunk["model"],
+                            "system_fingerprint": chunk["system_fingerprint"],
+                            "finish_reason": finish_reason,
+                        })
+
+                        if logprobs:
+                            response_metadata["logprobs"] = logprobs
+
+                    chunk = _convert_delta_to_message_chunk(
+                        choice["delta"], response_metadata, default_chunk_class
+                    )
                     default_chunk_class = chunk.__class__
                     chunk = ChatGenerationChunk(
                         message=chunk, generation_info=generation_info or None
@@ -620,15 +636,28 @@ class BaseChatOpenAI(BaseChatModel):
                     choice = chunk["choices"][0]
                     if choice["delta"] is None:
                         continue
-                    chunk = _convert_delta_to_message_chunk(
-                        choice["delta"], default_chunk_class
-                    )
+
                     generation_info = {}
-                    if finish_reason := choice.get("finish_reason"):
-                        generation_info["finish_reason"] = finish_reason
+                    response_metadata =  {}
+
                     logprobs = choice.get("logprobs")
                     if logprobs:
                         generation_info["logprobs"] = logprobs
+
+                    if finish_reason := choice.get("finish_reason"):
+                        generation_info["finish_reason"] = finish_reason
+                        response_metadata.update({
+                            "model": chunk["model"],
+                            "system_fingerprint": chunk["system_fingerprint"],
+                            "finish_reason": finish_reason,
+                        })
+
+                        if logprobs:
+                            response_metadata["logprobs"] = logprobs
+
+                    chunk = _convert_delta_to_message_chunk(
+                        choice["delta"], response_metadata, default_chunk_class
+                    )
                     default_chunk_class = chunk.__class__
                     chunk = ChatGenerationChunk(
                         message=chunk, generation_info=generation_info or None
