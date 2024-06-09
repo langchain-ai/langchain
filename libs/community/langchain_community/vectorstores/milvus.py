@@ -611,7 +611,7 @@ class Milvus(VectorStore):
                             if key in keys:
                                 insert_dict.setdefault(key, []).append(value)
                 else:
-                    #Extend metadata with vector data
+                    # Extend metadata with vector data
                     # and other field in case of enable_dynamic_field
                     for index, d in enumerate(metadatas):
                         metadatas[index][self._text_field] = texts[index]
@@ -642,7 +642,8 @@ class Milvus(VectorStore):
                 except MilvusException as e:
                     logger.error(
                         "Failed to insert batch starting at entity: %s/%s",
-                        i, total_count
+                        i,
+                        total_count
                     )
                     raise e
         else:
@@ -651,9 +652,8 @@ class Milvus(VectorStore):
                 res = self.col.insert(metadatas, timeout=timeout, **kwargs)
                 pks.extend(res.primary_keys)
             except MilvusException as e:
-                logger.error(
-                    "Failed to insert "
-                )
+                logger.error("Failed to insert in Milvus for "
+                             "enable_dynamic_field enabled")
                 raise e
         return pks
 
