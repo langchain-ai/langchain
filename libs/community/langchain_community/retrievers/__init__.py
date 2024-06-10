@@ -98,6 +98,9 @@ if TYPE_CHECKING:
     from langchain_community.retrievers.pinecone_hybrid_search import (
         PineconeHybridSearchRetriever,
     )
+    from langchain_community.retrievers.project_gutenberg import (
+        ProjectGutenbergRetriever,
+    )
     from langchain_community.retrievers.pubmed import (
         PubMedRetriever,
     )
@@ -173,6 +176,7 @@ _module_lookup = {
     "MilvusRetriever": "langchain_community.retrievers.milvus",
     "OutlineRetriever": "langchain_community.retrievers.outline",
     "PineconeHybridSearchRetriever": "langchain_community.retrievers.pinecone_hybrid_search",  # noqa: E501
+    "ProjectGutenbergRetriever": "langchain_community.retrievers.project_gutenberg",
     "PubMedRetriever": "langchain_community.retrievers.pubmed",
     "QdrantSparseVectorRetriever": "langchain_community.retrievers.qdrant_sparse_vector_retriever",  # noqa: E501
     "RememberizerRetriever": "langchain_community.retrievers.rememberizer",
@@ -229,6 +233,7 @@ __all__ = [
     "NeuralDBRetriever",
     "OutlineRetriever",
     "PineconeHybridSearchRetriever",
+    "ProjectGutenbergRetriever",
     "PubMedRetriever",
     "QdrantSparseVectorRetriever",
     "RememberizerRetriever",
