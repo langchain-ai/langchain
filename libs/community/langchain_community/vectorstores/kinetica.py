@@ -426,13 +426,13 @@ class Kinetica(VectorStore):
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
         resp: Dict = self.__query_collection(embedding, k, filter)
-        if resp and resp['status_info']['status'] == 'OK' and 'records' in resp:
+        if resp and resp["status_info"]["status"] == "OK" and "records" in resp:
             records: OrderedDict = resp["records"]
             results = list(zip(*list(records.values())))
 
             return self._results_to_docs_and_scores(results)
         else:
-            self.logger.error(resp['status_info']['message'])
+            self.logger.error(resp["status_info"]["message"])
             return []
 
     def similarity_search_by_vector(
