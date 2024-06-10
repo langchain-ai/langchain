@@ -68,7 +68,8 @@ def merge_lists(left: Optional[List], right: Optional[List]) -> Optional[List]:
                         ):
                             warnings.warn(
                                 'Merging chunks with mismatched "type" fields. '
-                                f'Ignoring "{e["type"]}" in favor of existing "{merged[to_merge[0]]["type"]}".'
+                                f'Ignoring "{e["type"]}" in favor of existing '
+                                f'"{merged[to_merge[0]]["type"]}".'
                             )
                         e.pop("type")
                     merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], e)
