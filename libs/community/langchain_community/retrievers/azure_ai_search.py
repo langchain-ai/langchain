@@ -31,7 +31,7 @@ class AzureAISearchRetriever(BaseRetriever):
     api_version: str = "2023-11-01"
     """API version"""
     azure_ad_token_provider: Optional[Callable] = None
-    """Your Azure credential."""
+    """A function that returns an Azure OpenAI authentication token."""
     aiosession: Optional[aiohttp.ClientSession] = None
     """ClientSession, in case we want to reuse connection for better performance."""
     content_key: str = "content"
