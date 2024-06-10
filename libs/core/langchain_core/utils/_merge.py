@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any, Dict, List, Optional
 
 
@@ -60,6 +61,16 @@ def merge_lists(left: Optional[List], right: Optional[List]) -> Optional[List]:
                     if e_left["index"] == e["index"]
                 ]
                 if to_merge:
+                    if "type" in merged[to_merge[0]] and "type" in e:
+                        if (
+                            e["type"] is not None
+                            and merged[to_merge[0]]["type"] != e["type"]
+                        ):
+                            warnings.warn(
+                                'Merging chunks with mismatched "type" fields. '
+                                f'Ignoring "{e["type"]}" in favor of existing "{merged[to_merge[0]]["type"]}".'
+                            )
+                        e.pop("type")
                     merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], e)
                 else:
                     merged = merged + [e]
