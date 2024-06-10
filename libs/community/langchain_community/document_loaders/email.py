@@ -91,7 +91,7 @@ class OutlookMessageLoader(BaseLoader):
         """
 
         self.file_path = str(file_path)
-
+        
         if not os.path.isfile(self.file_path):
             raise ValueError(f"File path {self.file_path} is not a valid file")
 
@@ -116,3 +116,4 @@ class OutlookMessageLoader(BaseLoader):
                 "date": msg.date,
             },
         )
+        msg.close()
