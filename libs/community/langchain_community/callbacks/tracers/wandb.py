@@ -18,7 +18,6 @@ from typing import (
 from langchain_core.output_parsers.pydantic import PydanticBaseModel
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
-from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from wandb import Settings as WBSettings
@@ -48,7 +47,7 @@ def _serialize_io(run_io: Optional[dict]) -> dict:
         if isinstance(value, Message):
             serialized_inputs[key] = MessageToJson(value)
 
-        elif isinstance(value, (BaseModel, PydanticBaseModel)):
+        elif isinstance(value, PydanticBaseModel):
             serialized_inputs[key] = (
                 value.model_dump_json()
                 if hasattr(value, "model_dump_json")
@@ -373,10 +372,13 @@ class WandbTracer(BaseTracer):
                 "parent_run_id",
             )
             processed = truncate_run_iterative(processed, keep_keys=keep_keys)
-            exact_keys, partial_keys = ("lc", "type", "graph"), (
-                "api_key",
-                "input",
-                "output",
+            exact_keys, partial_keys = (
+                ("lc", "type", "graph"),
+                (
+                    "api_key",
+                    "input",
+                    "output",
+                ),
             )
             processed = modify_serialized_iterative(
                 processed, exact_keys=exact_keys, partial_keys=partial_keys
@@ -385,16 +387,6 @@ class WandbTracer(BaseTracer):
             return output
         except Exception as e:
             if PRINT_WARNINGS:
-                import traceback
-
-                def print_trace(ex: BaseException):
-                    print(
-                        "".join(
-                            traceback.TracebackException.from_exception(ex).format()
-                        )
-                    )
-
-                print_trace(e)
                 self._wandb.termerror(f"WARNING: Failed to serialize model: {e}")
             return None
 
