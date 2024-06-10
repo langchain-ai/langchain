@@ -292,6 +292,56 @@ def test_chat_prompt_template_from_messages_mustache() -> None:
     ]
 
 
+def test_chat_prompt_template_from_messages_fstring_falsy_cases() -> None:
+    template = ChatPromptTemplate.from_messages(
+        [
+            (
+                "human",
+                r"{zero_str} {zero_int} {zero_float} {false} {none} {empty_list} {empty_dict}",
+            ),
+        ],
+        "f-string",
+    )
+
+    messages = template.format_messages(
+        zero_str="0",
+        zero_int=0,
+        zero_float=0.0,
+        false=False,
+        none=None,
+        empty_list=[],
+        empty_dict={},
+    )
+
+    assert len(messages) == 1
+    assert messages[0].content == r"0 0 0.0 False None [] {}"
+
+
+def test_chat_prompt_template_from_messages_mustache_falsy_cases() -> None:
+    template = ChatPromptTemplate.from_messages(
+        [
+            (
+                "human",
+                r"{{zero_str}} {{zero_int}} {{zero_float}} {{false}} {{none}} {{empty_list}} {{empty_dict}}",
+            ),
+        ],
+        "mustache",
+    )
+
+    messages = template.format_messages(
+        zero_str="0",
+        zero_int=0,
+        zero_float=0.0,
+        false=False,
+        none=None,
+        empty_list=[],
+        empty_dict={},
+    )
+
+    assert len(messages) == 1
+    assert messages[0].content == r"0 0 0.0 False None [] {}"
+
+
 def test_chat_prompt_template_with_messages(
     messages: List[BaseMessagePromptTemplate],
 ) -> None:
