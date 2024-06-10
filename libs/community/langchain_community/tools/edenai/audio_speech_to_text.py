@@ -28,7 +28,7 @@ class EdenAiSpeechToTextTool(EdenaiTool):
 
     edenai_api_key: Optional[str] = None
 
-    name = "edenai_speech_to_text"
+    name: str = "edenai_speech_to_text"
     description = (
         "A wrapper around edenai Services speech to text "
         "Useful for when you have to convert audio to text."
@@ -43,7 +43,7 @@ class EdenAiSpeechToTextTool(EdenaiTool):
 
     feature: str = "audio"
     subfeature: str = "speech_to_text_async"
-    base_url = "https://api.edenai.run/v2/audio/speech_to_text_async/"
+    base_url: str = "https://api.edenai.run/v2/audio/speech_to_text_async/"
 
     @validator("providers")
     def check_only_one_provider_selected(cls, v: List[str]) -> List[str]:

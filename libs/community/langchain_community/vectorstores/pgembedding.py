@@ -36,7 +36,7 @@ class BaseModel(Base):
 class CollectionStore(BaseModel):
     """Collection store."""
 
-    __tablename__ = "langchain_pg_collection"
+    __tablename__: str = "langchain_pg_collection"
 
     name = sqlalchemy.Column(sqlalchemy.String)
     cmetadata = sqlalchemy.Column(JSON)
@@ -77,7 +77,7 @@ class CollectionStore(BaseModel):
 class EmbeddingStore(BaseModel):
     """Embedding store."""
 
-    __tablename__ = "langchain_pg_embedding"
+    __tablename__: str = "langchain_pg_embedding"
 
     collection_id = sqlalchemy.Column(
         UUID(as_uuid=True),
