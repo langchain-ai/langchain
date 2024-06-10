@@ -303,7 +303,7 @@ def filter_messages(
 
 
 def abbreviate_messages(
-    messages: Sequence[BaseMessage],
+    messages: Sequence[MessageLikeRepresentation],
     n_tokens: int,
     # TODO: Support a raw encoder? Callable[[BaseMessage], List[int]]
     token_counter: Union[
@@ -315,6 +315,7 @@ def abbreviate_messages(
     summarize_chunk_size: int = 1,
     llm: Optional[LanguageModelLike] = None,
 ) -> List[BaseMessage]:
+    messages = convert_to_messages(messages)
     if (
         list(inspect.signature(token_counter).parameters.values())[0].annotation
         is BaseMessage
