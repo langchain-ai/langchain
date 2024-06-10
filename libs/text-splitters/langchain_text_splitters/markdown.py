@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Tuple, TypedDict
+from typing import Any, Dict, List, Tuple, TypedDict, Union
 
 from langchain_core.documents import Document
 
@@ -223,13 +223,14 @@ class HeaderType(TypedDict):
     name: str
     data: str
 
+
 class ExperimentalMarkdownSyntaxTextSplitter:
     """
     An experimental text splitter for handling Markdown syntax.
 
-    This splitter aims to retain the exact whitespace of the original text while 
-    extracting structured metadata, such as headers. It is a re-implementation of the 
-    MarkdownHeaderTextSplitter with notable changes to the approach and 
+    This splitter aims to retain the exact whitespace of the original text while
+    extracting structured metadata, such as headers. It is a re-implementation of the
+    MarkdownHeaderTextSplitter with notable changes to the approach and
     additional features.
 
     Key Features:
@@ -237,7 +238,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
     - Extracts headers, code blocks, and horizontal rules as metadata.
     - Splits out code blocks and includes the language in the "Code" metadata key.
     - Splits text on horizontal rules (`---`) as well.
-    - Defaults to sensible splitting behavior, which can be overridden using the 
+    - Defaults to sensible splitting behavior, which can be overridden using the
       `headers_to_split_on` parameter.
 
     Parameters:
@@ -260,7 +261,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
     >>> for chunk in chunks:
     >>>     print(chunk)
 
-    This class is currently experimental and subject to change based on feedback and 
+    This class is currently experimental and subject to change based on feedback and
     further development.
     """
 
@@ -275,13 +276,13 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
     def __init__(
         self,
-        headers_to_split_on: List[Tuple[str, str]] = None,
+        headers_to_split_on: Union[List[Tuple[str, str]], None] = None,
         return_each_line: bool = False,
         strip_headers: bool = True,
     ):
-        self.chunks = []
+        self.chunks: List[Document] = []
         self.current_chunk = Document(page_content="")
-        self.current_header_stack = []
+        self.current_header_stack: List[Tuple[int, str]] = []
         self.strip_headers = strip_headers
         if headers_to_split_on:
             self.splittable_headers = dict(headers_to_split_on)
@@ -333,7 +334,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
             ]
         return self.chunks
 
-    def _resolve_header_stack(self, header_depth, header_text):
+    def _resolve_header_stack(self, header_depth: int, header_text: str) -> None:
         for i, (depth, _) in enumerate(self.current_header_stack):
             if depth == header_depth:
                 self.current_header_stack[i] = (header_depth, header_text)
@@ -341,15 +342,16 @@ class ExperimentalMarkdownSyntaxTextSplitter:
                 return
         self.current_header_stack.append((header_depth, header_text))
 
-    def _resolve_code_chunk(self, current_line, raw_lines):
+    def _resolve_code_chunk(self, current_line: str, raw_lines: List[str]) -> str:
         chunk = current_line
         while raw_lines:
             raw_line = raw_lines.pop(0)
             chunk += raw_line
             if self._match_code(raw_line):
                 return chunk
+        return ""
 
-    def _complete_chunk_doc(self):
+    def _complete_chunk_doc(self) -> None:
         chunk_content = self.current_chunk.page_content
         # Discard any empty documents
         if chunk_content and not chunk_content.isspace():
@@ -362,17 +364,18 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         self.current_chunk = Document(page_content="")
 
     # Match methods
-    def _match_header(self, line):
+    def _match_header(self, line: str) -> Union[re.Match, None]:
         match = re.match(r"^(#{1,6}) (.*)", line)
         # Only matches on the configured headers
         if match and match.group(1) in self.splittable_headers:
             return match
+        return None
 
-    def _match_code(self, line):
+    def _match_code(self, line: str) -> Union[re.Match, None]:
         matches = [re.match(rule, line) for rule in [r"^```(.*)", r"^~~~(.*)"]]
         return next((match for match in matches if match), None)
 
-    def _match_horz(self, line):
+    def _match_horz(self, line: str) -> Union[re.Match, None]:
         matches = [
             re.match(rule, line) for rule in [r"^\*\*\*+\n", r"^---+\n", r"^___+\n"]
         ]
