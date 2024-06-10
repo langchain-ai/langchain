@@ -94,8 +94,7 @@ class ChatGroq(BaseChatModel):
             from langchain_groq import ChatGroq
 
             model = ChatGroq(model_name="mixtral-8x7b-32768")
-    """
-    """
+
     Setup:
         Install ``langchain-groq`` and set environment variable 
         ``GROQ_API_KEY``.
