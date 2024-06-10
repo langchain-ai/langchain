@@ -189,7 +189,7 @@ def test_list_keys(manager: MemoryRecordManager) -> None:
 
 
 @pytest.mark.requires("aiosqlite")
-async def test_list_keys(manager: MemoryRecordManager) -> None:
+async def test_alist_keys(manager: MemoryRecordManager) -> None:
     """Test listing keys based on the provided date range."""
     # Insert records
     assert (await manager.alist_keys()) == []
@@ -316,7 +316,7 @@ def test_namespace_is_used(manager: MemoryRecordManager) -> None:
 
 
 @pytest.mark.requires("aiosqlite")
-async def test_namespace_is_used(manager: MemoryRecordManager) -> None:
+async def test_anamespace_is_used(manager: MemoryRecordManager) -> None:
     """Verify that namespace is taken into account for all operations."""
     assert manager.namespace == "kittens"
     manager.data = [
