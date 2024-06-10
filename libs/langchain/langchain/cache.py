@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from langchain_community.cache import (
         AstraDBCache,
         AstraDBSemanticCache,
-        AzureCosmosDBMongoVCoreSemanticCache,
+        AzureCosmosDBSemanticCache,
         CassandraCache,
         CassandraSemanticCache,
         FullLLMCache,
@@ -41,7 +41,7 @@ DEPRECATED_LOOKUP = {
     "SQLAlchemyMd5Cache": "langchain_community.cache",
     "AstraDBCache": "langchain_community.cache",
     "AstraDBSemanticCache": "langchain_community.cache",
-    "AzureCosmosDBMongoVCoreSemanticCache": "langchain_community.cache",
+    "AzureCosmosDBSemanticCache": "langchain_community.cache",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
@@ -68,5 +68,5 @@ __all__ = [
     "SQLAlchemyMd5Cache",
     "AstraDBCache",
     "AstraDBSemanticCache",
-    "AzureCosmosDBMongoVCoreSemanticCache",
+    "AzureCosmosDBSemanticCache",
 ]
