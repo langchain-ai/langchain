@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Iterator
 import json
@@ -11,7 +11,62 @@ from langchain_core.outputs import GenerationChunk
 from langchain_community.llms.utils import enforce_stop_tokens
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
-VALID_PROVIDERS = ("cohere", "meta")
+
+
+class Provider(ABC):
+    @property
+    @abstractmethod
+    def stop_sequence_key(self) -> str:
+        ...
+
+    @abstractmethod
+    def completion_response_to_text(self, response: Any) -> str:
+        ...
+
+
+class CohereProvider(Provider):
+    stop_sequence_key = "stop_sequences"
+
+    def __init__(self) -> None:
+        try:
+            from oci.generative_ai_inference import models
+            
+        except ImportError as ex:
+            raise ModuleNotFoundError(
+                "Could not import oci python package. "
+                "Please make sure you have the oci package installed."
+            ) from ex
+
+        self.llm_inference_request = models.CohereLlmInferenceRequest
+
+    def completion_response_to_text(self, response: Any) -> str:
+        return response.data.inference_response.generated_texts[0].text
+    
+  
+class MetaProvider(Provider):
+    stop_sequence_key = "stop"
+    
+    def __init__(self) -> None:
+        try:
+            from oci.generative_ai_inference import models
+            
+        except ImportError as ex:
+            raise ModuleNotFoundError(
+                "Could not import oci python package. "
+                "Please make sure you have the oci package installed."
+            ) from ex
+
+        self.llm_inference_request = models.LlamaLlmInferenceRequest
+
+    def completion_response_to_text(self, response: Any) -> str:
+        return response.data.inference_response.choices[0].text
+
+
+VALID_PROVIDERS = {
+    "cohere": CohereProvider(),
+    "meta": MetaProvider(),
+}
+        
 
 class OCIAuthType(Enum):
     """OCI authentication types as enumerator."""
@@ -32,8 +87,8 @@ class OCIGenAIBase(BaseModel, ABC):
     
     API_KEY, 
     SECURITY_TOKEN, 
-    INSTANCE_PRINCIPLE, 
-    RESOURCE_PRINCIPLE
+    INSTANCE_PRINCIPAL, 
+    RESOURCE_PRINCIPAL
 
     If not specified, API_KEY will be used
     """
@@ -115,24 +170,25 @@ class OCIGenAIBase(BaseModel, ABC):
                     "signer"
                 ] = oci.auth.signers.get_resource_principals_signer()
             else:
-                raise ValueError("Please provide valid value to auth_type")
+                raise ValueError(
+                    f"Please provide valid value to auth_type, {values['auth_type']} is not valid."
+                )
 
             values["client"] = oci.generative_ai_inference.GenerativeAiInferenceClient(
                 **client_kwargs
             )
 
         except ImportError as ex:
-            raise ImportError(
+            raise ModuleNotFoundError(
                 "Could not import oci python package. "
                 "Please make sure you have the oci package installed."
             ) from ex
         except Exception as e:
             raise ValueError(
-                "Could not authenticate with OCI client. "
-                "Please check if ~/.oci/config exists. "
-                "If INSTANCE_PRINCIPLE or RESOURCE_PRINCIPLE is used, "
-                "Please check the specified "
-                "auth_profile and auth_type are valid."
+                """Could not authenticate with OCI client. Please check if ~/.oci/config exists.
+                If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used, please check the specified
+                auth_profile and auth_type are valid.""",
+                e,
             ) from e
 
         return values
@@ -157,7 +213,7 @@ class OCIGenAIBase(BaseModel, ABC):
                 "Please explicitly pass in the supported provider "
                 "when using custom endpoint"
             )
-        return provider
+        return VALID_PROVIDERS[provider]
 
 
 class OCIGenAI(LLM, OCIGenAIBase):
@@ -167,7 +223,7 @@ class OCIGenAI(LLM, OCIGenAIBase):
     https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm
 
     The authentifcation method is passed through auth_type and should be one of:
-    API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE
+    API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL
 
     Make sure you have the required policies (profile/roles) to
     access the OCI Generative AI service.
@@ -205,18 +261,10 @@ class OCIGenAI(LLM, OCIGenAIBase):
     ) -> Dict[str, Any]:
         from oci.generative_ai_inference import models
 
-        oci_llm_request_mapping = {
-            "cohere": models.CohereLlmInferenceRequest,
-            "meta": models.LlamaLlmInferenceRequest,
-        }
-        llm_stop_sequence_mapping = {
-            "cohere": "stop_sequences",
-            "meta": "stop",
-        }
         provider = self._get_provider()
         _model_kwargs = self.model_kwargs or {}
         if stop is not None:
-            _model_kwargs[llm_stop_sequence_mapping[provider]] = stop
+            _model_kwargs[provider.stop_sequence_key] = stop
 
         if self.model_id.startswith(CUSTOM_ENDPOINT_PREFIX):
             serving_mode = models.DedicatedServingMode(endpoint_id=self.model_id)
@@ -230,19 +278,14 @@ class OCIGenAI(LLM, OCIGenAIBase):
         invocation_obj = models.GenerateTextDetails(
             compartment_id=self.compartment_id,
             serving_mode=serving_mode,
-            inference_request=oci_llm_request_mapping[provider](**inference_params),
+            inference_request=provider.llm_inference_request(**inference_params),
         )
 
         return invocation_obj
 
     def _process_response(self, response: Any, stop: Optional[List[str]]) -> str:
         provider = self._get_provider()
-        if provider == "cohere":
-            text = response.data.inference_response.generated_texts[0].text
-        elif provider == "meta":
-            text = response.data.inference_response.choices[0].text
-        else:
-            raise ValueError(f"Invalid provider: {provider}")
+        text = provider.completion_response_to_text(response)
 
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
