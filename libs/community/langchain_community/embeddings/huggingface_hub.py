@@ -13,7 +13,7 @@ VALID_TASKS = ("feature-extraction",)
 @deprecated(
     since="0.2.2",
     removal="0.3.0",
-    alternative_import="from langchain_huggingface import HuggingFaceEndpointEmbeddings",  # noqa: E501
+    alternative_import="langchain_huggingface.HuggingFaceEndpointEmbeddings",
 )
 class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
     """HuggingFaceHub embedding models.

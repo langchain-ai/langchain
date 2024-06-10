@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 @deprecated(
     "0.0.21",
     removal="0.3.0",
-    alternative_import="from langchain_huggingface import HuggingFaceEndpoint",
+    alternative_import="langchain_huggingface.HuggingFaceEndpoint",
 )
 class HuggingFaceTextGenInference(LLM):
     """
