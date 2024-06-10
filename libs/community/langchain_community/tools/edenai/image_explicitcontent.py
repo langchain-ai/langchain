@@ -35,7 +35,7 @@ class EdenAiExplicitImageTool(EdenaiTool):
         "Input should be the string url of the image ."
     )
 
-    combine_available = True
+    combine_available: bool = True
     feature: str = "image"
     subfeature: str = "explicit_content"
 
