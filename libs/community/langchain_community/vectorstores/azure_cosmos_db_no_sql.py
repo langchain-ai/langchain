@@ -77,9 +77,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                     "vectorEmbeddings cannot be null "
                     "or empty in the vector_embedding_policy."
                 )
-            if (
-                self._cosmos_container_properties["partition_key"] is None
-            ):
+            if self._cosmos_container_properties["partition_key"] is None:
                 raise ValueError(
                     "partition_key cannot be null or empty for a container."
                 )
