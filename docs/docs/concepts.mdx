@@ -140,7 +140,7 @@ Although the underlying models are messages in, message out, the LangChain wrapp
 
 When a string is passed in as input, it is converted to a HumanMessage and then passed to the underlying model.
 
-LangChain does not provide any ChatModels, rather we rely on third party integrations.
+LangChain does not host any Chat Models, rather we rely on third party integrations.
 
 We have some standardized parameters when constructing ChatModels:
 - `model`: the name of the model
@@ -159,10 +159,10 @@ For specifics on how to use chat models, see the [relevant how-to guides here](/
 <span data-heading-keywords="llm,llms"></span>
 
 Language models that takes a string as input and returns a string.
-These are traditionally older models (newer models generally are `ChatModels`, see below).
+These are traditionally older models (newer models generally are [Chat Models](/docs/concepts/#chat-models), see below).
 
 Although the underlying models are string in, string out, the LangChain wrappers also allow these models to take messages as input.
-This makes them interchangeable with ChatModels.
+This gives them the same interface as [Chat Models](/docs/concepts/#chat-models).
 When messages are passed in as input, they will be formatted into a string under the hood before being passed to the underlying model.
 
 LangChain does not provide any LLMs, rather we rely on third party integrations.
@@ -595,6 +595,47 @@ runnables or tools.
 For specifics on how to use callbacks, see the [relevant how-to guides here](/docs/how_to/#callbacks).
 
 ## Techniques
+
+### Streaming
+
+Individual LLM calls often run for much longer than traditional resource requests.
+This problem compounds when you build more complex chains or agents that require multiple reasoning steps.
+And [transformers](https://arxiv.org/abs/1706.03762), which power LLMs, [scale quadratically](https://arxiv.org/abs/2209.04881),
+which means that this increase latency is unlikely to disappear in the short-term, since any increases in computing power can be
+offset by corresponding increases in model power.
+
+Fortunately, LLMs generate output iteratively, which means it's possible to show sensible intermediate results
+before the final response is ready. Consuming output as soon as it becomes available has therefore become a vital part of the UX
+around building apps with LLMs to help alleviate latency issues, and LangChain aims to have first-class support for streaming via
+[LangChain Expression Language](/docs/concepts/#langchain-expression-language-lcel) and [callbacks](/docs/concepts/#callbacks).
+
+Below, we'll discuss some concepts and considerations around streaming in LangChain.
+
+#### Tokens
+
+The unit that most model providers use to measure input and output is via a unit called a **token**.
+Tokens are the basic units that language models read and generate when processing or producing text.
+The exact definition of a token can vary depending on the specific way the model was trained -
+for instance, in English, a token could be a single word like "apple", or a part of a word like "app".
+
+The reason language models use tokens rather than something more immediately intuitive like "characters"
+has to do with how they process and understand text. At a high-level, language models iteratively predict their next generated output based on
+the initial input and their previous generations. Training the model using tokens language models to handle linguistic
+units (like words or subwords) that carry meaning, rather than individual characters, which makes it easier for the model
+to learn and understand the structure of the language, including grammar and context.
+Furthermore, using tokens can also improve efficiency, since the model processes fewer units of text compared to character-level processing.
+
+When you send a model a prompt, the words and characters in the prompt are encoded into tokens using a **tokenizer**.
+As the model streams back output, it does so as tokens, which the tokenizer decodes into human-readable text.
+
+#### Callbacks
+
+The lowest level way to stream tokens in LangChain is via the [callbacks](/docs/concepts/#callbacks) system.
+This was the first technique introduced in LangChain.
+
+#### `.stream()`
+
+#### `.streamEvents()`
 
 ### Function/tool calling
 
