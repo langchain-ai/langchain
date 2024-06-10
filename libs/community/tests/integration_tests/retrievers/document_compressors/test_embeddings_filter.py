@@ -1,13 +1,12 @@
 """Integration test for embedding-based relevant doc filtering."""
 import numpy as np
-import pytest
 from langchain.retrievers.document_compressors import EmbeddingsFilter
 from langchain_core.documents import Document
 
 from langchain_community.document_transformers.embeddings_redundant_filter import (
     _DocumentWithState,
 )
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai.embeddings import OpenAIEmbeddings
 
 
 def test_embeddings_filter() -> None:
@@ -24,7 +23,6 @@ def test_embeddings_filter() -> None:
     assert len(set(texts[:2]).intersection([d.page_content for d in actual])) == 2
 
 
-@pytest.mark.asyncio
 async def atest_embeddings_filter() -> None:
     texts = [
         "What happened to all of my cookies?",
@@ -59,7 +57,6 @@ def test_embeddings_filter_with_state() -> None:
     assert texts[-1] == actual[0].page_content
 
 
-@pytest.mark.asyncio
 async def test_aembeddings_filter_with_state() -> None:
     texts = [
         "What happened to all of my cookies?",
