@@ -1,8 +1,7 @@
 """Loader that uses unstructured to load files."""
-import collections
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Sequence, Union
+from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 from langchain_core.documents import Document
 
@@ -204,13 +203,14 @@ def get_elements_from_api(
         )
     
     if is_list := isinstance(file_path, list):
-        file_path = [str(path) for path in file_path]
-    if isinstance(file, collections.abc.Sequence) or is_list:
+        _file_path: List[str] = [str(path) for path in file_path]
+    if isinstance(file, Sequence) or is_list:
+        _file = cast(List[str], file)
         from unstructured.partition.api import partition_multiple_via_api
 
         _doc_elements = partition_multiple_via_api(
-            filenames=file_path,
-            files=file,
+            filenames=_file_path,
+            files=_file,
             api_key=api_key,
             api_url=api_url,
             **unstructured_kwargs,
@@ -323,7 +323,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
     def __init__(
         self,
-        file: Union[IO, Sequence[IO]],
+        file: IO[bytes],
         mode: str = "single",
         **unstructured_kwargs: Any,
     ):
