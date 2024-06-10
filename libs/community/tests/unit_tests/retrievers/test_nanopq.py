@@ -2,7 +2,7 @@ import pytest
 from langchain_core.documents import Document
 
 from langchain_community.embeddings import FakeEmbeddings
-from langchain_community.retrievers.nanopq import NanoPQRetriever
+from langchain_community.retrievers import NanoPQRetriever
 
 
 class TestPQRetriever:
