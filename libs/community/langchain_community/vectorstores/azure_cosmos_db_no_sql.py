@@ -181,6 +181,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         vector_embedding_policy: Dict[str, Any],
         indexing_policy: Dict[str, Any],
         cosmos_container_properties: Dict[str, Any],
+        cosmos_database_properties: Dict[str, Any],
         database_name: str = "vectorSearchDB",
         container_name: str = "vectorSearchContainer",
         **kwargs: Any,
@@ -200,6 +201,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             vector_embedding_policy=vector_embedding_policy,
             indexing_policy=indexing_policy,
             cosmos_container_properties=cosmos_container_properties,
+            cosmos_database_properties=cosmos_database_properties,
             database_name=database_name,
             container_name=container_name,
         )
