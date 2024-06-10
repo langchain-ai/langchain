@@ -111,14 +111,11 @@ class ChatGroq(BaseChatModel):
             Sampling temperature. Ranges from 0.0 to 1.0.
         max_tokens: Optional[int]
             Max number of tokens to generate.
+        model_kwargs: Dict[str, Any]
+            Holds any model parameters valid for create call not 
+            explicitly specified.
 
     Key init args — client params:
-        cache: Union[BaseCache, bool, None]
-            Whether to cache the response. Uses global cache if true, does not
-            use a cache if false, uses global cache (if it is set) if None,
-            and uses the provided cache if is instance of BaseCache.
-        callbacks: Callbacks
-            Callbacks to add to the run trace.
         custom_get_token_ids: Optional[Callable[[str], List[int]]]
             Optional encoder to use for counting tokens.
         groq_api_base: Optional[str]
@@ -126,11 +123,6 @@ class ChatGroq(BaseChatModel):
             or service emulator.
         metadata: Optional[Dict[str, Any]]
             Metadata to add to the run trace.
-        model_kwargs: Dict[str, Any]
-            Holds any model parameters valid for create call not 
-            explicitly specified.
-        streaming: bool = False
-            Whether to stream the results or not.
 
     See full list of supported init args and their descriptions in the params
     section.
