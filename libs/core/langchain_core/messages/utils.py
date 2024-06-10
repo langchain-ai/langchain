@@ -1,4 +1,17 @@
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+import inspect
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Protocol,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from langchain_core.messages.ai import (
     AIMessage,
@@ -242,3 +255,135 @@ def convert_to_messages(
         List of messages (BaseMessages).
     """
     return [_convert_to_message(m) for m in messages]
+
+
+def filter_messages(
+    messages: Sequence[MessageLikeRepresentation],
+    *,
+    incl_names: Optional[Sequence[str]] = None,
+    excl_names: Optional[Sequence[str]] = None,
+    incl_types: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
+    excl_types: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
+    incl_ids: Optional[Sequence[str]] = None,
+    excl_ids: Optional[Sequence[str]] = None,
+) -> List[BaseMessage]:
+    if incl_names and excl_names:
+        raise ValueError
+    if incl_types and excl_types:
+        raise ValueError
+    if incl_ids and excl_ids:
+        raise ValueError
+    messages = convert_to_messages(messages)
+    incl_types_str = [t for t in (incl_types or ()) if isinstance(t, str)]
+    incl_types_types = tuple(t for t in (incl_types or ()) if isinstance(t, type))
+    excl_types_str = [t for t in (excl_types or ()) if isinstance(t, str)]
+    excl_types_types = tuple(t for t in (excl_types or ()) if isinstance(t, type))
+
+    filtered: List[BaseMessage] = []
+    for msg in messages:
+        if incl_names and msg.name not in incl_names:
+            continue
+        elif excl_names and msg.name in excl_names:
+            continue
+        elif incl_types_str and msg.type not in incl_types_str:
+            continue
+        elif incl_types_types and not isinstance(msg, incl_types_types):
+            continue
+        elif excl_types_str and msg.type in excl_types_str:
+            continue
+        elif excl_types_types and isinstance(msg.type, excl_types_types):
+            continue
+        elif incl_ids and msg.id not in incl_ids:
+            continue
+        elif excl_ids and msg.id in excl_ids:
+            continue
+        else:
+            filtered.append(msg)
+    return filtered
+
+
+def abbreviate_messages(
+    messages: Sequence[BaseMessage],
+    n_tokens: int,
+    # TODO: Support a raw encoder? Callable[[BaseMessage], List[int]]
+    token_counter: Union[
+        Callable[[Sequence[BaseMessage]], int], Callable[[BaseMessage], int]
+    ],
+    *,
+    strategy: Literal["first", "last", "last_with_system", "summarize"] = "last",
+    allow_partial_messages: bool = False,
+    summarize_chunk_size: int = 1,
+    llm: Optional[LanguageModelLike] = None,
+) -> List[BaseMessage]:
+    if (
+        list(inspect.signature(token_counter).parameters.values())[0].annotation
+        is BaseMessage
+    ):
+        list_token_counter = lambda msgs: sum(token_counter(msg) for msg in msgs)
+    else:
+        list_token_counter = token_counter
+
+    if strategy == "first":
+        return _first_n_tokens(
+            messages,
+            n_tokens,
+            list_token_counter,
+            allow_partial_messages=allow_partial_messages,
+        )
+    elif strategy == "last":
+        return _last_n_tokens(
+            messages,
+            n_tokens,
+            list_token_counter,
+            allow_partial_messages=allow_partial_messages,
+            include_system=False,
+        )
+    elif strategy == "last_with_system":
+        return _last_n_tokens(
+            messages,
+            n_tokens,
+            list_token_counter,
+            allow_partial_messages=allow_partial_messages,
+            include_system=True,
+        )
+    elif strategy == "summarize":
+        if not llm:
+            raise ValueError
+        return _summarize(
+            messages, n_tokens, list_token_counter, llm, chunk_size=summarize_chunk_size
+        )
+    else:
+        raise ValueError
+
+
+def _first_n_tokens(
+    messages: Sequence[BaseMessage],
+    n_tokens: int,
+    list_token_counter: Callable[[Sequence[BaseMessage]], int],
+    *,
+    allow_partial_messages: bool = False,
+) -> List[BaseMessage]:
+    ...
+
+
+def _last_n_tokens(
+    messages: Sequence[BaseMessage],
+    n_tokens: int,
+    list_token_counter: Callable[[Sequence[BaseMessage]], int],
+    *,
+    allow_partial_messages: bool = False,
+    include_system: bool = False,
+) -> List[BaseMessage]:
+    ...
+
+
+# TODO: Should this return a Runnable?
+def _summarize(
+    messages: Sequence[BaseMessage],
+    n_tokens: int,
+    list_token_counter: Callable[[Sequence[BaseMessage]], int],
+    llm: LanguageModelLike,
+    *,
+    chunk_size: int = 1,
+) -> List[BaseMessage]:
+    ...
