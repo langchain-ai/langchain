@@ -1,0 +1,10 @@
+-e ../partners/openai
+-e ../partners/anthropic
+-e ../partners/fireworks
+-e ../partners/together
+-e ../partners/mistralai
+-e ../partners/groq
+jsonschema>=4.22.0,<5
+numexpr>=2.8.6,<3
+rapidfuzz>=3.1.1,<4
+aiosqlite>=0.19.0,<0.20
