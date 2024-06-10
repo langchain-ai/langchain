@@ -106,13 +106,6 @@ class LangChainTracer(BaseTracer):
     ) -> Run:
         """Start a trace for an LLM run."""
         start_time = datetime.now(timezone.utc)
-        metrics = kwargs.get("langchain_metrics") or {}
-        import pdb
-
-        pdb.set_trace()
-        metrics["id"] = serialized.get("id")
-        print(metrics)
-        kwargs["langchain_metrics"] = metrics
         if metadata:
             kwargs.update({"metadata": metadata})
         chat_model_run = Run(

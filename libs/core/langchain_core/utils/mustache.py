@@ -328,7 +328,7 @@ def _get_key(
             # Return an empty string if falsy, with two exceptions
             # 0 should return 0, and False should return False
             if scope in (0, False):
-                return str(scope)
+                return scope
 
             # For every dot separated key
             for child in key.split("."):
