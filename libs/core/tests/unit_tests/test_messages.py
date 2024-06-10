@@ -221,7 +221,7 @@ def test_complex_ai_message_chunks() -> None:
         == AIMessageChunk(
             content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
         )
-    ), "Concatenating when both content arrays are dicts with the same index but not type should merge and log a warning"  # noqa: E501
+    ), "Concatenating when both content arrays are dicts with the same index and different types should merge without updating type"  # noqa: E501
 
 
 def test_function_message_chunks() -> None:
