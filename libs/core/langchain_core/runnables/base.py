@@ -45,7 +45,6 @@ from langchain_core.load.serializable import (
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.runnables.config import (
     RunnableConfig,
-    _set_config_context,
     acall_func_with_variable_args,
     call_func_with_variable_args,
     ensure_config,
@@ -56,6 +55,7 @@ from langchain_core.runnables.config import (
     merge_configs,
     patch_config,
     run_in_executor,
+    var_child_runnable_config,
 )
 from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.schema import StreamEvent
@@ -1590,7 +1590,7 @@ class Runnable(Generic[Input, Output], ABC):
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
-            context.run(_set_config_context, child_config)
+            context.run(var_child_runnable_config.set, child_config)
             output = cast(
                 Output,
                 context.run(
@@ -1638,7 +1638,7 @@ class Runnable(Generic[Input, Output], ABC):
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
-            context.run(_set_config_context, child_config)
+            context.run(var_child_runnable_config.set, child_config)
             coro = acall_func_with_variable_args(
                 func, input, config, run_manager, **kwargs
             )
@@ -1847,7 +1847,7 @@ class Runnable(Generic[Input, Output], ABC):
             if accepts_run_manager(transformer):
                 kwargs["run_manager"] = run_manager
             context = copy_context()
-            context.run(_set_config_context, child_config)
+            context.run(var_child_runnable_config.set, child_config)
             iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
             if stream_handler := next(
                 (
@@ -1947,7 +1947,7 @@ class Runnable(Generic[Input, Output], ABC):
             if accepts_run_manager(transformer):
                 kwargs["run_manager"] = run_manager
             context = copy_context()
-            context.run(_set_config_context, child_config)
+            context.run(var_child_runnable_config.set, child_config)
             iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
 
             if stream_handler := next(

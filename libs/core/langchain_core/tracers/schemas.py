@@ -1,4 +1,5 @@
 """Schemas for tracers."""
+
 from __future__ import annotations
 
 import datetime
@@ -6,8 +7,8 @@ import warnings
 from typing import Any, Dict, List, Optional, Type
 from uuid import UUID
 
-from langsmith.schemas import RunBase as BaseRunV2
-from langsmith.schemas import RunTypeEnum as RunTypeEnumDep
+from langsmith import RunTree
+from langsmith.schemas import RunTypeEnum as RunTypeEnumDep, RunBase as BaseRunDep  # type: ignore
 
 from langchain_core._api import deprecated
 from langchain_core.outputs import LLMResult
@@ -110,14 +111,13 @@ class ToolRun(BaseRun):
 # Begin V2 API Schemas
 
 
-class Run(BaseRunV2):
+# TODO: rm client API key validation
+class Run(RunTree):
     """Run schema for the V2 API in the Tracer."""
 
     child_runs: List[Run] = Field(default_factory=list)
     tags: Optional[List[str]] = Field(default_factory=list)
     events: List[Dict[str, Any]] = Field(default_factory=list)
-    trace_id: Optional[UUID] = None
-    dotted_order: Optional[str] = None
 
     @root_validator(pre=True)
     def assign_name(cls, values: dict) -> dict:

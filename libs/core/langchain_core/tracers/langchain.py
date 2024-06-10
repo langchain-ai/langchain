@@ -10,6 +10,7 @@ from uuid import UUID
 
 from langsmith import Client
 from langsmith import utils as ls_utils
+from langsmith.run_helpers import _set_tracing_context
 from tenacity import (
     Retrying,
     retry_if_exception_type,
@@ -65,7 +66,7 @@ def _get_executor() -> ThreadPoolExecutor:
 
 def _run_to_dict(run: Run) -> dict:
     return {
-        **run.dict(exclude={"child_runs", "inputs", "outputs"}),
+        **run.dict(exclude={"child_runs", "inputs", "outputs", "client", "parent_run"}),
         "inputs": run.inputs.copy() if run.inputs is not None else None,
         "outputs": run.outputs.copy() if run.outputs is not None else None,
     }
@@ -125,6 +126,7 @@ class LangChainTracer(BaseTracer):
         return chat_model_run
 
     def _persist_run(self, run: Run) -> None:
+        breakpoint()
         run_ = run.copy()
         run_.reference_example_id = self.example_id
         self.latest_run = run_
@@ -155,6 +157,11 @@ class LangChainTracer(BaseTracer):
 
     def _persist_run_single(self, run: Run) -> None:
         """Persist a run."""
+        run.client = self.client
+        if run.parent_run_id:
+            if str(run.parent_run_id) in self.run_map:
+                run.parent_run = self.run_map[str(run.parent_run_id)]
+        _set_tracing_context({"parent": run})
         run_dict = _run_to_dict(run)
         run_dict["tags"] = self._get_tags(run)
         extra = run_dict.get("extra", {})
@@ -169,6 +176,7 @@ class LangChainTracer(BaseTracer):
 
     def _update_run_single(self, run: Run) -> None:
         """Update a run."""
+        _set_tracing_context({"parent": run.parent_run})
         try:
             run_dict = _run_to_dict(run)
             run_dict["tags"] = self._get_tags(run)

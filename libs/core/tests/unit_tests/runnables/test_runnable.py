@@ -2931,7 +2931,6 @@ def test_prompt_with_chat_model_and_parser(
         ]
     )
     assert parser_spy.call_args.args[1] == AIMessage(content="foo, bar", id=AnyStr())
-
     assert tracer.runs == snapshot
 
 
