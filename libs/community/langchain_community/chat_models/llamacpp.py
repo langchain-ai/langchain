@@ -34,12 +34,11 @@ from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
-from langchain_community.chat_models.chat_models.base import (
+from langchain_openai.chat_models.base import (
     _convert_delta_to_message_chunk,
     _convert_dict_to_message,
-    _convert_message_to_dict,
+    _convert_message_to_dict
 )
-
 
 class ChatLlamaCpp(BaseChatModel):
     """llama.cpp model.
