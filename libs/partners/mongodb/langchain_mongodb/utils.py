@@ -9,8 +9,8 @@ are duplicated in this utility respectively from modules:
 """
 
 import logging
-from typing import List, Union
-
+from typing import List, Dict, Union, Any
+from bson import ObjectId, json_util
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -83,3 +83,26 @@ def maximal_marginal_relevance(
         idxs.append(idx_to_add)
         selected = np.append(selected, [embedding_list[idx_to_add]], axis=0)
     return idxs
+
+
+def make_serializable(obj: Dict[str, Any]) -> None:
+    """Make every BSON ObjectId found JSON-Serializable.
+
+        Changes are made *in-place*.
+
+       Follows format used in bson.json_util.loads
+        e.g. loads('{"_id": {"$oid": "664..."}}') == {'_id': ObjectId('664..')} # noqa: E501
+
+    Args:
+        obj: Any dict that might contain a bson.ObjectID
+
+    Returns:
+        None. Changes are made *in-place*.
+    """
+    for k, v in obj.items():
+        if isinstance(v, dict):
+            make_serializable(v)
+        elif isinstance(v, list) and v and isinstance(v[0], ObjectId):
+            obj[k] = [json_util.default(item) for item in v]
+        elif isinstance(v, ObjectId):
+            obj[k] = json_util.default(v)
