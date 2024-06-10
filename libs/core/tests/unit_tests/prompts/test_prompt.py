@@ -1,9 +1,9 @@
 """Test functionality related to prompts."""
 
+from typing import Any, Dict, Union
 from unittest import mock
 
 import pytest
-from typing import Any, Union, Dict
 
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
