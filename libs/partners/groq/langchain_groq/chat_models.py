@@ -85,7 +85,7 @@ class ChatGroq(BaseChatModel):
     To use, you should have the
     environment variable ``GROQ_API_KEY`` set with your API key.
 
-    Any parameters that are valid to be passed to the groq.create call 
+    Any parameters that are valid to be passed to the groq.create call
     can be passed in, even if not explicitly saved on this class.
 
     Example:
@@ -96,7 +96,7 @@ class ChatGroq(BaseChatModel):
             model = ChatGroq(model_name="mixtral-8x7b-32768")
 
     Setup:
-        Install ``langchain-groq`` and set environment variable 
+        Install ``langchain-groq`` and set environment variable
         ``GROQ_API_KEY``.
 
         .. code-block:: bash
@@ -112,14 +112,14 @@ class ChatGroq(BaseChatModel):
         max_tokens: Optional[int]
             Max number of tokens to generate.
         model_kwargs: Dict[str, Any]
-            Holds any model parameters valid for create call not 
+            Holds any model parameters valid for create call not
             explicitly specified.
 
     Key init args — client params:
         custom_get_token_ids: Optional[Callable[[str], List[int]]]
             Optional encoder to use for counting tokens.
         groq_api_base: Optional[str]
-            Base URL path for API requests, leave blank if not using a proxy 
+            Base URL path for API requests, leave blank if not using a proxy
             or service emulator.
         metadata: Optional[Dict[str, Any]]
             Metadata to add to the run trace.
@@ -144,7 +144,7 @@ class ChatGroq(BaseChatModel):
         .. code-block:: python
 
             messages = [
-                ("system", "You are a helpful translator. Translate the user 
+                ("system", "You are a helpful translator. Translate the user
                 sentence to French."),
                 ("human", "I love programming."),
             ]
@@ -152,14 +152,14 @@ class ChatGroq(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessage(content='The English sentence "I love programming" can 
-            be translated to French as "J\'aime programmer". The word 
-            "programming" is translated as "programmer" in French.', 
-            response_metadata={'token_usage': {'completion_tokens': 38, 
-            'prompt_tokens': 28, 'total_tokens': 66, 'completion_time': 
-            0.057975474, 'prompt_time': 0.005366091, 'queue_time': None, 
-            'total_time': 0.063341565}, 'model_name': 'mixtral-8x7b-32768', 
-            'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop', 
+            AIMessage(content='The English sentence "I love programming" can
+            be translated to French as "J\'aime programmer". The word
+            "programming" is translated as "programmer" in French.',
+            response_metadata={'token_usage': {'completion_tokens': 38,
+            'prompt_tokens': 28, 'total_tokens': 66, 'completion_time':
+            0.057975474, 'prompt_time': 0.005366091, 'queue_time': None,
+            'total_time': 0.063341565}, 'model_name': 'mixtral-8x7b-32768',
+            'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
             'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
     
     Stream:
@@ -177,7 +177,7 @@ class ChatGroq(BaseChatModel):
             ...
             content=' program' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
             content='".' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
-            content='' response_metadata={'finish_reason': 'stop'} 
+            content='' response_metadata={'finish_reason': 'stop'}
             id='run-4e9f926b-73f5-483b-8ef5-09533d925853
 
         .. code-block:: python
@@ -190,16 +190,16 @@ class ChatGroq(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessageChunk(content='The English sentence "I love programming" 
-            can be translated to French as "J\'aime programmer". 
-            Here\'s the breakdown of the sentence:\n\n* "J\'aime" is the 
-            French equivalent of "I love"\n* "programmer" is the French 
-            infinitive for "to program"\n\nSo, the literal translation 
-            is "I love to program". However, in English we often omit the 
-            "to" when talking about activities we love, and the same applies 
-            to French. Therefore, "J\'aime programmer" is the correct and 
-            natural way to express "I love programming" in French.', 
-            response_metadata={'finish_reason': 'stop'}, 
+            AIMessageChunk(content='The English sentence "I love programming"
+            can be translated to French as "J\'aime programmer".
+            Here\'s the breakdown of the sentence:\n\n* "J\'aime" is the
+            French equivalent of "I love"\n* "programmer" is the French
+            infinitive for "to program"\n\nSo, the literal translation
+            is "I love to program". However, in English we often omit the
+            "to" when talking about activities we love, and the same applies
+            to French. Therefore, "J\'aime programmer" is the correct and
+            natural way to express "I love programming" in French.',
+            response_metadata={'finish_reason': 'stop'},
             id='run-a3c35ac4-0750-4d08-ac55-bfc63805de76')
 
     Async:
@@ -209,15 +209,15 @@ class ChatGroq(BaseChatModel):
 
         .. code-block:: python
 
-           AIMessage(content='The English sentence "I love programming" can 
-           be translated to French as "J\'aime programmer". The word 
-           "programming" is translated as "programmer" in French. I hope 
-           this helps! Let me know if you have any other questions.', 
-           response_metadata={'token_usage': {'completion_tokens': 53, 
-           'prompt_tokens': 28, 'total_tokens': 81, 'completion_time': 
-           0.083623752, 'prompt_time': 0.007365126, 'queue_time': None, 
-           'total_time': 0.090988878}, 'model_name': 'mixtral-8x7b-32768', 
-           'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop', 
+           AIMessage(content='The English sentence "I love programming" can
+           be translated to French as "J\'aime programmer". The word
+           "programming" is translated as "programmer" in French. I hope
+           this helps! Let me know if you have any other questions.',
+           response_metadata={'token_usage': {'completion_tokens': 53,
+           'prompt_tokens': 28, 'total_tokens': 81, 'completion_time':
+           0.083623752, 'prompt_time': 0.007365126, 'queue_time': None,
+           'total_time': 0.090988878}, 'model_name': 'mixtral-8x7b-32768',
+           'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
            'logprobs': None}, id='run-897f3391-1bea-42e2-82e0-686e2367bcf8-0')
 
     Tool calling:
@@ -228,13 +228,13 @@ class ChatGroq(BaseChatModel):
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
 
-                location: str = Field(..., description="The city and state, 
+                location: str = Field(..., description="The city and state,
                 e.g. San Francisco, CA")
 
             class GetPopulation(BaseModel):
                 '''Get the current population in a given location'''
 
-                location: str = Field(..., description="The city and state, 
+                location: str = Field(..., description="The city and state,
                 e.g. San Francisco, CA")
 
             model_with_tools = model.bind_tools([GetWeather, GetPopulation])
@@ -243,8 +243,8 @@ class ChatGroq(BaseChatModel):
 
         .. code-block:: python
 
-            [{'name': 'GetPopulation', 
-            'args': {'location': 'NY'}, 
+            [{'name': 'GetPopulation',
+            'args': {'location': 'NY'},
             'id': 'call_bb8d'}]
 
         See ``ChatGroq.bind_tools()`` method for more.
@@ -261,7 +261,7 @@ class ChatGroq(BaseChatModel):
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke 
+                rating: Optional[int] = Field(description="How funny the joke
                 is, from 1 to 10")
 
             structured_model = model.with_structured_output(Joke)
@@ -269,7 +269,7 @@ class ChatGroq(BaseChatModel):
 
         .. code-block:: python
 
-            Joke(setup="Why don't cats play poker in the jungle?", 
+            Joke(setup="Why don't cats play poker in the jungle?",
             punchline='Too many cheetahs!', rating=None)
 
         See ``ChatGroq.with_structured_output()`` for more.
