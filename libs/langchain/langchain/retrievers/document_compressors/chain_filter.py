@@ -1,10 +1,7 @@
 """Filter that uses an LLM to drop documents that aren't relevant to the query."""
-from typing import Any, Callable, Dict, Optional, Sequence
+import asyncio
 
-from langchain_core.callbacks.manager import Callbacks
-from langchain_core.documents import Document
-from langchain_core.language_models import BaseLanguageModel
-from langchain_core.prompts import BasePromptTemplate, PromptTemplate
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from langchain.chains import LLMChain
 from langchain.output_parsers.boolean import BooleanOutputParser
@@ -12,6 +9,11 @@ from langchain.retrievers.document_compressors.base import BaseDocumentCompresso
 from langchain.retrievers.document_compressors.chain_filter_prompt import (
     prompt_template,
 )
+from langchain_core.callbacks.manager import Callbacks
+from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.prompts import BasePromptTemplate, PromptTemplate
+from langchain_core.runnables.config import get_executor_for_config
 
 
 def _get_default_chain_prompt() -> PromptTemplate:
@@ -38,29 +40,67 @@ class LLMChainFilter(BaseDocumentCompressor):
     """Callable for constructing the chain input from the query and a Document."""
 
     def compress_documents(
-        self,
-        documents: Sequence[Document],
-        query: str,
-        callbacks: Optional[Callbacks] = None,
+            self,
+            documents: Sequence[Document],
+            query: str,
+            callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Filter down documents based on their relevance to the query."""
         filtered_docs = []
-        for doc in documents:
-            _input = self.get_input(query, doc)
-            output_dict = self.llm_chain.invoke(_input, config={"callbacks": callbacks})
+
+        config={"callbacks": callbacks}
+        with get_executor_for_config(config) as executor:
+            outputs = zip(executor.map(
+                *[
+                    self.llm_chain.ainvoke(
+                        self.get_input(query, doc), config={"callbacks": callbacks}
+                    )
+                    for doc in documents
+                ]
+            ), documents)
+        for output_dict, doc in outputs:
+            include_doc = None
             output = output_dict[self.llm_chain.output_key]
             if self.llm_chain.prompt.output_parser is not None:
                 include_doc = self.llm_chain.prompt.output_parser.parse(output)
             if include_doc:
                 filtered_docs.append(doc)
+
+        return filtered_docs
+
+    async def acompress_documents(
+            self,
+            documents: Sequence[Document],
+            query: str,
+            callbacks: Optional[Callbacks] = None,
+    ) -> Sequence[Document]:
+        """Filter down documents based on their relevance to the query."""
+        filtered_docs = []
+
+        outputs = zip(await asyncio.gather(
+            *[
+                self.llm_chain.ainvoke(
+                    self.get_input(query, doc), config={"callbacks": callbacks}
+                )
+                for doc in documents
+            ]
+        ), documents)
+        for output_dict, doc in outputs:
+            include_doc = None
+            output = output_dict[self.llm_chain.output_key]
+            if self.llm_chain.prompt.output_parser is not None:
+                include_doc = self.llm_chain.prompt.output_parser.parse(output)
+            if include_doc:
+                filtered_docs.append(doc)
+
         return filtered_docs
 
     @classmethod
     def from_llm(
-        cls,
-        llm: BaseLanguageModel,
-        prompt: Optional[BasePromptTemplate] = None,
-        **kwargs: Any,
+            cls,
+            llm: BaseLanguageModel,
+            prompt: Optional[BasePromptTemplate] = None,
+            **kwargs: Any,
     ) -> "LLMChainFilter":
         """Create a LLMChainFilter from a language model.
 
