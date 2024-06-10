@@ -341,7 +341,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             except ImportError:
                 raise ValueError(
                     "Could not import transformers python package. "
-                    "This is needed in order to for OpenAIEmbeddings without "
+                    "This is needed for OpenAIEmbeddings to work without "
                     "`tiktoken`. Please install it with `pip install transformers`. "
                 )
 
