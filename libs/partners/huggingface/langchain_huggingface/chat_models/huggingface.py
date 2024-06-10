@@ -155,7 +155,7 @@ class ChatHuggingFace(BaseChatModel):
     https://python.langchain.com/docs/integrations/chat/llama2_chat
 
     Setup:
-        Install ``langchain-huggingface`` and ensure your Hugging Face token 
+        Install ``langchain-huggingface`` and ensure your Hugging Face token
         is saved.
 
         .. code-block:: bash
