@@ -36,7 +36,7 @@ class BaseModel(Base):
 class CollectionStore(BaseModel):
     """Collection store."""
 
-    __tablename__: str = "langchain_pg_collection"
+    __tablename__ = "langchain_pg_collection"
 
     name = sqlalchemy.Column(sqlalchemy.String)
     cmetadata = sqlalchemy.Column(JSON)
