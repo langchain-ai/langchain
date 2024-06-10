@@ -15,8 +15,10 @@ from typing import (
     Union,
 )
 
+from langchain_core.output_parsers.pydantic import PydanticBaseModel
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from wandb import Settings as WBSettings
@@ -27,16 +29,32 @@ if TYPE_CHECKING:
 PRINT_WARNINGS = True
 
 
-def _serialize_io(run_inputs: Optional[dict]) -> dict:
-    if not run_inputs:
+def _serialize_io(run_io: Optional[dict]) -> dict:
+    """Utility to serialize the input and output of a run to store in wandb.
+    Currently, supports serializing pydantic models and protobuf messages.
+
+    :param run_io: The inputs and outputs of the run.
+    :return: The serialized inputs and outputs.
+
+
+    """
+    if not run_io:
         return {}
     from google.protobuf.json_format import MessageToJson
     from google.protobuf.message import Message
 
     serialized_inputs = {}
-    for key, value in run_inputs.items():
+    for key, value in run_io.items():
         if isinstance(value, Message):
             serialized_inputs[key] = MessageToJson(value)
+
+        elif isinstance(value, (BaseModel, PydanticBaseModel)):
+            serialized_inputs[key] = (
+                value.model_dump_json()
+                if hasattr(value, "model_dump_json")
+                else value.json()
+            )
+
         elif key == "input_documents":
             serialized_inputs.update(
                 {f"input_document_{i}": doc.json() for i, doc in enumerate(value)}
@@ -267,13 +285,20 @@ class WandbTracer(BaseTracer):
     _run: Optional[WBRun] = None
     _run_args: Optional[WandbRunArgs] = None
 
-    def __init__(self, run_args: Optional[WandbRunArgs] = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        run_args: Optional[WandbRunArgs] = None,
+        io_serializer: Callable = _serialize_io,
+        **kwargs: Any,
+    ) -> None:
         """Initializes the WandbTracer.
 
         Parameters:
             run_args: (dict, optional) Arguments to pass to `wandb.init()`. If not
                 provided, `wandb.init()` will be called with no arguments. Please
                 refer to the `wandb.init` for more details.
+            io_serializer: callable A function that serializes the input and output of a run to store in wandb.
+             Defaults to "_serialize_io"
 
         To use W&B to monitor all LangChain activity, add this tracer like any other
         LangChain callback:
@@ -299,6 +324,7 @@ class WandbTracer(BaseTracer):
         self._trace_tree = trace_tree
         self._run_args = run_args
         self._ensure_run(should_print_url=(wandb.run is None))
+        self._io_serializer = io_serializer if io_serializer else _serialize_io
 
     def finish(self) -> None:
         """Waits for all asynchronous processes to finish and data to upload.
@@ -439,8 +465,8 @@ class WandbTracer(BaseTracer):
                     if run.end_time is not None
                     else None,
                     metadata=metadata,
-                    inputs=_serialize_io(run.inputs),
-                    outputs=_serialize_io(run.outputs),
+                    inputs=self._io_serializer(run.inputs),
+                    outputs=self._io_serializer(run.outputs),
                 )
 
                 # If the run has child runs, recursively create traces for them
