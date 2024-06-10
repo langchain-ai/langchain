@@ -289,7 +289,6 @@ class Kinetica(VectorStore):
                 "Could not import Kinetica python API. "
                 "Please install it with `pip install gpudb==7.2.0.9`."
             )
-        print(self.table_name)
         return GPUdbTable(
             _type=self.table_schema,
             name=self.table_name,
