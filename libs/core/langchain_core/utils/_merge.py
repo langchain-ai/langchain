@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any, Dict, List, Optional
 
 
@@ -60,6 +61,10 @@ def merge_lists(left: Optional[List], right: Optional[List]) -> Optional[List]:
                     if e_left["index"] == e["index"]
                 ]
                 if to_merge:
+                    # If a top-level "type" has been set for a chunk, it should no
+                    # longer be overridden by the "type" field in future chunks.
+                    if "type" in merged[to_merge[0]] and "type" in e:
+                        e.pop("type")
                     merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], e)
                 else:
                     merged = merged + [e]
