@@ -1,34 +1,39 @@
+"""Couchbase vector stores."""
+
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
-from langchain_core._api.deprecation import deprecated
+import couchbase.search as search
+from couchbase.cluster import Cluster
+from couchbase.exceptions import DocumentExistsException, DocumentNotFoundException
+from couchbase.options import SearchOptions
+from couchbase.vector_search import VectorQuery, VectorSearch
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
-if TYPE_CHECKING:
-    from couchbase.cluster import Cluster
 
-
-@deprecated(
-    since="0.2.4",
-    removal="0.3.0",
-    alternative_import="langchain_couchbase.CouchbaseVectorStore",
-)
 class CouchbaseVectorStore(VectorStore):
-    """`Couchbase Vector Store` vector store.
+    """Couchbase vector store.
 
-    To use it, you need
-    - a recent installation of the `couchbase` library
-    - a Couchbase database with a pre-defined Search index with support for
-        vector fields
+     To use it, you need
+        - a Couchbase database with a pre-defined Search index with support for
+            vector fields
 
     Example:
         .. code-block:: python
 
-            from langchain_community.vectorstores import CouchbaseVectorStore
+            from langchain_couchbase import CouchbaseVectorStore
             from langchain_openai import OpenAIEmbeddings
 
             from couchbase.cluster import Cluster
@@ -158,14 +163,6 @@ class CouchbaseVectorStore(VectorStore):
             scoped_index (optional[bool]): specify whether the index is a scoped index.
                 Set to True by default.
         """
-        try:
-            from couchbase.cluster import Cluster
-        except ImportError as e:
-            raise ImportError(
-                "Could not import couchbase python package. "
-                "Please install couchbase SDK  with `pip install couchbase`."
-            ) from e
-
         if not isinstance(cluster, Cluster):
             raise ValueError(
                 f"cluster should be an instance of couchbase.Cluster, "
@@ -230,7 +227,7 @@ class CouchbaseVectorStore(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[Dict[str, Any]]] = None,
+        metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: Optional[int] = None,
         **kwargs: Any,
@@ -253,7 +250,6 @@ class CouchbaseVectorStore(VectorStore):
         Returns:
             List[str]:List of ids from adding the texts into the vectorstore.
         """
-        from couchbase.exceptions import DocumentExistsException
 
         if not batch_size:
             batch_size = self.DEFAULT_BATCH_SIZE
@@ -303,7 +299,6 @@ class CouchbaseVectorStore(VectorStore):
             bool: True if all the documents were deleted successfully, False otherwise.
 
         """
-        from couchbase.exceptions import DocumentNotFoundException
 
         if ids is None:
             raise ValueError("No document ids provided to delete.")
@@ -349,6 +344,35 @@ class CouchbaseVectorStore(VectorStore):
 
         return metadata
 
+    def similarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        search_options: Optional[Dict[str, Any]] = {},
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return documents most similar to embedding vector with their scores.
+
+        Args:
+            query (str): Query to look up for similar documents
+            k (int): Number of Documents to return.
+                Defaults to 4.
+            search_options (Optional[Dict[str, Any]]): Optional search options that are
+                passed to Couchbase search.
+                Defaults to empty dictionary
+            fields (Optional[List[str]]): Optional list of fields to include in the
+                metadata of results. Note that these need to be stored in the index.
+                If nothing is specified, defaults to all the fields stored in the index.
+
+        Returns:
+            List of Documents most similar to the query.
+        """
+        query_embedding = self.embeddings.embed_query(query)
+        docs_with_scores = self.similarity_search_with_score_by_vector(
+            query_embedding, k, search_options, **kwargs
+        )
+        return [doc for doc, _ in docs_with_scores]
+
     def similarity_search_with_score_by_vector(
         self,
         embedding: List[float],
@@ -372,9 +396,6 @@ class CouchbaseVectorStore(VectorStore):
         Returns:
             List of (Document, score) that are the most similar to the query vector.
         """
-        import couchbase.search as search
-        from couchbase.options import SearchOptions
-        from couchbase.vector_search import VectorQuery, VectorSearch
 
         fields = kwargs.get("fields", ["*"])
 
@@ -405,9 +426,9 @@ class CouchbaseVectorStore(VectorStore):
 
             else:
                 search_iter = self._cluster.search(
-                    index=self._index_name,
-                    request=search_req,
-                    options=SearchOptions(limit=k, fields=fields, raw=search_options),
+                    self._index_name,
+                    search_req,
+                    SearchOptions(limit=k, fields=fields, raw=search_options),
                 )
 
             docs_with_score = []
@@ -427,35 +448,6 @@ class CouchbaseVectorStore(VectorStore):
             raise ValueError(f"Search failed with error: {e}")
 
         return docs_with_score
-
-    def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        search_options: Optional[Dict[str, Any]] = {},
-        **kwargs: Any,
-    ) -> List[Document]:
-        """Return documents most similar to embedding vector with their scores.
-
-        Args:
-            query (str): Query to look up for similar documents
-            k (int): Number of Documents to return.
-                Defaults to 4.
-            search_options (Optional[Dict[str, Any]]): Optional search options that are
-                passed to Couchbase search.
-                Defaults to empty dictionary
-            fields (Optional[List[str]]): Optional list of fields to include in the
-                metadata of results. Note that these need to be stored in the index.
-                If nothing is specified, defaults to all the fields stored in the index.
-
-        Returns:
-            List of Documents most similar to the query.
-        """
-        query_embedding = self.embeddings.embed_query(query)
-        docs_with_scores = self.similarity_search_with_score_by_vector(
-            query_embedding, k, search_options, **kwargs
-        )
-        return [doc for doc, _ in docs_with_scores]
 
     def similarity_search_with_score(
         self,
@@ -563,7 +555,7 @@ class CouchbaseVectorStore(VectorStore):
         cls: Type[CouchbaseVectorStore],
         texts: List[str],
         embedding: Embeddings,
-        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> CouchbaseVectorStore:
         """Construct a Couchbase vector store from a list of texts.
@@ -571,7 +563,7 @@ class CouchbaseVectorStore(VectorStore):
         Example:
             .. code-block:: python
 
-            from langchain_community.vectorstores import CouchbaseVectorStore
+            from langchain_couchbase import CouchbaseVectorStore
             from langchain_openai import OpenAIEmbeddings
 
             from couchbase.cluster import Cluster
