@@ -2,6 +2,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from pymongo.collection import Collection
+from pymongo.operations import SearchIndexModel
 
 logger = logging.getLogger(__file__)
 
@@ -43,17 +44,15 @@ def create_vector_search_index(
         similarity (str): The similarity score used for the index
         filters (List[Dict[str, str]]): additional filters for index definition.
     """
-    db = collection.database
-    index_definition = {
-        "definition": _create_index_definition(
-            dimensions=dimensions, path=path, similarity=similarity, filters=filters
-        ),
-        "name": index_name,
-        "type": "vectorSearch",
-    }
-
-    result = db.command(
-        {"createSearchIndexes": collection.name, "indexes": [index_definition]}
+    logger.info("Creating Search Index %s on %s", index_name, collection.name)
+    result = collection.create_search_index(
+        SearchIndexModel(
+            definition=_create_index_definition(
+                dimensions=dimensions, path=path, similarity=similarity, filters=filters
+            ),
+            name=index_name,
+            type="vectorSearch",
+        )
     )
     logger.info(result)
 
@@ -65,9 +64,11 @@ def drop_vector_search_index(collection: Collection, index_name: str) -> None:
         collection (Collection): MongoDB Collection with index to be dropped
         index_name (str): Name of the MongoDB index
     """
-    collection.database.command(
-        {"dropSearchIndex": collection.name, "name": index_name}
+    logger.info(
+        "Dropping Search Index %s from Collection: %s", index_name, collection.name
     )
+    collection.drop_search_index(index_name)
+    logger.info("Vector Search index %s.%s dropped", collection.name, index_name)
 
 
 def update_vector_search_index(
@@ -88,18 +89,17 @@ def update_vector_search_index(
         similarity (str): The similarity score used for the index.
         filters (List[Dict[str, str]]): additional filters for index definition.
     """
-    db = collection.database
 
-    result = db.command(
-        {
-            "updateSearchIndex": collection.name,
-            "name": index_name,
-            "definition": _create_index_definition(
-                dimensions=dimensions,
-                path=path,
-                similarity=similarity,
-                filters=filters,
-            ),
-        }
+    logger.info(
+        "Updating Search Index %s from Collection: %s", index_name, collection.name
     )
-    logger.info(result)
+    collection.update_search_index(
+        name=index_name,
+        definition=_create_index_definition(
+            dimensions=dimensions,
+            path=path,
+            similarity=similarity,
+            filters=filters,
+        ),
+    )
+    logger.info("Update succeeded")
