@@ -1,5 +1,6 @@
 """Test functionality related to prompts."""
 
+from typing import Any, Dict, Union
 from unittest import mock
 
 import pytest
@@ -499,3 +500,56 @@ async def test_prompt_ainvoke_with_metadata() -> None:
     assert len(tracer.traced_runs) == 1
     assert tracer.traced_runs[0].extra["metadata"] == {"version": "1", "foo": "bar"}  # type: ignore
     assert tracer.traced_runs[0].tags == ["tag1", "tag2"]  # type: ignore
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        ("0", "0"),
+        (0, "0"),
+        (0.0, "0.0"),
+        (False, "False"),
+        ("", ""),
+        (
+            None,
+            {
+                "mustache": "",
+                "f-string": "None",
+            },
+        ),
+        (
+            [],
+            {
+                "mustache": "",
+                "f-string": "[]",
+            },
+        ),
+        (
+            {},
+            {
+                "mustache": "",
+                "f-string": "{}",
+            },
+        ),
+    ],
+)
+@pytest.mark.parametrize("template_format", ["f-string", "mustache"])
+def test_prompt_falsy_vars(
+    template_format: str, value: Any, expected: Union[str, Dict[str, str]]
+) -> None:
+    # each line is value, f-string, mustache
+    if template_format == "f-string":
+        template = "{my_var}"
+    elif template_format == "mustache":
+        template = "{{my_var}}"
+    else:
+        raise ValueError(f"Invalid template format: {template_format}")
+
+    prompt = PromptTemplate.from_template(template, template_format=template_format)
+
+    result = prompt.invoke({"my_var": value})
+
+    expected_output = (
+        expected if not isinstance(expected, dict) else expected[template_format]
+    )
+    assert result.to_string() == expected_output

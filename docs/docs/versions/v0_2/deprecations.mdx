@@ -500,7 +500,7 @@ Deprecated: 0.1.0
 Removal: 0.3.0
 
 
-Alternative: Use new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
+Alternative: Use [LangGraph](/docs/how_to/migrate_agent/) or new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
 
 
 #### Chain.__call__
@@ -566,7 +566,7 @@ Deprecated: 0.1.17
 Removal: 0.3.0
 
 
-Alternative: RunnableSequence, e.g., `prompt | llm`
+Alternative: [RunnableSequence](/docs/how_to/sequence/), e.g., `prompt | llm`
 
 
 #### LLMSingleActionAgent
@@ -577,7 +577,7 @@ Deprecated: 0.1.0
 Removal: 0.3.0
 
 
-Alternative: Use new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
+Alternative: Use [LangGraph](/docs/how_to/migrate_agent/) or new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
 
 
 #### Agent
@@ -588,7 +588,7 @@ Deprecated: 0.1.0
 Removal: 0.3.0
 
 
-Alternative: Use new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
+Alternative: Use [LangGraph](/docs/how_to/migrate_agent/) or new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
 
 
 #### OpenAIFunctionsAgent
@@ -753,7 +753,7 @@ Deprecated: 0.1.17
 Removal: 0.3.0
 
 
-Alternative: create_retrieval_chain
+Alternative: [create_retrieval_chain](https://api.python.langchain.com/en/latest/chains/langchain.chains.retrieval.create_retrieval_chain.html#langchain-chains-retrieval-create-retrieval-chain)
 
 
 #### load_agent_from_config
@@ -786,7 +786,7 @@ Deprecated: 0.1.0
 Removal: 0.3.0
 
 
-Alternative: Use new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
+Alternative: Use [LangGraph](/docs/how_to/migrate_agent/) or new agent constructor methods like create_react_agent, create_json_agent, create_structured_chat_agent, etc.
 
 
 #### XMLAgent
@@ -819,7 +819,7 @@ Deprecated: 0.1.17
 Removal: 0.3.0
 
 
-Alternative: create_history_aware_retriever together with create_retrieval_chain (see example in docstring)
+Alternative: [create_history_aware_retriever](https://api.python.langchain.com/en/latest/chains/langchain.chains.history_aware_retriever.create_history_aware_retriever.html) together with [create_retrieval_chain](https://api.python.langchain.com/en/latest/chains/langchain.chains.retrieval.create_retrieval_chain.html#langchain-chains-retrieval-create-retrieval-chain) (see example in docstring)
 
 
 #### create_extraction_chain_pydantic
@@ -830,7 +830,7 @@ Deprecated: 0.1.14
 Removal: 0.3.0
 
 
-Alternative: with_structured_output method on chat models that support tool calling.
+Alternative: [with_structured_output](/docs/how_to/structured_output/#the-with_structured_output-method) method on chat models that support tool calling.
 
 
 #### create_openai_fn_runnable
@@ -841,7 +841,7 @@ Deprecated: 0.1.14
 Removal: 0.3.0
 
 
-Alternative: with_structured_output method on chat models that support tool calling.
+Alternative: [with_structured_output](/docs/how_to/structured_output/#the-with_structured_output-method) method on chat models that support tool calling.
 
 
 #### create_structured_output_runnable
@@ -852,7 +852,7 @@ Deprecated: 0.1.17
 Removal: 0.3.0
 
 
-Alternative: with_structured_output method on chat models that support tool calling.
+Alternative: [with_structured_output](/docs/how_to/structured_output/#the-with_structured_output-method) method on chat models that support tool calling.
 
 
 #### create_openai_fn_chain
@@ -884,7 +884,7 @@ Deprecated: 0.1.14
 Removal: 0.3.0
 
 
-Alternative: with_structured_output method on chat models that support tool calling.
+Alternative: [with_structured_output](/docs/how_to/structured_output/#the-with_structured_output-method) method on chat models that support tool calling.
 
 
 #### create_extraction_chain_pydantic
@@ -895,4 +895,4 @@ Deprecated: 0.1.14
 Removal: 0.3.0
 
 
-Alternative: with_structured_output method on chat models that support tool calling.
+Alternative: [with_structured_output](/docs/how_to/structured_output/#the-with_structured_output-method) method on chat models that support tool calling.

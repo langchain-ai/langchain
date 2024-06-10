@@ -581,7 +581,7 @@ class BaseChatOpenAI(BaseChatModel):
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
-            "model_name": self.model_name,
+            "model_name": response.get("model", self.model_name),
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         return ChatResult(generations=generations, llm_output=llm_output)
@@ -1280,6 +1280,28 @@ class ChatOpenAI(BaseChatOpenAI):
              {'name': 'GetPopulation',
               'args': {'location': 'New York, NY'},
               'id': 'call_6ghfKxV264jEfe1mRIkS3PE7'}]
+
+        Note that ``openai >= 1.32`` supports a ``parallel_tool_calls`` parameter
+        that defaults to ``True``. This parameter can be set to ``False`` to
+        disable parallel tool calls:
+
+        .. code-block:: python
+
+            ai_msg = llm_with_tools.invoke(
+                "What is the weather in LA and NY?",
+                parallel_tool_calls=False,
+            )
+            ai_msg.tool_calls
+
+        .. code-block:: python
+
+            [{'name': 'GetWeather',
+            'args': {'location': 'Los Angeles, CA'},
+            'id': 'call_4OoY0ZR99iEvC7fevsH8Uhtz'}]
+
+        Like other runtime parameters, ``parallel_tool_calls`` can be bound to a model
+        using ``llm.bind(parallel_tool_calls=False)`` or during instantiation by
+        setting ``model_kwargs``.
 
         See ``ChatOpenAI.bind_tools()`` method for more.
 
