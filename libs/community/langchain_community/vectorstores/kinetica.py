@@ -168,7 +168,7 @@ class Kinetica(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import Kinetica python API. "
-                "Please install it with `pip install gpudb==7.2.0.1`."
+                "Please install it with `pip install gpudb==7.2.0.9`."
             )
 
         self.dimensions = dimensions
@@ -197,7 +197,7 @@ class Kinetica(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import Kinetica python API. "
-                "Please install it with `pip install gpudb==7.2.0.1`."
+                "Please install it with `pip install gpudb==7.2.0.9`."
             )
 
         options = GPUdb.Options()
@@ -221,6 +221,7 @@ class Kinetica(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
+        schema_name: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
@@ -239,8 +240,10 @@ class Kinetica(VectorStore):
                         with each text. Defaults to None.
             ids (Optional[List[str]], optional): List of unique IDs (UUID by default)
                         associated with each text. Defaults to None.
-            collection_name (str, optional): Kinetica schema name.
+            collection_name (str, optional): Kinetica table name.
                         Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
+            schema_name (str, optional): Kinetica schema name.
+                        Defaults to _LANGCHAIN_DEFAULT_SCHEMA_NAME.
             distance_strategy (DistanceStrategy, optional): Not used for now.
                         Defaults to DEFAULT_DISTANCE_STRATEGY.
             pre_delete_collection (bool, optional): Whether to delete the Kinetica
@@ -260,8 +263,8 @@ class Kinetica(VectorStore):
         store = cls(
             config=config,
             collection_name=collection_name,
+            schema_name = schema_name,
             embedding_function=embedding,
-            # dimensions=dimensions,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
             logger=logger,
@@ -284,8 +287,9 @@ class Kinetica(VectorStore):
         except ImportError:
             raise ImportError(
                 "Could not import Kinetica python API. "
-                "Please install it with `pip install gpudb==7.2.0.1`."
+                "Please install it with `pip install gpudb==7.2.0.9`."
             )
+        print(self.table_name)
         return GPUdbTable(
             _type=self.table_schema,
             name=self.table_name,
@@ -423,11 +427,14 @@ class Kinetica(VectorStore):
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
         resp: Dict = self.__query_collection(embedding, k, filter)
+        if resp and resp['status_info']['status'] == 'OK' and 'records' in resp:
+            records: OrderedDict = resp["records"]
+            results = list(zip(*list(records.values())))
 
-        records: OrderedDict = resp["records"]
-        results = list(zip(*list(records.values())))
-
-        return self._results_to_docs_and_scores(results)
+            return self._results_to_docs_and_scores(results)
+        else:
+            self.logger.error(resp['status_info']['message'])
+            return []
 
     def similarity_search_by_vector(
         self,
@@ -545,7 +552,7 @@ class Kinetica(VectorStore):
         query_string = f"""
                 SELECT text, metadata, {dist_strategy}(embedding, '{embedding_str}') 
                 as distance, embedding
-                FROM {self.table_name}
+                FROM "{self.schema_name}"."{self.collection_name}"
                 {where_clause}
                 ORDER BY distance asc NULLS LAST
                 LIMIT {k}
@@ -757,6 +764,7 @@ class Kinetica(VectorStore):
         metadatas: Optional[List[dict]] = None,
         config: KineticaSettings = KineticaSettings(),
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
+        schema_name: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
@@ -773,6 +781,8 @@ class Kinetica(VectorStore):
             config (KineticaSettings): a `KineticaSettings` instance
             collection_name (str, optional): Kinetica schema name.
                         Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
+            schema_name (str, optional): Kinetica schema name.
+                        Defaults to _LANGCHAIN_DEFAULT_SCHEMA_NAME.
             distance_strategy (DistanceStrategy, optional): Distance strategy
                         e.g., l2, cosine etc.. Defaults to DEFAULT_DISTANCE_STRATEGY.
             ids (Optional[List[str]], optional): A list of UUIDs for each
@@ -804,6 +814,7 @@ class Kinetica(VectorStore):
             metadatas=metadatas,
             ids=ids,
             collection_name=collection_name,
+            schema_name=schema_name,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
             **kwargs,
@@ -820,6 +831,7 @@ class Kinetica(VectorStore):
         config: KineticaSettings = KineticaSettings(),
         dimensions: int = Dimension.OPENAI,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
+        schema_name: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
@@ -839,6 +851,8 @@ class Kinetica(VectorStore):
                         default will be used. Defaults to Dimension.OPENAI.
             collection_name (str, optional): Kinetica schema name.
                         Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
+            schema_name (str, optional): Kinetica schema name.
+                        Defaults to _LANGCHAIN_DEFAULT_SCHEMA_NAME.
             distance_strategy (DistanceStrategy, optional): Distance strategy
                         e.g., l2, cosine etc.. Defaults to DEFAULT_DISTANCE_STRATEGY.
             ids (Optional[List[str]], optional): A list of UUIDs for each text/document.
@@ -863,6 +877,7 @@ class Kinetica(VectorStore):
             metadatas=metadatas,
             ids=ids,
             collection_name=collection_name,
+            schema_name=schema_name,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
             **kwargs,
@@ -876,6 +891,7 @@ class Kinetica(VectorStore):
         config: KineticaSettings = KineticaSettings(),
         metadatas: Optional[List[dict]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
+        schema_name: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
@@ -892,6 +908,8 @@ class Kinetica(VectorStore):
                         the texts/documents. Defaults to None.
             collection_name (str, optional): Kinetica schema name.
                         Defaults to _LANGCHAIN_DEFAULT_COLLECTION_NAME.
+            schema_name (str, optional): Kinetica schema name.
+                        Defaults to _LANGCHAIN_DEFAULT_SCHEMA_NAME.
             distance_strategy (DistanceStrategy, optional): Distance strategy
                         e.g., l2, cosine etc.. Defaults to DEFAULT_DISTANCE_STRATEGY.
             ids (Optional[List[str]], optional): A list of UUIDs for each text/document.
@@ -912,6 +930,7 @@ class Kinetica(VectorStore):
             metadatas=metadatas,
             config=config,
             collection_name=collection_name,
+            schema_name=schema_name,
             distance_strategy=distance_strategy,
             ids=ids,
             pre_delete_collection=pre_delete_collection,
