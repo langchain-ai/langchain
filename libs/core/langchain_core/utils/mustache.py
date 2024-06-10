@@ -328,7 +328,7 @@ def _get_key(
             # Return an empty string if falsy, with two exceptions
             # 0 should return 0, and False should return False
             if scope in (0, False):
-                return scope
+                return str(scope)
 
             # For every dot separated key
             for child in key.split("."):
@@ -353,6 +353,8 @@ def _get_key(
                 if scope._CHEVRON_return_scope_when_falsy:  # type: ignore
                     return scope
             except AttributeError:
+                if scope in (0, False):
+                    return scope
                 return scope or ""
         except (AttributeError, KeyError, IndexError, ValueError):
             # We couldn't find the key in the current scope
