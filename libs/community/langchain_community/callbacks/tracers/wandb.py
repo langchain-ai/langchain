@@ -296,8 +296,8 @@ class WandbTracer(BaseTracer):
             run_args: (dict, optional) Arguments to pass to `wandb.init()`. If not
                 provided, `wandb.init()` will be called with no arguments. Please
                 refer to the `wandb.init` for more details.
-            io_serializer: callable A function that serializes the input and output of a run to store in wandb.
-             Defaults to "_serialize_io"
+            io_serializer: callable A function that serializes the input and outputs
+             of a run to store in wandb. Defaults to "_serialize_io"
 
         To use W&B to monitor all LangChain activity, add this tracer like any other
         LangChain callback:
@@ -323,7 +323,7 @@ class WandbTracer(BaseTracer):
         self._trace_tree = trace_tree
         self._run_args = run_args
         self._ensure_run(should_print_url=(wandb.run is None))
-        self._io_serializer = io_serializer if io_serializer else _serialize_io
+        self._io_serializer = _serialize_io
 
     def finish(self) -> None:
         """Waits for all asynchronous processes to finish and data to upload.
@@ -479,7 +479,7 @@ class WandbTracer(BaseTracer):
 
         run_trace = create_trace(run)
         model_dict = self.process_model_dict(run)
-        if model_dict is not None:
+        if model_dict is not None and run_trace is not None:
             run_trace._model_dict = model_dict
         if self._wandb.run is not None and run_trace is not None:
             run_trace.log("langchain_trace")
