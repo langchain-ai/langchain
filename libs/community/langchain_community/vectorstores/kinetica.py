@@ -263,7 +263,7 @@ class Kinetica(VectorStore):
         store = cls(
             config=config,
             collection_name=collection_name,
-            schema_name = schema_name,
+            schema_name=schema_name,
             embedding_function=embedding,
             distance_strategy=distance_strategy,
             pre_delete_collection=pre_delete_collection,
