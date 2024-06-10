@@ -140,7 +140,9 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                         image_url = None
                         if isinstance(content_part.get("image_url"), str):
                             image_url = content_part["image_url"]
-                        elif isinstance(content_part.get("image_url"), dict) and "url" in content_part.get("image_url"):
+                        elif isinstance(
+                            content_part.get("image_url"), dict
+                        ) and "url" in content_part.get("image_url"):
                             image_url = content_part["image_url"]["url"]
                         else:
                             raise ValueError(
