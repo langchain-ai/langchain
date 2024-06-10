@@ -6,8 +6,8 @@ from langchain_community.retrievers import ProjectGutenbergRetriever
 
 def test_project_gutenberg_retriever() -> None:
 
-    docai_wh_retriever = ProjectGutenbergRetriever()
-    documents = docai_wh_retriever.invoke(
+    retrievers = ProjectGutenbergRetriever()
+    documents = retrievers.invoke(
         "Crime and Punishment"
     )
     assert len(documents) == 1
