@@ -1,7 +1,7 @@
 # flake8: noqa
 """Global values and configuration that apply to all of LangChain."""
 import warnings
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from langchain_core.caches import BaseCache
@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 _verbose: bool = False
 _debug: bool = False
 _llm_cache: Optional["BaseCache"] = None
-_package_versions: Dict[str, str] = {}
 
 
 def set_verbose(value: bool) -> None:
@@ -196,9 +195,3 @@ def get_llm_cache() -> "BaseCache":
 
     global _llm_cache
     return _llm_cache or old_llm_cache
-
-
-def _set_package_version(package: str, version: str) -> None:
-    """Set the version of a package."""
-    global _package_versions
-    _package_versions[package] = version
