@@ -33,8 +33,10 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         vector_embedding_policy: Dict[str, Any],
         indexing_policy: Dict[str, Any],
         cosmos_container_properties: Dict[str, Any],
+        cosmos_database_properties: Dict[str, Any],
         database_name: str = "vectorSearchDB",
         container_name: str = "vectorSearchContainer",
+        create_container: bool = True,
     ):
         """
         Constructor for AzureCosmosDBNoSqlVectorSearch
@@ -47,23 +49,8 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             vector_embedding_policy: Vector Embedding Policy for the container.
             indexing_policy: Indexing Policy for the container.
             cosmos_container_properties: Container Properties for the container.
+            cosmos_database_properties: Database Properties for the container.
         """
-        if (
-            indexing_policy["vectorIndexes"] is None
-            or len(indexing_policy["vectorIndexes"]) == 0
-        ):
-            raise ValueError(
-                "vectorIndexes cannot be null or empty in the indexing_policy."
-            )
-        if (
-            vector_embedding_policy is None
-            or len(vector_embedding_policy["vectorEmbeddings"]) == 0
-        ):
-            raise ValueError(
-                "vectorEmbeddings cannot be null "
-                "or empty in the vector_embedding_policy."
-            )
-
         self._cosmos_client = cosmos_client
         self._database_name = database_name
         self._container_name = container_name
@@ -71,10 +58,41 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self._vector_embedding_policy = vector_embedding_policy
         self._indexing_policy = indexing_policy
         self._cosmos_container_properties = cosmos_container_properties
+        self._cosmos_database_properties = cosmos_database_properties
+        self._create_container = create_container
+
+        if self._create_container:
+            if (
+                indexing_policy["vectorIndexes"] is None
+                or len(indexing_policy["vectorIndexes"]) == 0
+            ):
+                raise ValueError(
+                    "vectorIndexes cannot be null or empty in the indexing_policy."
+                )
+            if (
+                vector_embedding_policy is None
+                or len(vector_embedding_policy["vectorEmbeddings"]) == 0
+            ):
+                raise ValueError(
+                    "vectorEmbeddings cannot be null "
+                    "or empty in the vector_embedding_policy."
+                )
+            if (
+                self._cosmos_container_properties["partition_key"] is None
+            ):
+                raise ValueError(
+                    "partition_key cannot be null "
+                    "or empty for a container."
+                )
 
         # Create the database if it already doesn't exist
         self._database = self._cosmos_client.create_database_if_not_exists(
-            id=self._database_name
+            id=self._database_name,
+            offer_throughput=self._cosmos_database_properties.get("offer_throughput"),
+            session_token=self._cosmos_database_properties.get("session_token"),
+            initial_headers=self._cosmos_database_properties.get("initial_headers"),
+            etag=self._cosmos_database_properties.get("etag"),
+            match_condition=self._cosmos_database_properties.get("match_condition"),
         )
 
         # Create the collection if it already doesn't exist
@@ -82,8 +100,19 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             id=self._container_name,
             partition_key=self._cosmos_container_properties["partition_key"],
             indexing_policy=self._indexing_policy,
+            default_ttl=self._cosmos_container_properties.get("default_ttl"),
+            offer_throughput=self._cosmos_container_properties.get("offer_throughput"),
+            unique_key_policy=self._cosmos_container_properties.get("unique_key_policy"),
+            conflict_resolution_policy=self._cosmos_container_properties.get("conflict_resolution_policy"),
+            analytical_storage_ttl=self._cosmos_container_properties.get("analytical_storage_ttl"),
+            computed_properties=self._cosmos_container_properties.get("computed_properties"),
+            etag=self._cosmos_container_properties.get("etag"),
+            match_condition=self._cosmos_container_properties.get("match_condition"),
+            session_token=self._cosmos_container_properties.get("session_token"),
+            initial_headers=self._cosmos_container_properties.get("initial_headers"),
             vector_embedding_policy=self._vector_embedding_policy,
         )
+
         self._embedding_key = self._vector_embedding_policy["vectorEmbeddings"][0][
             "path"
         ][1:]
