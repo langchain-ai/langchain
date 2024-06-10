@@ -227,16 +227,18 @@ class ExperimentalMarkdownSyntaxTextSplitter:
     """
     An experimental text splitter for handling Markdown syntax.
 
-    This splitter aims to retain the exact whitespace of the original text while extracting structured 
-    metadata, such as headers. It is a re-implementation of the MarkdownHeaderTextSplitter with notable 
-    changes to the approach and additional features.
+    This splitter aims to retain the exact whitespace of the original text while 
+    extracting structured metadata, such as headers. It is a re-implementation of the 
+    MarkdownHeaderTextSplitter with notable changes to the approach and 
+    additional features.
 
     Key Features:
     - Retains the original whitespace and formatting of the Markdown text.
     - Extracts headers, code blocks, and horizontal rules as metadata.
     - Splits out code blocks and includes the language in the "Code" metadata key.
     - Splits text on horizontal rules (`---`) as well.
-    - Defaults to sensible splitting behavior, which can be overridden using the `headers_to_split_on` parameter.
+    - Defaults to sensible splitting behavior, which can be overridden using the 
+      `headers_to_split_on` parameter.
 
     Parameters:
     ----------
@@ -251,13 +253,17 @@ class ExperimentalMarkdownSyntaxTextSplitter:
     >>>     ("#", "Header 1"),
     >>>     ("##", "Header 2"),
     >>> ]
-    >>> splitter = ExperimentalMarkdownSyntaxTextSplitter(headers_to_split_on=headers_to_split_on)
+    >>> splitter = ExperimentalMarkdownSyntaxTextSplitter(
+    >>>     headers_to_split_on=headers_to_split_on
+    >>> )
     >>> chunks = splitter.split(text)
     >>> for chunk in chunks:
     >>>     print(chunk)
 
-    This class is currently experimental and subject to change based on feedback and further development.
+    This class is currently experimental and subject to change based on feedback and 
+    further development.
     """
+
     DEFAULT_HEADER_KEYS = {
         "#": "Header 1",
         "##": "Header 2",
