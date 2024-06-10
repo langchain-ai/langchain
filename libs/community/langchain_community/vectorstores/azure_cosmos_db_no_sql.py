@@ -81,8 +81,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                 self._cosmos_container_properties["partition_key"] is None
             ):
                 raise ValueError(
-                    "partition_key cannot be null "
-                    "or empty for a container."
+                    "partition_key cannot be null or empty for a container."
                 )
 
         # Create the database if it already doesn't exist
@@ -102,10 +101,18 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             indexing_policy=self._indexing_policy,
             default_ttl=self._cosmos_container_properties.get("default_ttl"),
             offer_throughput=self._cosmos_container_properties.get("offer_throughput"),
-            unique_key_policy=self._cosmos_container_properties.get("unique_key_policy"),
-            conflict_resolution_policy=self._cosmos_container_properties.get("conflict_resolution_policy"),
-            analytical_storage_ttl=self._cosmos_container_properties.get("analytical_storage_ttl"),
-            computed_properties=self._cosmos_container_properties.get("computed_properties"),
+            unique_key_policy=self._cosmos_container_properties.get(
+                "unique_key_policy"
+            ),
+            conflict_resolution_policy=self._cosmos_container_properties.get(
+                "conflict_resolution_policy"
+            ),
+            analytical_storage_ttl=self._cosmos_container_properties.get(
+                "analytical_storage_ttl"
+            ),
+            computed_properties=self._cosmos_container_properties.get(
+                "computed_properties"
+            ),
             etag=self._cosmos_container_properties.get("etag"),
             match_condition=self._cosmos_container_properties.get("match_condition"),
             session_token=self._cosmos_container_properties.get("session_token"),
