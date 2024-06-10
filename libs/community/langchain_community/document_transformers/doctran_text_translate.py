@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 from typing import Any, Optional, Sequence
 
@@ -67,9 +69,6 @@ class DoctranTextTranslator(BaseDocumentTransformer):
             raise ImportError(
                 "Install doctran to use this parser. (pip install doctran)"
             )
-        doctran = Doctran(
-            openai_api_key=self.openai_api_key, openai_model=self.openai_api_model
-        )
 
         parse_tasks = [
             self._aparse_document(doctran, i, doc) for i, doc in enumerate(documents)
