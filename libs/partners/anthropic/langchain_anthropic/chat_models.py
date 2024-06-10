@@ -1095,12 +1095,8 @@ def _make_message_chunk_from_anthropic_event(
         if coerce_content_to_string:
             warnings.warn("Received unexpected tool content block.")
         # TODO: Pass type through here
-        content_block = {
-            "index": event.index,
-            "id": event.content_block.id,
-            "name": event.content_block.name,
-            "input": event.content_block.input,
-        }
+        content_block = event.content_block
+        content_block.index = event.index
         tool_call_chunk = {
             "index": event.index,
             "id": event.content_block.id,
@@ -1117,17 +1113,14 @@ def _make_message_chunk_from_anthropic_event(
                 text = event.delta.text
                 message_chunk = AIMessageChunk(content=text)
             else:
-                content_block = {
-                    "index": event.index,
-                    "text": event.delta.text,
-                }
+                content_block = event.delta
+                content_block.index = event.index
+                content_block.type = "text"
                 message_chunk = AIMessageChunk(content=[content_block])
         elif event.delta.type == "input_json_delta":
-            # TODO: Pass type through here
-            content_block = {
-                "index": event.index,
-                "partial_json": event.delta.partial_json,
-            }
+            content_block = event.delta
+            content_block.index = event.index
+            content_block.type = "tool_use"
             tool_call_chunk = {
                 "index": event.index,
                 "id": None,

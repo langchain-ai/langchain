@@ -398,6 +398,15 @@ def test_tool_use() -> None:
         else:
             gathered = gathered + chunk  # type: ignore
     assert len(chunks) > 1
+    assert isinstance(gathered.content, list)
+    tool_use_block = None
+    for chunk in gathered.content:
+        if chunk["type"] == "tool_use":
+            tool_use_block = chunk
+            break
+    assert tool_use_block is not None
+    assert tool_use_block["name"] == "get_weather"
+    assert "location" in json.loads(tool_use_block["partial_json"])
     assert isinstance(gathered, AIMessageChunk)
     assert isinstance(gathered.tool_call_chunks, list)
     assert len(gathered.tool_call_chunks) == 1
