@@ -72,9 +72,9 @@ MAX_UPLOAD_BATCH_SIZE = 1000
 
 def _get_search_client(
     endpoint: str,
-    key: str,
+    key: Optional[str],
     index_name: str,
-    azure_credential: Optional[Callable],
+    azure_credential: Optional[Callable] = None,
     semantic_configuration_name: Optional[str] = None,
     fields: Optional[List[SearchField]] = None,
     vector_search: Optional[VectorSearch] = None,
@@ -116,8 +116,9 @@ def _get_search_client(
     elif key is None:
         credential = DefaultAzureCredential()
     elif key.upper() == "INTERACTIVE":
-        credential = InteractiveBrowserCredential()
-        credential.get_token("https://search.azure.com/.default")
+        credential = InteractiveBrowserCredential().get_token(
+            "https://search.azure.com/.default"
+        )
     else:
         credential = AzureKeyCredential(key)
     index_client: SearchIndexClient = SearchIndexClient(
@@ -244,10 +245,10 @@ class AzureSearch(VectorStore):
     def __init__(
         self,
         azure_search_endpoint: str,
-        index_name: str,
         embedding_function: Union[Callable, Embeddings],
-        azure_credential: Optional[Callable],
-        azure_search_key: Optional[str] = None,
+        azure_search_key: str = "",
+        index_name: str = "",
+        azure_credential: Optional[Callable] = None,
         search_type: str = "hybrid",
         semantic_configuration_name: Optional[str] = None,
         fields: Optional[List[SearchField]] = None,
@@ -314,7 +315,7 @@ class AzureSearch(VectorStore):
         self.client = _get_search_client(
             azure_search_endpoint,
             azure_search_key,
-            index_name,
+            index_name=index_name,
             azure_credential=azure_credential,
             semantic_configuration_name=semantic_configuration_name,
             fields=fields,
@@ -1386,9 +1387,9 @@ class AzureSearch(VectorStore):
         # Creating a new Azure Search instance
         azure_search = cls(
             azure_search_endpoint,
+            embedding,
             azure_search_key,
             index_name,
-            embedding,
             fields=fields,
             **kwargs,
         )
@@ -1410,9 +1411,9 @@ class AzureSearch(VectorStore):
         # Creating a new Azure Search instance
         azure_search = cls(
             azure_search_endpoint,
+            embedding,
             azure_search_key,
             index_name,
-            embedding,
             fields=fields,
             **kwargs,
         )
