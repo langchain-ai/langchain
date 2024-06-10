@@ -3,8 +3,8 @@ import time
 
 import pytest
 from dotenv import load_dotenv
-from langchain_openai import AzureOpenAIEmbeddings
 
+from langchain_community.embeddings.azure_openai import AzureOpenAIEmbeddings
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.vectorstores.azuresearch import AzureSearch
 
