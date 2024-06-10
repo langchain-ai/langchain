@@ -77,7 +77,7 @@ class CollectionStore(BaseModel):
 class EmbeddingStore(BaseModel):
     """Embedding store."""
 
-    __tablename__: str = "langchain_pg_embedding"
+    __tablename__ = "langchain_pg_embedding"
 
     collection_id = sqlalchemy.Column(
         UUID(as_uuid=True),
