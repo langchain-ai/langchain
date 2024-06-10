@@ -323,7 +323,7 @@ class WandbTracer(BaseTracer):
         self._trace_tree = trace_tree
         self._run_args = run_args
         self._ensure_run(should_print_url=(wandb.run is None))
-        self._io_serializer = _serialize_io
+        self._io_serializer = io_serializer
 
     def finish(self) -> None:
         """Waits for all asynchronous processes to finish and data to upload.
