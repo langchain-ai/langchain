@@ -14,7 +14,7 @@ from typing import (
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
-from langchain_community.utilities.cassandra import wrapped_response_future
+from langchain_community.utilities.cassandra import aexecute_cql
 
 _NOT_SET = object()
 
@@ -57,8 +57,10 @@ class CassandraLoader(BaseLoader):
                 (do not use together with the table parameter)
             page_content_mapper: a function to convert a row to string page content.
                 Defaults to the str representation of the row.
+            metadata_mapper: a function to convert a row to document metadata.
             query_parameters: The query parameters used when calling session.execute .
             query_timeout: The query timeout used when calling session.execute .
+            query_trace: Whether to use tracing when calling session.execute .
             query_custom_payload: The query custom_payload used when calling
                 session.execute .
             query_execution_profile: The query execution_profile used when calling
@@ -116,11 +118,7 @@ class CassandraLoader(BaseLoader):
             )
 
     async def alazy_load(self) -> AsyncIterator[Document]:
-        for row in await wrapped_response_future(
-            self.session.execute_async,
-            self.query,
-            **self.query_kwargs,
-        ):
+        for row in await aexecute_cql(self.session, self.query, **self.query_kwargs):
             metadata = self.metadata.copy()
             metadata.update(self.metadata_mapper(row))
             yield Document(

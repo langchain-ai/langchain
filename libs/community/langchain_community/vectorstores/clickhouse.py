@@ -39,6 +39,7 @@ class ClickhouseSettings(BaseSettings):
         port (int) : URL port to connect with HTTP. Defaults to 8443.
         username (str) : Username to login. Defaults to None.
         password (str) : Password to login. Defaults to None.
+        secure (bool) : Connect to server over secure connection. Defaults to False.
         index_type (str): index type string.
         index_param (list): index build parameter.
         index_query_params(dict): index query parameters.
@@ -71,6 +72,8 @@ class ClickhouseSettings(BaseSettings):
 
     username: Optional[str] = None
     password: Optional[str] = None
+
+    secure: bool = False
 
     index_type: Optional[str] = "annoy"
     # Annoy supports L2Distance and cosineDistance.
@@ -193,6 +196,7 @@ class Clickhouse(VectorStore):
             port=self.config.port,
             username=self.config.username,
             password=self.config.password,
+            secure=self.config.secure,
             **kwargs,
         )
         # Enable JSON type

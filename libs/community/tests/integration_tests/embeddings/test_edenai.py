@@ -6,7 +6,7 @@ from langchain_community.embeddings.edenai import EdenAiEmbeddings
 def test_edenai_embedding_documents() -> None:
     """Test edenai embeddings with openai."""
     documents = ["foo bar", "test text"]
-    embedding = EdenAiEmbeddings(provider="openai")
+    embedding = EdenAiEmbeddings(provider="openai")  # type: ignore[call-arg]
     output = embedding.embed_documents(documents)
     assert len(output) == 2
     assert len(output[0]) == 1536
@@ -16,6 +16,6 @@ def test_edenai_embedding_documents() -> None:
 def test_edenai_embedding_query() -> None:
     """Test eden ai embeddings with google."""
     document = "foo bar"
-    embedding = EdenAiEmbeddings(provider="google")
+    embedding = EdenAiEmbeddings(provider="google")  # type: ignore[call-arg]
     output = embedding.embed_query(document)
     assert len(output) == 768

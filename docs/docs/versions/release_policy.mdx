@@ -3,7 +3,7 @@ sidebar_position: 2
 sidebar_label: Release Policy
 ---
 
-# LangChain Releases
+# LangChain releases
 
 The LangChain ecosystem is composed of different component packages (e.g., `langchain-core`, `langchain`, `langchain-community`, `langgraph`, `langserve`, partner packages etc.)
 
@@ -32,13 +32,13 @@ From time to time, we will version packages as **release candidates**. These are
 
 Other packages in the ecosystem (including user packages) can follow a different versioning scheme, but are generally expected to pin to specific minor versions of `langchain` and `langchain-core`.
 
-## Release Cadence
+## Release cadence
 
 We expect to space out **minor** releases (e.g., from 0.2.0 to 0.3.0) of `langchain` and `langchain-core` by at least 2-3 months, as such releases may contain breaking changes.
 
 Patch versions are released frequently as they contain bug fixes and new features.
 
-## API Stability
+## API stability
 
 The development of LLM applications is a rapidly evolving field, and we are constantly learning from our users and the community. As such, we expect that the APIs in `langchain` and `langchain-core` will continue to evolve to better serve the needs of our users.
 
@@ -49,14 +49,14 @@ Even though both `langchain` and `langchain-core` are currently in a pre-1.0 sta
 
 We will generally try to avoid making unnecessary changes, and will provide a deprecation policy for features that are being removed.
 
-### Stability of Other Packages
+### Stability of other packages
 
 The stability of other packages in the LangChain ecosystem may vary:
 
 - `langchain-community` is a community maintained package that contains 3rd party integrations. While we do our best to review and test changes in `langchain-community`, `langchain-community` is expected to experience more breaking changes than `langchain` and `langchain-core` as it contains many community contributions.
 - Partner packages may follow different stability and versioning policies, and users should refer to the documentation of those packages for more information; however, in general these packages are expected to be stable.
 
-### What is a "API Stability"?
+### What is a "API stability"?
 
 API stability means:
 
@@ -72,7 +72,7 @@ Certain APIs are explicitly marked as “internal” in a couple of ways:
 - Functions, methods, and other objects prefixed by a leading underscore (**`_`**). This is the standard Python convention of indicating that something is private; if any method starts with a single **`_`**, it’s an internal API.
     - **Exception:** Certain methods are prefixed with `_` , but do not contain an implementation. These methods are *meant* to be overridden by sub-classes that provide the implementation. Such methods are generally part of the **Public API** of LangChain.
 
-## Deprecation Policy
+## Deprecation policy
 
 We will generally avoid deprecating features until a better alternative is available.
 

@@ -376,7 +376,7 @@ def create_ernie_fn_chain(
     output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
-) -> LLMChain:
+) -> LLMChain:  # type: ignore[valid-type]
     """[Legacy] Create an LLM chain that uses Ernie functions.
 
     Args:
@@ -453,7 +453,7 @@ def create_ernie_fn_chain(
     }
     if len(ernie_functions) == 1:
         llm_kwargs["function_call"] = {"name": ernie_functions[0]["name"]}
-    llm_chain = LLMChain(
+    llm_chain = LLMChain(  # type: ignore[misc]
         llm=llm,
         prompt=prompt,
         output_parser=output_parser,
@@ -472,7 +472,7 @@ def create_structured_output_chain(
     output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
-) -> LLMChain:
+) -> LLMChain:  # type: ignore[valid-type]
     """[Legacy] Create an LLMChain that uses an Ernie function to get a structured output.
 
     Args:

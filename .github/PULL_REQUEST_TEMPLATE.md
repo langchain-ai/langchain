@@ -26,4 +26,4 @@ Additional guidelines:
 - Changes should be backwards compatible.
 - If you are adding something to community, do not re-import it in langchain.
 
-If no one reviews your PR within a few days, please @-mention one of baskaryan, efriis, eyurtsev, hwchase17.
+If no one reviews your PR within a few days, please @-mention one of baskaryan, efriis, eyurtsev, ccurme, vbarda, hwchase17.

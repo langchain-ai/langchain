@@ -28,6 +28,8 @@ def test_together_model_param() -> None:
     assert llm.model_name == "foo"
     llm = ChatTogether(model_name="foo")
     assert llm.model_name == "foo"
+    ls_params = llm._get_ls_params()
+    assert ls_params["ls_provider"] == "together"
 
 
 def test_function_dict_to_message_function_message() -> None:
