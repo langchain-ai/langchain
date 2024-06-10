@@ -45,24 +45,14 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
-        try:
-            import unstructured  # noqa:F401
-        except ImportError:
-            raise ImportError(
-                "unstructured package not found, please install it with "
-                "`pip install unstructured`"
-            )
         _valid_modes = {"single", "elements", "paged"}
+
         if mode not in _valid_modes:
             raise ValueError(
                 f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
             )
+        
         self.mode = mode
-
-        if not satisfies_min_unstructured_version("0.5.4"):
-            if "strategy" in unstructured_kwargs:
-                unstructured_kwargs.pop("strategy")
-
         self.unstructured_kwargs = unstructured_kwargs
         self.post_processors = post_processors or []
 
@@ -162,6 +152,19 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
     ):
         """Initialize with file path."""
         self.file_path = file_path
+
+        try:
+            import unstructured  # noqa:F401
+        except ImportError:
+            raise ImportError(
+                "unstructured package not found, please install it with "
+                "`pip install unstructured`"
+            )
+        
+        if not satisfies_min_unstructured_version("0.5.4"):
+            if "strategy" in unstructured_kwargs:
+                unstructured_kwargs.pop("strategy")
+
         super().__init__(mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
@@ -191,6 +194,15 @@ def get_elements_from_api(
     **unstructured_kwargs: Any,
 ) -> List:
     """Retrieve a list of elements from the `Unstructured API`."""
+
+    try:
+        import unstructured_client  # noqa:F401
+    except ImportError:
+        raise ImportError(
+            "unstructured_client package not found, please install it with "
+            "`pip install unstructured-client`"
+        )
+    
     if is_list := isinstance(file_path, list):
         file_path = [str(path) for path in file_path]
     if isinstance(file, collections.abc.Sequence) or is_list:
@@ -221,7 +233,7 @@ def get_elements_from_api(
         )
 
 
-class UnstructuredAPIFileLoader(UnstructuredFileLoader):
+class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
     """Load files using `Unstructured` API.
 
     By default, the loader makes a call to the hosted Unstructured API.
@@ -263,12 +275,11 @@ class UnstructuredAPIFileLoader(UnstructuredFileLoader):
     ):
         """Initialize with file path."""
 
-        validate_unstructured_version(min_unstructured_version="0.10.15")
-
+        self.file_path = file_path
         self.url = url
         self.api_key = api_key
 
-        super().__init__(file_path=file_path, mode=mode, **unstructured_kwargs)
+        super().__init__(mode=mode, **unstructured_kwargs)
 
     def _get_metadata(self) -> dict:
         return {"source": self.file_path}
@@ -318,6 +329,19 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     ):
         """Initialize with file path."""
         self.file = file
+
+        try:
+            import unstructured  # noqa:F401
+        except ImportError:
+            raise ImportError(
+                "unstructured package not found, please install it with "
+                "`pip install unstructured`"
+            )
+        
+        if not satisfies_min_unstructured_version("0.5.4"):
+            if "strategy" in unstructured_kwargs:
+                unstructured_kwargs.pop("strategy")
+                
         super().__init__(mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
@@ -329,7 +353,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
         return {}
 
 
-class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
+class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
     """Load files using `Unstructured` API.
 
     By default, the loader makes a call to the hosted Unstructured API.
@@ -371,16 +395,12 @@ class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
-
-        if isinstance(file, collections.abc.Sequence):
-            validate_unstructured_version(min_unstructured_version="0.6.3")
-        if file:
-            validate_unstructured_version(min_unstructured_version="0.6.2")
-
+        
+        self.file = file
         self.url = url
         self.api_key = api_key
 
-        super().__init__(file=file, mode=mode, **unstructured_kwargs)
+        super().__init__(mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
         return get_elements_from_api(
@@ -389,3 +409,6 @@ class UnstructuredAPIFileIOLoader(UnstructuredFileIOLoader):
             api_url=self.url,
             **self.unstructured_kwargs,
         )
+    
+    def _get_metadata(self) -> dict:
+        return {}
