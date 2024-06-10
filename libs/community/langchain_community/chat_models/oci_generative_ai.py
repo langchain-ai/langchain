@@ -111,7 +111,11 @@ class MetaProvider(Provider):
             ) from ex
 
         self.oci_chat_request = models.GenericChatRequest
-        self.oci_chat_message = models.Message
+        self.oci_chat_message = {
+            "USER": models.UserMessage,
+            "SYSTEM": models.SystemMessage,
+            "ASSISTANT": models.AssistantMessage,
+        }
         self.oci_chat_message_content = models.TextContent
         self.chat_api_format = models.BaseChatRequest.API_FORMAT_GENERIC
         
@@ -143,7 +147,7 @@ class MetaProvider(Provider):
 
     def messages_to_oci_params(self, messages: List[BaseMessage]) -> Dict[str, Any]:
 
-        oci_messages = [self.oci_chat_message(role=self.get_role(msg), content=[self.oci_chat_message_content(text=msg.content)]) for msg in messages]
+        oci_messages = [self.oci_chat_message[self.get_role(msg)](content=[self.oci_chat_message_content(text=msg.content)]) for msg in messages]
         oci_params = {
             "messages": oci_messages,
             "api_format": self.chat_api_format,
@@ -166,7 +170,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
     https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm
 
     The authentifcation method is passed through auth_type and should be one of:
-    API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPLE, RESOURCE_PRINCIPLE
+    API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL
 
     Make sure you have the required policies (profile/roles) to
     access the OCI Generative AI service.
