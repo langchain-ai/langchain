@@ -47,45 +47,12 @@ from langchain_core.messages import (
     SystemMessage,
 )
 
-def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
-    role = _dict["role"]
-    if role == "user":
-        return HumanMessage(content=_dict["content"])
-    elif role == "assistant":
-        return AIMessage(content=_dict.get("content", "") or "")
-    else:
-        return ChatMessage(content=_dict["content"], role=role)
-
-
-def _convert_message_to_dict(message: BaseMessage) -> dict:
-    message_dict: Dict[str, Any]
-    if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
-    elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
-    elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
-    elif isinstance(message, AIMessage):
-        message_dict = {"role": "assistant", "content": message.content}
-    else:
-        raise TypeError(f"Got unknown type {message}")
-
-    return message_dict
-
-def _convert_delta_to_message_chunk(
-    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
-) -> BaseMessageChunk:
-    role = _dict.get("role")
-    content = _dict.get("content") or ""
-
-    if role == "user" or default_class == HumanMessageChunk:
-        return HumanMessageChunk(content=content)
-    elif role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(content=content)
-    elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
-    else:
-        return default_class(content=content)  # type: ignore[call-arg]
+from langchain_openai.chat_models.base import (
+    _convert_delta_to_message_chunk,
+    _convert_dict_to_message,
+    _convert_message_to_dict,
+    _convert_message_to_dict
+)
 
 class ChatLlamaCpp(BaseChatModel):
     """llama.cpp model.
