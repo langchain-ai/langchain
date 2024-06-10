@@ -82,7 +82,10 @@ class HuggingFacePipeline(BaseLLM):
         batch_size: int = DEFAULT_BATCH_SIZE,
         **kwargs: Any,
     ) -> HuggingFacePipeline:
-        """Construct the pipeline object from model_id and task."""
+        """Construct the pipeline object from model_id and task.
+        backend: str = "default"
+            optimization backend chose from ["default", "ipex", "openvino"]
+        """
         try:
             from transformers import (  # type: ignore[import]
                 AutoConfig,
