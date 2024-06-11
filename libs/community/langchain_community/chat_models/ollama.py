@@ -146,7 +146,8 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                             image_url = content_part["image_url"]["url"]
                         else:
                             raise ValueError(
-                                "Only string image_url or dict with string 'url' inside content parts are supported."
+                                "Only string image_url or dict with string 'url' "
+                                "inside content parts are supported."
                             )
 
                         image_url_components = image_url.split(",")
