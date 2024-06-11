@@ -88,7 +88,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
 
             values["client"] = Llama(model_path, embedding=True, **model_params)
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import llama-cpp-python library. "
                 "Please install the llama-cpp-python library to "
                 "use this embedding model: pip install llama-cpp-python"

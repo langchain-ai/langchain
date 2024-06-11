@@ -77,6 +77,8 @@ EXPECT_ALL = [
     "RWKV",
     "Replicate",
     "SagemakerEndpoint",
+    "Sambaverse",
+    "SambaStudio",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
     "StochasticAI",

@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 import requests
+from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
 
@@ -17,6 +18,11 @@ DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
 DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索相关文章："
 
 
+@deprecated(
+    since="0.2.2",
+    removal="0.3.0",
+    alternative_import="langchain_huggingface.HuggingFaceEmbeddings",
+)
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
 
@@ -311,6 +317,8 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
     """The name of the model to use for text embeddings."""
     api_url: Optional[str] = None
     """Custom inference endpoint url. None for using default public url."""
+    additional_headers: Dict[str, str] = {}
+    """Pass additional headers to the requests library if needed."""
 
     @property
     def _api_url(self) -> str:
@@ -327,7 +335,10 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
 
     @property
     def _headers(self) -> dict:
-        return {"Authorization": f"Bearer {self.api_key.get_secret_value()}"}
+        return {
+            "Authorization": f"Bearer {self.api_key.get_secret_value()}",
+            **self.additional_headers,
+        }
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Get the embeddings for a list of texts.

@@ -490,7 +490,7 @@ class Databricks(LLM):
                 task=self.task,
             )
         elif self.cluster_id and self.cluster_driver_port:
-            self._client = _DatabricksClusterDriverProxyClient(
+            self._client = _DatabricksClusterDriverProxyClient(  # type: ignore[call-arg]
                 host=self.host,
                 api_token=self.api_token,
                 cluster_id=self.cluster_id,

@@ -60,7 +60,7 @@ class LambdaWrapper(BaseModel):
             query: an input to passed to the lambda
                 function as the ``body`` of a JSON
                 object.
-        """  # noqa: E501
+        """
         res = self.lambda_client.invoke(
             FunctionName=self.function_name,
             InvocationType="RequestResponse",

@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
@@ -41,6 +42,15 @@ def is_endpoint_live(url: str, headers: Optional[dict], payload: Any) -> bool:
         raise Exception(f"Error querying the endpoint: {e}")
 
 
+@deprecated(
+    since="0.0.37",
+    removal="0.2.0",
+    message=(
+        "Directly instantiating a NeMoEmbeddings from langchain-community is "
+        "deprecated. Please use langchain-nvidia-ai-endpoints NVIDIAEmbeddings "
+        "interface."
+    ),
+)
 class NeMoEmbeddings(BaseModel, Embeddings):
     """NeMo embedding models."""
 

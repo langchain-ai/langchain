@@ -22,9 +22,11 @@ class NeptuneQueryException(Exception):
 
 
 class BaseNeptuneGraph(ABC):
+    """Abstract base class for Neptune"""
+
     @property
     def get_schema(self) -> str:
-        """Returns the schema of the Neptune database"""
+        """Return the schema of the Neptune database"""
         return self.schema
 
     @abstractmethod
@@ -196,13 +198,13 @@ class NeptuneAnalyticsGraph(BaseNeptuneGraph):
                     self.client = session.client("neptune-graph")
 
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
         except Exception as e:
             if type(e).__name__ == "UnknownServiceError":
-                raise ModuleNotFoundError(
+                raise ImportError(
                     "NeptuneGraph requires a boto3 version 1.34.40 or greater."
                     "Please install it with `pip install -U boto3`."
                 ) from e
@@ -345,13 +347,13 @@ class NeptuneGraph(BaseNeptuneGraph):
                     )
 
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import boto3 python package. "
                 "Please install it with `pip install boto3`."
             )
         except Exception as e:
             if type(e).__name__ == "UnknownServiceError":
-                raise ModuleNotFoundError(
+                raise ImportError(
                     "NeptuneGraph requires a boto3 version 1.28.38 or greater."
                     "Please install it with `pip install -U boto3`."
                 ) from e

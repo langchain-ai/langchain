@@ -14,4 +14,4 @@ RETRIEVER_TOOL_NAME = "search"
 @tool
 def search(query):
     """Search with the retriever."""
-    return retriever.get_relevant_documents(query)
+    return retriever.invoke(query)

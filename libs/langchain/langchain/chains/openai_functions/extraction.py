@@ -59,7 +59,6 @@ Passage:
         "https://github.com/langchain-ai/langchain/discussions/18154"
     ),
     removal="0.3.0",
-    pending=True,
     alternative=(
         """
             from langchain_core.pydantic_v1 import BaseModel, Field
@@ -130,7 +129,6 @@ def create_extraction_chain(
         "https://github.com/langchain-ai/langchain/discussions/18154"
     ),
     removal="0.3.0",
-    pending=True,
     alternative=(
         """
             from langchain_core.pydantic_v1 import BaseModel, Field

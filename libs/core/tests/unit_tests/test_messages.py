@@ -120,6 +120,22 @@ def test_message_chunks() -> None:
     assert ai_msg_chunk + tool_calls_msg_chunk == tool_calls_msg_chunk
     assert tool_calls_msg_chunk + ai_msg_chunk == tool_calls_msg_chunk
 
+    # Test token usage
+    left = AIMessageChunk(
+        content="",
+        usage_metadata={"input_tokens": 1, "output_tokens": 2, "total_tokens": 3},
+    )
+    right = AIMessageChunk(
+        content="",
+        usage_metadata={"input_tokens": 4, "output_tokens": 5, "total_tokens": 9},
+    )
+    assert left + right == AIMessageChunk(
+        content="",
+        usage_metadata={"input_tokens": 5, "output_tokens": 7, "total_tokens": 12},
+    )
+    assert AIMessageChunk(content="") + left == left
+    assert right + AIMessageChunk(content="") == right
+
 
 def test_chat_message_chunks() -> None:
     assert ChatMessageChunk(role="User", content="I am", id="ai4") + ChatMessageChunk(
@@ -143,7 +159,49 @@ def test_chat_message_chunks() -> None:
         role="User", content=" indeed."
     ) == AIMessageChunk(
         content="I am indeed."
-    ), "Other MessageChunk + ChatMessageChunk should be a MessageChunk as the left side"  # noqa: E501
+    ), "Other MessageChunk + ChatMessageChunk should be a MessageChunk as the left side"
+
+
+def test_complex_ai_message_chunks() -> None:
+    assert AIMessageChunk(content=["I am"], id="ai4") + AIMessageChunk(
+        content=[" indeed."]
+    ) == AIMessageChunk(
+        id="ai4", content=["I am", " indeed."]
+    ), "Content concatenation with arrays of strings should naively combine"
+
+    assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
+        content=" indeed."
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am"}, " indeed."]
+    ), "Concatenating mixed content arrays should naively combine them"
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am"}])
+        + AIMessageChunk(content=[{"index": 0, "text": " indeed."}])
+        == AIMessageChunk(content=[{"index": 0, "text": "I am indeed."}])
+    ), "Concatenating when both content arrays are dicts with the same index should merge"  # noqa: E501
+
+    assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
+        content=[{"text": " indeed."}]
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am"}, {"text": " indeed."}]
+    ), "Concatenating when one chunk is missing an index should not merge or throw"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am"}])
+        + AIMessageChunk(content=[{"index": 2, "text": " indeed."}])
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am"}, {"index": 2, "text": " indeed."}]
+        )
+    ), "Concatenating when both content arrays are dicts with a gap between indexes should not result in a holey array"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am"}])
+        + AIMessageChunk(content=[{"index": 1, "text": " indeed."}])
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am"}, {"index": 1, "text": " indeed."}]
+        )
+    ), "Concatenating when both content arrays are dicts with separate indexes should not merge"  # noqa: E501
 
 
 def test_function_message_chunks() -> None:
@@ -306,8 +364,8 @@ def test_message_chunk_to_message() -> None:
             {"name": "tool2", "args": {}, "id": "2"},
         ],
         invalid_tool_calls=[
-            {"name": "tool3", "args": None, "id": "3", "error": "Malformed args."},
-            {"name": "tool4", "args": "abc", "id": "4", "error": "Malformed args."},
+            {"name": "tool3", "args": None, "id": "3", "error": None},
+            {"name": "tool4", "args": "abc", "id": "4", "error": None},
         ],
     )
     assert message_chunk_to_message(chunk) == expected
@@ -545,8 +603,8 @@ def test_convert_to_messages() -> None:
         [
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": "Hello!"},
-            {"role": "ai", "content": "Hi!"},
-            {"role": "human", "content": "Hello!", "name": "Jane"},
+            {"role": "ai", "content": "Hi!", "id": "ai1"},
+            {"type": "human", "content": "Hello!", "name": "Jane", "id": "human1"},
             {
                 "role": "assistant",
                 "content": "Hi!",
@@ -554,13 +612,20 @@ def test_convert_to_messages() -> None:
                 "function_call": {"name": "greet", "arguments": '{"name": "Jane"}'},
             },
             {"role": "function", "name": "greet", "content": "Hi!"},
+            {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {"name": "greet", "args": {"name": "Jane"}, "id": "tool_id"}
+                ],
+            },
             {"role": "tool", "tool_call_id": "tool_id", "content": "Hi!"},
         ]
     ) == [
         SystemMessage(content="You are a helpful assistant."),
         HumanMessage(content="Hello!"),
-        AIMessage(content="Hi!"),
-        HumanMessage(content="Hello!", name="Jane"),
+        AIMessage(content="Hi!", id="ai1"),
+        HumanMessage(content="Hello!", name="Jane", id="human1"),
         AIMessage(
             content="Hi!",
             name="JaneBot",
@@ -569,6 +634,10 @@ def test_convert_to_messages() -> None:
             },
         ),
         FunctionMessage(name="greet", content="Hi!"),
+        AIMessage(
+            content="",
+            tool_calls=[ToolCall(name="greet", args={"name": "Jane"}, id="tool_id")],
+        ),
         ToolMessage(tool_call_id="tool_id", content="Hi!"),
     ]
 
@@ -579,7 +648,7 @@ def test_convert_to_messages() -> None:
             "hello!",
             ("ai", "Hi!"),
             ("human", "Hello!"),
-            ("assistant", "Hi!"),
+            ["assistant", "Hi!"],
         ]
     ) == [
         SystemMessage(content="You are a helpful assistant."),

@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional, Union
+
+from typing_extensions import TypedDict
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -19,6 +21,20 @@ from langchain_core.utils.json import (
 )
 
 
+class UsageMetadata(TypedDict):
+    """Usage metadata for a message, such as token counts.
+
+    Attributes:
+        input_tokens: (int) count of input (or prompt) tokens
+        output_tokens: (int) count of output (or completion) tokens
+        total_tokens: (int) total token count
+    """
+
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+
+
 class AIMessage(BaseMessage):
     """Message from an AI."""
 
@@ -31,6 +47,11 @@ class AIMessage(BaseMessage):
     """If provided, tool calls associated with the message."""
     invalid_tool_calls: List[InvalidToolCall] = []
     """If provided, tool calls with parsing errors associated with the message."""
+    usage_metadata: Optional[UsageMetadata] = None
+    """If provided, usage metadata for a message, such as token counts.
+
+    This is a standard representation of token usage that is consistent across models.
+    """
 
     type: Literal["ai"] = "ai"
 
@@ -69,6 +90,37 @@ class AIMessage(BaseMessage):
                 pass
         return values
 
+    def pretty_repr(self, html: bool = False) -> str:
+        """Return a pretty representation of the message."""
+        base = super().pretty_repr(html=html)
+        lines = []
+
+        def _format_tool_args(tc: Union[ToolCall, InvalidToolCall]) -> List[str]:
+            lines = [
+                f"  {tc.get('name', 'Tool')} ({tc.get('id')})",
+                f" Call ID: {tc.get('id')}",
+            ]
+            if tc.get("error"):
+                lines.append(f"  Error: {tc.get('error')}")
+            lines.append("  Args:")
+            args = tc.get("args")
+            if isinstance(args, str):
+                lines.append(f"    {args}")
+            elif isinstance(args, dict):
+                for arg, value in args.items():
+                    lines.append(f"    {arg}: {value}")
+            return lines
+
+        if self.tool_calls:
+            lines.append("Tool Calls:")
+            for tc in self.tool_calls:
+                lines.extend(_format_tool_args(tc))
+        if self.invalid_tool_calls:
+            lines.append("Invalid Tool Calls:")
+            for itc in self.invalid_tool_calls:
+                lines.extend(_format_tool_args(itc))
+        return (base.strip() + "\n" + "\n".join(lines)).strip()
+
 
 AIMessage.update_forward_refs()
 
@@ -79,7 +131,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment] # noqa: E501
+    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
 
     tool_call_chunks: List[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
@@ -124,7 +176,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                         name=chunk["name"],
                         args=chunk["args"],
                         id=chunk["id"],
-                        error="Malformed args.",
+                        error=None,
                     )
                 )
         values["tool_calls"] = tool_calls
@@ -167,12 +219,29 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             else:
                 tool_call_chunks = []
 
+            # Token usage
+            if self.usage_metadata or other.usage_metadata:
+                left: UsageMetadata = self.usage_metadata or UsageMetadata(
+                    input_tokens=0, output_tokens=0, total_tokens=0
+                )
+                right: UsageMetadata = other.usage_metadata or UsageMetadata(
+                    input_tokens=0, output_tokens=0, total_tokens=0
+                )
+                usage_metadata: Optional[UsageMetadata] = {
+                    "input_tokens": left["input_tokens"] + right["input_tokens"],
+                    "output_tokens": left["output_tokens"] + right["output_tokens"],
+                    "total_tokens": left["total_tokens"] + right["total_tokens"],
+                }
+            else:
+                usage_metadata = None
+
             return self.__class__(
                 example=self.example,
                 content=content,
                 additional_kwargs=additional_kwargs,
                 tool_call_chunks=tool_call_chunks,
                 response_metadata=response_metadata,
+                usage_metadata=usage_metadata,
                 id=self.id,
             )
 

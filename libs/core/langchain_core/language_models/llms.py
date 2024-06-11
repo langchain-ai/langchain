@@ -1064,7 +1064,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         generations = [existing_prompts[i] for i in range(len(prompts))]
         return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     def __call__(
         self,
         prompt: str,
@@ -1116,7 +1116,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         )
         return result.generations[0][0].text
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -1126,7 +1126,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             _stop = list(stop)
         return self(text, stop=_stop, **kwargs)
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
     def predict_messages(
         self,
         messages: List[BaseMessage],
@@ -1142,7 +1142,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         content = self(text, stop=_stop, **kwargs)
         return AIMessage(content=content)
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
@@ -1152,7 +1152,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             _stop = list(stop)
         return await self._call_async(text, stop=_stop, **kwargs)
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="0.3.0")
     async def apredict_messages(
         self,
         messages: List[BaseMessage],
@@ -1218,7 +1218,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
 
 class LLM(BaseLLM):
-    """This class exposes a simple interface for implementing a custom LLM.
+    """Simple interface for implementing a custom LLM.
 
     You should subclass this class and implement the following:
 

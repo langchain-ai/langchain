@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import warnings
 from typing import Dict, Iterable, List, Optional
 
 import httpx
@@ -17,6 +18,17 @@ from tokenizers import Tokenizer  # type: ignore
 logger = logging.getLogger(__name__)
 
 MAX_TOKENS = 16_000
+"""A batching parameter for the Mistral API. This is NOT the maximum number of tokens
+accepted by the embedding model for each document/chunk, but rather the maximum number 
+of tokens that can be sent in a single request to the Mistral API (across multiple
+documents/chunks)"""
+
+
+class DummyTokenizer:
+    """Dummy tokenizer for when tokenizer cannot be accessed (e.g., via Huggingface)"""
+
+    def encode_batch(self, texts: List[str]) -> List[List[str]]:
+        return [list(text) for text in texts]
 
 
 class MistralAIEmbeddings(BaseModel, Embeddings):
@@ -63,29 +75,40 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         )
         api_key_str = values["mistral_api_key"].get_secret_value()
         # todo: handle retries
-        values["client"] = httpx.Client(
-            base_url=values["endpoint"],
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": f"Bearer {api_key_str}",
-            },
-            timeout=values["timeout"],
-        )
-        # todo: handle retries and max_concurrency
-        values["async_client"] = httpx.AsyncClient(
-            base_url=values["endpoint"],
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": f"Bearer {api_key_str}",
-            },
-            timeout=values["timeout"],
-        )
-        if values["tokenizer"] is None:
-            values["tokenizer"] = Tokenizer.from_pretrained(
-                "mistralai/Mixtral-8x7B-v0.1"
+        if not values.get("client"):
+            values["client"] = httpx.Client(
+                base_url=values["endpoint"],
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {api_key_str}",
+                },
+                timeout=values["timeout"],
             )
+        # todo: handle retries and max_concurrency
+        if not values.get("async_client"):
+            values["async_client"] = httpx.AsyncClient(
+                base_url=values["endpoint"],
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {api_key_str}",
+                },
+                timeout=values["timeout"],
+            )
+        if values["tokenizer"] is None:
+            try:
+                values["tokenizer"] = Tokenizer.from_pretrained(
+                    "mistralai/Mixtral-8x7B-v0.1"
+                )
+            except IOError:  # huggingface_hub GatedRepoError
+                warnings.warn(
+                    "Could not download mistral tokenizer from Huggingface for "
+                    "calculating batch sizes. Set a Huggingface token via the "
+                    "HF_TOKEN environment variable to download the real tokenizer. "
+                    "Falling back to a dummy tokenizer that uses `len()`."
+                )
+                values["tokenizer"] = DummyTokenizer()
         return values
 
     def _get_batches(self, texts: List[str]) -> Iterable[List[str]]:
@@ -100,7 +123,10 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
         for text, text_tokens in zip(texts, text_token_lengths):
             if batch_tokens + text_tokens > MAX_TOKENS:
-                yield batch
+                if len(batch) > 0:
+                    # edge case where first batch exceeds max tokens
+                    # should not yield an empty batch.
+                    yield batch
                 batch = [text]
                 batch_tokens = text_tokens
             else:

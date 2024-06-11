@@ -1,19 +1,25 @@
 from typing import Callable, Dict, Optional, Sequence
 
 import numpy as np
-from langchain_community.document_transformers.embeddings_redundant_filter import (
-    _get_embeddings_from_stateful_docs,
-    get_stateful_documents,
-)
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import Field, root_validator
 
 from langchain.retrievers.document_compressors.base import (
     BaseDocumentCompressor,
 )
-from langchain.utils.math import cosine_similarity
+
+
+def _get_similarity_function() -> Callable:
+    try:
+        from langchain_community.utils.math import cosine_similarity
+    except ImportError:
+        raise ImportError(
+            "To use please install langchain-community "
+            "with `pip install langchain-community`."
+        )
+    return cosine_similarity
 
 
 class EmbeddingsFilter(BaseDocumentCompressor):
@@ -22,7 +28,7 @@ class EmbeddingsFilter(BaseDocumentCompressor):
 
     embeddings: Embeddings
     """Embeddings to use for embedding document contents and queries."""
-    similarity_fn: Callable = cosine_similarity
+    similarity_fn: Callable = Field(default_factory=_get_similarity_function)
     """Similarity function for comparing documents. Function expected to take as input
     two matrices (List[List[float]]) and return a matrix of scores where higher values
     indicate greater similarity."""
@@ -53,6 +59,16 @@ class EmbeddingsFilter(BaseDocumentCompressor):
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """Filter documents based on similarity of their embeddings to the query."""
+        try:
+            from langchain_community.document_transformers.embeddings_redundant_filter import (  # noqa: E501
+                _get_embeddings_from_stateful_docs,
+                get_stateful_documents,
+            )
+        except ImportError:
+            raise ImportError(
+                "To use please install langchain-community "
+                "with `pip install langchain-community`."
+            )
         stateful_documents = get_stateful_documents(documents)
         embedded_documents = _get_embeddings_from_stateful_docs(
             self.embeddings, stateful_documents

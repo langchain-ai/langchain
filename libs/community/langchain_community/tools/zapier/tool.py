@@ -95,7 +95,7 @@ class ZapierNLARunAction(BaseTool):
 
     """
 
-    api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)
+    api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)  # type: ignore[arg-type]
     action_id: str
     params: Optional[dict] = None
     base_prompt: str = BASE_ZAPIER_TOOL_PROMPT
@@ -174,7 +174,7 @@ class ZapierNLAListActions(BaseTool):
     description: str = BASE_ZAPIER_TOOL_PROMPT + (
         "This tool returns a list of the user's exposed actions."
     )
-    api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)
+    api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)  # type: ignore[arg-type]
 
     def _run(
         self,

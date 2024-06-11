@@ -30,7 +30,7 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.chains import LLMChain
 
 
-@deprecated("0.1.0", alternative="create_json_chat_agent", removal="0.2.0")
+@deprecated("0.1.0", alternative="create_json_chat_agent", removal="0.3.0")
 class ConversationalChatAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 

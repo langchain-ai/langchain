@@ -68,9 +68,9 @@ class FunctionCallbackHandler(BaseTracer):
     def get_breadcrumbs(self, run: Run) -> str:
         parents = self.get_parents(run)[::-1]
         string = " > ".join(
-            f"{parent.execution_order}:{parent.run_type}:{parent.name}"
+            f"{parent.run_type}:{parent.name}"
             if i != len(parents) - 1
-            else f"{parent.execution_order}:{parent.run_type}:{parent.name}"
+            else f"{parent.run_type}:{parent.name}"
             for i, parent in enumerate(parents + [run])
         )
         return string

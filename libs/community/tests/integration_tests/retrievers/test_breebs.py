@@ -10,7 +10,7 @@ class TestBreebsRetriever:
         breeb_key = "Parivoyage"
         query = "What are the best churches to visit in Paris?"
         breeb_retriever = BreebsRetriever(breeb_key)
-        documents: List[Document] = breeb_retriever.get_relevant_documents(query)
+        documents: List[Document] = breeb_retriever.invoke(query)
         assert isinstance(documents, list), "Documents should be a list"
         for doc in documents:
             assert doc.page_content, "Document page_content should not be None"

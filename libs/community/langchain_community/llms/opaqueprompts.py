@@ -84,7 +84,7 @@ class OpaquePrompts(LLM):
         Example:
             .. code-block:: python
 
-                response = op_llm("Tell me a joke.")
+                response = op_llm.invoke("Tell me a joke.")
         """
         import opaqueprompts as op
 

@@ -143,7 +143,7 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
             )
 
         except ImportError as ex:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import oci python package. "
                 "Please make sure you have the oci package installed."
             ) from ex

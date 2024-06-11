@@ -4,6 +4,7 @@ from uuid import UUID
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
+from langchain_core.utils import guard_import
 
 from langchain_community.callbacks.utils import import_pandas
 
@@ -54,14 +55,7 @@ _dataset_dict = {
 
 def import_fiddler() -> Any:
     """Import the fiddler python package and raise an error if it is not installed."""
-    try:
-        import fiddler  # noqa: F401
-    except ImportError:
-        raise ImportError(
-            "To use fiddler callback handler you need to have `fiddler-client`"
-            "package installed. Please install it with `pip install fiddler-client`"
-        )
-    return fiddler
+    return guard_import("fiddler", pip_name="fiddler-client")
 
 
 # First, define custom callback handler implementations
@@ -169,7 +163,7 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
             )
             print(  # noqa: T201
                 f"adding model {self.model} to project {self.project}."
-                "This only has to be done once."  # noqa: T201
+                "This only has to be done once."
             )
             try:
                 self.fiddler_client.add_model(
@@ -181,7 +175,7 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
             except Exception as e:
                 print(  # noqa: T201
                     f"Error adding model {self.model}: {e}."
-                    "Fiddler integration will not work."  # noqa: T201
+                    "Fiddler integration will not work."
                 )
                 raise e
 

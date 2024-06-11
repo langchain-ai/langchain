@@ -1,5 +1,5 @@
-from langchain.utilities import DuckDuckGoSearchAPIWrapper
 from langchain_community.chat_models import ChatOpenAI
+from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
 from langchain_core.runnables import RunnableLambda

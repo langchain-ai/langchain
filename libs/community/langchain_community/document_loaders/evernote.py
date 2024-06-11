@@ -34,7 +34,7 @@ class EverNoteLoader(BaseLoader):
             notes into a single long Document.
         If this is set to True (default) then the only metadata on the document will be
             the 'source' which contains the file name of the export.
-    """  # noqa: E501
+    """
 
     def __init__(self, file_path: Union[str, Path], load_single_document: bool = True):
         """Initialize with file path."""
