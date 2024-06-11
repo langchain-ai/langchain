@@ -33,6 +33,28 @@ class _QuerySQLDataBaseToolInput(BaseModel):
 class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
     """Tool for querying a SQL database."""
 
+    safe_query: bool = Field(
+        True,
+        description="Check the query for forbidden SQL keywords, forbidden_keywords defaults to all modifying SQL commands.",
+        exclude=True,
+    )
+    forbidden_keywords: Sequence[str] = Field(
+        [
+            "ALTER",
+            "CREATE",
+            "DELETE",
+            "DROP",
+            "INSERT",
+            "MERGE",
+            "UPDATE",
+            "TRUNCATE",
+            "RENAME",
+            "GRANT",
+            "REVOKE",
+        ],
+        description="A list of forbidden sql keywords that are not allowed in the query.",
+        exclude=True,
+    )
     name: str = "sql_db_query"
     description: str = """
     Execute a SQL query against the database and get back the result..
@@ -47,6 +69,10 @@ class QuerySQLDataBaseTool(BaseSQLDatabaseTool, BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[str, Sequence[Dict[str, Any]], Result]:
         """Execute the query, return the results or an error message."""
+        if self.safe_query:
+            forbidden_words_in_query = [word for word in self.forbidden_keywords if word in query]
+            if forbidden_words_in_query:
+                return f"Error: Query contains forbidden words: {', '.join(forbidden_words_in_query)}"
         return self.db.run_no_throw(query)
 
 
