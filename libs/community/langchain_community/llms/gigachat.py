@@ -204,6 +204,12 @@ class _BaseGigaChat(Serializable):
     ) -> gm.UploadedFile:
         return await self._client.aupload_file(file, purpose)
 
+    def get_image(self, file_id: str) -> gm.Image:
+        return self._client.get_image(file_id)
+
+    async def aget_image(self, file_id: str) -> gm.Image:
+        return await self._client.aget_image(file_id)
+
 
 class GigaChat(_BaseGigaChat, BaseLLM):
     """`GigaChat` large language models API.
