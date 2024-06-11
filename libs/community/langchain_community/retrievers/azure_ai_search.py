@@ -54,11 +54,11 @@ class AzureAISearchRetriever(BaseRetriever):
         values["index_name"] = get_from_dict_or_env(
             values, "index_name", "AZURE_AI_SEARCH_INDEX_NAME"
         )
-        if 'azure_ad_token_provider' in values:
-            return values 
-        else: 
+        if "azure_ad_token_provider" in values:
+            return values
+        else:
             values["api_key"] = get_from_dict_or_env(
-            values, "api_key", "AZURE_AI_SEARCH_API_KEY"
+                values, "api_key", "AZURE_AI_SEARCH_API_KEY"
             )
             return values
 
