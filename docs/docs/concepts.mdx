@@ -626,16 +626,86 @@ to learn and understand the structure of the language, including grammar and con
 Furthermore, using tokens can also improve efficiency, since the model processes fewer units of text compared to character-level processing.
 
 When you send a model a prompt, the words and characters in the prompt are encoded into tokens using a **tokenizer**.
-As the model streams back output, it does so as tokens, which the tokenizer decodes into human-readable text.
+The model then streams back generated output tokens, which the tokenizer decodes into human-readable text.
 
 #### Callbacks
 
-The lowest level way to stream tokens in LangChain is via the [callbacks](/docs/concepts/#callbacks) system.
-This was the first technique introduced in LangChain.
+The lowest level way to stream outputs from LLMs in LangChain is via the [callbacks](/docs/concepts/#callbacks) system. You can pass a
+callback handler that handles the [`on_llm_new_token`](https://api.python.langchain.com/en/latest/callbacks/langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.html#langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.on_llm_new_token) event into LangChain components. When that component is invoked, any
+[LLM](/docs/concepts/#llms) or [chat model](/docs/concepts/#chat-models) contained in the component calls
+the callback with the generated token. Within the callback, you could pipe the tokens into some other destination, e.g. a HTTP response.
+You can also handle the [`on_llm_end`](https://api.python.langchain.com/en/latest/callbacks/langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.html#langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.on_llm_end) event to perform any necessary cleanup.
+
+You can see [this how-to section](/docs/how_to/#callbacks) for more specifics on using callbacks.
+
+Callbacks were the first technique for streaming introduced in LangChain. While powerful and generalizable,
+they can be unwieldy for developers. For example:
+
+- You need to explicitly initialize and manage some aggregator or other stream to collect results.
+- The execution order isn't explicitly guaranteed, and you could theoretically have a callback run after the `.invoke()` method finishes.
+- Providers would often make you pass an additional parameter to stream outputs instead of returning them all at once.
+- You would often ignore the result of the actual model call in favor of callback results.
 
 #### `.stream()`
 
-#### `.streamEvents()`
+LangChain also includes the `.stream()` method as a more ergonomic streaming interface.
+`.stream()` returns an iterator, which you can consume with a simple `for` loop. Here's an example with a chat model:
+
+```python
+from langchain_anthropic import ChatAnthropic
+
+model = ChatAnthropic(model="claude-3-sonnet-20240229")
+
+for chunk in model.stream("what color is the sky?"):
+    print(chunk.content, end="|", flush=True)
+```
+
+For models (or other components) that don't support streaming natively, this iterator would just yield a single chunk, but
+you could still use the same general pattern. Using `.stream()` will also automatically call the model in streaming mode
+without the need to provide additional config.
+
+The type of each outputted chunk depends on the type of component - for example, chat models yield [`AIMessageChunks`](https://api.python.langchain.com/en/latest/messages/langchain_core.messages.ai.AIMessageChunk.html).
+Because this method is part of [LangChain Expression Language](/docs/concepts/#langchain-expression-language-lcel),
+you can handle formatting differences from different outputs using an [output parser](/docs/concepts/#output-parsers) to transform
+each yielded chunk.
+
+You can check out [this guide](/docs/how_to/streaming/#using-stream) for more detail on how to use `.stream()`.
+
+#### `.astream_events()`
+
+While the `.stream()` method is easier to use than callbacks, it only returns one type of value. This is fine for single LLM calls,
+but as you build more complex chains of several LLM calls together, you may want to use the intermediate values of
+the chain alongside the final output - for example, returning sources alongside the final generation when building a chat
+over documents app.
+
+There are ways to do this using the aforementioned callbacks, or by constructing your chain in such a way that it passes intermediate
+values to the end with something like [`.assign()`](/docs/how_to/passthrough/), but LangChain also includes an
+`.astream_events()` method that combines the flexibility of callbacks with the ergonomics of `.stream()`. When called, it returns an iterator
+which yields [various types of events](/docs/how_to/streaming/#event-reference) that you can filter and process according
+to the needs of your project.
+
+Here's one small example that prints just events containing streamed chat model output:
+
+```python
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_anthropic import ChatAnthropic
+
+model = ChatAnthropic(model="claude-3-sonnet-20240229")
+
+prompt = ChatPromptTemplate.from_template("tell me a joke about {topic}")
+parser = StrOutputParser()
+chain = prompt | model | parser
+
+async for event in chain.astream_events({"topic": "parrot"}, version="v2"):
+    kind = event["event"]
+    if kind == "on_chat_model_stream":
+        print(event, end="|", flush=True)
+```
+
+You can roughly think of it as an iterator over callback events (though the format differs) - and you can use it on almost all LangChain components!
+
+See [this guide](/docs/how_to/streaming/#using-stream-events) for more detailed information on how to use `.astream_events()`.
 
 ### Function/tool calling
 
