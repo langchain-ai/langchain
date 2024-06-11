@@ -714,7 +714,7 @@ See [this guide](/docs/how_to/streaming/#using-stream-events) for more detailed 
 We use the term tool calling interchangeably with function calling. Although
 function calling is sometimes meant to refer to invocations of a single function,
 we treat all models as though they can return multiple tool or function calls in
-each message.
+each message
 :::
 
 Tool calling allows a model to respond to a given prompt by generating output that
@@ -754,7 +754,98 @@ There are two main use cases for function/tool calling:
 
 ### Retrieval
 
-LangChain provides several advanced retrieval types. A full list is below, along with the following information:
+LLMs are trained on a large but fixed corpus of data, limiting their ability to reason over private or recent information outside of their training data. Fine-tuning is one way to mitigate this, but is often [poorly suited for facutal recall](https://www.anyscale.com/blog/fine-tuning-is-for-form-not-facts) and [can be costly](https://www.glean.com/blog/how-to-build-an-ai-assistant-for-the-enterprise). 
+Retrieval augmented generation (RAG) has emerged as a popular and powerful mechanism to expand an LLM's knowledge base, using documents retrieved from an external data source to ground the LLM generation via in-context learning. 
+
+:::tip
+
+* See our RAG from Scratch [code](https://github.com/langchain-ai/rag-from-scratch) and [video series](https://youtube.com/playlist?list=PLfaIDFEXuae2LXbO1_PKyVJiQ23ZztA0x&feature=shared).
+* See our documentation focused on RAG [here](/docs/tutorials/#working-with-external-knowledge).
+
+:::
+
+RAG is only as good as the retrieved documents’ relevance and and detail. Fortunatly, an emerging set of techiques can be employed to design and improve RAG systems. We've focused on taxonomizing and summarizing many of these techniques (see below figure) and will share some high-level strategic guidance in the following sections.
+
+![](/img/rag_landscape.png)
+
+#### Query Translation
+
+First, consider the user of a RAG system and the input(s) they are likely to pass. Ideally, a RAG system should be able to handle a wide range of inputs, from poorly worded questions to complex multi-part queries.
+*Using an LLM to review the raw input and modify it in some way is the central idea behind query translation.* This can be as simple as extracting keywords or as complex as generating multiple sub-questions for a complex concept.
+
+:::tip
+
+See our RAG from Scratch videos for a few different specific approaches:
+* Multi-query: https://youtu.be/JChPi0CRnDY?feature=shared
+* RAG-Fusion: https://youtu.be/77qELPbNgxA?feature=shared
+* Decomposition: https://youtu.be/h0OPWlEOank?feature=shared
+* Step-back: https://youtu.be/xn1jEjRyJ2U?feature=shared
+* HyDE: https://youtu.be/SaDzIVkYqyY?feature=shared
+
+:::
+
+#### Routing
+
+Second, consider the data sources available to your RAG system. These could be a mix of structured and unstructured data, or even multiple unstructured data sources. *Using an LLM to review the input and route it to the approriate data source is a simple and effective approach for querying across sources.*
+
+:::tip
+
+See our RAG from Scratch vide on routing: https://youtu.be/pfpIndq7Fi8?feature=shared
+
+And see our documentation on [using an LLM to route queries](/docs/how_to/routing/).
+
+:::
+
+#### Query Construction
+
+Third, consider whether any of your data sources require specific query formats. Many structured databases use SQL, but even vectorstores often have specific syntax for applying keyword filters based upon metadata. *Using an LLM to convert a natual language query into a specific query syntax is a general and powerful approach.*
+In particular, [text-to-SQL](/docs/tutorials/sql_qa/), [text-to-Cypher](/docs/tutorials/graph/), and [query analysis](/docs/tutorials/query_analysis/#query-analysis) are useful ways to interact with structured, graph, and vector databses, respectively. 
+
+:::tip
+
+See our RAG from Scratch video on query construction: https://youtu.be/kl6NwWYxvbM?feature=shared
+
+:::
+
+#### Indexing
+
+Fouth, consider how the design of your index. A simple and powerful idea is to *decouple the documents that you index for retrieval from the documents that you pass to the LLM for generation.* There is a natural tension here. Indexing frequently uses embedding models with vectorstores, which [compress the semantic information of documents into a fixed-size vectors](https://docs.google.com/presentation/d/1MhsCqZs7wTX6P19TFnA9qRSlxH3u-1-0gWkhBiDG9lQ/edit?usp=sharing).
+It is often desirable to index focused and semantically related chunks, which enables efficient retrieval [using a measure of similarity between the input and the chunk](https://cameronrwolfe.substack.com/p/the-basics-of-ai-powered-vector-search?utm_source=profile&utm_medium=reader2).
+However, LLMs are increacingly capable of processing thousands or millions of tokens.
+ 
+:::tip
+
+See our RAG from Scratch video on indexing fundementals: https://youtu.be/bjb_EMsTDKI?feature=shared
+
+:::
+
+One approach to address this is simply linking indexed documents (e.g., which are often narrow chunks) to the full documents, often creating a many-to-one mapping between smaller sematically related chunks and the full document that they derive from. This marries the best of both words: perform retrieval using chunks better optimized to your search algorithm, but utilize full documents in generation to provide the LLM with the most context possible.
+We have a few different retriever abstractions to support this, including parent document and multi-vector retrievers.
+
+:::tip
+
+See our RAG from Scratch video on multi-vector retriever: https://youtu.be/gTCU9I6QqCE?feature=shared
+
+:::
+
+Fifth, consider ways to improve the quality of your similarity search itself. Embeddings excel at capturing high-level semantic similarity, but may struggle with more keyword-based queries. Many [vectorstores](https://python.langchain.com/v0.2/docs/integrations/retrievers/pinecone_hybrid_search/) offer built-in [hybrid-search](https://docs.pinecone.io/guides/data/understanding-hybrid-search) to combine keyword and semantic similarity.  
+In addition, many vectorstores have [maximal marginal relevance](https://python.langchain.com/v0.1/docs/modules/model_io/prompts/example_selectors/mmr/), which attempts to diversify the results of a search to avoid returning similar documents. Finally, it can be 
+
+:::tip
+
+< Add ColBERT: https://youtu.be/cN6S0Ehm7_8?feature=shared>
+
+:::
+
+#### Post-processing
+
+< Add ReRank - https://python.langchain.com/v0.1/docs/integrations/retrievers/cohere-reranker/ and MRR - RAG-Fusion >
+
+#### Generation
+
+< Add LangGraph self-correction stories: adaptive RAG, self-RAG, corrective-RAG >
+
+For a summary of the techniques and their use cases, see the table below:
 
 **Name**: Name of the retrieval algorithm.
 
