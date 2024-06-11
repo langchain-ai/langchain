@@ -330,7 +330,7 @@ class TestAGEGraph(unittest.TestCase):
         graph.refresh_schema()
 
         # check that schema is refreshed
-        self.assertIn(
+        self.assertIn(  # codespell:ignore
             re.sub(r"\s", "", graph.get_schema),
             [re.sub(r"\s", "", x) for x in expected_possibilities],
         )
