@@ -1,6 +1,8 @@
 """Test ChatDeepInfra wrapper."""
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables.base import RunnableBinding
 
 from langchain_community.chat_models.deepinfra import ChatDeepInfra
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -63,3 +65,29 @@ async def test_async_chat_deepinfra_streaming() -> None:
     assert isinstance(generation, ChatGeneration)
     assert isinstance(generation.text, str)
     assert generation.text == generation.message.content
+
+
+def test_chat_deepinfra_bind_tools() -> None:
+    class Foo(BaseModel):
+        pass
+
+    chat = ChatDeepInfra(
+        max_tokens=10,
+    )
+    tools = [Foo]
+    chat_with_tools = chat.bind_tools(tools)
+    assert isinstance(chat_with_tools, RunnableBinding)
+    chat_tools = chat_with_tools.tools
+    assert chat_tools
+    assert chat_tools == {
+        "tools": [
+            {
+                "function": {
+                    "description": "",
+                    "name": "Foo",
+                    "parameters": {"properties": {}, "type": "object"},
+                },
+                "type": "function",
+            }
+        ]
+    }
