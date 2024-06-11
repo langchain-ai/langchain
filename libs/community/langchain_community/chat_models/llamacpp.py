@@ -37,7 +37,7 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
-from langchain_core.messages.tool import InvalidToolCall, ToolCall
+from langchain_core.messages.tool import InvalidToolCall, ToolCall, ToolCallChunk
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -50,196 +50,6 @@ from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
-
-
-def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
-    """Convert a dictionary to a LangChain message.
-
-    Args:
-        _dict: The dictionary.
-
-    Returns:
-        The LangChain message.
-    """
-    role = _dict.get("role")
-    name = _dict.get("name")
-    id_ = _dict.get("id")
-    if role == "user":
-        return HumanMessage(content=_dict.get("content", ""), id=id_, name=name)
-    elif role == "assistant":
-        # Fix for azure
-        # Also OpenAI returns None for tool invocations
-        content = _dict.get("content", "") or ""
-        additional_kwargs: Dict = {}
-        if function_call := _dict.get("function_call"):
-            additional_kwargs["function_call"] = dict(function_call)
-        tool_calls = []
-        invalid_tool_calls = []
-        if raw_tool_calls := _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = raw_tool_calls
-            for raw_tool_call in raw_tool_calls:
-                try:
-                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
-                except Exception as e:
-                    invalid_tool_calls.append(
-                        make_invalid_tool_call(raw_tool_call, str(e))
-                    )
-        return AIMessage(
-            content=content,
-            additional_kwargs=additional_kwargs,
-            name=name,
-            id=id_,
-            tool_calls=tool_calls,
-            invalid_tool_calls=invalid_tool_calls,
-        )
-    elif role == "system":
-        return SystemMessage(content=_dict.get("content", ""), name=name, id=id_)
-    elif role == "function":
-        return FunctionMessage(
-            content=_dict.get("content", ""), name=cast(str, _dict.get("name")), id=id_
-        )
-    elif role == "tool":
-        additional_kwargs = {}
-        if "name" in _dict:
-            additional_kwargs["name"] = _dict["name"]
-        return ToolMessage(
-            content=_dict.get("content", ""),
-            tool_call_id=cast(str, _dict.get("tool_call_id")),
-            additional_kwargs=additional_kwargs,
-            name=name,
-            id=id_,
-        )
-    else:
-        return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)
-
-
-def _format_message_content(content: Any) -> Any:
-    """Format message content."""
-    if content and isinstance(content, list):
-        # Remove unexpected block types
-        formatted_content = []
-        for block in content:
-            if (
-                isinstance(block, dict)
-                and "type" in block
-                and block["type"] == "tool_use"
-            ):
-                continue
-            else:
-                formatted_content.append(block)
-    else:
-        formatted_content = content
-
-    return formatted_content
-
-
-def _convert_message_to_dict(message: BaseMessage) -> dict:
-    """Convert a LangChain message to a dictionary.
-
-    Args:
-        message: The LangChain message.
-
-    Returns:
-        The dictionary.
-    """
-    message_dict: Dict[str, Any] = {
-        "content": _format_message_content(message.content),
-    }
-    if (name := message.name or message.additional_kwargs.get("name")) is not None:
-        message_dict["name"] = name
-
-    # populate role and additional message data
-    if isinstance(message, ChatMessage):
-        message_dict["role"] = message.role
-    elif isinstance(message, HumanMessage):
-        message_dict["role"] = "user"
-    elif isinstance(message, AIMessage):
-        message_dict["role"] = "assistant"
-        if "function_call" in message.additional_kwargs:
-            message_dict["function_call"] = message.additional_kwargs["function_call"]
-        if message.tool_calls or message.invalid_tool_calls:
-            message_dict["tool_calls"] = [
-                _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
-            ] + [
-                _lc_invalid_tool_call_to_openai_tool_call(tc)
-                for tc in message.invalid_tool_calls
-            ]
-        elif "tool_calls" in message.additional_kwargs:
-            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
-            tool_call_supported_props = {"id", "type", "function"}
-            message_dict["tool_calls"] = [
-                {k: v for k, v in tool_call.items() if k in tool_call_supported_props}
-                for tool_call in message_dict["tool_calls"]
-            ]
-        else:
-            pass
-        # If tool calls present, content null value should be None not empty string.
-        if "function_call" in message_dict or "tool_calls" in message_dict:
-            message_dict["content"] = message_dict["content"] or None
-    elif isinstance(message, SystemMessage):
-        message_dict["role"] = "system"
-    elif isinstance(message, FunctionMessage):
-        message_dict["role"] = "function"
-    elif isinstance(message, ToolMessage):
-        message_dict["role"] = "tool"
-        message_dict["tool_call_id"] = message.tool_call_id
-
-        supported_props = {"content", "role", "tool_call_id"}
-        message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
-    else:
-        raise TypeError(f"Got unknown type {message}")
-    return message_dict
-
-
-def _convert_delta_to_message_chunk(
-    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
-) -> BaseMessageChunk:
-    id_ = _dict.get("id")
-    role = cast(str, _dict.get("role"))
-    content = cast(str, _dict.get("content") or "")
-    additional_kwargs: Dict = {}
-    if _dict.get("function_call"):
-        function_call = dict(_dict["function_call"])
-        if "name" in function_call and function_call["name"] is None:
-            function_call["name"] = ""
-        additional_kwargs["function_call"] = function_call
-    tool_call_chunks = []
-    if raw_tool_calls := _dict.get("tool_calls"):
-        additional_kwargs["tool_calls"] = raw_tool_calls
-        try:
-            tool_call_chunks = [
-                {
-                    "name": rtc["function"].get("name"),
-                    "args": rtc["function"].get("arguments"),
-                    "id": rtc.get("id"),
-                    "index": rtc["index"],
-                }
-                for rtc in raw_tool_calls
-            ]
-        except KeyError:
-            pass
-
-    if role == "user" or default_class == HumanMessageChunk:
-        return HumanMessageChunk(content=content, id=id_)
-    elif role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(
-            content=content,
-            additional_kwargs=additional_kwargs,
-            id=id_,
-            tool_call_chunks=tool_call_chunks,
-        )
-    elif role == "system" or default_class == SystemMessageChunk:
-        return SystemMessageChunk(content=content, id=id_)
-    elif role == "function" or default_class == FunctionMessageChunk:
-        return FunctionMessageChunk(content=content, name=_dict["name"], id=id_)
-    elif role == "tool" or default_class == ToolMessageChunk:
-        return ToolMessageChunk(
-            content=content, tool_call_id=_dict["tool_call_id"], id=id_
-        )
-    elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role, id=id_)
-    else:
-        return default_class(content=content, id=id_)  # type: ignore
 
 
 class ChatLlamaCpp(BaseChatModel):
@@ -262,70 +72,70 @@ class ChatLlamaCpp(BaseChatModel):
     lora_path: Optional[str] = None
     """The path to the Llama LoRA. If None, no LoRa is loaded."""
 
-    n_ctx: int = Field(512, alias="n_ctx")
+    n_ctx: int = 512
     """Token context window."""
 
-    n_parts: int = Field(-1, alias="n_parts")
+    n_parts: int = -1
     """Number of parts to split the model into.
     If -1, the number of parts is automatically determined."""
 
-    seed: int = Field(-1, alias="seed")
+    seed: int = -1
     """Seed. If -1, a random seed is used."""
 
-    f16_kv: bool = Field(True, alias="f16_kv")
+    f16_kv: bool = True
     """Use half-precision for key/value cache."""
 
-    logits_all: bool = Field(False, alias="logits_all")
+    logits_all: bool = False
     """Return logits for all tokens, not just the last token."""
 
-    vocab_only: bool = Field(False, alias="vocab_only")
+    vocab_only: bool = False
     """Only load the vocabulary, no weights."""
 
-    use_mlock: bool = Field(False, alias="use_mlock")
+    use_mlock: bool = False
     """Force system to keep model in RAM."""
 
-    n_threads: Optional[int] = Field(None, alias="n_threads")
+    n_threads: Optional[int] = None
     """Number of threads to use.
     If None, the number of threads is automatically determined."""
 
-    n_batch: Optional[int] = Field(8, alias="n_batch")
+    n_batch: int = 8
     """Number of tokens to process in parallel.
     Should be a number between 1 and n_ctx."""
 
-    n_gpu_layers: Optional[int] = Field(None, alias="n_gpu_layers")
+    n_gpu_layers: Optional[int] = None
     """Number of layers to be loaded into gpu memory. Default None."""
 
-    suffix: Optional[str] = Field(None)
+    suffix: Optional[str] = None
     """A suffix to append to the generated text. If None, no suffix is appended."""
 
-    max_tokens: Optional[int] = 256
+    max_tokens: int = 256
     """The maximum number of tokens to generate."""
 
-    temperature: Optional[float] = 0.8
+    temperature: float = 0.8
     """The temperature to use for sampling."""
 
-    top_p: Optional[float] = 0.95
+    top_p: float = 0.95
     """The top-p value to use for sampling."""
 
-    logprobs: Optional[int] = Field(None)
+    logprobs: Optional[int] = None
     """The number of logprobs to return. If None, no logprobs are returned."""
 
-    echo: Optional[bool] = False
+    echo: bool = False
     """Whether to echo the prompt."""
 
-    stop: Optional[List[str]] = []
+    stop: Optional[List[str]] = None
     """A list of strings to stop generation when encountered."""
 
-    repeat_penalty: Optional[float] = 1.1
+    repeat_penalty: float = 1.1
     """The penalty to apply to repeated tokens."""
 
-    top_k: Optional[int] = 40
+    top_k: int = 40
     """The top-k value to use for sampling."""
 
-    last_n_tokens_size: Optional[int] = 64
+    last_n_tokens_size: int = 64
     """The number of tokens to look back when applying the repeat_penalty."""
 
-    use_mmap: Optional[bool] = True
+    use_mmap: bool = True
     """Whether to keep the model loaded in RAM"""
 
     rope_freq_scale: float = 1.0
@@ -347,7 +157,7 @@ class ChatLlamaCpp(BaseChatModel):
     to force the model to generate valid JSON or to speak exclusively in emojis. At most
     one of grammar_path and grammar should be passed in.
     """
-    grammar: Optional[Union[str, Any]] = None
+    grammar: Any = None
     """
     grammar: formal grammar for constraining model outputs. For instance, the grammar 
     can be used to force the model to generate valid JSON or to speak exclusively in 
@@ -357,7 +167,7 @@ class ChatLlamaCpp(BaseChatModel):
     verbose: bool = True
     """Print verbose output to stderr."""
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
         try:
@@ -418,7 +228,7 @@ class ChatLlamaCpp(BaseChatModel):
             pass
         return values
 
-    def _get_parameters(self) -> Dict[str, Any]:
+    def _get_parameters(self, stop: Optional[List[str]]) -> Dict[str, Any]:
         """
         Performs sanity check, preparing parameters in format needed by llama_cpp.
 
@@ -429,10 +239,10 @@ class ChatLlamaCpp(BaseChatModel):
         params = self._default_params
 
         # llama_cpp expects the "stop" key not this, so we remove it:
-        params.pop("stop_sequences")
+        stop_sequences = params.pop("stop_sequences")
 
         # then sets it as configured, or default to an empty list:
-        params["stop"] = self.stop or []
+        params["stop"] = stop or stop_sequences or self.stop or []
 
         return params
 
@@ -450,10 +260,7 @@ class ChatLlamaCpp(BaseChatModel):
             generation_info = dict(finish_reason=res.get("finish_reason"))
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
-            gen = ChatGeneration(
-                message=message,
-                generation_info=generation_info,
-            )
+            gen = ChatGeneration(message=message, generation_info=generation_info)
             generations.append(gen)
         token_usage = response.get("usage", {})
         llm_output = {
@@ -465,10 +272,11 @@ class ChatLlamaCpp(BaseChatModel):
     def _generate(
         self,
         messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params = {**self._get_parameters(), **kwargs}
+        params = {**self._get_parameters(stop), **kwargs}
 
         # Check tool_choice is whether available, if yes then run no stream with tool
         # calling
@@ -485,10 +293,11 @@ class ChatLlamaCpp(BaseChatModel):
     def _stream(
         self,
         messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        params = {**self._get_parameters(), **kwargs}
+        params = {**self._get_parameters(stop), **kwargs}
         message_dicts = self._create_message_dicts(messages)
 
         result = self.client.create_chat_completion(
@@ -805,3 +614,198 @@ def _lc_invalid_tool_call_to_openai_tool_call(
             "arguments": invalid_tool_call["args"],
         },
     }
+
+
+def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
+    """Convert a dictionary to a LangChain message.
+
+    Args:
+        _dict: The dictionary.
+
+    Returns:
+        The LangChain message.
+    """
+    role = _dict.get("role")
+    name = _dict.get("name")
+    id_ = _dict.get("id")
+    if role == "user":
+        return HumanMessage(content=_dict.get("content", ""), id=id_, name=name)
+    elif role == "assistant":
+        # Fix for azure
+        # Also OpenAI returns None for tool invocations
+        content = _dict.get("content", "") or ""
+        additional_kwargs: Dict = {}
+        if function_call := _dict.get("function_call"):
+            additional_kwargs["function_call"] = dict(function_call)
+        tool_calls = []
+        invalid_tool_calls = []
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            for raw_tool_call in raw_tool_calls:
+                try:
+                    tc = parse_tool_call(raw_tool_call, return_id=True)
+                except Exception as e:
+                    invalid_tc = make_invalid_tool_call(raw_tool_call, str(e))
+                    invalid_tool_calls.append(invalid_tc)
+                else:
+                    if not tc:
+                        continue
+                    else:
+                        tool_calls.append(tc)
+        return AIMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            name=name,
+            id=id_,
+            tool_calls=tool_calls,  # type: ignore[arg-type]
+            invalid_tool_calls=invalid_tool_calls,
+        )
+    elif role == "system":
+        return SystemMessage(content=_dict.get("content", ""), name=name, id=id_)
+    elif role == "function":
+        return FunctionMessage(
+            content=_dict.get("content", ""), name=cast(str, _dict.get("name")), id=id_
+        )
+    elif role == "tool":
+        additional_kwargs = {}
+        if "name" in _dict:
+            additional_kwargs["name"] = _dict["name"]
+        return ToolMessage(
+            content=_dict.get("content", ""),
+            tool_call_id=cast(str, _dict.get("tool_call_id")),
+            additional_kwargs=additional_kwargs,
+            name=name,
+            id=id_,
+        )
+    else:
+        return ChatMessage(
+            content=_dict.get("content", ""), role=cast(str, role), id=id_
+        )
+
+
+def _format_message_content(content: Any) -> Any:
+    """Format message content."""
+    if content and isinstance(content, list):
+        # Remove unexpected block types
+        formatted_content = []
+        for block in content:
+            if (
+                isinstance(block, dict)
+                and "type" in block
+                and block["type"] == "tool_use"
+            ):
+                continue
+            else:
+                formatted_content.append(block)
+    else:
+        formatted_content = content
+
+    return formatted_content
+
+
+def _convert_message_to_dict(message: BaseMessage) -> dict:
+    """Convert a LangChain message to a dictionary.
+
+    Args:
+        message: The LangChain message.
+
+    Returns:
+        The dictionary.
+    """
+    message_dict: Dict[str, Any] = {
+        "content": _format_message_content(message.content),
+    }
+    if (name := message.name or message.additional_kwargs.get("name")) is not None:
+        message_dict["name"] = name
+
+    # populate role and additional message data
+    if isinstance(message, ChatMessage):
+        message_dict["role"] = message.role
+    elif isinstance(message, HumanMessage):
+        message_dict["role"] = "user"
+    elif isinstance(message, AIMessage):
+        message_dict["role"] = "assistant"
+        if "function_call" in message.additional_kwargs:
+            message_dict["function_call"] = message.additional_kwargs["function_call"]
+        if message.tool_calls or message.invalid_tool_calls:
+            message_dict["tool_calls"] = [
+                _lc_tool_call_to_openai_tool_call(tc) for tc in message.tool_calls
+            ] + [
+                _lc_invalid_tool_call_to_openai_tool_call(tc)
+                for tc in message.invalid_tool_calls
+            ]
+        elif "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+            tool_call_supported_props = {"id", "type", "function"}
+            message_dict["tool_calls"] = [
+                {k: v for k, v in tool_call.items() if k in tool_call_supported_props}
+                for tool_call in message_dict["tool_calls"]
+            ]
+        else:
+            pass
+        # If tool calls present, content null value should be None not empty string.
+        if "function_call" in message_dict or "tool_calls" in message_dict:
+            message_dict["content"] = message_dict["content"] or None
+    elif isinstance(message, SystemMessage):
+        message_dict["role"] = "system"
+    elif isinstance(message, FunctionMessage):
+        message_dict["role"] = "function"
+    elif isinstance(message, ToolMessage):
+        message_dict["role"] = "tool"
+        message_dict["tool_call_id"] = message.tool_call_id
+
+        supported_props = {"content", "role", "tool_call_id"}
+        message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
+    else:
+        raise TypeError(f"Got unknown type {message}")
+    return message_dict
+
+
+def _convert_delta_to_message_chunk(
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+) -> BaseMessageChunk:
+    id_ = _dict.get("id")
+    role = cast(str, _dict.get("role"))
+    content = cast(str, _dict.get("content") or "")
+    additional_kwargs: Dict = {}
+    if _dict.get("function_call"):
+        function_call = dict(_dict["function_call"])
+        if "name" in function_call and function_call["name"] is None:
+            function_call["name"] = ""
+        additional_kwargs["function_call"] = function_call
+    tool_call_chunks = []
+    if raw_tool_calls := _dict.get("tool_calls"):
+        additional_kwargs["tool_calls"] = raw_tool_calls
+        for rtc in raw_tool_calls:
+            try:
+                tool_call = ToolCallChunk(
+                    name=rtc["function"].get("name"),
+                    args=rtc["function"].get("arguments"),
+                    id=rtc.get("id"),
+                    index=rtc["index"],
+                )
+                tool_call_chunks.append(tool_call)
+            except KeyError:
+                pass
+
+    if role == "user" or default_class == HumanMessageChunk:
+        return HumanMessageChunk(content=content, id=id_)
+    elif role == "assistant" or default_class == AIMessageChunk:
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            id=id_,
+            tool_call_chunks=tool_call_chunks,
+        )
+    elif role == "system" or default_class == SystemMessageChunk:
+        return SystemMessageChunk(content=content, id=id_)
+    elif role == "function" or default_class == FunctionMessageChunk:
+        return FunctionMessageChunk(content=content, name=_dict["name"], id=id_)
+    elif role == "tool" or default_class == ToolMessageChunk:
+        return ToolMessageChunk(
+            content=content, tool_call_id=_dict["tool_call_id"], id=id_
+        )
+    elif role or default_class == ChatMessageChunk:
+        return ChatMessageChunk(content=content, role=role, id=id_)
+    else:
+        return default_class(content=content, id=id_)  # type: ignore
