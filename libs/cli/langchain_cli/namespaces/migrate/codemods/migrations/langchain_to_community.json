@@ -7184,11 +7184,11 @@
     "langchain_community.vectorstores.AwaDB"
   ],
   [
-    "langchain.vectorstores.azure_cosmos_db_mongo_vcore.CosmosDBSimilarityType",
-    "langchain_community.vectorstores.azure_cosmos_db_mongo_vcore.CosmosDBSimilarityType"
+    "langchain.vectorstores.azure_cosmos_db.CosmosDBSimilarityType",
+    "langchain_community.vectorstores.azure_cosmos_db.CosmosDBSimilarityType"
   ],
   [
-    "langchain.vectorstores.azure_cosmos_db_mongo_vcore.AzureCosmosDBVectorSearch",
+    "langchain.vectorstores.azure_cosmos_db.AzureCosmosDBVectorSearch",
     "langchain_community.vectorstores.AzureCosmosDBVectorSearch"
   ],
   [
