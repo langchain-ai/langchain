@@ -186,8 +186,8 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
 
 def get_elements_from_api(
-    file_path: Union[str, List[str], Path, List[Path], None] = None,
-    file: Union[IO, Sequence[IO], None] = None,
+    file_path: Union[str, Path, None] = None,
+    file: Union[IO, None] = None,
     api_url: str = "https://api.unstructured.io/general/v0/general",
     api_key: str = "",
     **unstructured_kwargs: Any,
@@ -196,40 +196,41 @@ def get_elements_from_api(
 
     try:
         import unstructured_client  # noqa:F401
+        from unstructured.staging.base import elements_from_json  # noqa:F401
     except ImportError:
         raise ImportError(
-            "unstructured_client package not found, please install it with "
-            "`pip install unstructured-client`"
+            "unstructured_client and/or unstructured package not found, please install it with "
+            "`pip install unstructured-client` or `pip install unstructured`."
         )
-    
-    if is_list := isinstance(file_path, list):
-        _file_path: List[str] = [str(path) for path in file_path]
-    if isinstance(file, Sequence) or is_list:
-        _file = cast(List[str], file)
-        from unstructured.partition.api import partition_multiple_via_api
+    from unstructured.staging.base import elements_from_json
+    from unstructured_client.models import operations, shared
 
-        _doc_elements = partition_multiple_via_api(
-            filenames=_file_path,
-            files=_file,
-            api_key=api_key,
-            api_url=api_url,
+    content = None
+    if file is not None:            
+        content = file.read()
+    if content is None and file_path is not None:
+        with open(file_path, 'rb') as f:
+            content = f.read()
+    if content is None:
+        raise ValueError("Either file or file_path must be provided")
+
+    client = unstructured_client.UnstructuredClient(api_key_auth=api_key, server_url=api_url)
+    req = operations.PartitionRequest(
+        partition_parameters=shared.PartitionParameters(
+            files=shared.Files(
+                content=content,
+                file_name=str(file_path)
+            ),
             **unstructured_kwargs,
-        )
+        ),
+    )
+    response = client.general.partition(req)
 
-        elements = []
-        for _elements in _doc_elements:
-            elements.extend(_elements)
-
-        return elements
+    if response.status_code == 200:
+        return elements_from_json(text=response.raw_response.text)
     else:
-        from unstructured.partition.api import partition_via_api
-
-        return partition_via_api(
-            filename=str(file_path) if file_path is not None else None,
-            file=file,
-            api_key=api_key,
-            api_url=api_url,
-            **unstructured_kwargs,
+        raise ValueError(
+            f"Receive unexpected status code {response.status_code} from the API.",
         )
 
 
@@ -285,6 +286,19 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
         return {"source": self.file_path}
 
     def _get_elements(self) -> List:
+        if isinstance(self.file_path, List):
+            elements = []
+            for path in self.file_path:
+                elements.extend(
+                    get_elements_from_api(
+                        file_path=path,
+                        api_key=self.api_key,
+                        api_url=self.url,
+                        **self.unstructured_kwargs,
+                    )
+                )
+            return elements
+
         return get_elements_from_api(
             file_path=self.file_path,
             api_key=self.api_key,
@@ -403,8 +417,30 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
         super().__init__(mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
+        if isinstance(self.file, Sequence):
+            if _metadata_filenames := self.unstructured_kwargs.pop("metadata_filename"):
+                elements = []
+                for i, file in enumerate(self.file):
+                    elements.extend(
+                        get_elements_from_api(
+                            file=file,
+                            file_path=_metadata_filenames[i],
+                            api_key=self.api_key,
+                            api_url=self.url,
+                            **self.unstructured_kwargs,
+                        )
+                    )
+                return elements
+            else:
+                raise ValueError(
+                    "If partitioning a file via api,"
+                    " metadata_filename must be specified as well.",
+                )
+
+
         return get_elements_from_api(
             file=self.file,
+            file_path=self.unstructured_kwargs.pop("metadata_filename"),
             api_key=self.api_key,
             api_url=self.url,
             **self.unstructured_kwargs,

@@ -87,7 +87,7 @@ def test_unstructured_api_file_io_loader() -> None:
             api_key="FAKE_API_KEY",
             strategy="fast",
             mode="elements",
-            file_filename=file_path,
+            metadata_filename=file_path,
         )
         docs = loader.load()
 
@@ -109,7 +109,7 @@ def test_unstructured_api_file_loader_io_multiple_files() -> None:
             api_key="FAKE_API_KEY",
             strategy="fast",
             mode="elements",
-            file_filenames=file_paths,
+            metadata_filename=file_paths,
         )
 
         docs = loader.load()
