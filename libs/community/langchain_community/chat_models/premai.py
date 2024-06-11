@@ -164,24 +164,20 @@ def _messages_to_prompt_dict(
                 system_prompt = str(input_msg.content)
             else:
                 assert (input_msg.id is not None) and (input_msg.id != ""), ValueError(
-                    "When using prompt template there should be id associated "
+                    "When using prompt template there should be id associated ",
                     "with each HumanMessage"
                 )
                 params[str(input_msg.id)] = str(input_msg.content)
         
-        examples_and_messages.append({
-            "role": "user",
-            "template_id": template_id,
-            "params": params
-        })
+        examples_and_messages.append(
+            {"role": "user", "template_id": template_id, "params": params}
+        )
 
         for input_msg in input_messages:
             if isinstance(input_msg, AIMessage):
-                examples_and_messages.append({
-                    "role": "assistant",
-                    "content": input_msg 
-                })
-        
+                examples_and_messages.append(
+                    {"role": "assistant", "content": input_msg}
+                )
     else:
         for input_msg in input_messages:
             if isinstance(input_msg, SystemMessage):
@@ -326,7 +322,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
         if "template_id" in kwargs:
             system_prompt, messages_to_pass = _messages_to_prompt_dict(
                 messages, template_id=kwargs["template_id"]
-            )  # type: ignore
+            ) 
         else:
             system_prompt, messages_to_pass = _messages_to_prompt_dict(messages) # type: ignore
 
