@@ -152,7 +152,6 @@ class ApertureDB(VectorStore):
             # Create indexes
             self.utils.create_entity_index("_Descriptor", "_create_txn")
             self.utils.create_entity_index("_DescriptorSet", "_name")
-            self.utils.create_entity_index("_Descriptor", "_uniqueid")
             self.utils.create_entity_index("_Descriptor", UNIQUEID_PROPERTY)
 
     @override
