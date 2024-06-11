@@ -2,45 +2,10 @@
 
 All functionality related to [Google Cloud Platform](https://cloud.google.com/) and other `Google` products.
 
-## LLMs
+## Chat models
 
 We recommend individual developers to start with Gemini API (`langchain-google-genai`) and move to Vertex AI (`langchain-google-vertexai`) when they need access to commercial support and higher rate limits. If you’re already Cloud-friendly or Cloud-native, then you can get started in Vertex AI straight away.
-Please, find more information [here](https://ai.google.dev/gemini-api/docs/migrate-to-cloud).
-
-### Google Generative AI
-
-Access GoogleAI `Gemini` models such as `gemini-pro` and `gemini-pro-vision` through the `GoogleGenerativeAI` class.
-
-Install python package.
-
-```bash
-pip install langchain-google-genai
-```
-
-See a [usage example](/docs/integrations/llms/google_ai).
-
-```python
-from langchain_google_genai import GoogleGenerativeAI
-```
-
-### Vertex AI Model Garden
-
-Access `PaLM` and hundreds of OSS models via `Vertex AI Model Garden` service.
-
-We need to install `langchain-google-vertexai` python package.
-
-```bash
-pip install langchain-google-vertexai
-```
-
-See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model-garden).
-
-```python
-from langchain_google_vertexai import VertexAIModelGarden
-```
-
-
-## Chat models
+Please see [here](https://ai.google.dev/gemini-api/docs/migrate-to-cloud) for more information.
 
 ### Google Generative AI
 
@@ -105,6 +70,40 @@ See a [usage example](/docs/integrations/chat/google_vertex_ai_palm).
 
 ```python
 from langchain_google_vertexai import ChatVertexAI
+```
+
+## LLMs
+
+### Google Generative AI
+
+Access GoogleAI `Gemini` models such as `gemini-pro` and `gemini-pro-vision` through the `GoogleGenerativeAI` class.
+
+Install python package.
+
+```bash
+pip install langchain-google-genai
+```
+
+See a [usage example](/docs/integrations/llms/google_ai).
+
+```python
+from langchain_google_genai import GoogleGenerativeAI
+```
+
+### Vertex AI Model Garden
+
+Access `PaLM` and hundreds of OSS models via `Vertex AI Model Garden` service.
+
+We need to install `langchain-google-vertexai` python package.
+
+```bash
+pip install langchain-google-vertexai
+```
+
+See a [usage example](/docs/integrations/llms/google_vertex_ai_palm#vertex-model-garden).
+
+```python
+from langchain_google_vertexai import VertexAIModelGarden
 ```
 
 ## Embedding models

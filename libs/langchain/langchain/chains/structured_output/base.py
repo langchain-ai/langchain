@@ -518,7 +518,7 @@ def _create_openai_json_runnable(
     """"""
     if isinstance(output_schema, type) and issubclass(output_schema, BaseModel):
         output_parser = output_parser or PydanticOutputParser(
-            pydantic_object=output_schema,
+            pydantic_object=output_schema,  # type: ignore
         )
         schema_as_dict = convert_to_openai_function(output_schema)["parameters"]
     else:

@@ -266,12 +266,17 @@ def test_neo4j_filtering_labels() -> None:
     # Remove all constraints
     graph.query("CALL apoc.schema.assert({}, {})")
     graph.query(
-        "CREATE (:`_Bloom_Scene_`)-[:_Bloom_HAS_SCENE_]->(:`_Bloom_Perspective_`)"
+        """
+        CREATE (:_Bloom_Scene_ {property_a: 'a'})
+        -[:_Bloom_HAS_SCENE_ {property_b: 'b'}]
+        ->(:_Bloom_Perspective_)
+        """
     )
     graph.refresh_schema()
 
-    # Assert both are empty
+    # Assert all are empty
     assert graph.structured_schema["node_props"] == {}
+    assert graph.structured_schema["rel_props"] == {}
     assert graph.structured_schema["relationships"] == []
 
 
