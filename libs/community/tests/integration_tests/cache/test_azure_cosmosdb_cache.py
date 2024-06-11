@@ -14,7 +14,7 @@ from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.outputs import Generation
 
 from langchain_community.cache import AzureCosmosDBMongoVCoreSemanticCache
-from langchain_community.vectorstores.azure_cosmos_db_mongo_vcore import (
+from langchain_community.vectorstores.azure_cosmos_db import (
     CosmosDBSimilarityType,
     CosmosDBVectorSearchType,
 )

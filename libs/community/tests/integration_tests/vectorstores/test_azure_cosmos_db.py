@@ -8,7 +8,7 @@ import pytest
 from langchain_core.documents import Document
 
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores.azure_cosmos_db_mongo_vcore import (
+from langchain_community.vectorstores.azure_cosmos_db import (
     AzureCosmosDBVectorSearch,
     CosmosDBSimilarityType,
     CosmosDBVectorSearchType,

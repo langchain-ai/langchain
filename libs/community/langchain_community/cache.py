@@ -54,7 +54,7 @@ from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 
 from langchain_community.utilities.cassandra import SetupMode as CassandraSetupMode
-from langchain_community.vectorstores.azure_cosmos_db_mongo_vcore import (
+from langchain_community.vectorstores.azure_cosmos_db import (
     CosmosDBSimilarityType,
     CosmosDBVectorSearchType,
 )
@@ -2078,7 +2078,7 @@ class AstraDBSemanticCache(BaseCache):
         await self.async_collection.clear()
 
 
-class AzureCosmosDBMongoVCoreSemanticCache(BaseCache):
+class AzureCosmosDBSemanticCache(BaseCache):
     """Cache that uses Cosmos DB Mongo vCore vector-store backend"""
 
     DEFAULT_DATABASE_NAME = "CosmosMongoVCoreCacheDB"
@@ -2269,14 +2269,8 @@ class AzureCosmosDBMongoVCoreSemanticCache(BaseCache):
 
     @staticmethod
     def _validate_enum_value(value: Any, enum_type: Type[Enum]) -> None:
-        # if not isinstance(value, enum_type):
-        #     raise ValueError(f"Invalid enum value: {value}. Expected {enum_type}.")
-        if not isinstance(value, enum_type) and not isinstance(value, str):
+        if not isinstance(value, enum_type):
             raise ValueError(f"Invalid enum value: {value}. Expected {enum_type}.")
-        if value not in enum_type.__members__.values():
-            raise ValueError(
-                f"Invalid enum value: {value}. Expected one of: {list(enum_type)}."
-            )
 
 
 class OpenSearchSemanticCache(BaseCache):
