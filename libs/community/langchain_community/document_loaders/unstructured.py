@@ -1,7 +1,18 @@
 """Loader that uses unstructured to load files."""
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Sequence, Union, cast
+from typing import (
+    IO,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from langchain_core.documents import Document
 
@@ -50,7 +61,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
             raise ValueError(
                 f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
             )
-        
+
         self.mode = mode
         self.unstructured_kwargs = unstructured_kwargs
         self.post_processors = post_processors or []
@@ -159,7 +170,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )
-        
+
         if not satisfies_min_unstructured_version("0.5.4"):
             if "strategy" in unstructured_kwargs:
                 unstructured_kwargs.pop("strategy")
@@ -206,21 +217,20 @@ def get_elements_from_api(
     from unstructured_client.models import operations, shared
 
     content = None
-    if file is not None:            
+    if file is not None:
         content = file.read()
     if content is None and file_path is not None:
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             content = f.read()
     if content is None:
         raise ValueError("Either file or file_path must be provided")
 
-    client = unstructured_client.UnstructuredClient(api_key_auth=api_key, server_url=api_url)
+    client = unstructured_client.UnstructuredClient(
+        api_key_auth=api_key, server_url=api_url
+    )
     req = operations.PartitionRequest(
         partition_parameters=shared.PartitionParameters(
-            files=shared.Files(
-                content=content,
-                file_name=str(file_path)
-            ),
+            files=shared.Files(content=content, file_name=str(file_path)),
             **unstructured_kwargs,
         ),
     )
@@ -351,11 +361,11 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
                 "unstructured package not found, please install it with "
                 "`pip install unstructured`"
             )
-        
+
         if not satisfies_min_unstructured_version("0.5.4"):
             if "strategy" in unstructured_kwargs:
                 unstructured_kwargs.pop("strategy")
-                
+
         super().__init__(mode=mode, **unstructured_kwargs)
 
     def _get_elements(self) -> List:
@@ -409,7 +419,7 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
-        
+
         self.file = file
         self.url = url
         self.api_key = api_key
@@ -437,7 +447,6 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
                     " metadata_filename must be specified as well.",
                 )
 
-
         return get_elements_from_api(
             file=self.file,
             file_path=self.unstructured_kwargs.pop("metadata_filename"),
@@ -445,6 +454,6 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
             api_url=self.url,
             **self.unstructured_kwargs,
         )
-    
+
     def _get_metadata(self) -> dict:
         return {}

@@ -2,6 +2,8 @@ import os
 from contextlib import ExitStack
 from pathlib import Path
 
+import pytest
+
 from langchain_community.document_loaders import (
     UnstructuredAPIFileIOLoader,
     UnstructuredAPIFileLoader,
