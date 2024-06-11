@@ -163,7 +163,7 @@ class YoutubeLoader(BaseLoader):
     ):
         """Initialize with YouTube video ID."""
         self.video_id = video_id
-        self.metadata = {"source": video_id}
+        self._metadata = {"source": video_id}
         self.add_video_info = add_video_info
         self.language = language
         if isinstance(language, str):
@@ -204,7 +204,7 @@ class YoutubeLoader(BaseLoader):
                 map(lambda chunk_piece: chunk_piece["text"].strip(" "), chunk_pieces)
             ),
             metadata={
-                **self.metadata,
+                **self._metadata,
                 "start_seconds": chunk_start_seconds,
                 "start_timestamp": f"{h:02d}:{m:02d}:{s:02d}",
                 "source":
@@ -252,7 +252,7 @@ class YoutubeLoader(BaseLoader):
             # Get more video meta info
             # Such as title, description, thumbnail url, publish_date
             video_info = self._get_video_info()
-            self.metadata.update(video_info)
+            self._metadata.update(video_info)
 
         try:
             transcript_list = YouTubeTranscriptApi.list_transcripts(self.video_id)
@@ -276,7 +276,7 @@ class YoutubeLoader(BaseLoader):
                     transcript_pieces,
                 )
             )
-            return [Document(page_content=transcript, metadata=self.metadata)]
+            return [Document(page_content=transcript, metadata=self._metadata)]
         elif self.transcript_format == TranscriptFormat.LINES:
             return list(
                 map(
