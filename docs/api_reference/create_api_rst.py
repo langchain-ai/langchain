@@ -375,8 +375,9 @@ def main(dirs: Optional[list] = None) -> None:
             try:
                 _build_rst_file(package_name=dir_)
             except FileNotFoundError as e:
-                print(f"Error building API reference for {dir_} package. Error: {e}")
-                pass
+                raise FileNotFoundError(
+                    f"Error building API reference" f" for {dir_} package. Error: {e}"
+                )
     print("API reference files built.")
 
 
