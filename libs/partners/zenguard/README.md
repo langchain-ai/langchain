@@ -1,4 +1,4 @@
-# ZenGuard AI LangchainTool
+# ZenGuard AI Langchain Tool
 
 <a href="https://colab.research.google.com/github/langchain-ai/langchail/blob/main/docs/docs/integrations/tools/zenguard.ipynb" target=_parent><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
 
@@ -44,12 +44,12 @@ Generate an API Key:
 
 ## Code Usage
 
-Instantiate the pack with the API Key
+Instantiate the tool with the API Key
 
 ```python
 from langchain_zenguard import ZenGuardTool
 
-tool = ZenguardTool(zenguard_api_key=your_zenguard_api_key)
+tool = ZenGuardTool(zenguard_api_key=your_zenguard_api_key)
 ```
 
 Note that the `run()` function is a light wrapper around `zenguard.detect()`.
