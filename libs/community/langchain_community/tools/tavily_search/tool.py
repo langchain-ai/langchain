@@ -29,21 +29,20 @@ class TavilySearchResults(BaseTool):
     )
     api_wrapper: TavilySearchAPIWrapper = Field(default_factory=TavilySearchAPIWrapper)  # type: ignore[arg-type]
     max_results: int = 5
-    '''Max search results to return, default is 5'''
+    """Max search results to return, default is 5"""
     search_depth: str = "advanced"
     '''The depth of the search. It can be "basic" or "advanced"'''
     include_domains: List[str] = []
-    '''A list of domains to specifically include in the search results. Default is None, which includes all domains.'''
+    """A list of domains to specifically include in the search results. Default is None, which includes all domains."""  # noqa: E501
     exclude_domains: List[str] = []
-    '''A list of domains to specifically exclude from the search results. Default is None, which doesn't exclude any domains.'''
+    """A list of domains to specifically exclude from the search results. Default is None, which doesn't exclude any domains."""  # noqa: E501
     include_answer: bool = False
-    '''Include a short answer to original query in the search results. Default is False.'''
+    """Include a short answer to original query in the search results. Default is False."""  # noqa: E501
     include_raw_content: bool = False
-    '''Include cleaned and parsed HTML of each site search results. Default is False.'''
+    """Include cleaned and parsed HTML of each site search results. Default is False."""
     include_images: bool = False
-    '''Include a list of query related images in the response. Default is False.'''
+    """Include a list of query related images in the response. Default is False."""
     args_schema: Type[BaseModel] = TavilyInput
-    
 
     def _run(
         self,
