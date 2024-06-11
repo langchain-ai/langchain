@@ -56,7 +56,7 @@ Covers the read and write value for the AINetwork Blockchain database.
 - `/token/total_supply`: Token total supply
 - `/transfer/<address from>/<address to>/<key>/value`: Transfer
 - `/withdraw/<service id>/<address>/<withdraw id>`: Withdraw
-"""
+"""  # codespell:ignore
     args_schema: Type[BaseModel] = ValueSchema
 
     async def _arun(
