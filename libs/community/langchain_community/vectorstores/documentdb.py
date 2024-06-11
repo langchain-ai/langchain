@@ -329,6 +329,7 @@ class DocumentDBVectorSearch(VectorStore):
         """
         pipeline: List[dict[str, Any]] = [
             {
+                "$match": filter,
                 "$search": {
                     "vectorSearch": {
                         "vector": embeddings,
@@ -338,7 +339,6 @@ class DocumentDBVectorSearch(VectorStore):
                         "efSearch": ef_search,
                     }
                 },
-                "$match": filter,
             }
         ]
 
