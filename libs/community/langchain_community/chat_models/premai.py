@@ -165,10 +165,10 @@ def _messages_to_prompt_dict(
             else:
                 assert (input_msg.id is not None) and (input_msg.id != ""), ValueError(
                     "When using prompt template there should be id associated ",
-                    "with each HumanMessage"
+                    "with each HumanMessage",
                 )
                 params[str(input_msg.id)] = str(input_msg.content)
-        
+
         examples_and_messages.append(
             {"role": "user", "template_id": template_id, "params": params}
         )
@@ -265,7 +265,8 @@ class ChatPremAI(BaseChatModel, BaseModel):
                 values, "premai_api_key", "PREMAI_API_KEY"
             )
             values["client"] = Prem(
-                api_key=premai_api_key if isinstance(premai_api_key, str)
+                api_key=premai_api_key
+                if isinstance(premai_api_key, str)
                 else premai_api_key._secret_value
             )
         except Exception as error:
@@ -322,9 +323,9 @@ class ChatPremAI(BaseChatModel, BaseModel):
         if "template_id" in kwargs:
             system_prompt, messages_to_pass = _messages_to_prompt_dict(
                 messages, template_id=kwargs["template_id"]
-            ) 
+            )
         else:
-            system_prompt, messages_to_pass = _messages_to_prompt_dict(messages) # type: ignore
+            system_prompt, messages_to_pass = _messages_to_prompt_dict(messages)  # type: ignore
 
         if system_prompt is not None and system_prompt != "":
             kwargs["system_prompt"] = system_prompt
@@ -353,7 +354,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
                 messages, template_id=kwargs["template_id"]
             )  # type: ignore
         else:
-            system_prompt, messages_to_pass = _messages_to_prompt_dict(messages) # type: ignore
+            system_prompt, messages_to_pass = _messages_to_prompt_dict(messages)  # type: ignore
 
         if stop is not None:
             logger.warning("stop is not supported in langchain streaming")
