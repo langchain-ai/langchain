@@ -54,15 +54,13 @@ class AzureAISearchRetriever(BaseRetriever):
         values["index_name"] = get_from_dict_or_env(
             values, "index_name", "AZURE_AI_SEARCH_INDEX_NAME"
         )
-        try:
+        if 'azure_ad_token_provider' in values:
+            return values 
+        else: 
             values["api_key"] = get_from_dict_or_env(
-                values, "api_key", "AZURE_AI_SEARCH_API_KEY"
+            values, "api_key", "AZURE_AI_SEARCH_API_KEY"
             )
-        except ValueError:
-            values["azure_ad_token_provider"] = get_from_dict_or_env(
-                values, "azure_ad_token_provider", "azure_ad_token_provider"
-            )
-        return values
+            return values
 
     def _build_search_url(self, query: str) -> str:
         url_suffix = get_from_env("", "AZURE_AI_SEARCH_URL_SUFFIX", DEFAULT_URL_SUFFIX)
