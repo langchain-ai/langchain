@@ -221,10 +221,11 @@ class Kinetica(VectorStore):
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
-        schema_name: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         pre_delete_collection: bool = False,
         logger: Optional[logging.Logger] = None,
+        *,
+        schema_name: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME,
         **kwargs: Any,
     ) -> Kinetica:
         """Class method to assist in constructing the `Kinetica` store instance
@@ -425,6 +426,7 @@ class Kinetica(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
+        from gpudb import GPUdbException
         resp: Dict = self.__query_collection(embedding, k, filter)
         if resp and resp["status_info"]["status"] == "OK" and "records" in resp:
             records: OrderedDict = resp["records"]
@@ -433,7 +435,7 @@ class Kinetica(VectorStore):
             return self._results_to_docs_and_scores(results)
         else:
             self.logger.error(resp["status_info"]["message"])
-            return []
+            raise GPUdbException(resp["status_info"]["message"])
 
     def similarity_search_by_vector(
         self,
@@ -763,10 +765,11 @@ class Kinetica(VectorStore):
         metadatas: Optional[List[dict]] = None,
         config: KineticaSettings = KineticaSettings(),
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
-        schema_name: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
+        *,
+        schema_name: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME,
         **kwargs: Any,
     ) -> Kinetica:
         """Adds the texts passed in to the vector store and returns it
