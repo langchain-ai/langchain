@@ -86,9 +86,7 @@ class AzureAISearchRetriever(BaseRetriever):
 
     @property
     def _headers(self) -> Dict[str, str]:
-        headers = {
-        "Content-Type": "application/json"
-        }
+        headers = {"Content-Type": "application/json"}
 
         if self.azure_ad_token_provider:
             token = f"Bearer {self.azure_ad_token_provider()}"
