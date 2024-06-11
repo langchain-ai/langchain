@@ -74,7 +74,7 @@ def test_azure_ai_search_invoke_managed_identity() -> None:
     """Test valid call to Azure AI Search using managed identity.
 
     In order to run this test, you should provide
-    `service_name`,index_name`, and azure_ad_token_provider,
+    `service_name`,index_name`, and `azure_ad_token_provider`,
     as arguments for the AzureAISearchRetriever in both tests.
     api_version, aiosession and topk_k are optional parameters.
     """
