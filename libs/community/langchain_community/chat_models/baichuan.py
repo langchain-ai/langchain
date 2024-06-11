@@ -97,7 +97,7 @@ class ChatBaichuan(BaseChatModel):
     """Whether to stream the results or not."""
     request_timeout: int = Field(default=60, alias="timeout")
     """request timeout for chat http requests"""
-    model = "Baichuan2-Turbo-192K"
+    model: str = "Baichuan2-Turbo-192K"
     """model name of Baichuan, default is `Baichuan2-Turbo-192K`,
     other options include `Baichuan2-Turbo`"""
     temperature: Optional[float] = Field(default=0.3)
