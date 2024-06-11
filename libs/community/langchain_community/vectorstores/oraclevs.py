@@ -90,19 +90,18 @@ def _table_exists(client: Connection, table_name: str) -> bool:
         raise
 
 
-def _compare_version(version: str, target_version) -> bool:
-
+def _compare_version(version: str, target_version: str) -> bool:
     # Split both version strings into parts
-    version_parts = [int(part) for part in version.split('.')]
-    target_parts = [int(part) for part in target_version.split('.')]
-    
+    version_parts = [int(part) for part in version.split(".")]
+    target_parts = [int(part) for part in target_version.split(".")]
+
     # Compare each part
     for v, t in zip(version_parts, target_parts):
         if v < t:
             return True  # Current version is less
         elif v > t:
             return False  # Current version is greater
-    
+
     # If all parts equal so far, check if version has fewer parts than target_version
     return len(version_parts) < len(target_parts)
 
@@ -419,20 +418,35 @@ class OracleVS(VectorStore):
             ) from e
 
         self.insert_mode = "array"
-        
-        if client.thin == True:
+
+        if client.thin is True:
             if oracledb.__version__ == "2.1.0":
-                raise Exception("Oracle DB python thin client driver version 2.1.0 not supported")
+                raise Exception(
+                    "Oracle DB python thin client driver version 2.1.0 not supported"
+                )
             elif _compare_version(oracledb.__version__, "2.2.0"):
                 self.insert_mode = "clob"
             else:
                 self.insert_mode = "array"
         else:
-            if _compare_version('.'.join(map(str, oracledb.clientversion())), "23.4"):
+            if (_compare_version(oracledb.__version__, "2.1.0")) and (
+                not (
+                    _compare_version(
+                        ".".join(map(str, oracledb.clientversion())), "23.4"
+                    )
+                )
+            ):
+                raise Exception(
+                    "Oracle DB python thick client driver version earlier than "
+                    "2.1.0 not supported with client libraries greater than "
+                    "equal to 23.4"
+                )
+
+            if _compare_version(".".join(map(str, oracledb.clientversion())), "23.4"):
                 self.insert_mode = "clob"
             else:
                 self.insert_mode = "array"
-            
+
             if _compare_version(oracledb.__version__, "2.1.0"):
                 self.insert_mode = "clob"
 
@@ -529,14 +543,6 @@ class OracleVS(VectorStore):
           kwargs: vectorstore specific parameters
         """
 
-        try:
-            import oracledb
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import oracledb, please install with "
-                "`pip install -U oracledb`."
-            ) from e
-
         texts = list(texts)
         if ids:
             # If ids are provided, hash them to maintain consistency
@@ -563,15 +569,16 @@ class OracleVS(VectorStore):
         embeddings = self._embed_documents(texts)
         if not metadatas:
             metadatas = [{} for _ in texts]
-        
-        if self.insert_mode == "clob" :
+
+        docs: List[Tuple[Any, Any, Any, Any]]
+        if self.insert_mode == "clob":
             docs = [
                 (id_, text, json.dumps(metadata), json.dumps(embedding))
                 for id_, text, metadata, embedding in zip(
                     processed_ids, texts, metadatas, embeddings
                 )
             ]
-        else :
+        else:
             docs = [
                 (id_, text, json.dumps(metadata), array.array("f", embedding))
                 for id_, text, metadata, embedding in zip(
@@ -664,18 +671,10 @@ class OracleVS(VectorStore):
         filter: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-
-        try:
-            import oracledb
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import oracledb, please install with "
-                "`pip install -U oracledb`."
-            ) from e
-
         docs_and_scores = []
 
-        if self.insert_mode == "clob" :
+        embedding_arr: Any
+        if self.insert_mode == "clob":
             embedding_arr = json.dumps(embedding)
         else:
             embedding_arr = array.array("f", embedding)
@@ -736,16 +735,8 @@ class OracleVS(VectorStore):
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float, np.ndarray[np.float32, Any]]]:
-
-        try:
-            import oracledb
-        except ImportError as e:
-            raise ImportError(
-                "Unable to import oracledb, please install with "
-                "`pip install -U oracledb`."
-            ) from e
-
-        if self.insert_mode == "clob" :
+        embedding_arr: Any
+        if self.insert_mode == "clob":
             embedding_arr = json.dumps(embedding)
         else:
             embedding_arr = array.array("f", embedding)
