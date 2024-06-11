@@ -37,8 +37,8 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
     api_url: str
     huggingface_api_key: SecretStr
 
-    _HUGGINGFACE_API_KEY_ENV_NAME = "HUGGINGFACE_API_KEY"
-    _HUGGINGFACE_API_URL_ROOT = "https://api-inference.huggingface.co/models"
+    _HUGGINGFACE_API_KEY_ENV_NAME: str = "HUGGINGFACE_API_KEY"
+    _HUGGINGFACE_API_URL_ROOT: str = "https://api-inference.huggingface.co/models"
 
     def __init__(
         self,
