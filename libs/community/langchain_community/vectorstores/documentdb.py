@@ -357,6 +357,7 @@ class DocumentDBVectorSearch(VectorStore):
         query: str,
         k: int = 4,
         ef_search: int = 40,
+        *,
         filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
