@@ -96,7 +96,6 @@ def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
                     id=str(uuid4()),
                 )
             ]
-    additional_kwargs["data_for_context"] = None
     if message.data_for_context:
         additional_kwargs["data_for_context"] = [
             _convert_dict_to_message(m) for m in message.data_for_context
@@ -134,8 +133,7 @@ def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
     if attachments:
         kwargs["attachments"] = attachments
     context = message.additional_kwargs.get("data_for_context", [])
-    if context:
-        kwargs["data_for_context"] = [_convert_message_to_dict(m) for m in context]
+    kwargs["data_for_context"] = [_convert_message_to_dict(m) for m in context]
 
     if isinstance(message, SystemMessage):
         kwargs["role"] = MessagesRole.SYSTEM
@@ -474,8 +472,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[True] = True,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]:
-        ...
+    ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
 
     @overload
     def with_structured_output(
@@ -485,8 +482,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[False] = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        ...
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
 
     @beta()
     def with_structured_output(
