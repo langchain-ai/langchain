@@ -5,7 +5,7 @@ from langchain_community.embeddings import FakeEmbeddings
 from langchain_community.retrievers import NanoPQRetriever
 
 
-class TestPQRetriever:
+class TestNanoPQRetriever:
     @pytest.mark.requires("nanopq")
     def test_from_texts(self) -> None:
         input_texts = ["I have a pen.", "Do you have a pen?", "I have a bag."]
