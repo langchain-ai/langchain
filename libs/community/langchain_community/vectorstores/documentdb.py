@@ -175,6 +175,10 @@ class DocumentDBVectorSearch(VectorStore):
                 The maximum number of supported dimensions is 2000
 
             similarity: Similarity algorithm to use with the HNSW index.
+                 Possible options are:
+                    - DocumentDBSimilarityType.COS (cosine distance),
+                    - DocumentDBSimilarityType.EUC (Euclidean distance), and
+                    - DocumentDBSimilarityType.DOT (dot product).
 
             m: Specifies the max number of connections for an HNSW index.
                 Large impact on memory consumption.
@@ -183,10 +187,6 @@ class DocumentDBVectorSearch(VectorStore):
                 for constructing the graph for HNSW index. Higher values lead
                 to more accurate results but slower indexing speed.
 
-                Possible options are:
-                    - DocumentDBSimilarityType.COS (cosine distance),
-                    - DocumentDBSimilarityType.EUC (Euclidean distance), and
-                    - DocumentDBSimilarityType.DOT (dot product).
 
         Returns:
             An object describing the created index
@@ -309,7 +309,11 @@ class DocumentDBVectorSearch(VectorStore):
         self._collection.delete_one({"_id": ObjectId(document_id)})
 
     def _similarity_search_without_score(
-        self, embeddings: List[float], k: int = 4, ef_search: int = 40
+        self,
+        embeddings: List[float],
+        k: int = 4,
+        ef_search: int = 40,
+        filter: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         """Returns a list of documents.
 
