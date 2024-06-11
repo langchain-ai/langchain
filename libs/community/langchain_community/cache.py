@@ -79,7 +79,7 @@ from langchain_community.utilities.astradb import (
 from langchain_community.utilities.astradb import (
     _AstraDBCollectionEnvironment,
 )
-from langchain_community.vectorstores import AzureCosmosDBMongoVCoreVectorSearch
+from langchain_community.vectorstores import AzureCosmosDBVectorSearch
 from langchain_community.vectorstores import (
     OpenSearchVectorSearch as OpenSearchVectorStore,
 )
@@ -2164,14 +2164,14 @@ class AzureCosmosDBMongoVCoreSemanticCache(BaseCache):
         self.ef_construction = ef_construction
         self.ef_search = ef_search
         self.score_threshold = score_threshold
-        self._cache_dict: Dict[str, AzureCosmosDBMongoVCoreVectorSearch] = {}
+        self._cache_dict: Dict[str, AzureCosmosDBVectorSearch] = {}
         self.application_name = application_name
 
     def _index_name(self, llm_string: str) -> str:
         hashed_index = _hash(llm_string)
         return f"cache:{hashed_index}"
 
-    def _get_llm_cache(self, llm_string: str) -> AzureCosmosDBMongoVCoreVectorSearch:
+    def _get_llm_cache(self, llm_string: str) -> AzureCosmosDBVectorSearch:
         index_name = self._index_name(llm_string)
 
         namespace = self.database_name + "." + self.collection_name
@@ -2183,7 +2183,7 @@ class AzureCosmosDBMongoVCoreSemanticCache(BaseCache):
         # create new vectorstore client for the specific llm string
         if self.cosmosdb_client:
             collection = self.cosmosdb_client[self.database_name][self.collection_name]
-            self._cache_dict[index_name] = AzureCosmosDBMongoVCoreVectorSearch(
+            self._cache_dict[index_name] = AzureCosmosDBVectorSearch(
                 collection=collection,
                 embedding=self.embedding,
                 index_name=index_name,
@@ -2191,7 +2191,7 @@ class AzureCosmosDBMongoVCoreSemanticCache(BaseCache):
         else:
             self._cache_dict[
                 index_name
-            ] = AzureCosmosDBMongoVCoreVectorSearch.from_connection_string(
+            ] = AzureCosmosDBVectorSearch.from_connection_string(
                 connection_string=self.cosmosdb_connection_string,
                 namespace=namespace,
                 embedding=self.embedding,

@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_INSERT_BATCH_SIZE = 128
 
 
-class AzureCosmosDBMongoVCoreVectorSearch(VectorStore):
+class AzureCosmosDBVectorSearch(VectorStore):
     """`Azure Cosmos DB for MongoDB vCore` vector store.
 
     To use, you should have both:
@@ -62,14 +62,14 @@ class AzureCosmosDBMongoVCoreVectorSearch(VectorStore):
         . code-block:: python
 
             from langchain_community.vectorstores import
-            AzureCosmosDBMongoVCoreVectorSearch
+            AzureCosmosDBVectorSearch
             from langchain_community.embeddings.openai import OpenAIEmbeddings
             from pymongo import MongoClient
 
             mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
             collection = mongo_client["<db_name>"]["<collection_name>"]
             embeddings = OpenAIEmbeddings()
-            vectorstore = AzureCosmosDBMongoVCoreVectorSearch(collection, embeddings)
+            vectorstore = AzureCosmosDBVectorSearch(collection, embeddings)
     """
 
     def __init__(
@@ -82,7 +82,7 @@ class AzureCosmosDBMongoVCoreVectorSearch(VectorStore):
         embedding_key: str = "vectorContent",
         application_name: str = "LANGCHAIN_PYTHON",
     ):
-        """Constructor for AzureCosmosDBMongoVCoreVectorSearch
+        """Constructor for AzureCosmosDBVectorSearch
 
         Args:
             collection: MongoDB collection to add the texts to.
@@ -121,8 +121,8 @@ class AzureCosmosDBMongoVCoreVectorSearch(VectorStore):
         embedding: Embeddings,
         application_name: str = "LANGCHAIN_PYTHON",
         **kwargs: Any,
-    ) -> AzureCosmosDBMongoVCoreVectorSearch:
-        """Creates an Instance of AzureCosmosDBMongoVCoreVectorSearch
+    ) -> AzureCosmosDBVectorSearch:
+        """Creates an Instance of AzureCosmosDBVectorSearch
         from a Connection String
 
         Args:
@@ -360,7 +360,7 @@ class AzureCosmosDBMongoVCoreVectorSearch(VectorStore):
         metadatas: Optional[List[dict]] = None,
         collection: Optional[Collection] = None,
         **kwargs: Any,
-    ) -> AzureCosmosDBMongoVCoreVectorSearch:
+    ) -> AzureCosmosDBVectorSearch:
         if collection is None:
             raise ValueError("Must provide 'collection' named parameter.")
         vectorstore = cls(collection, embedding, **kwargs)
