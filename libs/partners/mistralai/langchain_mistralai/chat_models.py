@@ -484,14 +484,21 @@ class ChatMistralAI(BaseChatModel):
 
     def _create_chat_result(self, response: Dict) -> ChatResult:
         generations = []
+        token_usage = response.get("usage", {})
         for res in response["choices"]:
             finish_reason = res.get("finish_reason")
+            message = _convert_mistral_chat_message_to_message(res["message"])
+            if token_usage and isinstance(message, AIMessage):
+                message.usage_metadata = {
+                    "input_tokens": token_usage.get("prompt_tokens", 0),
+                    "output_tokens": token_usage.get("completion_tokens", 0),
+                    "total_tokens": token_usage.get("total_tokens", 0),
+                }
             gen = ChatGeneration(
-                message=_convert_mistral_chat_message_to_message(res["message"]),
+                message=message,
                 generation_info={"finish_reason": finish_reason},
             )
             generations.append(gen)
-        token_usage = response.get("usage", {})
 
         llm_output = {"token_usage": token_usage, "model": self.model}
         return ChatResult(generations=generations, llm_output=llm_output)
