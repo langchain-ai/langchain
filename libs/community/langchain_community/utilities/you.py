@@ -114,7 +114,7 @@ class YouSearchAPIWrapper(BaseModel):
         return values
 
     @root_validator
-    def warn_if_set_fields_have_no_effect(cls, values) -> Dict:
+    def warn_if_set_fields_have_no_effect(cls, values: Dict) -> Dict:
         if values["endpoint_type"] != "news":
             news_api_fields = ("search_lang", "ui_lang", "spellcheck")
             for field in news_api_fields:
@@ -139,7 +139,7 @@ class YouSearchAPIWrapper(BaseModel):
         return values
 
     @root_validator
-    def warn_if_deprecated_endpoints_are_used(cls, values) -> Dict:
+    def warn_if_deprecated_endpoints_are_used(cls, values: Dict) -> Dict:
         if values["endpoint_type"] == "snippets":
             warnings.warn(
                 (
@@ -150,7 +150,7 @@ class YouSearchAPIWrapper(BaseModel):
             )
         return values
 
-    def _generate_params(self, query: str, **kwargs) -> Dict:
+    def _generate_params(self, query: str, **kwargs: Any) -> Dict:
         """
         Parse parameters required for different You.com APIs.
 
