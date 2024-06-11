@@ -23,7 +23,8 @@ from langchain_community.llms.utils import enforce_stop_tokens
 
 
 # oci 2.127 new message roles caps, new sys role, llamaindex incompatability
-# stream issues: (1) command-r stream hangs at end with stop (2) stream cohere command does not remove stop
+# stream issues: (1) command-r stream hangs at end with stop 
+# (2) stream cohere command does not remove stop
 # test with dedicated cluster
 # command-r tools ?
 class Provider(ABC):
@@ -103,7 +104,6 @@ class CohereProvider(Provider):
             self.oci_chat_message[self.get_role(msg)](message=msg.content)
             for msg in messages[:-1]
         ]
-        # oci_chat_history = [self.oci_chat_message(role=self.get_role(msg), message=msg.content) for msg in messages[:-1]]
         oci_params = {
             "message": messages[-1].content,
             "chat_history": oci_chat_history,

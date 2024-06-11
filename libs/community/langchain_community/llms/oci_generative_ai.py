@@ -173,7 +173,8 @@ class OCIGenAIBase(BaseModel, ABC):
                 ] = oci.auth.signers.get_resource_principals_signer()
             else:
                 raise ValueError(
-                    f"Please provide valid value to auth_type, {values['auth_type']} is not valid."
+                    "Please provide valid value to auth_type, "
+                    f"{values['auth_type']} is not valid."
                 )
 
             values["client"] = oci.generative_ai_inference.GenerativeAiInferenceClient(
@@ -187,8 +188,10 @@ class OCIGenAIBase(BaseModel, ABC):
             ) from ex
         except Exception as e:
             raise ValueError(
-                """Could not authenticate with OCI client. Please check if ~/.oci/config exists.
-                If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used, please check the specified
+                """Could not authenticate with OCI client. 
+                Please check if ~/.oci/config exists.
+                If INSTANCE_PRINCIPAL or RESOURCE_PRINCIPAL is used, 
+                please check the specified
                 auth_profile and auth_type are valid.""",
                 e,
             ) from e
