@@ -2,11 +2,12 @@
 import numpy as np
 from langchain.retrievers.document_compressors import EmbeddingsFilter
 from langchain_core.documents import Document
-from langchain_openai.embeddings import OpenAIEmbeddings
+# from langchain_openai.embeddings import OpenAIEmbeddings
 
 from langchain_community.document_transformers.embeddings_redundant_filter import (
     _DocumentWithState,
 )
+from langchain_community.embeddings import OpenAIEmbeddings
 
 
 def test_embeddings_filter() -> None:
