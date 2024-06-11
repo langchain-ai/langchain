@@ -20,7 +20,7 @@ class TavilyInput(BaseModel):
 
 class TavilySearchResults(BaseTool):
     """Tool that queries the Tavily Search API and gets back json.
-    
+
     Setup:
         Install ``langchain-openai`` and ``tavily-python``, and set environment variable ``TAVILY_API_KEY``.
 
@@ -28,10 +28,10 @@ class TavilySearchResults(BaseTool):
 
             pip install -U langchain-openai
             export TAVILY_API_KEY="your-api-key"
-    
+
     Instantiate:
 
-        .. code-block:: python 
+        .. code-block:: python
 
             from langchain_community.tools.tavily_search import TavilySearchResults
 
@@ -44,7 +44,7 @@ class TavilySearchResults(BaseTool):
                 # include_raw_content = False
                 # include_images = False
             )
-        
+
     Invoking the tool:
 
         .. code-block:: python
@@ -62,8 +62,8 @@ class TavilySearchResults(BaseTool):
             'content': 'Short Range Forecasts. Short range forecast products depicting pressure patterns, circulation centers and fronts, and types and extent of precipitation. 12 Hour | 24 Hour | 36 Hour | 48 Hour.'}]
 
         When converting ``TavilySearchResults`` to a tool, you may want to not return all of the content resulting from ``invoke``. You can select what parts of the response to keep depending on your use case.
-                
-    """ # noqa: E501
+
+    """  # noqa: E501
 
     name: str = "tavily_search_results_json"
     description: str = (
