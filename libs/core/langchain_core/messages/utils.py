@@ -1,31 +1,30 @@
+from __future__ import annotations
+
 import inspect
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
     List,
     Literal,
     Optional,
-    Protocol,
     Sequence,
     Tuple,
     Type,
     Union,
 )
 
-from langchain_core.messages.ai import (
-    AIMessage,
-    AIMessageChunk,
-)
-from langchain_core.messages.base import (
-    BaseMessage,
-    BaseMessageChunk,
-)
+from langchain_core.messages.ai import AIMessage, AIMessageChunk
+from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolMessage, ToolMessageChunk
+
+if TYPE_CHECKING:
+    from langchain_core.language_models.base import LanguageModelLike
 
 AnyMessage = Union[
     AIMessage, HumanMessage, ChatMessage, SystemMessage, FunctionMessage, ToolMessage
@@ -301,15 +300,37 @@ def filter_messages(
             filtered.append(msg)
     return filtered
 
+def merge_message_runs(
+    messages: Sequence[MessageLikeRepresentation],
+) -> List[BaseMessage]:
+    if not messages:
+        return []
+    messages = convert_to_messages(messages)
+    merged = [messages[0].copy(deep=True)]
+    for msg in messages[1:]:
+        curr = msg.copy(deep=True)
+        last = merged.pop()
+        if not isinstance(curr, last.__class__):
+            merged.extend([last, curr])
+        else:
+            merged.append(_chunk_to_msg(_msg_to_chunk(last) + _msg_to_chunk(curr)))
+    return merged
 
+# TODO: what should function name be? `{x}_messages`:
+# - abbreviate
+# - trim
+# - shorten
+# - condense
+# - fit
+# - crop
 def abbreviate_messages(
     messages: Sequence[MessageLikeRepresentation],
+    *,
     n_tokens: int,
     # TODO: Support a raw encoder? Callable[[BaseMessage], List[int]]
     token_counter: Union[
         Callable[[Sequence[BaseMessage]], int], Callable[[BaseMessage], int]
     ],
-    *,
     strategy: Literal["first", "last", "last_with_system", "summarize"] = "last",
     allow_partial_messages: bool = False,
     summarize_chunk_size: int = 1,
@@ -320,38 +341,44 @@ def abbreviate_messages(
         list(inspect.signature(token_counter).parameters.values())[0].annotation
         is BaseMessage
     ):
-        list_token_counter = lambda msgs: sum(token_counter(msg) for msg in msgs)
+
+        def list_token_counter(messages: Sequence[BaseMessage]) -> int:
+            return sum(token_counter(msg) for msg in messages)
     else:
         list_token_counter = token_counter
 
     if strategy == "first":
         return _first_n_tokens(
             messages,
-            n_tokens,
-            list_token_counter,
+            n_tokens=n_tokens,
+            token_counter=list_token_counter,
             allow_partial_messages=allow_partial_messages,
         )
     elif strategy == "last":
         return _last_n_tokens(
             messages,
-            n_tokens,
-            list_token_counter,
+            n_tokens=n_tokens,
+            token_counter=list_token_counter,
             allow_partial_messages=allow_partial_messages,
-            include_system=False,
+            keep_system=False,
         )
     elif strategy == "last_with_system":
         return _last_n_tokens(
             messages,
-            n_tokens,
-            list_token_counter,
+            n_tokens=n_tokens,
+            token_counter=list_token_counter,
             allow_partial_messages=allow_partial_messages,
-            include_system=True,
+            keep_system=True,
         )
     elif strategy == "summarize":
         if not llm:
             raise ValueError
         return _summarize(
-            messages, n_tokens, list_token_counter, llm, chunk_size=summarize_chunk_size
+            messages,
+            n_tokens=n_tokens,
+            token_counter=list_token_counter,
+            llm=llm,
+            chunk_size=summarize_chunk_size,
         )
     else:
         raise ValueError
@@ -359,32 +386,82 @@ def abbreviate_messages(
 
 def _first_n_tokens(
     messages: Sequence[BaseMessage],
-    n_tokens: int,
-    list_token_counter: Callable[[Sequence[BaseMessage]], int],
     *,
+    n_tokens: int,
+    token_counter: Callable[[Sequence[BaseMessage]], int],
     allow_partial_messages: bool = False,
+    end_on: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
 ) -> List[BaseMessage]:
-    ...
+    idx = 0
+    for i in range(len(messages)):
+        if token_counter(messages[:-i] if i else messages) <= n_tokens:
+            idx = len(messages) - i
+            break
+
+    if idx < len(messages) - 1 and allow_partial_messages:
+        excluded = messages[idx].copy(deep=True)
+        if isinstance(excluded.content, list):
+            ...
+        # TODO: Should we just pass in tokenizer, so we can find exact cutoff?
+        else:
+            ...
+
+    if isinstance(end_on, str):
+        while messages[idx - 1].type != end_on and idx > 0:
+            idx = idx - 1
+    elif isinstance(end_on, type):
+        while not isinstance(messages[idx - 1], end_on) and idx > 0:
+            idx = idx - 1
+    else:
+        pass
+
+    return [msg for msg in messages[:idx]]
+
 
 
 def _last_n_tokens(
     messages: Sequence[BaseMessage],
-    n_tokens: int,
-    list_token_counter: Callable[[Sequence[BaseMessage]], int],
     *,
+    n_tokens: int,
+    token_counter: Callable[[Sequence[BaseMessage]], int],
     allow_partial_messages: bool = False,
-    include_system: bool = False,
+    keep_system: bool = False,
+    end_on: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
 ) -> List[BaseMessage]:
-    ...
+
 
 
 # TODO: Should this return a Runnable?
 def _summarize(
     messages: Sequence[BaseMessage],
-    n_tokens: int,
-    list_token_counter: Callable[[Sequence[BaseMessage]], int],
-    llm: LanguageModelLike,
     *,
+    n_tokens: int,
+    token_counter: Callable[[Sequence[BaseMessage]], int],
+    llm: LanguageModelLike,
     chunk_size: int = 1,
 ) -> List[BaseMessage]:
     ...
+
+
+
+_MSG_CHUNK_MAP = {
+    HumanMessage: HumanMessageChunk,
+    AIMessage: AIMessageChunk,
+    SystemMessage: SystemMessageChunk,
+    ToolMessage: ToolMessageChunk,
+    FunctionMessage: FunctionMessageChunk,
+    ChatMessage: ChatMessageChunk,
+}
+_CHUNK_MSG_MAP = {v: k for k, v in _MSG_CHUNK_MAP.items()}
+
+
+def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
+    return _MSG_CHUNK_MAP[message.__class__](**message.dict())
+
+
+def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
+    # TODO: does this break when there are extra fields in chunk.
+    return _CHUNK_MSG_MAP[chunk.__class__](**chunk.dict())
+
+
+
