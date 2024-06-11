@@ -599,15 +599,11 @@ For specifics on how to use callbacks, see the [relevant how-to guides here](/do
 ### Streaming
 
 Individual LLM calls often run for much longer than traditional resource requests.
-This problem compounds when you build more complex chains or agents that require multiple reasoning steps.
-And [transformers](https://arxiv.org/abs/1706.03762), which power LLMs, [scale quadratically](https://arxiv.org/abs/2209.04881),
-which means that this increase latency is unlikely to disappear in the short-term, since any increases in computing power can be
-offset by corresponding increases in model power.
+This compounds when you build more complex chains or agents that require multiple reasoning steps.
 
 Fortunately, LLMs generate output iteratively, which means it's possible to show sensible intermediate results
 before the final response is ready. Consuming output as soon as it becomes available has therefore become a vital part of the UX
-around building apps with LLMs to help alleviate latency issues, and LangChain aims to have first-class support for streaming via
-[LangChain Expression Language](/docs/concepts/#langchain-expression-language-lcel) and [callbacks](/docs/concepts/#callbacks).
+around building apps with LLMs to help alleviate latency issues, and LangChain aims to have first-class support for streaming.
 
 Below, we'll discuss some concepts and considerations around streaming in LangChain.
 
@@ -617,6 +613,11 @@ The unit that most model providers use to measure input and output is via a unit
 Tokens are the basic units that language models read and generate when processing or producing text.
 The exact definition of a token can vary depending on the specific way the model was trained -
 for instance, in English, a token could be a single word like "apple", or a part of a word like "app".
+The below example shows how OpenAI models tokenize `LangChain is cool!`:
+
+![](/img/tokenization.png)
+
+You can see that it gets split into 5 different tokens, and that the boundaries between tokens are not exactly the same as word boundaries.
 
 The reason language models use tokens rather than something more immediately intuitive like "characters"
 has to do with how they process and understand text. At a high-level, language models iteratively predict their next generated output based on
