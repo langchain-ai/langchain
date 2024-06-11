@@ -1,5 +1,4 @@
 """Integration test for compression pipelines."""
-import pytest
 from langchain.retrievers.document_compressors import (
     DocumentCompressorPipeline,
     EmbeddingsFilter,
@@ -30,7 +29,6 @@ def test_document_compressor_pipeline() -> None:
     assert actual[0].page_content in texts[:2]
 
 
-@pytest.mark.asyncio
 async def test_adocument_compressor_pipeline() -> None:
     embeddings = OpenAIEmbeddings()
     splitter = CharacterTextSplitter(chunk_size=20, chunk_overlap=0, separator=". ")
