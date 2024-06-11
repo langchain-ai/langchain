@@ -59,14 +59,9 @@ class BasePromptTemplate(
     tags: Optional[List[str]] = None
     """Tags to be used for tracing."""
 
-    @root_validator(pre=True)
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_variable_names(cls, values: Dict) -> Dict:
         """Validate variable names do not include restricted names."""
-        if "input_variables" not in values:
-            raise ValueError("PromptTemplate must have input_variables.")
-
-        values.setdefault("partial_variables", {})
-
         if "stop" in values["input_variables"]:
             raise ValueError(
                 "Cannot have an input variable named 'stop', as it is used internally,"
