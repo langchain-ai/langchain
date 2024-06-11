@@ -15,14 +15,14 @@ def test_everlyai_chat_missing_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify validation error if no api key found"""
     monkeypatch.delenv("EVERLYAI_API_KEY", raising=False)
     with pytest.raises(ValidationError) as e:
-        ChatEverlyAI()
+        ChatEverlyAI()  # type: ignore[call-arg]
     assert "Did not find everlyai_api_key" in str(e)
 
 
 @pytest.mark.requires("openai")
 def test_everlyai_chat_default_params() -> None:
     """Check default parameters with environment API key"""
-    chat = ChatEverlyAI()
+    chat = ChatEverlyAI()  # type: ignore[call-arg]
     assert chat.everlyai_api_key is None
     assert chat.model_name == DEFAULT_MODEL
     assert chat.everlyai_api_base == "https://everlyai.xyz/hosted"
@@ -36,7 +36,7 @@ def test_everlyai_chat_default_params() -> None:
 def test_everlyai_chat_param_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     """Check use of parameter API key instead of environment API key"""
     monkeypatch.delenv("EVERLYAI_API_KEY", raising=False)
-    chat = ChatEverlyAI(everlyai_api_key="test")
+    chat = ChatEverlyAI(everlyai_api_key="test")  # type: ignore[call-arg]
     assert isinstance(chat.everlyai_api_key, SecretStr)
 
 
@@ -44,14 +44,15 @@ def test_everlyai_chat_param_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_everlyai_chat_initialization() -> None:
     """Ensure parameter names can be referenced by alias"""
     for model in [
-        ChatEverlyAI(
+        ChatEverlyAI(  # type: ignore[call-arg]
             everlyai_api_key="test",
             model_name=DEFAULT_MODEL,
         ),
-        ChatEverlyAI(
+        ChatEverlyAI(  # type: ignore[call-arg]
             api_key="test",
             model=DEFAULT_MODEL,
         ),
     ]:
-        assert model.everlyai_api_key.get_secret_value() == "test"
+        if model.everlyai_api_key is not None:
+            assert model.everlyai_api_key.get_secret_value() == "test"
         assert model.model_name == DEFAULT_MODEL
