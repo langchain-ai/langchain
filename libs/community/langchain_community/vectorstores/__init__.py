@@ -55,6 +55,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.azure_cosmos_db import (
         AzureCosmosDBVectorSearch,
     )
+    from langchain_community.vectorstores.azure_cosmos_db_no_sql import (
+        AzureCosmosDBNoSqlVectorSearch,
+    )
     from langchain_community.vectorstores.azuresearch import (
         AzureSearch,
     )
@@ -294,6 +297,9 @@ if TYPE_CHECKING:
     from langchain_community.vectorstores.zep import (
         ZepVectorStore,
     )
+    from langchain_community.vectorstores.zep_cloud import (
+        ZepCloudVectorStore,
+    )
     from langchain_community.vectorstores.zilliz import (
         Zilliz,
     )
@@ -308,6 +314,7 @@ __all__ = [
     "AstraDB",
     "AtlasDB",
     "AwaDB",
+    "AzureCosmosDBNoSqlVectorSearch",
     "AzureCosmosDBVectorSearch",
     "AzureSearch",
     "BESVectorStore",
@@ -395,6 +402,7 @@ __all__ = [
     "Weaviate",
     "Yellowbrick",
     "ZepVectorStore",
+    "ZepCloudVectorStore",
     "Zilliz",
 ]
 
@@ -408,7 +416,8 @@ _module_lookup = {
     "AstraDB": "langchain_community.vectorstores.astradb",
     "AtlasDB": "langchain_community.vectorstores.atlas",
     "AwaDB": "langchain_community.vectorstores.awadb",
-    "AzureCosmosDBVectorSearch": "langchain_community.vectorstores.azure_cosmos_db",
+    "AzureCosmosDBNoSqlVectorSearch": "langchain_community.vectorstores.azure_cosmos_db_no_sql",  # noqa: E501
+    "AzureCosmosDBVectorSearch": "langchain_community.vectorstores.azure_cosmos_db",  # noqa: E501
     "AzureSearch": "langchain_community.vectorstores.azuresearch",
     "BaiduVectorDB": "langchain_community.vectorstores.baiduvectordb",
     "BESVectorStore": "langchain_community.vectorstores.baiducloud_vector_search",
@@ -495,6 +504,7 @@ _module_lookup = {
     "Weaviate": "langchain_community.vectorstores.weaviate",
     "Yellowbrick": "langchain_community.vectorstores.yellowbrick",
     "ZepVectorStore": "langchain_community.vectorstores.zep",
+    "ZepCloudVectorStore": "langchain_community.vectorstores.zep_cloud",
     "Zilliz": "langchain_community.vectorstores.zilliz",
 }
 

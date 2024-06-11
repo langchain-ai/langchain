@@ -482,7 +482,7 @@ def _get_standardized_inputs(
 
 
 def _get_standardized_outputs(
-    run: Run, schema_format: Literal["original", "streaming_events"]
+    run: Run, schema_format: Literal["original", "streaming_events", "original+chat"]
 ) -> Optional[Any]:
     """Extract standardized output from a run.
 

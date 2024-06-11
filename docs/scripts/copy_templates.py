@@ -27,6 +27,7 @@ if __name__ == "__main__":
 
     sidebar_hidden = """---
 sidebar_class_name: hidden
+custom_edit_url:
 ---
 
 """
