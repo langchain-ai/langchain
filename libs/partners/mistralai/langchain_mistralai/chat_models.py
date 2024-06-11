@@ -186,9 +186,10 @@ async def acompletion_with_retry(
     return await _completion_with_retry(**kwargs)
 
 
-def _convert_delta_to_message_chunk(
-    _delta: Dict, default_class: Type[BaseMessageChunk]
+def _convert_chunk_to_message_chunk(
+    chunk: Dict, default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
+    _delta = chunk["choices"][0]["delta"]
     role = _delta.get("role")
     content = _delta.get("content") or ""
     if role == "user" or default_class == HumanMessageChunk:
@@ -532,8 +533,7 @@ class ChatMistralAI(BaseChatModel):
         ):
             if len(chunk["choices"]) == 0:
                 continue
-            delta = chunk["choices"][0]["delta"]
-            new_chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
             gen_chunk = ChatGenerationChunk(message=new_chunk)
@@ -559,8 +559,7 @@ class ChatMistralAI(BaseChatModel):
         ):
             if len(chunk["choices"]) == 0:
                 continue
-            delta = chunk["choices"][0]["delta"]
-            new_chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
             gen_chunk = ChatGenerationChunk(message=new_chunk)
