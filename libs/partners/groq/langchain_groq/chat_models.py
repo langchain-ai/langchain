@@ -459,8 +459,15 @@ class ChatGroq(BaseChatModel):
         generations = []
         if not isinstance(response, dict):
             response = response.dict()
+        token_usage = response.get("usage", {})
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
+            if token_usage and isinstance(message, AIMessage):
+                message.usage_metadata = {
+                    "input_tokens": token_usage.get("prompt_tokens", 0),
+                    "output_tokens": token_usage.get("completion_tokens", 0),
+                    "total_tokens": token_usage.get("total_tokens", 0),
+                }
             generation_info = dict(finish_reason=res.get("finish_reason"))
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
@@ -469,7 +476,6 @@ class ChatGroq(BaseChatModel):
                 generation_info=generation_info,
             )
             generations.append(gen)
-        token_usage = response.get("usage", {})
         llm_output = {
             "token_usage": token_usage,
             "model_name": self.model_name,
