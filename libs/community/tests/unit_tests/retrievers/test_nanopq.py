@@ -35,7 +35,7 @@ class TestNanoPQRetriever:
     def invalid_subspace_error(self) -> None:
         input_texts = ["I have a pen.", "Do you have a pen?", "I have a bag."]
         pq_retriever = NanoPQRetriever.from_texts(
-            texts=input_texts, embeddings=FakeEmbeddings(size=6)
+            texts=input_texts, embeddings=FakeEmbeddings(size=43)
         )
         with pytest.raises(RuntimeError):
             pq_retriever.invoke("I have")
