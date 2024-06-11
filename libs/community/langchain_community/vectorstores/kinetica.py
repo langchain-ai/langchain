@@ -834,10 +834,11 @@ class Kinetica(VectorStore):
         config: KineticaSettings = KineticaSettings(),
         dimensions: int = Dimension.OPENAI,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
-        schema_name: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
+        *,
+        schema_name: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME,
         **kwargs: Any,
     ) -> Kinetica:
         """Adds the embeddings passed in to the vector store and returns it
@@ -894,10 +895,11 @@ class Kinetica(VectorStore):
         config: KineticaSettings = KineticaSettings(),
         metadatas: Optional[List[dict]] = None,
         collection_name: str = _LANGCHAIN_DEFAULT_COLLECTION_NAME,
-        schema_name: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME,
         distance_strategy: DistanceStrategy = DEFAULT_DISTANCE_STRATEGY,
         ids: Optional[List[str]] = None,
         pre_delete_collection: bool = False,
+        *,
+        schema_name: str = _LANGCHAIN_DEFAULT_SCHEMA_NAME,
         **kwargs: Any,
     ) -> Kinetica:
         """Adds the list of `Document` passed in to the vector store and returns it
