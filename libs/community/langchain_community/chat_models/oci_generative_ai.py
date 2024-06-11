@@ -43,6 +43,7 @@ class Provider(ABC):
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         ...
 
+
 class CohereProvider(Provider):
     stop_sequence_key = "stop_sequences"
 
@@ -97,6 +98,7 @@ class CohereProvider(Provider):
     
         return oci_params
     
+
 class MetaProvider(Provider):
     stop_sequence_key = "stop"
     
@@ -156,12 +158,14 @@ class MetaProvider(Provider):
     
         return oci_params
 
-PROVIDERS = {
+
+CHAT_PROVIDERS = {
     "cohere": CohereProvider(),
     "meta": MetaProvider(),
 }
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
+
 
 class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
     """OCI large language chat models.
@@ -268,7 +272,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             stream_iter = self._stream(messages, stop=stop, run_manager=run_manager, **kwargs)
             return generate_from_stream(stream_iter)
 
-        provider = PROVIDERS[self._get_provider()]
+        provider = self._get_provider(provider_map=CHAT_PROVIDERS)
         request = self._prepare_request(messages, stop, kwargs, provider, stream=False)
         response = self.client.chat(request)
         
@@ -299,7 +303,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         
-        provider = PROVIDERS[self._get_provider()]
+        provider = self._get_provider(provider_map=CHAT_PROVIDERS)
         request = self._prepare_request(messages, stop, kwargs, provider, stream=True)
         response = self.client.chat(request)
                 

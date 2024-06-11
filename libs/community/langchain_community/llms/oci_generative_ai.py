@@ -62,7 +62,7 @@ class MetaProvider(Provider):
         return response.data.inference_response.choices[0].text
 
 
-VALID_PROVIDERS = {
+COMPLETION_PROVIDERS = {
     "cohere": CohereProvider(),
     "meta": MetaProvider(),
 }
@@ -201,19 +201,19 @@ class OCIGenAIBase(BaseModel, ABC):
             **{"model_kwargs": _model_kwargs},
         }
 
-    def _get_provider(self) -> str:
+    def _get_provider(self, provider_map) -> str:
         if self.provider is not None:
             provider = self.provider
         else:
             provider = self.model_id.split(".")[0].lower()
 
-        if provider not in VALID_PROVIDERS:
+        if provider not in provider_map:
             raise ValueError(
                 f"Invalid provider derived from model_id: {self.model_id} "
                 "Please explicitly pass in the supported provider "
                 "when using custom endpoint"
             )
-        return VALID_PROVIDERS[provider]
+        return provider_map[provider]
 
 
 class OCIGenAI(LLM, OCIGenAIBase):
@@ -261,7 +261,7 @@ class OCIGenAI(LLM, OCIGenAIBase):
     ) -> Dict[str, Any]:
         from oci.generative_ai_inference import models
 
-        provider = self._get_provider()
+        provider = self._get_provider(provider_map=COMPLETION_PROVIDERS)
         _model_kwargs = self.model_kwargs or {}
         if stop is not None:
             _model_kwargs[provider.stop_sequence_key] = stop
@@ -284,7 +284,7 @@ class OCIGenAI(LLM, OCIGenAIBase):
         return invocation_obj
 
     def _process_response(self, response: Any, stop: Optional[List[str]]) -> str:
-        provider = self._get_provider()
+        provider = self._get_provider(provider_map=COMPLETION_PROVIDERS)
         text = provider.completion_response_to_text(response)
 
         if stop is not None:
