@@ -1,13 +1,13 @@
+import json
 from operator import itemgetter
 from pathlib import Path
-import json
 from typing import (
     Any,
     Callable,
     Dict,
-    Mapping,
     Iterator,
     List,
+    Mapping,
     Optional,
     Sequence,
     Type,
@@ -23,21 +23,21 @@ from langchain_core.language_models.chat_models import (
 )
 from langchain_core.messages import (
     AIMessage,
-    BaseMessage,
-    HumanMessage,
-    ChatMessage,
-    SystemMessage,
-    FunctionMessage,
-    ToolMessage,
     AIMessageChunk,
+    BaseMessage,
     BaseMessageChunk,
-    HumanMessageChunk,
+    ChatMessage,
     ChatMessageChunk,
-    SystemMessageChunk,
+    FunctionMessage,
     FunctionMessageChunk,
+    HumanMessage,
+    HumanMessageChunk,
+    SystemMessage,
+    SystemMessageChunk,
+    ToolMessage,
     ToolMessageChunk,
 )
-
+from langchain_core.messages.tool import InvalidToolCall, ToolCall
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -50,7 +50,6 @@ from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.messages.tool import ToolCall, InvalidToolCall
 
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
@@ -243,7 +242,6 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content, id=id_)  # type: ignore
 
 
-
 class ChatLlamaCpp(BaseChatModel):
     """llama.cpp model.
 
@@ -419,7 +417,6 @@ class ChatLlamaCpp(BaseChatModel):
         else:
             pass
         return values
-    
 
     def _get_parameters(self) -> Dict[str, Any]:
         """
@@ -439,19 +436,14 @@ class ChatLlamaCpp(BaseChatModel):
 
         return params
 
-
     def _create_message_dicts(
         self, messages: List[BaseMessage]
     ) -> List[Dict[str, Any]]:
-        
         message_dicts = [_convert_message_to_dict(m) for m in messages]
 
         return message_dicts
 
-
-    def _create_chat_result(
-        self, response: dict
-    ) -> ChatResult:
+    def _create_chat_result(self, response: dict) -> ChatResult:
         generations = []
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
@@ -470,34 +462,25 @@ class ChatLlamaCpp(BaseChatModel):
         }
         return ChatResult(generations=generations, llm_output=llm_output)
 
-
     def _generate(
         self,
         messages: List[BaseMessage],
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        
         params = {**self._get_parameters(), **kwargs}
 
-        # Check tool_choice is whether available, if yes then run no stream with tool calling
-        try:
-            tool_available = True if params['tool_choice'] else False
-        except:
-            tool_available = False
-
-        if self.streaming and not tool_available:
-            stream_iter = self._stream(
-                messages, run_manager=run_manager, **kwargs
-            )
+        # Check tool_choice is whether available, if yes then run no stream with tool
+        # calling
+        if self.streaming and not params.get("tool_choice"):
+            stream_iter = self._stream(messages, run_manager=run_manager, **kwargs)
             return generate_from_stream(stream_iter)
-        
+
         message_dicts = self._create_message_dicts(messages)
 
         response = self.client.create_chat_completion(messages=message_dicts, **params)
 
         return self._create_chat_result(response)
-    
 
     def _stream(
         self,
@@ -505,14 +488,13 @@ class ChatLlamaCpp(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        
         params = {**self._get_parameters(), **kwargs}
         message_dicts = self._create_message_dicts(messages)
 
         result = self.client.create_chat_completion(
             messages=message_dicts, stream=True, **params
         )
-        
+
         default_chunk_class = AIMessageChunk
         count = 0
         for chunk in result:
@@ -538,11 +520,8 @@ class ChatLlamaCpp(BaseChatModel):
                 message=chunk, generation_info=generation_info or None
             )
             if run_manager:
-                run_manager.on_llm_new_token(
-                    chunk.text, chunk=chunk, logprobs=logprobs
-                )
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
             yield chunk
-
 
     def bind_tools(
         self,
@@ -594,8 +573,7 @@ class ChatLlamaCpp(BaseChatModel):
         kwargs["tool_choice"] = tool_choice
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
-    
-    
+
     def with_structured_output(
         self,
         schema: Optional[Union[Dict, Type[BaseModel]]] = None,
@@ -735,7 +713,7 @@ class ChatLlamaCpp(BaseChatModel):
                 # }
 
         """  # noqa: E501
-        
+
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
         is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
@@ -766,7 +744,7 @@ class ChatLlamaCpp(BaseChatModel):
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
             return llm | output_parser
-    
+
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Return a dictionary of identifying parameters.
@@ -779,15 +757,15 @@ class ChatLlamaCpp(BaseChatModel):
             # rules in LLM monitoring applications (e.g., in LangSmith users
             # can provide per token pricing for their model and monitor
             # costs for the given LLM.)
-            **{"model_path": self.model_path}, 
-            **self._default_params
+            **{"model_path": self.model_path},
+            **self._default_params,
         }
 
     @property
     def _llm_type(self) -> str:
         """Get the type of language model used by this chat model."""
         return "llama-cpp-python"
-    
+
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling create_chat_completion."""
