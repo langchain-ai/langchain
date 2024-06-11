@@ -138,12 +138,13 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                         content += f"\n{content_part['text']}"
                     elif content_part.get("type") == "image_url":
                         image_url = None
-                        if isinstance(content_part.get("image_url"), str):
+                        temp_image_url = content_part.get("image_url")
+                        if isinstance(temp_image_url, str):
                             image_url = content_part["image_url"]
-                        elif isinstance(
-                            content_part.get("image_url"), dict
-                        ) and "url" in content_part.get("image_url"):
-                            image_url = content_part["image_url"]["url"]
+                        elif (
+                            isinstance(temp_image_url, dict) and "url" in temp_image_url
+                        ):
+                            image_url = temp_image_url
                         else:
                             raise ValueError(
                                 "Only string image_url or dict with string 'url' "
