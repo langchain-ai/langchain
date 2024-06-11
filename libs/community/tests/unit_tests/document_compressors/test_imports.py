@@ -6,6 +6,8 @@ EXPECTED_ALL = [
     "JinaRerank",
     "RankLLMRerank",
     "FlashrankRerank",
+    "DashScopeRerank",
+    "VolcengineRerank",
 ]
 
 

@@ -95,6 +95,7 @@ if TYPE_CHECKING:
         RunLog,
         RunLogPatch,
     )
+    from langchain_core.tracers.root_listeners import AsyncListener
     from langchain_core.tracers.schemas import Run
 
 
@@ -642,8 +643,8 @@ class Runnable(Generic[Input, Output], ABC):
     @overload
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Any,
@@ -653,8 +654,8 @@ class Runnable(Generic[Input, Output], ABC):
     @overload
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[True],
         **kwargs: Any,
@@ -663,8 +664,8 @@ class Runnable(Generic[Input, Output], ABC):
 
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
@@ -746,8 +747,8 @@ class Runnable(Generic[Input, Output], ABC):
     @overload
     def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Optional[Any],
@@ -757,8 +758,8 @@ class Runnable(Generic[Input, Output], ABC):
     @overload
     def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[True],
         **kwargs: Optional[Any],
@@ -767,8 +768,8 @@ class Runnable(Generic[Input, Output], ABC):
 
     async def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
@@ -958,6 +959,11 @@ class Runnable(Generic[Input, Output], ABC):
             the runnable that emitted the event.
             A child runnable that gets invoked as part of the execution of a
             parent runnable is assigned its own unique ID.
+        - ``parent_ids``: **List[str]** - The IDs of the parent runnables that
+            generated the event. The root runnable will have an empty list.
+            The order of the parent IDs is from the root to the immediate parent.
+            Only available for v2 version of the API. The v1 version of the API
+            will return an empty list.
         - ``tags``: **Optional[List[str]]** - The tags of the runnable that generated
             the event.
         - ``metadata``: **Optional[Dict[str, Any]]** - The metadata of the runnable
@@ -1050,7 +1056,8 @@ class Runnable(Generic[Input, Output], ABC):
                 event async for event in chain.astream_events("hello", version="v2")
             ]
 
-            # will produce the following events (run_id has been omitted for brevity):
+            # will produce the following events (run_id, and parent_ids
+            # has been omitted for brevity):
             [
                 {
                     "data": {"input": "hello"},
@@ -1317,6 +1324,86 @@ class Runnable(Generic[Input, Output], ABC):
                 lambda config: {
                     "callbacks": [
                         RootListenersTracer(
+                            config=config,
+                            on_start=on_start,
+                            on_end=on_end,
+                            on_error=on_error,
+                        )
+                    ],
+                }
+            ],
+        )
+
+    def with_alisteners(
+        self,
+        *,
+        on_start: Optional[AsyncListener] = None,
+        on_end: Optional[AsyncListener] = None,
+        on_error: Optional[AsyncListener] = None,
+    ) -> Runnable[Input, Output]:
+        """
+        Bind asynchronous lifecycle listeners to a Runnable, returning a new Runnable.
+
+        on_start: Asynchronously called before the runnable starts running.
+        on_end: Asynchronously called after the runnable finishes running.
+        on_error: Asynchronously called if the runnable throws an error.
+
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+
+        Example:
+
+        .. code-block:: python
+            from langchain_core.runnables import RunnableLambda
+            import time
+
+            async def test_runnable(time_to_sleep : int):
+                print(f"Runnable[{time_to_sleep}s]: starts at {format_t(time.time())}")
+                await asyncio.sleep(time_to_sleep)
+                print(f"Runnable[{time_to_sleep}s]: ends at {format_t(time.time())}")
+
+            async def fn_start(run_obj : Runnable):
+                print(f"on start callback starts at {format_t(time.time())}
+                await asyncio.sleep(3)
+                print(f"on start callback ends at {format_t(time.time())}")
+
+            async def fn_end(run_obj : Runnable):
+                print(f"on end callback starts at {format_t(time.time())}
+                await asyncio.sleep(2)
+                print(f"on end callback ends at {format_t(time.time())}")
+
+            runnable = RunnableLambda(test_runnable).with_alisteners(
+                on_start=fn_start,
+                on_end=fn_end
+            )
+            async def concurrent_runs():
+                await asyncio.gather(runnable.ainvoke(2), runnable.ainvoke(3))
+
+            asyncio.run(concurrent_runs())
+            Result:
+            on start callback starts at 2024-05-16T14:20:29.637053+00:00
+            on start callback starts at 2024-05-16T14:20:29.637150+00:00
+            on start callback ends at 2024-05-16T14:20:32.638305+00:00
+            on start callback ends at 2024-05-16T14:20:32.638383+00:00
+            Runnable[3s]: starts at 2024-05-16T14:20:32.638849+00:00
+            Runnable[5s]: starts at 2024-05-16T14:20:32.638999+00:00
+            Runnable[3s]: ends at 2024-05-16T14:20:35.640016+00:00
+            on end callback starts at 2024-05-16T14:20:35.640534+00:00
+            Runnable[5s]: ends at 2024-05-16T14:20:37.640169+00:00
+            on end callback starts at 2024-05-16T14:20:37.640574+00:00
+            on end callback ends at 2024-05-16T14:20:37.640654+00:00
+            on end callback ends at 2024-05-16T14:20:39.641751+00:00
+
+        """
+        from langchain_core.tracers.root_listeners import AsyncRootListenersTracer
+
+        return RunnableBinding(
+            bound=self,
+            config_factories=[
+                lambda config: {
+                    "callbacks": [
+                        AsyncRootListenersTracer(
                             config=config,
                             on_start=on_start,
                             on_end=on_end,
@@ -4294,6 +4381,33 @@ class RunnableEach(RunnableEachBase[Input, Output]):
             )
         )
 
+    def with_alisteners(
+        self,
+        *,
+        on_start: Optional[AsyncListener] = None,
+        on_end: Optional[AsyncListener] = None,
+        on_error: Optional[AsyncListener] = None,
+    ) -> RunnableEach[Input, Output]:
+        """
+        Bind async lifecycle listeners to a Runnable, returning a new Runnable.
+
+        on_start: Called asynchronously before the runnable starts running,
+                  with the Run object.
+        on_end: Called asynchronously after the runnable finishes running,
+                with the Run object.
+        on_error: Called asynchronously if the runnable throws an error,
+                with the Run object.
+
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+        """
+        return RunnableEach(
+            bound=self.bound.with_alisteners(
+                on_start=on_start, on_end=on_end, on_error=on_error
+            )
+        )
+
 
 class RunnableBindingBase(RunnableSerializable[Input, Output]):
     """Runnable that delegates calls to another Runnable with a set of kwargs.
@@ -4506,8 +4620,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @overload
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Any,
@@ -4517,8 +4631,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @overload
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[True],
         **kwargs: Any,
@@ -4527,13 +4641,13 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
 
     def batch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
-        if isinstance(config, list):
+        if isinstance(config, Sequence):
             configs = cast(
                 List[RunnableConfig],
                 [self._merge_configs(conf) for conf in config],
@@ -4559,8 +4673,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @overload
     def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Optional[Any],
@@ -4570,8 +4684,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     @overload
     def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: Literal[True],
         **kwargs: Optional[Any],
@@ -4580,13 +4694,13 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
 
     async def abatch_as_completed(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: Sequence[Input],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
-        if isinstance(config, list):
+        if isinstance(config, Sequence):
             configs = cast(
                 List[RunnableConfig],
                 [self._merge_configs(conf) for conf in config],
