@@ -1217,6 +1217,10 @@
     {
       "source": "/v0.1/docs/integrations/chat/solar(/?)",
       "destination": "/v0.1/docs/integrations/chat/upstage"
+    },
+    {
+      "source": "/v0.1/docs/langgraph(/?)",
+      "destination": "https://langchain-ai.github.io/langgraph/"
     }
   ]
 }
