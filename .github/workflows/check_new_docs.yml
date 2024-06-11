@@ -28,4 +28,4 @@ jobs:
         uses: Ana06/get-changed-files@v2.2.0
       - name: Check new docs
         run: |
-          python docs/scripts/check_templates.py ${{ steps.files.outputs.all }}
+          python docs/scripts/check_templates.py ${{ steps.files.outputs.added }}
