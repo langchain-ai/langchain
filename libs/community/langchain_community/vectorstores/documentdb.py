@@ -323,7 +323,7 @@ class DocumentDBVectorSearch(VectorStore):
             ef_search: Specifies the size of the dynamic candidate list
                 that HNSW index uses during search. A higher value of
                 efSearch provides better recall at cost of speed.
-
+            filter (Optional[Dict[str, str]]): Filter by metadata. Defaults to None.
         Returns:
             A list of documents closest to the query vector
         """
@@ -337,7 +337,8 @@ class DocumentDBVectorSearch(VectorStore):
                         "k": k,
                         "efSearch": ef_search,
                     }
-                }
+                },
+                "$match": filter,
             }
         ]
 
@@ -356,10 +357,11 @@ class DocumentDBVectorSearch(VectorStore):
         query: str,
         k: int = 4,
         ef_search: int = 40,
+        filter: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> List[Document]:
         embeddings = self._embedding.embed_query(query)
         docs = self._similarity_search_without_score(
-            embeddings=embeddings, k=k, ef_search=ef_search
+            embeddings=embeddings, k=k, ef_search=ef_search, filter=filter
         )
         return [doc for doc in docs]
