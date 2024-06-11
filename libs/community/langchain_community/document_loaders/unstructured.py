@@ -11,7 +11,6 @@ from typing import (
     Optional,
     Sequence,
     Union,
-    cast,
 )
 
 from langchain_core.documents import Document
@@ -130,7 +129,8 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
     def __init__(
         self,
-        file_path: Union[str, List[str], Path, List[Path], None],
+        file_path: Union[str, List[str], Path, List[Path]],
+        *,
         mode: str = "single",
         **unstructured_kwargs: Any,
     ):
@@ -204,7 +204,8 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
 
     def __init__(
         self,
-        file_path: Union[str, List[str], None] = "",
+        file_path: Union[str, List[str]],
+        *,
         mode: str = "single",
         url: str = "https://api.unstructured.io/general/v0/general",
         api_key: str = "",
@@ -274,6 +275,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     def __init__(
         self,
         file: IO[bytes],
+        *,
         mode: str = "single",
         **unstructured_kwargs: Any,
     ):
@@ -339,6 +341,7 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
     def __init__(
         self,
         file: Union[IO, Sequence[IO]],
+        *,
         mode: str = "single",
         url: str = "https://api.unstructured.io/general/v0/general",
         api_key: str = "",
@@ -427,16 +430,15 @@ def get_elements_from_api(
         )
     
 
-def _get_content(file: Union[IO[bytes], None] = None, file_path: Union[str, Path, None] = None) -> bytes:
+def _get_content(file_path: Union[str, Path], file: Union[IO[bytes], None] = None) -> bytes:
     """Get content from either file or file_path."""
+    # `file_path` is a required arg and used to define `file_name` for the sdk, but use `file` for the
+    # `content` if it is provided
     if file is not None:
         return file.read()
-    
-    if file_path is not None:
+    else:
         with open(file_path, "rb") as f:
             return f.read()
-    
-    raise ValueError("Either file or file_path must be provided")
 
 
 def satisfies_min_unstructured_version(min_version: str) -> bool:

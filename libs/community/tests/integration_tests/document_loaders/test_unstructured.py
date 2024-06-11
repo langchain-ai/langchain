@@ -1,6 +1,7 @@
 import os
 from contextlib import ExitStack
 from pathlib import Path
+import pytest
 
 import pytest
 
@@ -9,6 +10,7 @@ from langchain_community.document_loaders import (
     UnstructuredAPIFileLoader,
     UnstructuredFileLoader,
 )
+from langchain_community.document_loaders.unstructured import _get_content
 
 EXAMPLE_DOCS_DIRECTORY = str(Path(__file__).parent.parent / "examples/")
 
@@ -111,3 +113,21 @@ def test_unstructured_api_file_loader_io_multiple_files() -> None:
         docs = loader.load()
 
     assert len(docs) > 1
+
+
+def test_get_content_from_file() -> None:
+    with open(os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"), "rb") as f:
+        content = _get_content(
+            file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY,"layout-parser-paper.pdf"),
+            file=f,
+        )
+    
+    assert type(content)==bytes
+    assert content[:50]==b'%PDF-1.5\n%\x8f\n47 0 obj\n<< /Filter /FlateDecode /Leng'
+
+
+def test_get_content_from_file_path() -> None:
+    content = _get_content(file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"))
+    
+    assert type(content)==bytes
+    assert content[:50]==b'%PDF-1.5\n%\x8f\n47 0 obj\n<< /Filter /FlateDecode /Leng'
