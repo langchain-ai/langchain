@@ -217,10 +217,19 @@ def _convert_chunk_to_message_chunk(
                 pass
         else:
             tool_call_chunks = []
+        if token_usage := chunk.get("usage"):
+            usage_metadata = {
+                "input_tokens": token_usage.get("prompt_tokens", 0),
+                "output_tokens": token_usage.get("completion_tokens", 0),
+                "total_tokens": token_usage.get("total_tokens", 0),
+            }
+        else:
+            usage_metadata = None
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
             tool_call_chunks=tool_call_chunks,
+            usage_metadata=usage_metadata,
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
