@@ -109,10 +109,6 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
         lst = []
         for chunk in text_in_chunks:
             req = {
-                "model": {
-                    "name": self.model,
-                    "version": self.version,
-                },
                 "input": chunk,
             }
             try:
