@@ -1,13 +1,11 @@
 """Filter that uses an LLM to drop documents that aren't relevant to the query."""
-import asyncio
-from functools import partial
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
-from langchain_core.runnables.config import RunnableConfig, get_executor_for_config
+from langchain_core.runnables.config import RunnableConfig
 
 from langchain.chains import LLMChain
 from langchain.output_parsers.boolean import BooleanOutputParser
@@ -50,14 +48,13 @@ class LLMChainFilter(BaseDocumentCompressor):
         filtered_docs = []
 
         config = RunnableConfig(callbacks=callbacks)
-        with get_executor_for_config(config) as executor:
-            outputs = zip(
-                executor.map(
-                    partial(self.llm_chain.invoke, config={"callbacks": callbacks}),
-                    [self.get_input(query, doc) for doc in documents],
-                ),
-                documents,
-            )
+        outputs = zip(
+            self.llm_chain.batch(
+                [self.get_input(query, doc) for doc in documents], config=config
+            ),
+            documents,
+        )
+
         for output_dict, doc in outputs:
             include_doc = None
             output = output_dict[self.llm_chain.output_key]
@@ -77,14 +74,10 @@ class LLMChainFilter(BaseDocumentCompressor):
         """Filter down documents based on their relevance to the query."""
         filtered_docs = []
 
+        config = RunnableConfig(callbacks=callbacks)
         outputs = zip(
-            await asyncio.gather(
-                *[
-                    self.llm_chain.ainvoke(
-                        self.get_input(query, doc), config={"callbacks": callbacks}
-                    )
-                    for doc in documents
-                ]
+            await self.llm_chain.abatch(
+                [self.get_input(query, doc) for doc in documents], config=config
             ),
             documents,
         )
