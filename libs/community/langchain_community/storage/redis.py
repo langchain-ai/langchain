@@ -69,11 +69,9 @@ class RedisStore(ByteStore):
                 "Either a Redis client or a redis_url with optional client_kwargs "
                 "must be provided, but not both."
             )
-        
+
         if not client and not redis_url:
-            raise ValueError(
-                "Either a Redis client or a redis_url must be provided."
-            )
+            raise ValueError("Either a Redis client or a redis_url must be provided.")
 
         if client:
             if not isinstance(client, Redis):
@@ -82,6 +80,10 @@ class RedisStore(ByteStore):
                 )
             _client = client
         else:
+            if not redis_url:
+                raise ValueError(
+                    "Either a Redis client or a redis_url must be provided."
+                )
             _client = get_client(redis_url, **(client_kwargs or {}))
 
         self.client = _client
