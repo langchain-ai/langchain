@@ -13,7 +13,7 @@ import pytest
 from langchain.globals import get_llm_cache, set_llm_cache
 from langchain_core.outputs import Generation
 
-from langchain_community.cache import AzureCosmosDBMongoVCoreSemanticCache
+from langchain_community.cache import AzureCosmosDBSemanticCache
 from langchain_community.vectorstores.azure_cosmos_db import (
     CosmosDBSimilarityType,
     CosmosDBVectorSearchType,
@@ -53,7 +53,7 @@ def random_string() -> str:
 )
 def test_azure_cosmos_db_semantic_cache() -> None:
     set_llm_cache(
-        AzureCosmosDBMongoVCoreSemanticCache(
+        AzureCosmosDBSemanticCache(
             cosmosdb_connection_string=CONNECTION_STRING,
             cosmosdb_client=None,
             embedding=FakeEmbeddings(),
@@ -91,7 +91,7 @@ def test_azure_cosmos_db_semantic_cache() -> None:
 )
 def test_azure_cosmos_db_semantic_cache_inner_product() -> None:
     set_llm_cache(
-        AzureCosmosDBMongoVCoreSemanticCache(
+        AzureCosmosDBSemanticCache(
             cosmosdb_connection_string=CONNECTION_STRING,
             cosmosdb_client=None,
             embedding=FakeEmbeddings(),
@@ -129,7 +129,7 @@ def test_azure_cosmos_db_semantic_cache_inner_product() -> None:
 )
 def test_azure_cosmos_db_semantic_cache_multi() -> None:
     set_llm_cache(
-        AzureCosmosDBMongoVCoreSemanticCache(
+        AzureCosmosDBSemanticCache(
             cosmosdb_connection_string=CONNECTION_STRING,
             cosmosdb_client=None,
             embedding=FakeEmbeddings(),
@@ -169,7 +169,7 @@ def test_azure_cosmos_db_semantic_cache_multi() -> None:
 )
 def test_azure_cosmos_db_semantic_cache_multi_inner_product() -> None:
     set_llm_cache(
-        AzureCosmosDBMongoVCoreSemanticCache(
+        AzureCosmosDBSemanticCache(
             cosmosdb_connection_string=CONNECTION_STRING,
             cosmosdb_client=None,
             embedding=FakeEmbeddings(),
@@ -209,7 +209,7 @@ def test_azure_cosmos_db_semantic_cache_multi_inner_product() -> None:
 )
 def test_azure_cosmos_db_semantic_cache_hnsw() -> None:
     set_llm_cache(
-        AzureCosmosDBMongoVCoreSemanticCache(
+        AzureCosmosDBSemanticCache(
             cosmosdb_connection_string=CONNECTION_STRING,
             cosmosdb_client=None,
             embedding=FakeEmbeddings(),
@@ -247,7 +247,7 @@ def test_azure_cosmos_db_semantic_cache_hnsw() -> None:
 )
 def test_azure_cosmos_db_semantic_cache_inner_product_hnsw() -> None:
     set_llm_cache(
-        AzureCosmosDBMongoVCoreSemanticCache(
+        AzureCosmosDBSemanticCache(
             cosmosdb_connection_string=CONNECTION_STRING,
             cosmosdb_client=None,
             embedding=FakeEmbeddings(),
@@ -285,7 +285,7 @@ def test_azure_cosmos_db_semantic_cache_inner_product_hnsw() -> None:
 )
 def test_azure_cosmos_db_semantic_cache_multi_hnsw() -> None:
     set_llm_cache(
-        AzureCosmosDBMongoVCoreSemanticCache(
+        AzureCosmosDBSemanticCache(
             cosmosdb_connection_string=CONNECTION_STRING,
             cosmosdb_client=None,
             embedding=FakeEmbeddings(),
@@ -325,7 +325,7 @@ def test_azure_cosmos_db_semantic_cache_multi_hnsw() -> None:
 )
 def test_azure_cosmos_db_semantic_cache_multi_inner_product_hnsw() -> None:
     set_llm_cache(
-        AzureCosmosDBMongoVCoreSemanticCache(
+        AzureCosmosDBSemanticCache(
             cosmosdb_connection_string=CONNECTION_STRING,
             cosmosdb_client=None,
             embedding=FakeEmbeddings(),
