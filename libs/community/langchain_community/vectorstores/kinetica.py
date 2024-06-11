@@ -427,7 +427,7 @@ class Kinetica(VectorStore):
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
         from gpudb import GPUdbException
-        
+
         resp: Dict = self.__query_collection(embedding, k, filter)
         if resp and resp["status_info"]["status"] == "OK" and "records" in resp:
             records: OrderedDict = resp["records"]
