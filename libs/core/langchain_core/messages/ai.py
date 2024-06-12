@@ -55,6 +55,12 @@ class AIMessage(BaseMessage):
 
     type: Literal["ai"] = "ai"
 
+    def __init__(
+        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
+    ) -> None:
+        """Pass in content as positional arg."""
+        super().__init__(content=content, **kwargs)
+
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""

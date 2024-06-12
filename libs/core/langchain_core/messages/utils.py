@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import inspect
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -22,10 +21,6 @@ from langchain_core.messages.function import FunctionMessage, FunctionMessageChu
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolMessage, ToolMessageChunk
-from langchain_core.prompts import BasePromptTemplate
-
-if TYPE_CHECKING:
-    from langchain_core.language_models.base import LanguageModelLike
 
 AnyMessage = Union[
     AIMessage, HumanMessage, ChatMessage, SystemMessage, FunctionMessage, ToolMessage
@@ -337,9 +332,9 @@ def trim_messages(
     ):
 
         def list_token_counter(messages: Sequence[BaseMessage]) -> int:
-            return sum(token_counter(msg) for msg in messages)
+            return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
     else:
-        list_token_counter = token_counter
+        list_token_counter = token_counter  # type: ignore[assignment]
 
     if strategy == "first":
         return _first_n_tokens(
@@ -427,21 +422,7 @@ def _last_n_tokens(
         return reversed_[::-1]
 
 
-# TODO: Should this return a Runnable?
-def _summarize(
-    messages: Sequence[BaseMessage],
-    *,
-    n_tokens: int,
-    token_counter: Callable[[Sequence[BaseMessage]], int],
-    llm: LanguageModelLike,
-    chunk_size: int = 1,
-    prompt: Optional[BasePromptTemplate] = None,
-) -> List[BaseMessage]:
-    prompt = prompt or DEFAULT_SUMMARY_PROMPT
-    ...
-
-
-_MSG_CHUNK_MAP = {
+_MSG_CHUNK_MAP: Dict[Type[BaseMessage], Type[BaseMessageChunk]] = {
     HumanMessage: HumanMessageChunk,
     AIMessage: AIMessageChunk,
     SystemMessage: SystemMessageChunk,
@@ -452,13 +433,13 @@ _MSG_CHUNK_MAP = {
 _CHUNK_MSG_MAP = {v: k for k, v in _MSG_CHUNK_MAP.items()}
 
 
-def _msg_to_chunk(message: AnyMessage) -> BaseMessageChunk:
+def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
     if message.__class__ in _MSG_CHUNK_MAP:
-        return _MSG_CHUNK_MAP[message.__class__](**message.dict())
+        return _MSG_CHUNK_MAP[message.__class__](**message.dict(exclude={"type"}))
 
     for msg_cls, chunk_cls in _MSG_CHUNK_MAP.items():
         if isinstance(message, msg_cls):
-            return chunk_cls(**message.dict())
+            return chunk_cls(**message.dict(exclude={"type"}))
 
     raise ValueError(
         f"Unrecognized message class {message.__class__}. Supported classes are "
@@ -466,13 +447,15 @@ def _msg_to_chunk(message: AnyMessage) -> BaseMessageChunk:
     )
 
 
-def _chunk_to_msg(chunk: BaseMessageChunk) -> AnyMessage:
+def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
     # TODO: does this break when there are extra fields in chunk.
     if chunk.__class__ in _CHUNK_MSG_MAP:
-        return _CHUNK_MSG_MAP[chunk.__class__](**chunk.dict())
+        return _CHUNK_MSG_MAP[chunk.__class__](
+            **chunk.dict(exclude={"type", "tool_call_chunks"})
+        )
     for chunk_cls, msg_cls in _CHUNK_MSG_MAP.items():
         if isinstance(chunk, chunk_cls):
-            return msg_cls(**chunk.dict())
+            return msg_cls(**chunk.dict(exclude={"type", "tool_call_chunks"}))
 
     raise ValueError(
         f"Unrecognized message chunk class {chunk.__class__}. Supported classes are "
