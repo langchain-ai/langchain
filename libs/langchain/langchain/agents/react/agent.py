@@ -24,7 +24,7 @@ def create_react_agent(
 ) -> Runnable:
     """Create an agent that uses ReAct prompting.
     
-    Based on paper "ReAct: Synergizing Reasoning and Acting in Language Models" 
+    Based on paper "ReAct: Synergizing Reasoning and Acting in Language Models"
     (https://arxiv.org/abs/2210.03629)
 
     Args:
