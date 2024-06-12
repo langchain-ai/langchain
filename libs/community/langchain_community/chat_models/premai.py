@@ -158,7 +158,7 @@ def _messages_to_prompt_dict(
     examples_and_messages: List[Dict[str, str]] = []
 
     if template_id is not None:
-        params = {}
+        params: Dict[str, str] = {}
         for input_msg in input_messages:
             if isinstance(input_msg, SystemMessage):
                 system_prompt = str(input_msg.content)
