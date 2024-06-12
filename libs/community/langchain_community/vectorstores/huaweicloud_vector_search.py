@@ -22,17 +22,17 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class CSSVectorStore(VectorStore):
+class HuaweiCSSVectorStore(VectorStore):
     """`Huawei Elasticsearch` vector store.
 
     Example:
         .. code-block:: python
 
-            from langchain_community.vectorstores import CSSVectorStore
+            from langchain_community.vectorstores import HuaweiCSSVectorStore
             from langchain_community.embeddings.openai import OpenAIEmbeddings
 
             embeddings = OpenAIEmbeddings()
-            vectorstore = CSSVectorStore(
+            vectorstore = HuaweiCSSVectorStore(
                 embedding=OpenAIEmbeddings(),
                 index_name="langchain-demo",
                 css_url="http://localhost:9200"
@@ -65,7 +65,7 @@ class CSSVectorStore(VectorStore):
         self.index_params = kwargs.get("index_params") or {}
 
         if css_url is not None:
-            self.client = CSSVectorStore.css_client(
+            self.client = HuaweiCSSVectorStore.css_client(
                 css_url=css_url, username=user, password=password
             )
         else:
@@ -342,8 +342,8 @@ class CSSVectorStore(VectorStore):
         documents: List[Document],
         embedding: Optional[Embeddings] = None,
         **kwargs: Any,
-    ) -> "CSSVectorStore":
-        """Construct CSSVectorStore wrapper from documents.
+    ) -> "HuaweiCSSVectorStore":
+        """Construct HuaweiCSSVectorStore wrapper from documents.
 
         Args:
             documents: List of documents to add to the Elasticsearch index.
@@ -353,7 +353,7 @@ class CSSVectorStore(VectorStore):
             kwargs: create index key words arguments
         """
 
-        vectorStore = CSSVectorStore._css_vector_store(embedding=embedding, **kwargs)
+        vectorStore = HuaweiCSSVectorStore._css_vector_store(embedding=embedding, **kwargs)
         # Encode the provided texts and add them to the newly created index.
         vectorStore.add_documents(documents)
 
@@ -366,8 +366,8 @@ class CSSVectorStore(VectorStore):
         embedding: Optional[Embeddings] = None,
         metadatas: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
-    ) -> "CSSVectorStore":
-        """Construct CSSVectorStore wrapper from raw documents.
+    ) -> "HuaweiCSSVectorStore":
+        """Construct HuaweiCSSVectorStore wrapper from raw documents.
 
         Args:
             texts: List of texts to add to the Elasticsearch index.
@@ -377,7 +377,7 @@ class CSSVectorStore(VectorStore):
             kwargs: create index key words arguments
         """
 
-        vectorStore = CSSVectorStore._css_vector_store(embedding=embedding, **kwargs)
+        vectorStore = HuaweiCSSVectorStore._css_vector_store(embedding=embedding, **kwargs)
 
         # Encode the provided texts and add them to the newly created index.
         vectorStore.add_texts(texts, metadatas=metadatas, **kwargs)
@@ -474,7 +474,7 @@ class CSSVectorStore(VectorStore):
     @staticmethod
     def _css_vector_store(
         embedding: Optional[Embeddings] = None, **kwargs: Any
-    ) -> "CSSVectorStore":
+    ) -> "HuaweiCSSVectorStore":
         index_name = kwargs.get("index_name")
 
         if index_name is None:
@@ -484,4 +484,4 @@ class CSSVectorStore(VectorStore):
         if css_url is None:
             raise ValueError("Please provided a valid css connection url")
 
-        return CSSVectorStore(embedding=embedding, **kwargs)
+        return HuaweiCSSVectorStore(embedding=embedding, **kwargs)

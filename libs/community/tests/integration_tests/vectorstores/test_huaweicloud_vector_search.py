@@ -4,14 +4,14 @@ import uuid
 import pytest
 from langchain_core.documents import Document
 
-from langchain_community.vectorstores.huaweicloud_vector_search import CSSVectorStore
+from langchain_community.vectorstores.huaweicloud_vector_search import HuaweiCSSVectorStore
 from tests.integration_tests.vectorstores.fake_embeddings import (
     FakeEmbeddings,
     fake_texts,
 )
 
 
-class TestCSSVectorStore:
+class TestHuaweiCSSVectorStore:
     @pytest.fixture(scope="class", autouse=True)
     def css_url(self) -> str:
         return os.environ.get("CSS_URL", "http://localhost:9200")
@@ -21,7 +21,7 @@ class TestCSSVectorStore:
         return f"test_{uuid.uuid4().hex}"
 
     def test_knn_similarity_search(self, css_url: str, index_name: str):
-        store = CSSVectorStore.from_texts(
+        store = HuaweiCSSVectorStore.from_texts(
             fake_texts,
             FakeEmbeddings(),
             css_url=css_url,
@@ -32,7 +32,7 @@ class TestCSSVectorStore:
         assert output == [Document(page_content="foo")]
 
     def test_ann_similarity_search(self, css_url: str, index_name: str):
-        store = CSSVectorStore.from_texts(
+        store = HuaweiCSSVectorStore.from_texts(
             fake_texts,
             FakeEmbeddings(),
             css_url=css_url,

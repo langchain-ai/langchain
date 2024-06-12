@@ -429,7 +429,6 @@ _module_lookup = {
     "Clickhouse": "langchain_community.vectorstores.clickhouse",
     "ClickhouseSettings": "langchain_community.vectorstores.clickhouse",
     "CouchbaseVectorStore": "langchain_community.vectorstores.couchbase",
-    "CSSVectorStore": "langchain_community.vectorstores.huaweicloud_vector_search",
     "DashVector": "langchain_community.vectorstores.dashvector",
     "DatabricksVectorSearch": "langchain_community.vectorstores.databricks_vector_search",  # noqa: E501
     "DeepLake": "langchain_community.vectorstores.deeplake",
@@ -447,6 +446,7 @@ _module_lookup = {
     "FAISS": "langchain_community.vectorstores.faiss",
     "HanaDB": "langchain_community.vectorstores.hanavector",
     "Hologres": "langchain_community.vectorstores.hologres",
+    "HuaweiCSSVectorStore": "langchain_community.vectorstores.huaweicloud_vector_search",
     "InfinispanVS": "langchain_community.vectorstores.infinispanvs",
     "InMemoryVectorStore": "langchain_community.vectorstores.inmemory",
     "KDBAI": "langchain_community.vectorstores.kdbai",
