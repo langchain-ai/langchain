@@ -101,7 +101,6 @@ class PromptTemplate(StringPromptTemplate):
             )
 
         if values["template_format"]:
-            existing_input_variables = set(values.get("input_variables", []))
             values["input_variables"] = [
                 var
                 for var in get_template_variables(
