@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, List, Literal, Optional, Union
 
 from typing_extensions import TypedDict
@@ -158,8 +159,28 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     @root_validator()
     def init_tool_calls(cls, values: dict) -> dict:
         if not values["tool_call_chunks"]:
-            values["tool_calls"] = []
-            values["invalid_tool_calls"] = []
+            if values["tool_calls"]:
+                values["tool_call_chunks"] = [
+                    ToolCallChunk(
+                        name=tc["name"],
+                        args=json.dumps(tc["args"]),
+                        id=tc["id"],
+                        index=None,
+                    )
+                    for tc in values["tool_calls"]
+                ]
+            if values["invalid_tool_calls"]:
+                tool_call_chunks = values.get("tool_call_chunks", [])
+                tool_call_chunks.extend(
+                    [
+                        ToolCallChunk(
+                            name=tc["name"], args=tc["args"], id=tc["id"], index=None
+                        )
+                        for tc in values["invalid_tool_calls"]
+                    ]
+                )
+                values["tool_call_chunks"] = tool_call_chunks
+
             return values
         tool_calls = []
         invalid_tool_calls = []
