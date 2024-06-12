@@ -133,12 +133,12 @@ Some components LangChain implements, some components we rely on third-party int
 <span data-heading-keywords="chat model,chat models"></span>
 
 Language models that use a sequence of messages as inputs and return chat messages as outputs (as opposed to using plain text).
-These are traditionally newer models (older models are generally `LLMs`, see above).
+These are traditionally newer models (older models are generally `LLMs`, see below).
 Chat models support the assignment of distinct roles to conversation messages, helping to distinguish messages from the AI, users, and instructions such as system messages.
 
 Although the underlying models are messages in, message out, the LangChain wrappers also allow these models to take a string as input. This means you can easily use chat models in place of LLMs.
 
-When a string is passed in as input, it is converted to a HumanMessage and then passed to the underlying model.
+When a string is passed in as input, it is converted to a `HumanMessage` and then passed to the underlying model.
 
 LangChain does not host any Chat Models, rather we rely on third party integrations.
 
@@ -165,7 +165,7 @@ Although the underlying models are string in, string out, the LangChain wrappers
 This gives them the same interface as [Chat Models](/docs/concepts/#chat-models).
 When messages are passed in as input, they will be formatted into a string under the hood before being passed to the underlying model.
 
-LangChain does not provide any LLMs, rather we rely on third party integrations.
+LangChain does not host any LLMs, rather we rely on third party integrations.
 
 For specifics on how to use LLMs, see the [relevant how-to guides here](/docs/how_to/#llms).
 
@@ -613,6 +613,9 @@ The unit that most model providers use to measure input and output is via a unit
 Tokens are the basic units that language models read and generate when processing or producing text.
 The exact definition of a token can vary depending on the specific way the model was trained -
 for instance, in English, a token could be a single word like "apple", or a part of a word like "app".
+
+When you send a model a prompt, the words and characters in the prompt are encoded into tokens using a **tokenizer**.
+The model then streams back generated output tokens, which the tokenizer decodes into human-readable text.
 The below example shows how OpenAI models tokenize `LangChain is cool!`:
 
 ![](/img/tokenization.png)
@@ -625,9 +628,6 @@ the initial input and their previous generations. Training the model using token
 units (like words or subwords) that carry meaning, rather than individual characters, which makes it easier for the model
 to learn and understand the structure of the language, including grammar and context.
 Furthermore, using tokens can also improve efficiency, since the model processes fewer units of text compared to character-level processing.
-
-When you send a model a prompt, the words and characters in the prompt are encoded into tokens using a **tokenizer**.
-The model then streams back generated output tokens, which the tokenizer decodes into human-readable text.
 
 #### Callbacks
 
@@ -647,9 +647,9 @@ they can be unwieldy for developers. For example:
 - Providers would often make you pass an additional parameter to stream outputs instead of returning them all at once.
 - You would often ignore the result of the actual model call in favor of callback results.
 
-#### `.stream()`
+#### `.stream()` and `.astream()`
 
-LangChain also includes the `.stream()` method as a more ergonomic streaming interface.
+LangChain also includes the `.stream()` method (and the equivalent `.astream()` method for [async](https://docs.python.org/3/library/asyncio.html) environments) as a more ergonomic streaming interface.
 `.stream()` returns an iterator, which you can consume with a simple `for` loop. Here's an example with a chat model:
 
 ```python
@@ -708,7 +708,99 @@ You can roughly think of it as an iterator over callback events (though the form
 
 See [this guide](/docs/how_to/streaming/#using-stream-events) for more detailed information on how to use `.astream_events()`.
 
-### Function/tool calling
+### Structured output
+
+LLMs are capable of generating arbitrary text. This enables the model to respond appropriately to a wide
+range of inputs, but for some use-cases, it can be useful to constrain the LLM's output
+to a specific format or structure. This is referred to as **structured output**.
+
+For example, if the output is to be stored in a relational database,
+it is much easier if the model generates output that adheres to a defined schema or format.
+[Extracting specific information](/docs/tutorials/extraction/) from unstructured text is another
+case where this is particularly useful. Most commonly, the output format will be JSON,
+though other formats such as [YAML](/docs/how_to/output_parser_yaml/) can be useful too. Below, we'll discuss
+a few ways to get structured output from models in LangChain.
+
+#### `.with_structured_output()`
+
+For convenience, some LangChain chat models support a `.with_structured_output()` method.
+This method only requires a schema as input, and returns a dict or Pydantic object.
+Generally, this method is only present on models that support one of the more advanced methods described below,
+and will use one of them under the hood. It takes care of importing a suitable output parser and
+formatting the schema in the right format for the model.
+
+For more information, check out this [how-to guide](/docs/how_to/structured_output/#the-with_structured_output-method).
+
+#### Raw prompting
+
+The most intuitive way to get a model to structure output is to ask nicely.
+In addition to your query, you can give instructions describing what kind of output you'd like, then
+parse the output using an [output parser](/docs/concepts/#output-parsers) to convert the raw
+model message or string output into something more easily manipulated.
+
+The biggest benefit to raw prompting is its flexibility:
+
+- Raw prompting does not require any special model features, only sufficient reasoning capability to understand
+the passed schema.
+- You can prompt for any format you'd like, not just JSON. This can be useful if the model you
+are using is more heavily trained on a certain type of data, such as XML or YAML.
+
+However, there are some drawbacks too:
+
+- LLMs are non-deterministic, and prompting a LLM to consistently output data in the exactly correct format
+for smooth parsing can be surprisingly difficult and model-specific.
+- Individual models have quirks depending on the data they were trained on, and optimizing prompts can be quite difficult.
+Some may be better at interpreting [JSON schema](https://json-schema.org/), others may be best with TypeScript definitions,
+and still others may prefer XML.
+
+While we'll next go over some ways that you can take advantage of features offered by
+model providers to increase reliability, prompting techniques remain important for tuning your
+results no matter what method you choose.
+
+#### JSON mode
+<span data-heading-keywords="json mode"></span>
+
+Some models, such as [Mistral](/docs/integrations/chat/mistralai/), [OpenAI](/docs/integrations/chat/openai/),
+[Together AI](/docs/integrations/chat/together/) and [Ollama](/docs/integrations/chat/ollama/),
+support a feature called **JSON mode**, usually enabled via config.
+
+When enabled, JSON mode will constrain the model's output to always be some sort of valid JSON.
+Often they require some custom prompting, but it's usually much less burdensome and along the lines of,
+`"you must always return JSON"`, and the [output is easier to parse](/docs/how_to/output_parser_json/).
+
+It's also generally simpler and more commonly available than tool calling.
+
+Here's an example:
+
+```python
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+from langchain.output_parsers.json import SimpleJsonOutputParser
+
+model = ChatOpenAI(
+    model="gpt-4o",
+    model_kwargs={ "response_format": { "type": "json_object" } },
+)
+
+prompt = ChatPromptTemplate.from_template(
+    "Answer the user's question to the best of your ability."
+    'You must always output a JSON object with an "answer" key and a "followup_question" key.'
+    "{question}"
+)
+
+chain = prompt | model | SimpleJsonOutputParser()
+
+chain.invoke({ "question": "What is the powerhouse of the cell?" })
+```
+
+```
+{'answer': 'The powerhouse of the cell is the mitochondrion. It is responsible for producing energy in the form of ATP through cellular respiration.',
+ 'followup_question': 'Would you like to know more about how mitochondria produce energy?'}
+```
+
+For a full list of model providers that support JSON mode, see [this table](/docs/integrations/chat/#advanced-features).
+
+#### Function/tool calling
 
 :::info
 We use the term tool calling interchangeably with function calling. Although
@@ -726,8 +818,10 @@ from unstructured text, you could give the model an "extraction" tool that takes
 parameters matching the desired schema, then treat the generated output as your final
 result.
 
-A tool call includes a name, arguments dict, and an optional identifier. The
-arguments dict is structured `{argument_name: argument_value}`.
+For models that support it, tool calling can be very convenient. It removes the
+guesswork around how best to prompt schemas in favor of a built-in model feature. It can also
+more naturally support agentic flows, since you can just pass multiple tool schemas instead
+of fiddling with enums or unions.
 
 Many LLM providers, including [Anthropic](https://www.anthropic.com/),
 [Cohere](https://cohere.com/), [Google](https://cloud.google.com/vertex-ai),
@@ -744,13 +838,15 @@ LangChain provides a standardized interface for tool calling that is consistent 
 
 The standard interface consists of:
 
-* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call.
+* `ChatModel.bind_tools()`: a method for specifying which tools are available for a model to call. This method accepts [LangChain tools](/docs/concepts/#tools) here.
 * `AIMessage.tool_calls`: an attribute on the `AIMessage` returned from the model for accessing the tool calls requested by the model.
 
-There are two main use cases for function/tool calling:
+The following how-to guides are good practical resources for using function/tool calling:
 
 - [How to return structured data from an LLM](/docs/how_to/structured_output/)
 - [How to use a model to call tools](/docs/how_to/tool_calling/)
+
+For a full list of model providers that support tool calling, [see this table](/docs/integrations/chat/#advanced-features).
 
 ### Retrieval
 
