@@ -155,7 +155,7 @@ def _messages_to_prompt_dict(
     which is the message structure in Prem"""
 
     system_prompt: Optional[str] = None
-    examples_and_messages: List[Dict[str, str]] = []
+    examples_and_messages: List[Dict[str, Any]] = []
 
     if template_id is not None:
         params: Dict[str, str] = {}
@@ -176,7 +176,7 @@ def _messages_to_prompt_dict(
         for input_msg in input_messages:
             if isinstance(input_msg, AIMessage):
                 examples_and_messages.append(
-                    {"role": "assistant", "content": str(input_msg)}
+                    {"role": "assistant", "content": str(input_msg.content)}
                 )
     else:
         for input_msg in input_messages:
