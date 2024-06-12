@@ -445,6 +445,7 @@ def trim_messages(
         Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
     ] = None,
     include_system: bool = False,
+    text_splitter: Optional[Callable[[str], List[str]]] = None,
 ) -> List[BaseMessage]:
     """Trim messages to be below a token count.
 
@@ -485,8 +486,8 @@ def trim_messages(
             from langchain_core.messages import trim_messages, AIMessage, BaseMessage, HumanMessage, SystemMessage
 
             messages = [
-                SystemMessage("This is a 4 token text."),
-                HumanMessage("This is a 4 token text.", id="first"),
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
                 AIMessage(
                     [
                         {"type": "text", "text": "This is the FIRST 4 token block."},
@@ -494,8 +495,8 @@ def trim_messages(
                     ],
                     id="second",
                 ),
-                HumanMessage("This is a 4 token text.", id="third"),
-                AIMessage("This is a 4 token text.", id="fourth"),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
+                AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
             ]
 
             def dummy_token_counter(messages: List[BaseMessage]) -> int:
@@ -523,8 +524,8 @@ def trim_messages(
         .. code-block:: python
 
             [
-                SystemMessage("This is a 4 token text."),
-                HumanMessage("This is a 4 token text.", id="first"),
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
             ]
 
         First 30 tokens, allowing partial messages:
@@ -541,8 +542,8 @@ def trim_messages(
         .. code-block:: python
 
             [
-                SystemMessage("This is a 4 token text."),
-                HumanMessage("This is a 4 token text.", id="first"),
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
                 AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
             ]
 
@@ -561,8 +562,8 @@ def trim_messages(
         .. code-block:: python
 
             [
-                SystemMessage("This is a 4 token text."),
-                HumanMessage("This is a 4 token text.", id="first"),
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
             ]
 
 
@@ -574,9 +575,9 @@ def trim_messages(
         .. code-block:: python
 
             [
-                SystemMessage("This is a 4 token text."),
-                HumanMessage("This is a 4 token text.", id="third"),
-                AIMessage("This is a 4 token text.", id="fourth"),
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
+                AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
             ]
 
         Last 40 tokens, including system message, allowing partial messages:
@@ -594,13 +595,13 @@ def trim_messages(
         .. code-block:: python
 
             [
-                SystemMessage("This is a 4 token text."),
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
                 AIMessage(
                     [{"type": "text", "text": "This is the FIRST 4 token block."},],
                     id="second",
                 ),
-                HumanMessage("This is a 4 token text.", id="third"),
-                AIMessage("This is a 4 token text.", id="fourth"),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
+                AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
             ]
 
         Last 30 tokens, including system message, allowing partial messages, end on HumanMessage:
@@ -619,12 +620,12 @@ def trim_messages(
         .. code-block:: python
 
             [
-                SystemMessage("This is a 4 token text."),
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
                 AIMessage(
                     [{"type": "text", "text": "This is the FIRST 4 token block."},],
                     id="second",
                 ),
-                HumanMessage("This is a 4 token text.", id="third"),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
             ]
 
 
@@ -644,9 +645,9 @@ def trim_messages(
         .. code-block:: python
 
             [
-                SystemMessage("This is a 4 token text."),
-                HumanMessage("This is a 4 token text.", id="third"),
-                AIMessage("This is a 4 token text.", id="fourth"),
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
+                AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
             ]
 
     """  # noqa: E501
@@ -672,6 +673,7 @@ def trim_messages(
             token_counter=list_token_counter,
             allow_partial=allow_partial,
             end_on=end_on,
+            text_splitter=text_splitter,
         )
     elif strategy == "last":
         return _last_n_tokens(
@@ -682,6 +684,7 @@ def trim_messages(
             include_system=include_system,
             start_on=start_on,
             end_on=end_on,
+            text_splitter=text_splitter,
         )
     else:
         raise ValueError(
@@ -767,6 +770,7 @@ def _last_n_tokens(
     end_on: Optional[
         Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
     ] = None,
+    text_splitter: Optional[Callable[[str], List[str]]] = None,
 ) -> List[BaseMessage]:
     messages = list(messages)
     if end_on:
@@ -784,6 +788,7 @@ def _last_n_tokens(
         token_counter=token_counter,
         allow_partial=allow_partial,
         end_on=start_on,
+        text_splitter=text_splitter,
     )
     if swapped_system:
         return reversed_[:1] + reversed_[1:][::-1]
