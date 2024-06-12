@@ -2,7 +2,7 @@
 
 <a href="https://colab.research.google.com/github/langchain-ai/langchail/blob/main/docs/docs/integrations/tools/zenguard.ipynb" target=_parent><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
 
-This LangchailTool lets you quickly set up [ZenGuard AI](https://www.zenguard.ai/) in your Langchain-powered application. The ZenGuard AI provides ultrafast guardrails to protect your GenAI application from:
+This Langchain Tool lets you quickly set up [ZenGuard AI](https://www.zenguard.ai/) in your Langchain-powered application. The ZenGuard AI provides ultrafast guardrails to protect your GenAI application from:
 
 - Prompts Attacks
 - Veering of the pre-defined topics
