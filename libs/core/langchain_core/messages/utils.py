@@ -366,20 +366,55 @@ def _first_n_tokens(
     token_counter: Callable[[Sequence[BaseMessage]], int],
     allow_partial: bool = False,
     end_on: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
+    text_splitter: Optional[Callable[[str], List[str]]] = None,
 ) -> List[BaseMessage]:
+    text_splitter = text_splitter or _default_text_splitter
     idx = 0
+    messages = list(messages)
     for i in range(len(messages)):
         if token_counter(messages[:-i] if i else messages) <= n_tokens:
             idx = len(messages) - i
             break
 
     if idx < len(messages) - 1 and allow_partial:
-        excluded = messages[idx].copy(deep=True)
-        if isinstance(excluded.content, list):
-            ...
-        # TODO: Should we just pass in tokenizer, so we can find exact cutoff?
-        else:
-            ...
+        included_partial = False
+        if isinstance(messages[idx].content, list):
+            excluded = messages[idx].copy(deep=True)
+            num_block = len(excluded.content)
+            for _ in range(1, num_block):
+                excluded.content = excluded.content[:-1]
+                if token_counter(messages[:idx] + [excluded]) <= n_tokens:
+                    messages = messages[:idx] + [excluded]
+                    idx += 1
+                    included_partial = True
+                    break
+        if not included_partial:
+            excluded = messages[idx].copy(deep=True)
+            if isinstance(messages[idx].content, list) and any(
+                isinstance(block, str) or block["type"] == "text"
+                for block in messages[idx].content
+            ):
+                text_block = next(
+                    block
+                    for block in messages[idx].content
+                    if isinstance(block, str) or block["type"] == "text"
+                )
+                text = (
+                    text_block["text"] if isinstance(text_block, dict) else text_block
+                )
+            elif isinstance(messages[idx].content, str):
+                text = messages[idx].content
+            else:
+                text = None
+            if text:
+                split_texts = text_splitter(text)
+                excluded.content = [{"type": "text", "text": t} for t in split_texts]
+                for _ in range(1, len(split_texts)):
+                    excluded.content = excluded.content[:-1]
+                    if token_counter(messages[:idx] + [excluded]) <= n_tokens:
+                        messages = messages[:idx] + [excluded]
+                        idx += 1
+                        break
 
     if isinstance(end_on, str):
         while messages[idx - 1].type != end_on and idx > 0:
@@ -390,7 +425,7 @@ def _first_n_tokens(
     else:
         pass
 
-    return [msg for msg in messages[:idx]]
+    return messages[:idx]
 
 
 def _last_n_tokens(
@@ -461,3 +496,7 @@ def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
         f"Unrecognized message chunk class {chunk.__class__}. Supported classes are "
         f"{list(_CHUNK_MSG_MAP.keys())}"
     )
+
+
+def _default_text_splitter(text: str) -> List[str]:
+    return text.split("\n")
