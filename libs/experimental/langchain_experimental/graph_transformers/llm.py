@@ -261,7 +261,7 @@ def create_unstructured_prompt(
         "{examples}"
         ""
         "For the following text, extract entities and relations as in the provided example."
-        "{format_instructions}\nText: {input}"
+        "{format_instructions}\nText: {input}",
     ]
     human_prompt_string = "\n".join(filter(None, human_string_parts))
     human_prompt = PromptTemplate(
