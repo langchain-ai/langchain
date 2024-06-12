@@ -150,7 +150,7 @@ def _convert_delta_response_to_message_chunk(
 def _messages_to_prompt_dict(
     input_messages: List[BaseMessage],
     template_id: Optional[str] = None,
-):
+) -> Tuple[Optional[str], List[Dict[str, Any]]]:
     """Converts a list of LangChain Messages into a simple dict
     which is the message structure in Prem"""
 
@@ -176,7 +176,7 @@ def _messages_to_prompt_dict(
         for input_msg in input_messages:
             if isinstance(input_msg, AIMessage):
                 examples_and_messages.append(
-                    {"role": "assistant", "content": input_msg}
+                    {"role": "assistant", "content": str(input_msg)}
                 )
     else:
         for input_msg in input_messages:
@@ -261,7 +261,7 @@ class ChatPremAI(BaseChatModel, BaseModel):
             ) from error
 
         try:
-            premai_api_key = get_from_dict_or_env(
+            premai_api_key: Union[str, SecretStr] = get_from_dict_or_env(
                 values, "premai_api_key", "PREMAI_API_KEY"
             )
             values["client"] = Prem(
