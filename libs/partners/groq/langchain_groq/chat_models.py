@@ -344,9 +344,7 @@ class ChatGroq(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
-            message_chunk = _convert_delta_to_message_chunk(
-                choice["delta"], default_chunk_class
-            )
+            message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
@@ -419,9 +417,7 @@ class ChatGroq(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
-            message_chunk = _convert_delta_to_message_chunk(
-                choice["delta"], default_chunk_class
-            )
+            message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
@@ -902,9 +898,11 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _convert_delta_to_message_chunk(
-    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+def _convert_chunk_to_message_chunk(
+    chunk: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
+    choice = chunk["choices"][0]
+    _dict = choice["delta"]
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
     additional_kwargs: Dict = {}
@@ -919,7 +917,21 @@ def _convert_delta_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        if usage := (chunk.get("x_groq") or {}).get("usage"):
+            input_tokens = usage.get("prompt_tokens", 0)
+            output_tokens = usage.get("completion_tokens", 0)
+            usage_metadata = {
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "total_tokens": usage.get("total_tokens", input_tokens + output_tokens),
+            }
+        else:
+            usage_metadata = None
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            usage_metadata=usage_metadata,
+        )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:
