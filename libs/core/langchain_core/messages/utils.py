@@ -260,6 +260,38 @@ def filter_messages(
     incl_ids: Optional[Sequence[str]] = None,
     excl_ids: Optional[Sequence[str]] = None,
 ) -> List[BaseMessage]:
+    """Filter messages based on name, type or id.
+
+    Args:
+        messages: Sequence Message-like objects to filter.
+        incl_names: Message names to include. Should not be specified if excl_names is
+            specified.
+        excl_names: Messages names to exclude. Should not be specified if incl_names is
+            specified.
+        incl_types: Message types to include. Can be specified as string names (e.g.
+            "system", "human", "ai", ...) or as BaseMessage classes (e.g.
+            SystemMessage, HumanMessage, AIMessage, ...). Should not be specified if
+            excl_types is specified.
+        excl_types: Message types to exclude. Can be specified as string names (e.g.
+            "system", "human", "ai", ...) or as BaseMessage classes (e.g.
+            SystemMessage, HumanMessage, AIMessage, ...). Should not be specified if
+            incl_types is specified.
+        incl_ids: Message IDs to include. Should not be specified if excl_ids is
+            specified.
+        excl_ids: Message IDs to exclude. Should not be specified if incl_ids is
+            specified.
+
+    Returns:
+        A list of filtered Messages.
+
+    Raises:
+        ValueError if two incompatible arguments are provided.
+
+    Example:
+        .. code-block:: python
+
+            ...
+    """
     if incl_names and excl_names:
         raise ValueError
     if incl_types and excl_types:
@@ -298,6 +330,20 @@ def filter_messages(
 def merge_message_runs(
     messages: Sequence[MessageLikeRepresentation],
 ) -> List[BaseMessage]:
+    """Merge runs of Messages of the same type.
+
+    Args:
+        messages: Sequence Message-like objects to merge.
+
+    Returns:
+        List of BaseMessages with consecutive runs of message types merged into single
+        messages.
+
+    Example:
+        .. code-block:: python
+
+            ...
+    """
     if not messages:
         return []
     messages = convert_to_messages(messages)
@@ -317,7 +363,7 @@ def trim_messages(
     *,
     n_tokens: int,
     token_counter: Union[
-        Callable[[Sequence[BaseMessage]], int], Callable[[BaseMessage], int]
+        Callable[[List[BaseMessage]], int], Callable[[BaseMessage], int]
     ],
     strategy: Literal["first", "last"] = "last",
     allow_partial: bool = False,
@@ -325,6 +371,48 @@ def trim_messages(
     start_on: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
     keep_system: bool = False,
 ) -> List[BaseMessage]:
+    """Trim messages to be below a token count.
+
+    Args:
+        messages: Sequence of Message-like objects to trim.
+        n_tokens: Max token count of trimmed messages.
+        token_counter: Function for counting tokens of a BaseMessage or a list of
+            BaseMessage.
+        strategy: Strategy for trimming.
+            - "first": Keep the first <= n_count tokens of the messages.
+            - "last": Keep the last <= n_count tokens of the messages.
+        allow_partial: Whether to split a message if only part of the message can be
+            included.
+        end_on: The message type to end on. Can be specified as string names (e.g.
+            "system", "human", "ai", ...) or as BaseMessage classes (e.g.
+            SystemMessage, HumanMessage, AIMessage, ...). Should only be specified if
+            ``strategy="first"``.
+        start_on: The message type to start on. Can be specified as string names (e.g.
+            "system", "human", "ai", ...) or as BaseMessage classes (e.g.
+            SystemMessage, HumanMessage, AIMessage, ...). Should only be specified if
+            ``strategy="last"``. Ignores a SystemMessage at index 0 if
+            ``keep_system=True``.
+        keep_system: Whether to keep the SystemMessage if there is one at index 0.
+            Should only be specified if ``strategy="last"``.
+
+    Returns:
+        List of trimmed BaseMessages.
+
+    Raises:
+        ValueError if two incompatible arguments are specified.
+
+    Example:
+        .. code-block:: python
+
+            ...
+
+    """
+    if end_on and strategy == "last":
+        raise ValueError
+    if start_on and strategy == "first":
+        raise ValueError
+    if keep_system and strategy == "first":
+        raise ValueError
     messages = convert_to_messages(messages)
     if (
         list(inspect.signature(token_counter).parameters.values())[0].annotation
