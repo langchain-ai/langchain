@@ -1,12 +1,5 @@
 import asyncio
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-)
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -40,7 +33,8 @@ class SurrealDBStore(VectorStore):
             from langchain_community.vectorstores.surrealdb import SurrealDBStore
             from langchain_community.embeddings import HuggingFaceEmbeddings
 
-            embedding_function = HuggingFaceEmbeddings()
+            model_name = "sentence-transformers/all-mpnet-base-v2"
+            embedding_function = HuggingFaceEmbeddings(model_name=model_name)
             dburl = "ws://localhost:8000/rpc"
             ns = "langchain"
             db = "docstore"

@@ -1,13 +1,13 @@
 from typing import Any, Dict, List, Optional
 
 import requests
-from langchain_core._api import deprecated
+from langchain_core._api import deprecated, warn_deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
-DEFAULT_BGE_MODEL = "BAAI/bge-large-en-v1.5"
+DEFAULT_BGE_MODEL = "BAAI/bge-large-en"
 DEFAULT_EMBED_INSTRUCTION = "Represent the document for retrieval: "
 DEFAULT_QUERY_INSTRUCTION = (
     "Represent the question for retrieving supporting documents: "
@@ -66,6 +66,15 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+
+        if "model_name" not in kwargs:
+            warn_deprecated(
+                since="0.2.5",
+                removal="0.4.0",
+                name="Model defaults",
+                alternative="provide a model_name explicitly",
+            )
+
         try:
             import sentence_transformers
 
@@ -158,6 +167,15 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+
+        if "model_name" not in kwargs:
+            warn_deprecated(
+                since="0.2.5",
+                removal="0.4.0",
+                name="Model defaults",
+                alternative="provide a model_name explicitly",
+            )
+
         try:
             from InstructorEmbedding import INSTRUCTOR
 
@@ -256,6 +274,15 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
         super().__init__(**kwargs)
+
+        if "model_name" not in kwargs:
+            warn_deprecated(
+                since="0.2.5",
+                removal="0.4.0",
+                name="Model defaults",
+                alternative="provide a model_name explicitly",
+            )
+
         try:
             import sentence_transformers
 
