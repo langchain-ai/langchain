@@ -250,16 +250,13 @@ def create_unstructured_prompt(
         "{node_labels}"
         if node_labels
         else "",
-        ""
         "Use the following relation types, don't use other relation that is not defined below:"
         "# RELATION TYPES:"
         "{rel_types}"
         if rel_types
         else "",
-        ""
         "Below are a number of examples of text and their extracted entities and relationships."
-        "{examples}"
-        ""
+        "{examples}\n"
         "For the following text, extract entities and relations as in the provided example."
         "{format_instructions}\nText: {input}",
     ]
