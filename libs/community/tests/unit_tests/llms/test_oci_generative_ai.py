@@ -16,12 +16,12 @@ class MockResponseDict(dict):
 @pytest.mark.parametrize(
     "test_model_id", ["cohere.command", "cohere.command-light", "meta.llama-2-70b-chat"]
 )
-def test_llm_call(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
-    """Test valid call to OCI Generative AI LLM service."""
+def test_llm_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Test valid completion call to OCI Generative AI LLM service."""
     oci_gen_ai_client = MagicMock()
     llm = OCIGenAI(model_id=test_model_id, client=oci_gen_ai_client)
 
-    provider = llm._get_provider()
+    provider = llm.model_id.split(".")[0].lower()
 
     def mocked_response(*args):  # type: ignore[no-untyped-def]
         response_text = "This is the completion."

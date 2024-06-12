@@ -22,11 +22,7 @@ from langchain_community.llms.oci_generative_ai import OCIGenAIBase
 from langchain_community.llms.utils import enforce_stop_tokens
 
 
-# oci 2.127 new message roles caps, new sys role, llamaindex incompatability
-# stream issues: (1) command-r stream hangs at end with stop 
-# (2) stream cohere command does not remove stop
-# test with dedicated cluster
-# command-r tools ?
+
 class Provider(ABC):
     @property
     @abstractmethod
