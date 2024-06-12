@@ -277,7 +277,8 @@ def filter_messages(
 
     Returns:
         A list of Messages that meets at least one of the incl_* conditions and none
-            of the excl_* conditions.
+        of the excl_* conditions. If not incl_* conditions are specified then
+        anything that is not explicitly excluded will be included.
 
     Raises:
         ValueError if two incompatible arguments are provided.
@@ -321,6 +322,10 @@ def filter_messages(
         else:
             pass
 
+        # default to inclusion when no inclusion criteria given.
+        if not (incl_types or incl_ids or incl_names):
+            filtered.append(msg)
+            continue
         if incl_names and msg.name in incl_names:
             filtered.append(msg)
             continue
@@ -340,6 +345,9 @@ def merge_message_runs(
     messages: Sequence[MessageLikeRepresentation],
 ) -> List[BaseMessage]:
     """Merge runs of Messages of the same type.
+
+    **NOTE**: ToolMessages are not merged, as each has a distinct tool call id that
+    can't be merged.
 
     Args:
         messages: Sequence Message-like objects to merge.
@@ -402,11 +410,13 @@ def merge_message_runs(
     if not messages:
         return []
     messages = convert_to_messages(messages)
-    merged = [messages[0].copy(deep=True)]
-    for msg in messages[1:]:
+    merged: List[BaseMessage] = []
+    for msg in messages:
         curr = msg.copy(deep=True)
-        last = merged.pop()
-        if not isinstance(curr, last.__class__):
+        last = merged.pop() if merged else None
+        if not last:
+            merged.append(curr)
+        elif isinstance(curr, ToolMessage) or not isinstance(curr, last.__class__):
             merged.extend([last, curr])
         else:
             last_chunk = _msg_to_chunk(last)
@@ -524,7 +534,7 @@ def trim_messages(
                 messages,
                 n_tokens=30,
                 token_counter=dummy_token_counter,
-                strategy="first"
+                strategy="first",
                 allow_partial=True,
             )
 
