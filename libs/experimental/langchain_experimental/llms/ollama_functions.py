@@ -336,7 +336,7 @@ class OllamaFunctions(ChatOllama):
                                 images.append(image_url_components[0])
                         else:
                             raise ValueError(
-                                "Only string image_url " "content parts are supported."
+                                "Only string image_url content parts are supported."
                             )
                     else:
                         raise ValueError(
