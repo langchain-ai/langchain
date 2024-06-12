@@ -1,4 +1,5 @@
 """A unit test meant to catch accidental introduction of non-optional dependencies."""
+
 from pathlib import Path
 from typing import Any, Dict, Mapping
 
@@ -55,7 +56,9 @@ def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
     unrequired_dependencies = [
         package_name for package_name, required in is_required.items() if not required
     ]
-    in_extras = [dep for group in poetry_conf["extras"].values() for dep in group]
+    in_extras = [
+        dep for group in poetry_conf.get("extras", {}).values() for dep in group
+    ]
     assert set(unrequired_dependencies) == set(in_extras)
 
 

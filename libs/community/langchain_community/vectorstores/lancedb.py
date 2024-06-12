@@ -113,7 +113,7 @@ class LanceDB(VectorStore):
         Args:
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
-            ids: Optional list of ids to associate w    ith the texts.
+            ids: Optional list of ids to associate with the texts.
 
         Returns:
             List of ids of the added texts.
@@ -218,14 +218,42 @@ class LanceDB(VectorStore):
         Args:
             query: String to query the vectorstore with.
             k: Number of documents to return.
+            filter (Optional[Dict]): Optional filter arguments
+                sql_filter(Optional[string]): SQL filter to apply to the query.
+                prefilter(Optional[bool]): Whether to apply the filter prior
+                                             to the vector search.
+        Raises:
+            ValueError: If the specified table is not found in the database.
 
         Returns:
             List of documents most similar to the query.
+
+        Examples:
+
+        .. code-block:: python
+
+            # Retrieve documents with filtering based on a metadata file_type
+            vector_store.as_retriever(search_kwargs={"k": 4, "filter":{
+                                                        'sql_filter':"file_type='notice'",
+                                                         'prefilter': True
+                                                         }
+                                                     })
+
+            # Retrieve documents with filtering on a specific file name
+            vector_store.as_retriever(search_kwargs={"k": 4, "filter":{
+                                                         'sql_filter':"source='my-file.txt'",
+                                                         'prefilter': True
+                                                         }
+                                                    })
         """
         embedding = self._embedding.embed_query(query)  # type: ignore
         tbl = self.get_table(name)
+        filters = kwargs.pop("filter", {})
+        sql_filter = filters.pop("sql_filter", None)
+        prefilter = filters.pop("prefilter", False)
         docs = (
             tbl.search(embedding, vector_column_name=self._vector_key)
+            .where(sql_filter, prefilter=prefilter)
             .limit(k)
             .to_arrow()
         )

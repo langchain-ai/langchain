@@ -266,6 +266,11 @@ class ChatHunyuan(BaseChatModel):
 
         default_chunk_class = AIMessageChunk
         for chunk in res.iter_lines():
+            chunk = chunk.decode(encoding="UTF-8", errors="strict").replace(
+                "data: ", ""
+            )
+            if len(chunk) == 0:
+                continue
             response = json.loads(chunk)
             if "error" in response:
                 raise ValueError(f"Error from Hunyuan api response: {response}")
