@@ -344,7 +344,7 @@ class ChatGroq(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
-            chunk = _convert_delta_to_message_chunk(
+            message_chunk = _convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
             generation_info = {}
@@ -353,14 +353,16 @@ class ChatGroq(BaseChatModel):
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
-            default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(
-                message=chunk, generation_info=generation_info or None
+            default_chunk_class = message_chunk.__class__
+            generation_chunk = ChatGenerationChunk(
+                message=message_chunk, generation_info=generation_info or None
             )
 
             if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
-            yield chunk
+                run_manager.on_llm_new_token(
+                    generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
+                )
+            yield generation_chunk
 
     async def _astream(
         self,
@@ -417,7 +419,7 @@ class ChatGroq(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
-            chunk = _convert_delta_to_message_chunk(
+            message_chunk = _convert_delta_to_message_chunk(
                 choice["delta"], default_chunk_class
             )
             generation_info = {}
@@ -426,16 +428,18 @@ class ChatGroq(BaseChatModel):
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
-            default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(
-                message=chunk, generation_info=generation_info or None
+            default_chunk_class = message_chunk.__class__
+            generation_chunk = ChatGenerationChunk(
+                message=message_chunk, generation_info=generation_info or None
             )
 
             if run_manager:
                 await run_manager.on_llm_new_token(
-                    token=chunk.text, chunk=chunk, logprobs=logprobs
+                    token=generation_chunk.text,
+                    chunk=generation_chunk,
+                    logprobs=logprobs,
                 )
-            yield chunk
+            yield generation_chunk
 
     #
     # Internal methods
