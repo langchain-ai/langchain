@@ -93,16 +93,6 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 embeddings_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
 ```
-
-You can also leave the `model_name` blank to use the default [sentence-transformers/all-mpnet-base-v2](https://huggingface.co/sentence-transformers/all-mpnet-base-v2) model.
-
-```python
-from langchain_huggingface import HuggingFaceEmbeddings
-
-model_name = "sentence-transformers/all-mpnet-base-v2"
-embeddings_model = HuggingFaceEmbeddings(model_name=model_name)
-```
-
   </TabItem>
 </Tabs>
 
