@@ -307,7 +307,7 @@ class ChatGroq(BaseChatModel):
             )
             chat_result = self._create_chat_result(response)
             generation = chat_result.generations[0]
-            message = generation.message
+            message = cast(AIMessage, generation.message)
             tool_call_chunks = [
                 {
                     "name": rtc["function"].get("name"),
@@ -322,6 +322,7 @@ class ChatGroq(BaseChatModel):
                     content=message.content,
                     additional_kwargs=message.additional_kwargs,
                     tool_call_chunks=tool_call_chunks,
+                    usage_metadata=message.usage_metadata,
                 ),
                 generation_info=generation.generation_info,
             )
@@ -378,7 +379,7 @@ class ChatGroq(BaseChatModel):
             )
             chat_result = self._create_chat_result(response)
             generation = chat_result.generations[0]
-            message = generation.message
+            message = cast(AIMessage, generation.message)
             tool_call_chunks = [
                 {
                     "name": rtc["function"].get("name"),
@@ -393,6 +394,7 @@ class ChatGroq(BaseChatModel):
                     content=message.content,
                     additional_kwargs=message.additional_kwargs,
                     tool_call_chunks=tool_call_chunks,
+                    usage_metadata=message.usage_metadata,
                 ),
                 generation_info=generation.generation_info,
             )
