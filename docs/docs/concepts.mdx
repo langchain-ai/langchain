@@ -710,8 +710,7 @@ See [this guide](/docs/how_to/streaming/#using-stream-events) for more detailed 
 
 ### Structured output
 
-LLMs are capable of generating arbitrary text. This is fantastic
-in general, since it enables the model to respond appropriately to a wide
+LLMs are capable of generating arbitrary text. This enables the model to respond appropriately to a wide
 range of inputs, but for some use-cases, it can be useful to constrain the LLM's output
 to a specific format or structure. This is referred to as **structured output**.
 
@@ -719,10 +718,18 @@ For example, if the output is to be stored in a relational database,
 it is much easier if the model generates output that adheres to a defined schema or format.
 [Extracting specific information](/docs/tutorials/extraction/) from unstructured text is another
 case where this is particularly useful. Most commonly, the output format will be JSON,
-though other formats such as [YAML](/docs/how_to/output_parser_yaml/) can be useful too.
+though other formats such as [YAML](/docs/how_to/output_parser_yaml/) can be useful too. Below, we'll discuss
+a few ways to get structured output from models in LangChain.
 
-A few different strategies have emerged for getting models to consistently generate outputs
-in a specific format. We'll talk about a few of them below.
+#### `.with_structured_output()`
+
+For convenience, some LangChain chat models support a `.with_structured_output()` method.
+This method only requires a schema as input, and returns a dict or Pydantic object.
+Generally, this method is only present on models that support one of the more advanced methods described below,
+and will use one of them under the hood. It takes care of importing a suitable output parser and
+formatting the schema in the right format for the model.
+
+For more information, check out this [how-to guide](/docs/how_to/structured_output/#the-with_structured_output-method).
 
 #### Raw prompting
 
@@ -840,15 +847,6 @@ The following how-to guides are good practical resources for using function/tool
 - [How to use a model to call tools](/docs/how_to/tool_calling/)
 
 For a full list of model providers that support tool calling, [see this table](/docs/integrations/chat/#advanced-features).
-
-#### `.with_structured_output()`
-
-For convenience, some LangChain chat models support a `.with_structured_output()` method.
-This method only requires a schema as input, and returns a dict or Pydantic object.
-It takes care of importing a suitable output parser and formatting the schema in the right format for the model.
-Generally, this method is only present on models that support either tool calling or JSON mode.
-
-For more information, check out this [how-to guide](/docs/how_to/structured_output/#the-with_structured_output-method).
 
 ### Retrieval
 
