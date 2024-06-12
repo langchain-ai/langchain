@@ -22,6 +22,7 @@ from langchain_core.messages.function import FunctionMessage, FunctionMessageChu
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolMessage, ToolMessageChunk
+from langchain_core.prompts import BasePromptTemplate
 
 if TYPE_CHECKING:
     from langchain_core.language_models.base import LanguageModelLike
@@ -194,9 +195,7 @@ def _create_message_from_message_type(
     return message
 
 
-def _convert_to_message(
-    message: MessageLikeRepresentation,
-) -> BaseMessage:
+def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     """Instantiate a message from a variety of message formats.
 
     The message format can be one of the following:
@@ -300,6 +299,7 @@ def filter_messages(
             filtered.append(msg)
     return filtered
 
+
 def merge_message_runs(
     messages: Sequence[MessageLikeRepresentation],
 ) -> List[BaseMessage]:
@@ -316,25 +316,19 @@ def merge_message_runs(
             merged.append(_chunk_to_msg(_msg_to_chunk(last) + _msg_to_chunk(curr)))
     return merged
 
-# TODO: what should function name be? `{x}_messages`:
-# - abbreviate
-# - trim
-# - shorten
-# - condense
-# - fit
-# - crop
-def abbreviate_messages(
+
+def trim_messages(
     messages: Sequence[MessageLikeRepresentation],
     *,
     n_tokens: int,
-    # TODO: Support a raw encoder? Callable[[BaseMessage], List[int]]
     token_counter: Union[
         Callable[[Sequence[BaseMessage]], int], Callable[[BaseMessage], int]
     ],
-    strategy: Literal["first", "last", "last_with_system", "summarize"] = "last",
-    allow_partial_messages: bool = False,
-    summarize_chunk_size: int = 1,
-    llm: Optional[LanguageModelLike] = None,
+    strategy: Literal["first", "last"] = "last",
+    allow_partial: bool = False,
+    end_on: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
+    start_on: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
+    keep_system: bool = False,
 ) -> List[BaseMessage]:
     messages = convert_to_messages(messages)
     if (
@@ -352,36 +346,22 @@ def abbreviate_messages(
             messages,
             n_tokens=n_tokens,
             token_counter=list_token_counter,
-            allow_partial_messages=allow_partial_messages,
+            allow_partial=allow_partial,
+            end_on=end_on,
         )
     elif strategy == "last":
         return _last_n_tokens(
             messages,
             n_tokens=n_tokens,
             token_counter=list_token_counter,
-            allow_partial_messages=allow_partial_messages,
-            keep_system=False,
-        )
-    elif strategy == "last_with_system":
-        return _last_n_tokens(
-            messages,
-            n_tokens=n_tokens,
-            token_counter=list_token_counter,
-            allow_partial_messages=allow_partial_messages,
-            keep_system=True,
-        )
-    elif strategy == "summarize":
-        if not llm:
-            raise ValueError
-        return _summarize(
-            messages,
-            n_tokens=n_tokens,
-            token_counter=list_token_counter,
-            llm=llm,
-            chunk_size=summarize_chunk_size,
+            allow_partial=allow_partial,
+            keep_system=keep_system,
+            start_on=start_on,
         )
     else:
-        raise ValueError
+        raise ValueError(
+            f"Unrecognized {strategy=}. Supported strategies are 'last' and 'first'."
+        )
 
 
 def _first_n_tokens(
@@ -389,7 +369,7 @@ def _first_n_tokens(
     *,
     n_tokens: int,
     token_counter: Callable[[Sequence[BaseMessage]], int],
-    allow_partial_messages: bool = False,
+    allow_partial: bool = False,
     end_on: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
 ) -> List[BaseMessage]:
     idx = 0
@@ -398,7 +378,7 @@ def _first_n_tokens(
             idx = len(messages) - i
             break
 
-    if idx < len(messages) - 1 and allow_partial_messages:
+    if idx < len(messages) - 1 and allow_partial:
         excluded = messages[idx].copy(deep=True)
         if isinstance(excluded.content, list):
             ...
@@ -418,17 +398,33 @@ def _first_n_tokens(
     return [msg for msg in messages[:idx]]
 
 
-
 def _last_n_tokens(
     messages: Sequence[BaseMessage],
     *,
     n_tokens: int,
     token_counter: Callable[[Sequence[BaseMessage]], int],
-    allow_partial_messages: bool = False,
+    allow_partial: bool = False,
     keep_system: bool = False,
-    end_on: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
+    start_on: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
 ) -> List[BaseMessage]:
+    messages = list(messages)
+    swapped_system = keep_system and isinstance(messages[0], SystemMessage)
+    if swapped_system:
+        reversed_ = messages[:1] + messages[1::-1]
+    else:
+        reversed_ = messages[::-1]
 
+    reversed_ = _first_n_tokens(
+        reversed_,
+        n_tokens=n_tokens,
+        token_counter=token_counter,
+        allow_partial=allow_partial,
+        end_on=start_on,
+    )
+    if swapped_system:
+        return reversed_[:1] + reversed_[1::-1]
+    else:
+        return reversed_[::-1]
 
 
 # TODO: Should this return a Runnable?
@@ -439,9 +435,10 @@ def _summarize(
     token_counter: Callable[[Sequence[BaseMessage]], int],
     llm: LanguageModelLike,
     chunk_size: int = 1,
+    prompt: Optional[BasePromptTemplate] = None,
 ) -> List[BaseMessage]:
+    prompt = prompt or DEFAULT_SUMMARY_PROMPT
     ...
-
 
 
 _MSG_CHUNK_MAP = {
@@ -455,13 +452,29 @@ _MSG_CHUNK_MAP = {
 _CHUNK_MSG_MAP = {v: k for k, v in _MSG_CHUNK_MAP.items()}
 
 
-def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
-    return _MSG_CHUNK_MAP[message.__class__](**message.dict())
+def _msg_to_chunk(message: AnyMessage) -> BaseMessageChunk:
+    if message.__class__ in _MSG_CHUNK_MAP:
+        return _MSG_CHUNK_MAP[message.__class__](**message.dict())
+
+    for msg_cls, chunk_cls in _MSG_CHUNK_MAP.items():
+        if isinstance(message, msg_cls):
+            return chunk_cls(**message.dict())
+
+    raise ValueError(
+        f"Unrecognized message class {message.__class__}. Supported classes are "
+        f"{list(_MSG_CHUNK_MAP.keys())}"
+    )
 
 
-def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
+def _chunk_to_msg(chunk: BaseMessageChunk) -> AnyMessage:
     # TODO: does this break when there are extra fields in chunk.
-    return _CHUNK_MSG_MAP[chunk.__class__](**chunk.dict())
+    if chunk.__class__ in _CHUNK_MSG_MAP:
+        return _CHUNK_MSG_MAP[chunk.__class__](**chunk.dict())
+    for chunk_cls, msg_cls in _CHUNK_MSG_MAP.items():
+        if isinstance(chunk, chunk_cls):
+            return msg_cls(**chunk.dict())
 
-
-
+    raise ValueError(
+        f"Unrecognized message chunk class {chunk.__class__}. Supported classes are "
+        f"{list(_CHUNK_MSG_MAP.keys())}"
+    )
