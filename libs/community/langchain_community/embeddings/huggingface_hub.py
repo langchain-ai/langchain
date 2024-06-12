@@ -91,7 +91,7 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         return values
 
     @root_validator(pre=False, skip_on_failure=True)
-    def post_init(self, values: Dict) -> Dict:
+    def post_init(cls, values: Dict) -> Dict:
         """Post init validation for the class."""
         if values["task"] not in VALID_TASKS:
             raise ValueError(
