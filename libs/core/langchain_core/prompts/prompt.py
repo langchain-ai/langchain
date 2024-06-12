@@ -5,7 +5,6 @@ import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from langchain_core._api import warn_deprecated
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
