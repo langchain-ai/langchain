@@ -285,7 +285,7 @@ def filter_messages(
     Example:
         .. code-block:: python
 
-            from langchain_core.messages import filter_messages
+            from langchain_core.messages import filter_messages, AIMessage, HumanMessage, SystemMessage
 
             messages = [
                 SystemMessage("you're a good assistant."),
@@ -296,10 +296,10 @@ def filter_messages(
             ]
 
             filter_messages(
-                messages
+                messages,
                 incl_names=("example_user", "example_assistant"),
-                incl_type=("system"),
-                excl_ids=("bar"),
+                incl_types=("system",),
+                excl_ids=("bar",),
             )
 
         .. code-block:: python
