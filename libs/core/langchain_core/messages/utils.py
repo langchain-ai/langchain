@@ -304,10 +304,10 @@ def filter_messages(
 
         .. code-block:: python
 
-                [
-                    SystemMessage("you're a good assistant."),
-                    HumanMessage("what's your name", id="foo", name="example_user"),
-                ]
+            [
+                SystemMessage("you're a good assistant."),
+                HumanMessage("what's your name", id="foo", name="example_user"),
+            ]
 
     """
     messages = convert_to_messages(messages)
@@ -357,13 +357,59 @@ def merge_message_runs(
 
     Returns:
         List of BaseMessages with consecutive runs of message types merged into single
-        messages.
+        messages. If two messages being merged both have string contents, the merged
+        content is a concatenation of the two strings with a new-line separator. If at
+        least one of the messages has a list of content blocks, the merged content is a
+        list of content blocks.
 
     Example:
         .. code-block:: python
 
-            ...
-    """
+            from langchain_core.messages import (
+                merge_message_runs,
+                AIMessage,
+                HumanMessage,
+                SystemMessage,
+                ToolCall,
+            )
+
+            messages = [
+                SystemMessage("you're a good assistant."),
+                HumanMessage("what's your favorite color", id="foo",),
+                HumanMessage("wait your favorite food", id="bar",),
+                AIMessage(
+                    "my favorite colo",
+                    tool_calls=[ToolCall(name="blah_tool", args={"x": 2}, id="123")],
+                    id="baz",
+                ),
+                AIMessage(
+                    [{"type": "text", "text": "my favorite dish is lasagna"}],
+                    tool_calls=[ToolCall(name="blah_tool", args={"x": -10}, id="456")],
+                    id="blur",
+                ),
+            ]
+
+            merge_message_runs(messages)
+
+        .. code-block:: python
+
+            [
+                SystemMessage("you're a good assistant."),
+                HumanMessage("what's your favorite color\nwait your favorite food", id="foo",),
+                AIMessage(
+                    [
+                        "my favorite colo",
+                        {"type": "text", "text": "my favorite dish is lasagna"}
+                    ],
+                    tool_calls=[
+                        ToolCall({"name": "blah_tool", "args": {"x": 2}, "id": "123"),
+                        ToolCall({"name": "blah_tool", "args": {"x": -10}, "id": "456")
+                    ]
+                    id="baz"
+                ),
+            ]
+
+    """  # noqa: E501
     if not messages:
         return []
     messages = convert_to_messages(messages)
@@ -374,7 +420,13 @@ def merge_message_runs(
         if not isinstance(curr, last.__class__):
             merged.extend([last, curr])
         else:
-            merged.append(_chunk_to_msg(_msg_to_chunk(last) + _msg_to_chunk(curr)))
+            last_chunk = _msg_to_chunk(last)
+            curr_chunk = _msg_to_chunk(curr)
+            if isinstance(last_chunk.content, str) and isinstance(
+                curr_chunk.content, str
+            ):
+                last_chunk.content += "\n"
+            merged.append(_chunk_to_msg(last_chunk + curr_chunk))
     return merged
 
 
