@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import Callable, Dict, List, Optional
 
 import aiohttp
@@ -54,7 +55,7 @@ class AzureAISearchRetriever(BaseRetriever):
         values["index_name"] = get_from_dict_or_env(
             values, "index_name", "AZURE_AI_SEARCH_INDEX_NAME"
         )
-        if "azure_ad_token_provider" in values:
+        if "azure_ad_token_provider" in values or os.getenv("AZURE_AD_TOKEN_PROVIDER"):
             return values
         else:
             values["api_key"] = get_from_dict_or_env(
