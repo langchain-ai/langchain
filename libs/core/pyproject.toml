@@ -15,7 +15,7 @@ langsmith = "^0.1.75"
 tenacity = "^8.1.0"
 jsonpatch = "^1.33"
 PyYAML = ">=5.3"
-packaging = "^23.2"
+packaging = ">=23.2,<25"
 
 [tool.poetry.group.lint]
 optional = true
