@@ -3,11 +3,9 @@ import logging
 from typing import Dict, List, Optional, Sequence
 
 from langchain_core.documents import Document
-
 from langchain_community.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__name__)
-
 
 class MongodbLoader(BaseLoader):
     """Load MongoDB documents."""
@@ -77,7 +75,19 @@ class MongodbLoader(BaseLoader):
 
             # Extract text content from filtered fields or use the entire document
             if self.field_names is not None:
-                fields = {name: doc[name] for name in self.field_names}
+                fields = {}
+                for name in self.field_names:
+                    # Split the field names to handle nested fields
+                    keys = name.split('.')
+                    value = doc
+                    for key in keys:
+                        if key in value:
+                            value = value[key]
+                        else:
+                            value = ''
+                            break
+                    fields[name] = value
+                
                 texts = [str(value) for value in fields.values()]
                 text = " ".join(texts)
             else:
