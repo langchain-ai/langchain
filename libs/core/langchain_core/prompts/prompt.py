@@ -5,6 +5,7 @@ import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Union
 
+from langchain_core._api import warn_deprecated
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
@@ -86,7 +87,22 @@ class PromptTemplate(StringPromptTemplate):
         values.setdefault("template_format", "f-string")
         values.setdefault("partial_variables", {})
 
+        if values.get("validate_template"):
+            if values["template_format"] == "mustache":
+                raise ValueError("Mustache templates cannot be validated.")
+
+            if "input_variables" not in values:
+                raise ValueError(
+                    "Input variables must be provided to validate the template."
+                )
+
+            all_inputs = values["input_variables"] + list(values["partial_variables"])
+            check_valid_template(
+                values["template"], values["template_format"], all_inputs
+            )
+
         if values["template_format"]:
+            existing_input_variables = set(values.get("input_variables", []))
             values["input_variables"] = [
                 var
                 for var in get_template_variables(
@@ -94,18 +110,7 @@ class PromptTemplate(StringPromptTemplate):
                 )
                 if var not in values["partial_variables"]
             ]
-        return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def post_init_validation(cls, values: Dict) -> Dict:
-        """Run any validation."""
-        if values["validate_template"]:
-            if values["template_format"] == "mustache":
-                raise ValueError("Mustache templates cannot be validated.")
-            all_inputs = values["input_variables"] + list(values["partial_variables"])
-            check_valid_template(
-                values["template"], values["template_format"], all_inputs
-            )
         return values
 
     def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
