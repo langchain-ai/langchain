@@ -183,7 +183,6 @@ def test_prompt_from_template_with_partial_variables() -> None:
     )
     assert prompt == expected_prompt
 
-
 def test_prompt_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {foo} test."

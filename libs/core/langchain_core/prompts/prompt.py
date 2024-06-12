@@ -47,7 +47,7 @@ class PromptTemplate(StringPromptTemplate):
             prompt.format(foo="bar")
 
             # Instantiation using initializer
-            prompt = PromptTemplate(input_variables=["foo"], template="Say {foo}")
+            prompt = PromptTemplate(template="Say {foo}")
     """
 
     @property
