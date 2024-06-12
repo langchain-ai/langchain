@@ -1,7 +1,7 @@
 presidio-anonymizer>=2.2.352,<3
 presidio-analyzer>=2.2.352,<3
 faker>=19.3.1,<20
-vowpal-wabbit-next==0.6.0
+vowpal-wabbit-next==0.7.0
 sentence-transformers>=2,<3
 jinja2>=3,<4
 pandas>=2.0.1,<3
