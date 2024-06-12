@@ -193,26 +193,36 @@ class YoutubeLoader(BaseLoader):
         video_id = cls.extract_video_id(youtube_url)
         return cls(video_id, **kwargs)
 
-    def _make_chunk_document(
-        self, chunk_pieces: List[Dict], chunk_start_seconds: int
+    def _make_document(
+        self,
+        transcript_pieces: List[Dict],
+        additional_metadata: Dict[str, Any] = {},
     ) -> Document:
         """Create Document from chunk of transcript pieces."""
-        m, s = divmod(chunk_start_seconds, 60)
-        h, m = divmod(m, 60)
         return Document(
             page_content=" ".join(
-                map(lambda chunk_piece: chunk_piece["text"].strip(" "), chunk_pieces)
+                map(
+                    lambda transcript_pieces: transcript_pieces["text"].strip(" "),
+                    transcript_pieces,
+                )
             ),
             metadata={
                 **self._metadata,
-                "start_seconds": chunk_start_seconds,
-                "start_timestamp": f"{h:02d}:{m:02d}:{s:02d}",
-                "source":
-                # replace video ID with URL to start time
-                f"https://www.youtube.com/watch?v={self.video_id}"
-                f"&t={chunk_start_seconds}s",
+                **additional_metadata,
             },
         )
+
+    def _make_chunk_metadata(
+        self, video_id: str, chunk_start_seconds: int
+    ) -> Dict[str, Any]:
+        m, s = divmod(chunk_start_seconds, 60)
+        h, m = divmod(m, 60)
+        return {
+            "start_seconds": chunk_start_seconds,
+            "start_timestamp": f"{h:02d}:{m:02d}:{s:02d}",
+            # replace video ID with URL to start time
+            "source": f"https://www.youtube.com/watch?v={self.video_id}&t={chunk_start_seconds}s",
+        }
 
     def _get_transcript_chunks(
         self, transcript_pieces: List[Dict]
@@ -224,7 +234,12 @@ class YoutubeLoader(BaseLoader):
             piece_end = transcript_piece["start"] + transcript_piece["duration"]
             if piece_end > chunk_time_limit:
                 if chunk_pieces:
-                    yield self._make_chunk_document(chunk_pieces, chunk_start_seconds)
+                    yield self._make_document(
+                        chunk_pieces,
+                        additional_metadata=self._make_chunk_metadata(
+                            self.video_id, chunk_start_seconds
+                        ),
+                    )
                 chunk_pieces = []
                 chunk_start_seconds = chunk_time_limit
                 chunk_time_limit += self.chunk_size_seconds
@@ -232,7 +247,12 @@ class YoutubeLoader(BaseLoader):
             chunk_pieces.append(transcript_piece)
 
         if len(chunk_pieces) > 0:
-            yield self._make_chunk_document(chunk_pieces, chunk_start_seconds)
+            yield self._make_document(
+                chunk_pieces,
+                additional_metadata=self._make_chunk_metadata(
+                    self.video_id, chunk_start_seconds
+                ),
+            )
 
     def load(self) -> List[Document]:
         """Load YouTube transcripts into `Document` objects."""
@@ -270,30 +290,21 @@ class YoutubeLoader(BaseLoader):
         transcript_pieces: List[Dict[str, Any]] = transcript.fetch()
 
         if self.transcript_format == TranscriptFormat.TEXT:
-            transcript = " ".join(
-                map(
-                    lambda transcript_piece: transcript_piece["text"].strip(" "),
-                    transcript_pieces,
-                )
-            )
-            return [Document(page_content=transcript, metadata=self._metadata)]
+            return [self._make_document(transcript_pieces)]
         elif self.transcript_format == TranscriptFormat.LINES:
             return list(
                 map(
-                    lambda transcript_piece: Document(
-                        page_content=transcript_piece["text"].strip(" "),
-                        metadata={
-                            filter(
-                                lambda item: item[0] != "text", transcript_piece.items()
-                            )
-                        },
+                    lambda transcript_piece: self._make_document(
+                        [transcript_piece],
+                        additional_metadata=dict(
+                            filter(lambda i: i[0] != "text", transcript_piece.items())
+                        ),
                     ),
                     transcript_pieces,
                 )
             )
         elif self.transcript_format == TranscriptFormat.CHUNKS:
             return list(self._get_transcript_chunks(transcript_pieces))
-
         else:
             raise ValueError("Unknown transcript format.")
 
