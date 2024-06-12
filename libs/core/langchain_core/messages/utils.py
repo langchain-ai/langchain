@@ -264,25 +264,20 @@ def filter_messages(
 
     Args:
         messages: Sequence Message-like objects to filter.
-        incl_names: Message names to include. Should not be specified if excl_names is
-            specified.
-        excl_names: Messages names to exclude. Should not be specified if incl_names is
-            specified.
+        incl_names: Message names to include.
+        excl_names: Messages names to exclude.
         incl_types: Message types to include. Can be specified as string names (e.g.
             "system", "human", "ai", ...) or as BaseMessage classes (e.g.
-            SystemMessage, HumanMessage, AIMessage, ...). Should not be specified if
-            excl_types is specified.
+            SystemMessage, HumanMessage, AIMessage, ...).
         excl_types: Message types to exclude. Can be specified as string names (e.g.
             "system", "human", "ai", ...) or as BaseMessage classes (e.g.
-            SystemMessage, HumanMessage, AIMessage, ...). Should not be specified if
-            incl_types is specified.
-        incl_ids: Message IDs to include. Should not be specified if excl_ids is
-            specified.
-        excl_ids: Message IDs to exclude. Should not be specified if incl_ids is
-            specified.
+            SystemMessage, HumanMessage, AIMessage, ...).
+        incl_ids: Message IDs to include.
+        excl_ids: Message IDs to exclude.
 
     Returns:
-        A list of filtered Messages.
+        A list of Messages that meets at least one of the incl_* conditions and none
+            of the excl_* conditions.
 
     Raises:
         ValueError if two incompatible arguments are provided.
@@ -290,14 +285,31 @@ def filter_messages(
     Example:
         .. code-block:: python
 
-            ...
+            from langchain_core.messages import filter_messages
+
+            messages = [
+                SystemMessage("you're a good assistant."),
+                HumanMessage("what's your name", id="foo", name="example_user"),
+                AIMessage("steve-o", id="bar", name="example_assistant"),
+                HumanMessage("what's your favorite color", id="baz",),
+                AIMessage("silicon blue", id="blah",),
+            ]
+
+            filter_messages(
+                messages
+                incl_names=("example_user", "example_assistant"),
+                incl_type=("system"),
+                excl_ids=("bar"),
+            )
+
+        .. code-block:: python
+
+                [
+                    SystemMessage("you're a good assistant."),
+                    HumanMessage("what's your name", id="foo", name="example_user"),
+                ]
+
     """
-    if incl_names and excl_names:
-        raise ValueError
-    if incl_types and excl_types:
-        raise ValueError
-    if incl_ids and excl_ids:
-        raise ValueError
     messages = convert_to_messages(messages)
     incl_types_str = [t for t in (incl_types or ()) if isinstance(t, str)]
     incl_types_types = tuple(t for t in (incl_types or ()) if isinstance(t, type))
@@ -306,24 +318,32 @@ def filter_messages(
 
     filtered: List[BaseMessage] = []
     for msg in messages:
-        if incl_names and msg.name not in incl_names:
-            continue
-        elif excl_names and msg.name in excl_names:
-            continue
-        elif incl_types_str and msg.type not in incl_types_str:
-            continue
-        elif incl_types_types and not isinstance(msg, incl_types_types):
+        if excl_names and msg.name in excl_names:
             continue
         elif excl_types_str and msg.type in excl_types_str:
             continue
         elif excl_types_types and isinstance(msg.type, excl_types_types):
             continue
-        elif incl_ids and msg.id not in incl_ids:
-            continue
         elif excl_ids and msg.id in excl_ids:
             continue
         else:
+            pass
+
+        if incl_names and msg.name in incl_names:
             filtered.append(msg)
+            continue
+        elif incl_types_str and msg.type in incl_types_str:
+            filtered.append(msg)
+            continue
+        elif incl_types_types and isinstance(msg, incl_types_types):
+            filtered.append(msg)
+            continue
+        elif incl_ids and msg.id in incl_ids:
+            filtered.append(msg)
+            continue
+        else:
+            pass
+
     return filtered
 
 
@@ -399,7 +419,8 @@ def trim_messages(
         List of trimmed BaseMessages.
 
     Raises:
-        ValueError if two incompatible arguments are specified.
+        ValueError: if two incompatible arguments are specified or an unrecognized
+            ``strategy`` is specified.
 
     Example:
         .. code-block:: python
