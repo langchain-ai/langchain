@@ -68,11 +68,15 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
 
         if "model_name" not in kwargs:
+            since = "0.2.5"
+            removal = "0.4.0"
             warn_deprecated(
-                since="0.2.5",
-                removal="0.4.0",
-                name="Model defaults",
-                alternative="provide a model_name explicitly",
+                since=since,
+                removal=removal,
+                message=f"Default values for {self.__class__.__name__}.model_name"
+                + f" were deprecated in LangChain {since} and will be removed in"
+                + f" {removal}. Explicitly pass a model_name to the"
+                + f" {self.__class__.__name__} constructor instead.",
             )
 
         try:
@@ -169,11 +173,15 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
 
         if "model_name" not in kwargs:
+            since = "0.2.5"
+            removal = "0.4.0"
             warn_deprecated(
-                since="0.2.5",
-                removal="0.4.0",
-                name="Model defaults",
-                alternative="provide a model_name explicitly",
+                since=since,
+                removal=removal,
+                message=f"Default values for {self.__class__.__name__}.model_name"
+                + f" were deprecated in LangChain {since} and will be removed in"
+                + f" {removal}. Explicitly pass a model_name to the"
+                + f" {self.__class__.__name__} constructor instead.",
             )
 
         try:
@@ -276,11 +284,15 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         super().__init__(**kwargs)
 
         if "model_name" not in kwargs:
+            since = "0.2.5"
+            removal = "0.4.0"
             warn_deprecated(
-                since="0.2.5",
-                removal="0.4.0",
-                name="Model defaults",
-                alternative="provide a model_name explicitly",
+                since=since,
+                removal=removal,
+                message=f"Default values for {self.__class__.__name__}.model_name"
+                + f" were deprecated in LangChain {since} and will be removed in"
+                + f" {removal}. Explicitly pass a model_name to the"
+                + f" {self.__class__.__name__} constructor instead.",
             )
 
         try:
@@ -380,7 +392,9 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
         Example:
             .. code-block:: python
 
-                from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+                from langchain_community.embeddings import (
+                    HuggingFaceInferenceAPIEmbeddings,
+                )
 
                 hf_embeddings = HuggingFaceInferenceAPIEmbeddings(
                     api_key="your_api_key",
