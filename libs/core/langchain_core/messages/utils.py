@@ -308,21 +308,13 @@ def filter_messages(
                 SystemMessage("you're a good assistant."),
                 HumanMessage("what's your name", id="foo", name="example_user"),
             ]
-
-    """
+    """  # noqa: E501
     messages = convert_to_messages(messages)
-    incl_types_str = [t for t in (incl_types or ()) if isinstance(t, str)]
-    incl_types_types = tuple(t for t in (incl_types or ()) if isinstance(t, type))
-    excl_types_str = [t for t in (excl_types or ()) if isinstance(t, str)]
-    excl_types_types = tuple(t for t in (excl_types or ()) if isinstance(t, type))
-
     filtered: List[BaseMessage] = []
     for msg in messages:
         if excl_names and msg.name in excl_names:
             continue
-        elif excl_types_str and msg.type in excl_types_str:
-            continue
-        elif excl_types_types and isinstance(msg.type, excl_types_types):
+        elif excl_types and _is_message_type(msg, excl_types):
             continue
         elif excl_ids and msg.id in excl_ids:
             continue
@@ -332,10 +324,7 @@ def filter_messages(
         if incl_names and msg.name in incl_names:
             filtered.append(msg)
             continue
-        elif incl_types_str and msg.type in incl_types_str:
-            filtered.append(msg)
-            continue
-        elif incl_types_types and isinstance(msg, incl_types_types):
+        elif incl_types and _is_message_type(msg, incl_types):
             filtered.append(msg)
             continue
         elif incl_ids and msg.id in incl_ids:
@@ -439,9 +428,13 @@ def trim_messages(
     ],
     strategy: Literal["first", "last"] = "last",
     allow_partial: bool = False,
-    end_on: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
-    start_on: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
-    keep_system: bool = False,
+    end_on: Optional[
+        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+    ] = None,
+    start_on: Optional[
+        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+    ] = None,
+    include_system: bool = False,
 ) -> List[BaseMessage]:
     """Trim messages to be below a token count.
 
@@ -457,14 +450,14 @@ def trim_messages(
             included.
         end_on: The message type to end on. Can be specified as string names (e.g.
             "system", "human", "ai", ...) or as BaseMessage classes (e.g.
-            SystemMessage, HumanMessage, AIMessage, ...). Should only be specified if
-            ``strategy="first"``.
+            SystemMessage, HumanMessage, AIMessage, ...). Can be a single type or a list
+            of types.
         start_on: The message type to start on. Can be specified as string names (e.g.
             "system", "human", "ai", ...) or as BaseMessage classes (e.g.
-            SystemMessage, HumanMessage, AIMessage, ...). Should only be specified if
-            ``strategy="last"``. Ignores a SystemMessage at index 0 if
-            ``keep_system=True``.
-        keep_system: Whether to keep the SystemMessage if there is one at index 0.
+            SystemMessage, HumanMessage, AIMessage, ...). Can be a single type or a
+            list of types. Should only be specified if ``strategy="last"``. Ignores a
+            SystemMessage at index 0 if ``include_system=True``.
+        include_system: Whether to keep the SystemMessage if there is one at index 0.
             Should only be specified if ``strategy="last"``.
 
     Returns:
@@ -477,14 +470,179 @@ def trim_messages(
     Example:
         .. code-block:: python
 
-            ...
+            from typing import List
 
-    """
-    if end_on and strategy == "last":
-        raise ValueError
+            from langchain_core.messages import trim_messages, AIMessage, BaseMessage, HumanMessage, SystemMessage
+
+            messages = [
+                SystemMessage("This is a 4 token text."),
+                HumanMessage("This is a 4 token text.", id="first"),
+                AIMessage(
+                    [
+                        {"type": "text", "text": "This is the FIRST 4 token block."},
+                        {"type": "text", "text": "This is the SECOND 4 token block."},
+                    ],
+                    id="second",
+                ),
+                HumanMessage("This is a 4 token text.", id="third"),
+                AIMessage("This is a 4 token text.", id="fourth"),
+            ]
+
+            def dummy_token_counter(messages: List[BaseMessage]) -> int:
+                # treat each message like it adds 3 default tokens at the beginning
+                # of the message and at the end of the message. 3 + 4 + 3 = 10 tokens
+                # per message.
+
+                default_content_len = 4
+                default_msg_prefix_len = 3
+                default_msg_suffix_len = 3
+
+                count = 0
+                for msg in messages:
+                    if isinstance(msg.content, str):
+                        count += default_msg_prefix_len + default_content_len + default_msg_suffix_len
+                    if isinstance(msg.content, list):
+                        count += default_msg_prefix_len + len(msg.content) *  default_content_len + default_msg_suffix_len
+                return count
+
+        First 30 tokens, not allowing partial messages:
+        .. code-block:: python
+
+            trim_messages(messages, n_tokens=30, token_counter=dummy_token_counter, strategy="first")
+
+        .. code-block:: python
+
+            [
+                SystemMessage("This is a 4 token text."),
+                HumanMessage("This is a 4 token text.", id="first"),
+            ]
+
+        First 30 tokens, allowing partial messages:
+        .. code-block:: python
+
+            trim_messages(
+                messages,
+                n_tokens=30,
+                token_counter=dummy_token_counter,
+                strategy="first"
+                allow_partial=True,
+            )
+
+        .. code-block:: python
+
+            [
+                SystemMessage("This is a 4 token text."),
+                HumanMessage("This is a 4 token text.", id="first"),
+                AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
+            ]
+
+        First 30 tokens, allowing partial messages, have to end on HumanMessage:
+        .. code-block:: python
+
+            trim_messages(
+                messages,
+                n_tokens=30,
+                token_counter=dummy_token_counter,
+                strategy="first"
+                allow_partial=True,
+                end_on="human",
+            )
+
+        .. code-block:: python
+
+            [
+                SystemMessage("This is a 4 token text."),
+                HumanMessage("This is a 4 token text.", id="first"),
+            ]
+
+
+        Last 30 tokens, including system message, not allowing partial messages:
+        .. code-block:: python
+
+            trim_messages(messages, n_tokens=30, include_system=True, token_counter=dummy_token_counter, strategy="last")
+
+        .. code-block:: python
+
+            [
+                SystemMessage("This is a 4 token text."),
+                HumanMessage("This is a 4 token text.", id="third"),
+                AIMessage("This is a 4 token text.", id="fourth"),
+            ]
+
+        Last 40 tokens, including system message, allowing partial messages:
+        .. code-block:: python
+
+            trim_messages(
+                messages,
+                n_tokens=40,
+                token_counter=dummy_token_counter,
+                strategy="last",
+                allow_partial=True,
+                include_system=True
+            )
+
+        .. code-block:: python
+
+            [
+                SystemMessage("This is a 4 token text."),
+                AIMessage(
+                    [{"type": "text", "text": "This is the FIRST 4 token block."},],
+                    id="second",
+                ),
+                HumanMessage("This is a 4 token text.", id="third"),
+                AIMessage("This is a 4 token text.", id="fourth"),
+            ]
+
+        Last 30 tokens, including system message, allowing partial messages, end on HumanMessage:
+        .. code-block:: python
+
+            trim_messages(
+                messages,
+                n_tokens=30,
+                token_counter=dummy_token_counter,
+                strategy="last",
+                end_on="human",
+                include_system=True,
+                allow_partial=True,
+            )
+
+        .. code-block:: python
+
+            [
+                SystemMessage("This is a 4 token text."),
+                AIMessage(
+                    [{"type": "text", "text": "This is the FIRST 4 token block."},],
+                    id="second",
+                ),
+                HumanMessage("This is a 4 token text.", id="third"),
+            ]
+
+
+        Last 40 tokens, including system message, allowing partial messages, start on HumanMessage:
+        .. code-block:: python
+
+            trim_messages(
+                messages,
+                n_tokens=40,
+                token_counter=dummy_token_counter,
+                strategy="last",
+                include_system=True,
+                allow_partial=True,
+                start_on="human"
+            )
+
+        .. code-block:: python
+
+            [
+                SystemMessage("This is a 4 token text."),
+                HumanMessage("This is a 4 token text.", id="third"),
+                AIMessage("This is a 4 token text.", id="fourth"),
+            ]
+
+    """  # noqa: E501
     if start_on and strategy == "first":
         raise ValueError
-    if keep_system and strategy == "first":
+    if include_system and strategy == "first":
         raise ValueError
     messages = convert_to_messages(messages)
     if (
@@ -511,8 +669,9 @@ def trim_messages(
             n_tokens=n_tokens,
             token_counter=list_token_counter,
             allow_partial=allow_partial,
-            keep_system=keep_system,
+            include_system=include_system,
             start_on=start_on,
+            end_on=end_on,
         )
     else:
         raise ValueError(
@@ -526,12 +685,14 @@ def _first_n_tokens(
     n_tokens: int,
     token_counter: Callable[[Sequence[BaseMessage]], int],
     allow_partial: bool = False,
-    end_on: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
+    end_on: Optional[
+        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+    ] = None,
     text_splitter: Optional[Callable[[str], List[str]]] = None,
 ) -> List[BaseMessage]:
     text_splitter = text_splitter or _default_text_splitter
-    idx = 0
     messages = list(messages)
+    idx = 0
     for i in range(len(messages)):
         if token_counter(messages[:-i] if i else messages) <= n_tokens:
             idx = len(messages) - i
@@ -576,15 +737,9 @@ def _first_n_tokens(
                         messages = messages[:idx] + [excluded]
                         idx += 1
                         break
-
-    if isinstance(end_on, str):
-        while messages[idx - 1].type != end_on and idx > 0:
-            idx = idx - 1
-    elif isinstance(end_on, type):
-        while not isinstance(messages[idx - 1], end_on) and idx > 0:
-            idx = idx - 1
-    else:
-        pass
+    if end_on:
+        while idx > 0 and not _is_message_type(messages[idx - 1], end_on):
+            idx -= 1
 
     return messages[:idx]
 
@@ -595,13 +750,21 @@ def _last_n_tokens(
     n_tokens: int,
     token_counter: Callable[[Sequence[BaseMessage]], int],
     allow_partial: bool = False,
-    keep_system: bool = False,
-    start_on: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
+    include_system: bool = False,
+    start_on: Optional[
+        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+    ] = None,
+    end_on: Optional[
+        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+    ] = None,
 ) -> List[BaseMessage]:
     messages = list(messages)
-    swapped_system = keep_system and isinstance(messages[0], SystemMessage)
+    if end_on:
+        while messages and not _is_message_type(messages[-1], end_on):
+            messages.pop()
+    swapped_system = include_system and isinstance(messages[0], SystemMessage)
     if swapped_system:
-        reversed_ = messages[:1] + messages[1::-1]
+        reversed_ = messages[:1] + messages[1:][::-1]
     else:
         reversed_ = messages[::-1]
 
@@ -613,7 +776,7 @@ def _last_n_tokens(
         end_on=start_on,
     )
     if swapped_system:
-        return reversed_[:1] + reversed_[1::-1]
+        return reversed_[:1] + reversed_[1:][::-1]
     else:
         return reversed_[::-1]
 
@@ -644,7 +807,6 @@ def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
 
 
 def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
-    # TODO: does this break when there are extra fields in chunk.
     if chunk.__class__ in _CHUNK_MSG_MAP:
         return _CHUNK_MSG_MAP[chunk.__class__](
             **chunk.dict(exclude={"type", "tool_call_chunks"})
@@ -661,3 +823,14 @@ def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
 
 def _default_text_splitter(text: str) -> List[str]:
     return text.split("\n")
+
+
+def _is_message_type(
+    message: BaseMessage,
+    type_: Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]],
+) -> bool:
+    types = [type_] if isinstance(type_, (str, type)) else type_
+    types_str = [t for t in types if isinstance(t, str)]
+    types_types = tuple(t for t in types if isinstance(t, type))
+
+    return message.type in types_str or isinstance(message, types_types)
