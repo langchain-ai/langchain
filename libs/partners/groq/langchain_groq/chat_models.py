@@ -337,7 +337,7 @@ class ChatGroq(BaseChatModel):
 
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         for chunk in self.client.create(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
@@ -408,7 +408,7 @@ class ChatGroq(BaseChatModel):
 
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         async for chunk in await self.async_client.create(
             messages=message_dicts, **params
         ):
