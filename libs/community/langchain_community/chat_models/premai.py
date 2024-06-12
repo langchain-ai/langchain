@@ -150,7 +150,7 @@ def _convert_delta_response_to_message_chunk(
 def _messages_to_prompt_dict(
     input_messages: List[BaseMessage],
     template_id: Optional[str] = None,
-) -> Tuple[Optional[str], List[Dict[str, str]]]:
+):
     """Converts a list of LangChain Messages into a simple dict
     which is the message structure in Prem"""
 
