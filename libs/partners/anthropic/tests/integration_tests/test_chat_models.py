@@ -388,9 +388,10 @@ def test_tool_use() -> None:
     assert "location" in tool_call["args"]
 
     # Test streaming
+    input = "how are you? what's the weather in san francisco, ca"
     first = True
     chunks = []  # type: ignore
-    for chunk in llm_with_tools.stream("what's the weather in san francisco, ca"):
+    for chunk in llm_with_tools.stream(input):
         chunks = chunks + [chunk]
         if first:
             gathered = chunk
@@ -399,6 +400,7 @@ def test_tool_use() -> None:
             gathered = gathered + chunk  # type: ignore
     assert len(chunks) > 1
     assert isinstance(gathered.content, list)
+    assert len(gathered.content) == 2
     tool_use_block = None
     for chunk in gathered.content:
         if chunk["type"] == "tool_use":
@@ -414,6 +416,25 @@ def test_tool_use() -> None:
     assert tool_call_chunk["name"] == "get_weather"
     assert isinstance(tool_call_chunk["args"], str)
     assert "location" in json.loads(tool_call_chunk["args"])
+
+    # Test passing response back to model
+    stream = llm_with_tools.stream(
+        [
+            input,
+            gathered,
+            ToolMessage("sunny and warm", tool_call_id=tool_call_chunk["id"]),
+        ]
+    )
+    chunks = []  # type: ignore
+    first = True
+    for chunk in stream:
+        chunks = chunks + [chunk]
+        if first:
+            gathered = chunk
+            first = False
+        else:
+            gathered = gathered + chunk  # type: ignore
+    assert len(chunks) > 1
 
 
 def test_anthropic_with_empty_text_block() -> None:
