@@ -46,7 +46,6 @@ from langchain_core.messages import (
     convert_to_messages,
     message_chunk_to_message,
 )
-from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
@@ -69,6 +68,7 @@ if TYPE_CHECKING:
     from langchain_core.pydantic_v1 import BaseModel
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
+    from langchain_core.output_parsers.base import OutputParserLike
 
 
 class LangSmithParams(TypedDict, total=False):
