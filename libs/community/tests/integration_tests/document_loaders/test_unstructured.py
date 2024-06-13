@@ -47,26 +47,20 @@ def test_unstructured_file_loader_multiple_files() -> None:
     assert len(docs) > 1
 
 
-def test_unstructured_api_file_loader() -> None:
+@pytest.mark.parametrize(
+    ("file_paths"),
+    [
+        (os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")),
+        (
+            [
+                os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"),
+                os.path.join(EXAMPLE_DOCS_DIRECTORY, "whatsapp_chat.txt"),
+            ]
+        ),
+    ],
+)
+def test_unstructured_api_file_loader(file_paths) -> None:
     """Test unstructured loader."""
-    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
-    loader = UnstructuredAPIFileLoader(
-        file_path=file_path,
-        api_key="FAKE_API_KEY",
-        strategy="fast",
-        mode="elements",
-    )
-    docs = loader.load()
-
-    assert len(docs) > 1
-
-
-def test_unstructured_api_file_loader_multiple_files() -> None:
-    """Test unstructured loader."""
-    file_paths = [
-        os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"),
-        os.path.join(EXAMPLE_DOCS_DIRECTORY, "whatsapp_chat.txt"),
-    ]
 
     loader = UnstructuredAPIFileLoader(
         file_path=file_paths,
