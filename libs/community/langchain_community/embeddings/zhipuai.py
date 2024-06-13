@@ -12,6 +12,9 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
     environment variable ``ZHIPU_API_KEY`` set with your API key or pass it
     as a named parameter to the constructor.
 
+    More instructions about ZhipuAi Embeddings, you can get it
+    from  https://open.bigmodel.cn/dev/api#vector
+
     Example:
         .. code-block:: python
 
@@ -49,10 +52,10 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
         Embeds a text using the AutoVOT algorithm.
 
         Args:
-            text (str): A text to embed.
+            text: A text to embed.
 
         Returns:
-            List[float]: Input document's embedded list.
+            Input document's embedded list.
         """
         resp = self.embed_documents([text])
         return resp[0]
@@ -62,11 +65,11 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
         Embeds a list of text documents using the AutoVOT algorithm.
 
         Args:
-            texts (List[str]): A list of text documents to embed.
+            texts: A list of text documents to embed.
 
         Returns:
             A list of embeddings for each document in the input list.
-                            Each embedding is represented as a list of float values.
+            Each embedding is represented as a list of float values.
         """
         resp = self._client.embeddings.create(model=self.model, input=texts)
         embeddings = [r.embedding for r in resp.data]
