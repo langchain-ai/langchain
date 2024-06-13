@@ -228,7 +228,7 @@ def get_chat_model_table() -> str:
         "[Structured output](/docs/how_to/structured_output/)",
         "JSON mode",
         "Local",
-        "Multimodal",
+        "[Multimodal](/docs/how_to/multimodal_inputs/)",
         "Package",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
