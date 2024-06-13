@@ -45,7 +45,7 @@ class TavilySearchResults(BaseTool):
                 # include_images = False
             )
 
-    Invoking the tool:
+    Invoke:
 
         .. code-block:: python
 
