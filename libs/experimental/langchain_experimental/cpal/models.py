@@ -135,9 +135,9 @@ class ResultModel(BaseModel):
 class StoryModel(BaseModel):
     """Story data."""
 
-    causal_operations: Any = Field(required=True)
-    intervention: Any = Field(required=True)
-    query: Any = Field(required=True)
+    causal_operations: Any = Field()
+    intervention: Any = Field()
+    query: Any = Field()
     _outcome_table: Any = PrivateAttr(default=None)
     _networkx_wrapper: Any = PrivateAttr(default=None)
 
