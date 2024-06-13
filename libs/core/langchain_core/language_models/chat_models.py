@@ -960,7 +960,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def with_structured_output(
         self,
-        schema: Optional[Union[Dict, Type[BaseModel]]] = None,
+        schema: Union[Dict, Type[BaseModel]],
         *,
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: bool = False,
