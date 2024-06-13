@@ -155,6 +155,16 @@ Please see the [tool calling section](/docs/concepts/#functiontool-calling) for 
 
 For specifics on how to use chat models, see the [relevant how-to guides here](/docs/how_to/#chat-models).
 
+#### Multimodality
+
+Some chat models are multimodal, accepting images, audio and even video as inputs. These are still less common, meaning model providers haven't standardized on the "best" way to define the API. Multimodal **outputs** are even less common. As such, we've kept our multimodal abstractions fairly light weight and plan to further solidify the multimodal APIs and interaction patterns as the field matures.
+
+In LangChain, most chat models that support multimodal inputs also accept those values in OpenAI's content blocks format. So far this is restricted to image inputs. For models like Gemini which support video and other bytes input, the APIs also support the native, model-specific representations.
+
+For specifics on how to use multimodal models, see the [relevant how-to guides here](/docs/how_to/#multimodal).
+
+For a full list of LangChain model providers with multimodal models, [check out this table](/docs/integrations/chat/#advanced-features).
+
 ### LLMs
 <span data-heading-keywords="llm,llms"></span>
 
@@ -513,14 +523,6 @@ In order to solve that we built LangGraph to be this flexible, highly-controllab
 If you are still using AgentExecutor, do not fear: we still have a guide on [how to use AgentExecutor](/docs/how_to/agent_executor).
 It is recommended, however, that you start to transition to LangGraph.
 In order to assist in this we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent).
-
-### Multimodal
-
-Some models are multimodal, accepting images, audio and even video as inputs. These are still less common, meaning model providers haven't standardized on the "best" way to define the API. Multimodal **outputs** are even less common. As such, we've kept our multimodal abstractions fairly light weight and plan to further solidify the multimodal APIs and interaction patterns as the field matures.
-
-In LangChain, most chat models that support multimodal inputs also accept those values in OpenAI's content blocks format. So far this is restricted to image inputs. For models like Gemini which support video and other bytes input, the APIs also support the native, model-specific representations.
-
-For specifics on how to use multimodal models, see the [relevant how-to guides here](/docs/how_to/#multimodal).
 
 ### Callbacks
 
