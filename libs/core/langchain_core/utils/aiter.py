@@ -6,6 +6,7 @@ MIT License
 
 from collections import deque
 from contextlib import AbstractAsyncContextManager
+from types import TracebackType
 from typing import (
     Any,
     AsyncContextManager,
@@ -19,6 +20,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -229,11 +231,19 @@ class aclosing(AbstractAsyncContextManager):
 
     """
 
-    def __init__(self, thing):
+    def __init__(
+        self, thing: Union[AsyncGenerator[Any, Any], AsyncIterator[Any]]
+    ) -> None:
         self.thing = thing
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> Union[AsyncGenerator[Any, Any], AsyncIterator[Any]]:
         return self.thing
 
-    async def __aexit__(self, *exc_info):
-        await self.thing.aclose()
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
+        if hasattr(self.thing, "aclose"):
+            await self.thing.aclose()

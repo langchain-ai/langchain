@@ -13,6 +13,7 @@ from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     AsyncIterator,
     Awaitable,
     Callable,
@@ -3916,12 +3917,15 @@ class RunnableLambda(Runnable[Input, Output]):
         if is_async_generator(afunc):
             output: Optional[Output] = None
             async with aclosing(
-                acall_func_with_variable_args(
-                    cast(Callable, afunc),
-                    input,
-                    config,
-                    run_manager,
-                    **kwargs,
+                cast(
+                    AsyncGenerator[Any, Any],
+                    acall_func_with_variable_args(
+                        cast(Callable, afunc),
+                        input,
+                        config,
+                        run_manager,
+                        **kwargs,
+                    ),
                 )
             ) as stream:
                 async for chunk in cast(

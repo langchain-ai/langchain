@@ -2214,7 +2214,7 @@ async def test_break_astream_events() -> None:
                 self.cancelled = True
                 raise
 
-        def reset(self):
+        def reset(self) -> None:
             self.started = False
             self.cancelled = False
 
@@ -2279,7 +2279,7 @@ async def test_cancel_astream_events() -> None:
                 self.cancelled = True
                 raise
 
-        def reset(self):
+        def reset(self) -> None:
             self.started = False
             self.cancelled = False
 
@@ -2303,7 +2303,7 @@ async def test_cancel_astream_events() -> None:
     got_event = False
 
     async def aconsume(stream: AsyncIterator[Any]) -> None:
-        nonlocal got_event, task
+        nonlocal got_event
         # here we don't need aclosing as cancelling the task is propagated
         # to the async generator being consumed
         async for chunk in stream:
