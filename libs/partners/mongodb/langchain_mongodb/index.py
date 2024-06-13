@@ -7,7 +7,7 @@ from pymongo.operations import SearchIndexModel
 logger = logging.getLogger(__file__)
 
 
-def _create_index_definition(
+def _vector_search_index_definition(
     dimensions: int,
     path: str,
     similarity: str,
@@ -47,7 +47,7 @@ def create_vector_search_index(
     logger.info("Creating Search Index %s on %s", index_name, collection.name)
     result = collection.create_search_index(
         SearchIndexModel(
-            definition=_create_index_definition(
+            definition=_vector_search_index_definition(
                 dimensions=dimensions, path=path, similarity=similarity, filters=filters
             ),
             name=index_name,
@@ -95,7 +95,7 @@ def update_vector_search_index(
     )
     collection.update_search_index(
         name=index_name,
-        definition=_create_index_definition(
+        definition=_vector_search_index_definition(
             dimensions=dimensions,
             path=path,
             similarity=similarity,
