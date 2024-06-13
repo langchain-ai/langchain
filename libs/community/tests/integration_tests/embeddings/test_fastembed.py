@@ -15,10 +15,10 @@ def test_fastembed_embedding_documents(
 ) -> None:
     """Test fastembed embeddings for documents."""
     documents = ["foo bar", "bar foo"]
-    embedding = FastEmbedEmbeddings(
+    embedding = FastEmbedEmbeddings(  # type: ignore[call-arg]
         model_name=model_name,
         max_length=max_length,
-        doc_embed_type=doc_embed_type,
+        doc_embed_type=doc_embed_type,  # type: ignore[arg-type]
         threads=threads,
     )
     output = embedding.embed_documents(documents)
@@ -33,7 +33,7 @@ def test_fastembed_embedding_documents(
 def test_fastembed_embedding_query(model_name: str, max_length: int) -> None:
     """Test fastembed embeddings for query."""
     document = "foo bar"
-    embedding = FastEmbedEmbeddings(model_name=model_name, max_length=max_length)
+    embedding = FastEmbedEmbeddings(model_name=model_name, max_length=max_length)  # type: ignore[call-arg]
     output = embedding.embed_query(document)
     assert len(output) == 384
 
@@ -49,10 +49,10 @@ async def test_fastembed_async_embedding_documents(
 ) -> None:
     """Test fastembed embeddings for documents."""
     documents = ["foo bar", "bar foo"]
-    embedding = FastEmbedEmbeddings(
+    embedding = FastEmbedEmbeddings(  # type: ignore[call-arg]
         model_name=model_name,
         max_length=max_length,
-        doc_embed_type=doc_embed_type,
+        doc_embed_type=doc_embed_type,  # type: ignore[arg-type]
         threads=threads,
     )
     output = await embedding.aembed_documents(documents)
@@ -69,6 +69,6 @@ async def test_fastembed_async_embedding_query(
 ) -> None:
     """Test fastembed embeddings for query."""
     document = "foo bar"
-    embedding = FastEmbedEmbeddings(model_name=model_name, max_length=max_length)
+    embedding = FastEmbedEmbeddings(model_name=model_name, max_length=max_length)  # type: ignore[call-arg]
     output = await embedding.aembed_query(document)
     assert len(output) == 384

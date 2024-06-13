@@ -23,7 +23,24 @@ class ChatGeneration(Generation):
     def set_text(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Set the text attribute to be the contents of the message."""
         try:
-            values["text"] = values["message"].content
+            text = ""
+            if isinstance(values["message"].content, str):
+                text = values["message"].content
+            # HACK: Assumes text in content blocks in OpenAI format.
+            # Uses first text block.
+            elif isinstance(values["message"].content, list):
+                for block in values["message"].content:
+                    if isinstance(block, str):
+                        text = block
+                        break
+                    elif isinstance(block, dict) and "text" in block:
+                        text = block["text"]
+                        break
+                    else:
+                        pass
+            else:
+                pass
+            values["text"] = text
         except (KeyError, AttributeError) as e:
             raise ValueError("Error while initializing ChatGeneration") from e
         return values
@@ -44,7 +61,7 @@ class ChatGenerationChunk(ChatGeneration):
 
     message: BaseMessageChunk
     # Override type to be ChatGeneration, ignore mypy error as this is intentional
-    type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"  # type: ignore[assignment] # noqa: E501
+    type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
     @classmethod

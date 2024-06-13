@@ -1,6 +1,6 @@
 """Test conversation chain and memory."""
-from langchain_community.llms.fake import FakeListLLM
 from langchain_core.documents import Document
+from langchain_core.language_models import FakeListLLM
 
 from langchain.chains.conversational_retrieval.base import (
     ConversationalRetrievalChain,

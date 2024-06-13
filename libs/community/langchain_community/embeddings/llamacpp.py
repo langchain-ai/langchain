@@ -62,7 +62,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that llama-cpp-python library is installed."""
         model_path = values["model_path"]
@@ -88,7 +88,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
 
             values["client"] = Llama(model_path, embedding=True, **model_params)
         except ImportError:
-            raise ModuleNotFoundError(
+            raise ImportError(
                 "Could not import llama-cpp-python library. "
                 "Please install the llama-cpp-python library to "
                 "use this embedding model: pip install llama-cpp-python"

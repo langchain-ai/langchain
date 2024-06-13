@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 @deprecated(
     since="0.0.12",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_google_vertexai.VectorSearchVectorStore",
 )
 class MatchingEngine(VectorStore):

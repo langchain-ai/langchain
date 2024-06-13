@@ -7,7 +7,7 @@ from langchain_community.llms.baichuan import BaichuanLLM
 def test_call() -> None:
     """Test valid call to baichuan."""
     llm = BaichuanLLM()
-    output = llm("Who won the second world war?")
+    output = llm.invoke("Who won the second world war?")
     assert isinstance(output, str)
 
 

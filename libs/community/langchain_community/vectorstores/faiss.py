@@ -1072,7 +1072,6 @@ class FAISS(VectorStore):
                 Pickle files can be modified by malicious actors to deliver a
                 malicious payload that results in execution of
                 arbitrary code on your machine.
-            asynchronous: whether to use async version or not
         """
         if not allow_dangerous_deserialization:
             raise ValueError(
@@ -1082,10 +1081,10 @@ class FAISS(VectorStore):
                 "You will need to set `allow_dangerous_deserialization` to `True` to "
                 "enable deserialization. If you do this, make sure that you "
                 "trust the source of the data. For example, if you are loading a "
-                "file that you created, and no that no one else has modified the file, "
-                "then this is safe to do. Do not set this to `True` if you are loading "
-                "a file from an untrusted source (e.g., some random site on the "
-                "internet.)."
+                "file that you created, and know that no one else has modified the "
+                "file, then this is safe to do. Do not set this to `True` if you are "
+                "loading a file from an untrusted source (e.g., some random site on "
+                "the internet.)."
             )
         path = Path(folder_path)
         # load index separately since it is not picklable

@@ -74,8 +74,8 @@ class RePhraseQueryRetriever(BaseRetriever):
         response = self.llm_chain(query, callbacks=run_manager.get_child())
         re_phrased_question = response["text"]
         logger.info(f"Re-phrased question: {re_phrased_question}")
-        docs = self.retriever.get_relevant_documents(
-            re_phrased_question, callbacks=run_manager.get_child()
+        docs = self.retriever.invoke(
+            re_phrased_question, config={"callbacks": run_manager.get_child()}
         )
         return docs
 

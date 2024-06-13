@@ -166,7 +166,8 @@ class PineconeVectorStore(VectorStore):
                     batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
                 )
             ]
-            [res.get() for res in async_res]
+            if async_req:
+                [res.get() for res in async_res]
 
         return ids
 
@@ -493,7 +494,7 @@ class PineconeVectorStore(VectorStore):
         return None
 
 
-@deprecated(since="0.0.3", removal="0.2.0", alternative="PineconeVectorStore")
+@deprecated(since="0.0.3", removal="0.3.0", alternative="PineconeVectorStore")
 class Pinecone(PineconeVectorStore):
     """Deprecated. Use PineconeVectorStore instead."""
 

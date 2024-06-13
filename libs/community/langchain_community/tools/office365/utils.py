@@ -36,7 +36,7 @@ def clean_body(body: str) -> str:
 
 
 def authenticate() -> Account:
-    """Authenticate using the Microsoft Grah API"""
+    """Authenticate using the Microsoft Graph API"""
     try:
         from O365 import Account
     except ImportError as e:
