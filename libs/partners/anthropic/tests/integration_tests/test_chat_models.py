@@ -148,7 +148,7 @@ async def test_abatch_tags() -> None:
 
 async def test_async_tool_use() -> None:
     llm = ChatAnthropic(  # type: ignore[call-arg]
-        model="claude-3-sonnet-20240229",
+        model=MODEL_NAME,
     )
 
     llm_with_tools = llm.bind_tools(
@@ -362,7 +362,7 @@ async def test_astreaming() -> None:
 
 def test_tool_use() -> None:
     llm = ChatAnthropic(  # type: ignore[call-arg]
-        model="claude-3-sonnet-20240229",
+        model=MODEL_NAME,
     )
 
     llm_with_tools = llm.bind_tools(
@@ -510,7 +510,7 @@ class GetWeather(BaseModel):
 @pytest.mark.parametrize("tool_choice", ["GetWeather", "auto", "any"])
 def test_anthropic_bind_tools_tool_choice(tool_choice: str) -> None:
     chat_model = ChatAnthropic(  # type: ignore[call-arg]
-        model="claude-3-sonnet-20240229",
+        model=MODEL_NAME,
     )
     chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice=tool_choice)
     response = chat_model_with_tools.invoke("what's the weather in ny and la")
