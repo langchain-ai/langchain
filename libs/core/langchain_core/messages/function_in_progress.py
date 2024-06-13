@@ -6,7 +6,7 @@ from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 class FunctionInProgressMessage(BaseMessage):
     """Function in progress Message"""
 
-    type: Literal["function"] = "function_in_progress"
+    type: Literal["function_in_progress"] = "function_in_progress"
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -23,7 +23,7 @@ class FunctionInProgressMessageChunk(FunctionInProgressMessage, BaseMessageChunk
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["FunctionMessageChunk"] = "FunctionInProgressMessage"  # type: ignore[assignment]
+    type: Literal["FunctionInProgressMessage"] = "FunctionInProgressMessage"  # type: ignore[assignment]
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
