@@ -5,7 +5,7 @@ import pytest
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders import DirectoryLoader
-from langchain_community.loaders.text import TextLoader
+from langchain_community.document_loaders.text import TextLoader
 
 
 def test_raise_error_if_path_not_exist() -> None:
@@ -62,30 +62,30 @@ def test_exclude_as_string_converts_to_sequence() -> None:
 def test_directory_loader_glob_multiple() -> None:
     """Verify that globbing multiple patterns in a list works correctly."""
 
-    path_to_tests_directory = "../../"
-    extensions = [".json", ".txt", ".md"]
-    list_globs = [ f"**/*{ext}" for ext in extensions]
-    is_recursive_glob = True
+    path_to_examples = "tests/examples/"
+    list_extensions = [".rst", ".txt"]
+    list_globs = [f"**/*{ext}" for ext in list_extensions]
+    is_file_type_loaded = {ext: False for ext in list_extensions} 
 
     loader = DirectoryLoader(
-        path=path_to_tests_directory,
+        path=path_to_examples,
         glob=list_globs,
-        recursive=is_recursive_glob,
         loader_cls=TextLoader
     )
 
     list_documents = loader.load()
 
-    is_file_type_loaded = dict(keys=extensions, values=[False]*len(extensions))
-
     for doc in list_documents:
         path_doc = Path(doc.metadata.get("source", ""))
         ext_doc = path_doc.suffix
 
-        if file_types_loaded[ext_doc]:
+        if is_file_type_loaded.get(ext_doc, False):
             continue
-        elif ext_doc in extensions:
-            file_types_loaded[ext_doc] = True
-
-    for ext in extensions:
-        assert is_file_type_loaded[ext]
+        elif ext_doc in list_extensions:
+            is_file_type_loaded[ext_doc] = True
+        else:
+            # Loaded a filetype that was not specified in extensions list
+            assert False
+    print(is_file_type_loaded)
+    for ext in list_extensions:
+        assert is_file_type_loaded.get(ext, False)
