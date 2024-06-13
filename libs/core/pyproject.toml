@@ -40,6 +40,7 @@ optional = true
 jupyter = "^1.0.0"
 setuptools = "^67.6.1"
 grandalf = "^0.8"
+aiosqlite = "^0.19.0"
 
 [tool.poetry.group.test]
 optional = true
