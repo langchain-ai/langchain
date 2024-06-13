@@ -65,7 +65,7 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
             texts (List[str]): A list of text documents to embed.
 
         Returns:
-            List[List[float]]: A list of embeddings for each document in the input list.
+            A list of embeddings for each document in the input list.
                             Each embedding is represented as a list of float values.
         """
         resp = self._client.embeddings.create(model=self.model, input=texts)
