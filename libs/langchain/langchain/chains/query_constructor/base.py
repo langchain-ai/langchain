@@ -11,9 +11,7 @@ from langchain_core.output_parsers.json import parse_and_check_json_markdown
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.runnables import Runnable
-
-from langchain.chains.llm import LLMChain
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     FilterDirective,
@@ -21,6 +19,8 @@ from langchain.chains.query_constructor.ir import (
     Operator,
     StructuredQuery,
 )
+
+from langchain.chains.llm import LLMChain
 from langchain.chains.query_constructor.parser import get_parser
 from langchain.chains.query_constructor.prompt import (
     DEFAULT_EXAMPLES,

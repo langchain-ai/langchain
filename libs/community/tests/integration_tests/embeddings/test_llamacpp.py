@@ -31,7 +31,7 @@ def test_llamacpp_embedding_documents() -> None:
     """Test llamacpp embeddings."""
     documents = ["foo bar"]
     model_path = get_model()
-    embedding = LlamaCppEmbeddings(model_path=model_path)
+    embedding = LlamaCppEmbeddings(model_path=model_path)  # type: ignore[call-arg]
     output = embedding.embed_documents(documents)
     assert len(output) == 1
     assert len(output[0]) == 512
@@ -41,6 +41,6 @@ def test_llamacpp_embedding_query() -> None:
     """Test llamacpp embeddings."""
     document = "foo bar"
     model_path = get_model()
-    embedding = LlamaCppEmbeddings(model_path=model_path)
+    embedding = LlamaCppEmbeddings(model_path=model_path)  # type: ignore[call-arg]
     output = embedding.embed_query(document)
     assert len(output) == 512

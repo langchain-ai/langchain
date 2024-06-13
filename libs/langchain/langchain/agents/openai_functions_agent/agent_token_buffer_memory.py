@@ -4,8 +4,9 @@ from typing import Any, Dict, List
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
 
-from langchain.agents.format_scratchpad.openai_functions import (
+from langchain.agents.format_scratchpad import (
     format_to_openai_function_messages,
+    format_to_tool_messages,
 )
 from langchain.memory.chat_memory import BaseChatMemory
 
@@ -18,11 +19,12 @@ class AgentTokenBufferMemory(BaseChatMemory):
     llm: BaseLanguageModel
     memory_key: str = "history"
     max_token_limit: int = 12000
-    """The max number of tokens to keep in the buffer. 
+    """The max number of tokens to keep in the buffer.
     Once the buffer exceeds this many tokens, the oldest messages will be pruned."""
     return_messages: bool = True
     output_key: str = "output"
     intermediate_steps_key: str = "intermediate_steps"
+    format_as_tools: bool = False
 
     @property
     def buffer(self) -> List[BaseMessage]:
@@ -53,7 +55,12 @@ class AgentTokenBufferMemory(BaseChatMemory):
         """Save context from this conversation to buffer. Pruned."""
         input_str, output_str = self._get_input_output(inputs, outputs)
         self.chat_memory.add_user_message(input_str)
-        steps = format_to_openai_function_messages(outputs[self.intermediate_steps_key])
+        format_to_messages = (
+            format_to_tool_messages
+            if self.format_as_tools
+            else format_to_openai_function_messages
+        )
+        steps = format_to_messages(outputs[self.intermediate_steps_key])
         for msg in steps:
             self.chat_memory.add_message(msg)
         self.chat_memory.add_ai_message(output_str)

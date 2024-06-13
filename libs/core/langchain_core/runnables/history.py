@@ -25,6 +25,7 @@ from langchain_core.runnables.utils import (
 )
 
 if TYPE_CHECKING:
+    from langchain_core.language_models import LanguageModelLike
     from langchain_core.messages import BaseMessage
     from langchain_core.runnables.config import RunnableConfig
     from langchain_core.tracers.schemas import Run
@@ -213,7 +214,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 config={"configurable": {"user_id": "123", "conversation_id": "1"}}
             )
 
-    """  # noqa: E501
+    """
 
     get_session_history: GetSessionHistoryCallable
     input_messages_key: Optional[str] = None
@@ -228,9 +229,12 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
     def __init__(
         self,
-        runnable: Runnable[
-            MessagesOrDictWithMessages,
-            Union[str, BaseMessage, MessagesOrDictWithMessages],
+        runnable: Union[
+            Runnable[
+                Union[MessagesOrDictWithMessages],
+                Union[str, BaseMessage, MessagesOrDictWithMessages],
+            ],
+            LanguageModelLike,
         ],
         get_session_history: GetSessionHistoryCallable,
         *,
@@ -293,7 +297,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 into the get_session_history factory.
             **kwargs: Arbitrary additional kwargs to pass to parent class
                 ``RunnableBindingBase`` init.
-        """  # noqa: E501
+        """
         history_chain: Runnable = RunnableLambda(
             self._enter_history, self._aenter_history
         ).with_config(run_name="load_history")
@@ -364,17 +368,39 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             return super_schema
 
     def _get_input_messages(
-        self, input_val: Union[str, BaseMessage, Sequence[BaseMessage]]
+        self, input_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> List[BaseMessage]:
         from langchain_core.messages import BaseMessage
 
+        # If dictionary, try to pluck the single key representing messages
+        if isinstance(input_val, dict):
+            if self.input_messages_key:
+                key = self.input_messages_key
+            elif len(input_val) == 1:
+                key = list(input_val.keys())[0]
+            else:
+                key = "input"
+            input_val = input_val[key]
+
+        # If value is a string, convert to a human message
         if isinstance(input_val, str):
             from langchain_core.messages import HumanMessage
 
             return [HumanMessage(content=input_val)]
+        # If value is a single message, convert to a list
         elif isinstance(input_val, BaseMessage):
             return [input_val]
+        # If value is a list or tuple...
         elif isinstance(input_val, (list, tuple)):
+            # Handle empty case
+            if len(input_val) == 0:
+                return list(input_val)
+            # If is a list of list, then return the first value
+            # This occurs for chat models - since we batch inputs
+            if isinstance(input_val[0], list):
+                if len(input_val) != 1:
+                    raise ValueError()
+                return input_val[0]
             return list(input_val)
         else:
             raise ValueError(
@@ -387,13 +413,26 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     ) -> List[BaseMessage]:
         from langchain_core.messages import BaseMessage
 
+        # If dictionary, try to pluck the single key representing messages
         if isinstance(output_val, dict):
-            output_val = output_val[self.output_messages_key or "output"]
+            if self.output_messages_key:
+                key = self.output_messages_key
+            elif len(output_val) == 1:
+                key = list(output_val.keys())[0]
+            else:
+                key = "output"
+            # If you are wrapping a chat model directly
+            # The output is actually this weird generations object
+            if key not in output_val and "generations" in output_val:
+                output_val = output_val["generations"][0][0]["message"]
+            else:
+                output_val = output_val[key]
 
         if isinstance(output_val, str):
             from langchain_core.messages import AIMessage
 
             return [AIMessage(content=output_val)]
+        # If value is a single message, convert to a list
         elif isinstance(output_val, BaseMessage):
             return [output_val]
         elif isinstance(output_val, (list, tuple)):
@@ -432,9 +471,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
         # Get the input messages
         inputs = load(run.inputs)
-        input_val = inputs[self.input_messages_key or "input"]
-        input_messages = self._get_input_messages(input_val)
-
+        input_messages = self._get_input_messages(inputs)
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
         if not self.history_messages_key:

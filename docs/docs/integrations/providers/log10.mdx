@@ -30,7 +30,7 @@ messages = [
     HumanMessage(content="Ping?"),
 ]
 
-llm = ChatOpenAI(model_name="gpt-3.5-turbo", callbacks=[log10_callback])
+llm = ChatOpenAI(model="gpt-3.5-turbo", callbacks=[log10_callback])
 ```
 
 [Log10 + Langchain + Logs docs](https://github.com/log10-io/log10/blob/main/logging.md#langchain-logger)
@@ -55,7 +55,7 @@ messages = [
     HumanMessage(content="Ping?"),
 ]
 
-llm = ChatOpenAI(model_name="gpt-3.5-turbo", callbacks=[log10_callback], temperature=0.5, tags=["test"])
+llm = ChatOpenAI(model="gpt-3.5-turbo", callbacks=[log10_callback], temperature=0.5, tags=["test"])
 completion = llm.predict_messages(messages, tags=["foobar"])
 print(completion)
 
