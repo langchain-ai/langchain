@@ -402,27 +402,28 @@ def test_tool_use() -> None:
     assert isinstance(gathered.content, list)
     assert len(gathered.content) == 2
     tool_use_block = None
-    for chunk in gathered.content:
-        if chunk["type"] == "tool_use":
-            tool_use_block = chunk
+    for content_block in gathered.content:
+        assert isinstance(content_block, dict)
+        if content_block["type"] == "tool_use":
+            tool_use_block = content_block
             break
     assert tool_use_block is not None
     assert tool_use_block["name"] == "get_weather"
     assert "location" in json.loads(tool_use_block["partial_json"])
     assert isinstance(gathered, AIMessageChunk)
-    assert isinstance(gathered.tool_call_chunks, list)
-    assert len(gathered.tool_call_chunks) == 1
-    tool_call_chunk = gathered.tool_call_chunks[0]
-    assert tool_call_chunk["name"] == "get_weather"
-    assert isinstance(tool_call_chunk["args"], str)
-    assert "location" in json.loads(tool_call_chunk["args"])
+    assert isinstance(gathered.tool_calls, list)
+    assert len(gathered.tool_calls) == 1
+    tool_call = gathered.tool_calls[0]
+    assert tool_call["name"] == "get_weather"
+    assert isinstance(tool_call["args"], str)
+    assert "location" in json.loads(tool_call["args"])
 
     # Test passing response back to model
     stream = llm_with_tools.stream(
         [
             input,
             gathered,
-            ToolMessage("sunny and warm", tool_call_id=tool_call_chunk["id"]),
+            ToolMessage(content="sunny and warm", tool_call_id=tool_call["id"]),
         ]
     )
     chunks = []  # type: ignore
