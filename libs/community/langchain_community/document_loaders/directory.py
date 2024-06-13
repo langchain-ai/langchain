@@ -32,7 +32,7 @@ class DirectoryLoader(BaseLoader):
     def __init__(
         self,
         path: str,
-        glob: str = "**/[!.]*",
+        glob: list[str] | str = "**/[!.]*",
         silent_errors: bool = False,
         load_hidden: bool = False,
         loader_cls: FILE_LOADER_TYPE = UnstructuredFileLoader,
@@ -124,7 +124,14 @@ class DirectoryLoader(BaseLoader):
         if not p.is_dir():
             raise ValueError(f"Expected directory, got file: '{self.path}'")
 
-        paths = p.rglob(self.glob) if self.recursive else p.glob(self.glob)
+        # glob multiple patterns if a list is provided, e.g., multiple file extensions
+        if type(self.glob) == list:
+            paths = []
+            for pattern in self.glob:
+                paths.extend(list(p.rglob(pattern) if self.recursive else p.glob(pattern)))
+        elif type(self.glob):
+            paths = list(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
+
         items = [
             path
             for path in paths
