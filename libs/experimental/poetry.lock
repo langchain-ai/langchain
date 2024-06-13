@@ -1134,13 +1134,13 @@ url = "../text-splitters"
 
 [[package]]
 name = "gigachat"
-version = "0.1.28"
+version = "0.1.29"
 description = "GigaChat. Python-library for GigaChain and LangChain"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "gigachat-0.1.28-py3-none-any.whl", hash = "sha256:071335be94b5518d5268868e10c3ff6858f0a2e5c1d52d9215f1257ea4531732"},
-    {file = "gigachat-0.1.28.tar.gz", hash = "sha256:75f4cdfb696fc673a09b4246d403f1894b5525a219c2100e798bd2346bdea897"},
+    {file = "gigachat-0.1.29-py3-none-any.whl", hash = "sha256:0d12c6b1e056cf5b4f663cdcf6925d99e78d7933a3146b7476360319c9f9a1bb"},
+    {file = "gigachat-0.1.29.tar.gz", hash = "sha256:8cb267d28bbae9c941354f11f1d2430e7723b5999b569e5d0c9f43f0077dd561"},
 ]
 
 [package.dependencies]
@@ -5574,4 +5574,4 @@ extended-testing = ["faker", "jinja2", "pandas", "presidio-analyzer", "presidio-
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "aa2aa8d52355c5996d0164787b74055641173028e9ee8002baac7388208b1af2"
+content-hash = "0762c9c8b68e81c36af852630d95480c931b8d96808dcc46c8d63276c23bc669"

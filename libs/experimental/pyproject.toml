@@ -63,7 +63,7 @@ gigachain = {path = "../langchain", develop = true}
 gigachain-core = {path = "../core", develop = true}
 gigachain-community = {path = "../community", develop = true}
 gigachain-text-splitters = {path = "../text-splitters", develop = true}
-gigachat = "^0.1.28"
+gigachat = "^0.1.29"
 
 
 [tool.poetry.group.test_integration]
