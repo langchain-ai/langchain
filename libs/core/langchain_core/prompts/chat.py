@@ -866,9 +866,12 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             if isinstance(message, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
                 input_vars.update(message.input_variables)
             if isinstance(message, MessagesPlaceholder):
-                if 'partial_variables' not in values:
+                if "partial_variables" not in values:
                     values["partial_variables"] = {}
-                if message.optional and message.variable_name not in values["partial_variables"]:
+                if (
+                    message.optional
+                    and message.variable_name not in values["partial_variables"]
+                ):
                     values["partial_variables"][message.variable_name] = []
                 if message.variable_name not in input_types:
                     input_types[message.variable_name] = List[AnyMessage]

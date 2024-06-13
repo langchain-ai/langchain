@@ -82,11 +82,14 @@ class BasePromptTemplate(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
-        required_input_variables = {k: (self.input_types.get(k, str), ...) for k in self.input_variables}
-        optional_input_variables = {k:(self.input_types.get(k, str), None) for k in self.partial_variables}
+        required_input_variables = {
+            k: (self.input_types.get(k, str), ...) for k in self.input_variables
+        }
+        optional_input_variables = {
+            k: (self.input_types.get(k, str), None) for k in self.partial_variables
+        }
         return create_model(  # type: ignore[call-overload]
-            "PromptInput",
-            **{**required_input_variables,**optional_input_variables}
+            "PromptInput", **{**required_input_variables, **optional_input_variables}
         )
 
     def _validate_input(self, inner_input: Dict) -> Dict:
