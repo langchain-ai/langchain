@@ -1,4 +1,5 @@
 """Test ChatDeepInfra wrapper."""
+from typing import List
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.pydantic_v1 import BaseModel
@@ -6,7 +7,19 @@ from langchain_core.runnables.base import RunnableBinding
 
 from langchain_community.chat_models.deepinfra import ChatDeepInfra
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+from langchain_community.llms.deepinfra import DeepInfra
 
+from langchain_core.messages.tool import ToolMessage
+
+from langchain_core.messages.ai import AIMessageChunk, AIMessage
+from langchain_core.pydantic_v1 import BaseModel, Field
+
+from libs.core.langchain_core.messages.human import HumanMessage
+
+
+class GenerateMovieName(BaseModel):
+    "Get a movie name from a description"
+    description: str
 
 def test_chat_deepinfra() -> None:
     """Test valid call to DeepInfra."""
@@ -91,3 +104,21 @@ def test_chat_deepinfra_bind_tools() -> None:
             }
         ]
     }
+
+def test_tool_use() -> None:
+    llm = ChatDeepInfra(model_id="meta-llama/Meta-Llama-3-70B-Instruct", temperature = 0)
+    llm_with_tool = llm.bind_tools(tools=[GenerateMovieName], tool_choice=True)
+    msgs: List = [HumanMessage("It should be a movie explaining humanity in 2133.")]
+    ai_msg = llm_with_tool.invoke(msgs)
+
+    assert isinstance(ai_msg, AIMessage)
+    assert isinstance(ai_msg.tool_calls, list)
+    assert len(ai_msg.tool_calls) == 1
+    tool_call = ai_msg.tool_calls[0]
+    assert "args" in tool_call
+
+    tool_msg = ToolMessage(
+        "Year 2133", tool_call_id=ai_msg.additional_kwargs["tool_calls"][0]["id"]
+    )
+    msgs.extend([ai_msg, tool_msg])
+    llm_with_tool.invoke(msgs)
