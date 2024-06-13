@@ -1,19 +1,10 @@
-# TODO better metadata mgmt
-# TODO marginal_relevance_fns
-# TODO Hybrid_search
-# TODO updation
-# TODO distance_metric(L2/cosine/etc)
-# TODO add_images
-# TODO reset_collection
-# TODO add_audio
-
 from __future__ import annotations
 
 import base64
 import os
 import uuid
 import warnings
-from typing import Any, Callable, Dict, Iterable, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
 from langchain_core.documents import Document
@@ -79,7 +70,7 @@ class LanceDB(VectorStore):
         distance: Optional[str] = "l2",
         reranker: Optional[Any] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
-        limit: Optional[int] = DEFAULT_K,
+        limit: int = DEFAULT_K,
     ):
         """Initialize with Lance DB vectorstore"""
         lancedb = guard_import("lancedb")
@@ -498,18 +489,18 @@ class LanceDB(VectorStore):
 
     def similarity_search_with_score(
         self,
-        query: Any,
+        query: str,
         k: Optional[int] = None,
-        name: Optional[str] = None,
-        filter: Optional[Any] = None,
+        filter: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> Any:
         """Return documents most similar to the query with relevance scores."""
         if k is None:
             k = self.limit
 
         score = kwargs.get("score", True)
         fts = kwargs.get("fts", False)
+        name = kwargs.get("name", None)
 
         if fts is True:
             if self.api_key is None and self._fts_index is None:
@@ -522,6 +513,10 @@ class LanceDB(VectorStore):
                     "Full text search is not supported in LanceDB Cloud yet."
                 )
         else:
+            if self._embedding is None:
+                raise ValueError(
+                    "For vector search you must specify an embedding function on creation."
+                )
             embedding = self._embedding.embed_query(query)
             res = self._query(embedding, k, filter=filter, **kwargs)
             return self.results_to_docs(res, score=score)
@@ -568,29 +563,6 @@ class LanceDB(VectorStore):
                                                          }
                                                     })
         """
-        # embedding = self._embedding.embed_query(query)  # type: ignore
-        # tbl = self.get_table(name)
-        # filters = kwargs.pop("filter", {})
-        # sql_filter = filters.pop("sql_filter", None)
-        # prefilter = filters.pop("prefilter", False)
-        # docs = (
-        #     tbl.search(embedding, vector_column_name=self._vector_key)
-        #     .where(sql_filter, prefilter=prefilter)
-        #     .limit(k)
-        #     .to_arrow()
-        # )
-        # columns = docs.schema.names
-        # return [
-        #     Document(
-        #         page_content=docs[self._text_key][idx].as_py(),
-        #         metadata={
-        #             col: docs[col][idx].as_py()
-        #             for col in columns
-        #             if col != self._text_key
-        #         },
-        #     )
-        #     for idx in range(len(docs))
-        # ]
         res = self.similarity_search_with_score(
             query=query, k=k, name=name, filter=filter, fts=fts, score=False, **kwargs
         )
@@ -666,8 +638,6 @@ class LanceDB(VectorStore):
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-        if k is None:
-            k = self.limit
 
         results = self._query(
             query=embedding,
@@ -678,7 +648,7 @@ class LanceDB(VectorStore):
         mmr_selected = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
             results["vector"].to_pylist(),
-            k=k,
+            k=k or self.limit,
             lambda_mult=lambda_mult,
         )
 
@@ -689,7 +659,7 @@ class LanceDB(VectorStore):
 
     @classmethod
     def from_texts(
-        cls,
+        cls: Type[LanceDB],
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
@@ -704,6 +674,7 @@ class LanceDB(VectorStore):
         distance: Optional[str] = "l2",
         reranker: Optional[Any] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
+        **kwargs: Any,
     ) -> LanceDB:
         instance = LanceDB(
             connection=connection,
@@ -718,6 +689,7 @@ class LanceDB(VectorStore):
             distance=distance,
             reranker=reranker,
             relevance_score_fn=relevance_score_fn,
+            **kwargs,
         )
         instance.add_texts(texts, metadatas=metadatas)
 
@@ -757,14 +729,3 @@ class LanceDB(VectorStore):
             tbl.delete("true")
         else:
             raise ValueError("Provide either filter, ids, drop_columns or delete_all")
-
-    # def update(self, filter: str, values: Dict[str,str]) -> None:
-    #     """
-    #     Update a document in the table.
-
-    #     Args:
-    #         filter: Provide a string SQL expression -  "{col} {operation} {value}".
-    #         values: Provide a dictionary of values to update - "{col: value}".
-    #     """
-    #     tbl = self.get_table()
-    #     tbl.update(where=filter, values=values)
