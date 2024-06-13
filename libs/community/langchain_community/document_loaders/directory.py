@@ -32,7 +32,7 @@ class DirectoryLoader(BaseLoader):
     def __init__(
         self,
         path: str,
-        glob: list[str] | str = "**/[!.]*",
+        glob: list[str] | tuple[str] | str = "**/[!.]*",
         silent_errors: bool = False,
         load_hidden: bool = False,
         loader_cls: FILE_LOADER_TYPE = UnstructuredFileLoader,
@@ -125,12 +125,14 @@ class DirectoryLoader(BaseLoader):
             raise ValueError(f"Expected directory, got file: '{self.path}'")
 
         # glob multiple patterns if a list is provided, e.g., multiple file extensions
-        if type(self.glob) == list:
+        if isinstance(self.glob, (list, tuple)):
             paths = []
             for pattern in self.glob:
                 paths.extend(list(p.rglob(pattern) if self.recursive else p.glob(pattern)))
-        else:
+        elif isinstance(self.glob, str):
             paths = list(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
+        else:
+            raise TypeError('Expected glob to be str or sequence of str, but got {type(self.glob)}')
 
         items = [
             path
