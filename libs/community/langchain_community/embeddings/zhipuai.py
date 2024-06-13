@@ -29,7 +29,7 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
     api_key: str
     """Automatically inferred from env var `ZHIPU_API_KEY` if not provided."""
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that auth token exists in environment."""
         values["api_key"] = get_from_dict_or_env(values, "api_key", "ZHIPUAI_API_KEY")
