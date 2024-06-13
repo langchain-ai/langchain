@@ -171,7 +171,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
         allow_population_by_field_name = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = convert_to_secret_str(
             get_from_dict_or_env(
@@ -189,6 +189,11 @@ class QianfanChatEndpoint(BaseChatModel):
                 default="",
             )
         )
+        return values
+
+    @root_validator(pre=False, skip_on_failure=True)
+    def post_init(cls, values: Dict) -> Dict:
+        """Post init validation for the class."""
         params = {
             **values.get("init_kwargs", {}),
             "model": values["model"],

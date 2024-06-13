@@ -142,7 +142,7 @@ class ChatBaichuan(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["baichuan_api_base"] = get_from_dict_or_env(
             values,

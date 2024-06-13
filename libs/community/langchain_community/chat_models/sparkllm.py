@@ -195,7 +195,7 @@ class ChatSparkLLM(BaseChatModel):
 
         return values
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["spark_app_id"] = get_from_dict_or_env(
             values,
@@ -224,6 +224,11 @@ class ChatSparkLLM(BaseChatModel):
             "IFLYTEK_SPARK_LLM_DOMAIN",
             SPARK_LLM_DOMAIN,
         )
+        return values
+
+    @root_validator(pre=False, skip_on_failure=True)
+    def post_init(cls, values: Dict) -> Dict:
+        """Post init validation for the class."""
         # put extra params into model_kwargs
         values["model_kwargs"]["temperature"] = values["temperature"] or cls.temperature
         values["model_kwargs"]["top_k"] = values["top_k"] or cls.top_k
