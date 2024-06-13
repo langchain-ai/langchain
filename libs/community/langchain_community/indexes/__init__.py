@@ -11,6 +11,3 @@ Importantly, Index keeps on working even if the content being written is derived
 via a set of transformations from some source content (e.g., indexing children
 documents that were derived from parent documents by chunking.)
 """
-from langchain_community.indexes._sql_record_manager import SQLRecordManager
-
-__all__ = ["SQLRecordManager"]
