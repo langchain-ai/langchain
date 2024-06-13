@@ -129,7 +129,7 @@ def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
             tool_calls=tool_calls,
         )
     elif message.role == MessagesRole.FUNCTION:
-        return FunctionMessage(name=message.name, content=message.content)
+        return FunctionMessage(name=message.name or "", content=message.content)
     else:
         raise TypeError(f"Got unknown role {message.role} {message}")
 
@@ -502,8 +502,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[True] = True,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]:
-        ...
+    ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
 
     @overload
     def with_structured_output(
@@ -513,8 +512,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[False] = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        ...
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
 
     @beta()
     def with_structured_output(
