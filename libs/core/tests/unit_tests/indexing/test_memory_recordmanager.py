@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 import pytest_asyncio
 
-from langchain_community.indexes._memory_recordmanager import MemoryRecordManager
+from langchain_core.indexing._memory_recordmanager import MemoryRecordManager
 
 
 @pytest.fixture()
