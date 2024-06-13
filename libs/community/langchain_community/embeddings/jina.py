@@ -30,7 +30,7 @@ class JinaEmbeddings(BaseModel, Embeddings):
     model_name: str = "jina-embeddings-v2-base-en"
     jina_api_key: Optional[SecretStr] = None
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that auth token exists in environment."""
         try:
