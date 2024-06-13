@@ -129,7 +129,7 @@ class DirectoryLoader(BaseLoader):
             paths = []
             for pattern in self.glob:
                 paths.extend(list(p.rglob(pattern) if self.recursive else p.glob(pattern)))
-        elif type(self.glob):
+        else:
             paths = list(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
 
         items = [
