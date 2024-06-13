@@ -132,7 +132,7 @@ class RecursiveUrlLoader(BaseLoader):
             <head>
                 <meta charset="utf-8" /><
             {'source': 'https://docs.python.org/3.9/', 'content_type': 'text/html', 'title': '3.9.19 Documentation', 'language': None}
-            
+
     Async load:
         .. code-block:: python
 
