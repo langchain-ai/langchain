@@ -8,12 +8,15 @@ import pytest
 from langchain_community.document_loaders import (
     UnstructuredAPIFileIOLoader,
     UnstructuredAPIFileLoader,
+    UnstructuredFileIOLoader,
     UnstructuredFileLoader,
 )
 from langchain_community.document_loaders.unstructured import _get_content
 
 EXAMPLE_DOCS_DIRECTORY = str(Path(__file__).parent.parent / "examples/")
 
+
+# -- UnstructuredFileLoader -------------------------------
 
 def test_unstructured_loader_with_post_processor() -> None:
     def add_the_end(text: str) -> str:
@@ -49,6 +52,8 @@ def test_unstructured_file_loader_multiple_files() -> None:
     assert len(docs) > 1
 
 
+# -- UnstructuredAPIFileLoader -------------------------------
+
 @pytest.mark.parametrize(
     ("file_paths"),
     [
@@ -74,6 +79,25 @@ def test_unstructured_api_file_loader(file_paths) -> None:
 
     assert len(docs) > 1
 
+
+# -- UnstructuredFileIOLoader -------------------------------
+
+def test_unstructured_file_io_loader() -> None:
+    """Test unstructured loader."""
+    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
+
+    with open(file_path, "rb") as f:
+        loader = UnstructuredFileIOLoader(
+            file=f,
+            strategy="fast",
+            mode="elements",
+        )
+        docs = loader.load()
+
+    assert len(docs) > 1
+
+
+# -- UnstructuredAPIFileIOLoader -------------------------------
 
 def test_unstructured_api_file_io_loader() -> None:
     """Test unstructured loader."""
@@ -114,6 +138,8 @@ def test_unstructured_api_file_loader_io_multiple_files() -> None:
 
     assert len(docs) > 1
 
+
+# -- _get_content() -------------------------------
 
 def test_get_content_from_file() -> None:
     with open(os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"), "rb") as f:

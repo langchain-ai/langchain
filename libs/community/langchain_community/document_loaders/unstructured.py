@@ -274,7 +274,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
     def __init__(
         self,
-        file: IO[bytes],
+        file: Union[IO[bytes], Sequence[IO]],
         *,
         mode: str = "single",
         **unstructured_kwargs: Any,
@@ -299,7 +299,10 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     def _get_elements(self) -> List:
         from unstructured.partition.auto import partition
 
-        return partition(file=self.file, **self.unstructured_kwargs)
+        if isinstance(self.file, IO):
+            return partition(file=self.file, **self.unstructured_kwargs)
+        else:
+            raise ValueError("file must be of type IO.")
 
     def _get_metadata(self) -> dict:
         return {}
