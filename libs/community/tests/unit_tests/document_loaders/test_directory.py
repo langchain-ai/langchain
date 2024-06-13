@@ -5,7 +5,6 @@ import pytest
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders import DirectoryLoader
-from langchain_community.document_loaders.text import TextLoader
 
 
 def test_raise_error_if_path_not_exist() -> None:
@@ -59,6 +58,17 @@ def test_exclude_as_string_converts_to_sequence() -> None:
     assert loader.exclude == ("*.py",)
 
 
+class CustomLoaderMetadataOnly(CustomLoader):
+    """Test loader that just returns the file path in metadata. For test_directory_loader_glob_multiple."""
+
+    def load(self) -> List[Document]:
+        metadata = {"source": self.path}
+        return [Document(page_content="", metadata=metadata)]
+
+    def lazy_load(self) -> Iterator[Document]:
+        return iter(self.load())
+
+
 def test_directory_loader_glob_multiple() -> None:
     """Verify that globbing multiple patterns in a list works correctly."""
 
@@ -70,7 +80,7 @@ def test_directory_loader_glob_multiple() -> None:
     loader = DirectoryLoader(
         path=path_to_examples,
         glob=list_globs,
-        loader_cls=TextLoader
+        loader_cls=CustomLoaderMetadataOnly
     )
 
     list_documents = loader.load()
