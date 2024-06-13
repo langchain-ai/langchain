@@ -86,6 +86,6 @@ def test_directory_loader_glob_multiple() -> None:
         else:
             # Loaded a filetype that was not specified in extensions list
             assert False
-    print(is_file_type_loaded)
+    
     for ext in list_extensions:
         assert is_file_type_loaded.get(ext, False)
