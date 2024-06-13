@@ -144,7 +144,14 @@ class LanceDB(VectorStore):
     def results_to_docs(self, results: Any, score: bool = False) -> Any:
         columns = results.schema.names
 
-        if "_distance" not in columns or not score:
+        if "_distance" in columns:
+            score_col = "_distance"
+        elif "_relevance_score" in columns:
+            score_col = "_relevance_score"
+        else:
+            score_col = None
+
+        if score_col is None or not score:
             return [
                 Document(
                     page_content=results[self._text_key][idx].as_py(),
@@ -152,14 +159,14 @@ class LanceDB(VectorStore):
                 )
                 for idx in range(len(results))
             ]
-        elif "_distance" in columns and score:
+        elif score_col and score:
             return [
                 (
                     Document(
                         page_content=results[self._text_key][idx].as_py(),
                         metadata=results["metadata"][idx].as_py(),
                     ),
-                    results["_distance"][idx].as_py(),
+                    results[score_col][idx].as_py(),
                 )
                 for idx in range(len(results))
             ]
@@ -202,14 +209,17 @@ class LanceDB(VectorStore):
             )
 
         tbl = self.get_table()
+
         if tbl is None:
             tbl = self._connection.create_table(self._table_name, data=docs)
             self._table = tbl
-
-        if self.api_key is None:
-            tbl.add(docs, mode=self.mode)
         else:
-            tbl.add(docs)
+            if self.api_key is None:
+                tbl.add(docs, mode=self.mode)
+            else:
+                tbl.add(docs)
+
+        self._fts_index = None
 
         return ids
 
@@ -360,14 +370,17 @@ class LanceDB(VectorStore):
             filter = to_lance_filter(filter)
 
         prefilter = kwargs.get("prefilter", False)
+        query_type = kwargs.get("query_type", "vector")
 
-        docs = (
-            tbl.search(query, vector_column_name=self._vector_key)
+        lance_query = (
+            tbl.search(query=query, vector_column_name=self._vector_key)
             .limit(k)
             .where(filter, prefilter=prefilter)
-            .to_arrow()
         )
+        if query_type == "hybrid" and self._reranker is not None:
+            lance_query.rerank(reranker=self._reranker)
 
+        docs = lance_query.to_arrow()
         if len(docs) == 0:
             warnings.warn("No results found for the query.")
         return docs
@@ -448,24 +461,30 @@ class LanceDB(VectorStore):
             k = self.limit
 
         score = kwargs.get("score", True)
-        fts = kwargs.get("fts", False)
         name = kwargs.get("name", None)
+        query_type = kwargs.get("query_type", "vector")
 
-        if fts is True:
+        if self._embedding is None:
+            raise ValueError("search needs an emmbedding function to be specified.")
+
+        if query_type == "fts" or query_type == "hybrid":
             if self.api_key is None and self._fts_index is None:
                 tbl = self.get_table(name)
                 self._fts_index = tbl.create_fts_index(self._text_key, replace=True)
-                res = self._query(query, k, filter=filter, name=name, **kwargs)
+
+                if query_type == "hybrid":
+                    embedding = self._embedding.embed_query(query)
+                    _query = (embedding, query)
+                else:
+                    _query = query  # type: ignore
+
+                res = self._query(_query, k, filter=filter, name=name, **kwargs)
                 return self.results_to_docs(res, score=score)
             else:
                 raise NotImplementedError(
-                    "Full text search is not supported in LanceDB Cloud yet."
+                    "Full text/ Hybrid search is not supported in LanceDB Cloud yet."
                 )
         else:
-            if self._embedding is None:
-                raise ValueError(
-                    "vector search needs an emmbedding function to be specified."
-                )
             embedding = self._embedding.embed_query(query)
             res = self._query(embedding, k, filter=filter, **kwargs)
             return self.results_to_docs(res, score=score)
