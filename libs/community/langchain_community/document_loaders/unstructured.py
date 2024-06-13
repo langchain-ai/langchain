@@ -19,32 +19,6 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
 
-def satisfies_min_unstructured_version(min_version: str) -> bool:
-    """Check if the installed `Unstructured` version exceeds the minimum version
-    for the feature in question."""
-    from unstructured.__version__ import __version__ as __unstructured_version__
-
-    min_version_tuple = tuple([int(x) for x in min_version.split(".")])
-
-    # NOTE(MthwRobinson) - enables the loader to work when you're using pre-release
-    # versions of unstructured like 0.4.17-dev1
-    _unstructured_version = __unstructured_version__.split("-")[0]
-    unstructured_version_tuple = tuple(
-        [int(x) for x in _unstructured_version.split(".")]
-    )
-
-    return unstructured_version_tuple >= min_version_tuple
-
-
-def validate_unstructured_version(min_unstructured_version: str) -> None:
-    """Raise an error if the `Unstructured` version does not exceed the
-    specified minimum."""
-    if not satisfies_min_unstructured_version(min_unstructured_version):
-        raise ValueError(
-            f"unstructured>={min_unstructured_version} is required in this loader."
-        )
-
-
 class UnstructuredBaseLoader(BaseLoader, ABC):
     """Base Loader that uses `Unstructured`."""
 
@@ -194,59 +168,6 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
     def _get_metadata(self) -> dict:
         return {"source": self.file_path}
-
-
-def get_elements_from_api(
-    file_path: Union[str, Path, None] = None,
-    file: Union[IO[bytes], None] = None,
-    api_url: str = "https://api.unstructured.io/general/v0/general",
-    api_key: str = "",
-    **unstructured_kwargs: Any,
-) -> List:
-    """Retrieve a list of elements from the `Unstructured API`."""
-
-    try:
-        import unstructured_client  # noqa:F401
-        from unstructured.staging.base import elements_from_json  # noqa:F401
-    except ImportError:
-        raise ImportError(
-            "unstructured_client and/or unstructured package not found, please install it with "
-            "`pip install unstructured-client` or `pip install unstructured`."
-        )
-    from unstructured.staging.base import elements_from_json
-    from unstructured_client.models import operations, shared
-
-    content = _get_content(file=file, file_path=file_path)
-
-    client = unstructured_client.UnstructuredClient(
-        api_key_auth=api_key, server_url=api_url
-    )
-    req = operations.PartitionRequest(
-        partition_parameters=shared.PartitionParameters(
-            files=shared.Files(content=content, file_name=str(file_path)),
-            **unstructured_kwargs,
-        ),
-    )
-    response = client.general.partition(req)
-
-    if response.status_code == 200:
-        return elements_from_json(text=response.raw_response.text)
-    else:
-        raise ValueError(
-            f"Receive unexpected status code {response.status_code} from the API.",
-        )
-    
-
-def _get_content(file_path: Union[str, Path, None] = None, file: Union[IO[bytes], None] = None):
-    content = None
-    if file is not None:
-        content = file.read()
-    if content is None and file_path is not None:
-        with open(file_path, "rb") as f:
-            content = f.read()
-    if content is None:
-        raise ValueError("Either file or file_path must be provided")
-    return content
 
 
 class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
@@ -462,3 +383,82 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
 
     def _get_metadata(self) -> dict:
         return {}
+
+
+def get_elements_from_api(
+    file_path: Union[str, Path, None] = None,
+    file: Union[IO[bytes], None] = None,
+    api_url: str = "https://api.unstructured.io/general/v0/general",
+    api_key: str = "",
+    **unstructured_kwargs: Any,
+) -> List:
+    """Retrieve a list of elements from the `Unstructured API`."""
+
+    try:
+        import unstructured_client  # noqa:F401
+        from unstructured.staging.base import elements_from_json  # noqa:F401
+    except ImportError:
+        raise ImportError(
+            "unstructured_client and/or unstructured package not found, please install it with "
+            "`pip install unstructured-client` or `pip install unstructured`."
+        )
+    from unstructured.staging.base import elements_from_json
+    from unstructured_client.models import operations, shared
+
+    content = _get_content(file=file, file_path=file_path)
+
+    client = unstructured_client.UnstructuredClient(
+        api_key_auth=api_key, server_url=api_url
+    )
+    req = operations.PartitionRequest(
+        partition_parameters=shared.PartitionParameters(
+            files=shared.Files(content=content, file_name=str(file_path)),
+            **unstructured_kwargs,
+        ),
+    )
+    response = client.general.partition(req)
+
+    if response.status_code == 200:
+        return elements_from_json(text=response.raw_response.text)
+    else:
+        raise ValueError(
+            f"Receive unexpected status code {response.status_code} from the API.",
+        )
+    
+
+def _get_content(file_path: Union[str, Path, None] = None, file: Union[IO[bytes], None] = None):
+    content = None
+    if file is not None:
+        content = file.read()
+    if content is None and file_path is not None:
+        with open(file_path, "rb") as f:
+            content = f.read()
+    if content is None:
+        raise ValueError("Either file or file_path must be provided")
+    return content
+
+
+def satisfies_min_unstructured_version(min_version: str) -> bool:
+    """Check if the installed `Unstructured` version exceeds the minimum version
+    for the feature in question."""
+    from unstructured.__version__ import __version__ as __unstructured_version__
+
+    min_version_tuple = tuple([int(x) for x in min_version.split(".")])
+
+    # NOTE(MthwRobinson) - enables the loader to work when you're using pre-release
+    # versions of unstructured like 0.4.17-dev1
+    _unstructured_version = __unstructured_version__.split("-")[0]
+    unstructured_version_tuple = tuple(
+        [int(x) for x in _unstructured_version.split(".")]
+    )
+
+    return unstructured_version_tuple >= min_version_tuple
+
+
+def validate_unstructured_version(min_unstructured_version: str) -> None:
+    """Raise an error if the `Unstructured` version does not exceed the
+    specified minimum."""
+    if not satisfies_min_unstructured_version(min_unstructured_version):
+        raise ValueError(
+            f"unstructured>={min_unstructured_version} is required in this loader."
+        )
