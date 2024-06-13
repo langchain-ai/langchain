@@ -18,6 +18,7 @@ CHAT_MODEL_FEAT_TABLE = {
     "ChatAnthropic": {
         "tool_calling": True,
         "structured_output": True,
+        "multimodal": True,
         "package": "langchain-anthropic",
         "link": "/docs/integrations/chat/anthropic/",
     },
@@ -39,6 +40,7 @@ CHAT_MODEL_FEAT_TABLE = {
         "tool_calling": True,
         "structured_output": True,
         "json_mode": True,
+        "multimodal": True,
         "package": "langchain-openai",
         "link": "/docs/integrations/chat/azure_chat_openai/",
     },
@@ -46,6 +48,7 @@ CHAT_MODEL_FEAT_TABLE = {
         "tool_calling": True,
         "structured_output": True,
         "json_mode": True,
+        "multimodal": True,
         "package": "langchain-openai",
         "link": "/docs/integrations/chat/openai/",
     },
@@ -59,11 +62,13 @@ CHAT_MODEL_FEAT_TABLE = {
     "ChatVertexAI": {
         "tool_calling": True,
         "structured_output": True,
+        "multimodal": True,
         "package": "langchain-google-vertexai",
         "link": "/docs/integrations/chat/google_vertex_ai_palm/",
     },
     "ChatGoogleGenerativeAI": {
         "tool_calling": True,
+        "multimodal": True,
         "package": "langchain-google-genai",
         "link": "/docs/integrations/chat/google_generative_ai/",
     },
@@ -138,6 +143,7 @@ sidebar_position: 0
 sidebar_class_name: hidden
 keywords: [compatibility, bind_tools, tool calling, function calling, structured output, with_structured_output, json mode, local model]
 custom_edit_url:
+hide_table_of_contents: true
 ---
 
 # Chat models
@@ -213,6 +219,7 @@ def get_chat_model_table() -> str:
         "structured_output",
         "json_mode",
         "local",
+        "multimodal",
         "package",
     ]
     title = [
@@ -221,6 +228,7 @@ def get_chat_model_table() -> str:
         "[Structured output](/docs/how_to/structured_output/)",
         "JSON mode",
         "Local",
+        "[Multimodal](/docs/how_to/multimodal_inputs/)",
         "Package",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
