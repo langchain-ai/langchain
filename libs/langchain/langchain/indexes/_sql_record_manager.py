@@ -39,7 +39,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.orm import Query, Session, sessionmaker, declarative_base
+from sqlalchemy.orm import Query, Session, declarative_base, sessionmaker
 
 Base = declarative_base()
 
