@@ -70,4 +70,4 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
         """
         resp = self._client.embeddings.create(model=self.model, input=texts)
         embeddings = [r.embedding for r in resp.data]
-        return lst
+        return embeddings
