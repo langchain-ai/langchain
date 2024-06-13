@@ -3,6 +3,7 @@ from typing import Any, List, Union
 
 import pytest
 from langchain.pydantic_v1 import ValidationError
+
 from langchain_core._api.deprecation import (
     LangChainPendingDeprecationWarning,
 )
@@ -711,12 +712,13 @@ async def test_messages_prompt_accepts_list() -> None:
         await prompt.ainvoke([("user", "Hi there")])  # type: ignore
 
 
-
 def test_chat_input_schema() -> None:
-    prompt = ChatPromptTemplate.from_messages(messages = [MessagesPlaceholder("history", optional=False), 
-                                                          ('user', '${input}')])
+    prompt = ChatPromptTemplate.from_messages(
+        messages=[MessagesPlaceholder("history", optional=False), ("user", "${input}")]
+    )
     with pytest.raises(ValidationError):
-        prompt.input_schema(input = '')
-    prompt = ChatPromptTemplate.from_messages(messages = [MessagesPlaceholder("history", optional=True), 
-                                                          ('user', '${input}')])
-    prompt.input_schema(input = '') # should not raise error since history is optional    
+        prompt.input_schema(input="")
+    prompt = ChatPromptTemplate.from_messages(
+        messages=[MessagesPlaceholder("history", optional=True), ("user", "${input}")]
+    )
+    prompt.input_schema(input="")  # should not raise error since history is optional
