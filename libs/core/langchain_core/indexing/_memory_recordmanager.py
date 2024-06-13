@@ -11,9 +11,11 @@ class MemoryRecordManager(RecordManager):
         super().__init__(namespace=namespace)
 
     def create_schema(self) -> None:
+        """Create nothing."""
         pass
 
     async def acreate_schema(self) -> None:
+        """Create nothing."""
         pass
 
     def get_time(self) -> float:
