@@ -39,7 +39,7 @@ def vector_search_stage(
     limit: int = 4,
     filter: MongoDBDocumentType = None,
     oversampling_factor=10,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     """Vector Search Stage without Scores.
 
@@ -70,7 +70,9 @@ def vector_search_stage(
     }
 
 
-def combine_pipelines(pipeline: List[Any], stage: List[Dict[str, Any]], collection_name: str):
+def combine_pipelines(
+    pipeline: List[Any], stage: List[Dict[str, Any]], collection_name: str
+):
     """Combines two aggregations into a single result set."""
     if pipeline:
         pipeline.append({"$unionWith": {"coll": collection_name, "pipeline": stage}})
@@ -103,21 +105,21 @@ def reciprocal_rank_stage(
         {"$unwind": {"path": "$docs", "includeArrayIndex": "rank"}},
         {
             "$addFields": {
-                f"docs.{score_field}": {"$divide": [1.0, {"$add": ["$rank", penalty, 1]}]},
+                f"docs.{score_field}": {
+                    "$divide": [1.0, {"$add": ["$rank", penalty, 1]}]
+                },
                 "docs.rank": "$rank",
-                "_id": "$docs._id"
+                "_id": "$docs._id",
             }
         },
-        {"$replaceRoot": {"newRoot": "$docs"}}
+        {"$replaceRoot": {"newRoot": "$docs"}},
     ]
 
     return rrf_pipeline
 
 
 def final_hybrid_stage(
-    scores_fields: List[str],
-    limit: int,
-    **kwargs: Any
+    scores_fields: List[str], limit: int, **kwargs: Any
 ) -> List[Dict[str, Any]]:
     """Sum weighted scores, sort, and apply limit.
 
@@ -131,7 +133,7 @@ def final_hybrid_stage(
 
     return [
         {"$group": {"_id": "$_id", "docs": {"$mergeObjects": "$$ROOT"}}},
-        {"$replaceRoot": {"newRoot": '$docs'}},
+        {"$replaceRoot": {"newRoot": "$docs"}},
         {"$set": {score: {"$ifNull": [f"${score}", 0]} for score in scores_fields}},
         {"$addFields": {"score": {"$add": [f"${score}" for score in scores_fields]}}},
         {"$sort": {"score": -1}},

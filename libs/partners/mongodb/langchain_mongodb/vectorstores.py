@@ -26,7 +26,13 @@ from pymongo.collection import Collection
 from pymongo.driver_info import DriverInfo
 
 from langchain_mongodb.utils import maximal_marginal_relevance, make_serializable
-from langchain_mongodb.pipelines import vector_search_stage, combine_pipelines, reciprocal_rank_stage, text_search_stage, final_hybrid_stage
+from langchain_mongodb.pipelines import (
+    vector_search_stage,
+    combine_pipelines,
+    reciprocal_rank_stage,
+    text_search_stage,
+    final_hybrid_stage,
+)
 
 MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 VST = TypeVar("VST", bound=VectorStore)
@@ -504,7 +510,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         vector_penalty: float = 0.0,
         fulltext_penalty: float = 0.0,
         fulltext_search_operator: str = "phrase",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Extended Query interface supporting Vector, Full-Text and Hybrid Search.
 
@@ -542,7 +548,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
         Returns:
             List of documents most similar to the query and their scores.
-         """
+        """
 
         pipeline = []
 
@@ -550,16 +556,30 @@ class MongoDBAtlasVectorSearch(VectorStore):
             # Atlas Vector Search, potentially with filter
             query_vector = self._embedding.embed_query(query)
             pipeline = [
-                vector_search_stage(query_vector, self._embedding_key, self._vector_index_name, k, pre_filter, oversampling_factor, **kwargs),
+                vector_search_stage(
+                    query_vector,
+                    self._embedding_key,
+                    self._vector_index_name,
+                    k,
+                    pre_filter,
+                    oversampling_factor,
+                    **kwargs,
+                ),
                 {"$set": {"score": {"$meta": "vectorSearchScore"}}},
             ]
 
         elif strategy == "fulltext":
             # Atlas Full-Text Search, potentially with filter
             pipeline = [
-                text_search_stage(query, self._text_key, self._text_index_name, fulltext_search_operator, **kwargs),
+                text_search_stage(
+                    query,
+                    self._text_key,
+                    self._text_index_name,
+                    fulltext_search_operator,
+                    **kwargs,
+                ),
                 {"$match": {"$and": pre_filter} if pre_filter else {}},
-                {"$set": {"score": {'$meta': 'searchScore'}}},
+                {"$set": {"score": {"$meta": "searchScore"}}},
                 {"$limit": k},
             ]
 
@@ -569,28 +589,52 @@ class MongoDBAtlasVectorSearch(VectorStore):
             # Vector Search pipeline
             query_vector = self._embedding.embed_query(query)
             vector_pipeline = [
-                vector_search_stage(query_vector, self._embedding_key, self._vector_index_name, k, pre_filter, oversampling_factor, **kwargs)]
+                vector_search_stage(
+                    query_vector,
+                    self._embedding_key,
+                    self._vector_index_name,
+                    k,
+                    pre_filter,
+                    oversampling_factor,
+                    **kwargs,
+                )
+            ]
             if not include_embeddings:
                 vector_pipeline.append({"$project": {self._embedding_key: 0}})
-            vector_pipeline.extend(reciprocal_rank_stage(self._text_key, "vector_score", vector_penalty))
+            vector_pipeline.extend(
+                reciprocal_rank_stage(self._text_key, "vector_score", vector_penalty)
+            )
             combine_pipelines(pipeline, vector_pipeline, self._collection.name)
 
             # Full-Text Search pipeline
             text_pipeline = [
-                text_search_stage(query, self._text_key, self._text_index_name, fulltext_search_operator),
+                text_search_stage(
+                    query,
+                    self._text_key,
+                    self._text_index_name,
+                    fulltext_search_operator,
+                ),
                 {"$match": {"$and": pre_filter} if pre_filter else {}},
                 {"$limit": k},
             ]
             if not include_embeddings:
                 text_pipeline.append({"$project": {self._embedding_key: 0}})
-            text_pipeline.extend(reciprocal_rank_stage(self._text_key, "fulltext_score", fulltext_penalty))
-            combine_pipelines(pipeline, text_pipeline,  self._collection.name)
+            text_pipeline.extend(
+                reciprocal_rank_stage(
+                    self._text_key, "fulltext_score", fulltext_penalty
+                )
+            )
+            combine_pipelines(pipeline, text_pipeline, self._collection.name)
 
             # Sum and sort pipeline
-            pipeline += final_hybrid_stage(scores_fields=scores_fields, limit=k,  **kwargs)
+            pipeline += final_hybrid_stage(
+                scores_fields=scores_fields, limit=k, **kwargs
+            )
 
         else:
-            raise ValueError(f"Unrecognized {strategy=}. Expecting one of [vector, fulltext, hybrid]")
+            raise ValueError(
+                f"Unrecognized {strategy=}. Expecting one of [vector, fulltext, hybrid]"
+            )
 
         # Post-processing
         if post_filter_pipeline is not None:
