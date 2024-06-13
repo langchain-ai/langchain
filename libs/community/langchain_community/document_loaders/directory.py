@@ -129,6 +129,7 @@ class DirectoryLoader(BaseLoader):
             path
             for path in paths
             if not (self.exclude and any(path.match(glob) for glob in self.exclude))
+            and path.is_file()
         ]
 
         if self.sample_size > 0:
@@ -174,7 +175,8 @@ class DirectoryLoader(BaseLoader):
                         )
                     )
                 for future in concurrent.futures.as_completed(futures):
-                    yield future.result()
+                    for item in future.result():
+                        yield item
         else:
             for i in items:
                 yield from self._lazy_load_file(i, p, pbar)

@@ -24,7 +24,7 @@ def test_self_hosted_huggingface_pipeline_text_generation() -> None:
         hardware=gpu,
         model_reqs=model_reqs,
     )
-    output = llm("Say foo:")  # type: ignore
+    output = llm.invoke("Say foo:")  # type: ignore
     assert isinstance(output, str)
 
 
@@ -37,7 +37,7 @@ def test_self_hosted_huggingface_pipeline_text2text_generation() -> None:
         hardware=gpu,
         model_reqs=model_reqs,
     )
-    output = llm("Say foo:")  # type: ignore
+    output = llm.invoke("Say foo:")  # type: ignore
     assert isinstance(output, str)
 
 
@@ -50,7 +50,7 @@ def test_self_hosted_huggingface_pipeline_summarization() -> None:
         hardware=gpu,
         model_reqs=model_reqs,
     )
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -82,7 +82,7 @@ def test_init_with_local_pipeline() -> None:
         model_reqs=model_reqs,
         inference_fn=inference_fn,
     )
-    output = llm("Say foo:")  # type: ignore
+    output = llm.invoke("Say foo:")  # type: ignore
     assert isinstance(output, str)
 
 
@@ -101,7 +101,7 @@ def test_init_with_pipeline_path() -> None:
         model_reqs=model_reqs,
         inference_fn=inference_fn,
     )
-    output = llm("Say foo:")  # type: ignore
+    output = llm.invoke("Say foo:")  # type: ignore
     assert isinstance(output, str)
 
 
@@ -114,5 +114,5 @@ def test_init_with_pipeline_fn() -> None:
         model_reqs=model_reqs,
         inference_fn=inference_fn,
     )
-    output = llm("Say foo:")  # type: ignore
+    output = llm.invoke("Say foo:")  # type: ignore
     assert isinstance(output, str)

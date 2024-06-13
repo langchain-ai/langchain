@@ -1,0 +1,1891 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sema4.ai Action Server",
+    "version": "0.11.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8806"
+    }
+  ],
+  "paths": {
+    "/api/actions/google-calendar/create-event/run": {
+      "post": {
+        "summary": "Create Event",
+        "description": "Creates a new event in the specified calendar.",
+        "operationId": "create_event",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "event": {
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "title": "Id",
+                        "description": "The id of the event."
+                      },
+                      "summary": {
+                        "type": "string",
+                        "title": "Summary",
+                        "description": "A short summary of the event's purpose."
+                      },
+                      "location": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Location",
+                        "description": "The physical location of the event."
+                      },
+                      "description": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Description",
+                        "description": "A more detailed description of the event."
+                      },
+                      "start": {
+                        "allOf": [
+                          {
+                            "properties": {
+                              "date": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Date",
+                                "description": "The date, in the format 'yyyy-mm-dd', if this is an all-day event."
+                              },
+                              "dateTime": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Datetime",
+                                "description": "The start or end time of the event."
+                              },
+                              "timeZone": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Timezone",
+                                "description": "The time zone in which the time is specified, formatted as IANA Time Zone Database. For single events this field is optional."
+                              }
+                            },
+                            "type": "object",
+                            "title": "EventDateTime"
+                          }
+                        ],
+                        "description": "The (inclusive) start time of the event."
+                      },
+                      "end": {
+                        "allOf": [
+                          {
+                            "properties": {
+                              "date": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Date",
+                                "description": "The date, in the format 'yyyy-mm-dd', if this is an all-day event."
+                              },
+                              "dateTime": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Datetime",
+                                "description": "The start or end time of the event."
+                              },
+                              "timeZone": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Timezone",
+                                "description": "The time zone in which the time is specified, formatted as IANA Time Zone Database. For single events this field is optional."
+                              }
+                            },
+                            "type": "object",
+                            "title": "EventDateTime"
+                          }
+                        ],
+                        "description": "The (exclusive) end time of the event."
+                      },
+                      "recurrence": {
+                        "anyOf": [
+                          {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Recurrence",
+                        "description": "A list of RRULE, EXRULE, RDATE, and EXDATE lines for a recurring event."
+                      },
+                      "attendees": {
+                        "anyOf": [
+                          {
+                            "items": {
+                              "properties": {
+                                "email": {
+                                  "type": "string",
+                                  "title": "Email",
+                                  "description": "The email address of the identity."
+                                },
+                                "displayName": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "title": "Displayname",
+                                  "description": "The display name of the identity."
+                                },
+                                "optional": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "title": "Optional",
+                                  "description": "Whether this is an optional attendee."
+                                },
+                                "responseStatus": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "title": "Responsestatus",
+                                  "description": "The response status of the attendee."
+                                },
+                                "organizer": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "title": "Organizer",
+                                  "description": "Whether the attendee is the organizer of the event."
+                                }
+                              },
+                              "type": "object",
+                              "required": [
+                                "email"
+                              ],
+                              "title": "Attendee"
+                            },
+                            "type": "array"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Attendees",
+                        "description": "A list of attendees."
+                      },
+                      "reminders": {
+                        "anyOf": [
+                          {
+                            "properties": {
+                              "useDefault": {
+                                "type": "boolean",
+                                "title": "Usedefault",
+                                "description": "Indicates whether to use the default reminders."
+                              },
+                              "overrides": {
+                                "anyOf": [
+                                  {
+                                    "items": {
+                                      "properties": {
+                                        "method": {
+                                          "type": "string",
+                                          "title": "Method",
+                                          "description": "The method of the reminder (email or popup)."
+                                        },
+                                        "minutes": {
+                                          "type": "integer",
+                                          "title": "Minutes",
+                                          "description": "The number of minutes before the event when the reminder should occur."
+                                        }
+                                      },
+                                      "type": "object",
+                                      "required": [
+                                        "method",
+                                        "minutes"
+                                      ],
+                                      "title": "ReminderOverride"
+                                    },
+                                    "type": "array"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Overrides",
+                                "description": "A list of overrides for the reminders."
+                              }
+                            },
+                            "type": "object",
+                            "required": [
+                              "useDefault"
+                            ],
+                            "title": "Reminder"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "Reminders settings for the event."
+                      },
+                      "organizer": {
+                        "allOf": [
+                          {
+                            "properties": {
+                              "email": {
+                                "type": "string",
+                                "title": "Email",
+                                "description": "The email address of the identity."
+                              },
+                              "displayName": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Displayname",
+                                "description": "The display name of the identity."
+                              }
+                            },
+                            "type": "object",
+                            "required": [
+                              "email"
+                            ],
+                            "title": "Identity"
+                          }
+                        ],
+                        "description": "The organizer of the event."
+                      }
+                    },
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "summary",
+                      "start",
+                      "end",
+                      "organizer"
+                    ],
+                    "title": "Event",
+                    "description": "JSON representation of the Google Calendar V3 event."
+                  },
+                  "calendar_id": {
+                    "type": "string",
+                    "title": "Calendar Id",
+                    "description": "Calendar identifier which can be found by listing all calendars action.\nDefault value is \"primary\" which indicates the calendar where the user is currently logged in.",
+                    "default": "primary"
+                  }
+                },
+                "type": "object",
+                "required": [
+                  "event"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "title": "Id",
+                      "description": "The id of the event."
+                    },
+                    "summary": {
+                      "type": "string",
+                      "title": "Summary",
+                      "description": "A short summary of the event's purpose."
+                    },
+                    "location": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Location",
+                      "description": "The physical location of the event."
+                    },
+                    "description": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Description",
+                      "description": "A more detailed description of the event."
+                    },
+                    "start": {
+                      "allOf": [
+                        {
+                          "properties": {
+                            "date": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "title": "Date",
+                              "description": "The date, in the format 'yyyy-mm-dd', if this is an all-day event."
+                            },
+                            "dateTime": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "title": "Datetime",
+                              "description": "The start or end time of the event."
+                            },
+                            "timeZone": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "title": "Timezone",
+                              "description": "The time zone in which the time is specified, formatted as IANA Time Zone Database. For single events this field is optional."
+                            }
+                          },
+                          "type": "object",
+                          "title": "EventDateTime"
+                        }
+                      ],
+                      "description": "The (inclusive) start time of the event."
+                    },
+                    "end": {
+                      "allOf": [
+                        {
+                          "properties": {
+                            "date": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "title": "Date",
+                              "description": "The date, in the format 'yyyy-mm-dd', if this is an all-day event."
+                            },
+                            "dateTime": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "title": "Datetime",
+                              "description": "The start or end time of the event."
+                            },
+                            "timeZone": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "title": "Timezone",
+                              "description": "The time zone in which the time is specified, formatted as IANA Time Zone Database. For single events this field is optional."
+                            }
+                          },
+                          "type": "object",
+                          "title": "EventDateTime"
+                        }
+                      ],
+                      "description": "The (exclusive) end time of the event."
+                    },
+                    "recurrence": {
+                      "anyOf": [
+                        {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Recurrence",
+                      "description": "A list of RRULE, EXRULE, RDATE, and EXDATE lines for a recurring event."
+                    },
+                    "attendees": {
+                      "anyOf": [
+                        {
+                          "items": {
+                            "properties": {
+                              "email": {
+                                "type": "string",
+                                "title": "Email",
+                                "description": "The email address of the identity."
+                              },
+                              "displayName": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Displayname",
+                                "description": "The display name of the identity."
+                              },
+                              "optional": {
+                                "anyOf": [
+                                  {
+                                    "type": "boolean"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Optional",
+                                "description": "Whether this is an optional attendee."
+                              },
+                              "responseStatus": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Responsestatus",
+                                "description": "The response status of the attendee."
+                              },
+                              "organizer": {
+                                "anyOf": [
+                                  {
+                                    "type": "boolean"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Organizer",
+                                "description": "Whether the attendee is the organizer of the event."
+                              }
+                            },
+                            "type": "object",
+                            "required": [
+                              "email"
+                            ],
+                            "title": "Attendee"
+                          },
+                          "type": "array"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Attendees",
+                      "description": "A list of attendees."
+                    },
+                    "reminders": {
+                      "anyOf": [
+                        {
+                          "properties": {
+                            "useDefault": {
+                              "type": "boolean",
+                              "title": "Usedefault",
+                              "description": "Indicates whether to use the default reminders."
+                            },
+                            "overrides": {
+                              "anyOf": [
+                                {
+                                  "items": {
+                                    "properties": {
+                                      "method": {
+                                        "type": "string",
+                                        "title": "Method",
+                                        "description": "The method of the reminder (email or popup)."
+                                      },
+                                      "minutes": {
+                                        "type": "integer",
+                                        "title": "Minutes",
+                                        "description": "The number of minutes before the event when the reminder should occur."
+                                      }
+                                    },
+                                    "type": "object",
+                                    "required": [
+                                      "method",
+                                      "minutes"
+                                    ],
+                                    "title": "ReminderOverride"
+                                  },
+                                  "type": "array"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "title": "Overrides",
+                              "description": "A list of overrides for the reminders."
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "useDefault"
+                          ],
+                          "title": "Reminder"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "Reminders settings for the event."
+                    },
+                    "organizer": {
+                      "allOf": [
+                        {
+                          "properties": {
+                            "email": {
+                              "type": "string",
+                              "title": "Email",
+                              "description": "The email address of the identity."
+                            },
+                            "displayName": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "title": "Displayname",
+                              "description": "The display name of the identity."
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "email"
+                          ],
+                          "title": "Identity"
+                        }
+                      ],
+                      "description": "The organizer of the event."
+                    }
+                  },
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "summary",
+                    "start",
+                    "end",
+                    "organizer"
+                  ],
+                  "title": "Response for Create Event",
+                  "description": "The newly created event."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-openai-isConsequential": true
+      }
+    },
+    "/api/actions/google-calendar/list-events/run": {
+      "post": {
+        "summary": "List Events",
+        "description": "List all events in the user's primary calendar between the given dates.\nTo aggregate all events across calendars, call this method for each calendar returned by list_calendars endpoint.",
+        "operationId": "list_events",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "calendar_id": {
+                    "type": "string",
+                    "title": "Calendar Id",
+                    "description": "Calendar identifier which can be found by listing all calendars action.\nDefault value is \"primary\" which indicates the calendar where the user is currently logged in.",
+                    "default": "primary"
+                  },
+                  "query": {
+                    "type": "string",
+                    "title": "Query",
+                    "description": "Free text search terms to find events that match these terms in summary, description, location,\nattendee's name / email or working location information.",
+                    "default": ""
+                  },
+                  "start_date": {
+                    "type": "string",
+                    "title": "Start Date",
+                    "description": "Upper bound (exclusive) for an event's start time to filter by.\nMust be an RFC3339 timestamp with mandatory time zone offset.",
+                    "default": ""
+                  },
+                  "end_date": {
+                    "type": "string",
+                    "title": "End Date",
+                    "description": "Lower bound (exclusive) for an event's end time to filter by.\nMust be an RFC3339 timestamp with mandatory time zone offset.",
+                    "default": ""
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "anyOf": [
+                        {
+                          "properties": {
+                            "events": {
+                              "items": {
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "title": "Id",
+                                    "description": "The id of the event."
+                                  },
+                                  "summary": {
+                                    "type": "string",
+                                    "title": "Summary",
+                                    "description": "A short summary of the event's purpose."
+                                  },
+                                  "location": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ],
+                                    "title": "Location",
+                                    "description": "The physical location of the event."
+                                  },
+                                  "description": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ],
+                                    "title": "Description",
+                                    "description": "A more detailed description of the event."
+                                  },
+                                  "start": {
+                                    "allOf": [
+                                      {
+                                        "properties": {
+                                          "date": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ],
+                                            "title": "Date",
+                                            "description": "The date, in the format 'yyyy-mm-dd', if this is an all-day event."
+                                          },
+                                          "dateTime": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ],
+                                            "title": "Datetime",
+                                            "description": "The start or end time of the event."
+                                          },
+                                          "timeZone": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ],
+                                            "title": "Timezone",
+                                            "description": "The time zone in which the time is specified, formatted as IANA Time Zone Database. For single events this field is optional."
+                                          }
+                                        },
+                                        "type": "object",
+                                        "title": "EventDateTime"
+                                      }
+                                    ],
+                                    "description": "The (inclusive) start time of the event."
+                                  },
+                                  "end": {
+                                    "allOf": [
+                                      {
+                                        "properties": {
+                                          "date": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ],
+                                            "title": "Date",
+                                            "description": "The date, in the format 'yyyy-mm-dd', if this is an all-day event."
+                                          },
+                                          "dateTime": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ],
+                                            "title": "Datetime",
+                                            "description": "The start or end time of the event."
+                                          },
+                                          "timeZone": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ],
+                                            "title": "Timezone",
+                                            "description": "The time zone in which the time is specified, formatted as IANA Time Zone Database. For single events this field is optional."
+                                          }
+                                        },
+                                        "type": "object",
+                                        "title": "EventDateTime"
+                                      }
+                                    ],
+                                    "description": "The (exclusive) end time of the event."
+                                  },
+                                  "recurrence": {
+                                    "anyOf": [
+                                      {
+                                        "items": {
+                                          "type": "string"
+                                        },
+                                        "type": "array"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ],
+                                    "title": "Recurrence",
+                                    "description": "A list of RRULE, EXRULE, RDATE, and EXDATE lines for a recurring event."
+                                  },
+                                  "attendees": {
+                                    "anyOf": [
+                                      {
+                                        "items": {
+                                          "properties": {
+                                            "email": {
+                                              "type": "string",
+                                              "title": "Email",
+                                              "description": "The email address of the identity."
+                                            },
+                                            "displayName": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "string"
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ],
+                                              "title": "Displayname",
+                                              "description": "The display name of the identity."
+                                            },
+                                            "optional": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "boolean"
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ],
+                                              "title": "Optional",
+                                              "description": "Whether this is an optional attendee."
+                                            },
+                                            "responseStatus": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "string"
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ],
+                                              "title": "Responsestatus",
+                                              "description": "The response status of the attendee."
+                                            },
+                                            "organizer": {
+                                              "anyOf": [
+                                                {
+                                                  "type": "boolean"
+                                                },
+                                                {
+                                                  "type": "null"
+                                                }
+                                              ],
+                                              "title": "Organizer",
+                                              "description": "Whether the attendee is the organizer of the event."
+                                            }
+                                          },
+                                          "type": "object",
+                                          "required": [
+                                            "email"
+                                          ],
+                                          "title": "Attendee"
+                                        },
+                                        "type": "array"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ],
+                                    "title": "Attendees",
+                                    "description": "A list of attendees."
+                                  },
+                                  "reminders": {
+                                    "anyOf": [
+                                      {
+                                        "properties": {
+                                          "useDefault": {
+                                            "type": "boolean",
+                                            "title": "Usedefault",
+                                            "description": "Indicates whether to use the default reminders."
+                                          },
+                                          "overrides": {
+                                            "anyOf": [
+                                              {
+                                                "items": {
+                                                  "properties": {
+                                                    "method": {
+                                                      "type": "string",
+                                                      "title": "Method",
+                                                      "description": "The method of the reminder (email or popup)."
+                                                    },
+                                                    "minutes": {
+                                                      "type": "integer",
+                                                      "title": "Minutes",
+                                                      "description": "The number of minutes before the event when the reminder should occur."
+                                                    }
+                                                  },
+                                                  "type": "object",
+                                                  "required": [
+                                                    "method",
+                                                    "minutes"
+                                                  ],
+                                                  "title": "ReminderOverride"
+                                                },
+                                                "type": "array"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ],
+                                            "title": "Overrides",
+                                            "description": "A list of overrides for the reminders."
+                                          }
+                                        },
+                                        "type": "object",
+                                        "required": [
+                                          "useDefault"
+                                        ],
+                                        "title": "Reminder"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ],
+                                    "description": "Reminders settings for the event."
+                                  },
+                                  "organizer": {
+                                    "allOf": [
+                                      {
+                                        "properties": {
+                                          "email": {
+                                            "type": "string",
+                                            "title": "Email",
+                                            "description": "The email address of the identity."
+                                          },
+                                          "displayName": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ],
+                                            "title": "Displayname",
+                                            "description": "The display name of the identity."
+                                          }
+                                        },
+                                        "type": "object",
+                                        "required": [
+                                          "email"
+                                        ],
+                                        "title": "Identity"
+                                      }
+                                    ],
+                                    "description": "The organizer of the event."
+                                  }
+                                },
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "summary",
+                                  "start",
+                                  "end",
+                                  "organizer"
+                                ],
+                                "title": "Event"
+                              },
+                              "type": "array",
+                              "title": "Events"
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "events"
+                          ],
+                          "title": "EventList"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The result for the action if it ran successfully"
+                    },
+                    "error": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Error",
+                      "description": "The error message if the action failed for some reason"
+                    }
+                  },
+                  "type": "object",
+                  "title": "Response for List Events",
+                  "description": "A list of calendar events that match the query, if defined."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-openai-isConsequential": false
+      }
+    },
+    "/api/actions/google-calendar/list-calendars/run": {
+      "post": {
+        "summary": "List Calendars",
+        "description": "List all calendars that the user is subscribed to.",
+        "operationId": "list_calendars",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {},
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "anyOf": [
+                        {
+                          "properties": {
+                            "calendars": {
+                              "items": {
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "title": "Id",
+                                    "description": "The id of the calendar."
+                                  },
+                                  "summary": {
+                                    "type": "string",
+                                    "title": "Summary",
+                                    "description": "The name or summary of the calendar."
+                                  },
+                                  "timeZone": {
+                                    "type": "string",
+                                    "title": "Timezone",
+                                    "description": "The timezone the calendar is set to, such as 'Europe/Bucharest'."
+                                  },
+                                  "selected": {
+                                    "type": "boolean",
+                                    "title": "Selected",
+                                    "description": "A boolean indicating if the calendar is selected by the user in their UI."
+                                  },
+                                  "accessRole": {
+                                    "type": "string",
+                                    "title": "Accessrole",
+                                    "description": "The access role of the user with respect to the calendar, e.g., 'owner'."
+                                  }
+                                },
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "summary",
+                                  "timeZone",
+                                  "selected",
+                                  "accessRole"
+                                ],
+                                "title": "Calendar"
+                              },
+                              "type": "array",
+                              "title": "Calendars"
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "calendars"
+                          ],
+                          "title": "CalendarList"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The result for the action if it ran successfully"
+                    },
+                    "error": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Error",
+                      "description": "The error message if the action failed for some reason"
+                    }
+                  },
+                  "type": "object",
+                  "title": "Response for List Calendars",
+                  "description": "A list of calendars."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-openai-isConsequential": false
+      }
+    },
+    "/api/actions/google-calendar/update-event/run": {
+      "post": {
+        "summary": "Update Event",
+        "description": "Update an existing Google Calendar event with dynamic arguments.",
+        "operationId": "update_event",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "event_id": {
+                    "type": "string",
+                    "title": "Event Id",
+                    "description": "Identifier of the event to update. Can be found by listing events in all calendars."
+                  },
+                  "updates": {
+                    "properties": {
+                      "summary": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Summary",
+                        "description": "A short summary of the event's purpose."
+                      },
+                      "location": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Location",
+                        "description": "The physical location of the event."
+                      },
+                      "description": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Description",
+                        "description": "A more detailed description of the event."
+                      },
+                      "start": {
+                        "anyOf": [
+                          {
+                            "properties": {
+                              "date": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Date",
+                                "description": "The date, in the format 'yyyy-mm-dd', if this is an all-day event."
+                              },
+                              "dateTime": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Datetime",
+                                "description": "The start or end time of the event."
+                              },
+                              "timeZone": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Timezone",
+                                "description": "The time zone in which the time is specified, formatted as IANA Time Zone Database. For single events this field is optional."
+                              }
+                            },
+                            "type": "object",
+                            "title": "EventDateTime"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "The (inclusive) start time of the event."
+                      },
+                      "end": {
+                        "anyOf": [
+                          {
+                            "properties": {
+                              "date": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Date",
+                                "description": "The date, in the format 'yyyy-mm-dd', if this is an all-day event."
+                              },
+                              "dateTime": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Datetime",
+                                "description": "The start or end time of the event."
+                              },
+                              "timeZone": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ],
+                                "title": "Timezone",
+                                "description": "The time zone in which the time is specified, formatted as IANA Time Zone Database. For single events this field is optional."
+                              }
+                            },
+                            "type": "object",
+                            "title": "EventDateTime"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "The (exclusive) end time of the event."
+                      },
+                      "attendees": {
+                        "anyOf": [
+                          {
+                            "items": {
+                              "properties": {
+                                "email": {
+                                  "type": "string",
+                                  "title": "Email",
+                                  "description": "The email address of the identity."
+                                },
+                                "displayName": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "title": "Displayname",
+                                  "description": "The display name of the identity."
+                                },
+                                "optional": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "title": "Optional",
+                                  "description": "Whether this is an optional attendee."
+                                },
+                                "responseStatus": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "title": "Responsestatus",
+                                  "description": "The response status of the attendee."
+                                },
+                                "organizer": {
+                                  "anyOf": [
+                                    {
+                                      "type": "boolean"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ],
+                                  "title": "Organizer",
+                                  "description": "Whether the attendee is the organizer of the event."
+                                }
+                              },
+                              "type": "object",
+                              "required": [
+                                "email"
+                              ],
+                              "title": "Attendee"
+                            },
+                            "type": "array"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Attendees",
+                        "description": "A list of attendees consisting in email and whether they are mandatory to participate or not."
+                      }
+                    },
+                    "type": "object",
+                    "title": "Updates",
+                    "description": "A dictionary containing the event attributes to update.\nPossible keys include 'summary', 'description', 'start', 'end', and 'attendees'."
+                  },
+                  "calendar_id": {
+                    "type": "string",
+                    "title": "Calendar Id",
+                    "description": "Identifier of the calendar where the event is.\nDefault value is \"primary\" which indicates the calendar where the user is currently logged in.",
+                    "default": "primary"
+                  }
+                },
+                "type": "object",
+                "required": [
+                  "event_id",
+                  "updates"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "anyOf": [
+                        {
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "title": "Id",
+                              "description": "The id of the event."
+                            },
+                            "summary": {
+                              "type": "string",
+                              "title": "Summary",
+                              "description": "A short summary of the event's purpose."
+                            },
+                            "location": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "title": "Location",
+                              "description": "The physical location of the event."
+                            },
+                            "description": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "title": "Description",
+                              "description": "A more detailed description of the event."
+                            },
+                            "start": {
+                              "allOf": [
+                                {
+                                  "properties": {
+                                    "date": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ],
+                                      "title": "Date",
+                                      "description": "The date, in the format 'yyyy-mm-dd', if this is an all-day event."
+                                    },
+                                    "dateTime": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ],
+                                      "title": "Datetime",
+                                      "description": "The start or end time of the event."
+                                    },
+                                    "timeZone": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ],
+                                      "title": "Timezone",
+                                      "description": "The time zone in which the time is specified, formatted as IANA Time Zone Database. For single events this field is optional."
+                                    }
+                                  },
+                                  "type": "object",
+                                  "title": "EventDateTime"
+                                }
+                              ],
+                              "description": "The (inclusive) start time of the event."
+                            },
+                            "end": {
+                              "allOf": [
+                                {
+                                  "properties": {
+                                    "date": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ],
+                                      "title": "Date",
+                                      "description": "The date, in the format 'yyyy-mm-dd', if this is an all-day event."
+                                    },
+                                    "dateTime": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ],
+                                      "title": "Datetime",
+                                      "description": "The start or end time of the event."
+                                    },
+                                    "timeZone": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ],
+                                      "title": "Timezone",
+                                      "description": "The time zone in which the time is specified, formatted as IANA Time Zone Database. For single events this field is optional."
+                                    }
+                                  },
+                                  "type": "object",
+                                  "title": "EventDateTime"
+                                }
+                              ],
+                              "description": "The (exclusive) end time of the event."
+                            },
+                            "recurrence": {
+                              "anyOf": [
+                                {
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "title": "Recurrence",
+                              "description": "A list of RRULE, EXRULE, RDATE, and EXDATE lines for a recurring event."
+                            },
+                            "attendees": {
+                              "anyOf": [
+                                {
+                                  "items": {
+                                    "properties": {
+                                      "email": {
+                                        "type": "string",
+                                        "title": "Email",
+                                        "description": "The email address of the identity."
+                                      },
+                                      "displayName": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ],
+                                        "title": "Displayname",
+                                        "description": "The display name of the identity."
+                                      },
+                                      "optional": {
+                                        "anyOf": [
+                                          {
+                                            "type": "boolean"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ],
+                                        "title": "Optional",
+                                        "description": "Whether this is an optional attendee."
+                                      },
+                                      "responseStatus": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ],
+                                        "title": "Responsestatus",
+                                        "description": "The response status of the attendee."
+                                      },
+                                      "organizer": {
+                                        "anyOf": [
+                                          {
+                                            "type": "boolean"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ],
+                                        "title": "Organizer",
+                                        "description": "Whether the attendee is the organizer of the event."
+                                      }
+                                    },
+                                    "type": "object",
+                                    "required": [
+                                      "email"
+                                    ],
+                                    "title": "Attendee"
+                                  },
+                                  "type": "array"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "title": "Attendees",
+                              "description": "A list of attendees."
+                            },
+                            "reminders": {
+                              "anyOf": [
+                                {
+                                  "properties": {
+                                    "useDefault": {
+                                      "type": "boolean",
+                                      "title": "Usedefault",
+                                      "description": "Indicates whether to use the default reminders."
+                                    },
+                                    "overrides": {
+                                      "anyOf": [
+                                        {
+                                          "items": {
+                                            "properties": {
+                                              "method": {
+                                                "type": "string",
+                                                "title": "Method",
+                                                "description": "The method of the reminder (email or popup)."
+                                              },
+                                              "minutes": {
+                                                "type": "integer",
+                                                "title": "Minutes",
+                                                "description": "The number of minutes before the event when the reminder should occur."
+                                              }
+                                            },
+                                            "type": "object",
+                                            "required": [
+                                              "method",
+                                              "minutes"
+                                            ],
+                                            "title": "ReminderOverride"
+                                          },
+                                          "type": "array"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ],
+                                      "title": "Overrides",
+                                      "description": "A list of overrides for the reminders."
+                                    }
+                                  },
+                                  "type": "object",
+                                  "required": [
+                                    "useDefault"
+                                  ],
+                                  "title": "Reminder"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ],
+                              "description": "Reminders settings for the event."
+                            },
+                            "organizer": {
+                              "allOf": [
+                                {
+                                  "properties": {
+                                    "email": {
+                                      "type": "string",
+                                      "title": "Email",
+                                      "description": "The email address of the identity."
+                                    },
+                                    "displayName": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ],
+                                      "title": "Displayname",
+                                      "description": "The display name of the identity."
+                                    }
+                                  },
+                                  "type": "object",
+                                  "required": [
+                                    "email"
+                                  ],
+                                  "title": "Identity"
+                                }
+                              ],
+                              "description": "The organizer of the event."
+                            }
+                          },
+                          "type": "object",
+                          "required": [
+                            "id",
+                            "summary",
+                            "start",
+                            "end",
+                            "organizer"
+                          ],
+                          "title": "Event"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "The result for the action if it ran successfully"
+                    },
+                    "error": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Error",
+                      "description": "The error message if the action failed for some reason"
+                    }
+                  },
+                  "type": "object",
+                  "title": "Response for Update Event",
+                  "description": "Updated event details."
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-openai-isConsequential": true
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 """Chain that takes in an input and produces an action and action input."""
+
 from __future__ import annotations
 
 import asyncio
@@ -346,11 +347,11 @@ class RunnableAgent(BaseSingleActionAgent):
     input_keys_arg: List[str] = []
     return_keys_arg: List[str] = []
     stream_runnable: bool = True
-    """Whether to stream from the runnable or not. 
+    """Whether to stream from the runnable or not.
 
-    If True then underlying LLM is invoked in a streaming fashion to make it possible 
-        to get access to the individual LLM tokens when using stream_log with the Agent 
-        Executor. If False then LLM is invoked in a non-streaming fashion and 
+    If True then underlying LLM is invoked in a streaming fashion to make it possible
+        to get access to the individual LLM tokens when using stream_log with the Agent
+        Executor. If False then LLM is invoked in a non-streaming fashion and
         individual LLM tokens will not be available in stream_log.
     """
 
@@ -455,11 +456,11 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
     input_keys_arg: List[str] = []
     return_keys_arg: List[str] = []
     stream_runnable: bool = True
-    """Whether to stream from the runnable or not. 
-    
-    If True then underlying LLM is invoked in a streaming fashion to make it possible 
-        to get access to the individual LLM tokens when using stream_log with the Agent 
-        Executor. If False then LLM is invoked in a non-streaming fashion and 
+    """Whether to stream from the runnable or not.
+
+    If True then underlying LLM is invoked in a streaming fashion to make it possible
+        to get access to the individual LLM tokens when using stream_log with the Agent
+        Executor. If False then LLM is invoked in a non-streaming fashion and
         individual LLM tokens will not be available in stream_log.
     """
 
@@ -571,7 +572,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
-    removal="0.2.0",
+    removal="0.3.0",
 )
 class LLMSingleActionAgent(BaseSingleActionAgent):
     """Base class for single action agents."""
@@ -661,7 +662,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
-    removal="0.2.0",
+    removal="0.3.0",
 )
 class Agent(BaseSingleActionAgent):
     """Agent that calls the language model and deciding the action.
@@ -926,7 +927,7 @@ class AgentExecutor(Chain):
     max_iterations: Optional[int] = 15
     """The maximum number of steps to take before ending the execution
     loop.
-    
+
     Setting to 'None' could lead to an infinite loop."""
     max_execution_time: Optional[float] = None
     """The maximum amount of wall clock time to spend in the execution
@@ -938,7 +939,7 @@ class AgentExecutor(Chain):
 
     `"force"` returns a string saying that it stopped because it met a
         time or iteration limit.
-    
+
     `"generate"` calls the agent's LLM Chain one final time to generate
         a final answer based on the previous steps.
     """
@@ -1565,6 +1566,7 @@ class AgentExecutor(Chain):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.get("run_id"),
             yield_actions=True,
             **kwargs,
         )
@@ -1586,6 +1588,7 @@ class AgentExecutor(Chain):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.get("run_id"),
             yield_actions=True,
             **kwargs,
         )

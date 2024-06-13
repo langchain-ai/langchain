@@ -23,7 +23,7 @@ def test_prompt(model: Orca) -> None:
         HumanMessage(content="usr-msg-2"),
     ]
 
-    actual = model.predict_messages(messages).content  # type: ignore
+    actual = model.invoke(messages).content  # type: ignore
     expected = "### System:\nsys-msg\n\n### User:\nusr-msg-1\n\n### Assistant:\nai-msg-1\n\n### User:\nusr-msg-2\n\n"  # noqa: E501
 
     assert actual == expected

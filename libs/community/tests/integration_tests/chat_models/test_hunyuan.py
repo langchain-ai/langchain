@@ -6,7 +6,7 @@ from langchain_community.chat_models.hunyuan import ChatHunyuan
 def test_chat_hunyuan() -> None:
     chat = ChatHunyuan()
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -14,7 +14,7 @@ def test_chat_hunyuan() -> None:
 def test_chat_hunyuan_with_temperature() -> None:
     chat = ChatHunyuan(temperature=0.6)
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 

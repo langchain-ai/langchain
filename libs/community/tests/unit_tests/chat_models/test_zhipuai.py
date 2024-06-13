@@ -9,5 +9,5 @@ from langchain_community.chat_models.zhipuai import ChatZhipuAI
 def test_zhipuai_model_param() -> None:
     llm = ChatZhipuAI(api_key="test", model="foo")
     assert llm.model_name == "foo"
-    llm = ChatZhipuAI(api_key="test", model_name="foo")
+    llm = ChatZhipuAI(api_key="test", model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
