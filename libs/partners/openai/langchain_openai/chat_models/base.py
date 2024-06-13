@@ -1374,11 +1374,11 @@ class ChatOpenAI(BaseChatOpenAI):
 
             {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
 
-        When streaming, set the ``stream_options`` model kwarg:
+        When streaming, set the ``stream_usage`` kwarg:
 
         .. code-block:: python
 
-            stream = llm.stream(messages, stream_options={"include_usage": True})
+            stream = llm.stream(messages, stream_usage=True)
             full = next(stream)
             for chunk in stream:
                 full += chunk
@@ -1388,7 +1388,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
             {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
 
-        Alternatively, setting ``stream_options`` when instantiating the model can be
+        Alternatively, setting ``stream_usage`` when instantiating the model can be
         useful when incorporating ``ChatOpenAI`` into LCEL chains-- or when using
         methods like ``.with_structured_output``, which generate chains under the
         hood.
@@ -1397,7 +1397,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
             llm = ChatOpenAI(
                 model="gpt-4o",
-                model_kwargs={"stream_options": {"include_usage": True}},
+                stream_usage=True,
             )
             structured_llm = llm.with_structured_output(...)
 
