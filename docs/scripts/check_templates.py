@@ -29,6 +29,7 @@ DOCUMENT_LOADER_HEADERS = (
 )
 DOCUMENT_LOADER_REGEX = r".*".join(DOCUMENT_LOADER_HEADERS)
 
+
 def check_chat_model(path: Path) -> None:
     with open(path, "r") as f:
         doc = f.read()
@@ -38,6 +39,7 @@ def check_chat_model(path: Path) -> None:
             f"Please see https://github.com/langchain-ai/langchain/issues/22296 for "
             f"instructions on how to correctly format a ChatModel Integration page."
         )
+
 
 def check_document_loader(path: Path) -> None:
     with open(path, "r") as f:
@@ -56,7 +58,10 @@ def main(*new_doc_paths: Union[str, Path]) -> None:
         if CURR_DIR.parent / "docs" / "integrations" / "chat" in path.parents:
             print(f"Checking chat model page {path}")
             check_chat_model(path)
-        elif CURR_DIR.parent / "docs" / "integrations" / "document_loaders" in path.parents:
+        elif (
+            CURR_DIR.parent / "docs" / "integrations" / "document_loaders"
+            in path.parents
+        ):
             print(f"Checking document loader page {path}")
             check_document_loader(path)
         else:
