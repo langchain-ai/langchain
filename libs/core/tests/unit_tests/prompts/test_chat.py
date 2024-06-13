@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Any, List, Union
 
 import pytest
-from langchain.pydantic_v1 import ValidationError
 
 from langchain_core._api.deprecation import (
     LangChainPendingDeprecationWarning,
@@ -27,6 +26,7 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message,
 )
+from langchain_core.pydantic_v1 import ValidationError
 
 
 @pytest.fixture
