@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-core"
-version = "0.2.5"
+version = "0.2.6"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -60,8 +60,8 @@ responses = "^0.25.0"
 
 # Support Python 3.8 and 3.12+.
 numpy = [
-    {version = "^1.24.0", python = "<3.12"},
-    {version = "^1.26.0", python = ">=3.12"}
+  { version = "^1.24.0", python = "<3.12" },
+  { version = "^1.26.0", python = ">=3.12" },
 ]
 
 
