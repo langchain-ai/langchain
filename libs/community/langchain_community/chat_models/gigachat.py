@@ -143,7 +143,8 @@ def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
     if attachments:
         kwargs["attachments"] = attachments
     context = message.additional_kwargs.get("data_for_context", [])
-    kwargs["data_for_context"] = [_convert_message_to_dict(m) for m in context]
+    if context:
+        kwargs["data_for_context"] = [_convert_message_to_dict(m) for m in context]
 
     if isinstance(message, SystemMessage):
         kwargs["role"] = MessagesRole.SYSTEM
