@@ -15,7 +15,7 @@ langsmith = "^0.1.75"
 tenacity = "^8.1.0"
 jsonpatch = "^1.33"
 PyYAML = ">=5.3"
-packaging = "^23.2"
+packaging = ">=23.2,<25"
 
 [tool.poetry.group.lint]
 optional = true
@@ -57,7 +57,12 @@ pytest-asyncio = "^0.21.1"
 grandalf = "^0.8"
 pytest-profiling = "^1.7.0"
 responses = "^0.25.0"
-numpy = "^1.24.0"
+
+# Support Python 3.8 and 3.12+.
+numpy = [
+    {version = "^1.24.0", python = "<3.12"},
+    {version = "^1.26.0", python = ">=3.12"}
+]
 
 
 [tool.poetry.group.test_integration]

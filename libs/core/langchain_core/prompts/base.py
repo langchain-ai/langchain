@@ -59,6 +59,29 @@ class BasePromptTemplate(
     tags: Optional[List[str]] = None
     """Tags to be used for tracing."""
 
+    @root_validator(pre=False, skip_on_failure=True)
+    def validate_variable_names(cls, values: Dict) -> Dict:
+        """Validate variable names do not include restricted names."""
+        if "stop" in values["input_variables"]:
+            raise ValueError(
+                "Cannot have an input variable named 'stop', as it is used internally,"
+                " please rename."
+            )
+        if "stop" in values["partial_variables"]:
+            raise ValueError(
+                "Cannot have an partial variable named 'stop', as it is used "
+                "internally, please rename."
+            )
+
+        overall = set(values["input_variables"]).intersection(
+            values["partial_variables"]
+        )
+        if overall:
+            raise ValueError(
+                f"Found overlapping input and partial variables: {overall}"
+            )
+        return values
+
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
@@ -154,29 +177,6 @@ class BasePromptTemplate(
     async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Prompt Value."""
         return self.format_prompt(**kwargs)
-
-    @root_validator()
-    def validate_variable_names(cls, values: Dict) -> Dict:
-        """Validate variable names do not include restricted names."""
-        if "stop" in values["input_variables"]:
-            raise ValueError(
-                "Cannot have an input variable named 'stop', as it is used internally,"
-                " please rename."
-            )
-        if "stop" in values["partial_variables"]:
-            raise ValueError(
-                "Cannot have an partial variable named 'stop', as it is used "
-                "internally, please rename."
-            )
-
-        overall = set(values["input_variables"]).intersection(
-            values["partial_variables"]
-        )
-        if overall:
-            raise ValueError(
-                f"Found overlapping input and partial variables: {overall}"
-            )
-        return values
 
     def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:
         """Return a partial of the prompt template."""
