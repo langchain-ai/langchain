@@ -69,5 +69,5 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
                             Each embedding is represented as a list of float values.
         """
         resp = self._client.embeddings.create(model=self.model, input=texts)
-        lst = [r.embedding for r in resp.data]
+        embeddings = [r.embedding for r in resp.data]
         return lst
