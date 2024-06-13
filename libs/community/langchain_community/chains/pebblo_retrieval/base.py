@@ -118,7 +118,7 @@ class PebbloRetrievalQA(Chain):
             "name": self.app_name,
             "context": [
                 {
-                    "retrieved_from": doc.metadata.get("source"),
+                    "retrieved_from": doc.metadata.get("full_path", doc.metadata.get("source")),
                     "doc": doc.page_content,
                     "vector_db": self.retriever.vectorstore.__class__.__name__,
                 }
@@ -335,8 +335,8 @@ class PebbloRetrievalQA(Chain):
             "Accept": "application/json",
             "Content-Type": "application/json",
         }
+        payload = app.dict(exclude_unset=True)
         if classifier_location == "local":
-            payload = app.dict(exclude_unset=True)
             app_discover_url = f"{classifier_url}{APP_DISCOVER_URL}"
             try:
                 pebblo_resp = requests.post(
