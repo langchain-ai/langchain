@@ -225,7 +225,7 @@ from langchain_community.document_loaders.onenote import OneNoteLoader
 
 ## Vector stores
 
-### Azure Cosmos DB
+### Azure Cosmos DB MongoDB vCore
 
 >[Azure Cosmos DB for MongoDB vCore](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/) makes it easy to create a database with full native MongoDB support.
 > You can apply your MongoDB experience and continue to use your favorite MongoDB drivers, SDKs, and tools by pointing your application to the API for MongoDB vCore account's connection string.
@@ -253,6 +253,38 @@ See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db).
 
 ```python
 from langchain_community.vectorstores import AzureCosmosDBVectorSearch
+```
+
+### Azure Cosmos DB NoSQL
+
+>[Azure Cosmos DB for NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search) now offers vector indexing and search in preview.
+This feature is designed to handle high-dimensional vectors, enabling efficient and accurate vector search at any scale. You can now store vectors
+directly in the documents alongside your data. This means that each document in your database can contain not only traditional schema-free data,
+but also high-dimensional vectors as other properties of the documents. This colocation of data and vectors allows for efficient indexing and searching,
+as the vectors are stored in the same logical unit as the data they represent. This simplifies data management, AI application architectures, and the
+efficiency of vector-based operations.
+
+#### Installation and Setup
+
+See [detail configuration instructions](/docs/integrations/vectorstores/azure_cosmos_db_no_sql).
+
+We need to install `azure-cosmos` python package.
+
+```bash
+pip install azure-cosmos
+```
+
+#### Deploy Azure Cosmos DB on Microsoft Azure
+
+Azure Cosmos DB offers a solution for modern apps and intelligent workloads by being very responsive with dynamic and elastic autoscale. It is available
+in every Azure region and can automatically replicate data closer to users. It has SLA guaranteed low-latency and high availability.
+
+[Sign Up](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-python?pivots=devcontainer-codespace) for free to get started today.
+
+See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db_no_sql).
+
+```python
+from langchain_community.vectorstores import AzureCosmosDBNoSQLVectorSearch
 ```
 
 ## Retrievers
