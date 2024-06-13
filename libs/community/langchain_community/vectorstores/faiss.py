@@ -1093,7 +1093,13 @@ class FAISS(VectorStore):
 
         # load docstore and index_to_docstore_id
         with open(path / f"{index_name}.pkl", "rb") as f:
-            docstore, index_to_docstore_id = pickle.load(f)
+            (
+                docstore,
+                index_to_docstore_id,
+            ) = pickle.load(  # ignore[pickle]: explicit-opt-in
+                f
+            )
+
         return cls(embeddings, index, docstore, index_to_docstore_id, **kwargs)
 
     def serialize_to_bytes(self) -> bytes:
@@ -1123,7 +1129,13 @@ class FAISS(VectorStore):
                 "loading a file from an untrusted source (e.g., some random site on "
                 "the internet.)."
             )
-        index, docstore, index_to_docstore_id = pickle.loads(serialized)
+        (
+            index,
+            docstore,
+            index_to_docstore_id,
+        ) = pickle.loads(  # ignore[pickle]: explicit-opt-in
+            serialized
+        )
         return cls(embeddings, index, docstore, index_to_docstore_id, **kwargs)
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
