@@ -198,7 +198,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
 def get_elements_from_api(
     file_path: Union[str, Path, None] = None,
-    file: Union[IO, None] = None,
+    file: Union[IO[bytes], None] = None,
     api_url: str = "https://api.unstructured.io/general/v0/general",
     api_key: str = "",
     **unstructured_kwargs: Any,
@@ -216,14 +216,7 @@ def get_elements_from_api(
     from unstructured.staging.base import elements_from_json
     from unstructured_client.models import operations, shared
 
-    content = None
-    if file is not None:
-        content = file.read()
-    if content is None and file_path is not None:
-        with open(file_path, "rb") as f:
-            content = f.read()
-    if content is None:
-        raise ValueError("Either file or file_path must be provided")
+    content = _get_content(file=file, file_path=file_path)
 
     client = unstructured_client.UnstructuredClient(
         api_key_auth=api_key, server_url=api_url
@@ -242,6 +235,18 @@ def get_elements_from_api(
         raise ValueError(
             f"Receive unexpected status code {response.status_code} from the API.",
         )
+    
+
+def _get_content(file_path: Union[str, Path, None] = None, file: Union[IO[bytes], None] = None):
+    content = None
+    if file is not None:
+        content = file.read()
+    if content is None and file_path is not None:
+        with open(file_path, "rb") as f:
+            content = f.read()
+    if content is None:
+        raise ValueError("Either file or file_path must be provided")
+    return content
 
 
 class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
