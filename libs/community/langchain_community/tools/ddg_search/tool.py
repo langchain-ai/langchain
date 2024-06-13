@@ -66,7 +66,7 @@ class DuckDuckGoSearchResults(BaseTool):
         res = self.api_wrapper.results(query, self.max_results, source=self.backend)
         res_strs = [", ".join([f"{k}: {v}" for k, v in d.items() 
                     if not self.keys_to_include or k in self.keys_to_include]) for d in res]
-        return self.results_separator.join([f"[{rs}]" for rs in res_strs])
+        return self.results_separator.join(res_strs)
 
 
 def DuckDuckGoSearchTool(*args: Any, **kwargs: Any) -> DuckDuckGoSearchRun:
