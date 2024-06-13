@@ -27,8 +27,8 @@ class __ModuleName__Loader(BaseLoader):
             from langchain_community.document_loaders import __ModuleName__Loader
 
             loader = __ModuleName__Loader(
-                url = "https://docs.python.org/3.9/",
-                # otherparams = ...
+                # required params = ...
+                # other params = ...
             )
 
     Lazy load:
