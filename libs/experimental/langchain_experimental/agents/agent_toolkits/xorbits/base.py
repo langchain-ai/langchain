@@ -65,7 +65,7 @@ def create_xorbits_agent(
             "doc-string of this function. You must opt-in to use this functionality "
             "by setting allow_dangerous_code=True."
             "For general security guidelines, please see: "
-            "https://python.langchain.com/v0.1/docs/security/"
+            "https://python.langchain.com/v0.2/docs/security/"
         )
 
     try:
