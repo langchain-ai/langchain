@@ -5,6 +5,7 @@ import inspect
 import uuid
 import warnings
 from abc import ABC, abstractmethod
+from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,7 +21,6 @@ from typing import (
     Union,
     cast,
 )
-from operator import itemgetter
 
 from typing_extensions import TypedDict
 
@@ -46,6 +46,11 @@ from langchain_core.messages import (
     convert_to_messages,
     message_chunk_to_message,
 )
+from langchain_core.output_parsers.base import OutputParserLike
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -55,15 +60,10 @@ from langchain_core.outputs import (
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.utils.function_calling import convert_to_openai_tool
-from langchain_core.output_parsers.base import OutputParserLike
-from langchain_core.output_parsers.openai_tools import (
-    JsonOutputKeyToolsParser,
-    PydanticToolsParser,
-)
-from langchain_core.runnables import RunnableMap, RunnablePassthrough
 
 if TYPE_CHECKING:
     from langchain_core.pydantic_v1 import BaseModel
@@ -1123,7 +1123,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
         if method == "function_calling":
             if self.bind_tools is BaseChatModel.bind_tools:
-                raise NotImplementedError("with_structured_output is not implemented for this model.")
+                raise NotImplementedError(
+                    "with_structured_output is not implemented for this model."
+                )
             if schema is None:
                 raise ValueError(
                     "schema must be specified when method is 'function_calling'. "
