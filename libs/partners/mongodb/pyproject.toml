@@ -14,7 +14,7 @@ license = "MIT"
 python = ">=3.8.1,<4.0"
 pymongo = ">=4.6.1,<5.0"
 langchain-core = ">=0.1.46,<0.3"
-numpy = "^1"
+numpy = "^1"  #
 
 [tool.poetry.group.test]
 optional = true
