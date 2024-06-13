@@ -51,8 +51,8 @@ class DirectoryLoader(BaseLoader):
 
         Args:
             path: Path to directory.
-            glob: Glob pattern to use to find files. Defaults to "**/[!.]*"
-               (all files except hidden).
+            glob: A glob pattern or list of glob patterns to use to find files. 
+                Defaults to "**/[!.]*" (all files except hidden). 
             exclude: A pattern or list of patterns to exclude from results.
                 Use glob syntax.
             silent_errors: Whether to silently ignore errors. Defaults to False.
