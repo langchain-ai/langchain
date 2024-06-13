@@ -24,7 +24,7 @@ class __ModuleName__Loader(BaseLoader):
     Instantiate:
         .. code-block:: python
 
-            from __module_name__ import __ModuleName__Loader
+            from langchain_community.document_loaders import __ModuleName__Loader
 
             loader = __ModuleName__Loader(
                 url = "https://docs.python.org/3.9/",
