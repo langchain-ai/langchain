@@ -1120,7 +1120,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
 
-        is_pydantic_schema = isinstance(schema, type) and issubclass(schema, BaseModel)
         if method == "function_calling":
             if self.bind_tools is BaseChatModel.bind_tools:
                 raise NotImplementedError(
@@ -1132,7 +1131,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     "Received None."
                 )
             llm = self.bind_tools([schema], tool_choice="any")
-            if is_pydantic_schema:
+            if isinstance(schema, type) and issubclass(schema, BaseModel):
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema], first_tool_only=True
                 )
