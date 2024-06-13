@@ -4,7 +4,7 @@ import base64
 import os
 import uuid
 import warnings
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Type
 
 import numpy as np
 from langchain_core.documents import Document
@@ -204,6 +204,7 @@ class LanceDB(VectorStore):
         tbl = self.get_table()
         if tbl is None:
             tbl = self._connection.create_table(self._table_name, data=docs)
+            self._table = tbl
 
         if self.api_key is None:
             tbl.add(docs, mode=self.mode)
@@ -243,10 +244,6 @@ class LanceDB(VectorStore):
         try:
             return self._connection.open_table(_name)
         except Exception:
-            warnings.warn(
-                message=f"""Table {_name} not found in the database..It will be created 
-                during ingestion""",
-            )
             return None
 
     def create_index(
@@ -329,71 +326,23 @@ class LanceDB(VectorStore):
                 "embedding object should be provided and must have embed_image method."
             )
 
-        if metadatas:
-            # fill metadatas with empty dicts if somebody
-            # did not specify metadata for all images
-            length_diff = len(uris) - len(metadatas)
-            if length_diff:
-                metadatas = metadatas + [{}] * length_diff
-            empty_ids = []
-            non_empty_ids = []
-            for idx, m in enumerate(metadatas):
-                if m:
-                    non_empty_ids.append(idx)
-                else:
-                    empty_ids.append(idx)
-            if non_empty_ids:
-                data = []
-                try:
-                    for idx in non_empty_ids:
-                        embedding = embeddings[idx] if embeddings else None
-                        text = b64_texts[idx]
-                        metadata = metadatas[idx]
-                        data.append(
-                            {
-                                self._vector_key: embedding,
-                                self._id_key: ids[idx],
-                                self._text_key: text,
-                                "metadata": metadata,
-                            }
-                        )
-
-                    tbl.add(data)
-                except ValueError as e:
-                    if "Expected metadata value to be" in str(e):
-                        msg = (
-                            "Try filtering complex metadata using "
-                            "langchain_community.vectorstores.utils.filter_complex_metadata."
-                        )
-                        raise ValueError(e.args[0] + "\n\n" + msg)
-                    else:
-                        raise e
-            if empty_ids:
-                data = []
-                for idx in empty_ids:
-                    embedding = embeddings[idx] if embeddings else None
-                    text = b64_texts[idx]
-                    data.append(
-                        {
-                            self._vector_key: embedding,
-                            self._id_key: ids[idx],
-                            self._text_key: text,
-                            "metadata": {},
-                        }
-                    )
-                tbl.add(data)
-        else:
-            tbl.add(
-                [
-                    {
-                        self._vector_key: embedding,
-                        self._id_key: ids[idx],
-                        self._text_key: b64_texts[idx],
-                        "metadata": {},
-                    }
-                    for idx, embedding in enumerate(embeddings)
-                ]
+        data = []
+        for idx, emb in enumerate(embeddings):
+            metadata = metadatas[idx] if metadatas else {"id": ids[idx]}
+            data.append(
+                {
+                    self._vector_key: emb,
+                    self._id_key: ids[idx],
+                    self._text_key: b64_texts[idx],
+                    "metadata": metadata,
+                }
             )
+        if tbl is None:
+            tbl = self._connection.create_table(self._table_name, data=data)
+            self._table = tbl
+        else:
+            tbl.add(data)
+
         return ids
 
     def _query(
@@ -515,7 +464,7 @@ class LanceDB(VectorStore):
         else:
             if self._embedding is None:
                 raise ValueError(
-                    "For vector search you must specify an embedding function on creation."
+                    "vector search needs an emmbedding function to be specified."
                 )
             embedding = self._embedding.embed_query(query)
             res = self._query(embedding, k, filter=filter, **kwargs)
@@ -544,24 +493,6 @@ class LanceDB(VectorStore):
 
         Returns:
             List of documents most similar to the query.
-
-        Examples:
-
-        .. code-block:: python
-
-            # Retrieve documents with filtering based on a metadata file_type
-            vector_store.as_retriever(search_kwargs={"k": 4, "filter":{
-                                                        'sql_filter':"file_type='notice'",
-                                                         'prefilter': True
-                                                         }
-                                                     })
-
-            # Retrieve documents with filtering on a specific file name
-            vector_store.as_retriever(search_kwargs={"k": 4, "filter":{
-                                                         'sql_filter':"source='my-file.txt'",
-                                                         'prefilter': True
-                                                         }
-                                                    })
         """
         res = self.similarity_search_with_score(
             query=query, k=k, name=name, filter=filter, fts=fts, score=False, **kwargs
