@@ -1105,9 +1105,24 @@ class FAISS(VectorStore):
         cls,
         serialized: bytes,
         embeddings: Embeddings,
+        *,
+        allow_dangerous_deserialization: bool = False,
         **kwargs: Any,
     ) -> FAISS:
         """Deserialize FAISS index, docstore, and index_to_docstore_id from bytes."""
+        if not allow_dangerous_deserialization:
+            raise ValueError(
+                "The de-serialization relies loading a pickle file. "
+                "Pickle files can be modified to deliver a malicious payload that "
+                "results in execution of arbitrary code on your machine."
+                "You will need to set `allow_dangerous_deserialization` to `True` to "
+                "enable deserialization. If you do this, make sure that you "
+                "trust the source of the data. For example, if you are loading a "
+                "file that you created, and know that no one else has modified the "
+                "file, then this is safe to do. Do not set this to `True` if you are "
+                "loading a file from an untrusted source (e.g., some random site on "
+                "the internet.)."
+            )
         index, docstore, index_to_docstore_id = pickle.loads(serialized)
         return cls(embeddings, index, docstore, index_to_docstore_id, **kwargs)
 
