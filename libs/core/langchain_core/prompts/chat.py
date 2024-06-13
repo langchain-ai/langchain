@@ -861,6 +861,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """
         messages = values["messages"]
         input_vars = set()
+        optional_vars = set()
         input_types: Dict[str, Any] = values.get("input_types", {})
         for message in messages:
             if isinstance(message, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
@@ -873,6 +874,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                     and message.variable_name not in values["partial_variables"]
                 ):
                     values["partial_variables"][message.variable_name] = []
+                    optional_vars.add(message.variable_name)
                 if message.variable_name not in input_types:
                     input_types[message.variable_name] = List[AnyMessage]
         if "partial_variables" in values:
@@ -886,7 +888,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 )
         else:
             values["input_variables"] = sorted(input_vars)
-        values["input_types"] = input_types
+        if optional_vars:
+            values["optional_vars"] = optional_vars
         return values
 
     @classmethod
@@ -988,10 +991,12 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
         # Automatically infer input variables from messages
         input_vars: Set[str] = set()
+        optional_vars: Set[str] = set()
         partial_vars: Dict[str, Any] = {}
         for _message in _messages:
             if isinstance(_message, MessagesPlaceholder) and _message.optional:
                 partial_vars[_message.variable_name] = []
+                optional_vars.add(_message.variable_name)
             elif isinstance(
                 _message, (BaseChatPromptTemplate, BaseMessagePromptTemplate)
             ):
@@ -999,6 +1004,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
         return cls(
             input_variables=sorted(input_vars),
+            optional_vars=sorted(optional_vars),
             messages=_messages,
             partial_variables=partial_vars,
         )

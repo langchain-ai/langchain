@@ -44,6 +44,8 @@ class BasePromptTemplate(
 
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
+    optional_variables: List[str] = Field(default=[])
+    """A list of the names of the variables that are optional in prompt"""
     input_types: Dict[str, Any] = Field(default_factory=dict)
     """A dictionary of the types of the variables the prompt template expects.
     If not provided, all variables are assumed to be strings."""
@@ -86,7 +88,7 @@ class BasePromptTemplate(
             k: (self.input_types.get(k, str), ...) for k in self.input_variables
         }
         optional_input_variables = {
-            k: (self.input_types.get(k, str), None) for k in self.partial_variables
+            k: (self.input_types.get(k, str), None) for k in self.optional_variables
         }
         return create_model(  # type: ignore[call-overload]
             "PromptInput", **{**required_input_variables, **optional_input_variables}
