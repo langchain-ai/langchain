@@ -13,18 +13,18 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 def test_litellm_call() -> None:
     """Test valid call to litellm."""
-    chat = ChatLiteLLM(
+    chat = ChatLiteLLM(  # type: ignore[call-arg]
         model="test",
     )
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
 
 def test_litellm_generate() -> None:
     """Test generate method of anthropic."""
-    chat = ChatLiteLLM(model="test")
+    chat = ChatLiteLLM(model="test")  # type: ignore[call-arg]
     chat_messages: List[List[BaseMessage]] = [
         [HumanMessage(content="How many toes do dogs have?")]
     ]
@@ -40,9 +40,9 @@ def test_litellm_generate() -> None:
 
 def test_litellm_streaming() -> None:
     """Test streaming tokens from anthropic."""
-    chat = ChatLiteLLM(model="test", streaming=True)
+    chat = ChatLiteLLM(model="test", streaming=True)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -51,12 +51,12 @@ def test_litellm_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = ChatLiteLLM(
+    chat = ChatLiteLLM(  # type: ignore[call-arg]
         model="test",
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,
     )
     message = HumanMessage(content="Write me a sentence with 10 words.")
-    chat([message])
+    chat.invoke([message])
     assert callback_handler.llm_streams > 1

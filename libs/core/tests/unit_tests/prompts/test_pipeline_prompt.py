@@ -32,7 +32,7 @@ def test_multi_variable_pipeline() -> None:
     assert output == "okay jim deep"
 
 
-def test_partial_with_chat_prompts() -> None:
+async def test_partial_with_chat_prompts() -> None:
     prompt_a = ChatPromptTemplate(
         input_variables=["foo"], messages=[MessagesPlaceholder(variable_name="foo")]
     )
@@ -42,4 +42,6 @@ def test_partial_with_chat_prompts() -> None:
     )
     assert pipeline_prompt.input_variables == ["bar"]
     output = pipeline_prompt.format_prompt(bar="okay")
+    assert output.to_messages()[0].content == "jim okay"
+    output = await pipeline_prompt.aformat_prompt(bar="okay")
     assert output.to_messages()[0].content == "jim okay"

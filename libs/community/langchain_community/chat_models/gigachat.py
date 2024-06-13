@@ -108,9 +108,9 @@ def _convert_delta_to_message_chunk(
     elif role == "function" or default_class == FunctionMessageChunk:
         return FunctionMessageChunk(content=content, name=_dict["name"])
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 class GigaChat(_BaseGigaChat, BaseChatModel):
@@ -133,6 +133,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         )
 
         payload.functions = kwargs.get("functions", None)
+        payload.model = self.model
 
         if self.profanity_check is not None:
             payload.profanity_check = self.profanity_check

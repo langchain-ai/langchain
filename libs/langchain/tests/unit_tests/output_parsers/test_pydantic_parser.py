@@ -4,9 +4,8 @@ from enum import Enum
 from typing import Optional
 
 from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.pydantic_v1 import BaseModel, Field
-
-from langchain.output_parsers.pydantic import PydanticOutputParser
 
 
 class Actions(Enum):
@@ -88,9 +87,7 @@ def test_pydantic_output_parser_type_inference() -> None:
 
     # Ignoring mypy error that appears in python 3.8, but not 3.11.
     # This seems to be functionally correct, so we'll ignore the error.
-    pydantic_parser = PydanticOutputParser(
-        pydantic_object=SampleModel  # type: ignore[var-annotated]
-    )
+    pydantic_parser = PydanticOutputParser(pydantic_object=SampleModel)  # type: ignore
     schema = pydantic_parser.get_output_schema().schema()
 
     assert schema == {

@@ -315,7 +315,7 @@ class GitHubAPIWrapper(BaseModel):
         the branch the bot uses to make changes.
 
         Returns:
-            str: A plaintext list containing the the filepaths in the branch.
+            str: A plaintext list containing the filepaths in the branch.
         """
         files: List[str] = []
         try:

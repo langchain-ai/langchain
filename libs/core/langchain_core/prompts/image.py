@@ -8,7 +8,7 @@ from langchain_core.utils import image as image_utils
 
 
 class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
-    """An image prompt template for a multimodal model."""
+    """Image prompt template for a multimodal model."""
 
     template: dict = Field(default_factory=dict)
     """Template for the prompt."""
@@ -37,8 +37,10 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         return ["langchain", "prompts", "image"]
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Create Chat Messages."""
         return ImagePromptValue(image_url=self.format(**kwargs))
+
+    async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        return ImagePromptValue(image_url=await self.aformat(**kwargs))
 
     def format(
         self,

@@ -115,7 +115,7 @@ class MosaicML(LLM):
         Example:
             .. code-block:: python
 
-                response = mosaic_llm("Tell me a joke.")
+                response = mosaic_llm.invoke("Tell me a joke.")
         """
         _model_kwargs = self.model_kwargs or {}
 

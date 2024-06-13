@@ -18,6 +18,7 @@ import decimal
 import uuid
 from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Sequence, Union
 
+from langchain_core.indexing import RecordManager
 from sqlalchemy import (
     URL,
     Column,
@@ -39,8 +40,6 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import Query, Session, sessionmaker, declarative_base
-
-from langchain.indexes.base import RecordManager
 
 Base = declarative_base()
 

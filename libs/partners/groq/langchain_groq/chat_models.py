@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import warnings
 from operator import itemgetter
@@ -23,7 +24,6 @@ from typing import (
     cast,
 )
 
-from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -31,6 +31,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
+    LangSmithParams,
     agenerate_from_stream,
     generate_from_stream,
 )
@@ -45,8 +46,10 @@ from langchain_core.messages import (
     FunctionMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    InvalidToolCall,
     SystemMessage,
     SystemMessageChunk,
+    ToolCall,
     ToolMessage,
     ToolMessageChunk,
 )
@@ -58,6 +61,8 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
+    make_invalid_tool_call,
+    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
@@ -119,12 +124,17 @@ class ChatGroq(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
+    stop: Optional[List[str]] = Field(None, alias="stop_sequences")
+    """Default stop sequences."""
     default_headers: Union[Mapping[str, str], None] = None
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
+    http_async_client: Union[Any, None] = None
+    """Optional httpx.AsyncClient. Only used for async invocations. Must specify
+        http_client as well if you'd like a custom client for sync invocations."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -181,17 +191,20 @@ class ChatGroq(BaseChatModel):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
 
         try:
             import groq
 
+            sync_specific = {"http_client": values["http_client"]}
             if not values.get("client"):
-                values["client"] = groq.Groq(**client_params).chat.completions
+                values["client"] = groq.Groq(
+                    **client_params, **sync_specific
+                ).chat.completions
             if not values.get("async_client"):
+                async_specific = {"http_client": values["http_async_client"]}
                 values["async_client"] = groq.AsyncGroq(
-                    **client_params
+                    **client_params, **async_specific
                 ).chat.completions
         except ImportError:
             raise ImportError(
@@ -219,6 +232,23 @@ class ChatGroq(BaseChatModel):
     def _llm_type(self) -> str:
         """Return type of model."""
         return "groq-chat"
+
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        ls_params = LangSmithParams(
+            ls_provider="groq",
+            ls_model_name=self.model_name,
+            ls_model_type="chat",
+            ls_temperature=params.get("temperature", self.temperature),
+        )
+        if ls_max_tokens := params.get("max_tokens", self.max_tokens):
+            ls_params["ls_max_tokens"] = ls_max_tokens
+        if ls_stop := stop or params.get("stop", None) or self.stop:
+            ls_params["ls_stop"] = ls_stop
+        return ls_params
 
     def _generate(
         self,
@@ -277,10 +307,22 @@ class ChatGroq(BaseChatModel):
             )
             chat_result = self._create_chat_result(response)
             generation = chat_result.generations[0]
-            message = generation.message
+            message = cast(AIMessage, generation.message)
+            tool_call_chunks = [
+                {
+                    "name": rtc["function"].get("name"),
+                    "args": rtc["function"].get("arguments"),
+                    "id": rtc.get("id"),
+                    "index": rtc.get("index"),
+                }
+                for rtc in message.additional_kwargs.get("tool_calls", [])
+            ]
             chunk_ = ChatGenerationChunk(
                 message=AIMessageChunk(
-                    content=message.content, additional_kwargs=message.additional_kwargs
+                    content=message.content,
+                    additional_kwargs=message.additional_kwargs,
+                    tool_call_chunks=tool_call_chunks,
+                    usage_metadata=message.usage_metadata,
                 ),
                 generation_info=generation.generation_info,
             )
@@ -296,30 +338,30 @@ class ChatGroq(BaseChatModel):
 
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         for chunk in self.client.create(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
-            chunk = _convert_delta_to_message_chunk(
-                choice["delta"], default_chunk_class
-            )
+            message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
-            default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(
-                message=chunk, generation_info=generation_info or None
+            default_chunk_class = message_chunk.__class__
+            generation_chunk = ChatGenerationChunk(
+                message=message_chunk, generation_info=generation_info or None
             )
 
             if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
-            yield chunk
+                run_manager.on_llm_new_token(
+                    generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
+                )
+            yield generation_chunk
 
     async def _astream(
         self,
@@ -337,10 +379,22 @@ class ChatGroq(BaseChatModel):
             )
             chat_result = self._create_chat_result(response)
             generation = chat_result.generations[0]
-            message = generation.message
+            message = cast(AIMessage, generation.message)
+            tool_call_chunks = [
+                {
+                    "name": rtc["function"].get("name"),
+                    "args": rtc["function"].get("arguments"),
+                    "id": rtc.get("id"),
+                    "index": rtc.get("index"),
+                }
+                for rtc in message.additional_kwargs.get("tool_calls", [])
+            ]
             chunk_ = ChatGenerationChunk(
                 message=AIMessageChunk(
-                    content=message.content, additional_kwargs=message.additional_kwargs
+                    content=message.content,
+                    additional_kwargs=message.additional_kwargs,
+                    tool_call_chunks=tool_call_chunks,
+                    usage_metadata=message.usage_metadata,
                 ),
                 generation_info=generation.generation_info,
             )
@@ -356,7 +410,7 @@ class ChatGroq(BaseChatModel):
 
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         async for chunk in await self.async_client.create(
             messages=message_dicts, **params
         ):
@@ -365,25 +419,25 @@ class ChatGroq(BaseChatModel):
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
-            chunk = _convert_delta_to_message_chunk(
-                choice["delta"], default_chunk_class
-            )
+            message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
-            default_chunk_class = chunk.__class__
-            chunk = ChatGenerationChunk(
-                message=chunk, generation_info=generation_info or None
+            default_chunk_class = message_chunk.__class__
+            generation_chunk = ChatGenerationChunk(
+                message=message_chunk, generation_info=generation_info or None
             )
 
             if run_manager:
                 await run_manager.on_llm_new_token(
-                    token=chunk.text, chunk=chunk, logprobs=logprobs
+                    token=generation_chunk.text,
+                    chunk=generation_chunk,
+                    logprobs=logprobs,
                 )
-            yield chunk
+            yield generation_chunk
 
     #
     # Internal methods
@@ -396,6 +450,7 @@ class ChatGroq(BaseChatModel):
             "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
+            "stop": self.stop,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
@@ -406,8 +461,19 @@ class ChatGroq(BaseChatModel):
         generations = []
         if not isinstance(response, dict):
             response = response.dict()
+        token_usage = response.get("usage", {})
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
+            if token_usage and isinstance(message, AIMessage):
+                input_tokens = token_usage.get("prompt_tokens", 0)
+                output_tokens = token_usage.get("completion_tokens", 0)
+                message.usage_metadata = {
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "total_tokens": token_usage.get(
+                        "total_tokens", input_tokens + output_tokens
+                    ),
+                }
             generation_info = dict(finish_reason=res.get("finish_reason"))
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
@@ -416,7 +482,6 @@ class ChatGroq(BaseChatModel):
                 generation_info=generation_info,
             )
             generations.append(gen)
-        token_usage = response.get("usage", {})
         llm_output = {
             "token_usage": token_usage,
             "model_name": self.model_name,
@@ -429,8 +494,6 @@ class ChatGroq(BaseChatModel):
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = self._default_params
         if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
@@ -445,7 +508,7 @@ class ChatGroq(BaseChatModel):
             token_usage = output["token_usage"]
             if token_usage is not None:
                 for k, v in token_usage.items():
-                    if k in overall_token_usage:
+                    if k in overall_token_usage and v is not None:
                         overall_token_usage[k] += v
                     else:
                         overall_token_usage[k] = v
@@ -571,7 +634,6 @@ class ChatGroq(BaseChatModel):
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
 
-    @beta()
     def with_structured_output(
         self,
         schema: Optional[Union[Dict, Type[BaseModel]]] = None,
@@ -809,7 +871,14 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             # If function call only, content is None not empty string
             if message_dict["content"] == "":
                 message_dict["content"] = None
-        if "tool_calls" in message.additional_kwargs:
+        if message.tool_calls or message.invalid_tool_calls:
+            message_dict["tool_calls"] = [
+                _lc_tool_call_to_groq_tool_call(tc) for tc in message.tool_calls
+            ] + [
+                _lc_invalid_tool_call_to_groq_tool_call(tc)
+                for tc in message.invalid_tool_calls
+            ]
+        elif "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
             # If tool calls only, content is None not empty string
             if message_dict["content"] == "":
@@ -835,9 +904,11 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _convert_delta_to_message_chunk(
-    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+def _convert_chunk_to_message_chunk(
+    chunk: Mapping[str, Any], default_class: Type[BaseMessageChunk]
 ) -> BaseMessageChunk:
+    choice = chunk["choices"][0]
+    _dict = choice["delta"]
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
     additional_kwargs: Dict = {}
@@ -852,7 +923,21 @@ def _convert_delta_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        if usage := (chunk.get("x_groq") or {}).get("usage"):
+            input_tokens = usage.get("prompt_tokens", 0)
+            output_tokens = usage.get("completion_tokens", 0)
+            usage_metadata = {
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "total_tokens": usage.get("total_tokens", input_tokens + output_tokens),
+            }
+        else:
+            usage_metadata = None
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            usage_metadata=usage_metadata,
+        )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:
@@ -883,9 +968,24 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         additional_kwargs: Dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
-        if tool_calls := _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = tool_calls
-        return AIMessage(content=content, id=id_, additional_kwargs=additional_kwargs)
+        tool_calls = []
+        invalid_tool_calls = []
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            for raw_tool_call in raw_tool_calls:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    invalid_tool_calls.append(
+                        make_invalid_tool_call(raw_tool_call, str(e))
+                    )
+        return AIMessage(
+            content=content,
+            id=id_,
+            additional_kwargs=additional_kwargs,
+            tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
+        )
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""))
     elif role == "function":
@@ -901,3 +1001,27 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         )
     else:
         return ChatMessage(content=_dict.get("content", ""), role=role)
+
+
+def _lc_tool_call_to_groq_tool_call(tool_call: ToolCall) -> dict:
+    return {
+        "type": "function",
+        "id": tool_call["id"],
+        "function": {
+            "name": tool_call["name"],
+            "arguments": json.dumps(tool_call["args"]),
+        },
+    }
+
+
+def _lc_invalid_tool_call_to_groq_tool_call(
+    invalid_tool_call: InvalidToolCall,
+) -> dict:
+    return {
+        "type": "function",
+        "id": invalid_tool_call["id"],
+        "function": {
+            "name": invalid_tool_call["name"],
+            "arguments": invalid_tool_call["args"],
+        },
+    }

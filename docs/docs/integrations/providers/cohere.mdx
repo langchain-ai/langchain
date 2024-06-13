@@ -51,7 +51,7 @@ Usage of the Cohere (legacy) [LLM model](/docs/integrations/llms/cohere)
 ```python
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_cohere import ChatCohere, create_cohere_react_agent
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.agents import AgentExecutor
 
 llm = ChatCohere()
@@ -83,7 +83,7 @@ from langchain.retrievers import CohereRagRetriever
 from langchain_core.documents import Document
 
 rag = CohereRagRetriever(llm=ChatCohere())
-print(rag.get_relevant_documents("What is cohere ai?"))
+print(rag.invoke("What is cohere ai?"))
 ```
 
 Usage of the Cohere [RAG Retriever](/docs/integrations/retrievers/cohere)

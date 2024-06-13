@@ -72,7 +72,7 @@ class ChatGLM(LLM):
         Example:
             .. code-block:: python
 
-                response = chatglm_llm("Who are you?")
+                response = chatglm_llm.invoke("Who are you?")
         """
 
         _model_kwargs = self.model_kwargs or {}

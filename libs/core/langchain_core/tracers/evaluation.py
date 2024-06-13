@@ -64,7 +64,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         The LangSmith project name to be organize eval chain runs under.
     """
 
-    name = "evaluator_callback_handler"
+    name: str = "evaluator_callback_handler"
 
     def __init__(
         self,

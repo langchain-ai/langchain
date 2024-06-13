@@ -10,6 +10,24 @@
 > Alibaba's own e-commerce ecosystem.
  
  
+## LLMs
+
+### Alibaba Cloud PAI EAS
+
+See [installation instructions and a usage example](/docs/integrations/llms/alibabacloud_pai_eas_endpoint).
+
+```python
+from langchain_community.llms.pai_eas_endpoint import PaiEasEndpoint
+```
+
+### Tongyi Qwen
+
+See [installation instructions and a usage example](/docs/integrations/llms/tongyi).
+
+```python
+from langchain_community.llms import Tongyi
+```
+
 ## Chat Models
 
 ### Alibaba Cloud PAI EAS
@@ -18,6 +36,24 @@ See [installation instructions and a usage example](/docs/integrations/chat/alib
 
 ```python
 from langchain_community.chat_models import PaiEasChatEndpoint
+```
+
+### Tongyi Qwen Chat
+
+See [installation instructions and a usage example](/docs/integrations/chat/tongyi).
+
+```python
+from langchain_community.chat_models.tongyi import ChatTongyi
+```
+
+## Document Loaders
+
+### Alibaba Cloud MaxCompute
+
+See [installation instructions and a usage example](/docs/integrations/document_loaders/alibaba_cloud_maxcompute).
+
+```python
+from langchain_community.document_loaders import MaxComputeLoader
 ```
 
 ## Vector stores
@@ -38,12 +74,18 @@ See [installation instructions and a usage example](/docs/integrations/vectorsto
 from langchain_community.vectorstores import Tair
 ```
 
-## Document Loaders
+### AnalyticDB
 
-### Alibaba Cloud MaxCompute
-
-See [installation instructions and a usage example](/docs/integrations/document_loaders/alibaba_cloud_maxcompute).
+See [installation instructions and a usage example](/docs/integrations/vectorstores/analyticdb).
 
 ```python
-from langchain_community.document_loaders import MaxComputeLoader
+from langchain_community.vectorstores import AnalyticDB
+```
+
+### Hologres
+
+See [installation instructions and a usage example](/docs/integrations/vectorstores/hologres).
+
+```python
+from langchain_community.vectorstores import Hologres
 ```

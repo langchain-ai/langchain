@@ -1,4 +1,5 @@
 """Base class for all loaders that uses O365 Package"""
+
 from __future__ import annotations
 
 import logging
@@ -6,8 +7,8 @@ import os
 import tempfile
 from abc import abstractmethod
 from enum import Enum
-from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, List, Sequence, Union
+from pathlib import Path, PurePath
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Sequence, Union
 
 from langchain_core.pydantic_v1 import (
     BaseModel,
@@ -70,12 +71,14 @@ def fetch_mime_types(file_types: Sequence[_FileType]) -> Dict[str, str]:
 class O365BaseLoader(BaseLoader, BaseModel):
     """Base class for all loaders that uses O365 Package"""
 
-    settings: _O365Settings = Field(default_factory=_O365Settings)
+    settings: _O365Settings = Field(default_factory=_O365Settings)  # type: ignore[arg-type]
     """Settings for the Office365 API client."""
     auth_with_token: bool = False
     """Whether to authenticate with a token or not. Defaults to False."""
     chunk_size: Union[int, str] = CHUNK_SIZE
     """Number of bytes to retrieve from each api call to the server. int or 'auto'."""
+    recursive: bool = False
+    """Should the loader recursively load subfolders?"""
 
     @property
     @abstractmethod
@@ -106,14 +109,34 @@ class O365BaseLoader(BaseLoader, BaseModel):
         """
         file_mime_types = self._fetch_mime_types
         items = folder.get_items()
+        metadata_dict: Dict[str, Dict[str, Any]] = {}
         with tempfile.TemporaryDirectory() as temp_dir:
             os.makedirs(os.path.dirname(temp_dir), exist_ok=True)
             for file in items:
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
                         file.download(to_path=temp_dir, chunk_size=self.chunk_size)
+                        metadata_dict[file.name] = {
+                            "source": file.web_url,
+                            "mime_type": file.mime_type,
+                            "created": file.created,
+                            "modified": file.modified,
+                            "created_by": str(file.created_by),
+                            "modified_by": str(file.modified_by),
+                            "description": file.description,
+                        }
+
             loader = FileSystemBlobLoader(path=temp_dir)
-            yield from loader.yield_blobs()
+            for blob in loader.yield_blobs():
+                if not isinstance(blob.path, PurePath):
+                    raise NotImplementedError("Expected blob path to be a PurePath")
+                if blob.path:
+                    file_metadata_ = metadata_dict.get(str(blob.path), {})
+                    blob.metadata.update(file_metadata_)
+                yield blob
+        if self.recursive:
+            for subfolder in folder.get_child_folders():
+                yield from self._load_from_folder(subfolder)
 
     def _load_from_object_ids(
         self, drive: Drive, object_ids: List[str]
