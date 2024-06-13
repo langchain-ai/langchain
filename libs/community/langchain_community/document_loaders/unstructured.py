@@ -386,7 +386,8 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
 
 
 def get_elements_from_api(
-    file_path: Union[str, Path, None] = None,
+    file_path: Union[str, Path],
+    *,
     file: Union[IO[bytes], None] = None,
     api_url: str = "https://api.unstructured.io/general/v0/general",
     api_key: str = "",
@@ -426,16 +427,16 @@ def get_elements_from_api(
         )
     
 
-def _get_content(file_path: Union[str, Path, None] = None, file: Union[IO[bytes], None] = None):
-    content = None
+def _get_content(file: Union[IO[bytes], None] = None, file_path: Union[str, Path, None] = None) -> bytes:
+    """Get content from either file or file_path."""
     if file is not None:
-        content = file.read()
-    if content is None and file_path is not None:
+        return file.read()
+    
+    if file_path is not None:
         with open(file_path, "rb") as f:
-            content = f.read()
-    if content is None:
-        raise ValueError("Either file or file_path must be provided")
-    return content
+            return f.read()
+    
+    raise ValueError("Either file or file_path must be provided")
 
 
 def satisfies_min_unstructured_version(min_version: str) -> bool:
