@@ -31,29 +31,6 @@ class __ModuleName__Loader(BaseLoader):
                 # otherparams = ...
             )
 
-    Load:
-        .. code-block:: python
-
-            docs = loader.load()
-            print(docs[0].page_content[:100])
-            print(docs[0].metadata)
-
-        .. code-block:: python
-
-            TODO: Example output
-
-    # TODO: Delete if async load is not implemented
-    Async load:
-        .. code-block:: python
-
-            docs = await loader.aload()
-            print(docs[0].page_content[:100])
-            print(docs[0].metadata)
-
-        .. code-block:: python
-
-            TODO: Example output
-
     Lazy load:
         .. code-block:: python
 
@@ -71,9 +48,24 @@ class __ModuleName__Loader(BaseLoader):
         .. code-block:: python
 
             TODO: Example output  
+
+    # TODO: Delete if async load is not implemented
+    Async load:
+        .. code-block:: python
+
+            docs = await loader.aload()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            TODO: Example output
     """
 
     # TODO: This method must be implemented to load documents.
     # Do not implement load(), a default implementation is already available.
     def lazy_load(self) -> Iterator[Document]:
         raise NotImplementedError()
+    
+    # TODO: Implement if you would like to change default BaseLoader implementation
+    # async def alazy_load(self) -> AsyncIterator[Document]:
