@@ -92,6 +92,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     "title": "PromptInput",
                     "type": "object",
                     "properties": {"name": {"title": "Name", "type": "string"}},
+                    "required": ["name"],
                 },
             },
             {
@@ -175,6 +176,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                     "title": "PromptInput",
                     "type": "object",
                     "properties": {"name": {"title": "Name", "type": "string"}},
+                    "required": ["name"],
                 },
             },
             {
