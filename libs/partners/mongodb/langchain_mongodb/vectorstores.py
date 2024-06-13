@@ -1,5 +1,3 @@
-""" NEW ADDITIONS BEGIN AT LINE 500!! """
-
 from __future__ import annotations
 
 import logging
@@ -28,6 +26,7 @@ from pymongo.collection import Collection
 from pymongo.driver_info import DriverInfo
 
 from langchain_mongodb.utils import maximal_marginal_relevance, make_serializable
+from langchain_mongodb.pipelines import vector_search_stage, combine_pipelines, reciprocal_rank_stage, text_search_stage, final_hybrid_stage
 
 MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 VST = TypeVar("VST", bound=VectorStore)
@@ -66,12 +65,12 @@ class MongoDBAtlasVectorSearch(VectorStore):
         index_name: str = "vector_index",
         text_key: str = "text",
         embedding_key: str = "embedding",
-        relevance_score_fn: str = "cosine",
-        strategy: str = "vector",
-        text_index_name: str = "text",
-        text_search_operator: str = "phrase",
-        text_penalty: int = 0,
-        vector_penalty: int = 0,
+        relevance_score_fn: str = "cosine",  # TODO - Deduce from index_name
+        strategy: str = "vector",  # TODO - This is a search arg
+        text_index_name: str = "text_index",
+        text_search_operator: str = "text",  # TODO - This is a search arg. Better name?
+        text_penalty: int = 5,  # TODO - This is a search arg. Better name?
+        vector_penalty: int = 0,  # TODO - This is a search arg. Better name?
         **kwargs,
     ):
         """
@@ -106,6 +105,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self._text_search_operator = text_search_operator
         self.text_penalty = text_penalty
         self.vector_penalty = vector_penalty
+
     @property
     def embeddings(self) -> Embeddings:
         return self._embedding
@@ -443,7 +443,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def max_marginal_relevance_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: List[float],  # TODO Why is the API different for this method?
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
@@ -513,10 +513,11 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
-        # strategy: str = "vector", # TODO - Where does this belong?
-        score: bool = True,
+        strategy: str = None,  # TODO - Decide where these vars are set (VectorStore init, Retriever init, or function
+        with_scores: bool = True,
         oversampling_factor: int = 100,
         extra_fields: List[str] = None,
+        with_embeddings: bool = False,
         **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Extended Query interface supporting Vector, Full-Text and Hybrid Search.
@@ -554,31 +555,33 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
          """
 
-        from langchain_mongodb.pipelines import vector_search_stage, combine_pipelines, reciprocal_rank_stage, text_search_stage, final_hybrid_stage
+        pipeline = []
+        strategy = strategy or self._strategy
 
-        pipeline = []  # combined hybrid pipeline
-        if self._strategy == "hybrid":
+        if (strategy or self._strategy) == "hybrid":
             # Combines Vector and Full-Text searches with Reciprocal Rank Fusion
             # Vector Search
             query_vector = self._embedding.embed_query(query)
             vector_pipeline = [
-                vector_search_stage(query_vector, self._embedding_key, self._index_name, k, pre_filter)]
-            vector_pipeline.extend(reciprocal_rank_stage(self._text_key, "vector_score", self.vector_penalty))
+                vector_search_stage(query_vector, self._embedding_key, self._index_name, k, pre_filter, oversampling_factor)]
+            if not with_embeddings:
+                vector_pipeline.append({"$project": {self._embedding_key: 0}})
+            vector_pipeline.extend(reciprocal_rank_stage(self._text_key, "vector_score", self.vector_penalty, extra_fields=extra_fields))
             combine_pipelines(pipeline, vector_pipeline, self._collection)
 
-            # Text Search
+            # Text Search  # TODO Remove embedding here too
             text_pipeline = [
                 text_search_stage(query, self._text_key, self._text_index_name, self._text_search_operator),
                 {"$match": {"$and": pre_filter} if pre_filter else {}},
                 {"$limit": k},
             ]
-            text_pipeline.extend(reciprocal_rank_stage(self._text_key, "text_score", self.vector_penalty))
-            combine_pipelines(pipeline, vector_pipeline,  self._collection)
+            text_pipeline.extend(reciprocal_rank_stage(self._text_key, "text_score", self.text_penalty))
+            combine_pipelines(pipeline, text_pipeline,  self._collection.name)
 
-            # Finalize
+            # Sum and sort
             pipeline += final_hybrid_stage(scores_fields=["vector_score", "text_score"], limit=k, text_field=self._text_key, extra_fields=None)
 
-        elif self._strategy == "text":
+        elif strategy == "text":
             # Atlas Full-Text Search, potentially with filter
             pipeline = [
                 text_search_stage(query, self._text_key, self._text_index_name, self._text_search_operator),
@@ -586,7 +589,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 {"$set": {"score": {'$meta': 'searchScore'}}},
                 {"$limit": k},
             ]
-        elif self._strategy == "vector":
+        elif strategy == "vector":
             # Atlas Vector Search, potentially with filter
             query_vector = self._embedding.embed_query(query)
             pipeline = [
@@ -594,15 +597,17 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 {"$set": {"score": {"$meta": "vectorSearchScore"}}},
             ]
         else:
-            raise ValueError(f"{self._strategy} not understood. Expecting one of [vector, text, hybrid]")
+            raise ValueError(f"Unrecognized {strategy=}. Expecting one of [vector, text, hybrid]")
 
         # Post-processing
         if post_filter_pipeline is not None:
             pipeline.extend(post_filter_pipeline)
 
+        # Execution
         cursor = self._collection.aggregate(pipeline)  # type: ignore[arg-type]
         docs = []
 
+        # Format
         for res in cursor:
             text = res.pop(self._text_key)
             score = res.pop("score")

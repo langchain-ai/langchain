@@ -1,11 +1,13 @@
-"""Aggregation pipeline components involved in Atlas Full-Text, Vector, and Hybrid Search.
+"""Aggregation pipeline components used in Atlas Full-Text, Vector, and Hybrid Search.
 
 """
-from typing import Any, Dict, List
+from typing import Any, Dict, List, TypeVar
+
+MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 
 
 def text_search_stage(
-    query: str, search_field, index_name: str, operator: str = "phrase"
+    query: str, search_field, index_name: str, operator: str = "text"
 ) -> Dict[str, Any]:
     """Full-Text search.
 
@@ -15,9 +17,9 @@ def text_search_stage(
         index_name: Atlas Search Index name
         operator: A number of operators are available in the text search stage.
 
-
     Returns:
         Dictionary defining the $search
+
     See Also:
         - MongoDB Full-Text Search <https://www.mongodb.com/docs/atlas/atlas-search/aggregation-stages/search/#mongodb-pipeline-pipe.-search>
         - MongoDB Operators <https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref>
@@ -35,7 +37,7 @@ def vector_search_stage(
     search_field: str,
     index_name: str,
     limit: int = 4,
-    filter: Dict[str, Any] = None,
+    filter: MongoDBDocumentType = None,
     oversampling_factor=10,
 ) -> Dict[str, Any]:
     """Vector Search Stage without Scores.
@@ -67,7 +69,7 @@ def vector_search_stage(
     }
 
 
-def combine_pipelines(pipeline: List[Any], stage: Dict[str, Any], collection_name):
+def combine_pipelines(pipeline: List[Any], stage: Dict[str, Any], collection_name: str):
     """Combines two aggregations into a single result set."""
     if pipeline:
         pipeline.append({"$unionWith": {"coll": collection_name, "pipeline": stage}})
@@ -77,10 +79,9 @@ def combine_pipelines(pipeline: List[Any], stage: Dict[str, Any], collection_nam
 
 
 def reciprocal_rank_stage(
-    text_field, score_field: str, penalty: float = 0, extra_fields: List[str] = None
+    text_field, score_field: str, penalty: float = 0, extra_fields: List[str] = None  # TODO Sort out extra_fields
 ) -> List[Dict[str, Any]]:
     """Stage adds Reciprocal Rank Fusion weighting.
-
 
         First, it pushes documents retrieved from previous stage
         into a temporary sub-document. It then unwinds to establish
@@ -95,26 +96,53 @@ def reciprocal_rank_stage(
     Returns:
         RRF score := \frac{1}{rank + penalty} with rank in [1,2,..,n]
     """
+
     rrf_pipeline = [
         {"$group": {"_id": None, "docs": {"$push": "$$ROOT"}}},
         {"$unwind": {"path": "$docs", "includeArrayIndex": "rank"}},
         {
             "$addFields": {
-                score_field: {"$divide": [1.0, {"$add": ["$rank", penalty, 1]}]}
+                f"docs.{score_field}": {"$divide": [1.0, {"$add": ["$rank", penalty, 1]}]},
+                "docs.rank": "$rank",
+                "_id": "$docs._id"
             }
         },
+        {"$replaceRoot": {"newRoot": "$docs"}}
     ]
-    projection_fields = {text_field: f"$docs.{text_field}"}
-    projection_fields["_id"] = "$docs._id"
-    projection_fields[score_field] = 1
-    if extra_fields:
-        projection_fields.update({f"$docs.{key}" for key in extra_fields})
 
-    rrf_pipeline.append({"$project": projection_fields})
     return rrf_pipeline
 
 
 def final_hybrid_stage(
+    scores_fields: List[str],
+    limit: int,
+    text_field: str,
+    extra_fields: List[str] = None,
+) -> List[Dict[str, Any]]:
+    """Sum weighted scores, sort, and apply limit.
+
+    Args:
+        scores_fields: List of fields given to scores of vector and text searches
+        limit: Number of documents to return
+        text_field: Collection field containing relevant to text per VectorStore API
+        extra_fields: Any fields other than text_field that one wishes to keep.
+
+    Returns:
+        Final aggregation stages
+    """
+    # TODO - The scores_fields have been lost!!! i.e. score:None
+    final_pipeline = [
+        {"$group": {"_id": "$_id", "docs": {"$mergeObjects": "$$ROOT"}}},
+        {"$replaceRoot": {"newRoot": '$docs'}},
+        {"$set": {score: {"$ifNull": [f"${score}", 0]} for score in scores_fields}},
+        {"$addFields": {"score": {"$add": [f"${score}" for score in scores_fields]}}},
+        {"$sort": {"score": -1}},
+        {"$limit": limit},
+    ]
+    return final_pipeline
+
+
+def final_hybrid_stage_deprecated(
     scores_fields: List[str],
     limit: int,
     text_field: str,
@@ -139,7 +167,8 @@ def final_hybrid_stage(
     grouped_fields = {key: {"$first": f"${key}"} for key in doc_fields}
     best_score = {score: {"$max": f"${score}"} for score in scores_fields}
     final_pipeline = [
-        {"$group": {"_id": "$_id", **grouped_fields, **best_score}},
+        {
+            "$group": {"_id": "$_id", **grouped_fields, **best_score}},
         {
             "$project": {
                 **{doc_field: 1 for doc_field in doc_fields},
