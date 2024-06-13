@@ -65,10 +65,10 @@ from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 if TYPE_CHECKING:
+    from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.pydantic_v1 import BaseModel
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
-    from langchain_core.output_parsers.base import OutputParserLike
 
 
 class LangSmithParams(TypedDict, total=False):
