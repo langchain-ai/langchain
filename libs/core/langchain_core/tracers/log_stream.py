@@ -8,6 +8,7 @@ from typing import (
     Any,
     AsyncIterator,
     Dict,
+    Iterator,
     List,
     Literal,
     Optional,
@@ -252,6 +253,25 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
 
             yield chunk
 
+    def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
+        """Tap an output async iterator to stream its values to the log."""
+        for chunk in output:
+            # root run is handled in .astream_log()
+            if run_id != self.root_id:
+                # if we can't find the run silently ignore
+                # eg. because this run wasn't included in the log
+                if key := self._key_map_by_run_id.get(run_id):
+                    if not self.send(
+                        {
+                            "op": "add",
+                            "path": f"/logs/{key}/streamed_output/-",
+                            "value": chunk,
+                        }
+                    ):
+                        break
+
+            yield chunk
+
     def include_run(self, run: Run) -> bool:
         if run.id == self.root_id:
             return False
@@ -462,7 +482,7 @@ def _get_standardized_inputs(
 
 
 def _get_standardized_outputs(
-    run: Run, schema_format: Literal["original", "streaming_events"]
+    run: Run, schema_format: Literal["original", "streaming_events", "original+chat"]
 ) -> Optional[Any]:
     """Extract standardized output from a run.
 

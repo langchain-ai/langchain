@@ -1,19 +1,22 @@
 """Test ChatAnthropic chat model."""
 
 import json
-from typing import List
+from typing import List, Optional
 
+import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     HumanMessage,
     SystemMessage,
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
 
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
@@ -24,23 +27,108 @@ MODEL_NAME = "claude-3-sonnet-20240229"
 
 def test_stream() -> None:
     """Test streaming tokens from Anthropic."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
+    full: Optional[BaseMessageChunk] = None
+    chunks_with_input_token_counts = 0
+    chunks_with_output_token_counts = 0
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
+        full = token if full is None else full + token
+        assert isinstance(token, AIMessageChunk)
+        if token.usage_metadata is not None:
+            if token.usage_metadata.get("input_tokens"):
+                chunks_with_input_token_counts += 1
+            elif token.usage_metadata.get("output_tokens"):
+                chunks_with_output_token_counts += 1
+    if chunks_with_input_token_counts != 1 or chunks_with_output_token_counts != 1:
+        raise AssertionError(
+            "Expected exactly one chunk with input or output token counts. "
+            "AIMessageChunk aggregation adds counts. Check that "
+            "this is behaving properly."
+        )
+    # check token usage is populated
+    assert isinstance(full, AIMessageChunk)
+    assert full.usage_metadata is not None
+    assert full.usage_metadata["input_tokens"] > 0
+    assert full.usage_metadata["output_tokens"] > 0
+    assert full.usage_metadata["total_tokens"] > 0
+    assert (
+        full.usage_metadata["input_tokens"] + full.usage_metadata["output_tokens"]
+        == full.usage_metadata["total_tokens"]
+    )
 
 
 async def test_astream() -> None:
     """Test streaming tokens from Anthropic."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
+    full: Optional[BaseMessageChunk] = None
+    chunks_with_input_token_counts = 0
+    chunks_with_output_token_counts = 0
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
+        full = token if full is None else full + token
+        assert isinstance(token, AIMessageChunk)
+        if token.usage_metadata is not None:
+            if token.usage_metadata.get("input_tokens"):
+                chunks_with_input_token_counts += 1
+            elif token.usage_metadata.get("output_tokens"):
+                chunks_with_output_token_counts += 1
+    if chunks_with_input_token_counts != 1 or chunks_with_output_token_counts != 1:
+        raise AssertionError(
+            "Expected exactly one chunk with input or output token counts. "
+            "AIMessageChunk aggregation adds counts. Check that "
+            "this is behaving properly."
+        )
+    # check token usage is populated
+    assert isinstance(full, AIMessageChunk)
+    assert full.usage_metadata is not None
+    assert full.usage_metadata["input_tokens"] > 0
+    assert full.usage_metadata["output_tokens"] > 0
+    assert full.usage_metadata["total_tokens"] > 0
+    assert (
+        full.usage_metadata["input_tokens"] + full.usage_metadata["output_tokens"]
+        == full.usage_metadata["total_tokens"]
+    )
+
+    # test usage metadata can be excluded
+    model = ChatAnthropic(model_name=MODEL_NAME, stream_usage=False)  # type: ignore[call-arg]
+    async for token in model.astream("hi"):
+        assert isinstance(token, AIMessageChunk)
+        assert token.usage_metadata is None
+    # check we override with kwarg
+    model = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg]
+    assert model.stream_usage
+    async for token in model.astream("hi", stream_usage=False):
+        assert isinstance(token, AIMessageChunk)
+        assert token.usage_metadata is None
+
+    # Check expected raw API output
+    async_client = model._async_client
+    params: dict = {
+        "model": "claude-3-haiku-20240307",
+        "max_tokens": 1024,
+        "messages": [{"role": "user", "content": "hi"}],
+        "temperature": 0.0,
+    }
+    stream = await async_client.messages.create(**params, stream=True)
+    async for event in stream:
+        if event.type == "message_start":
+            assert event.message.usage.input_tokens > 1
+            # Note: this single output token included in message start event
+            # does not appear to contribute to overall output token counts. It
+            # is excluded from the total token count.
+            assert event.message.usage.output_tokens == 1
+        elif event.type == "message_delta":
+            assert event.usage.output_tokens > 1
+        else:
+            pass
 
 
 async def test_abatch() -> None:
     """Test streaming tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -49,7 +137,7 @@ async def test_abatch() -> None:
 
 async def test_abatch_tags() -> None:
     """Test batch tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -60,7 +148,7 @@ async def test_abatch_tags() -> None:
 
 def test_batch() -> None:
     """Test batch tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -69,7 +157,7 @@ def test_batch() -> None:
 
 async def test_ainvoke() -> None:
     """Test invoke tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -77,7 +165,7 @@ async def test_ainvoke() -> None:
 
 def test_invoke() -> None:
     """Test invoke tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
@@ -85,7 +173,7 @@ def test_invoke() -> None:
 
 def test_system_invoke() -> None:
     """Test invoke tokens with a system message"""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)
+    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -106,7 +194,7 @@ def test_system_invoke() -> None:
 
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
-    chat = ChatAnthropic(model="test")
+    chat = ChatAnthropic(model="test")  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
@@ -115,7 +203,7 @@ def test_anthropic_call() -> None:
 
 def test_anthropic_generate() -> None:
     """Test generate method of anthropic."""
-    chat = ChatAnthropic(model="test")
+    chat = ChatAnthropic(model="test")  # type: ignore[call-arg]
     chat_messages: List[List[BaseMessage]] = [
         [HumanMessage(content="How many toes do dogs have?")]
     ]
@@ -131,7 +219,7 @@ def test_anthropic_generate() -> None:
 
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
-    chat = ChatAnthropic(model="test")
+    chat = ChatAnthropic(model="test")  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = chat.stream([message])
     for token in response:
@@ -143,7 +231,7 @@ def test_anthropic_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = ChatAnthropic(
+    chat = ChatAnthropic(  # type: ignore[call-arg]
         model="test",
         callback_manager=callback_manager,
         verbose=True,
@@ -159,7 +247,7 @@ async def test_anthropic_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    chat = ChatAnthropic(
+    chat = ChatAnthropic(  # type: ignore[call-arg]
         model="test",
         callback_manager=callback_manager,
         verbose=True,
@@ -175,7 +263,7 @@ async def test_anthropic_async_streaming_callback() -> None:
 
 def test_anthropic_multimodal() -> None:
     """Test that multimodal inputs are handled correctly."""
-    chat = ChatAnthropic(model=MODEL_NAME)
+    chat = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
     messages = [
         HumanMessage(
             content=[
@@ -200,7 +288,7 @@ def test_streaming() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
 
-    llm = ChatAnthropicMessages(
+    llm = ChatAnthropicMessages(  # type: ignore[call-arg, call-arg]
         model_name=MODEL_NAME, streaming=True, callback_manager=callback_manager
     )
 
@@ -214,7 +302,7 @@ async def test_astreaming() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
 
-    llm = ChatAnthropicMessages(
+    llm = ChatAnthropicMessages(  # type: ignore[call-arg, call-arg]
         model_name=MODEL_NAME, streaming=True, callback_manager=callback_manager
     )
 
@@ -224,7 +312,7 @@ async def test_astreaming() -> None:
 
 
 def test_tool_use() -> None:
-    llm = ChatAnthropic(
+    llm = ChatAnthropic(  # type: ignore[call-arg]
         model="claude-3-opus-20240229",
     )
 
@@ -275,7 +363,7 @@ def test_anthropic_with_empty_text_block() -> None:
         """Type the given letter."""
         return "OK"
 
-    model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0).bind_tools(
+    model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0).bind_tools(  # type: ignore[call-arg]
         [type_letter]
     )
 
@@ -312,7 +400,7 @@ def test_anthropic_with_empty_text_block() -> None:
 
 
 def test_with_structured_output() -> None:
-    llm = ChatAnthropic(
+    llm = ChatAnthropic(  # type: ignore[call-arg]
         model="claude-3-opus-20240229",
     )
 
@@ -329,3 +417,19 @@ def test_with_structured_output() -> None:
     response = structured_llm.invoke("what's the weather in san francisco, ca")
     assert isinstance(response, dict)
     assert response["location"]
+
+
+class GetWeather(BaseModel):
+    """Get the current weather in a given location"""
+
+    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+
+@pytest.mark.parametrize("tool_choice", ["GetWeather", "auto", "any"])
+def test_anthropic_bind_tools_tool_choice(tool_choice: str) -> None:
+    chat_model = ChatAnthropic(  # type: ignore[call-arg]
+        model="claude-3-sonnet-20240229",
+    )
+    chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice=tool_choice)
+    response = chat_model_with_tools.invoke("what's the weather in ny and la")
+    assert isinstance(response, AIMessage)

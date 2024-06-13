@@ -475,7 +475,7 @@ class RLChain(Chain, Generic[TEvent]):
     def save_progress(self) -> None:
         """
         This function should be called to save the state of the learned policy model.
-        """  # noqa: E501
+        """
         self.active_policy.save()
 
     def _validate_inputs(self, inputs: Dict[str, Any]) -> None:

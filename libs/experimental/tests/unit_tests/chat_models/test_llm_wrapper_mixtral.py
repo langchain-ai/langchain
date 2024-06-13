@@ -25,7 +25,7 @@ def test_prompt(model: Mixtral) -> None:
 
     actual = model.invoke(messages).content  # type: ignore
     expected = (
-        "<s>[INST] sys-msg\nusr-msg-1 [/INST] ai-msg-1 </s> [INST] usr-msg-2 [/INST]"  # noqa: E501
+        "<s>[INST] sys-msg\nusr-msg-1 [/INST] ai-msg-1 </s> [INST] usr-msg-2 [/INST]"
     )
 
     assert actual == expected

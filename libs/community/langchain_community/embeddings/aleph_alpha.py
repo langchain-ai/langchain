@@ -37,7 +37,7 @@ class AlephAlphaAsymmetricSemanticEmbedding(BaseModel, Embeddings):
     compress_to_size: Optional[int] = None
     """Should the returned embeddings come back as an original 5120-dim vector, 
     or should it be compressed to 128-dim."""
-    normalize: Optional[bool] = None
+    normalize: bool = False
     """Should returned embeddings be normalized"""
     contextual_control_threshold: Optional[int] = None
     """Attention control parameters only apply to those tokens that have 

@@ -83,6 +83,7 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          editUrl: "https://github.com/langchain-ai/langchain/edit/master/docs/",
           sidebarPath: require.resolve("./sidebars.js"),
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
@@ -124,7 +125,7 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       announcementBar: {
-        content: 'You are viewing the <strong>preview</strong> v0.2 docs. View the <strong>stable</strong> v0.1 docs <a href="/v0.1/docs/get_started/introduction/">here</a>. Leave feedback on the v0.2 docs <a href="https://github.com/langchain-ai/langchain/discussions/21716">here</a>.',
+        content: 'LangChain 0.2 is out! Leave feedback on the v0.2 docs <a href="https://github.com/langchain-ai/langchain/discussions/21716">here</a>. You can view the v0.1 docs <a href="/v0.1/docs/get_started/introduction/">here</a>.',
         isCloseable: true,
       },
       docs: {
@@ -202,6 +203,25 @@ const config = {
                 docId: "additional_resources/youtube",
                 label: "YouTube"
               },
+              {
+                to: "/docs/additional_resources/arxiv_references",
+                label: "arXiv"
+              },
+            ]
+          },
+          {
+            type: "dropdown",
+            label: "v0.2",
+            position: "right",
+            items: [
+              {
+                label: "v0.2",
+                href: "/docs/introduction"
+              },
+              {
+                label: "v0.1",
+                href: "https://python.langchain.com/v0.1/docs/get_started/introduction"
+              }
             ]
           },
           {
@@ -272,6 +292,10 @@ const config = {
           {
             title: "GitHub",
             items: [
+              {
+                label: "Organization",
+                href: "https://github.com/langchain-ai",
+              },
               {
                 label: "Python",
                 href: "https://github.com/langchain-ai/langchain",

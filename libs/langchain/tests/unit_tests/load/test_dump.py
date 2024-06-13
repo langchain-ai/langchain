@@ -8,12 +8,7 @@ from unittest.mock import patch
 import pytest
 from langchain_core.load.dump import dumps
 from langchain_core.load.serializable import Serializable
-from langchain_core.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.tracers.langchain import LangChainTracer
-
-from langchain.chains.llm import LLMChain
 
 
 class Person(Serializable):
@@ -72,105 +67,6 @@ def test_typeerror() -> None:
         dumps({(1, 2): 3})
         == """{"lc": 1, "type": "not_implemented", "id": ["builtins", "dict"], "repr": "{(1, 2): 3}"}"""  # noqa: E501
     )
-
-
-@pytest.mark.community
-@pytest.mark.requires("openai")
-def test_serialize_openai_llm(snapshot: Any) -> None:
-    from langchain_community.llms.openai import OpenAI
-
-    with patch.dict(os.environ, {"LANGCHAIN_API_KEY": "test-api-key"}):
-        llm = OpenAI(  # type: ignore[call-arg]
-            model="davinci",
-            temperature=0.5,
-            openai_api_key="hello",
-            # This is excluded from serialization
-            callbacks=[LangChainTracer()],
-        )
-        llm.temperature = 0.7  # this is reflected in serialization
-        assert dumps(llm, pretty=True) == snapshot
-
-
-@pytest.mark.community
-@pytest.mark.requires("openai")
-def test_serialize_llmchain(snapshot: Any) -> None:
-    from langchain_community.llms.openai import OpenAI
-
-    llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
-    prompt = PromptTemplate.from_template("hello {name}!")
-    chain = LLMChain(llm=llm, prompt=prompt)
-    assert dumps(chain, pretty=True) == snapshot
-
-
-@pytest.mark.community
-@pytest.mark.requires("openai")
-def test_serialize_llmchain_env() -> None:
-    from langchain_community.llms.openai import OpenAI
-
-    llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
-    prompt = PromptTemplate.from_template("hello {name}!")
-    chain = LLMChain(llm=llm, prompt=prompt)
-
-    import os
-
-    has_env = "OPENAI_API_KEY" in os.environ
-    if not has_env:
-        os.environ["OPENAI_API_KEY"] = "env_variable"
-
-    llm_2 = OpenAI(model="davinci", temperature=0.5)  # type: ignore[call-arg]
-    prompt_2 = PromptTemplate.from_template("hello {name}!")
-    chain_2 = LLMChain(llm=llm_2, prompt=prompt_2)
-
-    assert dumps(chain_2, pretty=True) == dumps(chain, pretty=True)
-
-    if not has_env:
-        del os.environ["OPENAI_API_KEY"]
-
-
-@pytest.mark.community
-@pytest.mark.requires("openai")
-def test_serialize_llmchain_chat(snapshot: Any) -> None:
-    from langchain_community.chat_models.openai import ChatOpenAI
-
-    llm = ChatOpenAI(model="davinci", temperature=0.5, openai_api_key="hello")  # type: ignore[call-arg]
-    prompt = ChatPromptTemplate.from_messages(
-        [HumanMessagePromptTemplate.from_template("hello {name}!")]
-    )
-    chain = LLMChain(llm=llm, prompt=prompt)
-    assert dumps(chain, pretty=True) == snapshot
-
-    import os
-
-    has_env = "OPENAI_API_KEY" in os.environ
-    if not has_env:
-        os.environ["OPENAI_API_KEY"] = "env_variable"
-
-    llm_2 = ChatOpenAI(model="davinci", temperature=0.5)  # type: ignore[call-arg]
-    prompt_2 = ChatPromptTemplate.from_messages(
-        [HumanMessagePromptTemplate.from_template("hello {name}!")]
-    )
-    chain_2 = LLMChain(llm=llm_2, prompt=prompt_2)
-
-    assert dumps(chain_2, pretty=True) == dumps(chain, pretty=True)
-
-    if not has_env:
-        del os.environ["OPENAI_API_KEY"]
-
-
-@pytest.mark.community
-@pytest.mark.requires("openai")
-def test_serialize_llmchain_with_non_serializable_arg(snapshot: Any) -> None:
-    from langchain_community.llms.openai import OpenAI
-
-    llm = OpenAI(  # type: ignore[call-arg]
-        model="davinci",
-        temperature=0.5,
-        openai_api_key="hello",
-        client=NotSerializable,
-    )
-    prompt = PromptTemplate.from_template("hello {name}!")
-    chain = LLMChain(llm=llm, prompt=prompt)
-    assert dumps(chain, pretty=True) == snapshot
 
 
 def test_person_with_kwargs(snapshot: Any) -> None:

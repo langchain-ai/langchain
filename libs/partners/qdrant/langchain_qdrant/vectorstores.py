@@ -1353,8 +1353,8 @@ class Qdrant(VectorStore):
     def from_existing_collection(
         cls: Type[Qdrant],
         embedding: Embeddings,
-        path: str,
-        collection_name: str,
+        path: Optional[str] = None,
+        collection_name: Optional[str] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
@@ -1376,6 +1376,10 @@ class Qdrant(VectorStore):
         This method will return the instance of the store without inserting any new
         embeddings
         """
+
+        if collection_name is None:
+            raise ValueError("Must specify collection_name. Received None.")
+
         client, async_client = cls._generate_clients(
             location=location,
             url=url,
@@ -1657,7 +1661,7 @@ class Qdrant(VectorStore):
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
                     f"If you want to reuse it, please set `vector_name` to any of the "
                     f"existing named vectors: "
-                    f"{', '.join(current_vector_config.keys())}."  # noqa
+                    f"{', '.join(current_vector_config.keys())}."
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
@@ -1816,7 +1820,7 @@ class Qdrant(VectorStore):
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
                     f"If you want to reuse it, please set `vector_name` to any of the "
                     f"existing named vectors: "
-                    f"{', '.join(current_vector_config.keys())}."  # noqa
+                    f"{', '.join(current_vector_config.keys())}."
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
