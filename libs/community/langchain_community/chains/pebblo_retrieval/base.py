@@ -118,7 +118,9 @@ class PebbloRetrievalQA(Chain):
             "name": self.app_name,
             "context": [
                 {
-                    "retrieved_from": doc.metadata.get("source"),
+                    "retrieved_from": doc.metadata.get(
+                        "full_path", doc.metadata.get("source")
+                    ),
                     "doc": doc.page_content,
                     "vector_db": self.retriever.vectorstore.__class__.__name__,
                 }
@@ -335,8 +337,8 @@ class PebbloRetrievalQA(Chain):
             "Accept": "application/json",
             "Content-Type": "application/json",
         }
+        payload = app.dict(exclude_unset=True)
         if classifier_location == "local":
-            payload = app.dict(exclude_unset=True)
             app_discover_url = f"{classifier_url}{APP_DISCOVER_URL}"
             try:
                 pebblo_resp = requests.post(
@@ -360,8 +362,8 @@ class PebbloRetrievalQA(Chain):
                     PebbloRetrievalQA.set_discover_sent()
                 else:
                     logger.warning(
-                        "Received unexpected HTTP response code:" +
-                        f"{pebblo_resp.status_code}"
+                        "Received unexpected HTTP response code:"
+                        + f"{pebblo_resp.status_code}"
                     )
             except requests.exceptions.RequestException:
                 logger.warning("Unable to reach pebblo server.")
@@ -437,8 +439,8 @@ class PebbloRetrievalQA(Chain):
                     PebbloRetrievalQA.set_prompt_sent()
                 else:
                     logger.warning(
-                        "Received unexpected HTTP response code:" +
-                        f"{pebblo_resp.status_code}"
+                        "Received unexpected HTTP response code:"
+                        + f"{pebblo_resp.status_code}"
                     )
             except requests.exceptions.RequestException:
                 logger.warning("Unable to reach pebblo server.")
@@ -464,9 +466,9 @@ class PebbloRetrievalQA(Chain):
                         .get("prompt", {})
                     )
                 else:
-                    qa_payload.response = {}
-                    qa_payload.context = []
-                    qa_payload.prompt = {}
+                    qa_payload.response = None
+                    qa_payload.context = None
+                    qa_payload.prompt = None
             headers.update({"x-api-key": self.api_key})
             pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}{PROMPT_URL}"
             try:
