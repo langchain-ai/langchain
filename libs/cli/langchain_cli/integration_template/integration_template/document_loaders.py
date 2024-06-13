@@ -74,5 +74,6 @@ class __ModuleName__Loader(BaseLoader):
     """
 
     # TODO: This method must be implemented to load documents.
+    # Do not implement load(), a default implementation is already available.
     def lazy_load(self) -> Iterator[Document]:
         raise NotImplementedError()
