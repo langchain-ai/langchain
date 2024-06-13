@@ -201,7 +201,6 @@ class Milvus(VectorStore):
         timeout: Optional[float] = None,
         num_shards: Optional[int] = None,
         enable_dynamic_field: bool = False,
-
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -263,7 +262,6 @@ class Milvus(VectorStore):
         self.num_shards = num_shards
         self.enable_dynamic_field = enable_dynamic_field
 
-
         # Create the connection to the server
         if connection_args is None:
             connection_args = DEFAULT_MILVUS_CONNECTION
@@ -276,7 +274,6 @@ class Milvus(VectorStore):
                 self.collection_name,
                 using=self.alias,
                 enable_dynamic_field=self.enable_dynamic_field,
-
             )
             if self.collection_properties is not None:
                 self.col.set_properties(self.collection_properties)
