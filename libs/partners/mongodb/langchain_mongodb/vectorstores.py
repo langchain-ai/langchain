@@ -61,50 +61,35 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         collection: Collection[MongoDBDocumentType],
         embedding: Embeddings,
-        *,
-        index_name: str = "vector_index",
+        vector_index_name: str = "vector_index",
         text_key: str = "text",
         embedding_key: str = "embedding",
-        relevance_score_fn: str = "cosine",  # TODO - Deduce from index_name
-        strategy: str = "vector",  # TODO - This is a search arg
-        text_index_name: str = "text_index",
-        text_search_operator: str = "text",  # TODO - This is a search arg. Better name?
-        text_penalty: int = 5,  # TODO - This is a search arg. Better name?
-        vector_penalty: int = 0,  # TODO - This is a search arg. Better name?
+        relevance_score_fn: str = "cosine",  # TODO - Deduce from vector_index_name
+        fulltext_index_name: str = "text_index",
+        index_name: str = None,
         **kwargs,
     ):
         """
         Args:
             collection: MongoDB collection to add the texts to.
             embedding: Text embedding model to use.
-            text_key: MongoDB field that will contain the text for each
-                document.
-                defaults to 'text'
-            embedding_key: MongoDB field that will contain the embedding for
-                each document.
-                defaults to 'embedding'
-            index_name: Name of the Atlas Vector Search index.
+            text_key: MongoDB field that will contain the text for each document.
+            embedding_key: MongoDB field that will contain the embedding for each document.
+            vector_index_name: Name of the Atlas Vector Search index.
             relevance_score_fn: The similarity score used for the index.
-                defaults to 'cosine'
                 Currently supported: 'euclidean', 'cosine', and 'dotProduct'.
-            strategy: Search index strategy to apply.  # TODO - Improve documentation
-                One of 'vector', 'text', or 'hybrid'.
-                defaults to 'vector'
-            text_index_name: If strategy in ["text", "hybrid"], one must provide the name of an Atlas Search Index
-            text_search_operator: A number of operators are available in the text search stage.
-                For details, see https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref
+            fulltext_index_name: If strategy provided to search / retriever in ["fulltext", "hybrid"],
+                one must provide the name of an Atlas Search Index.
         """
         self._collection = collection
         self._embedding = embedding
-        self._index_name = index_name
+        self._vector_index_name = vector_index_name
         self._text_key = text_key
         self._embedding_key = embedding_key
         self._relevance_score_fn = relevance_score_fn
-        self._strategy = strategy
-        self._text_index_name = text_index_name
-        self._text_search_operator = text_search_operator
-        self.text_penalty = text_penalty
-        self.vector_penalty = vector_penalty
+        self._text_index_name = fulltext_index_name
+        if index_name is not None:
+            logger.warning("index_name is deprecated. Please use vector_index_name")
 
     @property
     def embeddings(self) -> Embeddings:
@@ -203,7 +188,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def _similarity_search_with_score(
         self,
-        embedding: List[float],
+        query_vector: List[float],
         k: int = 4,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
@@ -211,11 +196,11 @@ class MongoDBAtlasVectorSearch(VectorStore):
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         params = {
-            "queryVector": embedding,
+            "queryVector": query_vector,
             "path": self._embedding_key,
             "numCandidates": k * 10,
             "limit": k,
-            "index": self._index_name,
+            "index": self._vector_index_name,
         }
         if pre_filter:
             params["filter"] = pre_filter
@@ -513,11 +498,12 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
-        strategy: str = None,  # TODO - Decide where these vars are set (VectorStore init, Retriever init, or function
-        with_scores: bool = True,
-        oversampling_factor: int = 100,
-        extra_fields: List[str] = None,
-        with_embeddings: bool = False,
+        strategy: str = "vector",
+        oversampling_factor: int = 10,
+        include_embeddings: bool = False,
+        vector_penalty: float = 0.0,
+        fulltext_penalty: float = 0.0,
+        fulltext_search_operator: str = "phrase",
         **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Extended Query interface supporting Vector, Full-Text and Hybrid Search.
@@ -537,67 +523,74 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
         For details on search_type='hybrid', see
             https://www.mongodb.com/docs/atlas/atlas-vector-search/tutorials/reciprocal-rank-fusion/
-
+            In the scoring algorithm used, Reciprocal Rank Fusion,
+            scores := \frac{1}{rank + penalty} with rank in [1,2,..,n]
 
          Args:
             query: Text to look up documents similar to.
             k: (Optional) number of documents to return. Defaults to 4.
-            pre_filter: (Optional) dictionary of argument(s) to prefilter document
-                fields on.
-            post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages
-                for postprocessing).
-            strategy: (Optional) One of "vector", "text", or "hybrid"
+            pre_filter: (Optional) dictionary of argument(s) to prefilter document fields on.
+            post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages for postprocessing.
+            strategy: (Optional) Type of search to make. One of "vector", "fulltext", or "hybrid".
+            oversampling_factor: Multiple of k used when generating number of candidates in HNSW Vector Search,
+            include_embeddings: If True, the embedding vector of each result will be included in metadata.
+            vector_penalty: Weighting factor applied to vector search results.
+            fulltext_penalty: Weighting factor applied to full-text search results.
+            fulltext_search_operator: A number of operators are available in the full-text search stage.
+                For details, see https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref
             kwargs: Additional arguments are specific to the search_type
 
         Returns:
             List of documents most similar to the query and their scores.
-            Results contain only the
-
          """
 
         pipeline = []
-        strategy = strategy or self._strategy
 
-        if (strategy or self._strategy) == "hybrid":
-            # Combines Vector and Full-Text searches with Reciprocal Rank Fusion
-            # Vector Search
+        if strategy == "vector":
+            # Atlas Vector Search, potentially with filter
             query_vector = self._embedding.embed_query(query)
-            vector_pipeline = [
-                vector_search_stage(query_vector, self._embedding_key, self._index_name, k, pre_filter, oversampling_factor)]
-            if not with_embeddings:
-                vector_pipeline.append({"$project": {self._embedding_key: 0}})
-            vector_pipeline.extend(reciprocal_rank_stage(self._text_key, "vector_score", self.vector_penalty, extra_fields=extra_fields))
-            combine_pipelines(pipeline, vector_pipeline, self._collection)
-
-            # Text Search  # TODO Remove embedding here too
-            text_pipeline = [
-                text_search_stage(query, self._text_key, self._text_index_name, self._text_search_operator),
-                {"$match": {"$and": pre_filter} if pre_filter else {}},
-                {"$limit": k},
+            pipeline = [
+                vector_search_stage(query_vector, self._embedding_key, self._vector_index_name, k, pre_filter, oversampling_factor, **kwargs),
+                {"$set": {"score": {"$meta": "vectorSearchScore"}}},
             ]
-            text_pipeline.extend(reciprocal_rank_stage(self._text_key, "text_score", self.text_penalty))
-            combine_pipelines(pipeline, text_pipeline,  self._collection.name)
 
-            # Sum and sort
-            pipeline += final_hybrid_stage(scores_fields=["vector_score", "text_score"], limit=k, text_field=self._text_key, extra_fields=None)
-
-        elif strategy == "text":
+        elif strategy == "fulltext":
             # Atlas Full-Text Search, potentially with filter
             pipeline = [
-                text_search_stage(query, self._text_key, self._text_index_name, self._text_search_operator),
+                text_search_stage(query, self._text_key, self._text_index_name, fulltext_search_operator, **kwargs),
                 {"$match": {"$and": pre_filter} if pre_filter else {}},
                 {"$set": {"score": {'$meta': 'searchScore'}}},
                 {"$limit": k},
             ]
-        elif strategy == "vector":
-            # Atlas Vector Search, potentially with filter
+
+        elif strategy == "hybrid":
+            # Combines Vector and Full-Text searches with Reciprocal Rank Fusion weighting
+            scores_fields = ["vector_score", "fulltext_score"]
+            # Vector Search pipeline
             query_vector = self._embedding.embed_query(query)
-            pipeline = [
-                vector_search_stage(query_vector, self._embedding_key, self._index_name, k, pre_filter),
-                {"$set": {"score": {"$meta": "vectorSearchScore"}}},
+            vector_pipeline = [
+                vector_search_stage(query_vector, self._embedding_key, self._vector_index_name, k, pre_filter, oversampling_factor, **kwargs)]
+            if not include_embeddings:
+                vector_pipeline.append({"$project": {self._embedding_key: 0}})
+            vector_pipeline.extend(reciprocal_rank_stage(self._text_key, "vector_score", vector_penalty))
+            combine_pipelines(pipeline, vector_pipeline, self._collection.name)
+
+            # Full-Text Search pipeline
+            text_pipeline = [
+                text_search_stage(query, self._text_key, self._text_index_name, fulltext_search_operator),
+                {"$match": {"$and": pre_filter} if pre_filter else {}},
+                {"$limit": k},
             ]
+            if not include_embeddings:
+                text_pipeline.append({"$project": {self._embedding_key: 0}})
+            text_pipeline.extend(reciprocal_rank_stage(self._text_key, "fulltext_score", fulltext_penalty))
+            combine_pipelines(pipeline, text_pipeline,  self._collection.name)
+
+            # Sum and sort pipeline
+            pipeline += final_hybrid_stage(scores_fields=scores_fields, limit=k,  **kwargs)
+
         else:
-            raise ValueError(f"Unrecognized {strategy=}. Expecting one of [vector, text, hybrid]")
+            raise ValueError(f"Unrecognized {strategy=}. Expecting one of [vector, fulltext, hybrid]")
 
         # Post-processing
         if post_filter_pipeline is not None:

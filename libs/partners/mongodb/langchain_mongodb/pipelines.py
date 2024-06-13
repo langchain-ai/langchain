@@ -7,7 +7,7 @@ MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 
 
 def text_search_stage(
-    query: str, search_field, index_name: str, operator: str = "text"
+    query: str, search_field, index_name: str, operator: str = "phrase", **kwargs: Any
 ) -> Dict[str, Any]:
     """Full-Text search.
 
@@ -39,6 +39,7 @@ def vector_search_stage(
     limit: int = 4,
     filter: MongoDBDocumentType = None,
     oversampling_factor=10,
+    **kwargs: Any
 ) -> Dict[str, Any]:
     """Vector Search Stage without Scores.
 
@@ -69,7 +70,7 @@ def vector_search_stage(
     }
 
 
-def combine_pipelines(pipeline: List[Any], stage: Dict[str, Any], collection_name: str):
+def combine_pipelines(pipeline: List[Any], stage: List[Dict[str, Any]], collection_name: str):
     """Combines two aggregations into a single result set."""
     if pipeline:
         pipeline.append({"$unionWith": {"coll": collection_name, "pipeline": stage}})
@@ -79,7 +80,7 @@ def combine_pipelines(pipeline: List[Any], stage: Dict[str, Any], collection_nam
 
 
 def reciprocal_rank_stage(
-    text_field, score_field: str, penalty: float = 0, extra_fields: List[str] = None  # TODO Sort out extra_fields
+    text_field, score_field: str, penalty: float = 0, **kwargs: Any
 ) -> List[Dict[str, Any]]:
     """Stage adds Reciprocal Rank Fusion weighting.
 
@@ -116,22 +117,19 @@ def reciprocal_rank_stage(
 def final_hybrid_stage(
     scores_fields: List[str],
     limit: int,
-    text_field: str,
-    extra_fields: List[str] = None,
+    **kwargs: Any
 ) -> List[Dict[str, Any]]:
     """Sum weighted scores, sort, and apply limit.
 
     Args:
         scores_fields: List of fields given to scores of vector and text searches
         limit: Number of documents to return
-        text_field: Collection field containing relevant to text per VectorStore API
-        extra_fields: Any fields other than text_field that one wishes to keep.
 
     Returns:
         Final aggregation stages
     """
-    # TODO - The scores_fields have been lost!!! i.e. score:None
-    final_pipeline = [
+
+    return [
         {"$group": {"_id": "$_id", "docs": {"$mergeObjects": "$$ROOT"}}},
         {"$replaceRoot": {"newRoot": '$docs'}},
         {"$set": {score: {"$ifNull": [f"${score}", 0]} for score in scores_fields}},
@@ -139,48 +137,3 @@ def final_hybrid_stage(
         {"$sort": {"score": -1}},
         {"$limit": limit},
     ]
-    return final_pipeline
-
-
-def final_hybrid_stage_deprecated(
-    scores_fields: List[str],
-    limit: int,
-    text_field: str,
-    extra_fields: List[str] = None,
-) -> List[Dict[str, Any]]:
-    """Sum weighted scores, sort, and apply limit.
-
-    Args:
-        scores_fields: List of fields given to scores of vector and text searches
-        limit: Number of documents to return
-        text_field: Collection field containing relevant to text per VectorStore API
-        extra_fields: Any fields other than text_field that one wishes to keep.
-
-    Returns:
-        Final aggregation stages
-    """
-
-    doc_fields = [text_field]
-    if extra_fields:
-        doc_fields.extend(extra_fields)
-
-    grouped_fields = {key: {"$first": f"${key}"} for key in doc_fields}
-    best_score = {score: {"$max": f"${score}"} for score in scores_fields}
-    final_pipeline = [
-        {
-            "$group": {"_id": "$_id", **grouped_fields, **best_score}},
-        {
-            "$project": {
-                **{doc_field: 1 for doc_field in doc_fields},
-                **{score: {"$ifNull": [f"${score}", 0]} for score in scores_fields},
-            }
-        },
-        {
-            "$addFields": {
-                "score": {"$add": [f"${score}" for score in scores_fields]},
-            }
-        },
-        {"$sort": {"score": -1}},
-        {"$limit": limit},
-    ]
-    return final_pipeline
