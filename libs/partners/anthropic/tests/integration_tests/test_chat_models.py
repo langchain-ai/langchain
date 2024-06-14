@@ -415,8 +415,9 @@ def test_tool_use() -> None:
     assert len(gathered.tool_calls) == 1
     tool_call = gathered.tool_calls[0]
     assert tool_call["name"] == "get_weather"
-    assert isinstance(tool_call["args"], str)
-    assert "location" in json.loads(tool_call["args"])
+    assert isinstance(tool_call["args"], dict)
+    assert "location" in tool_call["args"]
+    assert tool_call["id"] is not None
 
     # Test passing response back to model
     stream = llm_with_tools.stream(

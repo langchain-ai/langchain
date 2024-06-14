@@ -141,7 +141,7 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
     [
                 {
                     "role": _message_type_lookups[m.type],
-                    "content": [_AnthropicMessageContent(text=m.content).dict()],
+                    "content": [_AnthropicMessageContent(text=m.content).model_dump()],
                 }
                 for m in messages
             ]
@@ -1063,7 +1063,7 @@ def _make_message_chunk_from_anthropic_event(
     event: anthropic.types.RawMessageStreamEvent,
     *,
     stream_usage: bool = True,
-    coerce_content_to_string: bool = False,
+    coerce_content_to_string: bool,
 ) -> Optional[AIMessageChunk]:
     """Convert Anthropic event to AIMessageChunk.
 
@@ -1089,7 +1089,7 @@ def _make_message_chunk_from_anthropic_event(
     ):
         if coerce_content_to_string:
             warnings.warn("Received unexpected tool content block.")
-        content_block = event.content_block.dict()
+        content_block = event.content_block.model_dump()
         content_block["index"] = event.index
         tool_call_chunk = {
             "index": event.index,
@@ -1107,12 +1107,12 @@ def _make_message_chunk_from_anthropic_event(
                 text = event.delta.text
                 message_chunk = AIMessageChunk(content=text)
             else:
-                content_block = event.delta.dict()
+                content_block = event.delta.model_dump()
                 content_block["index"] = event.index
                 content_block["type"] = "text"
                 message_chunk = AIMessageChunk(content=[content_block])
         elif event.delta.type == "input_json_delta":
-            content_block = event.delta.dict()
+            content_block = event.delta.model_dump()
             content_block["index"] = event.index
             content_block["type"] = "tool_use"
             tool_call_chunk = {
