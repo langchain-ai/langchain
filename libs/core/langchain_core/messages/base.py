@@ -105,6 +105,9 @@ def merge_content(
         # Add the second content to the last element
         if isinstance(first_content[-1], str):
             return first_content[:-1] + [first_content[-1] + second_content]
+        # If second content is an empty string, treat as a no-op
+        elif second_content == "":
+            return first_content
         else:
             # Otherwise, add the second content as a new element of the list
             return first_content + [second_content]

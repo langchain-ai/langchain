@@ -9,21 +9,10 @@ from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
 from langchain_groq import ChatGroq
 
 
-class TestMistralStandard(ChatModelIntegrationTests):
+class TestGroqStandard(ChatModelIntegrationTests):
     @pytest.fixture
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatGroq
-
-    @pytest.mark.xfail(reason="Not implemented.")
-    def test_usage_metadata(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-    ) -> None:
-        super().test_usage_metadata(
-            chat_model_class,
-            chat_model_params,
-        )
 
     @pytest.mark.xfail(reason="Not yet implemented.")
     def test_tool_message_histories_list_content(
