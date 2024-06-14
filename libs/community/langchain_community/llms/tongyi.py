@@ -55,17 +55,17 @@ def _create_retry_decorator(llm: Tongyi) -> Callable[[Any], Any]:
 
 def check_response(resp: Any) -> Any:
     """Check the response from the completion call."""
-    if resp.status_code == 200:
+    if resp["status_code"] == 200:
         return resp
-    elif resp.status_code in [400, 401]:
+    elif resp["status_code"] in [400, 401]:
         raise ValueError(
-            f"status_code: {resp.status_code} \n "
-            f"code: {resp.code} \n message: {resp.message}"
+            f"status_code: {resp['status_code']} \n "
+            f"code: {resp['code']} \n message: {resp['message']}"
         )
     else:
         raise HTTPError(
-            f"HTTP error occurred: status_code: {resp.status_code} \n "
-            f"code: {resp.code} \n message: {resp.message}",
+            f"HTTP error occurred: status_code: {resp['status_code']} \n "
+            f"code: {resp['code']} \n message: {resp['message']}",
             response=resp,
         )
 

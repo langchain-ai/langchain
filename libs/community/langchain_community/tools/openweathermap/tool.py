@@ -13,7 +13,7 @@ class OpenWeatherMapQueryRun(BaseTool):
     """Tool that queries the OpenWeatherMap API."""
 
     api_wrapper: OpenWeatherMapAPIWrapper = Field(
-        default_factory=OpenWeatherMapAPIWrapper
+        default_factory=OpenWeatherMapAPIWrapper  # type: ignore[arg-type]
     )
 
     name: str = "open_weather_map"

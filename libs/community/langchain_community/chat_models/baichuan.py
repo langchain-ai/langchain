@@ -66,9 +66,9 @@ def _convert_delta_to_message_chunk(
     elif role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 class ChatBaichuan(BaseChatModel):
@@ -97,7 +97,7 @@ class ChatBaichuan(BaseChatModel):
     """Whether to stream the results or not."""
     request_timeout: int = Field(default=60, alias="timeout")
     """request timeout for chat http requests"""
-    model = "Baichuan2-Turbo-192K"
+    model: str = "Baichuan2-Turbo-192K"
     """model name of Baichuan, default is `Baichuan2-Turbo-192K`,
     other options include `Baichuan2-Turbo`"""
     temperature: Optional[float] = Field(default=0.3)

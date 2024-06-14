@@ -73,7 +73,7 @@ class FileManagementToolkit(BaseToolkit):
         tools: List[BaseTool] = []
         for tool in allowed_tools:
             tool_cls = _FILE_TOOLS_MAP[tool]
-            tools.append(tool_cls(root_dir=self.root_dir))
+            tools.append(tool_cls(root_dir=self.root_dir))  # type: ignore[call-arg]
         return tools
 
 

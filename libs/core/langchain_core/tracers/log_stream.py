@@ -8,6 +8,7 @@ from typing import (
     Any,
     AsyncIterator,
     Dict,
+    Iterator,
     List,
     Literal,
     Optional,
@@ -26,6 +27,7 @@ from langchain_core.load.load import load
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.utils import Input, Output
+from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.memory_stream import _MemoryStream
 from langchain_core.tracers.schemas import Run
@@ -157,7 +159,7 @@ class RunLog(RunLogPatch):
 T = TypeVar("T")
 
 
-class LogStreamCallbackHandler(BaseTracer):
+class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
     """Tracer that streams run logs to a stream."""
 
     def __init__(
@@ -235,6 +237,25 @@ class LogStreamCallbackHandler(BaseTracer):
     ) -> AsyncIterator[T]:
         """Tap an output async iterator to stream its values to the log."""
         async for chunk in output:
+            # root run is handled in .astream_log()
+            if run_id != self.root_id:
+                # if we can't find the run silently ignore
+                # eg. because this run wasn't included in the log
+                if key := self._key_map_by_run_id.get(run_id):
+                    if not self.send(
+                        {
+                            "op": "add",
+                            "path": f"/logs/{key}/streamed_output/-",
+                            "value": chunk,
+                        }
+                    ):
+                        break
+
+            yield chunk
+
+    def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
+        """Tap an output async iterator to stream its values to the log."""
+        for chunk in output:
             # root run is handled in .astream_log()
             if run_id != self.root_id:
                 # if we can't find the run silently ignore
@@ -461,7 +482,7 @@ def _get_standardized_inputs(
 
 
 def _get_standardized_outputs(
-    run: Run, schema_format: Literal["original", "streaming_events"]
+    run: Run, schema_format: Literal["original", "streaming_events", "original+chat"]
 ) -> Optional[Any]:
     """Extract standardized output from a run.
 

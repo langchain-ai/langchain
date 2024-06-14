@@ -69,7 +69,7 @@ def _convert_delta_to_message_chunk(_dict: Mapping[str, Any]) -> BaseMessageChun
     elif role == "assistant":
         return AIMessageChunk(content=content)
     else:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
 
 
 class ChatCoze(BaseChatModel):

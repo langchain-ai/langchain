@@ -81,7 +81,7 @@ class WatsonxLLM(BaseLLM):
     params: Optional[dict] = None
     """Model parameters to use during generate requests."""
 
-    verify: Union[str, bool] = ""
+    verify: Union[str, bool, None] = None
     """User can pass as verify one of following:
         the path to a CA_BUNDLE file
         the path of directory with certificates of trusted CAs

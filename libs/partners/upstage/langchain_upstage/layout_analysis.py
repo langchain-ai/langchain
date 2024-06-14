@@ -1,6 +1,7 @@
 import os
+import warnings
 from pathlib import Path
-from typing import Iterator, List, Literal, Optional, Union
+from typing import Any, Dict, Iterator, List, Literal, Optional, Union
 
 from langchain_core.document_loaders import BaseLoader, Blob
 from langchain_core.documents import Document
@@ -73,7 +74,7 @@ def get_from_param_or_env(
 class UpstageLayoutAnalysisLoader(BaseLoader):
     """Upstage Layout Analysis.
 
-    To use, you should have the environment variable `UPSTAGE_DOCUMENT_AI_API_KEY`
+    To use, you should have the environment variable `UPSTAGE_API_KEY`
     set with your API key or pass it as a named parameter to the constructor.
 
     Example:
@@ -110,7 +111,7 @@ class UpstageLayoutAnalysisLoader(BaseLoader):
             api_key (str, optional): The API key for accessing the Upstage API.
                                      Defaults to None, in which case it will be
                                      fetched from the environment variable
-                                     `UPSTAGE_DOCUMENT_AI_API_KEY`.
+                                     `UPSTAGE_API_KEY`.
             use_ocr (bool, optional): Extract text from images in the document.
                                       Defaults to False. (Use text info in PDF file)
             exclude (list, optional): Exclude specific elements from
@@ -120,8 +121,14 @@ class UpstageLayoutAnalysisLoader(BaseLoader):
         self.file_path = file_path
         self.output_type = output_type
         self.split = split
+        if deprecated_key := os.environ.get("UPSTAGE_DOCUMENT_AI_API_KEY"):
+            warnings.warn(
+                "UPSTAGE_DOCUMENT_AI_API_KEY is deprecated."
+                "Please use UPSTAGE_API_KEY instead."
+            )
+
         self.api_key = get_from_param_or_env(
-            "UPSTAGE_DOCUMENT_AI_API_KEY", api_key, "UPSTAGE_DOCUMENT_AI_API_KEY"
+            "UPSTAGE_API_KEY", api_key, "UPSTAGE_API_KEY", deprecated_key
         )
         self.use_ocr = use_ocr
         self.exclude = exclude
@@ -197,3 +204,45 @@ class UpstageLayoutAnalysisLoader(BaseLoader):
                 exclude=self.exclude,
             )
             yield from parser.lazy_parse(blob)
+
+    def merge_and_split(
+        self, documents: List[Document], splitter: Optional[object] = None
+    ) -> List[Document]:
+        """
+        Merges the page content and metadata of multiple documents into a single
+        document, or splits the documents using a custom splitter.
+
+        Args:
+            documents (list): A list of Document objects to be merged and split.
+            splitter (object, optional): An optional splitter object that implements the
+                `split_documents` method. If provided, the documents will be split using
+                this splitter. Defaults to None, in which case the documents are merged.
+
+        Returns:
+            list: A list of Document objects. If no splitter is provided, a single
+            Document object is returned with the merged content and combined metadata.
+            If a splitter is provided, the documents are split and a list of Document
+            objects is returned.
+
+        Raises:
+            AssertionError: If a splitter is provided but it does not implement the
+            `split_documents` method.
+        """
+        if splitter is None:
+            merged_content = " ".join([doc.page_content for doc in documents])
+
+            metadatas: Dict[str, Any] = dict()
+            for _meta in [doc.metadata for doc in documents]:
+                for key, value in _meta.items():
+                    if key in metadatas:
+                        metadatas[key].append(value)
+                    else:
+                        metadatas[key] = [value]
+
+            return [Document(page_content=merged_content, metadata=metadatas)]
+        else:
+            assert hasattr(
+                splitter, "split_documents"
+            ), "splitter must implement split_documents method"
+
+            return splitter.split_documents(documents)

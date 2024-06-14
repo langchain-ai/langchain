@@ -101,7 +101,7 @@ def _convert_dict_to_message(dct: Dict[str, Any]) -> BaseMessage:
         if tool_calls is not None:
             additional_kwargs["tool_calls"] = tool_calls
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
-    return ChatMessage(role=role, content=content)
+    return ChatMessage(role=role, content=content)  # type: ignore[arg-type]
 
 
 def _convert_message_to_dict(message: BaseMessage) -> Dict[str, Any]:
@@ -144,8 +144,8 @@ def _convert_delta_to_message_chunk(
     if role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
     if role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
-    return default_class(content=content)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
+    return default_class(content=content)  # type: ignore[call-arg]
 
 
 def _truncate_params(payload: Dict[str, Any]) -> None:

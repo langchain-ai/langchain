@@ -18,7 +18,7 @@ class SpiderLoader(BaseLoader):
         *,
         api_key: Optional[str] = None,
         mode: Literal["scrape", "crawl"] = "scrape",
-        params: Optional[dict] = {"return_format": "markdown"},
+        params: Optional[dict] = None,
     ):
         """Initialize with API key and URL.
 
@@ -31,6 +31,12 @@ class SpiderLoader(BaseLoader):
                  crawling following subpages).
             params: Additional parameters for the Spider API.
         """
+        if params is None:
+            params = {
+                "return_format": "markdown",
+                "metadata": True,
+            }  # Using the metadata param slightly slows down the output
+
         try:
             from spider import Spider
         except ImportError:
@@ -41,13 +47,6 @@ class SpiderLoader(BaseLoader):
             raise ValueError(
                 f"Unrecognized mode '{mode}'. Expected one of 'scrape', 'crawl'."
             )
-        # If `params` is `None`, initialize it as an empty dictionary
-        if params is None:
-            params = {}
-
-        # Add a default value for 'metadata' if it's not already present
-        if "metadata" not in params:
-            params["metadata"] = True
 
         # Use the environment variable if the API key isn't provided
         api_key = api_key or get_from_env("api_key", "SPIDER_API_KEY")
@@ -79,7 +78,8 @@ class SpiderLoader(BaseLoader):
                 # Ensure metadata is also not None
                 metadata = doc[0].get("metadata", {})
 
-                yield Document(page_content=page_content, metadata=metadata)
+                if page_content is not None:
+                    yield Document(page_content=page_content, metadata=metadata)
             if self.mode == "crawl":
                 # Ensure page_content is also not None
                 page_content = doc.get("content", "")

@@ -29,7 +29,7 @@ class ZapierToolkit(BaseToolkit):
             )
             for action in actions
         ]
-        return cls(tools=tools)
+        return cls(tools=tools)  # type: ignore[arg-type]
 
     @classmethod
     async def async_from_zapier_nla_wrapper(
@@ -46,7 +46,7 @@ class ZapierToolkit(BaseToolkit):
             )
             for action in actions
         ]
-        return cls(tools=tools)
+        return cls(tools=tools)  # type: ignore[arg-type]
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""

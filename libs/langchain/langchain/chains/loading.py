@@ -1,8 +1,9 @@
 """Functionality for loading chains."""
+from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import yaml
 from langchain_core.prompts.loading import (
@@ -18,16 +19,19 @@ from langchain.chains.combine_documents.map_reduce import MapReduceDocumentsChai
 from langchain.chains.combine_documents.map_rerank import MapRerankDocumentsChain
 from langchain.chains.combine_documents.refine import RefineDocumentsChain
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
-from langchain.chains.graph_qa.cypher import GraphCypherQAChain
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.llm import LLMChain
 from langchain.chains.llm_checker.base import LLMCheckerChain
 from langchain.chains.llm_math.base import LLMMathChain
-from langchain.chains.llm_requests import LLMRequestsChain
 from langchain.chains.qa_with_sources.base import QAWithSourcesChain
 from langchain.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
 from langchain.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
 from langchain.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
+
+if TYPE_CHECKING:
+    from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
+
+    from langchain.chains.llm_requests import LLMRequestsChain
 
 try:
     from langchain_community.llms.loading import load_llm, load_llm_from_config
@@ -547,6 +551,14 @@ def _load_graph_cypher_chain(config: dict, **kwargs: Any) -> GraphCypherQAChain:
     else:
         raise ValueError("`qa_chain` must be present.")
 
+    try:
+        from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
+    except ImportError:
+        raise ImportError(
+            "To use this GraphCypherQAChain functionality you must install the "
+            "langchain_community package. "
+            "You can install it with `pip install langchain_community`"
+        )
     return GraphCypherQAChain(
         graph=graph,
         cypher_generation_chain=cypher_generation_chain,  # type: ignore[arg-type]
@@ -587,6 +599,15 @@ def _load_api_chain(config: dict, **kwargs: Any) -> APIChain:
 
 
 def _load_llm_requests_chain(config: dict, **kwargs: Any) -> LLMRequestsChain:
+    try:
+        from langchain.chains.llm_requests import LLMRequestsChain
+    except ImportError:
+        raise ImportError(
+            "To use this LLMRequestsChain functionality you must install the "
+            "langchain package. "
+            "You can install it with `pip install langchain`"
+        )
+
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
         llm_chain = load_chain_from_config(llm_chain_config, **kwargs)

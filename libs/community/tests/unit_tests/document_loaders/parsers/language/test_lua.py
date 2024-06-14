@@ -33,7 +33,7 @@ end"""
     @pytest.mark.skip(
         reason=(
             "Flakey. To be investigated. See "
-            "https://github.com/langchain-ai/langchain/actions/runs/7907779756/job/21585580650."  # noqa: E501
+            "https://github.com/langchain-ai/langchain/actions/runs/7907779756/job/21585580650."
         )
     )
     def test_extract_functions_classes(self) -> None:
@@ -46,7 +46,7 @@ end"""
         reason=(
             "Flakey. To be investigated. See "
             "https://github.com/langchain-ai/langchain/actions/runs/7923203031/job/21632416298?pr=17599 "  # noqa: E501
-            "and https://github.com/langchain-ai/langchain/actions/runs/7923784089/job/2163420864."  # noqa: E501
+            "and https://github.com/langchain-ai/langchain/actions/runs/7923784089/job/2163420864."
         )
     )
     def test_simplify_code(self) -> None:

@@ -128,11 +128,11 @@ def _load_package_modules(
     of the modules/packages are part of the package vs. 3rd party or built-in.
 
     Parameters:
-        package_directory: Path to the package directory.
-        submodule: Optional name of submodule to load.
+        package_directory (Union[str, Path]): Path to the package directory.
+        submodule (Optional[str]): Optional name of submodule to load.
 
     Returns:
-        list: A list of loaded module objects.
+        Dict[str, ModuleMembers]: A dictionary where keys are module names and values are ModuleMembers objects.
     """
     package_path = (
         Path(package_directory)
@@ -187,7 +187,7 @@ def _load_package_modules(
             modules_by_namespace[top_namespace] = _module_members
 
         except ImportError as e:
-            print(f"Error: Unable to import module '{namespace}' with error: {e}")  # noqa: T201
+            print(f"Error: Unable to import module '{namespace}' with error: {e}")
 
     return modules_by_namespace
 
@@ -359,9 +359,14 @@ def main(dirs: Optional[list] = None) -> None:
         dirs = [
             dir_
             for dir_ in os.listdir(ROOT_DIR / "libs")
-            if dir_ not in ("cli", "partners")
+            if dir_ not in ("cli", "partners", "standard-tests")
         ]
-        dirs += os.listdir(ROOT_DIR / "libs" / "partners")
+        dirs += [
+            dir_
+            for dir_ in os.listdir(ROOT_DIR / "libs" / "partners")
+            if os.path.isdir(ROOT_DIR / "libs" / "partners" / dir_)
+            and "pyproject.toml" in os.listdir(ROOT_DIR / "libs" / "partners" / dir_)
+        ]
     for dir_ in dirs:
         # Skip any hidden directories
         # Some of these could be present by mistake in the code base
