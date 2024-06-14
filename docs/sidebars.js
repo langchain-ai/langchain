@@ -185,7 +185,7 @@ module.exports = {
           ],
           link: {
             type: "doc",
-            slug: "integrations/document_loaders/index",
+            id: "integrations/document_loaders/index",
           },
         },
         {
