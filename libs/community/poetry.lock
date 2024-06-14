@@ -5741,24 +5741,6 @@ files = [
 ]
 
 [[package]]
-name = "parsel"
-version = "1.9.1"
-description = "Parsel is a library to extract data from HTML and XML using XPath and CSS selectors"
-optional = true
-python-versions = ">=3.8"
-files = [
-    {file = "parsel-1.9.1-py2.py3-none-any.whl", hash = "sha256:c4a777ee6c3ff5e39652b58e351c5cf02c12ff420d05b07a7966aebb68ab1700"},
-    {file = "parsel-1.9.1.tar.gz", hash = "sha256:14e00dc07731c9030db620c195fcae884b5b4848e9f9c523c6119f708ccfa9ac"},
-]
-
-[package.dependencies]
-cssselect = ">=1.2.0"
-jmespath = "*"
-lxml = "*"
-packaging = "*"
-w3lib = ">=1.19.0"
-
-[[package]]
 name = "parso"
 version = "0.8.3"
 description = "A Python Parser"
@@ -9618,17 +9600,6 @@ files = [
 protobuf = "4.24.2"
 
 [[package]]
-name = "w3lib"
-version = "2.2.1"
-description = "Library of web-related functions"
-optional = true
-python-versions = ">=3.8"
-files = [
-    {file = "w3lib-2.2.1-py3-none-any.whl", hash = "sha256:e56d81c6a6bf507d7039e0c95745ab80abd24b465eb0f248af81e3eaa46eb510"},
-    {file = "w3lib-2.2.1.tar.gz", hash = "sha256:756ff2d94c64e41c8d7c0c59fea12a5d0bc55e33a531c7988b4a163deb9b07dd"},
-]
-
-[[package]]
 name = "watchdog"
 version = "4.0.0"
 description = "Filesystem events monitoring"
@@ -10163,4 +10134,4 @@ extended-testing = ["aiosqlite", "aleph-alpha-client", "anthropic", "arxiv", "as
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "3ab4786c8bc2d01d37919fadb0ec07363ac0e70c48b084f37ccfde7e2b5471af"
+content-hash = "71be3556d059f2715d46e9d7835d8b03c9f915d2a306b65387666fe03daee4f1"
