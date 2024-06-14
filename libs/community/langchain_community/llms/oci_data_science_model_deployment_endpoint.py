@@ -1,17 +1,25 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Iterator, AsyncIterator
 
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
+from langchain_core.outputs import GenerationChunk
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain_community.llms.utils import enforce_stop_tokens
+import json
+import sseclient
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_TIME_OUT = 300
 DEFAULT_CONTENT_TYPE_JSON = "application/json"
-
+DEFAULT_MODEL_NAME = "odsc-llm"
 
 class OCIModelDeploymentLLM(LLM):
     """Base class for LLM deployed on OCI Data Science Model Deployment."""
@@ -47,6 +55,9 @@ class OCIModelDeploymentLLM(LLM):
     """Stop words to use when generating. Model output is cut off
     at the first occurrence of any of these substrings."""
 
+    streaming: bool = False
+    """Whether to stream the results or not."""
+    
     @root_validator()
     def validate_environment(  # pylint: disable=no-self-argument
         cls, values: Dict
@@ -84,7 +95,10 @@ class OCIModelDeploymentLLM(LLM):
 
     def _construct_json_body(self, prompt: str, params: dict) -> dict:
         """Constructs the request body as a dictionary (JSON)."""
-        raise NotImplementedError
+        return {
+            "prompt": prompt,
+            **params,
+        }
 
     def _invocation_params(self, stop: Optional[List[str]], **kwargs: Any) -> dict:
         """Combines the invocation parameters with default parameters."""
@@ -99,6 +113,10 @@ class OCIModelDeploymentLLM(LLM):
             # Don't set "stop" in param as None. It should be a list.
             params["stop"] = []
 
+        if self.streaming:
+            params["stream"] = True
+            params["whole_output_stream"] = True
+            
         return {**params, **kwargs}
 
     def _process_response(self, response_json: dict) -> str:
@@ -132,23 +150,120 @@ class OCIModelDeploymentLLM(LLM):
 
         """
         requests_kwargs = kwargs.pop("requests_kwargs", {})
+        
+        if self.streaming:
+            text = ""
+            for chunk in self._stream(prompt, stop, run_manager, **kwargs):
+                text += chunk.text
+            if stop is not None:
+                text = enforce_stop_tokens(text, stop)
+            return text
+        
         params = self._invocation_params(stop, **kwargs)
         body = self._construct_json_body(prompt, params)
         logger.info(f"LLM API Request:\n{prompt}")
         response = self._send_request(
             data=body, endpoint=self.endpoint, **requests_kwargs
-        )
+        ).json()
         completion = self._process_response(response)
         logger.info(f"LLM API Completion:\n{completion}")
         return completion
 
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        """Stream OCI Data Science Model Deployment endpoint on given prompt.
+
+        Parameters
+        ----------
+        prompt (str):
+            The prompt to pass into the model.
+        stop (List[str], Optional):
+            List of stop words to use when generating.
+        kwargs:
+            requests_kwargs:
+                Additional ``**kwargs`` to pass to requests.post
+                
+        Returns
+        -------
+            An iterator of GenerationChunks.
+
+
+        Example
+        -------
+
+            .. code-block:: python
+
+            response = oci_md.stream("Tell me a joke.")
+
+        """
+        requests_kwargs = kwargs.pop("requests_kwargs", {})
+        self.streaming = True
+        params = self._invocation_params(stop, **kwargs)
+        body = self._construct_json_body(prompt, params)
+        response = self._send_request(data=body, endpoint=self.endpoint, **requests_kwargs)
+
+        client = sseclient.SSEClient(response)
+        for event in client.events():
+            if not event or event.data == "[DONE]":
+                continue
+            
+            try:
+                chunk = GenerationChunk(text=json.loads(event.data)["choices"][0]["text"])
+            except Exception as e:
+                raise RuntimeError(f"Error raised during inferencing. Response data={event.data}. {e}")
+            
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk        
+                
+    async def _acall(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        """Async call the OCI Data Science Model Deployment endpoint and return the output.
+
+        Args:
+            prompt: The prompt to pass into the model.
+            stop: Optional list of stop words to use when generating.
+
+        Returns:
+            The string generated by the model.
+        
+        Example:
+        
+            .. code-block:: python
+
+                response = await oci_md("Tell me a joke.")
+                
+        """
+        # TODO: Implement it.
+        pass
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        # TODO: Implement it.
+        pass
+     
     def _send_request(
         self,
         data: Any,
         endpoint: str,
         header: Optional[dict] = {},
         **kwargs: Any,
-    ) -> Dict:
+    ) -> requests.Response:
         """Sends request to the oci data science model deployment endpoint.
 
         Args:
@@ -161,12 +276,13 @@ class OCIModelDeploymentLLM(LLM):
                 Defaults to {}.
             kwargs:
                 Additional ``**kwargs`` to pass to requests.post.
+                
         Raises:
             Exception:
                 Raise when invoking fails.
 
         Returns:
-            A JSON representation of a requests.Response object.
+            A requests.Response object.
         """
         if not header:
             header = {}
@@ -177,6 +293,10 @@ class OCIModelDeploymentLLM(LLM):
         request_kwargs = {"json": data}
         request_kwargs["headers"] = header
         timeout = kwargs.pop("timeout", DEFAULT_TIME_OUT)
+
+        if self.streaming:
+            header.update({"enable-streaming": "true", "Accept": "text/event-stream"})
+            request_kwargs["stream"] = True
 
         attempts = 0
         while attempts < 2:
@@ -192,18 +312,17 @@ class OCIModelDeploymentLLM(LLM):
 
         try:
             response.raise_for_status()
-            response_json = response.json()
 
-        except Exception:
+        except Exception as e:
             logger.error(
                 "DEBUG INFO: request_kwargs=%s, status_code=%s, content=%s",
                 request_kwargs,
                 response.status_code,
                 response.content,
             )
-            raise
+            raise ValueError(f"Error raised by inference endpoint: {e}")
 
-        return response_json
+        return response
 
     def _refresh_signer(self) -> None:
         if self.auth.get("signer", None) and hasattr(
@@ -230,7 +349,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
 
             from langchain_community.llms import ModelDeploymentTGI
 
-            oci_md = ModelDeploymentTGI(endpoint="https://<MD_OCID>/predict")
+            oci_md = ModelDeploymentTGI(endpoint=""https://modeldeployment.<region>.oci.customer-oci.com/<md_ocid>/predict"")
 
     """
 
@@ -256,6 +375,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for invoking OCI model deployment TGI endpoint."""
         return {
+            "model": DEFAULT_MODEL_NAME, # can be any
             "best_of": self.best_of,
             "max_new_tokens": self.max_tokens,
             "temperature": self.temperature,
@@ -268,11 +388,6 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
             "watermark": self.watermark,
         }
 
-    def _construct_json_body(self, prompt: str, params: dict) -> dict:
-        return {
-            "inputs": prompt,
-            "parameters": params,
-        }
 
     def _process_response(self, response_json: dict) -> str:
         return str(response_json.get("generated_text", response_json)) + "\n"
@@ -282,7 +397,7 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
     """VLLM deployed on OCI Data Science Model Deployment
 
     To use, you must provide the model HTTP endpoint from your deployed
-    model, e.g. https://<MD_OCID>/predict.
+    model, e.g. https://modeldeployment.<region>.oci.customer-oci.com/<md_ocid>/predict.
 
     To authenticate, `oracle-ads` has been used to automatically load
     credentials: https://accelerated-data-science.readthedocs.io/en/latest/user_guide/cli/authentication.html
@@ -297,13 +412,13 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
             from langchain_community.llms import OCIModelDeploymentVLLM
 
             oci_md = OCIModelDeploymentVLLM(
-                endpoint="https://<MD_OCID>/predict",
-                model="mymodel"
+                endpoint="https://modeldeployment.<region>.oci.customer-oci.com/<md_ocid>/predict",
+                model="odsc-llm"
             )
 
     """
 
-    model: str
+    model: str = DEFAULT_MODEL_NAME
     """The name of the model."""
 
     n: int = 1
@@ -352,11 +467,6 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
             "use_beam_search": self.use_beam_search,
         }
 
-    def _construct_json_body(self, prompt: str, params: dict) -> dict:
-        return {
-            "prompt": prompt,
-            **params,
-        }
 
     def _process_response(self, response_json: dict) -> str:
         return response_json["choices"][0]["text"]
