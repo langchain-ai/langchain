@@ -353,6 +353,8 @@ def _get_key(
                 if scope._CHEVRON_return_scope_when_falsy:  # type: ignore
                     return scope
             except AttributeError:
+                if scope in (0, False):
+                    return scope
                 return scope or ""
         except (AttributeError, KeyError, IndexError, ValueError):
             # We couldn't find the key in the current scope

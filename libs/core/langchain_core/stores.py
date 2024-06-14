@@ -129,28 +129,7 @@ ByteStore = BaseStore[str, bytes]
 
 
 class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
-    """In-memory implementation of the BaseStore using a dictionary.
-
-    Attributes:
-        store (Dict[str, Any]): The underlying dictionary that stores
-            the key-value pairs.
-
-    Examples:
-
-        .. code-block:: python
-
-            from langchain.storage import InMemoryStore
-
-            store = InMemoryStore()
-            store.mset([('key1', 'value1'), ('key2', 'value2')])
-            store.mget(['key1', 'key2'])
-            # ['value1', 'value2']
-            store.mdelete(['key1'])
-            list(store.yield_keys())
-            # ['key2']
-            list(store.yield_keys(prefix='k'))
-            # ['key2']
-    """
+    """In-memory implementation of the BaseStore using a dictionary."""
 
     def __init__(self) -> None:
         """Initialize an empty store."""
@@ -255,8 +234,54 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
                     yield key
 
 
-InMemoryStore = InMemoryBaseStore[Any]
-InMemoryByteStore = InMemoryBaseStore[bytes]
+class InMemoryStore(InMemoryBaseStore[Any]):
+    """In-memory store for any type of data.
+
+    Attributes:
+        store (Dict[str, Any]): The underlying dictionary that stores
+            the key-value pairs.
+
+    Examples:
+
+        .. code-block:: python
+
+            from langchain.storage import InMemoryStore
+
+            store = InMemoryStore()
+            store.mset([('key1', 'value1'), ('key2', 'value2')])
+            store.mget(['key1', 'key2'])
+            # ['value1', 'value2']
+            store.mdelete(['key1'])
+            list(store.yield_keys())
+            # ['key2']
+            list(store.yield_keys(prefix='k'))
+            # ['key2']
+    """
+
+
+class InMemoryByteStore(InMemoryBaseStore[bytes]):
+    """In-memory store for bytes.
+
+    Attributes:
+        store (Dict[str, bytes]): The underlying dictionary that stores
+            the key-value pairs.
+
+    Examples:
+
+        .. code-block:: python
+
+            from langchain.storage import InMemoryByteStore
+
+            store = InMemoryByteStore()
+            store.mset([('key1', b'value1'), ('key2', b'value2')])
+            store.mget(['key1', 'key2'])
+            # [b'value1', b'value2']
+            store.mdelete(['key1'])
+            list(store.yield_keys())
+            # ['key2']
+            list(store.yield_keys(prefix='k'))
+            # ['key2']
+    """
 
 
 class InvalidKeyException(LangChainException):

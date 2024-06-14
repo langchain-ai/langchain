@@ -18,12 +18,14 @@ CHAT_MODEL_FEAT_TABLE = {
     "ChatAnthropic": {
         "tool_calling": True,
         "structured_output": True,
+        "multimodal": True,
         "package": "langchain-anthropic",
         "link": "/docs/integrations/chat/anthropic/",
     },
     "ChatMistralAI": {
         "tool_calling": True,
         "structured_output": True,
+        "json_model": True,
         "package": "langchain-mistralai",
         "link": "/docs/integrations/chat/mistralai/",
     },
@@ -38,6 +40,7 @@ CHAT_MODEL_FEAT_TABLE = {
         "tool_calling": True,
         "structured_output": True,
         "json_mode": True,
+        "multimodal": True,
         "package": "langchain-openai",
         "link": "/docs/integrations/chat/azure_chat_openai/",
     },
@@ -45,6 +48,7 @@ CHAT_MODEL_FEAT_TABLE = {
         "tool_calling": True,
         "structured_output": True,
         "json_mode": True,
+        "multimodal": True,
         "package": "langchain-openai",
         "link": "/docs/integrations/chat/openai/",
     },
@@ -58,8 +62,15 @@ CHAT_MODEL_FEAT_TABLE = {
     "ChatVertexAI": {
         "tool_calling": True,
         "structured_output": True,
+        "multimodal": True,
         "package": "langchain-google-vertexai",
         "link": "/docs/integrations/chat/google_vertex_ai_palm/",
+    },
+    "ChatGoogleGenerativeAI": {
+        "tool_calling": True,
+        "multimodal": True,
+        "package": "langchain-google-genai",
+        "link": "/docs/integrations/chat/google_generative_ai/",
     },
     "ChatGroq": {
         "tool_calling": True,
@@ -80,12 +91,14 @@ CHAT_MODEL_FEAT_TABLE = {
         "link": "/docs/integrations/chat/bedrock/",
     },
     "ChatHuggingFace": {
+        "tool_calling": True,
         "local": True,
         "package": "langchain-huggingface",
         "link": "/docs/integrations/chat/huggingface/",
     },
     "ChatOllama": {
         "local": True,
+        "json_mode": True,
         "package": "langchain-community",
         "link": "/docs/integrations/chat/ollama/",
     },
@@ -93,6 +106,19 @@ CHAT_MODEL_FEAT_TABLE = {
         "local": True,
         "package": "langchain-community",
         "link": "/docs/integrations/chat/vllm/",
+    },
+    "ChatEdenAI": {
+        "tool_calling": True,
+        "structured_output": True,
+        "package": "langchain-community",
+        "link": "/docs/integrations/chat/edenai/",
+    },
+    "ChatLlamaCpp": {
+        "tool_calling": True,
+        "structured_output": True,
+        "local": True,
+        "package": "langchain-community",
+        "link": "/docs/integrations/chat/llamacpp",
     },
 }
 
@@ -102,6 +128,7 @@ LLM_TEMPLATE = """\
 sidebar_position: 1
 sidebar_class_name: hidden
 keywords: [compatibility]
+custom_edit_url:
 ---
 
 # LLMs
@@ -116,13 +143,15 @@ Each LLM integration can optionally provide native implementations for async, st
 
 {table}
 
-"""  # noqa: E501
+"""
 
 CHAT_MODEL_TEMPLATE = """\
 ---
 sidebar_position: 0
 sidebar_class_name: hidden
-keywords: [compatibility, bind_tools, tool calling, function calling, structured output, with_structured_output, json mode, local model]
+keywords: [compatibility]
+custom_edit_url:
+hide_table_of_contents: true
 ---
 
 # Chat models
@@ -133,7 +162,7 @@ The following table shows all the chat models that support one or more advanced 
 
 {table}
 
-"""  # noqa: E501
+"""
 
 
 def get_llm_table():
@@ -198,6 +227,7 @@ def get_chat_model_table() -> str:
         "structured_output",
         "json_mode",
         "local",
+        "multimodal",
         "package",
     ]
     title = [
@@ -206,6 +236,7 @@ def get_chat_model_table() -> str:
         "[Structured output](/docs/how_to/structured_output/)",
         "JSON mode",
         "Local",
+        "[Multimodal](/docs/how_to/multimodal_inputs/)",
         "Package",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
