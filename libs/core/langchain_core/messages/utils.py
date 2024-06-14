@@ -344,7 +344,7 @@ def filter_messages(
 def merge_message_runs(
     messages: Sequence[MessageLikeRepresentation],
 ) -> List[BaseMessage]:
-    """Merge runs of Messages of the same type.
+    """Merge consecutive Messages of the same type.
 
     **NOTE**: ToolMessages are not merged, as each has a distinct tool call id that
     can't be merged.
