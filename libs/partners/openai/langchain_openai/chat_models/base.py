@@ -847,7 +847,7 @@ class BaseChatOpenAI(BaseChatModel):
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if parallel_tool_calls:
-            kwargs['parallel_tool_calls'] = parallel_tool_calls
+            kwargs["parallel_tool_calls"] = parallel_tool_calls
         if tool_choice:
             if isinstance(tool_choice, str):
                 # tool_choice is a tool/function name
