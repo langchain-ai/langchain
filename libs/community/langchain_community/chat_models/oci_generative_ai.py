@@ -28,11 +28,6 @@ class Provider(ABC):
     def stop_sequence_key(self) -> str:
         ...
 
-    @property
-    @abstractmethod
-    def oci_chat_request(self) -> Any:
-        ...
-
     @abstractmethod
     def chat_response_to_text(self, response: Any) -> str:
         ...
@@ -230,7 +225,6 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
         messages: List[BaseMessage],
         stop: Optional[List[str]],
         kwargs: Dict[str, Any],
-        provider: Provider,
         stream: bool,
     ) -> Dict[str, Any]:
         try:
@@ -241,7 +235,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
                 "Could not import oci python package. "
                 "Please make sure you have the oci package installed."
             ) from ex
-
+        provider = self._get_provider(provider_map=CHAT_PROVIDERS)
         oci_params = provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = stream  # self.is_stream
         _model_kwargs = self.model_kwargs or {}
@@ -298,7 +292,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             return generate_from_stream(stream_iter)
 
         provider = self._get_provider(provider_map=CHAT_PROVIDERS)
-        request = self._prepare_request(messages, stop, kwargs, provider, stream=False)
+        request = self._prepare_request(messages, stop, kwargs, stream=False)
         response = self.client.chat(request)
 
         content = provider.chat_response_to_text(response)
@@ -332,7 +326,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         provider = self._get_provider(provider_map=CHAT_PROVIDERS)
-        request = self._prepare_request(messages, stop, kwargs, provider, stream=True)
+        request = self._prepare_request(messages, stop, kwargs, stream=True)
         response = self.client.chat(request)
 
         for event in response.data.events():
