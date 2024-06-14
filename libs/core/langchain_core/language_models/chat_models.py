@@ -46,10 +46,6 @@ from langchain_core.messages import (
     convert_to_messages,
     message_chunk_to_message,
 )
-from langchain_core.output_parsers.openai_tools import (
-    JsonOutputKeyToolsParser,
-    PydanticToolsParser,
-)
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -1106,6 +1102,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
+
+        from langchain_core.output_parsers.openai_tools import (
+            JsonOutputKeyToolsParser,
+            PydanticToolsParser,
+        )
 
         if self.bind_tools is BaseChatModel.bind_tools:
             raise NotImplementedError(
