@@ -155,6 +155,16 @@ Please see the [tool calling section](/docs/concepts/#functiontool-calling) for 
 
 For specifics on how to use chat models, see the [relevant how-to guides here](/docs/how_to/#chat-models).
 
+#### Multimodality
+
+Some chat models are multimodal, accepting images, audio and even video as inputs. These are still less common, meaning model providers haven't standardized on the "best" way to define the API. Multimodal **outputs** are even less common. As such, we've kept our multimodal abstractions fairly light weight and plan to further solidify the multimodal APIs and interaction patterns as the field matures.
+
+In LangChain, most chat models that support multimodal inputs also accept those values in OpenAI's content blocks format. So far this is restricted to image inputs. For models like Gemini which support video and other bytes input, the APIs also support the native, model-specific representations.
+
+For specifics on how to use multimodal models, see the [relevant how-to guides here](/docs/how_to/#multimodal).
+
+For a full list of LangChain model providers with multimodal models, [check out this table](/docs/integrations/chat/#advanced-features).
+
 ### LLMs
 <span data-heading-keywords="llm,llms"></span>
 
@@ -415,9 +425,14 @@ For specifics on how to use text splitters, see the [relevant how-to guides here
 ### Embedding models
 <span data-heading-keywords="embedding,embeddings"></span>
 
-The Embeddings class is a class designed for interfacing with text embedding models. There are lots of embedding model providers (OpenAI, Cohere, Hugging Face, etc) - this class is designed to provide a standard interface for all of them.
+Embedding models create a vector representation of a piece of text. You can think of a vector as an array of numbers that captures the semantic meaning of the text.
+By representing the text in this way, you can perform mathematical operations that allow you to do things like search for other pieces of text that are most similar in meaning.
+These natural language search capabilities underpin many types of [context retrieval](/docs/concepts/#retrieval),
+where we provide an LLM with the relevant data it needs to effectively respond to a query.
 
-Embeddings create a vector representation of a piece of text. This is useful because it means we can think about text in the vector space, and do things like semantic search where we look for pieces of text that are most similar in the vector space.
+![](/img/embeddings.png)
+
+The `Embeddings` class is a class designed for interfacing with text embedding models. There are many different embedding model providers (OpenAI, Cohere, Hugging Face, etc) and local models, and this class is designed to provide a standard interface for all of them.
 
 The base Embeddings class in LangChain provides two methods: one for embedding documents and one for embedding a query. The former takes as input multiple texts, while the latter takes a single text. The reason for having these as two separate methods is that some embedding providers have different embedding methods for documents (to be searched over) vs queries (the search query itself).
 
@@ -429,6 +444,9 @@ For specifics on how to use embedding models, see the [relevant how-to guides he
 One of the most common ways to store and search over unstructured data is to embed it and store the resulting embedding vectors,
 and then at query time to embed the unstructured query and retrieve the embedding vectors that are 'most similar' to the embedded query.
 A vector store takes care of storing embedded data and performing vector search for you.
+
+Most vector stores can also store metadata about embedded vectors and support filtering on that metadata before
+similarity search, allowing you more control over returned documents.
 
 Vector stores can be converted to the retriever interface by doing:
 
@@ -513,14 +531,6 @@ In order to solve that we built LangGraph to be this flexible, highly-controllab
 If you are still using AgentExecutor, do not fear: we still have a guide on [how to use AgentExecutor](/docs/how_to/agent_executor).
 It is recommended, however, that you start to transition to LangGraph.
 In order to assist in this we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent).
-
-### Multimodal
-
-Some models are multimodal, accepting images, audio and even video as inputs. These are still less common, meaning model providers haven't standardized on the "best" way to define the API. Multimodal **outputs** are even less common. As such, we've kept our multimodal abstractions fairly light weight and plan to further solidify the multimodal APIs and interaction patterns as the field matures.
-
-In LangChain, most chat models that support multimodal inputs also accept those values in OpenAI's content blocks format. So far this is restricted to image inputs. For models like Gemini which support video and other bytes input, the APIs also support the native, model-specific representations.
-
-For specifics on how to use multimodal models, see the [relevant how-to guides here](/docs/how_to/#multimodal).
 
 ### Callbacks
 
