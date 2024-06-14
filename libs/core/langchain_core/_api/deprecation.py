@@ -46,7 +46,10 @@ def _validate_deprecation_params(
         raise ValueError("Cannot specify both alternative and alternative_import")
 
     if alternative_import and "." not in alternative_import:
-        raise ValueError("alternative_import must be a fully qualified module path")
+        raise ValueError(
+            "alternative_import must be a fully qualified module path. Got "
+            f" {alternative_import}"
+        )
 
 
 def deprecated(
