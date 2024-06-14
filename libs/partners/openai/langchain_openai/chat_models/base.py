@@ -478,7 +478,7 @@ class BaseChatOpenAI(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         with self.client.create(messages=message_dicts, **params) as response:
             for chunk in response:
                 if not isinstance(chunk, dict):
@@ -600,7 +600,7 @@ class BaseChatOpenAI(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         response = await self.async_client.create(messages=message_dicts, **params)
         async with response:
             async for chunk in response:
@@ -643,7 +643,9 @@ class BaseChatOpenAI(BaseChatModel):
                     )
                 if run_manager:
                     await run_manager.on_llm_new_token(
-                        token=generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
+                        token=generation_chunk.text,
+                        chunk=generation_chunk,
+                        logprobs=logprobs,
                     )
                 yield generation_chunk
 
