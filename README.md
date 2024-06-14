@@ -329,6 +329,7 @@ chat = GigaChat(credentials='<авторизационные_данные>', ver
 - Работа с LlamaIndex: [с помощью ретривера и QA цепочки](docs/docs/integrations/retrievers/llama_index_retriever.ipynb) / [с помощью тула и Conversational агента](docs/docs/modules/agents/tools/llama_index_tool.ipynb)
 - [Агент-риелтор на GigaChat functions](cookbook/realestate/realestate.ipynb)
 - [Агент выполняющий код](cookbook/gigachat_code.ipynb)
+- [Получение сгенерированных изображений/видео](cookbook/images_and_videos/gigachat_with_images.ipynb)
 
 ### Развлекательные примеры
 - [Площадка для споров между GigaChat и YandexGPT с судьей GPT-4](docs/docs/use_cases/fun/debates.ipynb)
