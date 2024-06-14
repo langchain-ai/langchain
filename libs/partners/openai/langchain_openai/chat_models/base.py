@@ -483,21 +483,44 @@ class BaseChatOpenAI(BaseChatModel):
             for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
-                generation_chunk = _get_generation_chunk(
-                    chunk, default_chunk_class=default_chunk_class
-                )
-                if generation_chunk is None:
-                    continue
-                default_chunk_class = generation_chunk.message.__class__
-                if run_manager:
-                    if generation_chunk.generation_info:
-                        logprobs = generation_chunk.generation_info.get("logprobs")
+                if len(chunk["choices"]) == 0:
+                    if token_usage := chunk.get("usage"):
+                        usage_metadata = UsageMetadata(
+                            input_tokens=token_usage.get("prompt_tokens", 0),
+                            output_tokens=token_usage.get("completion_tokens", 0),
+                            total_tokens=token_usage.get("total_tokens", 0),
+                        )
+                        generation_chunk = ChatGenerationChunk(
+                            message=default_chunk_class(
+                                content="", usage_metadata=usage_metadata
+                            )
+                        )
                     else:
-                        logprobs = None
+                        continue
+                else:
+                    choice = chunk["choices"][0]
+                    if choice["delta"] is None:
+                        continue
+                    message_chunk = _convert_delta_to_message_chunk(
+                        choice["delta"], default_chunk_class
+                    )
+                    generation_info = {}
+                    if finish_reason := choice.get("finish_reason"):
+                        generation_info["finish_reason"] = finish_reason
+                        for key in ["model", "system_fingerprint"]:
+                            if value := chunk.get(key):
+                                generation_info[key] = value
+
+                    logprobs = choice.get("logprobs")
+                    if logprobs:
+                        generation_info["logprobs"] = logprobs
+                    default_chunk_class = message_chunk.__class__
+                    generation_chunk = ChatGenerationChunk(
+                        message=message_chunk, generation_info=generation_info or None
+                    )
+                if run_manager:
                     run_manager.on_llm_new_token(
-                        generation_chunk.text,
-                        chunk=generation_chunk,
-                        logprobs=logprobs,
+                        generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                     )
                 yield generation_chunk
 
@@ -583,17 +606,42 @@ class BaseChatOpenAI(BaseChatModel):
             async for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
-                generation_chunk = _get_generation_chunk(
-                    chunk, default_chunk_class=default_chunk_class
-                )
-                if generation_chunk is None:
-                    continue
-                default_chunk_class = generation_chunk.message.__class__
-                if run_manager:
-                    if generation_chunk.generation_info:
-                        logprobs = generation_chunk.generation_info.get("logprobs")
+                if len(chunk["choices"]) == 0:
+                    if token_usage := chunk.get("usage"):
+                        usage_metadata = UsageMetadata(
+                            input_tokens=token_usage.get("prompt_tokens", 0),
+                            output_tokens=token_usage.get("completion_tokens", 0),
+                            total_tokens=token_usage.get("total_tokens", 0),
+                        )
+                        generation_chunk = ChatGenerationChunk(
+                            message=default_chunk_class(
+                                content="", usage_metadata=usage_metadata
+                            )
+                        )
                     else:
-                        logprobs = None
+                        continue
+                else:
+                    choice = chunk["choices"][0]
+                    if choice["delta"] is None:
+                        continue
+                    message_chunk = _convert_delta_to_message_chunk(
+                        choice["delta"], default_chunk_class
+                    )
+                    generation_info = {}
+                    if finish_reason := choice.get("finish_reason"):
+                        generation_info["finish_reason"] = finish_reason
+                        for key in ["model", "system_fingerprint"]:
+                            if value := chunk.get(key):
+                                generation_info[key] = value
+
+                    logprobs = choice.get("logprobs")
+                    if logprobs:
+                        generation_info["logprobs"] = logprobs
+                    default_chunk_class = message_chunk.__class__
+                    generation_chunk = ChatGenerationChunk(
+                        message=message_chunk, generation_info=generation_info or None
+                    )
+                if run_manager:
                     await run_manager.on_llm_new_token(
                         token=generation_chunk.text,
                         chunk=generation_chunk,
@@ -1424,48 +1472,6 @@ class ChatOpenAI(BaseChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
         return True
-
-
-def _get_generation_chunk(
-    chunk: dict, default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
-) -> Optional[ChatGenerationChunk]:
-    """Get ChatGenerationChunk from client response."""
-    if len(chunk["choices"]) == 0:
-        if token_usage := chunk.get("usage"):
-            input_tokens = token_usage.get("prompt_tokens", 0)
-            output_tokens = token_usage.get("completion_tokens", 0)
-            usage_metadata = UsageMetadata(
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-                total_tokens=token_usage.get(
-                    "total_tokens", input_tokens + output_tokens
-                ),
-            )
-            return ChatGenerationChunk(
-                message=default_chunk_class(content="", usage_metadata=usage_metadata)
-            )
-        else:
-            return None
-    else:
-        choice = chunk["choices"][0]
-        if choice["delta"] is None:
-            return None
-        message_chunk = _convert_delta_to_message_chunk(
-            choice["delta"], default_chunk_class
-        )
-        generation_info = {}
-        if finish_reason := choice.get("finish_reason"):
-            generation_info["finish_reason"] = finish_reason
-            for key in ["model", "system_fingerprint"]:
-                if value := chunk.get(key):
-                    generation_info[key] = value
-        logprobs = choice.get("logprobs")
-        if logprobs:
-            generation_info["logprobs"] = logprobs
-
-        return ChatGenerationChunk(
-            message=message_chunk, generation_info=generation_info or None
-        )
 
 
 def _is_pydantic_class(obj: Any) -> bool:
