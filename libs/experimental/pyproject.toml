@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-experimental"
-version = "0.0.60"
+version = "0.0.61"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -10,8 +10,8 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2"
-langchain-community = "^0.2"
+langchain-core = "^0.2.7"
+langchain-community = "^0.2.5"
 
 [tool.poetry.group.lint]
 optional = true
@@ -57,8 +57,8 @@ langchain-text-splitters = { path = "../text-splitters", develop = true }
 # Support Python 3.8 and 3.12+.
 # Can be removed once the numpy version is fixed in langchain-community.
 numpy = [
-    {version = "^1.24.0", python = "<3.12"},
-    {version = "^1.26.0", python = ">=3.12"}
+  { version = "^1.24.0", python = "<3.12" },
+  { version = "^1.26.0", python = ">=3.12" },
 ]
 
 
