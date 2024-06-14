@@ -117,6 +117,7 @@ async def test_astream() -> None:
         == full.usage_metadata["total_tokens"]
     )
 
+
 async def test_abatch() -> None:
     """Test abatch tokens from ChatFireworks."""
     llm = ChatFireworks()
