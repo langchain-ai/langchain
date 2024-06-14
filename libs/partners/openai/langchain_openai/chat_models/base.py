@@ -817,6 +817,7 @@ class BaseChatOpenAI(BaseChatModel):
         tool_choice: Optional[
             Union[dict, str, Literal["auto", "none", "required", "any"], bool]
         ] = None,
+        parallel_tool_calls: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -836,14 +837,17 @@ class BaseChatOpenAI(BaseChatModel):
                 "any" or "required": force at least one tool to be called;
                 True: forces tool call (requires `tools` be length 1);
                 False: no effect;
-
                 or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
+            parallel_tool_calls: Whether to run tool calls in parallel
+                Can either be True or False
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if parallel_tool_calls:
+            kwargs['parallel_tool_calls'] = parallel_tool_calls
         if tool_choice:
             if isinstance(tool_choice, str):
                 # tool_choice is a tool/function name
@@ -1283,13 +1287,13 @@ class ChatOpenAI(BaseChatOpenAI):
 
         Note that ``openai >= 1.32`` supports a ``parallel_tool_calls`` parameter
         that defaults to ``True``. This parameter can be set to ``False`` to
-        disable parallel tool calls:
+        disable parallel tool calls. You can pass this argument into .bind_tools:
 
         .. code-block:: python
 
+            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation],parallel_tool_calls=False)
             ai_msg = llm_with_tools.invoke(
-                "What is the weather in LA and NY?",
-                parallel_tool_calls=False,
+                "What is the weather in LA and NY?"
             )
             ai_msg.tool_calls
 
