@@ -73,7 +73,7 @@ class PebbloRetrievalQA(Chain):
     """Pebblo cloud API key for app."""
     classifier_url: str = CLASSIFIER_URL  #: :meta private:
     """Classifier endpoint."""
-    classifier_location: Optional[str] = None  #: :meta private:
+    classifier_location: str = "local"  #: :meta private:
     """Classifier location. It could be either of 'local' or 'pebblo-cloud'."""
     _discover_sent = False  #: :meta private:
     """Flag to check if discover payload has been sent."""
@@ -227,7 +227,7 @@ class PebbloRetrievalQA(Chain):
         chain_type_kwargs: Optional[dict] = None,
         api_key: Optional[str] = None,
         classifier_url: str = CLASSIFIER_URL,
-        classifier_location: Optional[str] = None,
+        classifier_location: str = "local",
         **kwargs: Any,
     ) -> "PebbloRetrievalQA":
         """Load chain from chain type."""

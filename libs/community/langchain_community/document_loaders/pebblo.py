@@ -46,7 +46,7 @@ class PebbloSafeLoader(BaseLoader):
         api_key: Optional[str] = None,
         load_semantic: bool = False,
         classifier_url: Optional[str] = None,
-        classifier_location: Optional[str] = None,
+        classifier_location: str = "local",
     ):
         if not name or not isinstance(name, str):
             raise NameError("Must specify a valid name.")
