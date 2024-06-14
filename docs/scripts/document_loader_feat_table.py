@@ -47,7 +47,9 @@ def get_document_loader_table() -> str:
             del doc_loaders_feat_table[cm]["aload"]
             del doc_loaders_feat_table[cm]["alazy_load"]
             doc_loaders_feat_table[cm]["native_async"] = native_async
-            doc_loaders_feat_table[cm]["description"] = (cls.__doc__ or "\n").split("\n")[0]
+            doc_loaders_feat_table[cm]["description"] = (cls.__doc__ or "\n").split(
+                "\n"
+            )[0]
 
     header = ["loader", "description", "lazy_loading", "native_async"]
     title = ["Document Loader", "Description", "Lazy loading", "Native async support"]
