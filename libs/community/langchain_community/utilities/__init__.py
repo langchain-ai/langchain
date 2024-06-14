@@ -298,18 +298,20 @@ _module_lookup = {
 }
 
 REMOVED = {
-    "PythonREPL": "PythonREPL has been deprecated from langchain_community due to being "
-    "flagged by security scanners. See: "
-    "https://github.com/langchain-ai/langchain/issues/14345 "
-    "If you need to use it, please use the version "
-    "from langchain_experimental. "
-    "from langchain_experimental.utilities.python import PythonREPL."
+    "PythonREPL": (
+        "PythonREPL has been deprecated from langchain_community "
+        "due to being flagged by security scanners. See: "
+        "https://github.com/langchain-ai/langchain/issues/14345 "
+        "If you need to use it, please use the version "
+        "from langchain_experimental. "
+        "from langchain_experimental.utilities.python import PythonREPL."
+    )
 }
 
 
 def __getattr__(name: str) -> Any:
-    if name in DEPRECATED:
-        raise AssertionError(DEPRECATED[name])
+    if name in REMOVED:
+        raise AssertionError(REMOVED[name])
     if name in _module_lookup:
         module = importlib.import_module(_module_lookup[name])
         return getattr(module, name)
