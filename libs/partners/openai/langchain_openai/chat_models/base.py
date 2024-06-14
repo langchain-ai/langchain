@@ -490,7 +490,7 @@ class BaseChatOpenAI(BaseChatModel):
                             output_tokens=token_usage.get("completion_tokens", 0),
                             total_tokens=token_usage.get("total_tokens", 0),
                         )
-                        chunk = ChatGenerationChunk(
+                        generation_chunk = ChatGenerationChunk(
                             message=default_chunk_class(
                                 content="", usage_metadata=usage_metadata
                             )
@@ -613,7 +613,7 @@ class BaseChatOpenAI(BaseChatModel):
                             output_tokens=token_usage.get("completion_tokens", 0),
                             total_tokens=token_usage.get("total_tokens", 0),
                         )
-                        chunk = ChatGenerationChunk(
+                        generation_chunk = ChatGenerationChunk(
                             message=default_chunk_class(
                                 content="", usage_metadata=usage_metadata
                             )
