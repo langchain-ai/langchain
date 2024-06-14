@@ -23,10 +23,10 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 DEFAULT_HISTORY_TEMPLATE = """
 Current date and time: {current_time}.
 
-Potentially relevant excerpts of previous conversations (timestamped):
+Potentially relevant timestamped excerpts of previous conversations (you 
+do not need to use these if irrelevant):
 {previous_history}
 
-(You do not need to use these pieces of information if not relevant.)
 """
 
 TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S %Z"
@@ -61,6 +61,8 @@ class ConversationTokenBufferVectorStoreMemory(ConversationTokenBufferMemory):
 
 
     Example using ChromaDB:
+    
+    code-block:: python
 
         from langchain.memory.token_buffer_vectorstore_memory import (
                 ConversationTokenBufferVectorStoreMemory
@@ -100,6 +102,7 @@ class ConversationTokenBufferVectorStoreMemory(ConversationTokenBufferMemory):
          )
          conversation_memory.load_memory_variables({"input": "What time is it?"})
 
+    ::endcode-block
     """
 
     retriever: VectorStoreRetriever = Field(exclude=True)
