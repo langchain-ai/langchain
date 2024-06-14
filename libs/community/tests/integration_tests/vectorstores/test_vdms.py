@@ -224,8 +224,11 @@ def test_with_include_parameter(vdms_client: vdms.vdms) -> None:
         collection_name=collection_name,
         client=vdms_client,
     )
+
     response, response_array = docsearch.get(collection_name, include=["embeddings"])
-    assert response_array != []
+    for emb in embedding_function.embed_documents(texts):
+        assert embedding2bytes(emb) in response_array
+
     response, response_array = docsearch.get(collection_name)
     assert response_array == []
 
