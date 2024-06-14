@@ -1,6 +1,7 @@
 import csv
 from io import TextIOWrapper
-from typing import Any, Dict, Iterator, List, Optional, Sequence
+from pathlib import Path
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Union
 
 from langchain_core.documents import Document
 
@@ -35,7 +36,7 @@ class CSVLoader(BaseLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: Union[str, Path],
         source_column: Optional[str] = None,
         metadata_columns: Sequence[str] = (),
         csv_args: Optional[Dict] = None,
@@ -89,14 +90,16 @@ class CSVLoader(BaseLoader):
                 source = (
                     row[self.source_column]
                     if self.source_column is not None
-                    else self.file_path
+                    else str(self.file_path)
                 )
             except KeyError:
                 raise ValueError(
                     f"Source column '{self.source_column}' not found in CSV file."
                 )
             content = "\n".join(
-                f"{k.strip()}: {v.strip() if v is not None else v}"
+                f"""{k.strip() if k is not None else k}: {v.strip()
+                if isinstance(v, str) else ','.join(map(str.strip, v))
+                if isinstance(v, list) else v}"""
                 for k, v in row.items()
                 if k not in self.metadata_columns
             )

@@ -27,10 +27,12 @@ Then initialize
 from langchain_core.messages import HumanMessage
 from langchain_ai21.chat_models import ChatAI21
 
-chat = ChatAI21(model="j2-ultra")
+chat = ChatAI21(model="jamab-instruct")
 messages = [HumanMessage(content="Hello from AI21")]
 chat.invoke(messages)
 ```
+
+For a list of the supported models, see [this page](https://docs.ai21.com/reference/python-sdk#chat)
 
 ## LLMs
 You can use AI21's generative AI models as Langchain LLMs:
@@ -102,4 +104,20 @@ chain = tsm | StrOutputParser()
 response = chain.invoke(
     {"context": "Your context", "question": "Your question"},
 )
+```
+
+## Text Splitters
+
+### Semantic Text Splitter
+
+You can use AI21's semantic text splitter to split a text into segments.
+Instead of merely using punctuation and newlines to divide the text, it identifies distinct topics that will work well together and will form a coherent piece of text.
+
+For a list for examples, see [this page](https://github.com/langchain-ai/langchain/blob/master/docs/docs/modules/data_connection/document_transformers/semantic_text_splitter.ipynb).
+
+```python
+from langchain_ai21 import AI21SemanticTextSplitter
+
+splitter = AI21SemanticTextSplitter()
+response = splitter.split_text("Your text")
 ```

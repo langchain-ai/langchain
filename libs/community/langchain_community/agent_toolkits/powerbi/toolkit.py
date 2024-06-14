@@ -13,8 +13,8 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 from langchain_core.pydantic_v1 import Field
+from langchain_core.tools import BaseToolkit
 
-from langchain_community.agent_toolkits.base import BaseToolkit
 from langchain_community.tools import BaseTool
 from langchain_community.tools.powerbi.prompt import (
     QUESTION_TO_QUERY_BASE,
@@ -66,7 +66,7 @@ class PowerBIToolkit(BaseToolkit):
                 powerbi=self.powerbi,
                 examples=self.examples,
                 max_iterations=self.max_iterations,
-                output_token_limit=self.output_token_limit,
+                output_token_limit=self.output_token_limit,  # type: ignore[arg-type]
                 tiktoken_model_name=self.tiktoken_model_name,
             ),
             InfoPowerBITool(powerbi=self.powerbi),

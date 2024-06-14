@@ -77,7 +77,7 @@ def map_ai_messages_in_session(chat_sessions: ChatSession, sender: str) -> ChatS
             message = AIMessage(
                 content=message.content,
                 additional_kwargs=message.additional_kwargs.copy(),
-                example=getattr(message, "example", None),
+                example=getattr(message, "example", None),  # type: ignore[arg-type]
             )
             num_converted += 1
         messages.append(message)

@@ -1,15 +1,17 @@
 """Base interface for loading large language model APIs."""
 import json
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 
 import yaml
 from langchain_core.language_models.llms import BaseLLM
 
 from langchain_community.llms import get_type_to_cls_dict
 
+_ALLOW_DANGEROUS_DESERIALIZATION_ARG = "allow_dangerous_deserialization"
 
-def load_llm_from_config(config: dict) -> BaseLLM:
+
+def load_llm_from_config(config: dict, **kwargs: Any) -> BaseLLM:
     """Load LLM from Config Dict."""
     if "_type" not in config:
         raise ValueError("Must specify an LLM Type in config")
@@ -21,11 +23,18 @@ def load_llm_from_config(config: dict) -> BaseLLM:
         raise ValueError(f"Loading {config_type} LLM not supported")
 
     llm_cls = type_to_cls_dict[config_type]()
-    return llm_cls(**config)
+
+    load_kwargs = {}
+    if _ALLOW_DANGEROUS_DESERIALIZATION_ARG in llm_cls.__fields__:
+        load_kwargs[_ALLOW_DANGEROUS_DESERIALIZATION_ARG] = kwargs.get(
+            _ALLOW_DANGEROUS_DESERIALIZATION_ARG, False
+        )
+
+    return llm_cls(**config, **load_kwargs)
 
 
-def load_llm(file: Union[str, Path]) -> BaseLLM:
-    """Load LLM from file."""
+def load_llm(file: Union[str, Path], **kwargs: Any) -> BaseLLM:
+    """Load LLM from a file."""
     # Convert file to Path object.
     if isinstance(file, str):
         file_path = Path(file)
@@ -41,4 +50,4 @@ def load_llm(file: Union[str, Path]) -> BaseLLM:
     else:
         raise ValueError("File type must be json or yaml")
     # Load the LLM from the config now.
-    return load_llm_from_config(config)
+    return load_llm_from_config(config, **kwargs)

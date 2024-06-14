@@ -16,6 +16,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import xor_args
@@ -148,7 +149,7 @@ class Chroma(VectorStore):
         try:
             import chromadb  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import chromadb python package. "
                 "Please install it with `pip install chromadb`."
             )
@@ -610,11 +611,22 @@ class Chroma(VectorStore):
 
         return self._collection.get(**kwargs)
 
+    @deprecated(
+        since="0.1.17",
+        message=(
+            "Since Chroma 0.4.x the manual persistence method is no longer "
+            "supported as docs are automatically persisted."
+        ),
+        removal="0.3.0",
+    )
     def persist(self) -> None:
         """Persist the collection.
 
         This can be used to explicitly persist the data to disk.
         It will also be called automatically when the object is destroyed.
+
+        Since Chroma 0.4.x the manual persistence method is no longer
+        supported as docs are automatically persisted.
         """
         if self._persist_directory is None:
             raise ValueError(
@@ -795,3 +807,7 @@ class Chroma(VectorStore):
             ids: List of ids to delete.
         """
         self._collection.delete(ids=ids)
+
+    def __len__(self) -> int:
+        """Count the number of documents in the collection."""
+        return self._collection.count()

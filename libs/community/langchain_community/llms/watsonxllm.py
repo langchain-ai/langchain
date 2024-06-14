@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @deprecated(
-    since="0.0.18", removal="0.2", alternative_import="langchain_ibm.WatsonxLLM"
+    since="0.0.18", removal="0.3", alternative_import="langchain_ibm.WatsonxLLM"
 )
 class WatsonxLLM(BaseLLM):
     """
@@ -320,7 +320,7 @@ class WatsonxLLM(BaseLLM):
         Example:
             .. code-block:: python
 
-                response = watsonx_llm("What is a molecule")
+                response = watsonx_llm.invoke("What is a molecule")
         """
         result = self._generate(
             prompts=[prompt], stop=stop, run_manager=run_manager, **kwargs

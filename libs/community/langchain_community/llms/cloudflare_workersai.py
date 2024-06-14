@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class CloudflareWorkersAI(LLM):
-    """Langchain LLM class to help to access Cloudflare Workers AI service.
+    """Cloudflare Workers AI service.
 
     To use, you must provide an API token and
     account ID to access Cloudflare Workers AI, and

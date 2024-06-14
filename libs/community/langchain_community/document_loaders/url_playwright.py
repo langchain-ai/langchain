@@ -57,7 +57,7 @@ class PlaywrightEvaluator(ABC):
 
 
 class UnstructuredHtmlEvaluator(PlaywrightEvaluator):
-    """Evaluates the page HTML content using the `unstructured` library."""
+    """Evaluate the page HTML content using the `unstructured` library."""
 
     def __init__(self, remove_selectors: Optional[List[str]] = None):
         """Initialize UnstructuredHtmlEvaluator."""

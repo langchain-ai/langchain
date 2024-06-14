@@ -1,7 +1,6 @@
 """SQL agent."""
 from __future__ import annotations
 
-import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -45,7 +44,9 @@ if TYPE_CHECKING:
 def create_sql_agent(
     llm: BaseLanguageModel,
     toolkit: Optional[SQLDatabaseToolkit] = None,
-    agent_type: Optional[Union[AgentType, Literal["openai-tools"]]] = None,
+    agent_type: Optional[
+        Union[AgentType, Literal["openai-tools", "tool-calling"]]
+    ] = None,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
@@ -66,13 +67,15 @@ def create_sql_agent(
     """Construct a SQL agent from an LLM and toolkit or database.
 
     Args:
-        llm: Language model to use for the agent.
+        llm: Language model to use for the agent. If agent_type is "tool-calling" then
+            llm is expected to support tool calling.
         toolkit: SQLDatabaseToolkit for the agent to use. Must provide exactly one of
             'toolkit' or 'db'. Specify 'toolkit' if you want to use a different model
             for the agent and the toolkit.
-        agent_type: One of "openai-tools", "openai-functions", or
+        agent_type: One of "tool-calling", "openai-tools", "openai-functions", or
             "zero-shot-react-description". Defaults to "zero-shot-react-description".
-            "openai-tools" is recommended over "openai-functions".
+            "tool-calling" is recommended over the legacy "openai-tools" and
+            "openai-functions" types.
         callback_manager: DEPRECATED. Pass "callbacks" key into 'agent_executor_kwargs'
             instead to pass constructor callbacks to AgentExecutor.
         prefix: Prompt prefix string. Must contain variables "top_k" and "dialect".
@@ -93,7 +96,7 @@ def create_sql_agent(
             using 'db' and 'llm'. Must provide exactly one of 'db' or 'toolkit'.
         prompt: Complete agent prompt. prompt and {prefix, suffix, format_instructions,
             input_variables} are mutually exclusive.
-        **kwargs: DEPRECATED. Not used, kept for backwards compatibility.
+        **kwargs: Arbitrary additional Agent args.
 
     Returns:
         An AgentExecutor with the specified agent_type agent.
@@ -108,13 +111,14 @@ def create_sql_agent(
 
         db = SQLDatabase.from_uri("sqlite:///Chinook.db")
         llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-        agent_executor = create_sql_agent(llm, db=db, agent_type="openai-tools", verbose=True)
+        agent_executor = create_sql_agent(llm, db=db, agent_type="tool-calling", verbose=True)
 
     """  # noqa: E501
     from langchain.agents import (
         create_openai_functions_agent,
         create_openai_tools_agent,
         create_react_agent,
+        create_tool_calling_agent,
     )
     from langchain.agents.agent import (
         AgentExecutor,
@@ -131,15 +135,8 @@ def create_sql_agent(
         raise ValueError(
             "Must provide exactly one of 'toolkit' or 'db'. Received both."
         )
-    if input_variables:
-        kwargs = kwargs or {}
-        kwargs["input_variables"] = input_variables
-    if kwargs:
-        warnings.warn(
-            f"Received additional kwargs {kwargs} which are no longer supported."
-        )
 
-    toolkit = toolkit or SQLDatabaseToolkit(llm=llm, db=db)
+    toolkit = toolkit or SQLDatabaseToolkit(llm=llm, db=db)  # type: ignore[arg-type]
     agent_type = agent_type or AgentType.ZERO_SHOT_REACT_DESCRIPTION
     tools = toolkit.get_tools() + list(extra_tools)
     if prompt is None:
@@ -150,17 +147,18 @@ def create_sql_agent(
             prompt = prompt.partial(top_k=str(top_k))
         if "dialect" in prompt.input_variables:
             prompt = prompt.partial(dialect=toolkit.dialect)
-        db_context = toolkit.get_context()
-        if "table_info" in prompt.input_variables:
-            prompt = prompt.partial(table_info=db_context["table_info"])
-            tools = [
-                tool for tool in tools if not isinstance(tool, InfoSQLDatabaseTool)
-            ]
-        if "table_names" in prompt.input_variables:
-            prompt = prompt.partial(table_names=db_context["table_names"])
-            tools = [
-                tool for tool in tools if not isinstance(tool, ListSQLDatabaseTool)
-            ]
+        if any(key in prompt.input_variables for key in ["table_info", "table_names"]):
+            db_context = toolkit.get_context()
+            if "table_info" in prompt.input_variables:
+                prompt = prompt.partial(table_info=db_context["table_info"])
+                tools = [
+                    tool for tool in tools if not isinstance(tool, InfoSQLDatabaseTool)
+                ]
+            if "table_names" in prompt.input_variables:
+                prompt = prompt.partial(table_names=db_context["table_names"])
+                tools = [
+                    tool for tool in tools if not isinstance(tool, ListSQLDatabaseTool)
+                ]
 
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
         if prompt is None:
@@ -182,6 +180,7 @@ def create_sql_agent(
             runnable=create_react_agent(llm, tools, prompt),
             input_keys_arg=["input"],
             return_keys_arg=["output"],
+            **kwargs,
         )
 
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
@@ -194,11 +193,12 @@ def create_sql_agent(
             ]
             prompt = ChatPromptTemplate.from_messages(messages)
         agent = RunnableAgent(
-            runnable=create_openai_functions_agent(llm, tools, prompt),
+            runnable=create_openai_functions_agent(llm, tools, prompt),  # type: ignore
             input_keys_arg=["input"],
             return_keys_arg=["output"],
+            **kwargs,
         )
-    elif agent_type == "openai-tools":
+    elif agent_type in ("openai-tools", "tool-calling"):
         if prompt is None:
             messages = [
                 SystemMessage(content=cast(str, prefix)),
@@ -207,16 +207,22 @@ def create_sql_agent(
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
             prompt = ChatPromptTemplate.from_messages(messages)
-        agent = RunnableMultiActionAgent(
-            runnable=create_openai_tools_agent(llm, tools, prompt),
+        if agent_type == "openai-tools":
+            runnable = create_openai_tools_agent(llm, tools, prompt)  # type: ignore
+        else:
+            runnable = create_tool_calling_agent(llm, tools, prompt)  # type: ignore
+        agent = RunnableMultiActionAgent(  # type: ignore[assignment]
+            runnable=runnable,
             input_keys_arg=["input"],
             return_keys_arg=["output"],
+            **kwargs,
         )
 
     else:
         raise ValueError(
             f"Agent type {agent_type} not supported at the moment. Must be one of "
-            "'openai-tools', 'openai-functions', or 'zero-shot-react-description'."
+            "'tool-calling', 'openai-tools', 'openai-functions', or "
+            "'zero-shot-react-description'."
         )
 
     return AgentExecutor(
