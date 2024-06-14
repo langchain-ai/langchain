@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -41,6 +42,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
+    FunctionInProgressMessageChunk,
     FunctionMessage,
     FunctionMessageChunk,
     HumanMessage,
@@ -72,6 +74,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+IMAGE_SEARCH_REGEX = re.compile('<img\ssrc="(?P<UUID>.+?)"\sfuse=".+?"/>')
+VIDEO_SEARCH_REGEX = re.compile(
+    '<video\scover="(?P<cover_UUID>.+?)"\ssrc="(?P<UUID>.+?)"\sfuse="true"/>'
+)
+
 
 def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
     from gigachat.models import FunctionCall, MessagesRole
@@ -91,7 +98,26 @@ def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
                     id=str(uuid4()),
                 )
             ]
-
+    if message.data_for_context:
+        additional_kwargs["data_for_context"] = [
+            _convert_dict_to_message(m) for m in message.data_for_context
+        ]
+        if len(message.data_for_context) > 1:
+            if (
+                message.data_for_context[0].function_call
+                and message.data_for_context[0].function_call.name == "text2image"
+            ):
+                match = IMAGE_SEARCH_REGEX.search(message.content)
+                if match:
+                    additional_kwargs["image_uuid"] = match.group("UUID")
+            elif (
+                message.data_for_context[0].function_call
+                and message.data_for_context[0].function_call.name == "text2video"
+            ):
+                match = VIDEO_SEARCH_REGEX.search(message.content)
+                if match:
+                    additional_kwargs["cover_uuid"] = match.group("cover_UUID")
+                    additional_kwargs["video_uuid"] = match.group("UUID")
     if message.role == MessagesRole.SYSTEM:
         return SystemMessage(content=message.content)
     elif message.role == MessagesRole.USER:
@@ -102,6 +128,8 @@ def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
             additional_kwargs=additional_kwargs,
             tool_calls=tool_calls,
         )
+    elif message.role == MessagesRole.FUNCTION:
+        return FunctionMessage(name=message.name or "", content=message.content)
     else:
         raise TypeError(f"Got unknown role {message.role} {message}")
 
@@ -114,6 +142,9 @@ def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
     attachments = message.additional_kwargs.get("attachments", None)
     if attachments:
         kwargs["attachments"] = attachments
+    context = message.additional_kwargs.get("data_for_context", [])
+    if context:
+        kwargs["data_for_context"] = [_convert_message_to_dict(m) for m in context]
 
     if isinstance(message, SystemMessage):
         kwargs["role"] = MessagesRole.SYSTEM
@@ -166,10 +197,29 @@ def _convert_delta_to_message_chunk(
                     index=0,
                 )
             ]
+    if _dict.get("data_for_context"):
+        additional_kwargs["data_for_context"] = _dict["data_for_context"]
+    match = IMAGE_SEARCH_REGEX.search(content)
+    if match:
+        additional_kwargs["image_uuid"] = match.group("UUID")
+    match = VIDEO_SEARCH_REGEX.search(content)
+    if match:
+        additional_kwargs["cover_uuid"] = match.group("cover_UUID")
+        additional_kwargs["video_uuid"] = match.group("UUID")
+
+    if (
+        role == "function_in_progress"
+        or default_class == FunctionInProgressMessageChunk
+    ):
+        return FunctionInProgressMessageChunk(content=content)
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
-    elif role == "assistant" or default_class == AIMessageChunk:
+    elif (
+        role == "assistant"
+        or default_class == AIMessageChunk
+        or "data_for_context" in _dict
+    ):
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
