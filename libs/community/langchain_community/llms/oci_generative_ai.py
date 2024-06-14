@@ -357,7 +357,12 @@ class OCIGenAI(LLM, OCIGenAIBase):
         response = self.client.generate_text(invocation_obj)
 
         for event in response.data.events():
-            chunk = GenerationChunk(text=json.loads(event.data)["text"])
+            json_load = json.loads(event.data)
+            if "text" in json_load:
+                event_data_text = json_load["text"]
+            else:
+                event_data_text = ""
+            chunk = GenerationChunk(text=event_data_text)
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
