@@ -157,10 +157,12 @@ class MiniMaxChat(BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["minimax_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "minimax_api_key", "MINIMAX_API_KEY")
+            get_from_dict_or_env(
+                values, "minimax_api_key", "MINIMAX_API_KEY", values.get("api_key")
+            )
         )
         values["minimax_group_id"] = get_from_dict_or_env(
-            values, "minimax_group_id", "MINIMAX_GROUP_ID"
+            values, "minimax_group_id", "MINIMAX_GROUP_ID", values.get("group_id")
         )
         # Get custom api url from environment.
         values["minimax_api_host"] = get_from_dict_or_env(

@@ -155,6 +155,7 @@ class ChatBaichuan(BaseChatModel):
                 values,
                 "baichuan_api_key",
                 "BAICHUAN_API_KEY",
+                values.get("api_key"),
             )
         )
 

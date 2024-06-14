@@ -201,16 +201,19 @@ class ChatSparkLLM(BaseChatModel):
             values,
             "spark_app_id",
             "IFLYTEK_SPARK_APP_ID",
+            values.get("app_id"),
         )
         values["spark_api_key"] = get_from_dict_or_env(
             values,
             "spark_api_key",
             "IFLYTEK_SPARK_API_KEY",
+            values.get("api_key"),
         )
         values["spark_api_secret"] = get_from_dict_or_env(
             values,
             "spark_api_secret",
             "IFLYTEK_SPARK_API_SECRET",
+            values.get("api_secret"),
         )
         values["spark_api_url"] = get_from_dict_or_env(
             values,
@@ -224,14 +227,15 @@ class ChatSparkLLM(BaseChatModel):
             "IFLYTEK_SPARK_LLM_DOMAIN",
             SPARK_LLM_DOMAIN,
         )
-        return values
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def post_init(cls, values: Dict) -> Dict:
-        """Post init validation for the class."""
         # put extra params into model_kwargs
-        values["model_kwargs"]["temperature"] = values["temperature"] or cls.temperature
-        values["model_kwargs"]["top_k"] = values["top_k"] or cls.top_k
+        default_values = {
+            name: field.default
+            for name, field in cls.__fields__.items()
+            if field.default is not None
+        }
+        values["model_kwargs"]["temperature"] = default_values.get("temperature")
+        values["model_kwargs"]["top_k"] = default_values.get("top_k")
 
         values["client"] = _SparkLLMClient(
             app_id=values["spark_app_id"],
