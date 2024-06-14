@@ -105,7 +105,7 @@ class ChatGroq(BaseChatModel):
             export GROQ_API_KEY="your-api-key"
 
     Key init args — completion params:
-        model_name: str
+        model: str
             Name of Groq model to use. E.g. "mixtral-8x7b-32768".
         temperature: float
             Sampling temperature. Ranges from 0.0 to 1.0.
@@ -116,13 +116,17 @@ class ChatGroq(BaseChatModel):
             explicitly specified.
 
     Key init args — client params:
-        custom_get_token_ids: Optional[Callable[[str], List[int]]]
-            Optional encoder to use for counting tokens.
-        groq_api_base: Optional[str]
+        timeout: Union[float, Tuple[float, float], Any, None]
+            Timeout for requests.
+        max_retries: int
+            Max number of retries.
+        api_key: Optional[str]
+            Groq API key. If not passed in will be read from env var GROQ_API_KEY.
+        base_url: Optional[str]
             Base URL path for API requests, leave blank if not using a proxy
             or service emulator.
-        metadata: Optional[Dict[str, Any]]
-            Metadata to add to the run trace.
+        custom_get_token_ids: Optional[Callable[[str], List[int]]]
+            Optional encoder to use for counting tokens.
 
     See full list of supported init args and their descriptions in the params
     section.
@@ -133,10 +137,9 @@ class ChatGroq(BaseChatModel):
             from langchain_groq import ChatGroq
 
             model = ChatGroq(
-                model_name="mixtral-8x7b-32768",
+                model="mixtral-8x7b-32768",
                 temperature=0.0,
                 max_retries=2,
-                # streaming=...,
                 # other params...
                 )
 
@@ -161,7 +164,7 @@ class ChatGroq(BaseChatModel):
             'total_time': 0.063341565}, 'model_name': 'mixtral-8x7b-32768',
             'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
             'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
-    
+
     Stream:
         .. code-block:: python
 
@@ -304,7 +307,7 @@ class ChatGroq(BaseChatModel):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     groq_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    """Automatically inferred from env var `groq_API_KEY` if not provided."""
+    """Automatically inferred from env var `GROQ_API_KEY` if not provided."""
     groq_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
