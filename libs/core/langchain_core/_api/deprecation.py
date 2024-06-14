@@ -354,8 +354,6 @@ def warn_deprecated(
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
     """
-    _validate_deprecation_params(pending, removal, alternative, alternative_import)
-
     if not pending:
         if not removal:
             removal = f"in {removal}" if removal else "within ?? minor releases"
