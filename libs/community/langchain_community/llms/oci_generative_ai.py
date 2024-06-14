@@ -206,7 +206,7 @@ class OCIGenAIBase(BaseModel, ABC):
             **{"model_kwargs": _model_kwargs},
         }
 
-    def _get_provider(self, provider_map) -> str:
+    def _get_provider(self, provider_map: Mapping[str, Any]) -> Any:
         if self.provider is not None:
             provider = self.provider
         else:

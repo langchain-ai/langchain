@@ -45,7 +45,7 @@ class Provider(ABC):
         ...
 
     @abstractmethod
-    def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
+    def messages_to_oci_params(self, messages: Any) -> Dict[str, Any]:
         ...
 
 
