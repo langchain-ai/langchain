@@ -112,6 +112,13 @@ CHAT_MODEL_FEAT_TABLE = {
         "package": "langchain-community",
         "link": "/docs/integrations/chat/edenai/",
     },
+    "ChatLlamaCpp": {
+        "tool_calling": True,
+        "structured_output": True,
+        "local": True,
+        "package": "langchain-community",
+        "link": "/docs/integrations/chat/llamacpp",
+    },
 }
 
 
