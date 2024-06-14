@@ -53,7 +53,7 @@ def get_document_loader_table() -> str:
 
     header = ["loader", "description", "lazy_loading", "native_async"]
     title = ["Document Loader", "Description", "Lazy loading", "Native async support"]
-    rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
+    rows = [title, [":-"] * 2 + [":-:"] * (len(title) - 2)]
     for loader, feats in sorted(doc_loaders_feat_table.items()):
         if not feats:
             continue
