@@ -440,7 +440,6 @@ class ChatHuggingFace(BaseChatModel):
 
         from huggingface_hub import list_inference_endpoints  # type: ignore[import]
 
-        
         if _is_huggingface_hub(self.llm) or (
             hasattr(self.llm, "repo_id") and self.llm.repo_id
         ):
