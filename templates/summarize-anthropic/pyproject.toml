@@ -2,16 +2,14 @@
 name = "summarize-anthropic"
 version = "0.1.0"
 description = "This template uses Anthropic's `Claude2` to summarize long documents."
-authors = [
-    "Lance Martin <lance@langchain.dev>",
-]
+authors = ["Lance Martin <lance@langchain.dev>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain = "^0.1"
-anthropic = ">=0.5.0"
 langchainhub = ">=0.1.13"
+langchain-anthropic = "^0.1.4"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"
@@ -27,7 +25,5 @@ integrations = ["Anthropic"]
 tags = ["summarization"]
 
 [build-system]
-requires = [
-    "poetry-core",
-]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

@@ -1,6 +1,9 @@
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from langchain_core.messages.ai import AIMessage, AIMessageChunk
+from langchain_core.messages.ai import (
+    AIMessage,
+    AIMessageChunk,
+)
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
@@ -119,12 +122,17 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
     if not isinstance(chunk, BaseMessageChunk):
         return chunk
     # chunk classes always have the equivalent non-chunk class as their first parent
+    ignore_keys = ["type"]
+    if isinstance(chunk, AIMessageChunk):
+        ignore_keys.append("tool_call_chunks")
     return chunk.__class__.__mro__[1](
-        **{k: v for k, v in chunk.__dict__.items() if k != "type"}
+        **{k: v for k, v in chunk.__dict__.items() if k not in ignore_keys}
     )
 
 
-MessageLikeRepresentation = Union[BaseMessage, Tuple[str, str], str, Dict[str, Any]]
+MessageLikeRepresentation = Union[
+    BaseMessage, List[str], Tuple[str, str], str, Dict[str, Any]
+]
 
 
 def _create_message_from_message_type(
@@ -132,6 +140,8 @@ def _create_message_from_message_type(
     content: str,
     name: Optional[str] = None,
     tool_call_id: Optional[str] = None,
+    tool_calls: Optional[List[Dict[str, Any]]] = None,
+    id: Optional[str] = None,
     **additional_kwargs: Any,
 ) -> BaseMessage:
     """Create a message from a message type and content string.
@@ -150,6 +160,10 @@ def _create_message_from_message_type(
         kwargs["tool_call_id"] = tool_call_id
     if additional_kwargs:
         kwargs["additional_kwargs"] = additional_kwargs  # type: ignore[assignment]
+    if id is not None:
+        kwargs["id"] = id
+    if tool_calls is not None:
+        kwargs["tool_calls"] = tool_calls
     if message_type in ("human", "user"):
         message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in ("ai", "assistant"):
@@ -191,15 +205,17 @@ def _convert_to_message(
         _message = message
     elif isinstance(message, str):
         _message = _create_message_from_message_type("human", message)
-    elif isinstance(message, tuple):
-        if len(message) != 2:
-            raise ValueError(f"Expected 2-tuple of (role, template), got {message}")
-        message_type_str, template = message
+    elif isinstance(message, Sequence) and len(message) == 2:
+        # mypy doesn't realise this can't be a string given the previous branch
+        message_type_str, template = message  # type: ignore[misc]
         _message = _create_message_from_message_type(message_type_str, template)
     elif isinstance(message, dict):
         msg_kwargs = message.copy()
         try:
-            msg_type = msg_kwargs.pop("role")
+            try:
+                msg_type = msg_kwargs.pop("role")
+            except KeyError:
+                msg_type = msg_kwargs.pop("type")
             msg_content = msg_kwargs.pop("content")
         except KeyError:
             raise ValueError(

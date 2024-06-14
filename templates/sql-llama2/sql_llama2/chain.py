@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from langchain.utilities import SQLDatabase
 from langchain_community.llms import Replicate
+from langchain_community.utilities import SQLDatabase
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel

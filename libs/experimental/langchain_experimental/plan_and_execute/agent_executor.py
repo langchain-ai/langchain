@@ -1,10 +1,10 @@
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import (
+from langchain.chains.base import Chain
+from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from langchain.chains.base import Chain
 
 from langchain_experimental.plan_and_execute.executors.base import BaseExecutor
 from langchain_experimental.plan_and_execute.planners.base import BasePlanner

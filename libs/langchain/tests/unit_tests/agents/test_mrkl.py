@@ -152,7 +152,7 @@ def test_from_chains() -> None:
         Tool(name="bar", func=lambda x: "bar", description="foobar2"),
     ]
     agent = ZeroShotAgent.from_llm_and_tools(FakeLLM(), chain_configs)
-    expected_tools_prompt = "foo: foobar1\nbar: foobar2"
+    expected_tools_prompt = "foo(x) - foobar1\nbar(x) - foobar2"
     expected_tool_names = "foo, bar"
     expected_template = "\n\n".join(
         [

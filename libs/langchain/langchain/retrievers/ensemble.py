@@ -38,6 +38,15 @@ H = TypeVar("H", bound=Hashable)
 
 
 def unique_by_key(iterable: Iterable[T], key: Callable[[T], H]) -> Iterator[T]:
+    """Yield unique elements of an iterable based on a key function.
+
+    Args:
+        iterable: The iterable to filter.
+        key: A function that returns a hashable key for each element.
+
+    Yields:
+        Unique elements of the iterable based on the key function.
+    """
     seen = set()
     for e in iterable:
         if (k := key(e)) not in seen:

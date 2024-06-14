@@ -115,12 +115,12 @@ class CommaSeparatedListOutputParser(ListOutputParser):
     def get_format_instructions(self) -> str:
         return (
             "Your response should be a list of comma separated values, "
-            "eg: `foo, bar, baz`"
+            "eg: `foo, bar, baz` or `foo,bar,baz`"
         )
 
     def parse(self, text: str) -> List[str]:
         """Parse the output of an LLM call."""
-        return text.strip().split(", ")
+        return [part.strip() for part in text.split(",")]
 
     @property
     def _type(self) -> str:
@@ -130,7 +130,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
 class NumberedListOutputParser(ListOutputParser):
     """Parse a numbered list."""
 
-    pattern = r"\d+\.\s([^\n]+)"
+    pattern: str = r"\d+\.\s([^\n]+)"
 
     def get_format_instructions(self) -> str:
         return (
@@ -154,7 +154,7 @@ class NumberedListOutputParser(ListOutputParser):
 class MarkdownListOutputParser(ListOutputParser):
     """Parse a markdown list."""
 
-    pattern = r"^\s*[-*]\s([^\n]+)$"
+    pattern: str = r"^\s*[-*]\s([^\n]+)$"
 
     def get_format_instructions(self) -> str:
         return "Your response should be a markdown list, " "eg: `- foo\n- bar\n- baz`"
