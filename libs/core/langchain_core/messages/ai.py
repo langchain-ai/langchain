@@ -68,7 +68,7 @@ class AIMessage(BaseMessage):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
-    @root_validator()
+    @root_validator(pre=True)
     def _backwards_compat_tool_calls(cls, values: dict) -> dict:
         raw_tool_calls = values.get("additional_kwargs", {}).get("tool_calls")
         tool_calls = (
@@ -149,7 +149,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def init_tool_calls(cls, values: dict) -> dict:
         if not values["tool_call_chunks"]:
             values["tool_calls"] = []
