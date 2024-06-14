@@ -2,11 +2,11 @@
 from unittest.mock import MagicMock
 
 import pytest
+from langchain_core.messages import HumanMessage
 from pytest import MonkeyPatch
 
 from langchain_community.chat_models import ChatOCIGenAI
-from langchain_core.messages import HumanMessage, AIMessage
-from langchain_core.outputs import ChatGeneration, ChatResult
+
 
 class MockResponseDict(dict):
     def __getattr__(self, val):  # type: ignore[no-untyped-def]
@@ -42,7 +42,6 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                             "model_id": "cohere.command-r-16k",
                             "model_version": "1.0.0",
                         }
-                    
                     ),
                     "request_id": "1234567890",
                     "headers": MockResponseDict(
@@ -58,7 +57,6 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                     "status": 200,
                     "data": MockResponseDict(
                         {
-                            
                             "chat_response": MockResponseDict(
                                 {
                                     "choices": [
@@ -69,7 +67,7 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                                                         "content": [
                                                             MockResponseDict(
                                                                 {
-                                                                    "text": response_text,
+                                                                    "text": response_text,  # noqa: E501
                                                                 }
                                                             )
                                                         ]
@@ -84,7 +82,6 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                             ),
                             "model_id": "cohere.command-r-16k",
                             "model_version": "1.0.0",
-                            
                         }
                     ),
                     "request_id": "1234567890",
@@ -106,5 +103,3 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
     expected = "Assistant chat reply."
     actual = llm.invoke(messages, temperature=0.2)
     assert actual.content == expected
-    
-   

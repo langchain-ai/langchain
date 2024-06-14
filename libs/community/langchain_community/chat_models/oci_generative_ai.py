@@ -22,7 +22,6 @@ from langchain_community.llms.oci_generative_ai import OCIGenAIBase
 from langchain_community.llms.utils import enforce_stop_tokens
 
 
-
 class Provider(ABC):
     @property
     @abstractmethod
