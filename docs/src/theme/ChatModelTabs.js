@@ -130,7 +130,7 @@ export default function ChatModelTabs(props) {
     {
       value: "Groq",
       label: "Groq",
-      text: `from langchain_groq import ChatGroq\n\n${llmVarName} = ChatGroq(${fireworksParamsOrDefault})`,
+      text: `from langchain_groq import ChatGroq\n\n${llmVarName} = ChatGroq(${groqParamsOrDefault})`,
       apiKeyName: "GROQ_API_KEY",
       packageName: "langchain-groq",
       default: false,
