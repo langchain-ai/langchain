@@ -365,16 +365,12 @@ def filter_messages(
         # default to inclusion when no inclusion criteria given.
         if not (include_types or include_ids or include_names):
             filtered.append(msg)
-            continue
-        if include_names and msg.name in include_names:
+        elif include_names and msg.name in include_names:
             filtered.append(msg)
-            continue
         elif include_types and _is_message_type(msg, include_types):
             filtered.append(msg)
-            continue
         elif include_ids and msg.id in include_ids:
             filtered.append(msg)
-            continue
         else:
             pass
 
