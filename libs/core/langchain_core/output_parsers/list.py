@@ -130,7 +130,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
 class NumberedListOutputParser(ListOutputParser):
     """Parse a numbered list."""
 
-    pattern = r"\d+\.\s([^\n]+)"
+    pattern: str = r"\d+\.\s([^\n]+)"
 
     def get_format_instructions(self) -> str:
         return (
@@ -154,7 +154,7 @@ class NumberedListOutputParser(ListOutputParser):
 class MarkdownListOutputParser(ListOutputParser):
     """Parse a markdown list."""
 
-    pattern = r"^\s*[-*]\s([^\n]+)$"
+    pattern: str = r"^\s*[-*]\s([^\n]+)$"
 
     def get_format_instructions(self) -> str:
         return "Your response should be a markdown list, " "eg: `- foo\n- bar\n- baz`"

@@ -13,13 +13,24 @@ from typing import (
     TypedDict,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
 from langchain_community.chat_models.ollama import ChatOllama
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.messages import AIMessage, BaseMessage, ToolCall
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolCall,
+    ToolMessage,
+)
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.output_parsers.pydantic import PydanticOutputParser
@@ -71,18 +82,32 @@ def _is_pydantic_class(obj: Any) -> bool:
     )
 
 
+def _is_pydantic_object(obj: Any) -> bool:
+    return isinstance(obj, BaseModel)
+
+
 def convert_to_ollama_tool(tool: Any) -> Dict:
     """Convert a tool to an Ollama tool."""
+    description = None
     if _is_pydantic_class(tool):
         schema = tool.construct().schema()
-        definition = {"name": schema["title"], "properties": schema["properties"]}
-        if "required" in schema:
-            definition["required"] = schema["required"]
+        name = schema["title"]
+    elif _is_pydantic_object(tool):
+        schema = tool.get_input_schema().schema()
+        name = tool.get_name()
+        description = tool.description
+    elif isinstance(tool, dict) and "name" in tool and "parameters" in tool:
+        return tool.copy()
+    else:
+        raise ValueError(
+            f"""Cannot convert {tool} to an Ollama tool. 
+            {tool} needs to be a Pydantic class, model, or a dict."""
+        )
+    definition = {"name": name, "parameters": schema}
+    if description:
+        definition["description"] = description
 
-        return definition
-    raise ValueError(
-        f"Cannot convert {tool} to an Ollama tool. {tool} needs to be a Pydantic model."
-    )
+    return definition
 
 
 class _AllReturnType(TypedDict):
@@ -277,6 +302,59 @@ class OllamaFunctions(ChatOllama):
         else:
             return llm | parser_chain
 
+    def _convert_messages_to_ollama_messages(
+        self, messages: List[BaseMessage]
+    ) -> List[Dict[str, Union[str, List[str]]]]:
+        ollama_messages: List = []
+        for message in messages:
+            role = ""
+            if isinstance(message, HumanMessage):
+                role = "user"
+            elif isinstance(message, AIMessage) or isinstance(message, ToolMessage):
+                role = "assistant"
+            elif isinstance(message, SystemMessage):
+                role = "system"
+            else:
+                raise ValueError("Received unsupported message type for Ollama.")
+
+            content = ""
+            images = []
+            if isinstance(message.content, str):
+                content = message.content
+            else:
+                for content_part in cast(List[Dict], message.content):
+                    if content_part.get("type") == "text":
+                        content += f"\n{content_part['text']}"
+                    elif content_part.get("type") == "image_url":
+                        if isinstance(content_part.get("image_url"), str):
+                            image_url_components = content_part["image_url"].split(",")
+                            # Support data:image/jpeg;base64,<image> format
+                            # and base64 strings
+                            if len(image_url_components) > 1:
+                                images.append(image_url_components[1])
+                            else:
+                                images.append(image_url_components[0])
+                        else:
+                            raise ValueError(
+                                "Only string image_url content parts are supported."
+                            )
+                    else:
+                        raise ValueError(
+                            "Unsupported message content type. "
+                            "Must either have type 'text' or type 'image_url' "
+                            "with a string 'image_url' field."
+                        )
+
+            ollama_messages.append(
+                {
+                    "role": role,
+                    "content": content,
+                    "images": images,
+                }
+            )
+
+        return ollama_messages
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -297,9 +375,8 @@ class OllamaFunctions(ChatOllama):
                     "matching function in `functions`."
                 )
             del kwargs["function_call"]
-        if _is_pydantic_class(functions[0]):
-            functions = [convert_to_ollama_tool(fn) for fn in functions]
-        functions.insert(0, DEFAULT_RESPONSE_FUNCTION)
+        functions = [convert_to_ollama_tool(fn) for fn in functions]
+        functions.append(DEFAULT_RESPONSE_FUNCTION)
         system_message_prompt_template = SystemMessagePromptTemplate.from_template(
             self.tool_system_prompt_template
         )
@@ -320,16 +397,16 @@ class OllamaFunctions(ChatOllama):
                 Please try again. 
                 Response: {chat_generation_content}"""
             )
-        called_tool_name = parsed_chat_result["tool"]
+        called_tool_name = (
+            parsed_chat_result["tool"] if "tool" in parsed_chat_result else None
+        )
         called_tool = next(
             (fn for fn in functions if fn["name"] == called_tool_name), None
         )
-        if called_tool is None:
-            raise ValueError(
-                f"Failed to parse a function call from {self.model} output: "
-                f"{chat_generation_content}"
-            )
-        if called_tool["name"] == DEFAULT_RESPONSE_FUNCTION["name"]:
+        if (
+            called_tool is None
+            or called_tool["name"] == DEFAULT_RESPONSE_FUNCTION["name"]
+        ):
             if (
                 "tool_input" in parsed_chat_result
                 and "response" in parsed_chat_result["tool_input"]
@@ -352,7 +429,11 @@ class OllamaFunctions(ChatOllama):
                 ]
             )
 
-        called_tool_arguments = parsed_chat_result["tool_input"]
+        called_tool_arguments = (
+            parsed_chat_result["tool_input"]
+            if "tool_input" in parsed_chat_result
+            else {}
+        )
 
         response_message_with_functions = AIMessage(
             content="",
@@ -365,6 +446,86 @@ class OllamaFunctions(ChatOllama):
             ],
         )
 
+        return ChatResult(
+            generations=[ChatGeneration(message=response_message_with_functions)]
+        )
+
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        functions = kwargs.get("functions", [])
+        if "functions" in kwargs:
+            del kwargs["functions"]
+        if "function_call" in kwargs:
+            functions = [
+                fn for fn in functions if fn["name"] == kwargs["function_call"]["name"]
+            ]
+            if not functions:
+                raise ValueError(
+                    "If `function_call` is specified, you must also pass a "
+                    "matching function in `functions`."
+                )
+            del kwargs["function_call"]
+        elif not functions:
+            functions.append(DEFAULT_RESPONSE_FUNCTION)
+        if _is_pydantic_class(functions[0]):
+            functions = [convert_to_ollama_tool(fn) for fn in functions]
+        system_message_prompt_template = SystemMessagePromptTemplate.from_template(
+            self.tool_system_prompt_template
+        )
+        system_message = system_message_prompt_template.format(
+            tools=json.dumps(functions, indent=2)
+        )
+        response_message = await super()._agenerate(
+            [system_message] + messages, stop=stop, run_manager=run_manager, **kwargs
+        )
+        chat_generation_content = response_message.generations[0].text
+        if not isinstance(chat_generation_content, str):
+            raise ValueError("OllamaFunctions does not support non-string output.")
+        try:
+            parsed_chat_result = json.loads(chat_generation_content)
+        except json.JSONDecodeError:
+            raise ValueError(
+                f"""'{self.model}' did not respond with valid JSON. 
+                Please try again. 
+                Response: {chat_generation_content}"""
+            )
+        called_tool_name = parsed_chat_result["tool"]
+        called_tool_arguments = parsed_chat_result["tool_input"]
+        called_tool = next(
+            (fn for fn in functions if fn["name"] == called_tool_name), None
+        )
+        if called_tool is None:
+            raise ValueError(
+                f"Failed to parse a function call from {self.model} output: "
+                f"{chat_generation_content}"
+            )
+        if called_tool["name"] == DEFAULT_RESPONSE_FUNCTION["name"]:
+            return ChatResult(
+                generations=[
+                    ChatGeneration(
+                        message=AIMessage(
+                            content=called_tool_arguments["response"],
+                        )
+                    )
+                ]
+            )
+
+        response_message_with_functions = AIMessage(
+            content="",
+            additional_kwargs={
+                "function_call": {
+                    "name": called_tool_name,
+                    "arguments": json.dumps(called_tool_arguments)
+                    if called_tool_arguments
+                    else "",
+                },
+            },
+        )
         return ChatResult(
             generations=[ChatGeneration(message=response_message_with_functions)]
         )
