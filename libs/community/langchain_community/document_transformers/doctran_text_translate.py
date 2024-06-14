@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-import contextvars
-import functools
 from typing import Any, Optional, Sequence
 
 from langchain_core.documents import BaseDocumentTransformer, Document
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import get_from_env
 
 
@@ -44,15 +43,17 @@ class DoctranTextTranslator(BaseDocumentTransformer):
     async def _aparse_document(
         self, doctran: Any, index: int, doc: Document
     ) -> tuple[int, Any]:
-        parsed_doc = await self._to_thread(
-            doctran.parse, content=doc.page_content, metadata=doc.metadata
+        parsed_doc = await run_in_executor(
+            None, doctran.parse, content=doc.page_content, metadata=doc.metadata
         )
         return index, parsed_doc
 
     async def _atranslate_document(
         self, index: int, doc: Any, language: str
     ) -> tuple[int, Any]:
-        translated_doc = await self._to_thread(doc.translate(language=language).execute)
+        translated_doc = await run_in_executor(
+            None, lambda: doc.translate(language=language).execute()
+        )
         return index, translated_doc
 
     async def atransform_documents(
@@ -116,19 +117,3 @@ class DoctranTextTranslator(BaseDocumentTransformer):
             Document(page_content=doc.transformed_content, metadata=doc.metadata)
             for doc in doctran_docs
         ]
-
-    async def _to_thread(self, func, /, *args, **kwargs):
-        """Asynchronously run function *func* in a separate thread.
-
-        Any *args and **kwargs supplied for this function are directly passed
-        to *func*. Also, the current :class:`contextvars.Context` is propagated,
-        allowing context variables from the main thread to be accessed in the
-        separate thread.
-
-        Return a coroutine that can be awaited to get the eventual result of *func*.
-        """
-
-        loop = asyncio.get_event_loop()
-        ctx = contextvars.copy_context()
-        func_call = functools.partial(ctx.run, func, *args, **kwargs)
-        return await loop.run_in_executor(None, func_call)
