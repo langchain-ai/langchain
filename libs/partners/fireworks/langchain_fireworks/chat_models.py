@@ -212,10 +212,21 @@ def _convert_chunk_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
+        if usage := chunk.get("usage"):
+            input_tokens = usage.get("prompt_tokens", 0)
+            output_tokens = usage.get("completion_tokens", 0)
+            usage_metadata = {
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "total_tokens": usage.get("total_tokens", input_tokens + output_tokens),
+            }
+        else:
+            usage_metadata = None
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
             tool_call_chunks=tool_call_chunks,
+            usage_metadata=usage_metadata,
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
