@@ -97,7 +97,7 @@ class TestMongoDBAtlasVectorSearch:
             documents,
             embedding_openai,
             collection=collection,
-            index_name=INDEX_NAME,
+            vector_index_name=INDEX_NAME,
         )
         self._validate_search(
             vectorstore, collection, metadata=documents[2].metadata["c"]
@@ -116,7 +116,7 @@ class TestMongoDBAtlasVectorSearch:
             texts,
             embedding_openai,
             collection=collection,
-            index_name=INDEX_NAME,
+            vector_index_name=INDEX_NAME,
         )
         self._validate_search(vectorstore, collection, metadata=None)
 
@@ -135,7 +135,7 @@ class TestMongoDBAtlasVectorSearch:
             embedding_openai,
             metadatas=metadatas,
             collection=collection,
-            index_name=INDEX_NAME,
+            vector_index_name=INDEX_NAME,
         )
         self._validate_search(vectorstore, collection, metadata=metadatas[2]["c"])
 
@@ -154,7 +154,7 @@ class TestMongoDBAtlasVectorSearch:
             embedding_openai,
             metadatas=metadatas,
             collection=collection,
-            index_name=INDEX_NAME,
+            vector_index_name=INDEX_NAME,
         )
         collection._aggregate_result = list(
             filter(
@@ -176,7 +176,7 @@ class TestMongoDBAtlasVectorSearch:
             texts,
             embedding_openai,
             collection=collection,
-            index_name=INDEX_NAME,
+            vector_index_name=INDEX_NAME,
         )
         query = "foo"
         self._validate_search(
