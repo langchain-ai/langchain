@@ -7,6 +7,7 @@ from langchain_pinecone import PineconeEmbeddings
 MODEL = "multilingual-e5-large"
 MODEL_DIM = 1024
 
+
 class TestPineconeEmbeddings:
     """Test Pinecone embeddings."""
 
@@ -37,7 +38,9 @@ class TestPineconeEmbeddings:
     async def test_aembed_documents(self) -> None:
         """Test embedding documents."""
         pinecone_embeddings = PineconeEmbeddings(model=MODEL)
-        out = await pinecone_embeddings.aembed_documents(["Hello, world!", "This is a test."])
+        out = await pinecone_embeddings.aembed_documents(
+            ["Hello, world!", "This is a test."]
+        )
         assert isinstance(out, list)
         assert len(out) == 2
         assert len(out[0]) == MODEL_DIM
