@@ -1649,6 +1649,7 @@ def test_section_splitter_accepts_an_absolute_path() -> None:
 
     sec_splitter.split_text(html_string)
 
+
 @pytest.mark.requires("lxml")
 @pytest.mark.requires("bs4")
 def test_happy_path_splitting_with_duplicate_header_tag() -> None:

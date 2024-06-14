@@ -233,9 +233,7 @@ class HTMLSectionSplitter:
                 documents.append(new_doc)
         return documents
 
-    def split_html_by_headers(
-            self, html_doc: str
-    ) -> List[Dict[str, Optional[str]]]:
+    def split_html_by_headers(self, html_doc: str) -> List[Dict[str, Optional[str]]]:
         try:
             from bs4 import BeautifulSoup, PageElement  # type: ignore[import-untyped]
         except ImportError as e:
@@ -269,11 +267,13 @@ class HTMLSectionSplitter:
             content = " ".join(section_content).strip()
 
             if content != "":
-                sections.append({
-                    "header": current_header,
-                    "content": content,
-                    "tag_name": current_header_tag,
-                })
+                sections.append(
+                    {
+                        "header": current_header,
+                        "content": content,
+                        "tag_name": current_header_tag,
+                    }
+                )
 
         return sections
 
@@ -310,9 +310,9 @@ class HTMLSectionSplitter:
             Document(
                 cast(str, section["content"]),
                 metadata={
-                    self.headers_to_split_on[
-                        str(section["tag_name"])
-                    ]: section["header"]
+                    self.headers_to_split_on[str(section["tag_name"])]: section[
+                        "header"
+                    ]
                 },
             )
             for section in sections
