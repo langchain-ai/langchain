@@ -8,6 +8,6 @@ def test_all() -> None:
         "aindex",
         "index",
         "IndexingResult",
-        "MemoryRecordManager",
+        "InMemoryRecordManager",
         "RecordManager",
     ]
