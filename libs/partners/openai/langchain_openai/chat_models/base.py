@@ -817,7 +817,6 @@ class BaseChatOpenAI(BaseChatModel):
         tool_choice: Optional[
             Union[dict, str, Literal["auto", "none", "required", "any"], bool]
         ] = None,
-        parallel_tool_calls: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -839,15 +838,11 @@ class BaseChatOpenAI(BaseChatModel):
                 False: no effect;
                 or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
-            parallel_tool_calls: Whether to run tool calls in parallel
-                Can either be True or False
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
-        if parallel_tool_calls:
-            kwargs["parallel_tool_calls"] = parallel_tool_calls
         if tool_choice:
             if isinstance(tool_choice, str):
                 # tool_choice is a tool/function name
@@ -1084,7 +1079,7 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            llm = self.bind_tools([schema], tool_choice=True)
+            llm = self.bind_tools([schema], tool_choice=True, parallel_tool_calls=False)
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema], first_tool_only=True
