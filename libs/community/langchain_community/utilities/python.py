@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 def __getattr__(name: str) -> Any:
     if name in "PythonREPL":
         raise AssertionError(
-            "PytonREPL has been deprecated from langchain_community due to being "
+            "PythonREPL has been deprecated from langchain_community due to being "
             "flagged by security scanners. See: "
             "https://github.com/langchain-ai/langchain/issues/14345 "
             "If you need to use it, please use the version "
