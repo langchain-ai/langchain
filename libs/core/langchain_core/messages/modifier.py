@@ -1,16 +1,16 @@
 from typing import Any, List, Literal
 
-from langchain_core.messages.base import BaseMessage, BaseMessageChunk
+from langchain_core.messages.base import BaseMessage
 
 
-class MessageModifier(BaseMessage):
+class ModifierMessage(BaseMessage):
     """Message responsible for modifying other messages (deleting / updating.)"""
 
-    def __init__(self, id: str) -> None:
+    def __init__(self, id: str, **kwargs: Any) -> None:
         return super().__init__("modifier", id=id)
 
 
-class RemoveMessageModifier(MessageModifier):
+class RemoveMessage(ModifierMessage):
     """Message responsible for deleting other messages."""
 
     type: Literal["remove"] = "remove"
@@ -21,4 +21,4 @@ class RemoveMessageModifier(MessageModifier):
         return ["langchain", "schema", "messages"]
 
 
-RemoveMessageModifier.update_forward_refs()
+RemoveMessage.update_forward_refs()

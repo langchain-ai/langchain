@@ -41,6 +41,10 @@ if TYPE_CHECKING:
     from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
 
 
+# TODO: figure out how to do this properly
+from langchain_core.messages.modifier import RemoveMessage
+
+
 class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     """Runnable that can fallback to other Runnables if it fails.
 
@@ -456,41 +460,50 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         first_error = None
         last_error = None
+        output: Optional[Output] = None
+        last_chunk_id = None
+        seen_chunk_ids = []
         for runnable in self.runnables:
+            stream = runnable.stream(
+                input,
+                patch_config(config, callbacks=run_manager.get_child()),
+                **kwargs,
+            )
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error
-                stream = runnable.stream(
-                    input,
-                    patch_config(config, callbacks=run_manager.get_child()),
-                    **kwargs,
-                )
-                chunk = next(stream)
+
+                for chunk in stream:
+                    chunk_id = getattr(chunk, "id", None)
+                    if chunk_id is not None and chunk_id != last_chunk_id:
+                        seen_chunk_ids.append(chunk.id)
+                        last_chunk_id = chunk_id
+
+                    yield chunk
+
+                    try:
+                        if output is None:
+                            output = chunk
+                        else:
+                            output = output + chunk  # type: ignore
+                    except TypeError:
+                        output = None
+
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
+
+                for chunk_id in seen_chunk_ids:
+                    yield RemoveMessage(id=chunk_id)
+
+                output = None
+                seen_chunk_ids = []
             except BaseException as e:
                 run_manager.on_chain_error(e)
                 raise e
             else:
                 first_error = None
-                break
-        if first_error:
-            run_manager.on_chain_error(first_error)
-            raise first_error
 
-        yield chunk
-        output: Optional[Output] = chunk
-        try:
-            for chunk in stream:
-                yield chunk
-                try:
-                    output = output + chunk  # type: ignore
-                except TypeError:
-                    output = None
-        except BaseException as e:
-            run_manager.on_chain_error(e)
-            raise e
         run_manager.on_chain_end(output)
 
     async def astream(
