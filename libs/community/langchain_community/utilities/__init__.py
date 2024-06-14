@@ -298,7 +298,7 @@ _module_lookup = {
 }
 
 REMOVED = {
-    "PythonREPL": "PytonREPL has been deprecated from langchain_community due to being "
+    "PythonREPL": "PythonREPL has been deprecated from langchain_community due to being "
     "flagged by security scanners. See: "
     "https://github.com/langchain-ai/langchain/issues/14345 "
     "If you need to use it, please use the version "
