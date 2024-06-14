@@ -130,7 +130,7 @@ def test_trim_messages_first_30() -> None:
     ]
     actual = trim_messages(
         _MESSAGES_TO_TRIM,
-        n_tokens=30,
+        max_tokens=30,
         token_counter=dummy_token_counter,
         strategy="first",
     )
@@ -148,7 +148,7 @@ def test_trim_messages_first_30_allow_partial() -> None:
     ]
     actual = trim_messages(
         _MESSAGES_TO_TRIM,
-        n_tokens=30,
+        max_tokens=30,
         token_counter=dummy_token_counter,
         strategy="first",
         allow_partial=True,
@@ -165,7 +165,7 @@ def test_trim_messages_first_30_allow_partial_end_on_human() -> None:
 
     actual = trim_messages(
         _MESSAGES_TO_TRIM,
-        n_tokens=30,
+        max_tokens=30,
         token_counter=dummy_token_counter,
         strategy="first",
         allow_partial=True,
@@ -184,7 +184,7 @@ def test_trim_messages_last_30_include_system() -> None:
 
     actual = trim_messages(
         _MESSAGES_TO_TRIM,
-        n_tokens=30,
+        max_tokens=30,
         include_system=True,
         token_counter=dummy_token_counter,
         strategy="last",
@@ -208,7 +208,7 @@ def test_trim_messages_last_40_include_system_allow_partial() -> None:
 
     actual = trim_messages(
         _MESSAGES_TO_TRIM,
-        n_tokens=40,
+        max_tokens=40,
         token_counter=dummy_token_counter,
         strategy="last",
         allow_partial=True,
@@ -233,7 +233,7 @@ def test_trim_messages_last_30_include_system_allow_partial_end_on_human() -> No
 
     actual = trim_messages(
         _MESSAGES_TO_TRIM,
-        n_tokens=30,
+        max_tokens=30,
         token_counter=dummy_token_counter,
         strategy="last",
         allow_partial=True,
@@ -254,7 +254,7 @@ def test_trim_messages_last_40_include_system_allow_partial_start_on_human() -> 
 
     actual = trim_messages(
         _MESSAGES_TO_TRIM,
-        n_tokens=30,
+        max_tokens=30,
         token_counter=dummy_token_counter,
         strategy="last",
         allow_partial=True,
@@ -268,7 +268,7 @@ def test_trim_messages_last_40_include_system_allow_partial_start_on_human() -> 
 
 def test_trim_messages_allow_partial_text_splitter() -> None:
     expected = [
-        HumanMessage("token text.", id="third"),
+        HumanMessage("a 4 token text.", id="third"),
         AIMessage("This is a 4 token text.", id="fourth"),
     ]
 
@@ -289,7 +289,7 @@ def test_trim_messages_allow_partial_text_splitter() -> None:
 
     actual = trim_messages(
         _MESSAGES_TO_TRIM,
-        n_tokens=10,
+        max_tokens=10,
         token_counter=count_words,
         strategy="last",
         allow_partial=True,

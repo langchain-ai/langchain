@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,6 +15,7 @@ from typing import (
     Type,
     Union,
     cast,
+    overload,
 )
 
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
@@ -23,6 +25,7 @@ from langchain_core.messages.function import FunctionMessage, FunctionMessageChu
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolMessage, ToolMessageChunk
+from langchain_core.runnables import Runnable, RunnableLambda
 
 if TYPE_CHECKING:
     from langchain_text_splitters import TextSplitter
@@ -257,6 +260,36 @@ def convert_to_messages(
     return [_convert_to_message(m) for m in messages]
 
 
+def _runnable_support(func: Callable) -> Callable:
+    @overload
+    def wrapped(
+        messages: Literal[None] = None, **kwargs: Any
+    ) -> Runnable[Sequence[MessageLikeRepresentation], List[BaseMessage]]:
+        ...
+
+    @overload
+    def wrapped(
+        messages: Sequence[MessageLikeRepresentation], **kwargs: Any
+    ) -> List[BaseMessage]:
+        ...
+
+    def wrapped(
+        messages: Optional[Sequence[MessageLikeRepresentation]] = None, **kwargs: Any
+    ) -> Union[
+        List[BaseMessage],
+        Runnable[Sequence[MessageLikeRepresentation], List[BaseMessage]],
+    ]:
+        if messages is not None:
+            return func(messages, **kwargs)
+        else:
+            return RunnableLambda(
+                partial(func, **kwargs), name=getattr(func, "__name__")
+            )
+
+    return wrapped
+
+
+@_runnable_support
 def filter_messages(
     messages: Sequence[MessageLikeRepresentation],
     *,
@@ -348,6 +381,7 @@ def filter_messages(
     return filtered
 
 
+@_runnable_support
 def merge_message_runs(
     messages: Sequence[MessageLikeRepresentation],
 ) -> List[BaseMessage]:
@@ -436,10 +470,11 @@ def merge_message_runs(
     return merged
 
 
+@_runnable_support
 def trim_messages(
     messages: Sequence[MessageLikeRepresentation],
     *,
-    n_tokens: int,
+    max_tokens: int,
     token_counter: Union[
         Callable[[List[BaseMessage]], int],
         Callable[[BaseMessage], int],
@@ -455,12 +490,14 @@ def trim_messages(
     ] = None,
     include_system: bool = False,
     text_splitter: Optional[Union[Callable[[str], List[str]], TextSplitter]] = None,
-) -> List[BaseMessage]:
+) -> Union[
+    List[BaseMessage], Runnable[Sequence[MessageLikeRepresentation], List[BaseMessage]]
+]:
     """Trim messages to be below a token count.
 
     Args:
         messages: Sequence of Message-like objects to trim.
-        n_tokens: Max token count of trimmed messages.
+        max_tokens: Max token count of trimmed messages.
         token_counter: Function or llm for counting tokens in a BaseMessage or a list of
             BaseMessage. If a BaseLanguageModel is passed in then
             BaseLanguageModel.get_num_tokens_from_messages() will be used.
@@ -468,24 +505,29 @@ def trim_messages(
             - "first": Keep the first <= n_count tokens of the messages.
             - "last": Keep the last <= n_count tokens of the messages.
         allow_partial: Whether to split a message if only part of the message can be
-            included.
-        end_on: The message type to end on. If specified the list of messages will
-            continue to be trimmed until a message of this type is last. Can be
+            included. If ``strategy="last"`` then the last partial contents of a message
+            are included. If ``strategy="first"`` then the first partial contents of a
+            message are included.
+        end_on: The message type to end on. If specified then every message after the
+            last occurrence of this type is ignored. If ``strategy=="last"`` then this
+            is done before we attempt to get the last ``max_tokens``. If
+            ``strategy=="first"`` then this is done after we get the first
+            ``max_tokens``. Can be specified as string names (e.g. "system", "human",
+            "ai", ...) or as BaseMessage classes (e.g. SystemMessage, HumanMessage,
+            AIMessage, ...). Can be a single type or a list of types.
+        start_on: The message type to start on. Should only be specified if
+            ``strategy="last"``. If specified then every message before
+            the first occurrence of this type is ignored. This is done after we trim
+            the initial messages to the last ``max_tokens``. Does not
+            apply to a SystemMessage at index 0 if ``include_system=True``. Can be
             specified as string names (e.g. "system", "human", "ai", ...) or as
             BaseMessage classes (e.g. SystemMessage, HumanMessage, AIMessage, ...). Can
             be a single type or a list of types.
-        start_on: The message type to start on. If specified the list of messages will
-            continue to be trimmed until a message of this type is first. Can be
-            specified as string names (e.g. "system", "human", "ai", ...) or as
-            BaseMessage classes (e.g. SystemMessage, HumanMessage, AIMessage, ...). Can
-            be a single type or a list of types. Should only be specified if
-            ``strategy="last"``. Ignores a SystemMessage at index 0 if
-            ``include_system=True``.
         include_system: Whether to keep the SystemMessage if there is one at index 0.
             Should only be specified if ``strategy="last"``.
         text_splitter: Function or ``langchain_text_splitters.TextSplitter`` for
             splitting the string contents of a message. Only used if
-            ``allow_partial=True``. If ``strategy=="last"`` then the last split tokens
+            ``allow_partial=True``. If ``strategy="last"`` then the last split tokens
             from a partial message will be included. if ``strategy=="first"`` then the
             first split tokens from a partial message will be included. Token splitter
             assumes that separators are kept, so that split contents can be directly
@@ -540,7 +582,7 @@ def trim_messages(
         First 30 tokens, not allowing partial messages:
         .. code-block:: python
 
-            trim_messages(messages, n_tokens=30, token_counter=dummy_token_counter, strategy="first")
+            trim_messages(messages, max_tokens=30, token_counter=dummy_token_counter, strategy="first")
 
         .. code-block:: python
 
@@ -554,7 +596,7 @@ def trim_messages(
 
             trim_messages(
                 messages,
-                n_tokens=30,
+                max_tokens=30,
                 token_counter=dummy_token_counter,
                 strategy="first",
                 allow_partial=True,
@@ -573,7 +615,7 @@ def trim_messages(
 
             trim_messages(
                 messages,
-                n_tokens=30,
+                max_tokens=30,
                 token_counter=dummy_token_counter,
                 strategy="first"
                 allow_partial=True,
@@ -591,7 +633,7 @@ def trim_messages(
         Last 30 tokens, including system message, not allowing partial messages:
         .. code-block:: python
 
-            trim_messages(messages, n_tokens=30, include_system=True, token_counter=dummy_token_counter, strategy="last")
+            trim_messages(messages, max_tokens=30, include_system=True, token_counter=dummy_token_counter, strategy="last")
 
         .. code-block:: python
 
@@ -606,7 +648,7 @@ def trim_messages(
 
             trim_messages(
                 messages,
-                n_tokens=40,
+                max_tokens=40,
                 token_counter=dummy_token_counter,
                 strategy="last",
                 allow_partial=True,
@@ -630,7 +672,7 @@ def trim_messages(
 
             trim_messages(
                 messages,
-                n_tokens=30,
+                max_tokens=30,
                 token_counter=dummy_token_counter,
                 strategy="last",
                 end_on="human",
@@ -655,7 +697,7 @@ def trim_messages(
 
             trim_messages(
                 messages,
-                n_tokens=40,
+                max_tokens=40,
                 token_counter=dummy_token_counter,
                 strategy="last",
                 include_system=True,
@@ -671,7 +713,78 @@ def trim_messages(
                 AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
             ]
 
+        Using a TextSplitter for splitting parting messages:
+            .. code-block:: python
+
+                ...
+
+            .. code-block:: python
+
+                ...
+
+        Using a model for token counting:
+            .. code-block:: python
+
+                ...
+
+            .. code-block:: python
+
+                ...
+
+        Chaining:
+            .. code-block:: python
+
+                ...
+
+
     """  # noqa: E501
+    if messages is not None:
+        return _trim_messages_helper(
+            messages,
+            max_tokens=max_tokens,
+            token_counter=token_counter,
+            strategy=strategy,
+            allow_partial=allow_partial,
+            end_on=end_on,
+            start_on=start_on,
+            include_system=include_system,
+            text_splitter=text_splitter,
+        )
+    else:
+        trimmer = partial(
+            _trim_messages_helper,
+            max_tokens=max_tokens,
+            token_counter=token_counter,
+            strategy=strategy,
+            allow_partial=allow_partial,
+            end_on=end_on,
+            start_on=start_on,
+            include_system=include_system,
+            text_splitter=text_splitter,
+        )
+        return RunnableLambda(trimmer)
+
+
+def _trim_messages_helper(
+    messages: Sequence[MessageLikeRepresentation],
+    *,
+    max_tokens: int,
+    token_counter: Union[
+        Callable[[List[BaseMessage]], int],
+        Callable[[BaseMessage], int],
+        BaseLanguageModel,
+    ],
+    strategy: Literal["first", "last"] = "last",
+    allow_partial: bool = False,
+    end_on: Optional[
+        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+    ] = None,
+    start_on: Optional[
+        Union[str, Type[BaseMessage], Sequence[Union[str, Type[BaseMessage]]]]
+    ] = None,
+    include_system: bool = False,
+    text_splitter: Optional[Union[Callable[[str], List[str]], TextSplitter]] = None,
+) -> List[BaseMessage]:
     from langchain_core.language_models import BaseLanguageModel
 
     if start_on and strategy == "first":
@@ -704,18 +817,18 @@ def trim_messages(
     text_splitter_fn = text_splitter_fn or _default_text_splitter
 
     if strategy == "first":
-        return _first_n_tokens(
+        return _first_max_tokens(
             messages,
-            n_tokens=n_tokens,
+            max_tokens=max_tokens,
             token_counter=list_token_counter,
             text_splitter=text_splitter_fn,
             partial_strategy="first" if allow_partial else None,
             end_on=end_on,
         )
     elif strategy == "last":
-        return _last_n_tokens(
+        return _last_max_tokens(
             messages,
-            n_tokens=n_tokens,
+            max_tokens=max_tokens,
             token_counter=list_token_counter,
             allow_partial=allow_partial,
             include_system=include_system,
@@ -729,10 +842,10 @@ def trim_messages(
         )
 
 
-def _first_n_tokens(
+def _first_max_tokens(
     messages: Sequence[BaseMessage],
     *,
-    n_tokens: int,
+    max_tokens: int,
     token_counter: Callable[[List[BaseMessage]], int],
     text_splitter: Callable[[str], List[str]],
     partial_strategy: Optional[Literal["first", "last"]] = None,
@@ -743,7 +856,7 @@ def _first_n_tokens(
     messages = list(messages)
     idx = 0
     for i in range(len(messages)):
-        if token_counter(messages[:-i] if i else messages) <= n_tokens:
+        if token_counter(messages[:-i] if i else messages) <= max_tokens:
             idx = len(messages) - i
             break
 
@@ -756,7 +869,7 @@ def _first_n_tokens(
                 excluded.content = list(reversed(excluded.content))
             for _ in range(1, num_block):
                 excluded.content = excluded.content[:-1]
-                if token_counter(messages[:idx] + [excluded]) <= n_tokens:
+                if token_counter(messages[:idx] + [excluded]) <= max_tokens:
                     messages = messages[:idx] + [excluded]
                     idx += 1
                     included_partial = True
@@ -765,7 +878,7 @@ def _first_n_tokens(
                 excluded.content = list(reversed(excluded.content))
         if not included_partial:
             excluded = messages[idx].copy(deep=True)
-            if isinstance(messages[idx].content, list) and any(
+            if isinstance(excluded.content, list) and any(
                 isinstance(block, str) or block["type"] == "text"
                 for block in messages[idx].content
             ):
@@ -777,27 +890,21 @@ def _first_n_tokens(
                 text = (
                     text_block["text"] if isinstance(text_block, dict) else text_block
                 )
-            elif isinstance(messages[idx].content, str):
-                text = messages[idx].content
+            elif isinstance(excluded.content, str):
+                text = excluded.content
             else:
                 text = None
             if text:
                 split_texts = text_splitter(text)
-                excluded.content = [{"type": "text", "text": t} for t in split_texts]
+                num_splits = len(split_texts)
                 if partial_strategy == "last":
-                    excluded.content = list(reversed(excluded.content))
-                for _ in range(1, len(split_texts)):
-                    excluded.content = excluded.content[:-1]
-                    if token_counter(messages[:idx] + [excluded]) <= n_tokens:
+                    split_texts = list(reversed(split_texts))
+                for _ in range(num_splits - 1):
+                    split_texts.pop()
+                    excluded.content = "".join(split_texts)
+                    if token_counter(messages[:idx] + [excluded]) <= max_tokens:
                         if partial_strategy == "last":
-                            excluded.content = list(
-                                reversed(cast(list, excluded.content))
-                            )
-                        if isinstance(messages[idx].content, str):
-                            excluded.content = "".join(
-                                block["text"]  # type: ignore[index]
-                                for block in excluded.content
-                            )
+                            excluded.content = "".join(reversed(split_texts))
                         messages = messages[:idx] + [excluded]
                         idx += 1
                         break
@@ -809,10 +916,10 @@ def _first_n_tokens(
     return messages[:idx]
 
 
-def _last_n_tokens(
+def _last_max_tokens(
     messages: Sequence[BaseMessage],
     *,
-    n_tokens: int,
+    max_tokens: int,
     token_counter: Callable[[List[BaseMessage]], int],
     text_splitter: Callable[[str], List[str]],
     allow_partial: bool = False,
@@ -834,9 +941,9 @@ def _last_n_tokens(
     else:
         reversed_ = messages[::-1]
 
-    reversed_ = _first_n_tokens(
+    reversed_ = _first_max_tokens(
         reversed_,
-        n_tokens=n_tokens,
+        max_tokens=max_tokens,
         token_counter=token_counter,
         text_splitter=text_splitter,
         partial_strategy="last" if allow_partial else None,
