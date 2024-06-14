@@ -293,27 +293,27 @@ def _runnable_support(func: Callable) -> Callable:
 def filter_messages(
     messages: Sequence[MessageLikeRepresentation],
     *,
-    incl_names: Optional[Sequence[str]] = None,
-    excl_names: Optional[Sequence[str]] = None,
-    incl_types: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
-    excl_types: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
-    incl_ids: Optional[Sequence[str]] = None,
-    excl_ids: Optional[Sequence[str]] = None,
+    include_names: Optional[Sequence[str]] = None,
+    exclude_names: Optional[Sequence[str]] = None,
+    include_types: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
+    exclude_types: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
+    include_ids: Optional[Sequence[str]] = None,
+    exclude_ids: Optional[Sequence[str]] = None,
 ) -> List[BaseMessage]:
     """Filter messages based on name, type or id.
 
     Args:
         messages: Sequence Message-like objects to filter.
-        incl_names: Message names to include.
-        excl_names: Messages names to exclude.
-        incl_types: Message types to include. Can be specified as string names (e.g.
+        include_names: Message names to include.
+        exclude_names: Messages names to exclude.
+        include_types: Message types to include. Can be specified as string names (e.g.
             "system", "human", "ai", ...) or as BaseMessage classes (e.g.
             SystemMessage, HumanMessage, AIMessage, ...).
-        excl_types: Message types to exclude. Can be specified as string names (e.g.
+        exclude_types: Message types to exclude. Can be specified as string names (e.g.
             "system", "human", "ai", ...) or as BaseMessage classes (e.g.
             SystemMessage, HumanMessage, AIMessage, ...).
-        incl_ids: Message IDs to include.
-        excl_ids: Message IDs to exclude.
+        include_ids: Message IDs to include.
+        exclude_ids: Message IDs to exclude.
 
     Returns:
         A list of Messages that meets at least one of the incl_* conditions and none
@@ -353,26 +353,26 @@ def filter_messages(
     messages = convert_to_messages(messages)
     filtered: List[BaseMessage] = []
     for msg in messages:
-        if excl_names and msg.name in excl_names:
+        if exclude_names and msg.name in exclude_names:
             continue
-        elif excl_types and _is_message_type(msg, excl_types):
+        elif exclude_types and _is_message_type(msg, exclude_types):
             continue
-        elif excl_ids and msg.id in excl_ids:
+        elif exclude_ids and msg.id in exclude_ids:
             continue
         else:
             pass
 
         # default to inclusion when no inclusion criteria given.
-        if not (incl_types or incl_ids or incl_names):
+        if not (include_types or include_ids or include_names):
             filtered.append(msg)
             continue
-        if incl_names and msg.name in incl_names:
+        if include_names and msg.name in include_names:
             filtered.append(msg)
             continue
-        elif incl_types and _is_message_type(msg, incl_types):
+        elif include_types and _is_message_type(msg, include_types):
             filtered.append(msg)
             continue
-        elif incl_ids and msg.id in incl_ids:
+        elif include_ids and msg.id in include_ids:
             filtered.append(msg)
             continue
         else:
