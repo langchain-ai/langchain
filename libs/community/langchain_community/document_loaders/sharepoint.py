@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Iterator, List, Optional, Sequence
 
-import requests
+import requests # type: ignore
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Field
@@ -37,6 +37,8 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
     """ The ID of the file for which we need auth identities"""
     site_id: Optional[str] = None
     """ The ID of the Sharepoint site of the user where the file is present """
+    load_extended_metadata: Optional[bool] = False
+    """ Whether to load extended metadata. Size, Owner and full_path."""
 
     @property
     def _file_types(self) -> Sequence[_FileType]:
@@ -65,37 +67,47 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             if not isinstance(target_folder, Folder):
                 raise ValueError(f"There isn't a folder with path {self.folder_path}.")
             for blob in self._load_from_folder(target_folder):
+                file_id = str(blob.metadata.get("id"))
                 if self.load_auth is True:
-                    file_id = str(blob.metadata.get("id"))
                     auth_identities = self.authorized_identities(file_id)
-                    for parsed_blob in blob_parser.lazy_parse(blob):
+                if self.load_extended_metadata is True:
+                    extended_metadata = self.get_extended_metadata(file_id)
+                for parsed_blob in blob_parser.lazy_parse(blob):
+                    if self.load_auth is True:
                         parsed_blob.metadata["authorized_identities"] = auth_identities
-                        yield parsed_blob
-                else:
-                    yield from blob_parser.lazy_parse(blob)
+                    if self.load_extended_metadata is True:
+                        parsed_blob.metadata.update(extended_metadata)
+                    yield parsed_blob
         if self.folder_id:
             target_folder = drive.get_item(self.folder_id)
             if not isinstance(target_folder, Folder):
                 raise ValueError(f"There isn't a folder with path {self.folder_path}.")
             for blob in self._load_from_folder(target_folder):
                 file_id = str(blob.metadata.get("id"))
-                auth_identities = self.authorized_identities(file_id)
                 if self.load_auth is True:
-                    for parsed_blob in blob_parser.lazy_parse(blob):
+                    auth_identities = self.authorized_identities(file_id)
+                if self.load_extended_metadata is True:
+                    extended_metadata = self.get_extended_metadata(file_id)
+                for parsed_blob in blob_parser.lazy_parse(blob):
+                    if self.load_auth is True:
                         parsed_blob.metadata["authorized_identities"] = auth_identities
-                        yield parsed_blob
-                else:
-                    yield from blob_parser.lazy_parse(blob)
+                    if self.load_extended_metadata is True:
+                        parsed_blob.metadata.update(extended_metadata)
+                    yield parsed_blob
         if self.object_ids:
             for blob in self._load_from_object_ids(drive, self.object_ids):
+                file_id = str(blob.metadata.get("id"))
                 if self.load_auth is True:
-                    file_id = str(blob.metadata.get("id"))
                     auth_identities = self.authorized_identities(file_id)
-                    for parsed_blob in blob_parser.lazy_parse(blob):
+                if self.load_extended_metadata is True:
+                    extended_metadata = self.get_extended_metadata(file_id)
+                for parsed_blob in blob_parser.lazy_parse(blob):
+                    if self.load_auth is True:
                         parsed_blob.metadata["authorized_identities"] = auth_identities
-                        yield parsed_blob
-                else:
-                    yield from blob_parser.lazy_parse(blob)
+                    if self.load_extended_metadata is True:
+                        parsed_blob.metadata.update(extended_metadata)
+                    yield parsed_blob
+
         if not (self.folder_path or self.folder_id or self.object_ids):
             target_folder = drive.get_root_folder()
             if not isinstance(target_folder, Folder):
@@ -109,8 +121,8 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
         data = self._fetch_access_token()
         access_token = data.get("access_token")
         url = (
-            f"https://graph.microsoft.com/v1.0/sites/{self.site_id}/"
-            f"drives/{self.document_library_id}/items/{file_id}/permissions"
+            "https://graph.microsoft.com/v1.0/drives"
+            f"/{self.document_library_id}/items/{file_id}/permissions"
         )
         headers = {"Authorization": f"Bearer {access_token}"}
         response = requests.request("GET", url, headers=headers)
@@ -136,3 +148,27 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
             s = f.read()
         data = json.loads(s)
         return data
+
+    def get_extended_metadata(self, file_id: str) -> dict:
+        data = self._fetch_access_token()
+        access_token = data.get("access_token")
+        url = (
+            "https://graph.microsoft.com/v1.0/drives/"
+            f"{self.document_library_id}/items/{file_id}"
+            "?$select=size,createdBy,parentReference,name"
+        )
+        headers = {"Authorization": f"Bearer {access_token}"}
+        response = requests.request("GET", url, headers=headers)
+        metadata = response.json()
+        staged_metadata = {
+            "size": metadata.get("size", 0),
+            "owner": metadata.get("createdBy", {})
+            .get("user", {})
+            .get("displayName", ""),
+            "full_path": metadata.get("parentReference", {})
+            .get("path", "")
+            .split(":")[-1]
+            + "/"
+            + metadata.get("name", ""),
+        }
+        return staged_metadata
