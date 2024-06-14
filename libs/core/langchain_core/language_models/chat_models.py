@@ -974,12 +974,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 attributes will be validated, whereas with a dict they will not be. If
                 `method` is "function_calling" and `schema` is a dict, then the dict
                 must match the OpenAI function-calling spec.
-            method: The method for steering model generation, either "function_calling"
-                or "json_mode". If "function_calling" then the schema will be converted
-                to an OpenAI function and the returned model will make use of the
-                function-calling API. If "json_mode" then OpenAI's JSON mode will be
-                used. Note that if using "json_mode" then you must include instructions
-                for formatting the output into the desired schema into the model call.
             include_raw: If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
                 then both the raw model response (a BaseMessage) and the parsed model
@@ -1006,7 +1000,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
             .. code-block:: python
 
-                from langchain_provider import ChatModel
                 from langchain_core.pydantic_v1 import BaseModel
 
                 class AnswerWithJustification(BaseModel):
@@ -1027,7 +1020,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
             .. code-block:: python
 
-                from langchain_provider import ChatModel
                 from langchain_core.pydantic_v1 import BaseModel
 
                 class AnswerWithJustification(BaseModel):
@@ -1048,7 +1040,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: Function-calling, dict schema (method="function_calling", include_raw=False):
             .. code-block:: python
 
-                from langchain_provider import ChatModel
                 from langchain_core.pydantic_v1 import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
@@ -1070,7 +1061,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         Example: JSON mode, Pydantic schema (method="json_mode", include_raw=True):
             .. code-block::
 
-                from langchain_provider import ChatModel
                 from langchain_core.pydantic_v1 import BaseModel
 
                 class AnswerWithJustification(BaseModel):
@@ -1097,8 +1087,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         Example: JSON mode, no schema (schema=None, method="json_mode", include_raw=True):
             .. code-block::
-
-                from langchain_provider import ChatModel
 
                 structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
 
