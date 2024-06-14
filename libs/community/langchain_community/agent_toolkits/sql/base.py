@@ -136,7 +136,7 @@ def create_sql_agent(
             "Must provide exactly one of 'toolkit' or 'db'. Received both."
         )
 
-    toolkit = toolkit or SQLDatabaseToolkit(llm=llm, db=db)
+    toolkit = toolkit or SQLDatabaseToolkit(llm=llm, db=db)  # type: ignore[arg-type]
     agent_type = agent_type or AgentType.ZERO_SHOT_REACT_DESCRIPTION
     tools = toolkit.get_tools() + list(extra_tools)
     if prompt is None:

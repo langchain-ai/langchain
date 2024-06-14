@@ -9,7 +9,7 @@ from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
 from langchain_groq import ChatGroq
 
 
-class TestMistralStandard(ChatModelIntegrationTests):
+class TestGroqStandard(ChatModelIntegrationTests):
     @pytest.fixture
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatGroq

@@ -2,7 +2,7 @@
 
 LangChain has a large ecosystem of integrations with various external resources like local and remote file systems, APIs and databases. These integrations allow developers to create versatile applications that combine the power of LLMs with the ability to access, interact with and manipulate external resources.
 
-## Best Practices
+## Best practices
 
 When building such applications developers should remember to follow good security practices:
 
@@ -25,6 +25,6 @@ If you're building applications that access external resources like file systems
 or databases, consider speaking with your company's security team to determine how to best
 design and secure your applications.
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
 Please report security vulnerabilities by email to security@langchain.dev. This will ensure the issue is promptly triaged and acted upon as needed.

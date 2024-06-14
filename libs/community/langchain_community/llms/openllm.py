@@ -155,7 +155,7 @@ class OpenLLM(LLM):
             client = client_cls(server_url, timeout)
 
             super().__init__(
-                **{
+                **{  # type: ignore[arg-type]
                     "server_url": server_url,
                     "timeout": timeout,
                     "server_type": server_type,
@@ -180,7 +180,7 @@ class OpenLLM(LLM):
                 **llm_kwargs,
             )
             super().__init__(
-                **{
+                **{  # type: ignore[arg-type]
                     "model_name": model_name,
                     "model_id": model_id,
                     "embedded": embedded,

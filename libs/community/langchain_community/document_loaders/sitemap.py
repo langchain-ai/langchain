@@ -1,6 +1,16 @@
 import itertools
 import re
-from typing import Any, Callable, Generator, Iterable, Iterator, List, Optional, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+)
 from urllib.parse import urlparse
 
 from langchain_core.documents import Document
@@ -75,6 +85,7 @@ class SitemapLoader(WebBaseLoader):
         is_local: bool = False,
         continue_on_failure: bool = False,
         restrict_to_same_domain: bool = True,
+        max_depth: int = 10,
         **kwargs: Any,
     ):
         """Initialize with webpage path and optional filter URLs.
@@ -105,6 +116,7 @@ class SitemapLoader(WebBaseLoader):
             restrict_to_same_domain: whether to restrict loading to URLs to the same
                 domain as the sitemap. Attention: This is only applied if the sitemap
                 is not a local file!
+            max_depth: maximum depth to follow sitemap links. Default: 10
         """
 
         if blocksize is not None and blocksize < 1:
@@ -134,17 +146,23 @@ class SitemapLoader(WebBaseLoader):
         self.blocknum = blocknum
         self.is_local = is_local
         self.continue_on_failure = continue_on_failure
+        self.max_depth = max_depth
 
-    def parse_sitemap(self, soup: Any) -> List[dict]:
+    def parse_sitemap(self, soup: Any, *, depth: int = 0) -> List[dict]:
         """Parse sitemap xml and load into a list of dicts.
 
         Args:
             soup: BeautifulSoup object.
+            depth: current depth of the sitemap. Default: 0
 
         Returns:
             List of dicts.
         """
-        els = []
+        if depth >= self.max_depth:
+            return []
+
+        els: List[Dict] = []
+
         for url in soup.find_all("url"):
             loc = url.find("loc")
             if not loc:
@@ -177,9 +195,9 @@ class SitemapLoader(WebBaseLoader):
             loc = sitemap.find("loc")
             if not loc:
                 continue
-            soup_child = self.scrape_all([loc.text], "xml")[0]
 
-            els.extend(self.parse_sitemap(soup_child))
+            soup_child = self.scrape_all([loc.text], "xml")[0]
+            els.extend(self.parse_sitemap(soup_child, depth=depth + 1))
         return els
 
     def lazy_load(self) -> Iterator[Document]:

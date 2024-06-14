@@ -75,13 +75,11 @@ NGQL_GENERATION_PROMPT = PromptTemplate(
 
 KUZU_EXTRA_INSTRUCTIONS = """
 Instructions:
-
 Generate the Kùzu dialect of Cypher with the following rules in mind:
-
-1. Do not use a `WHERE EXISTS` clause to check the existence of a property.
-2. Do not omit the relationship pattern. Always use `()-[]->()` instead of `()->()`.
-3. Do not include any notes or comments even if the statement does not produce the expected result.
-```\n"""
+1. Do not omit the relationship pattern. Always use `()-[]->()` instead of `()->()`.
+2. Do not include triple backticks ``` in your response. Return only Cypher.
+3. Do not return any notes or comments in your response.
+\n"""
 
 KUZU_GENERATION_TEMPLATE = CYPHER_GENERATION_TEMPLATE.replace(
     "Generate Cypher", "Generate Kùzu Cypher"

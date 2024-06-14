@@ -6,7 +6,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
 from langchain_core.messages import (
     BaseMessage,
 )
@@ -35,6 +35,8 @@ class ChatAI21(BaseChatModel, AI21Base):
         You can view the options at https://github.com/AI21Labs/ai21-python?tab=readme-ov-file#model-types"""
     num_results: int = 1
     """The number of responses to generate for a given prompt."""
+    stop: Optional[List[str]] = None
+    """Default stop sequences."""
 
     max_tokens: int = 16
     """The maximum number of tokens to generate for each response."""
@@ -97,6 +99,8 @@ class ChatAI21(BaseChatModel, AI21Base):
             "top_k_return": self.top_k_return,
             "n": self.n,
         }
+        if self.stop:
+            base_params["stop_sequences"] = self.stop
 
         if self.count_penalty is not None:
             base_params["count_penalty"] = self.count_penalty.to_dict()
@@ -108,6 +112,23 @@ class ChatAI21(BaseChatModel, AI21Base):
             base_params["presence_penalty"] = self.presence_penalty.to_dict()
 
         return base_params
+
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        params = self._get_invocation_params(stop=stop, **kwargs)
+        ls_params = LangSmithParams(
+            ls_provider="ai21",
+            ls_model_name=self.model,
+            ls_model_type="chat",
+            ls_temperature=params.get("temperature", self.temperature),
+        )
+        if ls_max_tokens := params.get("max_tokens", self.max_tokens):
+            ls_params["ls_max_tokens"] = ls_max_tokens
+        if ls_stop := stop or params.get("stop", None) or self.stop:
+            ls_params["ls_stop"] = ls_stop
+        return ls_params
 
     def _build_params_for_request(
         self,

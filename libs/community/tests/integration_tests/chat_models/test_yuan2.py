@@ -16,7 +16,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 @pytest.mark.scheduled
 def test_chat_yuan2() -> None:
     """Test ChatYuan2 wrapper."""
-    chat = ChatYuan2(
+    chat = ChatYuan2(  # type: ignore[call-arg]
         yuan2_api_key="EMPTY",
         yuan2_api_base="http://127.0.0.1:8001/v1",
         temperature=1.0,
@@ -34,7 +34,7 @@ def test_chat_yuan2() -> None:
 
 def test_chat_yuan2_system_message() -> None:
     """Test ChatYuan2 wrapper with system message."""
-    chat = ChatYuan2(
+    chat = ChatYuan2(  # type: ignore[call-arg]
         yuan2_api_key="EMPTY",
         yuan2_api_base="http://127.0.0.1:8001/v1",
         temperature=1.0,
@@ -54,7 +54,7 @@ def test_chat_yuan2_system_message() -> None:
 @pytest.mark.scheduled
 def test_chat_yuan2_generate() -> None:
     """Test ChatYuan2 wrapper with generate."""
-    chat = ChatYuan2(
+    chat = ChatYuan2(  # type: ignore[call-arg]
         yuan2_api_key="EMPTY",
         yuan2_api_base="http://127.0.0.1:8001/v1",
         temperature=1.0,
@@ -82,7 +82,7 @@ def test_chat_yuan2_streaming() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
 
-    chat = ChatYuan2(
+    chat = ChatYuan2(  # type: ignore[call-arg]
         yuan2_api_key="EMPTY",
         yuan2_api_base="http://127.0.0.1:8001/v1",
         temperature=1.0,
@@ -102,7 +102,7 @@ def test_chat_yuan2_streaming() -> None:
 @pytest.mark.asyncio
 async def test_async_chat_yuan2() -> None:
     """Test async generation."""
-    chat = ChatYuan2(
+    chat = ChatYuan2(  # type: ignore[call-arg]
         yuan2_api_key="EMPTY",
         yuan2_api_base="http://127.0.0.1:8001/v1",
         temperature=1.0,
@@ -129,7 +129,7 @@ async def test_async_chat_yuan2_streaming() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
 
-    chat = ChatYuan2(
+    chat = ChatYuan2(  # type: ignore[call-arg]
         yuan2_api_key="EMPTY",
         yuan2_api_base="http://127.0.0.1:8001/v1",
         temperature=1.0,

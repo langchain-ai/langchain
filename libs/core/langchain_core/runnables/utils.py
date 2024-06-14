@@ -1,4 +1,5 @@
 """Utility code for runnables."""
+
 from __future__ import annotations
 
 import ast
@@ -11,6 +12,8 @@ from itertools import groupby
 from typing import (
     Any,
     AsyncIterable,
+    AsyncIterator,
+    Awaitable,
     Callable,
     Coroutine,
     Dict,
@@ -26,6 +29,8 @@ from typing import (
     TypeVar,
     Union,
 )
+
+from typing_extensions import TypeGuard
 
 from langchain_core.pydantic_v1 import BaseConfig, BaseModel
 from langchain_core.pydantic_v1 import create_model as _create_model_base
@@ -532,4 +537,26 @@ def _create_model_cached(
 ) -> Type[BaseModel]:
     return _create_model_base(
         __model_name, __config__=_SchemaConfig, **field_definitions
+    )
+
+
+def is_async_generator(
+    func: Any,
+) -> TypeGuard[Callable[..., AsyncIterator]]:
+    """Check if a function is an async generator."""
+    return (
+        inspect.isasyncgenfunction(func)
+        or hasattr(func, "__call__")
+        and inspect.isasyncgenfunction(func.__call__)
+    )
+
+
+def is_async_callable(
+    func: Any,
+) -> TypeGuard[Callable[..., Awaitable]]:
+    """Check if a function is async."""
+    return (
+        asyncio.iscoroutinefunction(func)
+        or hasattr(func, "__call__")
+        and asyncio.iscoroutinefunction(func.__call__)
     )

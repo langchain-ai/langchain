@@ -1,4 +1,5 @@
 """Test the public API of the tools package."""
+
 from langchain_community.tools import __all__ as public_api
 
 _EXPECTED = [
@@ -10,6 +11,7 @@ _EXPECTED = [
     "AIPluginTool",
     "APIOperation",
     "ArxivQueryRun",
+    "AskNewsSearch",
     "AzureAiServicesDocumentIntelligenceTool",
     "AzureAiServicesImageAnalysisTool",
     "AzureAiServicesSpeechToTextTool",

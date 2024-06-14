@@ -43,6 +43,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.clarifai import (
         ClarifaiEmbeddings,
     )
+    from langchain_community.embeddings.clova import (
+        ClovaEmbeddings,
+    )
     from langchain_community.embeddings.cohere import (
         CohereEmbeddings,
     )
@@ -101,6 +104,7 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.infinity_local import (
         InfinityEmbeddingsLocal,
     )
+    from langchain_community.embeddings.ipex_llm import IpexLLMBgeEmbeddings
     from langchain_community.embeddings.itrex import (
         QuantizedBgeEmbeddings,
     )
@@ -170,7 +174,10 @@ if TYPE_CHECKING:
         QuantizedBiEncoderEmbeddings,
     )
     from langchain_community.embeddings.oracleai import (
-        OracleEmbeddings,  # noqa: F401
+        OracleEmbeddings,
+    )
+    from langchain_community.embeddings.ovhcloud import (
+        OVHCloudEmbeddings,
     )
     from langchain_community.embeddings.premai import (
         PremAIEmbeddings,
@@ -203,6 +210,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.tensorflow_hub import (
         TensorflowHubEmbeddings,
     )
+    from langchain_community.embeddings.titan_takeoff import (
+        TitanTakeoffEmbed,
+    )
     from langchain_community.embeddings.vertexai import (
         VertexAIEmbeddings,
     )
@@ -218,6 +228,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.yandex import (
         YandexGPTEmbeddings,
     )
+    from langchain_community.embeddings.zhipuai import (
+        ZhipuAIEmbeddings,
+    )
 
 __all__ = [
     "AlephAlphaAsymmetricSemanticEmbedding",
@@ -229,6 +242,7 @@ __all__ = [
     "BedrockEmbeddings",
     "BookendEmbeddings",
     "ClarifaiEmbeddings",
+    "ClovaEmbeddings",
     "CohereEmbeddings",
     "DashScopeEmbeddings",
     "DatabricksEmbeddings",
@@ -251,6 +265,7 @@ __all__ = [
     "HuggingFaceInstructEmbeddings",
     "InfinityEmbeddings",
     "InfinityEmbeddingsLocal",
+    "IpexLLMBgeEmbeddings",
     "JavelinAIGatewayEmbeddings",
     "JinaEmbeddings",
     "JohnSnowLabsEmbeddings",
@@ -274,6 +289,7 @@ __all__ = [
     "OpenVINOBgeEmbeddings",
     "OpenVINOEmbeddings",
     "OracleEmbeddings",
+    "OVHCloudEmbeddings",
     "PremAIEmbeddings",
     "QianfanEmbeddingsEndpoint",
     "QuantizedBgeEmbeddings",
@@ -288,11 +304,13 @@ __all__ = [
     "SpacyEmbeddings",
     "SparkLLMTextEmbeddings",
     "TensorflowHubEmbeddings",
+    "TitanTakeoffEmbed",
     "VertexAIEmbeddings",
     "VolcanoEmbeddings",
     "VoyageEmbeddings",
     "XinferenceEmbeddings",
     "YandexGPTEmbeddings",
+    "ZhipuAIEmbeddings",
 ]
 
 _module_lookup = {
@@ -305,6 +323,7 @@ _module_lookup = {
     "BedrockEmbeddings": "langchain_community.embeddings.bedrock",
     "BookendEmbeddings": "langchain_community.embeddings.bookend",
     "ClarifaiEmbeddings": "langchain_community.embeddings.clarifai",
+    "ClovaEmbeddings": "langchain_community.embeddings.clova",
     "CohereEmbeddings": "langchain_community.embeddings.cohere",
     "DashScopeEmbeddings": "langchain_community.embeddings.dashscope",
     "DatabricksEmbeddings": "langchain_community.embeddings.databricks",
@@ -327,6 +346,7 @@ _module_lookup = {
     "HuggingFaceInstructEmbeddings": "langchain_community.embeddings.huggingface",
     "InfinityEmbeddings": "langchain_community.embeddings.infinity",
     "InfinityEmbeddingsLocal": "langchain_community.embeddings.infinity_local",
+    "IpexLLMBgeEmbeddings": "langchain_community.embeddings.ipex_llm",
     "JavelinAIGatewayEmbeddings": "langchain_community.embeddings.javelin_ai_gateway",
     "JinaEmbeddings": "langchain_community.embeddings.jina",
     "JohnSnowLabsEmbeddings": "langchain_community.embeddings.johnsnowlabs",
@@ -353,6 +373,7 @@ _module_lookup = {
     "QuantizedBgeEmbeddings": "langchain_community.embeddings.itrex",
     "QuantizedBiEncoderEmbeddings": "langchain_community.embeddings.optimum_intel",
     "OracleEmbeddings": "langchain_community.embeddings.oracleai",
+    "OVHCloudEmbeddings": "langchain_community.embeddings.ovhcloud",
     "SagemakerEndpointEmbeddings": "langchain_community.embeddings.sagemaker_endpoint",
     "SambaStudioEmbeddings": "langchain_community.embeddings.sambanova",
     "SelfHostedEmbeddings": "langchain_community.embeddings.self_hosted",
@@ -370,6 +391,7 @@ _module_lookup = {
     "TitanTakeoffEmbed": "langchain_community.embeddings.titan_takeoff",
     "PremAIEmbeddings": "langchain_community.embeddings.premai",
     "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
+    "ZhipuAIEmbeddings": "langchain_community.embeddings.zhipuai",
 }
 
 
@@ -379,8 +401,6 @@ def __getattr__(name: str) -> Any:
         return getattr(module, name)
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
-
-__all__ = list(_module_lookup.keys())
 
 logger = logging.getLogger(__name__)
 
