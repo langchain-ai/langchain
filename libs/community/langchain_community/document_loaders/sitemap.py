@@ -3,6 +3,7 @@ import re
 from typing import (
     Any,
     Callable,
+    Dict,
     Generator,
     Iterable,
     Iterator,
@@ -157,10 +158,10 @@ class SitemapLoader(WebBaseLoader):
         Returns:
             List of dicts.
         """
-        els = []
-
         if depth >= self.max_depth:
-            return els
+            return []
+
+        els: List[Dict] = []
 
         for url in soup.find_all("url"):
             loc = url.find("loc")
