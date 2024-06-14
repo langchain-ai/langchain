@@ -104,7 +104,9 @@ def test_chat_deepinfra_bind_tools() -> None:
 
 
 def test_tool_use() -> None:
-    llm = ChatDeepInfra(model_name="meta-llama/Meta-Llama-3-70B-Instruct", temperature=0)
+    llm = ChatDeepInfra(
+        model_name="meta-llama/Meta-Llama-3-70B-Instruct", temperature=0
+    )
     llm_with_tool = llm.bind_tools(tools=[GenerateMovieName], tool_choice=True)
     msgs: List = [HumanMessage("It should be a movie explaining humanity in 2133.")]
     ai_msg = llm_with_tool.invoke(msgs)
