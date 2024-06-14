@@ -12,13 +12,13 @@ from typing import Any, Dict, List, Optional
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
-from langchain_community.utilities import PythonREPL
 from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain_experimental.pal_chain.colored_object_prompt import COLORED_OBJECT_PROMPT
 from langchain_experimental.pal_chain.math_prompt import MATH_PROMPT
 from langchain_experimental.pydantic_v1 import Extra, Field, root_validator
+from langchain_experimental.utilities import PythonREPL
 
 COMMAND_EXECUTION_FUNCTIONS = ["system", "exec", "execfile", "eval", "__import__"]
 COMMAND_EXECUTION_ATTRIBUTES = [
