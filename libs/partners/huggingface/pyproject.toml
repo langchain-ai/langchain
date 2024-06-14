@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-huggingface"
-version = "0.0.3"
+version = "0.0.4"
 description = "An integration package connecting Hugging Face and LangChain"
 authors = []
 readme = "README.md"
@@ -13,7 +13,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = ">=0.1.52,<0.3"
-tokenizers = ">=0.19.1"
+tokenizers = ">=0.15.1"
 transformers = ">=4.39.0"
 sentence-transformers = ">=2.6.0"
 huggingface-hub = ">=0.23.0"
