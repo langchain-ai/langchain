@@ -962,7 +962,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         self,
         schema: Union[Dict, Type[BaseModel]],
         *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
@@ -1120,28 +1119,25 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
 
-        if method == "function_calling":
-            if self.bind_tools is BaseChatModel.bind_tools:
-                raise NotImplementedError(
-                    "with_structured_output is not implemented for this model."
-                )
-            if schema is None:
-                raise ValueError(
-                    "schema must be specified when method is 'function_calling'. "
-                    "Received None."
-                )
-            llm = self.bind_tools([schema], tool_choice="any")
-            if isinstance(schema, type) and issubclass(schema, BaseModel):
-                output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], first_tool_only=True
-                )
-            else:
-                key_name = convert_to_openai_tool(schema)["function"]["name"]
-                output_parser = JsonOutputKeyToolsParser(
-                    key_name=key_name, first_tool_only=True
-                )
-        elif method == "json_mode":
-            raise ValueError("JSON mode is not yet supported.")
+        if self.bind_tools is BaseChatModel.bind_tools:
+            raise NotImplementedError(
+                "with_structured_output is not implemented for this model."
+            )
+        if schema is None:
+            raise ValueError(
+                "schema must be specified when method is 'function_calling'. "
+                "Received None."
+            )
+        llm = self.bind_tools([schema], tool_choice="any")
+        if isinstance(schema, type) and issubclass(schema, BaseModel):
+            output_parser: OutputParserLike = PydanticToolsParser(
+                tools=[schema], first_tool_only=True
+            )
+        else:
+            key_name = convert_to_openai_tool(schema)["function"]["name"]
+            output_parser = JsonOutputKeyToolsParser(
+                key_name=key_name, first_tool_only=True
+            )
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
                 parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
