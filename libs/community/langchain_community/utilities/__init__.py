@@ -297,7 +297,7 @@ _module_lookup = {
     "ZapierNLAWrapper": "langchain_community.utilities.zapier",
 }
 
-DEPRECATED = {
+REMOVED = {
     "PythonREPL": "PytonREPL has been deprecated from langchain_community due to being "
     "flagged by security scanners. See: "
     "https://github.com/langchain-ai/langchain/issues/14345 "
