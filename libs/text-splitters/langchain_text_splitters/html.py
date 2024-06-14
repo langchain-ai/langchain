@@ -245,7 +245,7 @@ class HTMLSectionSplitter:
 
         soup = BeautifulSoup(html_doc, "html.parser")
         headers = list(self.headers_to_split_on.keys())
-        sections = []
+        sections: list[dict[str, str | None]] = []
 
         headers = soup.find_all(["body"] + headers)
 
