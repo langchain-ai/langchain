@@ -152,7 +152,7 @@ class SemanticChunker(BaseDocumentTransformer):
                 distances
             ) + self.breakpoint_threshold_amount * iqr, distances
         elif self.breakpoint_threshold_type == "gradient":
-            # Calculate the threshold based on the distribution of gradient of distance array.
+            # Calculate the threshold based on the distribution of gradient of distance array. # noqa: E501
             distance_gradient = np.gradient(distances, list(range(0, len(distances))))
             return cast(
                 float,
