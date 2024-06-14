@@ -113,29 +113,21 @@ The diameters of individual galaxies range from 80,000-150,000 light-years.
 {
     "document_chunks": [
         {
-            "repository_id": 1991,
-            "document_id": 1307,
-            "chunk_id": 173926,
+            "repository_id": 19xx,
+            "document_id": 13xx,
+            "chunk_id": 173xxx,
             "document_name": "Kegy 202 Chapter 2",
             "similarity_score": 0.586126983165741,
             "content": "n thousands\n                                                                                                                                               of           light-years. The diameters of individual\n                                                                                                                                               galaxies range from 80,000-150,000 light\n                                                                                                                       "
         },
         {
-            "repository_id": 1991,
-            "document_id": 1307,
-            "chunk_id": 173925,
+            "repository_id": 19xx,
+            "document_id": 13xx,
+            "chunk_id": 173xxx,
             "document_name": "Kegy 202 Chapter 2",
             "similarity_score": 0.4815782308578491,
             "content": "                                                for development of galaxies. A galaxy contains\n                                                                                                                                               a large number of stars. Galaxies spread over\n                                                                                                                                               vast distances that are measured in thousands\n                                       "
         },
-        {
-            "repository_id": 1991,
-            "document_id": 1307,
-            "chunk_id": 173916,
-            "document_name": "Kegy 202 Chapter 2",
-            "similarity_score": 0.38112708926200867,
-            "content": " was separated from the               from each other as the balloon expands.\n  solar surface. As the passing star moved away,             Similarly, the distance between the galaxies is\n  the material separated from the solar surface\n  continued to revolve around the sun and it\n  slowly condensed into planets. Sir James Jeans\n  and later Sir Harold Jeffrey supported thisnot to be republishedalso found to be increasing and thereby, the\n                                                             universe is"
-        }
     ]
 }
 ```
@@ -173,7 +165,42 @@ This will stream tokens one after the other.
 
 > Please note: As of now, RAG with streaming is not supported. However we still support it with our API. You can learn more about that [here](https://docs.premai.io/get-started/chat-completion-sse). 
 
-## PremEmbeddings
+
+## Prem Templates
+
+Writing Prompt Templates can be super messy. Prompt templates are long, hard to manage, and must be continuously tweaked to improve and keep the same throughout the application. 
+
+With **Prem**, writing and managing prompts can be super easy. The **_Templates_** tab inside the [launchpad](https://docs.premai.io/get-started/launchpad) helps you write as many prompts you need and use it inside the SDK to make your application running using those prompts. You can read more about Prompt Templates [here](https://docs.premai.io/get-started/prem-templates). 
+
+To use Prem Templates natively with LangChain, you need to pass an id the `HumanMessage`. This id should be the name the variable of your prompt template. the `content` in `HumanMessage` should be the value of that variable. 
+
+let's say for example, if your prompt template was this:
+
+```text
+Say hello to my name and say a feel-good quote
+from my age. My name is: {name} and age is {age}
+```
+
+So now your human_messages should look like:
+
+```python
+human_messages = [
+    HumanMessage(content="Shawn", id="name"),
+    HumanMessage(content="22", id="age")
+]
+```
+
+Pass this `human_messages` to ChatPremAI Client. Please note: Do not forget to
+pass the additional `template_id` to invoke generation with Prem Templates. If you are not aware of `template_id` you can learn more about that [in our docs](https://docs.premai.io/get-started/prem-templates). Here is an example:
+
+```python
+template_id = "78069ce8-xxxxx-xxxxx-xxxx-xxx"
+response = chat.invoke([human_message], template_id=template_id)
+```
+
+Prem Templates are also available for Streaming too. 
+
+## Prem Embeddings
 
 In this section we are going to dicuss how we can get access to different embedding model using `PremEmbeddings` with LangChain. Lets start by importing our modules and setting our API Key. 
 
