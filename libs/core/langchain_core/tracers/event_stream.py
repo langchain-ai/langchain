@@ -37,7 +37,7 @@ from langchain_core.runnables.utils import (
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.log_stream import LogEntry
 from langchain_core.tracers.memory_stream import _MemoryStream
-from langchain_core.utils.aiter import py_anext
+from langchain_core.utils.aiter import aclosing, py_anext
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document
@@ -903,11 +903,10 @@ async def _astream_events_implementation_v2(
     async def consume_astream() -> None:
         try:
             # if astream also calls tap_output_aiter this will be a no-op
-            async for _ in event_streamer.tap_output_aiter(
-                run_id, runnable.astream(input, config, **kwargs)
-            ):
-                # All the content will be picked up
-                pass
+            async with aclosing(runnable.astream(input, config, **kwargs)) as stream:
+                async for _ in event_streamer.tap_output_aiter(run_id, stream):
+                    # All the content will be picked up
+                    pass
         finally:
             await event_streamer.send_stream.aclose()
 
@@ -942,7 +941,8 @@ async def _astream_events_implementation_v2(
             yield event
     finally:
         # Wait for the runnable to finish, if not cancelled (eg. by break)
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
+        if task.cancel():
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass

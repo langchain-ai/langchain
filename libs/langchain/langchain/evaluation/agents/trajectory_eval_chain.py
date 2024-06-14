@@ -103,6 +103,8 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
 
     This chain is used to evaluate ReAct style agents by reasoning about
     the sequence of actions taken and their outcomes.
+    Based on the paper "ReAct: Synergizing Reasoning and Acting in Language Models"
+    (https://arxiv.org/abs/2210.03629)
 
     Example:
 
