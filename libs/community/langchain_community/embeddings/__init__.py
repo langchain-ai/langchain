@@ -176,6 +176,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.oracleai import (
         OracleEmbeddings,
     )
+    from langchain_community.embeddings.ovhcloud import (
+        OVHCloudEmbeddings,
+    )
     from langchain_community.embeddings.premai import (
         PremAIEmbeddings,
     )
@@ -224,6 +227,9 @@ if TYPE_CHECKING:
     )
     from langchain_community.embeddings.yandex import (
         YandexGPTEmbeddings,
+    )
+    from langchain_community.embeddings.zhipuai import (
+        ZhipuAIEmbeddings,
     )
 
 __all__ = [
@@ -283,6 +289,7 @@ __all__ = [
     "OpenVINOBgeEmbeddings",
     "OpenVINOEmbeddings",
     "OracleEmbeddings",
+    "OVHCloudEmbeddings",
     "PremAIEmbeddings",
     "QianfanEmbeddingsEndpoint",
     "QuantizedBgeEmbeddings",
@@ -303,6 +310,7 @@ __all__ = [
     "VoyageEmbeddings",
     "XinferenceEmbeddings",
     "YandexGPTEmbeddings",
+    "ZhipuAIEmbeddings",
 ]
 
 _module_lookup = {
@@ -365,6 +373,7 @@ _module_lookup = {
     "QuantizedBgeEmbeddings": "langchain_community.embeddings.itrex",
     "QuantizedBiEncoderEmbeddings": "langchain_community.embeddings.optimum_intel",
     "OracleEmbeddings": "langchain_community.embeddings.oracleai",
+    "OVHCloudEmbeddings": "langchain_community.embeddings.ovhcloud",
     "SagemakerEndpointEmbeddings": "langchain_community.embeddings.sagemaker_endpoint",
     "SambaStudioEmbeddings": "langchain_community.embeddings.sambanova",
     "SelfHostedEmbeddings": "langchain_community.embeddings.self_hosted",
@@ -382,6 +391,7 @@ _module_lookup = {
     "TitanTakeoffEmbed": "langchain_community.embeddings.titan_takeoff",
     "PremAIEmbeddings": "langchain_community.embeddings.premai",
     "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
+    "ZhipuAIEmbeddings": "langchain_community.embeddings.zhipuai",
 }
 
 

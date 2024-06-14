@@ -46,7 +46,7 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         mosaicml_api_token = get_from_dict_or_env(

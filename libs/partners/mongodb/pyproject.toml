@@ -14,7 +14,11 @@ license = "MIT"
 python = ">=3.8.1,<4.0"
 pymongo = ">=4.6.1,<5.0"
 langchain-core = ">=0.1.46,<0.3"
-numpy = "^1"
+# Support Python 3.8 and 3.12+.
+numpy = [
+    {version = "^1", python = "<3.12"},
+    {version = "^1.26.0", python = ">=3.12"}
+]
 
 [tool.poetry.group.test]
 optional = true
