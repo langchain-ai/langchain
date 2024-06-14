@@ -12,7 +12,7 @@ from langchain_community.chat_models import ChatGooglePalm
 
 def test_chat_google_palm() -> None:
     """Test Google PaLM Chat API wrapper."""
-    chat = ChatGooglePalm()
+    chat = ChatGooglePalm()  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = chat.invoke([message])
     assert isinstance(response, BaseMessage)
@@ -21,7 +21,7 @@ def test_chat_google_palm() -> None:
 
 def test_chat_google_palm_system_message() -> None:
     """Test Google PaLM Chat API wrapper with system message."""
-    chat = ChatGooglePalm()
+    chat = ChatGooglePalm()  # type: ignore[call-arg]
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
     response = chat.invoke([system_message, human_message])
@@ -31,7 +31,7 @@ def test_chat_google_palm_system_message() -> None:
 
 def test_chat_google_palm_generate() -> None:
     """Test Google PaLM Chat API wrapper with generate."""
-    chat = ChatGooglePalm(n=2, temperature=1.0)
+    chat = ChatGooglePalm(n=2, temperature=1.0)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -48,7 +48,7 @@ def test_chat_google_palm_multiple_completions() -> None:
     """Test Google PaLM Chat API wrapper with multiple completions."""
     # The API de-dupes duplicate responses, so set temperature higher. This
     # could be a flakey test though...
-    chat = ChatGooglePalm(n=5, temperature=1.0)
+    chat = ChatGooglePalm(n=5, temperature=1.0)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = chat._generate([message])
     assert isinstance(response, ChatResult)
@@ -60,7 +60,7 @@ def test_chat_google_palm_multiple_completions() -> None:
 
 async def test_async_chat_google_palm() -> None:
     """Test async generation."""
-    chat = ChatGooglePalm(n=2, temperature=1.0)
+    chat = ChatGooglePalm(n=2, temperature=1.0)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = await chat.agenerate([[message], [message]])
     assert isinstance(response, LLMResult)

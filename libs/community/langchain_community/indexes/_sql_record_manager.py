@@ -312,7 +312,7 @@ class SQLRecordManager(RecordManager):
 
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
-                insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)
+                insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)  # type: ignore[assignment]
                 stmt = insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
                     "uix_key_namespace",  # Name of constraint
                     set_=dict(
@@ -387,7 +387,7 @@ class SQLRecordManager(RecordManager):
 
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
-                insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)
+                insert_stmt = pg_insert(UpsertionRecord).values(records_to_upsert)  # type: ignore[assignment]
                 stmt = insert_stmt.on_conflict_do_update(  # type: ignore[attr-defined]
                     "uix_key_namespace",  # Name of constraint
                     set_=dict(
@@ -470,7 +470,7 @@ class SQLRecordManager(RecordManager):
             if limit:
                 query = query.limit(limit)  # type: ignore[attr-defined]
             records = query.all()  # type: ignore[attr-defined]
-        return [r.key for r in records]
+        return [r.key for r in records]  # type: ignore[misc]
 
     async def alist_keys(
         self,

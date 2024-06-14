@@ -363,7 +363,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
             generations.append(
                 [self._response_to_generation(r) for r in res.candidates]
             )
-        return LLMResult(generations=generations)
+        return LLMResult(generations=generations)  # type: ignore[arg-type]
 
     def _stream(
         self,

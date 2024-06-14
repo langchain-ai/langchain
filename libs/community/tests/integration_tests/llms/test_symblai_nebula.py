@@ -34,7 +34,7 @@ Sam: Perfect! Let's keep the momentum going. Reach out if there are any
 sudden issues or support needed. Have a productive day!
 Alex: You too.
 Rhea: Thanks, bye!"""
-    llm = Nebula(nebula_api_key="<your_api_key>")
+    llm = Nebula(nebula_api_key="<your_api_key>")  # type: ignore[arg-type]
 
     instruction = """Identify the main objectives mentioned in this 
 conversation."""

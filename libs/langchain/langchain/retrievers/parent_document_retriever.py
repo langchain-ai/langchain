@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 
 from langchain_core.documents import Document
 from langchain_text_splitters import TextSplitter
@@ -74,6 +74,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
         documents: List[Document],
         ids: Optional[List[str]] = None,
         add_to_docstore: bool = True,
+        **kwargs: Any,
     ) -> None:
         """Adds documents to the docstore and vectorstores.
 
@@ -119,6 +120,6 @@ class ParentDocumentRetriever(MultiVectorRetriever):
                 _doc.metadata[self.id_key] = _id
             docs.extend(sub_docs)
             full_docs.append((_id, doc))
-        self.vectorstore.add_documents(docs)
+        self.vectorstore.add_documents(docs, **kwargs)
         if add_to_docstore:
             self.docstore.mset(full_docs)

@@ -15,7 +15,7 @@ def test_default_base_prompt() -> None:
         action_id="test",
         zapier_description="test",
         params_schema={"test": "test"},
-        api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),
+        api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),  # type: ignore[call-arg]
     )
 
     # Test that the base prompt was successfully assigned to the default prompt
@@ -34,7 +34,7 @@ def test_custom_base_prompt() -> None:
         zapier_description="test",
         params_schema={"test": "test"},
         base_prompt=base_prompt,
-        api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),
+        api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),  # type: ignore[call-arg]
     )
 
     # Test that the base prompt was successfully assigned to the default prompt
@@ -51,7 +51,7 @@ def test_custom_base_prompt_fail() -> None:
             zapier_description="test",
             params={"test": "test"},
             base_prompt=base_prompt,
-            api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),
+            api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),  # type: ignore[call-arg]
         )
 
 
@@ -61,7 +61,7 @@ def test_format_headers_api_key() -> None:
         action_id="test",
         zapier_description="test",
         params_schema={"test": "test"},
-        api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),
+        api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),  # type: ignore[call-arg]
     )
     headers = tool.api_wrapper._format_headers()
     assert headers["Content-Type"] == "application/json"
@@ -75,7 +75,7 @@ def test_format_headers_access_token() -> None:
         action_id="test",
         zapier_description="test",
         params_schema={"test": "test"},
-        api_wrapper=ZapierNLAWrapper(zapier_nla_oauth_access_token="test"),
+        api_wrapper=ZapierNLAWrapper(zapier_nla_oauth_access_token="test"),  # type: ignore[call-arg]
     )
     headers = tool.api_wrapper._format_headers()
     assert headers["Content-Type"] == "application/json"
@@ -89,7 +89,7 @@ def test_create_action_payload() -> None:
         action_id="test",
         zapier_description="test",
         params_schema={"test": "test"},
-        api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),
+        api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),  # type: ignore[call-arg]
     )
 
     payload = tool.api_wrapper._create_action_payload("some instructions")
@@ -103,7 +103,7 @@ def test_create_action_payload_preview() -> None:
         action_id="test",
         zapier_description="test",
         params_schema={"test": "test"},
-        api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),
+        api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),  # type: ignore[call-arg]
     )
 
     payload = tool.api_wrapper._create_action_payload(
@@ -120,7 +120,7 @@ def test_create_action_payload_with_params() -> None:
         action_id="test",
         zapier_description="test",
         params_schema={"test": "test"},
-        api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),
+        api_wrapper=ZapierNLAWrapper(zapier_nla_api_key="test"),  # type: ignore[call-arg]
     )
 
     payload = tool.api_wrapper._create_action_payload(
@@ -139,7 +139,7 @@ async def test_apreview(mocker) -> None:  # type: ignore[no-untyped-def]
         action_id="test",
         zapier_description="test",
         params_schema={"test": "test"},
-        api_wrapper=ZapierNLAWrapper(
+        api_wrapper=ZapierNLAWrapper(  # type: ignore[call-arg]
             zapier_nla_api_key="test",
             zapier_nla_api_base="http://localhost:8080/v1/",
         ),
@@ -167,7 +167,7 @@ async def test_arun(mocker) -> None:  # type: ignore[no-untyped-def]
         action_id="test",
         zapier_description="test",
         params_schema={"test": "test"},
-        api_wrapper=ZapierNLAWrapper(
+        api_wrapper=ZapierNLAWrapper(  # type: ignore[call-arg]
             zapier_nla_api_key="test",
             zapier_nla_api_base="http://localhost:8080/v1/",
         ),
@@ -191,7 +191,7 @@ async def test_alist(mocker) -> None:  # type: ignore[no-untyped-def]
         action_id="test",
         zapier_description="test",
         params_schema={"test": "test"},
-        api_wrapper=ZapierNLAWrapper(
+        api_wrapper=ZapierNLAWrapper(  # type: ignore[call-arg]
             zapier_nla_api_key="test",
             zapier_nla_api_base="http://localhost:8080/v1/",
         ),
@@ -207,17 +207,17 @@ async def test_alist(mocker) -> None:  # type: ignore[no-untyped-def]
 def test_wrapper_fails_no_api_key_or_access_token_initialization() -> None:
     """Test Wrapper requires either an API Key or OAuth Access Token."""
     with pytest.raises(ValueError):
-        ZapierNLAWrapper()
+        ZapierNLAWrapper()  # type: ignore[call-arg]
 
 
 def test_wrapper_api_key_initialization() -> None:
     """Test Wrapper initializes with an API Key."""
-    ZapierNLAWrapper(zapier_nla_api_key="test")
+    ZapierNLAWrapper(zapier_nla_api_key="test")  # type: ignore[call-arg]
 
 
 def test_wrapper_access_token_initialization() -> None:
     """Test Wrapper initializes with an API Key."""
-    ZapierNLAWrapper(zapier_nla_oauth_access_token="test")
+    ZapierNLAWrapper(zapier_nla_oauth_access_token="test")  # type: ignore[call-arg]
 
 
 def test_list_raises_401_invalid_api_key() -> None:
@@ -233,7 +233,7 @@ def test_list_raises_401_invalid_api_key() -> None:
     mock_session.get.return_value = mock_response
 
     with patch("requests.Session", return_value=mock_session):
-        wrapper = ZapierNLAWrapper(zapier_nla_api_key="test")
+        wrapper = ZapierNLAWrapper(zapier_nla_api_key="test")  # type: ignore[call-arg]
 
         with pytest.raises(requests.HTTPError) as err:
             wrapper.list()
@@ -257,7 +257,7 @@ def test_list_raises_401_invalid_access_token() -> None:
     mock_session.get.return_value = mock_response
 
     with patch("requests.Session", return_value=mock_session):
-        wrapper = ZapierNLAWrapper(zapier_nla_oauth_access_token="test")
+        wrapper = ZapierNLAWrapper(zapier_nla_oauth_access_token="test")  # type: ignore[call-arg]
 
         with pytest.raises(requests.HTTPError) as err:
             wrapper.list()
@@ -280,7 +280,7 @@ def test_list_raises_other_error() -> None:
     mock_session.get.return_value = mock_response
 
     with patch("requests.Session", return_value=mock_session):
-        wrapper = ZapierNLAWrapper(zapier_nla_oauth_access_token="test")
+        wrapper = ZapierNLAWrapper(zapier_nla_oauth_access_token="test")  # type: ignore[call-arg]
 
         with pytest.raises(requests.HTTPError) as err:
             wrapper.list()

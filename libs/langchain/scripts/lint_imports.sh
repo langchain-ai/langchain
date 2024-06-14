@@ -27,6 +27,12 @@ langchain.(pydantic_v1|utils|schema|load|callbacks|env|_api|storage|llms|docstor
 # make sure not importing from langchain_experimental
 git --no-pager grep '^from langchain_experimental\.' . && errors=$((errors+1))
 
+# Add a basic lint rule to prevent imports from the global namespaces of langchain_community
+# This lint rule won't catch imports from local scope.
+# We can't add that rule without a more complex script to ignore imports from inside
+# a if TYPE_CHECKING block.
+git grep '^from langchain_community'  | grep -vE '# ignore: community-import' && errors=$((errors+1))
+
 # Decide on an exit status based on the errors
 if [ "$errors" -gt 0 ]; then
     exit 1

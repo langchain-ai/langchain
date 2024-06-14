@@ -8,6 +8,6 @@ def test_chat_upstage_secrets() -> None:
 
 
 def test_upstage_embeddings_secrets() -> None:
-    o = UpstageEmbeddings(upstage_api_key="foo")
+    o = UpstageEmbeddings(model="solar-embedding-1-large", upstage_api_key="foo")
     s = str(o)
     assert "foo" not in s

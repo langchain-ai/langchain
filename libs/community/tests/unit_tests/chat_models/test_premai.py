@@ -13,7 +13,7 @@ from langchain_community.chat_models.premai import _messages_to_prompt_dict
 
 @pytest.mark.requires("premai")
 def test_api_key_is_string() -> None:
-    llm = ChatPremAI(premai_api_key="secret-api-key", project_id=8)
+    llm = ChatPremAI(premai_api_key="secret-api-key", project_id=8)  # type: ignore[call-arg]
     assert isinstance(llm.premai_api_key, SecretStr)
 
 
@@ -21,7 +21,7 @@ def test_api_key_is_string() -> None:
 def test_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
-    llm = ChatPremAI(premai_api_key="secret-api-key", project_id=8)
+    llm = ChatPremAI(premai_api_key="secret-api-key", project_id=8)  # type: ignore[call-arg]
     print(llm.premai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
@@ -52,8 +52,8 @@ def test_messages_to_prompt_dict_with_valid_messages() -> None:
 @pytest.mark.requires("premai")
 def test_premai_initialization() -> None:
     for model in [
-        ChatPremAI(model="prem-ai-model", premai_api_key="xyz", project_id=8),
-        ChatPremAI(model_name="prem-ai-model", api_key="xyz", project_id=8),
+        ChatPremAI(model="prem-ai-model", premai_api_key="xyz", project_id=8),  # type: ignore[call-arg]
+        ChatPremAI(model_name="prem-ai-model", api_key="xyz", project_id=8),  # type: ignore[arg-type, call-arg]
     ]:
         assert model.model == "prem-ai-model"
         assert cast(SecretStr, model.premai_api_key).get_secret_value() == "xyz"
