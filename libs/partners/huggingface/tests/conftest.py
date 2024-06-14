@@ -1,5 +1,7 @@
-import sys
 import os
+import sys
 
-package_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'huggingface'))
+package_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "huggingface")
+)
 sys.path.insert(0, package_path)
