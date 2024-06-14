@@ -1480,11 +1480,12 @@ class ChatOpenAI(BaseChatOpenAI):
             stream_usage,
             kwargs.get("stream_options", {}).get("include_usage"),
             self.model_kwargs.get("stream_options", {}).get("include_usage"),
+            self.stream_usage,
         ]
         for source in stream_usage_sources:
             if source is not None:
                 return source
-        return self.stream_usage  # a bool attribute
+        return self.stream_usage
 
     def _stream(
         self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
