@@ -90,11 +90,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Fix for azure
         # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
-        if _dict.get("tool_calls"):
-            additional_kwargs = {"tool_calls": _dict["tool_calls"]}
-        else:
-            additional_kwargs = {}
-        return AIMessage(content=content, additional_kwargs=additional_kwargs)
+        tool_calls = _dict.get("tool_calls", [])
+        return AIMessage(content=content, tool_calls=tool_calls)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
     elif role == "function":
@@ -108,15 +105,12 @@ def _convert_delta_to_message_chunk(
 ) -> BaseMessageChunk:
     role = _dict.get("role")
     content = _dict.get("content") or ""
-    if _dict.get("function_call"):
-        additional_kwargs = {"function_call": dict(_dict["function_call"])}
-    else:
-        additional_kwargs = {}
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
+        tool_calls = _dict.get("tool_calls", [])
+        return AIMessageChunk(content=content, tool_calls=tool_calls)
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:

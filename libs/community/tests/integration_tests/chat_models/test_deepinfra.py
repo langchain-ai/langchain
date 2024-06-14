@@ -104,9 +104,11 @@ def test_chat_deepinfra_bind_tools() -> None:
 
 
 def test_tool_use() -> None:
-    llm = ChatDeepInfra(model_name="meta-llama/Meta-Llama-3-70B-Instruct", temperature=0)
+    llm = ChatDeepInfra(model="meta-llama/Meta-Llama-3-70B-Instruct", temperature=0)
     llm_with_tool = llm.bind_tools(tools=[GenerateMovieName], tool_choice=True)
-    msgs: List = [HumanMessage("It should be a movie explaining humanity in 2133.")]
+    msgs: List = [
+        HumanMessage(content="It should be a movie explaining humanity in 2133.")
+    ]
     ai_msg = llm_with_tool.invoke(msgs)
 
     assert isinstance(ai_msg, AIMessage)
@@ -116,7 +118,8 @@ def test_tool_use() -> None:
     assert "args" in tool_call
 
     tool_msg = ToolMessage(
-        "Year 2133", tool_call_id=ai_msg.additional_kwargs["tool_calls"][0]["id"]
+        content="Year 2133",
+        tool_call_id=ai_msg.additional_kwargs["tool_calls"][0]["id"],
     )
     msgs.extend([ai_msg, tool_msg])
     llm_with_tool.invoke(msgs)
