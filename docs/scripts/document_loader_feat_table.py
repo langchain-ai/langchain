@@ -47,12 +47,16 @@ def get_document_loader_table() -> str:
             del doc_loaders_feat_table[cm]["aload"]
             del doc_loaders_feat_table[cm]["alazy_load"]
             doc_loaders_feat_table[cm]["native_async"] = native_async
+            doc_loaders_feat_table[cm]["description"] = cls.__doc__.split("\n")[0]
 
-    header = ["loader", "lazy_loading", "native_async"]
-    title = ["Document Loader", "Document Lazy Loading", "Native Async Support"]
+    header = ["loader", "description", "lazy_loading", "native_async"]
+    title = ["Document Loader", "Description", "Lazy loading", "Native async support"]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
-    for llm, feats in sorted(doc_loaders_feat_table.items()):
-        rows += [[llm] + ["✅" if feats.get(h) else "❌" for h in header[1:]]]
+    for loader, feats in sorted(doc_loaders_feat_table.items()):
+        rows += [
+            [loader, feats["description"]]
+            + ["✅" if feats.get(h) else "❌" for h in header[2:]]
+        ]
     return "\n".join(["|".join(row) for row in rows])
 
 
