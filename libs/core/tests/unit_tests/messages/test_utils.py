@@ -198,7 +198,7 @@ def test_trim_messages_last_40_include_system_allow_partial() -> None:
         SystemMessage("This is a 4 token text."),
         AIMessage(
             [
-                {"type": "text", "text": "This is the FIRST 4 token block."},
+                {"type": "text", "text": "This is the SECOND 4 token block."},
             ],
             id="second",
         ),
@@ -224,7 +224,7 @@ def test_trim_messages_last_30_include_system_allow_partial_end_on_human() -> No
         SystemMessage("This is a 4 token text."),
         AIMessage(
             [
-                {"type": "text", "text": "This is the FIRST 4 token block."},
+                {"type": "text", "text": "This is the SECOND 4 token block."},
             ],
             id="second",
         ),
@@ -260,6 +260,40 @@ def test_trim_messages_last_40_include_system_allow_partial_start_on_human() -> 
         allow_partial=True,
         include_system=True,
         start_on="human",
+    )
+
+    assert actual == expected
+    assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
+
+
+def test_trim_messages_allow_partial_text_splitter() -> None:
+    expected = [
+        HumanMessage("token text.", id="third"),
+        AIMessage("This is a 4 token text.", id="fourth"),
+    ]
+
+    def count_words(msgs: List[BaseMessage]) -> int:
+        count = 0
+        for msg in msgs:
+            if isinstance(msg.content, str):
+                count += len(msg.content.split(" "))
+            else:
+                count += len(
+                    " ".join(block["text"] for block in msg.content).split(" ")  # type: ignore[index]
+                )
+        return count
+
+    def _split_on_space(text: str) -> List[str]:
+        splits = text.split(" ")
+        return [s + " " for s in splits[:-1]] + splits[-1:]
+
+    actual = trim_messages(
+        _MESSAGES_TO_TRIM,
+        n_tokens=10,
+        token_counter=count_words,
+        strategy="last",
+        allow_partial=True,
+        text_splitter=_split_on_space,
     )
 
     assert actual == expected
