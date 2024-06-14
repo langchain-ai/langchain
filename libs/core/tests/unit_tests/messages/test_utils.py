@@ -62,6 +62,8 @@ def test_merge_message_runs_content() -> None:
     ]
     actual = merge_message_runs(messages)
     assert actual == expected
+    invoked = merge_message_runs().invoke(messages)
+    assert actual == invoked
     assert messages == messages_copy
 
 
@@ -103,6 +105,8 @@ def test_filter_message(filters: Dict) -> None:
     expected = messages[1:2]
     actual = filter_messages(messages, **filters)
     assert expected == actual
+    invoked = filter_messages(**filters).invoke(messages)
+    assert invoked == actual
     assert messages == messages_copy
 
 
@@ -295,9 +299,18 @@ def test_trim_messages_allow_partial_text_splitter() -> None:
         allow_partial=True,
         text_splitter=_split_on_space,
     )
-
     assert actual == expected
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
+
+
+def test_trim_messages_invoke() -> None:
+    actual = trim_messages(max_tokens=10, token_counter=dummy_token_counter).invoke(
+        _MESSAGES_TO_TRIM
+    )
+    expected = trim_messages(
+        _MESSAGES_TO_TRIM, max_tokens=10, token_counter=dummy_token_counter
+    )
+    assert actual == expected
 
 
 def dummy_token_counter(messages: List[BaseMessage]) -> int:
