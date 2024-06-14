@@ -90,7 +90,7 @@ def _signature(secret_key: SecretStr, url: str, payload: Dict[str, Any]) -> str:
         value = payload[key]
 
         if isinstance(value, list) or isinstance(value, dict):
-            value = json.dumps(value, separators=(",", ":"))
+            value = json.dumps(value, separators=(",", ":"), ensure_ascii=False)
         elif isinstance(value, float):
             value = "%g" % value
 
