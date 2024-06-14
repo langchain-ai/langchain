@@ -28,6 +28,11 @@ class Provider(ABC):
     def stop_sequence_key(self) -> str:
         ...
 
+    @property
+    @abstractmethod
+    def oci_chat_request(self) -> Any:
+        ...
+
     @abstractmethod
     def chat_response_to_text(self, response: Any) -> str:
         ...
