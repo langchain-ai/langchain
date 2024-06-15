@@ -45,7 +45,7 @@ class PineconeEmbeddings(BaseModel, Embeddings):
 
         batch_size = values.get("batch_size")
         if batch_size is None:
-            values["batch_size"] = 128
+            values["batch_size"] = 96
         return values
 
     @root_validator()
@@ -61,15 +61,15 @@ class PineconeEmbeddings(BaseModel, Embeddings):
             api_key_str = api_key_secretstr.get_secret_value()
         else:
             api_key_str = None
+        if api_key_str is None:
+            raise ValueError(
+                "Pinecone API key not found. Please set the PINECONE_API_KEY "
+                "environment variable or pass it via `pinecone_api_key`."
+            )
         values["_client"] = PineconeClient(api_key=api_key_str, source_tag="langchain")
 
         # initialize async client
         if not values.get("_async_client"):
-            if api_key_str is None:
-                raise ValueError(
-                    "Pinecone API key not found. Please set the PINECONE_API_KEY "
-                    "environment variable or pass it via `pinecone_api_key`."
-                )
             values["_async_client"] = aiohttp.ClientSession(
                 headers={
                     "Api-Key": api_key_str,
