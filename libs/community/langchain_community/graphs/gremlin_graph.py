@@ -10,6 +10,7 @@ from langchain_community.graphs.graph_store import GraphStore
 
 class GremlinGraph(GraphStore):
     """Gremlin wrapper for graph operations.
+
     Parameters:
     url (Optional[str]): The URL of the Gremlin database server or env GREMLIN_URI
     username (Optional[str]): The collection-identifier like '/dbs/database/colls/graph'
@@ -55,7 +56,7 @@ class GremlinGraph(GraphStore):
             if sys.platform == "win32":
                 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Please install gremlin-python first: " "`pip3 install gremlinpython"
             )
 

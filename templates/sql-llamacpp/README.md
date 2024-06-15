@@ -48,7 +48,7 @@ The package will download the Mistral-7b model from [here](https://huggingface.c
 
 This package includes an example DB of 2023 NBA rosters. You can see instructions to build this DB [here](https://github.com/facebookresearch/llama-recipes/blob/main/demo_apps/StructuredLlama.ipynb).
 
-(Optional) Configure LangSmith for tracing, monitoring and debugging LangChain applications. LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). If you don't have access, you can skip this section
+(Optional) Configure LangSmith for tracing, monitoring and debugging LangChain applications. You can sign up for LangSmith [here](https://smith.langchain.com/). If you don't have access, you can skip this section
 
 ```shell
 export LANGCHAIN_TRACING_V2=true

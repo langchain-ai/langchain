@@ -1,5 +1,6 @@
 import logging
-from typing import Iterator, Optional
+from pathlib import Path
+from typing import Iterator, Optional, Union
 
 from langchain_core.documents import Document
 
@@ -25,7 +26,7 @@ class TextLoader(BaseLoader):
 
     def __init__(
         self,
-        file_path: str,
+        file_path: Union[str, Path],
         encoding: Optional[str] = None,
         autodetect_encoding: bool = False,
     ):
@@ -56,5 +57,5 @@ class TextLoader(BaseLoader):
         except Exception as e:
             raise RuntimeError(f"Error loading {self.file_path}") from e
 
-        metadata = {"source": self.file_path}
+        metadata = {"source": str(self.file_path)}
         yield Document(page_content=text, metadata=metadata)

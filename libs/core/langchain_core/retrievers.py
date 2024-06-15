@@ -25,6 +25,7 @@ from abc import ABC, abstractmethod
 from inspect import signature
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.load.dump import dumpd
 from langchain_core.runnables import (
@@ -51,11 +52,47 @@ RetrieverOutputLike = Runnable[Any, RetrieverOutput]
 class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     """Abstract base class for a Document retrieval system.
 
-    A retrieval system is defined as something that can take string queries and return
-        the most 'relevant' Documents from some source.
 
-    Example:
+    A retrieval system is defined as something that can take string queries and return
+    the most 'relevant' Documents from some source.
+
+    Usage:
+
+    A retriever follows the standard Runnable interface, and should be used
+    via the standard runnable methods of `invoke`, `ainvoke`, `batch`, `abatch`.
+
+    Implementation:
+
+    When implementing a custom retriever, the class should implement
+    the `_get_relevant_documents` method to define the logic for retrieving documents.
+
+    Optionally, an async native implementations can be provided by overriding the
+    `_aget_relevant_documents` method.
+
+    Example: A retriever that returns the first 5 documents from a list of documents
+
         .. code-block:: python
+
+            from langchain_core import Document, BaseRetriever
+            from typing import List
+
+            class SimpleRetriever(BaseRetriever):
+                docs: List[Document]
+                k: int = 5
+
+                def _get_relevant_documents(self, query: str) -> List[Document]:
+                    \"\"\"Return the first k documents from the list of documents\"\"\"
+                    return self.docs[:self.k]
+
+                async def _aget_relevant_documents(self, query: str) -> List[Document]:
+                    \"\"\"(Optional) async native implementation.\"\"\"
+                    return self.docs[:self.k]
+
+    Example: A simple retriever based on a scitkit learn vectorizer
+
+        .. code-block:: python
+
+            from sklearn.metrics.pairwise import cosine_similarity
 
             class TFIDFRetriever(BaseRetriever, BaseModel):
                 vectorizer: Any
@@ -66,9 +103,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 class Config:
                     arbitrary_types_allowed = True
 
-                def get_relevant_documents(self, query: str) -> List[Document]:
-                    from sklearn.metrics.pairwise import cosine_similarity
-
+                def _get_relevant_documents(self, query: str) -> List[Document]:
                     # Ip -- (n_docs,x), Op -- (n_docs,n_Feats)
                     query_vec = self.vectorizer.transform([query])
                     # Op -- (n_docs,1) -- Cosine Sim with each doc
@@ -137,15 +172,58 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Document]:
+        """Invoke the retriever to get relevant documents.
+
+        Main entry point for synchronous retriever invocations.
+
+        Args:
+            input: The query string
+            config: Configuration for the retriever
+            **kwargs: Additional arguments to pass to the retriever
+
+        Returns:
+            List of relevant documents
+
+        Examples:
+
+        .. code-block:: python
+
+            retriever.invoke("query")
+        """
+        from langchain_core.callbacks.manager import CallbackManager
+
         config = ensure_config(config)
-        return self.get_relevant_documents(
-            input,
-            callbacks=config.get("callbacks"),
-            tags=config.get("tags"),
-            metadata=config.get("metadata"),
-            run_name=config.get("run_name"),
-            **kwargs,
+        callback_manager = CallbackManager.configure(
+            config.get("callbacks"),
+            None,
+            verbose=kwargs.get("verbose", False),
+            inheritable_tags=config.get("tags"),
+            local_tags=self.tags,
+            inheritable_metadata=config.get("metadata"),
+            local_metadata=self.metadata,
         )
+        run_manager = callback_manager.on_retriever_start(
+            dumpd(self),
+            input,
+            name=config.get("run_name"),
+            run_id=kwargs.pop("run_id", None),
+        )
+        try:
+            _kwargs = kwargs if self._expects_other_args else {}
+            if self._new_arg_supported:
+                result = self._get_relevant_documents(
+                    input, run_manager=run_manager, **_kwargs
+                )
+            else:
+                result = self._get_relevant_documents(input, **_kwargs)
+        except Exception as e:
+            run_manager.on_retriever_error(e)
+            raise e
+        else:
+            run_manager.on_retriever_end(
+                result,
+            )
+            return result
 
     async def ainvoke(
         self,
@@ -153,15 +231,58 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> List[Document]:
+        """Asynchronously invoke the retriever to get relevant documents.
+
+        Main entry point for asynchronous retriever invocations.
+
+        Args:
+            input: The query string
+            config: Configuration for the retriever
+            **kwargs: Additional arguments to pass to the retriever
+
+        Returns:
+            List of relevant documents
+
+        Examples:
+
+        .. code-block:: python
+
+            await retriever.ainvoke("query")
+        """
+        from langchain_core.callbacks.manager import AsyncCallbackManager
+
         config = ensure_config(config)
-        return await self.aget_relevant_documents(
-            input,
-            callbacks=config.get("callbacks"),
-            tags=config.get("tags"),
-            metadata=config.get("metadata"),
-            run_name=config.get("run_name"),
-            **kwargs,
+        callback_manager = AsyncCallbackManager.configure(
+            config.get("callbacks"),
+            None,
+            verbose=kwargs.get("verbose", False),
+            inheritable_tags=config.get("tags"),
+            local_tags=self.tags,
+            inheritable_metadata=config.get("metadata"),
+            local_metadata=self.metadata,
         )
+        run_manager = await callback_manager.on_retriever_start(
+            dumpd(self),
+            input,
+            name=config.get("run_name"),
+            run_id=kwargs.pop("run_id", None),
+        )
+        try:
+            _kwargs = kwargs if self._expects_other_args else {}
+            if self._new_arg_supported:
+                result = await self._aget_relevant_documents(
+                    input, run_manager=run_manager, **_kwargs
+                )
+            else:
+                result = await self._aget_relevant_documents(input, **_kwargs)
+        except Exception as e:
+            await run_manager.on_retriever_error(e)
+            raise e
+        else:
+            await run_manager.on_retriever_end(
+                result,
+            )
+            return result
 
     @abstractmethod
     def _get_relevant_documents(
@@ -192,6 +313,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             run_manager=run_manager.get_sync(),
         )
 
+    @deprecated(since="0.1.46", alternative="invoke", removal="0.3.0")
     def get_relevant_documents(
         self,
         query: str,
@@ -203,6 +325,10 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         **kwargs: Any,
     ) -> List[Document]:
         """Retrieve documents relevant to a query.
+
+        Users should favor using `.invoke` or `.batch` rather than
+        `get_relevant_documents directly`.
+
         Args:
             query: string to find relevant documents for
             callbacks: Callback manager or list of callbacks
@@ -212,43 +338,23 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             metadata: Optional metadata associated with the retriever. Defaults to None
                 This metadata will be associated with each call to this retriever,
                 and passed as arguments to the handlers defined in `callbacks`.
+            run_name: Optional name for the run.
+
         Returns:
             List of relevant documents
         """
-        from langchain_core.callbacks.manager import CallbackManager
+        config: RunnableConfig = {}
+        if callbacks:
+            config["callbacks"] = callbacks
+        if tags:
+            config["tags"] = tags
+        if metadata:
+            config["metadata"] = metadata
+        if run_name:
+            config["run_name"] = run_name
+        return self.invoke(query, config, **kwargs)
 
-        callback_manager = CallbackManager.configure(
-            callbacks,
-            None,
-            verbose=kwargs.get("verbose", False),
-            inheritable_tags=tags,
-            local_tags=self.tags,
-            inheritable_metadata=metadata,
-            local_metadata=self.metadata,
-        )
-        run_manager = callback_manager.on_retriever_start(
-            dumpd(self),
-            query,
-            name=run_name,
-            run_id=kwargs.pop("run_id", None),
-        )
-        try:
-            _kwargs = kwargs if self._expects_other_args else {}
-            if self._new_arg_supported:
-                result = self._get_relevant_documents(
-                    query, run_manager=run_manager, **_kwargs
-                )
-            else:
-                result = self._get_relevant_documents(query, **_kwargs)
-        except Exception as e:
-            run_manager.on_retriever_error(e)
-            raise e
-        else:
-            run_manager.on_retriever_end(
-                result,
-            )
-            return result
-
+    @deprecated(since="0.1.46", alternative="ainvoke", removal="0.3.0")
     async def aget_relevant_documents(
         self,
         query: str,
@@ -260,6 +366,10 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         **kwargs: Any,
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
+
+        Users should favor using `.ainvoke` or `.abatch` rather than
+        `aget_relevant_documents directly`.
+
         Args:
             query: string to find relevant documents for
             callbacks: Callback manager or list of callbacks
@@ -269,39 +379,18 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             metadata: Optional metadata associated with the retriever. Defaults to None
                 This metadata will be associated with each call to this retriever,
                 and passed as arguments to the handlers defined in `callbacks`.
+            run_name: Optional name for the run.
+
         Returns:
             List of relevant documents
         """
-        from langchain_core.callbacks.manager import AsyncCallbackManager
-
-        callback_manager = AsyncCallbackManager.configure(
-            callbacks,
-            None,
-            verbose=kwargs.get("verbose", False),
-            inheritable_tags=tags,
-            local_tags=self.tags,
-            inheritable_metadata=metadata,
-            local_metadata=self.metadata,
-        )
-        run_manager = await callback_manager.on_retriever_start(
-            dumpd(self),
-            query,
-            name=run_name,
-            run_id=kwargs.pop("run_id", None),
-        )
-        try:
-            _kwargs = kwargs if self._expects_other_args else {}
-            if self._new_arg_supported:
-                result = await self._aget_relevant_documents(
-                    query, run_manager=run_manager, **_kwargs
-                )
-            else:
-                result = await self._aget_relevant_documents(query, **_kwargs)
-        except Exception as e:
-            await run_manager.on_retriever_error(e)
-            raise e
-        else:
-            await run_manager.on_retriever_end(
-                result,
-            )
-            return result
+        config: RunnableConfig = {}
+        if callbacks:
+            config["callbacks"] = callbacks
+        if tags:
+            config["tags"] = tags
+        if metadata:
+            config["metadata"] = metadata
+        if run_name:
+            config["run_name"] = run_name
+        return await self.ainvoke(query, config, **kwargs)

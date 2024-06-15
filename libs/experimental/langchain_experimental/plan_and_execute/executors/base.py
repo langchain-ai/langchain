@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from typing import Any
 
-from langchain.callbacks.manager import Callbacks
 from langchain.chains.base import Chain
+from langchain_core.callbacks.manager import Callbacks
 
 from langchain_experimental.plan_and_execute.schema import StepResponse
 from langchain_experimental.pydantic_v1 import BaseModel

@@ -18,7 +18,7 @@ FULL_PROMPT = """# Context
 ```json
 {json_format}
 ```
-"""  # noqa: E50
+"""
 
 NUM_PLATES_PROMPT = """- There {num_plates_str} in this data."""
 ROWS_PROMPT = """- Each plate has {num_rows} rows."""

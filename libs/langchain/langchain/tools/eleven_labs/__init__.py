@@ -1,5 +1,24 @@
 """Eleven Labs Services Tools."""
+from typing import TYPE_CHECKING, Any
 
-from langchain_community.tools.eleven_labs.text2speech import ElevenLabsText2SpeechTool
+from langchain._api import create_importer
 
-__all__ = ["ElevenLabsText2SpeechTool"]
+if TYPE_CHECKING:
+    from langchain_community.tools import ElevenLabsText2SpeechTool
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"ElevenLabsText2SpeechTool": "langchain_community.tools"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
+
+
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
+
+__all__ = [
+    "ElevenLabsText2SpeechTool",
+]

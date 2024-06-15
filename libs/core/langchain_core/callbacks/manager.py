@@ -41,6 +41,7 @@ from langchain_core.callbacks.base import (
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
+from langchain_core.tracers.schemas import Run
 from langchain_core.utils.env import env_var_is_set
 
 if TYPE_CHECKING:
@@ -984,7 +985,6 @@ class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
         Args:
             output (Any): The output of the tool.
         """
-        output = str(output)
         handle_event(
             self.handlers,
             "on_tool_end",
@@ -1045,7 +1045,6 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
         Args:
             output (Any): The output of the tool.
         """
-        output = str(output)
         await ahandle_event(
             self.handlers,
             "on_tool_end",
@@ -1915,12 +1914,11 @@ def _configure(
         _configure_hooks,
         _get_tracer_project,
         _tracing_v2_is_enabled,
-        tracing_callback_var,
         tracing_v2_callback_var,
     )
 
     run_tree = get_run_tree_context()
-    parent_run_id = None if run_tree is None else getattr(run_tree, "id")
+    parent_run_id = None if run_tree is None else run_tree.id
     callback_manager = callback_manager_cls(handlers=[], parent_run_id=parent_run_id)
     if inheritable_callbacks or local_callbacks:
         if isinstance(inheritable_callbacks, list) or inheritable_callbacks is None:
@@ -1931,10 +1929,22 @@ def _configure(
                 parent_run_id=parent_run_id,
             )
         else:
+            parent_run_id_ = inheritable_callbacks.parent_run_id
+            # Break ties between the external tracing context and inherited context
+            if parent_run_id is not None:
+                if parent_run_id_ is None:
+                    parent_run_id_ = parent_run_id
+                # If the LC parent has already been reflected
+                # in the run tree, we know the run_tree is either the
+                # same parent or a child of the parent.
+                elif run_tree and str(parent_run_id_) in run_tree.dotted_order:
+                    parent_run_id_ = parent_run_id
+                # Otherwise, we assume the LC context has progressed
+                # beyond the run tree and we should not inherit the parent.
             callback_manager = callback_manager_cls(
                 handlers=inheritable_callbacks.handlers.copy(),
                 inheritable_handlers=inheritable_callbacks.inheritable_handlers.copy(),
-                parent_run_id=inheritable_callbacks.parent_run_id,
+                parent_run_id=parent_run_id_,
                 tags=inheritable_callbacks.tags.copy(),
                 inheritable_tags=inheritable_callbacks.inheritable_tags.copy(),
                 metadata=inheritable_callbacks.metadata.copy(),
@@ -1954,20 +1964,25 @@ def _configure(
         callback_manager.add_metadata(inheritable_metadata or {})
         callback_manager.add_metadata(local_metadata or {}, False)
 
-    tracer = tracing_callback_var.get()
-    tracing_enabled_ = (
-        env_var_is_set("LANGCHAIN_TRACING")
-        or tracer is not None
-        or env_var_is_set("LANGCHAIN_HANDLER")
+    v1_tracing_enabled_ = env_var_is_set("LANGCHAIN_TRACING") or env_var_is_set(
+        "LANGCHAIN_HANDLER"
     )
 
     tracer_v2 = tracing_v2_callback_var.get()
     tracing_v2_enabled_ = _tracing_v2_is_enabled()
+
+    if v1_tracing_enabled_ and not tracing_v2_enabled_:
+        # if both are enabled, can silently ignore the v1 tracer
+        raise RuntimeError(
+            "Tracing using LangChainTracerV1 is no longer supported. "
+            "Please set the LANGCHAIN_TRACING_V2 environment variable to enable "
+            "tracing instead."
+        )
+
     tracer_project = _get_tracer_project()
     debug = _get_debug()
-    if verbose or debug or tracing_enabled_ or tracing_v2_enabled_:
+    if verbose or debug or tracing_v2_enabled_:
         from langchain_core.tracers.langchain import LangChainTracer
-        from langchain_core.tracers.langchain_v1 import LangChainTracerV1
         from langchain_core.tracers.stdout import ConsoleCallbackHandler
 
         if verbose and not any(
@@ -1983,16 +1998,6 @@ def _configure(
             for handler in callback_manager.handlers
         ):
             callback_manager.add_handler(ConsoleCallbackHandler(), True)
-        if tracing_enabled_ and not any(
-            isinstance(handler, LangChainTracerV1)
-            for handler in callback_manager.handlers
-        ):
-            if tracer:
-                callback_manager.add_handler(tracer, True)
-            else:
-                handler = LangChainTracerV1()
-                handler.load_session(tracer_project)
-                callback_manager.add_handler(handler, True)
         if tracing_v2_enabled_ and not any(
             isinstance(handler, LangChainTracer)
             for handler in callback_manager.handlers
@@ -2001,15 +2006,26 @@ def _configure(
                 callback_manager.add_handler(tracer_v2, True)
             else:
                 try:
-                    handler = LangChainTracer(project_name=tracer_project)
+                    handler = LangChainTracer(
+                        project_name=tracer_project,
+                        client=run_tree.client if run_tree is not None else None,
+                    )
                     callback_manager.add_handler(handler, True)
                 except Exception as e:
                     logger.warning(
                         "Unable to load requested LangChainTracer."
                         " To disable this warning,"
                         " unset the LANGCHAIN_TRACING_V2 environment variables.",
-                        e,
+                        f"{repr(e)}",
                     )
+        if run_tree is not None:
+            for handler in callback_manager.handlers:
+                if isinstance(handler, LangChainTracer):
+                    handler.order_map[run_tree.id] = (
+                        run_tree.trace_id,
+                        run_tree.dotted_order,
+                    )
+                    handler.run_map[str(run_tree.id)] = cast(Run, run_tree)
     for var, inheritable, handler_class, env_var in _configure_hooks:
         create_one = (
             env_var is not None

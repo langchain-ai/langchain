@@ -54,6 +54,7 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
                 response_metadata=merge_dicts(
                     self.response_metadata, other.response_metadata
                 ),
+                id=self.id,
             )
         elif isinstance(other, BaseMessageChunk):
             return self.__class__(
@@ -65,6 +66,7 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
                 response_metadata=merge_dicts(
                     self.response_metadata, other.response_metadata
                 ),
+                id=self.id,
             )
         else:
             return super().__add__(other)

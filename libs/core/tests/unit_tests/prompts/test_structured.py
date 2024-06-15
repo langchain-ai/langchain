@@ -23,7 +23,9 @@ def _fake_runnable(
 class FakeStructuredChatModel(FakeListChatModel):
     """Fake ChatModel for testing purposes."""
 
-    def with_structured_output(self, schema: Union[Dict, Type[BaseModel]]) -> Runnable:
+    def with_structured_output(
+        self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
+    ) -> Runnable:
         return RunnableLambda(partial(_fake_runnable, schema))
 
     @property

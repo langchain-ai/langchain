@@ -59,6 +59,29 @@ class BasePromptTemplate(
     tags: Optional[List[str]] = None
     """Tags to be used for tracing."""
 
+    @root_validator(pre=False, skip_on_failure=True)
+    def validate_variable_names(cls, values: Dict) -> Dict:
+        """Validate variable names do not include restricted names."""
+        if "stop" in values["input_variables"]:
+            raise ValueError(
+                "Cannot have an input variable named 'stop', as it is used internally,"
+                " please rename."
+            )
+        if "stop" in values["partial_variables"]:
+            raise ValueError(
+                "Cannot have an partial variable named 'stop', as it is used "
+                "internally, please rename."
+            )
+
+        overall = set(values["input_variables"]).intersection(
+            values["partial_variables"]
+        )
+        if overall:
+            raise ValueError(
+                f"Found overlapping input and partial variables: {overall}"
+            )
+        return values
+
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
@@ -87,7 +110,7 @@ class BasePromptTemplate(
             **{k: (self.input_types.get(k, str), None) for k in self.input_variables},
         )
 
-    def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
+    def _validate_input(self, inner_input: Dict) -> Dict:
         if not isinstance(inner_input, dict):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
@@ -105,18 +128,43 @@ class BasePromptTemplate(
                 f" Expected: {self.input_variables}"
                 f" Received: {list(inner_input.keys())}"
             )
-        return self.format_prompt(**inner_input)
+        return inner_input
+
+    def _format_prompt_with_error_handling(self, inner_input: Dict) -> PromptValue:
+        _inner_input = self._validate_input(inner_input)
+        return self.format_prompt(**_inner_input)
+
+    async def _aformat_prompt_with_error_handling(
+        self, inner_input: Dict
+    ) -> PromptValue:
+        _inner_input = self._validate_input(inner_input)
+        return await self.aformat_prompt(**_inner_input)
 
     def invoke(
         self, input: Dict, config: Optional[RunnableConfig] = None
     ) -> PromptValue:
         config = ensure_config(config)
         if self.metadata:
+            config["metadata"] = {**config["metadata"], **self.metadata}
+        if self.tags:
+            config["tags"] = config["tags"] + self.tags
+        return self._call_with_config(
+            self._format_prompt_with_error_handling,
+            input,
+            config,
+            run_type="prompt",
+        )
+
+    async def ainvoke(
+        self, input: Dict, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> PromptValue:
+        config = ensure_config(config)
+        if self.metadata:
             config["metadata"].update(self.metadata)
         if self.tags:
             config["tags"].extend(self.tags)
-        return self._call_with_config(
-            self._format_prompt_with_error_handling,
+        return await self._acall_with_config(
+            self._aformat_prompt_with_error_handling,
             input,
             config,
             run_type="prompt",
@@ -126,28 +174,9 @@ class BasePromptTemplate(
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """Create Prompt Value."""
 
-    @root_validator()
-    def validate_variable_names(cls, values: Dict) -> Dict:
-        """Validate variable names do not include restricted names."""
-        if "stop" in values["input_variables"]:
-            raise ValueError(
-                "Cannot have an input variable named 'stop', as it is used internally,"
-                " please rename."
-            )
-        if "stop" in values["partial_variables"]:
-            raise ValueError(
-                "Cannot have an partial variable named 'stop', as it is used "
-                "internally, please rename."
-            )
-
-        overall = set(values["input_variables"]).intersection(
-            values["partial_variables"]
-        )
-        if overall:
-            raise ValueError(
-                f"Found overlapping input and partial variables: {overall}"
-            )
-        return values
+    async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        """Create Prompt Value."""
+        return self.format_prompt(**kwargs)
 
     def partial(self, **kwargs: Union[str, Callable[[], str]]) -> BasePromptTemplate:
         """Return a partial of the prompt template."""
@@ -181,6 +210,23 @@ class BasePromptTemplate(
 
             prompt.format(variable1="foo")
         """
+
+    async def aformat(self, **kwargs: Any) -> FormatOutputType:
+        """Format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+
+        Example:
+
+        .. code-block:: python
+
+            await prompt.aformat(variable1="foo")
+        """
+        return self.format(**kwargs)
 
     @property
     def _prompt_type(self) -> str:
@@ -234,6 +280,21 @@ class BasePromptTemplate(
             raise ValueError(f"{save_path} must be json or yaml")
 
 
+def _get_document_info(doc: Document, prompt: BasePromptTemplate[str]) -> Dict:
+    base_info = {"page_content": doc.page_content, **doc.metadata}
+    missing_metadata = set(prompt.input_variables).difference(base_info)
+    if len(missing_metadata) > 0:
+        required_metadata = [
+            iv for iv in prompt.input_variables if iv != "page_content"
+        ]
+        raise ValueError(
+            f"Document prompt requires documents to have metadata variables: "
+            f"{required_metadata}. Received document with missing metadata: "
+            f"{list(missing_metadata)}."
+        )
+    return {k: base_info[k] for k in prompt.input_variables}
+
+
 def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
     """Format a document into a string based on a prompt template.
 
@@ -268,16 +329,30 @@ def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
             format_document(doc, prompt)
             >>> "Page 1: This is a joke"
     """
-    base_info = {"page_content": doc.page_content, **doc.metadata}
-    missing_metadata = set(prompt.input_variables).difference(base_info)
-    if len(missing_metadata) > 0:
-        required_metadata = [
-            iv for iv in prompt.input_variables if iv != "page_content"
-        ]
-        raise ValueError(
-            f"Document prompt requires documents to have metadata variables: "
-            f"{required_metadata}. Received document with missing metadata: "
-            f"{list(missing_metadata)}."
-        )
-    document_info = {k: base_info[k] for k in prompt.input_variables}
-    return prompt.format(**document_info)
+    return prompt.format(**_get_document_info(doc, prompt))
+
+
+async def aformat_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
+    """Format a document into a string based on a prompt template.
+
+    First, this pulls information from the document from two sources:
+
+    1. `page_content`:
+        This takes the information from the `document.page_content`
+        and assigns it to a variable named `page_content`.
+    2. metadata:
+        This takes information from `document.metadata` and assigns
+        it to variables of the same name.
+
+    Those variables are then passed into the `prompt` to produce a formatted string.
+
+    Args:
+        doc: Document, the page_content and metadata will be used to create
+            the final string.
+        prompt: BasePromptTemplate, will be used to format the page_content
+            and metadata into the final string.
+
+    Returns:
+        string of the document formatted.
+    """
+    return await prompt.aformat(**_get_document_info(doc, prompt))

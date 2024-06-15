@@ -10,7 +10,7 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
 
 from langchain.chains.llm import LLMChain
-from langchain.prompts.base import BasePromptTemplate
+from langchain_core.prompts.base import BasePromptTemplate
 
 from langchain_experimental.pydantic_v1 import Field
 from langchain_experimental.tot.prompts import get_cot_prompt, get_propose_prompt
