@@ -151,22 +151,34 @@ class TranscriptFormat(Enum):
 class YoutubeLoader(BaseLoader):
     """Load `YouTube` video transcripts."""
 
+    ADD_VIDEO_INFO_DEFAULT = False
+    LANGUAGE_DEFAULT = ["en"]
+    TRANSLATION_DEFAULT = None
+    TRANSCRIPT_FORMAT_DEFAULT = TranscriptFormat.TEXT
+    CHUNK_SIZE_SECONDS_DEFAULT = 120.0
+
     def __init__(
         self,
         video_id: str,
-        add_video_info: bool = False,
-        language: Union[str, Sequence[str]] = "en",
-        translation: Optional[str] = None,
-        transcript_format: TranscriptFormat = TranscriptFormat.TEXT,
-        chunk_size_seconds: int = 120,
+        add_video_info: bool = ADD_VIDEO_INFO_DEFAULT,
+        language: Union[Sequence[str], str] = LANGUAGE_DEFAULT,
+        translation: Optional[str] = TRANSLATION_DEFAULT,
+        transcript_format: TranscriptFormat = TRANSCRIPT_FORMAT_DEFAULT,
+        chunk_size_seconds: float = CHUNK_SIZE_SECONDS_DEFAULT,
     ):
-        """Initialize with YouTube video ID."""
-        self.video_id = video_id
-        self._metadata = {"source": video_id}
-        self.add_video_info = add_video_info
-        self.language = language
-        if isinstance(language, str):
-            self.language = [language]
+        """
+        Initialize with YouTube video ID.
+
+        :param video_id: ID string of YouTube video.
+        :param add_video_info: Boolean flag to add video info to transcripts.
+        :param language: List of language codes, in order of preference.
+        :param translation: Code of language to which transcripts will be translated.
+        :param transcript_format: Specifies which output format of transcripts to load.
+          Values from `TranscriptFormat` are `TEXT`, `LINES`, or `CHUNKS`.  All
+          formats are treated as `CHUNKS`, with `TEXT` using a `chunk_size_seconds`
+          value of `float("inf")` and `LINES` using a `chunk_size_seconds` value of `0`.
+        :param chunk_size_seconds: The maximum length of each chunk in seconds.
+        """
         else:
             self.language = language
         self.translation = translation
