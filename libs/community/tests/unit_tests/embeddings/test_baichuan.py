@@ -7,7 +7,7 @@ from langchain_community.embeddings import BaichuanTextEmbeddings
 
 def test_sparkllm_initialization_by_alias() -> None:
     # Effective initialization
-    embeddings = BaichuanTextEmbeddings(
+    embeddings = BaichuanTextEmbeddings(  # type: ignore[call-arg]
         model="embedding_model",  # type: ignore[arg-type]
         api_key="your-api-key",  # type: ignore[arg-type]
     )
