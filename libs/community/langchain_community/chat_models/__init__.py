@@ -105,6 +105,7 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.llama_edge import (
         LlamaEdgeChatService,
     )
+    from langchain_community.chat_models.llamacpp import ChatLlamaCpp
     from langchain_community.chat_models.maritalk import (
         ChatMaritalk,
     )
@@ -200,6 +201,7 @@ __all__ = [
     "ChatYandexGPT",
     "ChatYuan2",
     "ChatZhipuAI",
+    "ChatLlamaCpp",
     "ErnieBotChat",
     "FakeListChatModel",
     "GPTRouter",
@@ -265,6 +267,7 @@ _module_lookup = {
     "QianfanChatEndpoint": "langchain_community.chat_models.baidu_qianfan_endpoint",
     "VolcEngineMaasChat": "langchain_community.chat_models.volcengine_maas",
     "ChatPremAI": "langchain_community.chat_models.premai",
+    "ChatLlamaCpp": "langchain_community.chat_models.llamacpp",
 }
 
 
