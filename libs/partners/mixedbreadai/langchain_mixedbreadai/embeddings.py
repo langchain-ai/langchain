@@ -1,10 +1,10 @@
 import logging
 from typing import List, Optional
 
-from mixedbread_ai.types import EncodingFormat, TruncationStrategy
-
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field
+from mixedbread_ai.types import EncodingFormat, TruncationStrategy
+
 from .client import MixedBreadAIClient
 
 logger = logging.getLogger(__name__)
@@ -12,15 +12,15 @@ logger = logging.getLogger(__name__)
 
 class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
     """
-    Implements the Embeddings interface with Mixedbread AI's text representation language
-    models.
+    Implements the Embeddings interface with Mixedbread AI's text representation
+    language models.
 
     Find out more about us at https://mixedbread.ai
 
     This implementation uses the Embed API.
 
-    To use this you'll need a Mixedbread AI API key - either pass it to mixedbread_api_key
-    parameter or set the MIXEDBREAD_API_KEY environment variable.
+    To use this you'll need a Mixedbread AI API key - either pass it to
+    api_key parameter or set the MXBAI_API_KEY environment variable.
 
     API keys are available on https://mixedbread.ai - it's free to sign up and trial API
     keys work with this implementation.
@@ -28,7 +28,9 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
     Basic Example:
         .. code-block:: python
 
-            mixedbread_embeddings = MixedbreadAIEmbeddings(model="mixedbread-ai/mxbai-embed-large-v1")
+            mixedbread_embeddings = MixedbreadAIEmbeddings(
+                model="mixedbread-ai/mxbai-embed-large-v1"
+            )
             text = "This is a test document."
 
             query_result = mixedbread_embeddings.embed_query(text)
@@ -37,6 +39,7 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
             doc_result = mixedbread_embeddings.embed_documents([text])
             print(doc_result)
     """
+
     model: str = "mixedbread-ai/mxbai-embed-large-v1"
     """Model name to use."""
     encoding_format: EncodingFormat = Field(default=EncodingFormat.FLOAT)
@@ -59,7 +62,7 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
             normalized=self.normalized,
             dimensions=self.dimensions,
             prompt=self.prompt,
-            request_options=self._request_options
+            request_options=self._request_options,
         ).data
         return [item.embedding for item in embeddings]
 
@@ -76,7 +79,7 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
                 normalized=self.normalized,
                 dimensions=self.dimensions,
                 prompt=self.prompt,
-                request_options=self._request_options
+                request_options=self._request_options,
             )
         ).data
         return [item.embedding for item in embeddings]
