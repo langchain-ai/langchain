@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from enum import Enum
+from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional, Sequence, Union
 from urllib.parse import parse_qs, urlparse
@@ -143,9 +143,9 @@ def _parse_video_id(url: str) -> Optional[str]:
 class TranscriptFormat(Enum):
     """Output formats of transcripts from `YoutubeLoader`."""
 
-    TEXT = "text"
-    LINES = "lines"
-    CHUNKS = "chunks"
+    TEXT = auto()
+    LINES = auto()
+    CHUNKS = auto()
 
 
 class YoutubeLoader(BaseLoader):
