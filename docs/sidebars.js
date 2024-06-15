@@ -184,8 +184,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/document_loaders",
+            type: "doc",
+            id: "integrations/document_loaders/index",
           },
         },
         {
