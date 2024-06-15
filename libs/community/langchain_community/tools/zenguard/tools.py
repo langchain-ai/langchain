@@ -55,7 +55,7 @@ class ZenGuardTool(BaseTool):
 
     zenguard_api_key: Optional[str] = Field(default=None)
 
-    _ZENGUARD_API_URL_ROOT = "https://dummyai-backend-gwlrf6iakq-uc.a.run.app/"
+    _ZENGUARD_API_URL_ROOT = "https://api.zenguard.ai/"
     _ZENGUARD_API_KEY_ENV_NAME = "ZENGUARD_API_KEY"
 
     @validator("zenguard_api_key", pre=True, always=True, check_fields=False)
