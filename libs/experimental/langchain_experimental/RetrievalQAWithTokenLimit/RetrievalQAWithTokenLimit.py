@@ -1,26 +1,29 @@
-"""Chain for question-answering against a vector database based on the LLMs token Window."""
+"""Chain for question-answering against a vector database based on the LLMs token Window."""  # noqa: E501
 from __future__ import annotations
-from langchain.chains import RetrievalQA 
+
 from typing import List
+
+from langchain.chains import RetrievalQA
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
 from langchain_core.documents import Document
-from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 
-# This class extends the RetrievalQA class and adds a token limit to the documents retrieved.
+
+# This class extends the RetrievalQA class and adds a token limit to the documents retrieved. # noqa: E501
 class RetrievalQAWithTokenLimit(RetrievalQA):
-    # If True, the number of documents will be reduced to stay below the max token limit.
+    # If True, the number of documents will be reduced to stay below the max token limit. # noqa: E501
     reduce_k_below_max_tokens: bool = True
     # The maximum number of tokens allowed in the documents.
     max_tokens_limit: int = 3375
 
-    # This method reduces the number of documents so that the total number of tokens stays below the limit.
+    # This method reduces the number of documents so that the total number of tokens stays below the limit. # noqa: E501
     def _reduce_tokens_below_limit(self, docs: List[Document]) -> List[Document]:
         num_docs = len(docs)
 
-        # If reduce_k_below_max_tokens is True and the combine_documents_chain is an instance of StuffDocumentsChain,
+        # If reduce_k_below_max_tokens is True and the combine_documents_chain is an instance of StuffDocumentsChain, # noqa: E501
         # calculate the total number of tokens in the documents.
         if self.reduce_k_below_max_tokens and isinstance(
             self.combine_documents_chain, StuffDocumentsChain
@@ -32,7 +35,7 @@ class RetrievalQAWithTokenLimit(RetrievalQA):
             ]
             # Calculate the total number of tokens.
             token_count = sum(tokens[:num_docs])
-            # While the total number of tokens is greater than the limit, reduce the number of documents.
+            # While the total number of tokens is greater than the limit, reduce the number of documents. # noqa: E501
             while token_count > self.max_tokens_limit:
                 num_docs -= 1
                 token_count -= tokens[num_docs]
@@ -40,7 +43,7 @@ class RetrievalQAWithTokenLimit(RetrievalQA):
         # Return the reduced list of documents.
         return docs[:num_docs]
 
-    # This method retrieves the relevant documents for a given question and reduces the number of documents to stay below the token limit.
+    # This method retrieves the relevant documents for a given question and reduces the number of documents to stay below the token limit. # noqa: E501
     def _get_docs(
         self, question: str, *, run_manager: CallbackManagerForChainRun
     ) -> List[Document]:
