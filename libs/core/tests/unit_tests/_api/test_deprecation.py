@@ -401,3 +401,14 @@ def test_deprecated_method_pydantic() -> None:
         doc = obj.deprecated_method.__doc__
         assert isinstance(doc, str)
         assert doc.startswith("[*Deprecated*] original doc")
+
+
+def test_raise_error_for_bad_decorator() -> None:
+    """Verify that errors raised on init rather than on use."""
+    # Should not specify both `alternative` and `alternative_import`
+    with pytest.raises(ValueError):
+
+        @deprecated(since="2.0.0", alternative="NewClass", alternative_import="hello")
+        def deprecated_function() -> str:
+            """original doc"""
+            return "This is a deprecated function."
