@@ -181,34 +181,71 @@ CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
 
 class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
-    """OCI large language chat models.
+    """ChatOCIGenAI chat model integration.
 
-    To authenticate, the OCI client uses the methods described in
-    https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm
+    Setup:
+      Install ``langchain-community`` and the ``oci`` sdk.
 
-    The authentifcation method is passed through auth_type and should be one of:
-    API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL
+      .. code-block:: bash
 
-    Make sure you have the required policies (profile/roles) to
-    access the OCI Generative AI service.
-    If a specific config profile is used, you must pass
-    the name of the profile (from ~/.oci/config) through auth_profile.
+          pip install -U langchain-community oci
+          
 
-    To use, you must provide the compartment id
-    along with the endpoint url, and model id
-    as named parameters to the constructor.
+    Key init args — completion params:
+        model_id: str
+            Id of the OCIGenAI chat model to use, e.g., cohere.command-r-16k.
+        is_stream: bool 
+            Whether to stream back partial progress
+        model_kwargs: Optional[Dict]
+            Keyword arguments to pass to the specific model used, e.g., temperature, max_tokens.
 
-    Example:
+    Key init args — client params:
+        service_endpoint: str   
+            The endpoint URL for the OCIGenAI service, e.g., https://inference.generativeai.us-chicago-1.oci.oraclecloud.com.
+        compartment_id: str
+            The compartment OCID.
+        auth_type: str
+            The authentication type to use, e.g., API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL.
+        auth_profile: Optional[str]
+            The name of the profile in ~/.oci/config, if not specified , DEFAULT will be used.
+        provider: str
+            Provider name of the model. Default to None, will try to be derived from the model_id otherwise, requires user input.
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
-            from langchain_community.chat_models import OCIGenAIChat
+            from langchain_community.chat_models import ChatOCIGenAI
 
-            llm = OCIGenAIChat(
-                    model_id="MY_MODEL_ID",
-                    service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
-                    compartment_id="MY_OCID"
-                )
-    """
+            chat = ChatOCIGenAI(
+                model_id="cohere.command-r-16k",
+                service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
+                compartment_id="MY_OCID",
+                model_kwargs={"temperature": 0.7, "max_tokens": 500},
+            )
+
+    Invoke:
+        .. code-block:: python
+            messages = [
+                SystemMessage(content="your are an AI assistant."),
+                AIMessage(content="Hi there human!"),
+                HumanMessage(content="tell me a joke."),
+            ]
+            response = chat.invoke(messages)
+
+    Stream:
+        .. code-block:: python
+        
+        for r in chat.stream(messages):
+            print(r.content, end="", flush=True)
+
+    Response metadata
+        .. code-block:: python
+
+        response = chat.invoke(messages)
+        print(response.response_metadata)
+
+    """  # noqa: E501
 
     class Config:
         """Configuration for this pydantic object."""
