@@ -5,7 +5,7 @@ import pytest
 from langchain_core.messages import HumanMessage
 from pytest import MonkeyPatch
 
-from langchain_community.chat_models import ChatOCIGenAI
+from langchain_community.chat_models.oci_generative_ai import ChatOCIGenAI
 
 
 class MockResponseDict(dict):
@@ -13,7 +13,6 @@ class MockResponseDict(dict):
         return self[val]
 
 
-@pytest.mark.requires("oci")
 @pytest.mark.parametrize(
     "test_model_id", ["cohere.command-r-16k", "meta.llama-3-70b-instruct"]
 )

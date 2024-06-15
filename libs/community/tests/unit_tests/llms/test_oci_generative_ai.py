@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 from pytest import MonkeyPatch
 
-from langchain_community.llms import OCIGenAI
+from langchain_community.llms.oci_generative_ai import OCIGenAI
 
 
 class MockResponseDict(dict):
@@ -12,7 +12,6 @@ class MockResponseDict(dict):
         return self[val]
 
 
-@pytest.mark.requires("oci")
 @pytest.mark.parametrize(
     "test_model_id", ["cohere.command", "cohere.command-light", "meta.llama-2-70b-chat"]
 )
