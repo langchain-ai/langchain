@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field
-from mixedbread_ai.types import EncodingFormat, TruncationStrategy
+from mixedbread_ai.types import EncodingFormat, TruncationStrategy  # type: ignore
 
 from .client import MixedBreadAIClient
 
