@@ -111,7 +111,11 @@ ALLOWED_NETLOCS = {
 
 
 def _parse_video_id(url: str) -> Optional[str]:
-    """Parse a YouTube URL and return the video ID if valid, otherwise None."""
+    """
+    Parse a YouTube URL and return the video ID if valid, otherwise ``None``.
+    ``pytube.extract.video_id()`` could be used to extract the video ID, but
+    this function is more precise.
+    """
     parsed_url = urlparse(url)
 
     if parsed_url.scheme not in ALLOWED_SCHEMES:
@@ -120,11 +124,8 @@ def _parse_video_id(url: str) -> Optional[str]:
     if parsed_url.netloc not in ALLOWED_NETLOCS:
         return None
 
-    path = parsed_url.path
-
-    if path.endswith("/watch"):
-        query = parsed_url.query
-        parsed_query = parse_qs(query)
+    if parsed_url.path.endswith("/watch"):
+        parsed_query = parse_qs(parsed_url.query)
         if "v" in parsed_query:
             ids = parsed_query["v"]
             video_id = ids if isinstance(ids, str) else ids[0]
