@@ -940,9 +940,10 @@ async def _astream_events_implementation_v2(
 
             yield event
     finally:
-        # Wait for the runnable to finish, if not cancelled (eg. by break)
-        if task.cancel():
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
+        # Cancel the task if it's still running
+        task.cancel()
+        # Await it anyway, to run any cleanup code, and propagate any exceptions
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
