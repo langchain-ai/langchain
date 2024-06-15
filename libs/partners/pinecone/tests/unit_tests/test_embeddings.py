@@ -12,7 +12,7 @@ def test_initialization_pinecone_embeddings() -> None:
     """Test embedding model initialization."""
     emb = PineconeEmbeddings(pinecone_api_key="NOT_A_VALID_KEY", model=MODEL)
     assert isinstance(emb, Embeddings)
-    assert emb.batch_size == 128
+    assert emb.batch_size == 96
     assert emb.model == MODEL
     assert emb._client is not None
 
