@@ -158,7 +158,6 @@ class YoutubeLoader(BaseLoader):
         language: Union[str, Sequence[str]] = "en",
         translation: Optional[str] = None,
         transcript_format: TranscriptFormat = TranscriptFormat.TEXT,
-        continue_on_failure: bool = False,
         chunk_size_seconds: int = 120,
     ):
         """Initialize with YouTube video ID."""
@@ -172,7 +171,6 @@ class YoutubeLoader(BaseLoader):
             self.language = language
         self.translation = translation
         self.transcript_format = transcript_format
-        self.continue_on_failure = continue_on_failure
         self.chunk_size_seconds = chunk_size_seconds
 
     @staticmethod
