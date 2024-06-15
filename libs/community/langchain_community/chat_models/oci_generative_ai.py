@@ -189,18 +189,17 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
       .. code-block:: bash
 
           pip install -U langchain-community oci
-          
 
     Key init args — completion params:
         model_id: str
             Id of the OCIGenAI chat model to use, e.g., cohere.command-r-16k.
-        is_stream: bool 
+        is_stream: bool
             Whether to stream back partial progress
         model_kwargs: Optional[Dict]
             Keyword arguments to pass to the specific model used, e.g., temperature, max_tokens.
 
     Key init args — client params:
-        service_endpoint: str   
+        service_endpoint: str
             The endpoint URL for the OCIGenAI service, e.g., https://inference.generativeai.us-chicago-1.oci.oraclecloud.com.
         compartment_id: str
             The compartment OCID.
@@ -235,7 +234,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
 
     Stream:
         .. code-block:: python
-        
+
         for r in chat.stream(messages):
             print(r.content, end="", flush=True)
 
