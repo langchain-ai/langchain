@@ -11,6 +11,7 @@ def zenguard_tool():
         raise ValueError("ZENGUARD_API_KEY is not set in enviroment varibale")
     return ZenGuardTool()
 
+
 def assert_successful_response_not_detected(response):
     assert response is not None
     assert "error" not in response, f"API returned an error: {response.get('error')}"
@@ -20,13 +21,19 @@ def assert_successful_response_not_detected(response):
 def assert_detectors_response(response, detectors):
     assert response is not None
     for detector in detectors:
-        common_response = next((
-            resp["common_response"]
-            for resp in response["responses"]
-            if resp["detector"] == detector.value
-        ))
-        assert "err" not in common_response, f"API returned an error: {common_response.get('err')}"  # noqa: E501
-        assert common_response.get("is_detected") is False, f"Prompt was detected: {common_response}"  # noqa: E501
+        common_response = next(
+            (
+                resp["common_response"]
+                for resp in response["responses"]
+                if resp["detector"] == detector.value
+            )
+        )
+        assert (
+            "err" not in common_response
+        ), f"API returned an error: {common_response.get('err')}"  # noqa: E501
+        assert (
+            common_response.get("is_detected") is False
+        ), f"Prompt was detected: {common_response}"  # noqa: E501
 
 
 def test_prompt_injection(zenguard_tool):
@@ -76,6 +83,7 @@ def test_toxicity(zenguard_tool):
     detectors = [Detector.TOXICITY]
     response = zenguard_tool.run({"detectors": detectors, "prompts": [prompt]})
     assert_successful_response_not_detected(response)
+
 
 def test_all_detectors(zenguard_tool):
     prompt = "Simple all detectors test"
