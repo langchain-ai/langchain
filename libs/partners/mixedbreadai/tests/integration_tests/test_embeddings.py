@@ -1,8 +1,10 @@
 """Test MixedbreadAI embeddings."""
+import pytest
 
 from langchain_mixedbreadai.embeddings import MixedbreadAIEmbeddings
 
 
+@pytest.mark.vcr()
 def test_langchain_mixedbreadai_embedding_documents() -> None:
     """Test cohere embeddings."""
     documents = ["foo bar"]
@@ -12,6 +14,7 @@ def test_langchain_mixedbreadai_embedding_documents() -> None:
     assert len(output[0]) > 0
 
 
+@pytest.mark.vcr()
 def test_langchain_mixedbreadai_embedding_query() -> None:
     """Test cohere embeddings."""
     document = "foo bar"
