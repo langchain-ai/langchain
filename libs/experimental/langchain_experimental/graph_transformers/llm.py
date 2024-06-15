@@ -614,8 +614,8 @@ class LLMGraphTransformer:
           node properties from text. Alternatively, a list of valid properties can
           be provided for the LLM to extract, restricting extraction to those specified.
         relationship_properties (Union[bool, List[str]]): If True, the LLM can extract
-          any relationship properties from text. Alternatively, a list of valid 
-          properties can be provided for the LLM to extract, restricting extraction to 
+          any relationship properties from text. Alternatively, a list of valid
+          properties can be provided for the LLM to extract, restricting extraction to
           those specified.
 
     Example:
