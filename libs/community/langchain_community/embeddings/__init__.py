@@ -210,6 +210,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.tensorflow_hub import (
         TensorflowHubEmbeddings,
     )
+    from langchain_community.embeddings.textembed import (
+        TextEmbedEmbeddings,
+    )
     from langchain_community.embeddings.titan_takeoff import (
         TitanTakeoffEmbed,
     )
@@ -301,6 +304,7 @@ __all__ = [
     "SpacyEmbeddings",
     "SparkLLMTextEmbeddings",
     "TensorflowHubEmbeddings",
+    "TextEmbedEmbeddings",
     "TitanTakeoffEmbed",
     "VertexAIEmbeddings",
     "VolcanoEmbeddings",
@@ -384,6 +388,7 @@ _module_lookup = {
     "VolcanoEmbeddings": "langchain_community.embeddings.volcengine",
     "VoyageEmbeddings": "langchain_community.embeddings.voyageai",
     "XinferenceEmbeddings": "langchain_community.embeddings.xinference",
+    "TextEmbedEmbeddings": "langchain_community.embeddings.textembed",
     "TitanTakeoffEmbed": "langchain_community.embeddings.titan_takeoff",
     "PremAIEmbeddings": "langchain_community.embeddings.premai",
     "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
