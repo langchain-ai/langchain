@@ -2,8 +2,8 @@ import os
 from typing import Dict, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from mixedbread_ai.client import AsyncMixedbreadAI, MixedbreadAI
-from mixedbread_ai.core import RequestOptions
+from mixedbread_ai.client import AsyncMixedbreadAI, MixedbreadAI  # type: ignore
+from mixedbread_ai.core import RequestOptions  # type: ignore
 
 
 class MixedBreadAIClient(BaseModel):
