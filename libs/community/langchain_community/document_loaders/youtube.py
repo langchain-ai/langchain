@@ -180,11 +180,30 @@ class YoutubeLoader(BaseLoader):
           value of `float("inf")` and `LINES` using a `chunk_size_seconds` value of `0`.
         :param chunk_size_seconds: The maximum length of each chunk in seconds.
         """
+
+        self.video_id = str(video_id).strip()
+        if len(self.video_id) == 0:
+            raise ValueError("Video ID cannot be empty.")
+
+        self._metadata = {"source": self.video_id}
+        self.add_video_info = bool(add_video_info)
+
+        self.language = (
+            language
+            if isinstance(language, collections.abc.MutableSequence)
+            else [str(language).strip()]
+        )
+
+        self.translation = None if translation is None else str(translation).strip()
+
+        if transcript_format == TranscriptFormat.TEXT:
+            self.chunk_size_seconds = float("inf")
+        elif transcript_format == TranscriptFormat.LINES:
+            self.chunk_size_seconds = 0.0
+        elif transcript_format == TranscriptFormat.CHUNKS:
+            self.chunk_size_seconds = float(chunk_size_seconds)
         else:
-            self.language = language
-        self.translation = translation
-        self.transcript_format = transcript_format
-        self.chunk_size_seconds = chunk_size_seconds
+            raise ValueError("Unknown transcript format.")
 
     @staticmethod
     def extract_video_id(youtube_url: str) -> str:
