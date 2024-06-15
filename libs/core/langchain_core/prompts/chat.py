@@ -8,6 +8,7 @@ from typing import (
     Any,
     Dict,
     List,
+    Literal,
     Optional,
     Sequence,
     Set,
@@ -406,6 +407,8 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         cls: Type[_StringImageMessagePromptTemplateT],
         template: Union[str, List[Union[str, _TextTemplateParam, _ImageTemplateParam]]],
         template_format: str = "f-string",
+        *,
+        partial_variables: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> _StringImageMessagePromptTemplateT:
         """Create a class from a string template.
@@ -413,6 +416,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         Args:
             template: a template.
             template_format: format of the template.
+            partial_variables: A dictionary of variables that can be used too partially.
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:
@@ -420,17 +424,23 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         """
         if isinstance(template, str):
             prompt: Union[StringPromptTemplate, List] = PromptTemplate.from_template(
-                template, template_format=template_format
+                template,
+                template_format=template_format,
+                partial_variables=partial_variables,
             )
             return cls(prompt=prompt, **kwargs)
         elif isinstance(template, list):
+            if (partial_variables is not None) and len(partial_variables) > 0:
+                raise ValueError(
+                    "Partial variables are not supported for list of templates."
+                )
             prompt = []
             for tmpl in template:
                 if isinstance(tmpl, str) or isinstance(tmpl, dict) and "text" in tmpl:
                     if isinstance(tmpl, str):
                         text: str = tmpl
                     else:
-                        text = cast(_TextTemplateParam, tmpl)["text"]  # type: ignore[assignment]  # noqa: E501
+                        text = cast(_TextTemplateParam, tmpl)["text"]  # type: ignore[assignment]
                     prompt.append(
                         PromptTemplate.from_template(
                             text, template_format=template_format
@@ -929,6 +939,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     def from_messages(
         cls,
         messages: Sequence[MessageLikeRepresentation],
+        template_format: Literal["f-string", "mustache"] = "f-string",
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
 
@@ -964,7 +975,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Returns:
             a chat prompt template
         """
-        _messages = [_convert_to_message(message) for message in messages]
+        _messages = [
+            _convert_to_message(message, template_format) for message in messages
+        ]
 
         # Automatically infer input variables from messages
         input_vars: Set[str] = set()
@@ -1121,7 +1134,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
 
 def _create_template_from_message_type(
-    message_type: str, template: Union[str, list]
+    message_type: str,
+    template: Union[str, list],
+    template_format: Literal["f-string", "mustache"] = "f-string",
 ) -> BaseMessagePromptTemplate:
     """Create a message prompt template from a message type and template string.
 
@@ -1134,12 +1149,16 @@ def _create_template_from_message_type(
     """
     if message_type in ("human", "user"):
         message: BaseMessagePromptTemplate = HumanMessagePromptTemplate.from_template(
-            template
+            template, template_format=template_format
         )
     elif message_type in ("ai", "assistant"):
-        message = AIMessagePromptTemplate.from_template(cast(str, template))
+        message = AIMessagePromptTemplate.from_template(
+            cast(str, template), template_format=template_format
+        )
     elif message_type == "system":
-        message = SystemMessagePromptTemplate.from_template(cast(str, template))
+        message = SystemMessagePromptTemplate.from_template(
+            cast(str, template), template_format=template_format
+        )
     elif message_type == "placeholder":
         if isinstance(template, str):
             if template[0] != "{" or template[-1] != "}":
@@ -1180,6 +1199,7 @@ def _create_template_from_message_type(
 
 def _convert_to_message(
     message: MessageLikeRepresentation,
+    template_format: Literal["f-string", "mustache"] = "f-string",
 ) -> Union[BaseMessage, BaseMessagePromptTemplate, BaseChatPromptTemplate]:
     """Instantiate a message from a variety of message formats.
 
@@ -1204,16 +1224,22 @@ def _convert_to_message(
     elif isinstance(message, BaseMessage):
         _message = message
     elif isinstance(message, str):
-        _message = _create_template_from_message_type("human", message)
+        _message = _create_template_from_message_type(
+            "human", message, template_format=template_format
+        )
     elif isinstance(message, tuple):
         if len(message) != 2:
             raise ValueError(f"Expected 2-tuple of (role, template), got {message}")
         message_type_str, template = message
         if isinstance(message_type_str, str):
-            _message = _create_template_from_message_type(message_type_str, template)
+            _message = _create_template_from_message_type(
+                message_type_str, template, template_format=template_format
+            )
         else:
             _message = message_type_str(
-                prompt=PromptTemplate.from_template(cast(str, template))
+                prompt=PromptTemplate.from_template(
+                    cast(str, template), template_format=template_format
+                )
             )
     else:
         raise NotImplementedError(f"Unsupported message type: {type(message)}")

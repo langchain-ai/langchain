@@ -24,6 +24,9 @@ def create_react_agent(
 ) -> Runnable:
     """Create an agent that uses ReAct prompting.
 
+    Based on paper "ReAct: Synergizing Reasoning and Acting in Language Models"
+    (https://arxiv.org/abs/2210.03629)
+
     Args:
         llm: LLM to use as the agent.
         tools: Tools this agent has access to.
@@ -108,7 +111,7 @@ def create_react_agent(
             prompt = PromptTemplate.from_template(template)
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
-        prompt.input_variables
+        prompt.input_variables + list(prompt.partial_variables)
     )
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")

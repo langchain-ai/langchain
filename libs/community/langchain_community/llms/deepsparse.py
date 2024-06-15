@@ -92,7 +92,7 @@ class DeepSparse(LLM):
             .. code-block:: python
                 from langchain_community.llms import DeepSparse
                 llm = DeepSparse(model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base_quant-none")
-                llm("Tell me a joke.")
+                llm.invoke("Tell me a joke.")
         """
         if self.streaming:
             combined_output = ""
@@ -130,7 +130,7 @@ class DeepSparse(LLM):
             .. code-block:: python
                 from langchain_community.llms import DeepSparse
                 llm = DeepSparse(model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base_quant-none")
-                llm("Tell me a joke.")
+                llm.invoke("Tell me a joke.")
         """
         if self.streaming:
             combined_output = ""

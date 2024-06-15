@@ -1,7 +1,7 @@
 """Test OpenAI Chat API wrapper."""
 
 import json
-from typing import Any
+from typing import Any, List, Type, Union
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -14,11 +14,13 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
+    _format_message_content,
 )
 
 
@@ -104,7 +106,7 @@ def test__convert_dict_to_message_tool_call() -> None:
     raw_tool_call = {
         "id": "call_wm0JY6CdwOMZ4eTxHWUThDNz",
         "function": {
-            "arguments": '{"name":"Sally","hair_color":"green"}',
+            "arguments": '{"name": "Sally", "hair_color": "green"}',
             "name": "GenerateUsername",
         },
         "type": "function",
@@ -126,7 +128,7 @@ def test__convert_dict_to_message_tool_call() -> None:
     assert _convert_message_to_dict(expected_output) == message
 
     # Test malformed tool call
-    raw_tool_calls = [
+    raw_tool_calls: list = [
         {
             "id": "call_wm0JY6CdwOMZ4eTxHWUThDNz",
             "function": {
@@ -138,12 +140,13 @@ def test__convert_dict_to_message_tool_call() -> None:
         {
             "id": "call_abc123",
             "function": {
-                "arguments": '{"name":"Sally","hair_color":"green"}',
+                "arguments": '{"name": "Sally", "hair_color": "green"}',
                 "name": "GenerateUsername",
             },
             "type": "function",
         },
     ]
+    raw_tool_calls = list(sorted(raw_tool_calls, key=lambda x: x["id"]))
     message = {"role": "assistant", "content": None, "tool_calls": raw_tool_calls}
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(
@@ -166,7 +169,11 @@ def test__convert_dict_to_message_tool_call() -> None:
         ],
     )
     assert result == expected_output
-    assert _convert_message_to_dict(expected_output) == message
+    reverted_message_dict = _convert_message_to_dict(expected_output)
+    reverted_message_dict["tool_calls"] = list(
+        sorted(reverted_message_dict["tool_calls"], key=lambda x: x["id"])
+    )
+    assert reverted_message_dict == message
 
 
 @pytest.fixture
@@ -274,3 +281,86 @@ def test_openai_invoke_name(mock_completion: dict) -> None:
         # check return type has name
         assert res.content == "Bar Baz"
         assert res.name == "Erick"
+
+
+def test_custom_token_counting() -> None:
+    def token_encoder(text: str) -> List[int]:
+        return [1, 2, 3]
+
+    llm = ChatOpenAI(custom_get_token_ids=token_encoder)
+    assert llm.get_token_ids("foo") == [1, 2, 3]
+
+
+def test_format_message_content() -> None:
+    content: Any = "hello"
+    assert content == _format_message_content(content)
+
+    content = None
+    assert content == _format_message_content(content)
+
+    content = []
+    assert content == _format_message_content(content)
+
+    content = [
+        {"type": "text", "text": "What is in this image?"},
+        {
+            "type": "image_url",
+            "image_url": {
+                "url": "url.com",
+            },
+        },
+    ]
+    assert content == _format_message_content(content)
+
+    content = [
+        {"type": "text", "text": "hello"},
+        {
+            "type": "tool_use",
+            "id": "toolu_01A09q90qw90lq917835lq9",
+            "name": "get_weather",
+            "input": {"location": "San Francisco, CA", "unit": "celsius"},
+        },
+    ]
+    assert [{"type": "text", "text": "hello"}] == _format_message_content(content)
+
+
+class GenerateUsername(BaseModel):
+    "Get a username based on someone's name and hair color."
+
+    name: str
+    hair_color: str
+
+
+class MakeASandwich(BaseModel):
+    "Make a sandwich given a list of ingredients."
+
+    bread_type: str
+    cheese_type: str
+    condiments: List[str]
+    vegetables: List[str]
+
+
+@pytest.mark.parametrize(
+    "tool_choice",
+    [
+        "any",
+        "none",
+        "auto",
+        "required",
+        "GenerateUsername",
+        {"type": "function", "function": {"name": "MakeASandwich"}},
+        False,
+        None,
+    ],
+)
+def test_bind_tools_tool_choice(tool_choice: Any) -> None:
+    """Test passing in manually construct tool call message."""
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm.bind_tools(tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice)
+
+
+@pytest.mark.parametrize("schema", [GenerateUsername, GenerateUsername.schema()])
+def test_with_structured_output(schema: Union[Type[BaseModel], dict]) -> None:
+    """Test passing in manually construct tool call message."""
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm.with_structured_output(schema)

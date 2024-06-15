@@ -10,6 +10,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
     HumanMessage,
     SystemMessage,
+    ToolCall,
     ToolMessage,
 )
 from langchain_core.outputs import (
@@ -41,7 +42,7 @@ def test_chat_openai() -> None:
         default_query=None,
     )
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -59,7 +60,7 @@ def test_chat_openai_system_message() -> None:
     chat = ChatOpenAI(max_tokens=10)
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
-    response = chat([system_message, human_message])
+    response = chat.invoke([system_message, human_message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -348,6 +349,29 @@ def test_stream() -> None:
     for chunk in llm.stream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.response_metadata.get("finish_reason") is not None
+
+    # check token usage
+    aggregate: Optional[BaseMessageChunk] = None
+    chunks_with_token_counts = 0
+    for chunk in llm.stream("Hello", stream_options={"include_usage": True}):
+        assert isinstance(chunk.content, str)
+        aggregate = chunk if aggregate is None else aggregate + chunk
+        assert isinstance(chunk, AIMessageChunk)
+        if chunk.usage_metadata is not None:
+            chunks_with_token_counts += 1
+    if chunks_with_token_counts != 1:
+        raise AssertionError(
+            "Expected exactly one chunk with token counts. "
+            "AIMessageChunk aggregation adds counts. Check that "
+            "this is behaving properly."
+        )
+    assert isinstance(aggregate, AIMessageChunk)
+    assert aggregate.usage_metadata is not None
+    assert aggregate.usage_metadata["input_tokens"] > 0
+    assert aggregate.usage_metadata["output_tokens"] > 0
+    assert aggregate.usage_metadata["total_tokens"] > 0
 
 
 async def test_astream() -> None:
@@ -358,6 +382,29 @@ async def test_astream() -> None:
     async for chunk in llm.astream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.response_metadata.get("finish_reason") is not None
+
+    # check token usage
+    aggregate: Optional[BaseMessageChunk] = None
+    chunks_with_token_counts = 0
+    async for chunk in llm.astream("Hello", stream_options={"include_usage": True}):
+        assert isinstance(chunk.content, str)
+        aggregate = chunk if aggregate is None else aggregate + chunk
+        assert isinstance(chunk, AIMessageChunk)
+        if chunk.usage_metadata is not None:
+            chunks_with_token_counts += 1
+    if chunks_with_token_counts != 1:
+        raise AssertionError(
+            "Expected exactly one chunk with token counts. "
+            "AIMessageChunk aggregation adds counts. Check that "
+            "this is behaving properly."
+        )
+    assert isinstance(aggregate, AIMessageChunk)
+    assert aggregate.usage_metadata is not None
+    assert aggregate.usage_metadata["input_tokens"] > 0
+    assert aggregate.usage_metadata["output_tokens"] > 0
+    assert aggregate.usage_metadata["total_tokens"] > 0
 
 
 async def test_abatch() -> None:
@@ -478,8 +525,17 @@ class GenerateUsername(BaseModel):
     hair_color: str
 
 
+class MakeASandwich(BaseModel):
+    "Make a sandwich given a list of ingredients."
+
+    bread_type: str
+    cheese_type: str
+    condiments: List[str]
+    vegetables: List[str]
+
+
 def test_tool_use() -> None:
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+    llm = ChatOpenAI(model="gpt-4-turbo", temperature=0)
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername], tool_choice=True)
     msgs: List = [HumanMessage("Sally has green hair, what would her username be?")]
     ai_msg = llm_with_tool.invoke(msgs)
@@ -489,6 +545,12 @@ def test_tool_use() -> None:
     assert len(ai_msg.tool_calls) == 1
     tool_call = ai_msg.tool_calls[0]
     assert "args" in tool_call
+
+    tool_msg = ToolMessage(
+        "sally_green_hair", tool_call_id=ai_msg.additional_kwargs["tool_calls"][0]["id"]
+    )
+    msgs.extend([ai_msg, tool_msg])
+    llm_with_tool.invoke(msgs)
 
     # Test streaming
     ai_messages = llm_with_tool.stream(msgs)
@@ -505,11 +567,70 @@ def test_tool_use() -> None:
     tool_call_chunk = gathered.tool_call_chunks[0]
     assert "args" in tool_call_chunk
 
-    tool_msg = ToolMessage(
-        "sally_green_hair", tool_call_id=ai_msg.additional_kwargs["tool_calls"][0]["id"]
+    streaming_tool_msg = ToolMessage(
+        "sally_green_hair",
+        tool_call_id=gathered.additional_kwargs["tool_calls"][0]["id"],
     )
-    msgs.extend([ai_msg, tool_msg])
+    msgs.extend([gathered, streaming_tool_msg])
     llm_with_tool.invoke(msgs)
+
+
+def test_manual_tool_call_msg() -> None:
+    """Test passing in manually construct tool call message."""
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    llm_with_tool = llm.bind_tools(tools=[GenerateUsername])
+    msgs: List = [
+        HumanMessage("Sally has green hair, what would her username be?"),
+        AIMessage(
+            content="",
+            tool_calls=[
+                ToolCall(
+                    name="GenerateUsername",
+                    args={"name": "Sally", "hair_color": "green"},
+                    id="foo",
+                )
+            ],
+        ),
+        ToolMessage("sally_green_hair", tool_call_id="foo"),
+    ]
+    output: AIMessage = cast(AIMessage, llm_with_tool.invoke(msgs))
+    assert output.content
+    # Should not have called the tool again.
+    assert not output.tool_calls and not output.invalid_tool_calls
+
+    # OpenAI should error when tool call id doesn't match across AIMessage and
+    # ToolMessage
+    msgs = [
+        HumanMessage("Sally has green hair, what would her username be?"),
+        AIMessage(
+            content="",
+            tool_calls=[
+                ToolCall(
+                    name="GenerateUsername",
+                    args={"name": "Sally", "hair_color": "green"},
+                    id="bar",
+                )
+            ],
+        ),
+        ToolMessage("sally_green_hair", tool_call_id="foo"),
+    ]
+    with pytest.raises(Exception):
+        llm_with_tool.invoke(msgs)
+
+
+def test_bind_tools_tool_choice() -> None:
+    """Test passing in manually construct tool call message."""
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    for tool_choice in ("any", "required"):
+        llm_with_tools = llm.bind_tools(
+            tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice
+        )
+        msg = cast(AIMessage, llm_with_tools.invoke("how are you"))
+        assert msg.tool_calls
+
+    llm_with_tools = llm.bind_tools(tools=[GenerateUsername, MakeASandwich])
+    msg = cast(AIMessage, llm_with_tools.invoke("how are you"))
+    assert not msg.tool_calls
 
 
 def test_openai_structured_output() -> None:

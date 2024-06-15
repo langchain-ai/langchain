@@ -12,14 +12,16 @@ from langchain_community.utilities.you import YouSearchAPIWrapper
 
 
 class YouInput(BaseModel):
+    """Input schema for the you.com tool."""
+
     query: str = Field(description="should be a search query")
 
 
 class YouSearchTool(BaseTool):
-    """Tool that searches the you.com API"""
+    """Tool that searches the you.com API."""
 
-    name = "you_search"
-    description = (
+    name: str = "you_search"
+    description: str = (
         "The YOU APIs make LLMs and search experiences more factual and"
         "up to date with realtime web data."
     )

@@ -13,3 +13,10 @@ class TestMistralStandard(ChatModelIntegrationTests):
     @pytest.fixture
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatMistralAI
+
+    @pytest.fixture
+    def chat_model_params(self) -> dict:
+        return {
+            "model": "mistral-large-latest",
+            "temperature": 0,
+        }

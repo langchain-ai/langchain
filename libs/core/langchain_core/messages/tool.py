@@ -67,7 +67,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
 
 
 class ToolCall(TypedDict):
-    """A call to a tool.
+    """Represents a request to call a tool.
 
     Attributes:
         name: (str) the name of the tool to be called
@@ -149,7 +149,7 @@ def default_tool_parser(
                         name=function_name,
                         args=tool_call["function"]["arguments"],
                         id=tool_call.get("id"),
-                        error="Malformed args.",
+                        error=None,
                     )
                 )
     return tool_calls, invalid_tool_calls

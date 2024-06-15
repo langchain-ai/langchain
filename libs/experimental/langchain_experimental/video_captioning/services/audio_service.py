@@ -2,10 +2,10 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.schema import Document
 from langchain_community.document_loaders import AssemblyAIAudioTranscriptLoader
 from langchain_community.document_loaders.assemblyai import TranscriptFormat
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
 
 from langchain_experimental.video_captioning.models import AudioModel, BaseModel
 

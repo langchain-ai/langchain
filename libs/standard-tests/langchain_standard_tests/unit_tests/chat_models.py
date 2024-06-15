@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Type
+from typing import List, Literal, Optional, Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError
 from langchain_core.tools import tool
 
 
@@ -32,13 +32,16 @@ class ChatModelUnitTests(ABC):
     def chat_model_has_tool_calling(
         self, chat_model_class: Type[BaseChatModel]
     ) -> bool:
-        return hasattr(chat_model_class, "bind_tools")
+        return chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
     @pytest.fixture
     def chat_model_has_structured_output(
         self, chat_model_class: Type[BaseChatModel]
     ) -> bool:
-        return hasattr(chat_model_class, "with_structured_output")
+        return (
+            chat_model_class.with_structured_output
+            is not BaseChatModel.with_structured_output
+        )
 
     def test_chat_model_init(
         self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
@@ -49,7 +52,8 @@ class ChatModelUnitTests(ABC):
     def test_chat_model_init_api_key(
         self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
     ) -> None:
-        model = chat_model_class(api_key="test", **chat_model_params)  # type: ignore
+        params = {**chat_model_params, "api_key": "test"}
+        model = chat_model_class(**params)  # type: ignore
         assert model is not None
 
     def test_chat_model_init_streaming(
@@ -85,3 +89,29 @@ class ChatModelUnitTests(ABC):
         model = chat_model_class(**chat_model_params)
         assert model is not None
         assert model.with_structured_output(Person) is not None
+
+    def test_standard_params(
+        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
+    ) -> None:
+        class ExpectedParams(BaseModel):
+            ls_provider: str
+            ls_model_name: str
+            ls_model_type: Literal["chat"]
+            ls_temperature: Optional[float]
+            ls_max_tokens: Optional[int]
+            ls_stop: Optional[List[str]]
+
+        model = chat_model_class(**chat_model_params)
+        ls_params = model._get_ls_params()
+        try:
+            ExpectedParams(**ls_params)
+        except ValidationError as e:
+            pytest.fail(f"Validation error: {e}")
+
+        # Test optional params
+        model = chat_model_class(max_tokens=10, stop=["test"], **chat_model_params)
+        ls_params = model._get_ls_params()
+        try:
+            ExpectedParams(**ls_params)
+        except ValidationError as e:
+            pytest.fail(f"Validation error: {e}")

@@ -262,12 +262,12 @@ def _create_api_controller_agent(
     get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
     post_llm_chain = LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
     tools: List[BaseTool] = [
-        RequestsGetToolWithParsing(
+        RequestsGetToolWithParsing(  # type: ignore[call-arg]
             requests_wrapper=requests_wrapper,
             llm_chain=get_llm_chain,
             allow_dangerous_requests=allow_dangerous_requests,
         ),
-        RequestsPostToolWithParsing(
+        RequestsPostToolWithParsing(  # type: ignore[call-arg]
             requests_wrapper=requests_wrapper,
             llm_chain=post_llm_chain,
             allow_dangerous_requests=allow_dangerous_requests,
@@ -348,7 +348,7 @@ def create_openapi_agent(
     allow_dangerous_requests: bool = False,
     **kwargs: Any,
 ) -> Any:
-    """Instantiate OpenAI API planner and controller for a given spec.
+    """Construct an OpenAI API planner and controller for a given spec.
 
     Inject credentials via requests_wrapper.
 

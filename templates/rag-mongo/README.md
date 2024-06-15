@@ -49,7 +49,7 @@ add_routes(app, rag_mongo_ingest, path="/rag-mongo-ingest")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 
@@ -95,7 +95,7 @@ We will first follow the standard MongoDB Atlas setup instructions [here](https:
 2. Create a new project (if not already done)
 3. Locate your MongoDB URI.
 
-This can be done by going to the deployement overview page and connecting to you database
+This can be done by going to the deployment overview page and connecting to you database
 
 ![Screenshot highlighting the 'Connect' button in MongoDB Atlas.](_images/connect.png "MongoDB Atlas Connect Button")
 

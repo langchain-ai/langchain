@@ -5,7 +5,7 @@ from langchain_openai import ChatOpenAI, OpenAI
 
 
 def test_loads_openai_llm() -> None:
-    llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello")
+    llm = OpenAI(model="davinci", temperature=0.5, openai_api_key="hello", top_p=0.8)
     llm_string = dumps(llm)
     llm2 = loads(llm_string, secrets_map={"OPENAI_API_KEY": "hello"})
 

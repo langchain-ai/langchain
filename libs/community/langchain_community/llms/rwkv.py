@@ -25,7 +25,7 @@ class RWKV(LLM, BaseModel):
             model = RWKV(model="./models/rwkv-3b-fp16.bin", strategy="cpu fp32")
 
             # Simplest invocation
-            response = model("Once upon a time, ")
+            response = model.invoke("Once upon a time, ")
     """
 
     model: str
@@ -225,7 +225,7 @@ class RWKV(LLM, BaseModel):
             .. code-block:: python
 
                 prompt = "Once upon a time, "
-                response = model(prompt, n_predict=55)
+                response = model.invoke(prompt, n_predict=55)
         """
         text = self.rwkv_generate(prompt)
 
