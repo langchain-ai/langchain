@@ -1,6 +1,7 @@
 """Loads YouTube transcript."""
 from __future__ import annotations
 
+import collections.abc
 import logging
 from enum import Enum, auto
 from pathlib import Path
