@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from langchain_zenguard import Detector, ZenGuardTool
+from langchain_community.tools.zenguard.tools import Detector, ZenGuardTool
 
 
 @pytest.fixture()
