@@ -1,10 +1,6 @@
 from langchain_mixedbreadai import __all__
 
-EXPECTED_ALL = [
-    "MixedbreadAIEmbeddings",
-    "MixedbreadAIRerank",
-    "__version__"
-]
+EXPECTED_ALL = ["MixedbreadAIEmbeddings", "MixedbreadAIRerank", "__version__"]
 
 
 def test_all_imports() -> None:

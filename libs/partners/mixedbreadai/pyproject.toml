@@ -86,5 +86,6 @@ addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5
 # https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
   "compile: mark placeholder test used to compile integration tests without running them",
+  "vcr: marker for VCR tests"
 ]
 asyncio_mode = "auto"
