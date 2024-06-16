@@ -495,6 +495,7 @@ class BaseChatOpenAI(BaseChatModel):
                                 content="", usage_metadata=usage_metadata
                             )
                         )
+                        logprobs = None
                     else:
                         continue
                 else:
@@ -614,6 +615,7 @@ class BaseChatOpenAI(BaseChatModel):
                                 content="", usage_metadata=usage_metadata
                             )
                         )
+                        logprobs = None
                     else:
                         continue
                 else:
