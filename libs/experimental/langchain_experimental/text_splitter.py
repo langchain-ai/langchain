@@ -84,12 +84,14 @@ def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List
     return distances, sentences
 
 
-BreakpointThresholdType = Literal["percentile", "standard_deviation", "interquartile", "gradient"]
+BreakpointThresholdType = Literal[
+    "percentile", "standard_deviation", "interquartile", "gradient"
+]
 BREAKPOINT_DEFAULTS: Dict[BreakpointThresholdType, float] = {
     "percentile": 95,
     "standard_deviation": 3,
     "interquartile": 1.5,
-    "gradient": 95
+    "gradient": 95,
 }
 
 
@@ -128,7 +130,9 @@ class SemanticChunker(BaseDocumentTransformer):
         else:
             self.breakpoint_threshold_amount = breakpoint_threshold_amount
 
-    def _calculate_breakpoint_threshold(self, distances: List[float]) -> Tuple[float, List[float]]:
+    def _calculate_breakpoint_threshold(
+        self, distances: List[float]
+    ) -> Tuple[float, List[float]]:
         if self.breakpoint_threshold_type == "percentile":
             return cast(
                 float,
@@ -144,7 +148,9 @@ class SemanticChunker(BaseDocumentTransformer):
             q1, q3 = np.percentile(distances, [25, 75])
             iqr = q3 - q1
 
-            return np.mean(distances) + self.breakpoint_threshold_amount * iqr, distances
+            return np.mean(
+                distances
+            ) + self.breakpoint_threshold_amount * iqr, distances
         elif self.breakpoint_threshold_type == "gradient":
             # Calculate the threshold based on the distribution of gradient of distance array.
             distance_gradient = np.gradient(distances, range(0, len(distances)))
@@ -211,12 +217,15 @@ class SemanticChunker(BaseDocumentTransformer):
             breakpoint_distance_threshold = self._threshold_from_clusters(distances)
             breakpoint_array = distances
         else:
-            breakpoint_distance_threshold, breakpoint_array = self._calculate_breakpoint_threshold(
-                distances
-            )
+            (
+                breakpoint_distance_threshold,
+                breakpoint_array,
+            ) = self._calculate_breakpoint_threshold(distances)
 
         indices_above_thresh = [
-            i for i, x in enumerate(breakpoint_array) if x > breakpoint_distance_threshold
+            i
+            for i, x in enumerate(breakpoint_array)
+            if x > breakpoint_distance_threshold
         ]
 
         chunks = []
