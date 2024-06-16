@@ -62,7 +62,7 @@ class ConversationTokenBufferVectorStoreMemory(ConversationTokenBufferMemory):
 
     Example using ChromaDB:
     
-    code-block:: python
+    .. code-block:: python
 
         from langchain.memory.token_buffer_vectorstore_memory import (
                 ConversationTokenBufferVectorStoreMemory
@@ -79,30 +79,29 @@ class ConversationTokenBufferVectorStoreMemory(ConversationTokenBufferMemory):
                         collection_metadata={"hnsw:space": "cosine"},
                         )
 
-         retriever = chroma.as_retriever(
+        retriever = chroma.as_retriever(
                 search_type="similarity_score_threshold",
                 search_kwargs={
                     'k': 5,
                     'score_threshold': 0.75,
                 },
-         )
+        )
 
-         conversation_memory = ConversationTokenBufferVectorStoreMemory(
+        conversation_memory = ConversationTokenBufferVectorStoreMemory(
                 return_messages=True,
                 llm=OpenAI(),
                 retriever=retriever,
                 max_token_limit = 1000,
-         )
+        )
 
-         conversation_memory.save_context({"Human": "Hi there"},
+        conversation_memory.save_context({"Human": "Hi there"},
                                           {"AI": "Nice to meet you!"}
-         )
-         conversation_memory.save_context({"Human": "Nice day isn't it?"},
+        )
+        conversation_memory.save_context({"Human": "Nice day isn't it?"},
                                           {"AI": "I love Wednesdays."}
-         )
-         conversation_memory.load_memory_variables({"input": "What time is it?"})
+        )
+        conversation_memory.load_memory_variables({"input": "What time is it?"})
 
-    ::endcode-block
     """
 
     retriever: VectorStoreRetriever = Field(exclude=True)
