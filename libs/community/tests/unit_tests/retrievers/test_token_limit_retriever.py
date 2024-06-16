@@ -54,33 +54,42 @@ def toy_retriever():
 
     yield ToyRetriever(k = 4)
 
-
-
 @pytest.mark.requires("tiktoken")
-def test_tiktoken(toy_retriever):
-    test_retriever_to_be_wrapped = toy_retriever
-    import tiktoken
-    def tokenize(text):
+@pytest.fixture(scope="module")
+def get_tokenize_tiktoken():
+    def tokenize_tiktoken(text):
+        import tiktoken
         enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
         tokens = enc.encode(text)
         return tokens
+    yield tokenize_tiktoken
 
-    def decode_token_upto(text: str, n_token_left: int):
+
+@pytest.mark.requires("tiktoken")
+@pytest.fixture(scope="module")
+def get_decode_tiktoken_upto():
+    def decode_tiktoken_upto(text: str, n_token_left: int):
+        import tiktoken
         enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
         return enc.decode(enc.encode(text)[:n_token_left])
-    simple_token_limit_chain =TokenLimitRetriver(token_limit=20, remaining_token_fillup_callback=decode_token_upto,
-                       tokeniser_callback=tokenize, retriever=test_retriever_to_be_wrapped,
+    yield decode_tiktoken_upto
+@pytest.mark.requires("tiktoken")
+def test_tiktoken_partial(toy_retriever, get_tokenize_tiktoken, get_decode_tiktoken_upto):
+    test_retriever_to_be_wrapped = toy_retriever
+    simple_token_limit_chain =TokenLimitRetriver(token_limit=20, remaining_token_fillup_callback=get_decode_tiktoken_upto,
+                       tokeniser_callback=get_tokenize_tiktoken, retriever=test_retriever_to_be_wrapped,
                        token_cutoff_strategy = 'partial_document'
                        )
     res = simple_token_limit_chain.invoke('a')
     assert(len(res) == 4)
-    for i in res:
-        print(len(tokenize(i.page_content)))
-        from pydantic.v1.error_wrappers import ValidationError
+
+def test_tiktoken_complete_parameter_error(toy_retriever, get_tokenize_tiktoken, get_decode_tiktoken_upto):
+    from pydantic.v1.error_wrappers import ValidationError
+    test_retriever_to_be_wrapped = toy_retriever
     # test for invalid optoins
     try:
-        simple_token_limit_chain =TokenLimitRetriver(token_limit=20, remaining_token_fillup_callback=decode_token_upto,
-                        tokeniser_callback=tokenize, retriever=test_retriever_to_be_wrapped,
+        simple_token_limit_chain =TokenLimitRetriver(token_limit=20, remaining_token_fillup_callback=get_decode_tiktoken_upto,
+                        tokeniser_callback=get_tokenize_tiktoken, retriever=test_retriever_to_be_wrapped,
                         token_cutoff_strategy = 'complete_document'
                         )
     
@@ -88,9 +97,11 @@ def test_tiktoken(toy_retriever):
         res = simple_token_limit_chain.invoke('a')
     except ValidationError:
         pass
+def test_tiktoken_complete_parameter_correct(toy_retriever, get_tokenize_tiktoken):
+    test_retriever_to_be_wrapped = toy_retriever
     # test for complete document options
     simple_token_limit_chain =TokenLimitRetriver(token_limit=20,
-                       tokeniser_callback=tokenize, retriever=test_retriever_to_be_wrapped,
+                       tokeniser_callback=get_tokenize_tiktoken, retriever=test_retriever_to_be_wrapped,
                        token_cutoff_strategy = 'complete_document'
                        )
     res = simple_token_limit_chain.invoke('a')
@@ -123,3 +134,9 @@ def test_no_dependency(toy_retriever):
     assert(len(res) == 4)
     res = asyncio.run(simple_token_limit_chain.ainvoke('a'))
     assert(len(res) == 4)
+
+def run_tests():
+    pytest.main([__file__])
+
+if __name__ == "__main__":
+    run_tests()
