@@ -10,11 +10,12 @@ from langchain.schema.retriever import BaseRetriever
 
 __all__ = ["TokenLimitRetriver"]
 
+
 class TokenLimitRetrieverMixin(BaseModel):
     token_limit: int
     token_cutoff_strategy: str
     remaining_token_fillup_callback: Optional[Callable[[str, int], str]] = None
-    # remaining_token_fillup_callback is a callback that take the final document 
+    # remaining_token_fillup_callback is a callback that take the final document
     # and number of token remaining
     tokeniser_callback: Callable
     retriever: BaseRetriever
@@ -25,9 +26,9 @@ class TokenLimitRetrieverMixin(BaseModel):
             values["token_cutoff_strategy"] == "complete_document"
         ), (
             'cannot set token_cutoff_strategy to be "complete_document" '
-            'and set cufoff function at the same time'
-            + f"{values['token_cutoff_strategy']} and "+
-            f"{values['remaining_token_fillup_callback']}"
+            "and set cufoff function at the same time"
+            + f"{values['token_cutoff_strategy']} and "
+            + f"{values['remaining_token_fillup_callback']}"
         )
         assert values["token_cutoff_strategy"] in [
             "complete_document",
@@ -41,20 +42,20 @@ class TokenLimitRetriver(BaseRetriever, TokenLimitRetrieverMixin):
     Wrap another retriever and limit the token.
     tokenizer callback is require to count the token
 
-    remaining_token_fillup_callback is called when there are token 
-    quote left for part of the final document. A new document containing 
+    remaining_token_fillup_callback is called when there are token
+    quote left for part of the final document. A new document containing
     partial of the final document will be appended to end of
     the retrieved list of documents.
 
 
     Args:
         token_limit (int): The maximum number of tokens that must not exceed
-        token_cutoff_strategy (Literal['complete_doccument', 'partial_document']):  
+        token_cutoff_strategy (Literal['complete_doccument', 'partial_document']):
         specify strategy to cutoff,whether whole document or part of the final document
         retriever (RetrieverLike): retriever to be wrapped
-        remaining_token_fillup_callback (Optional[Callable[[str,int], str]]): 
+        remaining_token_fillup_callback (Optional[Callable[[str,int], str]]):
         A callable to chops the final document if the final document exceeds token count
-        tokeniser_callback (Callable): A callable that calculate the 
+        tokeniser_callback (Callable): A callable that calculate the
         number of tokens in a document
 
     Example:

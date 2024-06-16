@@ -13,7 +13,7 @@ from langchain_community.retrievers.token_limit_retriever import TokenLimitRetri
 @pytest.fixture(scope="module")
 def toy_retriever():
     class ToyRetriever(BaseRetriever):
-        """A toy retriever that contains the top k documents 
+        """A toy retriever that contains the top k documents
         that contain the user query.
 
         This retriever only implements the sync method _get_relevant_documents.
