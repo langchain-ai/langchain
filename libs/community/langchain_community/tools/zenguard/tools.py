@@ -16,6 +16,7 @@ class Detector(str, Enum):
     SECRETS = "secrets"
     TOXICITY = "toxicity"
 
+
 class DetectorAPI(str, Enum):
     ALLOWED_TOPICS = "v1/detect/topics/allowed"
     BANNED_TOPICS = "v1/detect/topics/banned"
@@ -24,6 +25,7 @@ class DetectorAPI(str, Enum):
     PII = "v1/detect/pii"
     SECRETS = "v1/detect/secrets"
     TOXICITY = "v1/detect/toxicity"
+
 
 class ZenGuardInput(BaseModel):
     prompts: List[str] = Field(
@@ -42,9 +44,10 @@ class ZenGuardInput(BaseModel):
         description="Run prompt detection by the detector in parallel or sequentially",
     )
 
+
 class ZenGuardTool(BaseTool):
-    name = "ZenGuard"
-    description = (
+    name: str = "ZenGuard"
+    description: str = (
         "ZenGuard AI integration package. ZenGuard AI - the fastest GenAI guardrails."
     )
     args_schema = ZenGuardInput
@@ -56,7 +59,7 @@ class ZenGuardTool(BaseTool):
     _ZENGUARD_API_KEY_ENV_NAME = "ZENGUARD_API_KEY"
 
     @validator("zenguard_api_key", pre=True, always=True, check_fields=False)
-    def set_api_key(cls, v):
+    def set_api_key(cls, v: str) -> str:
         if v is None:
             v = os.getenv(cls._ZENGUARD_API_KEY_ENV_NAME)
         if v is None:
@@ -66,16 +69,16 @@ class ZenGuardTool(BaseTool):
                 f"the f{cls._ZENGUARD_API_KEY_ENV_NAME} environment variable"
             )
         return v
-        
+
     def _run(
-            self,
-            prompts: List[str],
-            detectors: List[Detector],
-            in_parallel: bool = True,
+        self,
+        prompts: List[str],
+        detectors: List[Detector],
+        in_parallel: bool = True,
     ) -> Dict[str, Any]:
         try:
             postfix = None
-            json = None
+            json: Optional[Dict[str, Any]] = None
             if len(detectors) == 1:
                 postfix = self._convert_detector_to_api(detectors[0])
                 json = {"messages": prompts}
@@ -96,6 +99,6 @@ class ZenGuardTool(BaseTool):
             return response.json()
         except (requests.HTTPError, requests.Timeout) as e:
             return {"error": str(e)}
-        
-    def _convert_detector_to_api(self, detector: Detector):
+
+    def _convert_detector_to_api(self, detector: Detector) -> str:
         return DetectorAPI[detector.name].value
