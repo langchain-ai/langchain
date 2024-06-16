@@ -351,7 +351,7 @@ def test_stream() -> None:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.response_metadata.get("finish_reason") is not None
-    assert full.response_metadata.get("model") is not None
+    assert full.response_metadata.get("model_name") is not None
 
     # check token usage
     aggregate: Optional[BaseMessageChunk] = None
@@ -388,7 +388,7 @@ async def test_astream() -> None:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.response_metadata.get("finish_reason") is not None
-    assert full.response_metadata.get("model") is not None
+    assert full.response_metadata.get("model_name") is not None
 
     # check token usage
     aggregate: Optional[BaseMessageChunk] = None
@@ -450,6 +450,7 @@ async def test_ainvoke() -> None:
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
+    assert result.response_metadata.get("model_name") is not None
 
 
 def test_invoke() -> None:
@@ -458,6 +459,7 @@ def test_invoke() -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+    assert result.response_metadata.get("model_name") is not None
 
 
 def test_response_metadata() -> None:

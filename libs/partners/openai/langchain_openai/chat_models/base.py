@@ -507,9 +507,10 @@ class BaseChatOpenAI(BaseChatModel):
                     generation_info = {}
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
-                        for key in ["model", "system_fingerprint"]:
-                            if value := chunk.get(key):
-                                generation_info[key] = value
+                        if model_name := chunk.get("model"):
+                            generation_info["model_name"] = model_name
+                        if system_fingerprint := chunk.get("system_fingerprint"):
+                            generation_info["system_fingerprint"] = system_fingerprint
 
                     logprobs = choice.get("logprobs")
                     if logprobs:
@@ -630,9 +631,10 @@ class BaseChatOpenAI(BaseChatModel):
                     generation_info = {}
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
-                        for key in ["model", "system_fingerprint"]:
-                            if value := chunk.get(key):
-                                generation_info[key] = value
+                        if model_name := chunk.get("model"):
+                            generation_info["model_name"] = model_name
+                        if system_fingerprint := chunk.get("system_fingerprint"):
+                            generation_info["system_fingerprint"] = system_fingerprint
 
                     logprobs = choice.get("logprobs")
                     if logprobs:
