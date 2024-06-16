@@ -261,6 +261,9 @@ def _create_api_controller_agent(
 
     get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
     post_llm_chain = LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
+    put_llm_chain = LLMChain(llm=llm, prompt=PARSING_PUT_PROMPT)
+    delete_llm_chain = LLMChain(llm=llm, prompt=PARSING_DELETE_PROMPT)
+    patch_llm_chain = LLMChain(llm=llm, prompt=PARSING_PATCH_PROMPT)
     tools: List[BaseTool] = [
         RequestsGetToolWithParsing(  # type: ignore[call-arg]
             requests_wrapper=requests_wrapper,
@@ -273,6 +276,24 @@ def _create_api_controller_agent(
             allow_dangerous_requests=allow_dangerous_requests,
         ),
     ]
+    if allow_dangerous_requests:
+        tools.extend([
+            RequestsPutToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=put_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            ),
+            RequestsDeleteToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=delete_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            ),
+            RequestsPatchToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=patch_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            ),
+        ])
     prompt = PromptTemplate(
         template=API_CONTROLLER_PROMPT,
         input_variables=["input", "agent_scratchpad"],
@@ -308,7 +329,7 @@ def _create_api_controller_tool(
     base_url = api_spec.servers[0]["url"]  # TODO: do better.
 
     def _create_and_run_api_controller_agent(plan_str: str) -> str:
-        pattern = r"\b(GET|POST|PATCH|DELETE)\s+(/\S+)*"
+        pattern = r"\b(GET|POST|PATCH|DELETE|PUT)\s+(/\S+)*"
         matches = re.findall(pattern, plan_str)
         endpoint_names = [
             "{method} {route}".format(method=method, route=route.split("?")[0])
