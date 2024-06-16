@@ -170,6 +170,7 @@ def test_openai_streaming(llm: AzureChatOpenAI) -> None:
     for chunk in llm.stream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
+    assert full.response_metadata.get("model_name") is not None
 
 
 @pytest.mark.scheduled
@@ -180,6 +181,7 @@ async def test_openai_astream(llm: AzureChatOpenAI) -> None:
     async for chunk in llm.astream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
+    assert full.response_metadata.get("model_name") is not None
 
 
 @pytest.mark.scheduled
@@ -217,6 +219,7 @@ async def test_openai_ainvoke(llm: AzureChatOpenAI) -> None:
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
+    assert result.response_metadata.get("model_name") is not None
 
 
 @pytest.mark.scheduled
@@ -225,6 +228,7 @@ def test_openai_invoke(llm: AzureChatOpenAI) -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+    assert result.response_metadata.get("model_name") is not None
 
 
 @pytest.mark.skip(reason="Need tool calling model deployed on azure")
