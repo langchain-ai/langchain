@@ -98,6 +98,7 @@ CHAT_MODEL_FEAT_TABLE = {
     },
     "ChatOllama": {
         "local": True,
+        "json_mode": True,
         "package": "langchain-community",
         "link": "/docs/integrations/chat/ollama/",
     },
@@ -111,6 +112,13 @@ CHAT_MODEL_FEAT_TABLE = {
         "structured_output": True,
         "package": "langchain-community",
         "link": "/docs/integrations/chat/edenai/",
+    },
+    "ChatLlamaCpp": {
+        "tool_calling": True,
+        "structured_output": True,
+        "local": True,
+        "package": "langchain-community",
+        "link": "/docs/integrations/chat/llamacpp",
     },
 }
 
