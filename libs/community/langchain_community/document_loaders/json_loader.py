@@ -10,14 +10,6 @@ from langchain_community.document_loaders.base import BaseLoader
 class JSONLoader(BaseLoader):
     """
     Load a `JSON` file using a `jq` schema.
-
-    Example:
-        [{"text": ...}, {"text": ...}, {"text": ...}] -> jq_schema = .[].text
-        {"key": [{"text": ...}, {"text": ...}, {"text": ...}]} -> jq_schema =
-        .key[].text
-        ["", "", ""] -> jq_schema = .[]
-        The following example will use a sample quiz JSON file. 
-
     
     Setup:
         .. code-block:: bash
@@ -63,7 +55,7 @@ class JSONLoader(BaseLoader):
 
             {"sport": {"q1": {"question": "Which one is correct team name in
             NBA?", "options": ["New York Bulls"
-            {'source': '/sample_quiz
+            {'source': '/sample_quizg
             .json', 'seq_num': 1}
 
     Lazy load:
