@@ -16,6 +16,7 @@ from typing import (
     Literal,
     Optional,
     Sequence,
+    Tuple,
     Type,
     Union,
     cast,
@@ -42,6 +43,7 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
+    RemoveMessage,
     convert_to_messages,
     message_chunk_to_message,
 )
@@ -119,6 +121,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Callback manager to add to the run trace."""
+
+    exceptions_to_handle: Tuple[Type[BaseException], ...] = ()
+    """The exceptions on which the model will stream a special modifier message `RemoveMessage`.
+
+    Any exception that is not a subclass of these exceptions will be raised immediately.
+    """
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -241,6 +249,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 batch_size=1,
             )
             generation: Optional[ChatGenerationChunk] = None
+            seen_chunk_ids = []
+            last_chunk_id = None
             try:
                 for chunk in self._stream(messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
@@ -255,6 +265,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     else:
                         generation += chunk
                 assert generation is not None
+            except self.exceptions_to_handle:
+                if chunk.message.id != last_chunk_id:
+                    seen_chunk_ids.append(chunk.message.id)
+                    last_chunk_id = chunk.message.id
+
+                for chunk_id in seen_chunk_ids:
+                    yield RemoveMessage(id=chunk_id)
             except BaseException as e:
                 run_manager.on_llm_error(
                     e,
