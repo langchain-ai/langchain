@@ -10,7 +10,7 @@ from langchain_community.tools.zenguard.tools import Detector, ZenGuardTool
 def zenguard_tool() -> ZenGuardTool:
     zenguard_api_key = os.getenv("ZENGUARD_API_KEY")
     if zenguard_api_key is None:
-        zenguard_api_key = "3Ev_DGvELv7EnlgWMTlpmWTo82tpstyz4Li_R7kTDQw"    
+        zenguard_api_key = "3Ev_DGvELv7EnlgWMTlpmWTo82tpstyz4Li_R7kTDQw"
     return ZenGuardTool(zenguard_api_key=zenguard_api_key)
 
 
