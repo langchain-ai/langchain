@@ -106,7 +106,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        model_with_tools = model.bind_tools([my_adder_tool], tool_choice="any")
+        model_with_tools = model.bind_tools([my_adder_tool])
         function_name = "my_adder_tool"
         function_args = {"a": "1", "b": "2"}
 
@@ -142,7 +142,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
-        model_with_tools = model.bind_tools([my_adder_tool], tool_choice="any")
+        model_with_tools = model.bind_tools([my_adder_tool])
         function_name = "my_adder_tool"
         function_args = {"a": 1, "b": 2}
 
