@@ -65,7 +65,7 @@ class MixedbreadAIRerank(MixedBreadAIClient, BaseDocumentCompressor):
             request_options=self._request_options,
         ).data
 
-        return [{"index": result.index, "score": result.score} for result in results]
+        return [result.dict() for result in results]
 
     async def arerank(
         self,
@@ -106,7 +106,7 @@ class MixedbreadAIRerank(MixedBreadAIClient, BaseDocumentCompressor):
             )
         ).data
 
-        return [{"index": result.index, "score": result.score} for result in results]
+        return [result.dict() for result in results]
 
     def compress_documents(
         self,
