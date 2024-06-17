@@ -1,7 +1,11 @@
 import json
 import sys
 import os
-from typing import Dict
+from typing import Dict, List, Set
+
+import tomllib
+from collections import defaultdict
+import glob
 
 LANGCHAIN_DIRS = [
     "libs/core",
@@ -10,6 +14,34 @@ LANGCHAIN_DIRS = [
     "libs/community",
     "libs/experimental",
 ]
+
+def dependents_graph() -> dict:
+    dependents = defaultdict(set)
+
+    for path in glob.glob("./libs/**/pyproject.toml", recursive=True):
+        if "template" in path:
+            continue
+        with open(path, "rb") as f:
+            pyproject = tomllib.load(f)['tool']['poetry']
+        pkg_dir = "libs" + "/".join(path.split("libs")[1].split("/")[:-1])
+        for dep in pyproject['dependencies']:
+            if "langchain" in dep:
+                dependents[dep].add(pkg_dir)
+    return dependents
+
+
+def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
+    updated = set()
+    for dir_ in dirs_to_eval:
+        # handle core manually because it has so many dependents
+        if "core" in dir_:
+            updated.add(dir_)
+            continue
+        pkg = "langchain-" + dir_.split("/")[-1]
+        updated.update(dependents[pkg])
+        updated.add(dir_)
+    return list(updated)
+
 
 if __name__ == "__main__":
     files = sys.argv[1:]
@@ -81,11 +113,13 @@ if __name__ == "__main__":
                 docs_edited = True
             dirs_to_run["lint"].add(".")
 
+    dependents = dependents_graph()
+
     outputs = {
-        "dirs-to-lint": list(
-            dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"]
+        "dirs-to-lint": add_dependents(
+            dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
         ),
-        "dirs-to-test": list(dirs_to_run["test"] | dirs_to_run["extended-test"]),
+        "dirs-to-test": add_dependents(dirs_to_run["test"] | dirs_to_run["extended-test"], dependents),
         "dirs-to-extended-test": list(dirs_to_run["extended-test"]),
         "docs-edited": "true" if docs_edited else "",
     }
