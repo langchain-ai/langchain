@@ -6,6 +6,7 @@ import sseclient
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
+from pydantic import Field
 
 SMART_ENDPOINT = "https://chat-api.you.com/smart"
 RESEARCH_ENDPOINT = "https://chat-api.you.com/research"
@@ -13,7 +14,7 @@ RESEARCH_ENDPOINT = "https://chat-api.you.com/research"
 
 def _request(base_url: str, api_key: str, **kwargs) -> Dict[str, Any]:
     """
-    This function can be replaced by a OpenAPI-generated Python SDK in the future,
+    NOTE: This function can be replaced by a OpenAPI-generated Python SDK in the future,
     for better input/output typing support.
     """
     headers = {"x-api-key": api_key}
@@ -43,10 +44,39 @@ def _request_stream(
 
 
 class You(LLM):
-    """# TODO: Class doc should include/describe You endpoints"""
+    """Wrapper around You.com's conversational Smart and Research APIs.
 
-    mode: Literal["smart", "research"] = "smart"
-    """# TODO: Describe the mode parameter"""
+    Each API endpoint is designed to generate conversational
+    responses to a variety of query types, including inline citations
+    and web results when relevant.
+
+    Smart Mode:
+    - Quick, reliable answers for a variety of questions
+    - Cites the entire web page URL
+
+    Research Mode:
+    - In-depth answers with extensive citations for a variety of questions
+    - Cites the specific web page snippet relevant to the claim
+
+    To connect to the You.com api requires an API key which
+    you can get at https://api.you.com.
+
+    For more information, check out the documentations at
+    https://documentation.you.com/api-reference/.
+
+    Args:
+        mode: You.com conversational endpoints. Choose from "smart" or "research"
+        api_key: You.com API key, if `YDC_API_KEY` is not set in the environment
+    """
+
+    mode: Literal["smart", "research"] = Field(
+        "smart",
+        description='You.com conversational endpoints. Choose from "smart" or "research"',
+    )
+    ydc_api_key: Optional[str] = Field(
+        None,
+        description="You.com API key, if `YDC_API_KEY` is not set in the envrioment",
+    )
 
     def _call(
         self,
