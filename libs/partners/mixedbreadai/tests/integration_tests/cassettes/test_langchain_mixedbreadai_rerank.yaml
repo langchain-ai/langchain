@@ -1,0 +1,49 @@
+interactions:
+- request:
+    body: '{"model": "mixedbread-ai/mxbai-rerank-large-v1", "query": "Moby-Dick",
+      "input": ["Mockingbird", "Moby-Dick"], "rank_fields": null, "top_k": 3, "return_input":
+      false}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '165'
+      content-type:
+      - application/json
+      host:
+      - api.mixedbread.ai
+      user-agent:
+      - python-httpx/0.27.0
+      x-fern-language:
+      - Python
+    method: POST
+    uri: https://api.mixedbread.ai/v1/reranking
+  response:
+    body:
+      string: '{"usage":{"prompt_tokens":16,"total_tokens":16},"model":"mixedbread-ai/mxbai-rerank-large-v1","data":[{"index":1,"score":0.5703125,"object":"text_document"},{"index":0,"score":0.0034313202,"object":"text_document"}],"object":"list","top_k":3,"return_input":false}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '263'
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 15 Jun 2024 13:49:15 GMT
+      server:
+      - uvicorn
+      trace-id:
+      - '00000000000000000000000000000000'
+      x-correlation-id:
+      - ac165d1d446d40f894b6d4ac4e3ff4a2
+      x-request-id:
+      - 32020238-4bac-489c-afe1-451ef5a38b38
+      - 32020238-4bac-489c-afe1-451ef5a38b38
+    status:
+      code: 200
+      message: OK
+version: 1

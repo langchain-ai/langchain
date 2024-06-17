@@ -1,8 +1,9 @@
 import logging
-from typing import List, Optional
+from typing import Any, Iterator, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field
+from langchain_core.utils.iter import batch_iterate
 from mixedbread_ai.types import EncodingFormat, TruncationStrategy  # type: ignore
 
 from .client import MixedBreadAIClient
@@ -40,7 +41,7 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
             print(doc_result)
     """
 
-    model: str = "mixedbread-ai/mxbai-embed-large-v1"
+    model: str = Field(default="mixedbread-ai/mxbai-embed-large-v1")
     """Model name to use."""
     encoding_format: EncodingFormat = Field(default=EncodingFormat.FLOAT)
     truncation_strategy: TruncationStrategy = Field(default=TruncationStrategy.START)
@@ -50,39 +51,64 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
     Only applicable for Matryoshka-based models"""
     prompt: Optional[str] = Field(default=None)
 
-    def embed(
-        self,
-        texts: List[str],
-    ) -> List[List[float]]:
-        embeddings = self._client.embeddings(
-            model=self.model,
-            input=texts,
-            encoding_format=self.encoding_format,
-            truncation_strategy=self.truncation_strategy,
-            normalized=self.normalized,
-            dimensions=self.dimensions,
-            prompt=self.prompt,
-            request_options=self._request_options,
-        ).data
-        return [item.embedding for item in embeddings]
+    batch_size: int = Field(default=255, description="Batch size for batch processing")
+    show_progress_bar: bool = Field(
+        default=False, description="Show progress of batch processing"
+    )
 
-    async def aembed(
+    def _batch_iterate(self, items: List[Any], desc: str) -> Iterator[List[Any]]:
+        batch_itr = batch_iterate(self.batch_size, items)
+        if self.show_progress_bar:
+            try:
+                from tqdm.auto import tqdm  # type: ignore
+            except ImportError as e:
+                raise ImportError(
+                    "Must have tqdm installed if `show_progress_bar` is set to True. "
+                    "Please install with `pip install tqdm`."
+                ) from e
+            batch_itr = tqdm(batch_itr, total=len(items), desc=desc)
+        return batch_itr
+
+    def _embed(
         self,
         texts: List[str],
     ) -> List[List[float]]:
-        embeddings = (
-            await self._aclient.embeddings(
+        result: List[List[float]] = []
+
+        for batch in self._batch_iterate(texts, desc="Embedding"):
+            embeddings = self._client.embeddings(
                 model=self.model,
-                input=texts,
+                input=batch,
                 encoding_format=self.encoding_format,
                 truncation_strategy=self.truncation_strategy,
                 normalized=self.normalized,
                 dimensions=self.dimensions,
                 prompt=self.prompt,
                 request_options=self._request_options,
-            )
-        ).data
-        return [item.embedding for item in embeddings]
+            ).data
+            result.extend([item.embedding for item in embeddings])
+        return result
+
+    async def _aembed(
+        self,
+        texts: List[str],
+    ) -> List[List[float]]:
+        result: List[List[float]] = []
+        for batch in self._batch_iterate(texts, desc="Async Embedding"):
+            embeddings = (
+                await self._aclient.embeddings(
+                    model=self.model,
+                    input=batch,
+                    encoding_format=self.encoding_format,
+                    truncation_strategy=self.truncation_strategy,
+                    normalized=self.normalized,
+                    dimensions=self.dimensions,
+                    prompt=self.prompt,
+                    request_options=self._request_options,
+                )
+            ).data
+            result.extend([item.embedding for item in embeddings])
+        return result
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed a list of document texts.
@@ -93,7 +119,7 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        return self.embed(texts)
+        return self._embed(texts)
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Async call out to Mixedbread AI's embedding endpoint.
@@ -104,7 +130,7 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        return await self.aembed(texts)
+        return await self._aembed(texts)
 
     def embed_query(self, text: str) -> List[float]:
         """Call out to Mixedbread AI's embedding endpoint.
@@ -115,7 +141,7 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        return self.embed([text])[0]
+        return self._embed([text])[0]
 
     async def aembed_query(self, text: str) -> List[float]:
         """Async call out to Mixedbread AI's embedding endpoint.
@@ -126,4 +152,4 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
         Returns:
             Embeddings for the text.
         """
-        return (await self.aembed([text]))[0]
+        return (await self._aembed([text]))[0]
