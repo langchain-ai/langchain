@@ -90,7 +90,7 @@ class You(LLM):
                 "Stop words are not implemented for You.com endpoints."
             )
         params = {"query": prompt}
-        response = _request(self.endpoint, api_key=self.api_key, **params)
+        response = _request(self.endpoint, api_key=self._api_key, **params)
         return response["answer"]
 
     def _stream(
@@ -105,7 +105,7 @@ class You(LLM):
                 "Stop words are not implemented for You.com endpoints."
             )
         params = {"query": prompt}
-        for token in _request_stream(self.endpoint, api_key=self.api_key, **params):
+        for token in _request_stream(self.endpoint, api_key=self._api_key, **params):
             yield GenerationChunk(text=token)
 
     @property
@@ -115,8 +115,8 @@ class You(LLM):
         return RESEARCH_ENDPOINT
 
     @property
-    def api_key(self) -> str:
-        return os.environ["YDC_API_KEY"]
+    def _api_key(self) -> str:
+        return self.ydc_api_key or os.environ["YDC_API_KEY"]
 
     @property
     def _llm_type(self) -> str:
