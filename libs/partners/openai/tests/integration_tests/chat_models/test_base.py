@@ -351,20 +351,24 @@ def test_stream() -> None:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.response_metadata.get("finish_reason") is not None
+    assert full.response_metadata.get("model_name") is not None
 
     # check token usage
     aggregate: Optional[BaseMessageChunk] = None
     chunks_with_token_counts = 0
+    chunks_with_response_metadata = 0
     for chunk in llm.stream("Hello", stream_options={"include_usage": True}):
         assert isinstance(chunk.content, str)
         aggregate = chunk if aggregate is None else aggregate + chunk
         assert isinstance(chunk, AIMessageChunk)
         if chunk.usage_metadata is not None:
             chunks_with_token_counts += 1
-    if chunks_with_token_counts != 1:
+        if chunk.response_metadata:
+            chunks_with_response_metadata += 1
+    if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
         raise AssertionError(
-            "Expected exactly one chunk with token counts. "
-            "AIMessageChunk aggregation adds counts. Check that "
+            "Expected exactly one chunk with metadata. "
+            "AIMessageChunk aggregation can add these metadata. Check that "
             "this is behaving properly."
         )
     assert isinstance(aggregate, AIMessageChunk)
@@ -384,20 +388,24 @@ async def test_astream() -> None:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.response_metadata.get("finish_reason") is not None
+    assert full.response_metadata.get("model_name") is not None
 
     # check token usage
     aggregate: Optional[BaseMessageChunk] = None
     chunks_with_token_counts = 0
+    chunks_with_response_metadata = 0
     async for chunk in llm.astream("Hello", stream_options={"include_usage": True}):
         assert isinstance(chunk.content, str)
         aggregate = chunk if aggregate is None else aggregate + chunk
         assert isinstance(chunk, AIMessageChunk)
         if chunk.usage_metadata is not None:
             chunks_with_token_counts += 1
-    if chunks_with_token_counts != 1:
+        if chunk.response_metadata:
+            chunks_with_response_metadata += 1
+    if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
         raise AssertionError(
-            "Expected exactly one chunk with token counts. "
-            "AIMessageChunk aggregation adds counts. Check that "
+            "Expected exactly one chunk with metadata. "
+            "AIMessageChunk aggregation can add these metadata. Check that "
             "this is behaving properly."
         )
     assert isinstance(aggregate, AIMessageChunk)
@@ -442,6 +450,7 @@ async def test_ainvoke() -> None:
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
+    assert result.response_metadata.get("model_name") is not None
 
 
 def test_invoke() -> None:
@@ -450,6 +459,7 @@ def test_invoke() -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+    assert result.response_metadata.get("model_name") is not None
 
 
 def test_response_metadata() -> None:
