@@ -463,12 +463,14 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 patch_config(config, callbacks=run_manager.get_child()),
                 **kwargs,
             )
+
+            chunk = None
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error
 
                 for chunk in stream:
-                    yield chunk
+                    yield cast(Output, chunk)
 
                     if isinstance(chunk, RemoveMessage):
                         output = None
