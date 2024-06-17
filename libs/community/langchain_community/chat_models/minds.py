@@ -3,6 +3,7 @@ from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_community.chat_models.openai import (
     ChatOpenAI,
 )
+from langchain_community.utils.openai import is_openai_v1
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 DEFAULT_API_BASE = "https://llm.mdb.ai"
@@ -39,7 +40,7 @@ class ChatMinds(ChatOpenAI):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """
-        Validate that the MindsDB API key and the OpenAI exists in the environment.
+        Validate that the MindsDB API credentials are provided and that the `openai` package exists in the environment.
         """
         # Validate that the API key and base URL are available.
         values["mindsdb_api_key"] = convert_to_secret_str(
