@@ -132,7 +132,7 @@ class DirectoryLoader(BaseLoader):
         elif isinstance(self.glob, str):
             paths = list(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
         else:
-            raise TypeError('Expected glob to be str or sequence of str, but got {type(self.glob)}')
+            raise TypeError(f"Expected glob to be str or sequence of str, but got {type(self.glob)}")
 
         items = [
             path
