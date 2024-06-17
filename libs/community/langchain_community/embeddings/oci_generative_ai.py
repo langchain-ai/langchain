@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
@@ -187,8 +187,7 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
             serving_mode = models.OnDemandServingMode(model_id=self.model_id)
 
         embeddings = []
-
-        def split_texts():
+        def split_texts() -> Iterator[str]:
             for i in range(0, len(texts), self.batch_size):
                 yield texts[i : i + self.batch_size]
 
