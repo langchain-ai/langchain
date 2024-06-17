@@ -66,7 +66,7 @@ class You(LLM):
 
     Args:
         mode: You.com conversational endpoints. Choose from "smart" or "research"
-        api_key: You.com API key, if `YDC_API_KEY` is not set in the environment
+        ydc_api_key: You.com API key, if `YDC_API_KEY` is not set in the environment
     """
 
     mode: Literal["smart", "research"] = Field(
