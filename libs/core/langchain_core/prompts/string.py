@@ -138,7 +138,7 @@ def mustache_schema(
         current = defs
         for part in field[:-1]:
             current = current.setdefault(part, {})
-        current.setdefault(field[-1], "" if is_leaf else {})
+        current.setdefault(field[-1], "" if is_leaf else {})  # type: ignore[arg-type]
     return _create_model_recursive("PromptInput", defs)
 
 
