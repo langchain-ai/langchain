@@ -1,13 +1,23 @@
 import logging
 import os
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Union, Tuple
+from typing import (
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from ibm_watsonx_ai import Credentials  # type: ignore
-from ibm_watsonx_ai.foundation_models import Model, ModelInference  # type: ignore
+from ibm_watsonx_ai.foundation_models import ModelInference  # type: ignore
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
-    agenerate_from_stream,
     generate_from_stream,
 )
 from langchain_core.messages import (
@@ -27,22 +37,150 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.output_parsers.openai_tools import (
-    JsonOutputKeyToolsParser,
-    PydanticToolsParser,
     make_invalid_tool_call,
     parse_tool_call,
 )
-from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
 
+def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
+    """Convert a dictionary to a LangChain message.
+
+    Args:
+        _dict: The dictionary.
+
+    Returns:
+        The LangChain message.
+    """
+    role = _dict.get("role")
+    if role == "user":
+        return HumanMessage(content=_dict.get("generated_text", ""))
+    else:
+        content = _dict.get("generated_text", "") or ""
+        additional_kwargs: Dict = {}
+        if function_call := _dict.get("function_call"):
+            additional_kwargs["function_call"] = dict(function_call)
+        tool_calls = []
+        invalid_tool_calls = []
+        if raw_tool_calls := _dict.get("tool_calls"):
+            additional_kwargs["tool_calls"] = raw_tool_calls
+            for raw_tool_call in raw_tool_calls:
+                try:
+                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
+                except Exception as e:
+                    invalid_tool_calls.append(
+                        dict(make_invalid_tool_call(raw_tool_call, str(e)))
+                    )
+        return AIMessage(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
+        )
+
+
+def _convert_message_to_dict(message: BaseMessage) -> dict:
+    """Convert a LangChain message to a dictionary.
+
+    Args:
+        message: The LangChain message.
+
+    Returns:
+        The dictionary.
+    """
+    message_dict: Dict[str, Any]
+    if isinstance(message, ChatMessage):
+        message_dict = {"role": message.role, "content": message.content}
+    elif isinstance(message, HumanMessage):
+        message_dict = {"role": "user", "content": message.content}
+    elif isinstance(message, AIMessage):
+        message_dict = {"role": "assistant", "content": message.content}
+        if "function_call" in message.additional_kwargs:
+            message_dict["function_call"] = message.additional_kwargs["function_call"]
+            # If function call only, content is None not empty string
+            if message_dict["content"] == "":
+                message_dict["content"] = None
+        if "tool_calls" in message.additional_kwargs:
+            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+            # If tool calls only, content is None not empty string
+            if message_dict["content"] == "":
+                message_dict["content"] = None
+    elif isinstance(message, SystemMessage):
+        message_dict = {"role": "system", "content": message.content}
+    elif isinstance(message, FunctionMessage):
+        message_dict = {
+            "role": "function",
+            "content": message.content,
+            "name": message.name,
+        }
+    elif isinstance(message, ToolMessage):
+        message_dict = {
+            "role": "tool",
+            "content": message.content,
+            "tool_call_id": message.tool_call_id,
+        }
+    else:
+        raise TypeError(f"Got unknown type {message}")
+    if "name" in message.additional_kwargs:
+        message_dict["name"] = message.additional_kwargs["name"]
+    return message_dict
+
+
+def _convert_delta_to_message_chunk(
+    _dict: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+) -> BaseMessageChunk:
+    role = cast(str, _dict.get("role"))
+    content = cast(str, _dict.get("content") or "")
+    additional_kwargs: Dict = {}
+    if _dict.get("function_call"):
+        function_call = dict(_dict["function_call"])
+        if "name" in function_call and function_call["name"] is None:
+            function_call["name"] = ""
+        additional_kwargs["function_call"] = function_call
+    if raw_tool_calls := _dict.get("tool_calls"):
+        additional_kwargs["tool_calls"] = raw_tool_calls
+        try:
+            tool_call_chunks = [
+                {
+                    "name": rtc["function"].get("name"),
+                    "args": rtc["function"].get("arguments"),
+                    "id": rtc.get("id"),
+                    "index": rtc["index"],
+                }
+                for rtc in raw_tool_calls
+            ]
+        except KeyError:
+            pass
+    else:
+        tool_call_chunks = []
+
+    if role == "user" or default_class == HumanMessageChunk:
+        return HumanMessageChunk(content=content)
+    elif role == "assistant" or default_class == AIMessageChunk:
+        return AIMessageChunk(
+            content=content,
+            additional_kwargs=additional_kwargs,
+            tool_call_chunks=tool_call_chunks,
+        )
+    elif role == "system" or default_class == SystemMessageChunk:
+        return SystemMessageChunk(content=content)
+    elif role == "function" or default_class == FunctionMessageChunk:
+        return FunctionMessageChunk(content=content, name=_dict["name"])
+    elif role == "tool" or default_class == ToolMessageChunk:
+        return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
+    elif role or default_class == ChatMessageChunk:
+        return ChatMessageChunk(content=content, role=role)
+    else:
+        return default_class(content=content)  # type: ignore
+
+
 class ChatWatsonx(BaseChatModel):
     """
-    IBM watsonx.ai large language models.
+    IBM watsonx.ai large language chat models.
 
     To use, you should have ``langchain_ibm`` python package installed,
     and the environment variable ``WATSONX_APIKEY`` set with your API key, or pass
@@ -62,9 +200,9 @@ class ChatWatsonx(BaseChatModel):
                 GenTextParamsMetaNames.TOP_P: 1,
             }
 
-            from langchain_ibm import WatsonxLLM
-            watsonx_llm = WatsonxLLM(
-                model_id="google/flan-ul2",
+            from langchain_ibm import ChatWatsonx
+            watsonx_llm = ChatWatsonx(
+                model_id="meta-llama/llama-3-70b-instruct",
                 url="https://us-south.ml.cloud.ibm.com",
                 apikey="*****",
                 project_id="*****",
@@ -106,7 +244,7 @@ class ChatWatsonx(BaseChatModel):
     """Version of CPD instance"""
 
     params: Optional[dict] = None
-    """Model parameters to use during generate requests."""
+    """Chat Model parameters to use during generate requests."""
 
     verify: Union[str, bool] = ""
     """User can pass as verify one of following:
@@ -117,6 +255,8 @@ class ChatWatsonx(BaseChatModel):
 
     streaming: bool = False
     """ Whether to stream the results or not. """
+
+    watsonx_model: ModelInference = Field(default=None, exclude=True)  #: :meta private:
 
     class Config:
         """Configuration for this pydantic object."""
@@ -201,15 +341,11 @@ class ChatWatsonx(BaseChatModel):
                 )
             if not values["instance_id"] or "WATSONX_INSTANCE_ID" not in os.environ:
                 values["instance_id"] = convert_to_secret_str(
-                    get_from_dict_or_env(
-                        values, "instance_id", "WATSONX_INSTANCE_ID"
-                    )
+                    get_from_dict_or_env(values, "instance_id", "WATSONX_INSTANCE_ID")
                 )
         credentials = Credentials(
             url=values["url"].get_secret_value() if values["url"] else None,
-            api_key=values["apikey"].get_secret_value()
-            if values["apikey"]
-            else None,
+            api_key=values["apikey"].get_secret_value() if values["apikey"] else None,
             token=values["token"].get_secret_value() if values["token"] else None,
             password=values["password"].get_secret_value()
             if values["password"]
@@ -220,13 +356,11 @@ class ChatWatsonx(BaseChatModel):
             instance_id=values["instance_id"].get_secret_value()
             if values["instance_id"]
             else None,
-            version=values["version"].get_secret_value()
-            if values["version"]
-            else None,
+            version=values["version"].get_secret_value() if values["version"] else None,
             verify=values["verify"],
         )
 
-        watsonx_model = ModelInference(
+        watsonx_chat = ModelInference(
             model_id=values["model_id"],
             deployment_id=values["deployment_id"],
             credentials=credentials,
@@ -234,7 +368,7 @@ class ChatWatsonx(BaseChatModel):
             project_id=values["project_id"],
             space_id=values["space_id"],
         )
-        values["watsonx_model"] = watsonx_model
+        values["watsonx_model"] = watsonx_chat
 
         return values
 
@@ -243,11 +377,17 @@ class ChatWatsonx(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return generate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
-
         chat_prompt = self._create_chat_prompt(message_dicts)
 
         response = self.watsonx_model.generate(
@@ -255,36 +395,105 @@ class ChatWatsonx(BaseChatModel):
         )
         return self._create_chat_result(response)
 
-    @staticmethod
-    def _create_chat_prompt(messages: List[Dict[str, Any]]) -> str:
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        chat_prompt = self._create_chat_prompt(message_dicts)
 
+        for chunk in self.watsonx_model.generate_text_stream(
+            prompt=chat_prompt, raw_response=True, params=params, **kwargs
+        ):
+            if not isinstance(chunk, dict):
+                chunk = chunk.dict()
+            if len(chunk["results"]) == 0:
+                continue
+            choice = chunk["results"][0]
+
+            chunk = AIMessageChunk(
+                content=choice["generated_text"],
+            )
+            generation_info = {}
+            if finish_reason := choice.get("stop_reason"):
+                generation_info["finish_reason"] = finish_reason
+            logprobs = choice.get("logprobs")
+            if logprobs:
+                generation_info["logprobs"] = logprobs
+            chunk = ChatGenerationChunk(
+                message=chunk, generation_info=generation_info or None
+            )
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk, logprobs=logprobs)
+
+            yield chunk
+
+    def _create_chat_prompt(self, messages: List[Dict[str, Any]]) -> str:
         prompt = ""
 
-        for message in messages:
-            if message["role"] == "system":
-                prompt += message["content"] + "\n"
-            else:
-                prompt += message["role"].capitalize() + ": " + message["content"] + "\n"
+        if self.model_id in ["ibm/granite-13b-chat-v1", "ibm/granite-13b-chat-v2"]:
+            for message in messages:
+                if message["role"] == "system":
+                    prompt += "<|system|>\n" + message["content"] + "\n\n"
+                elif message["role"] == "assistant":
+                    prompt += "<|assistant|>\n" + message["content"] + "\n\n"
+                else:
+                    prompt += "<|user|>:\n" + message["content"] + "\n\n"
 
-        prompt += "Assistant: "
+            prompt += "<|assistant|>\n"
+
+        elif self.model_id in [
+            "meta-llama/llama-2-13b-chat",
+            "meta-llama/llama-2-70b-chat",
+        ]:
+            for message in messages:
+                if message["role"] == "system":
+                    prompt += "[INST] <<SYS>>\n" + message["content"] + "<</SYS>>\n\n"
+                elif message["role"] == "assistant":
+                    prompt += message["content"] + "\n[INST]\n\n"
+                else:
+                    prompt += message["content"] + "\n[/INST]\n"
+
+        else:
+            for message in messages:
+                if message["role"] == "system":
+                    prompt += "System:\n" + message["content"] + "\n\n"
+                elif message["role"] == "user":
+                    prompt += "Question:\n" + message["content"] + "\n\n"
+                elif message["role"] == "assistant":
+                    prompt += "Answer:\n" + message["content"] + "\n\n"
+                else:
+                    prompt += (
+                        message["role"].capitalize()
+                        + ":\n"
+                        + message["content"]
+                        + "\n\n"
+                    )
+
+            prompt += "Answer:\n"
 
         return prompt
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        params = self.params
+        params = {**self.params} if self.params else {}
         if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
-            params["stop"] = stop
+            if params and "stop_sequences" in params:
+                raise ValueError(
+                    "`stop_sequences` found in both the input and default params."
+                )
+            params = (params or {}) | {"stop_sequences": stop}
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
-    def _create_chat_result(
-        self, response: Union[dict]
-    ) -> ChatResult:
+    def _create_chat_result(self, response: Union[dict]) -> ChatResult:
         generations = []
+        sum_of_total_generated_tokens = 0
+        sum_of_total_input_tokens = 0
 
         if response.get("error"):
             raise ValueError(response.get("error"))
@@ -294,117 +503,22 @@ class ChatWatsonx(BaseChatModel):
             generation_info = dict(finish_reason=res.get("stop_reason"))
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
+            if "generated_token_count" in res:
+                sum_of_total_generated_tokens += res["generated_token_count"]
+            if "input_token_count" in res:
+                sum_of_total_input_tokens += res["input_token_count"]
             gen = ChatGeneration(
                 message=message,
                 generation_info=generation_info,
             )
             generations.append(gen)
-        # token_usage = response.get("usage", {})
+        token_usage = {
+            "generated_token_count": sum_of_total_generated_tokens,
+            "input_token_count": sum_of_total_input_tokens,
+        }
         llm_output = {
-            # "token_usage": token_usage,
+            "token_usage": token_usage,
             "model_name": self.model_id,
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         return ChatResult(generations=generations, llm_output=llm_output)
-
-
-def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
-    """Convert a dictionary to a LangChain message.
-
-    Args:
-        _dict: The dictionary.
-
-    Returns:
-        The LangChain message.
-    """
-    role = _dict.get("role")
-    if role == "user":
-        return HumanMessage(content=_dict.get("generated_text", ""))
-    elif role == "assistant":
-        # Fix for azure
-        # Also Fireworks returns None for tool invocations
-        content = _dict.get("generated_text", "") or ""
-        additional_kwargs: Dict = {}
-        if function_call := _dict.get("function_call"):
-            additional_kwargs["function_call"] = dict(function_call)
-        tool_calls = []
-        invalid_tool_calls = []
-        if raw_tool_calls := _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = raw_tool_calls
-            for raw_tool_call in raw_tool_calls:
-                try:
-                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
-                except Exception as e:
-                    invalid_tool_calls.append(
-                        dict(make_invalid_tool_call(raw_tool_call, str(e)))
-                    )
-        return AIMessage(
-            content=content,
-            additional_kwargs=additional_kwargs,
-            tool_calls=tool_calls,
-            invalid_tool_calls=invalid_tool_calls,
-        )
-    elif role == "system":
-        return SystemMessage(content=_dict.get("generated_text", ""))
-    elif role == "function":
-        return FunctionMessage(
-            content=_dict.get("generated_text", ""), name=_dict.get("name", "")
-        )
-    elif role == "tool":
-        additional_kwargs = {}
-        if "name" in _dict:
-            additional_kwargs["name"] = _dict["name"]
-        return ToolMessage(
-            content=_dict.get("generated_text", ""),
-            tool_call_id=_dict.get("tool_call_id", ""),
-            additional_kwargs=additional_kwargs,
-        )
-    else:
-        return ChatMessage(content=_dict.get("generated_text", ""), role=role or "")
-
-
-def _convert_message_to_dict(message: BaseMessage) -> dict:
-    """Convert a LangChain message to a dictionary.
-
-    Args:
-        message: The LangChain message.
-
-    Returns:
-        The dictionary.
-    """
-    message_dict: Dict[str, Any]
-    if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
-    elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
-    elif isinstance(message, AIMessage):
-        message_dict = {"role": "assistant", "content": message.content}
-        if "function_call" in message.additional_kwargs:
-            message_dict["function_call"] = message.additional_kwargs["function_call"]
-            # If function call only, content is None not empty string
-            if message_dict["content"] == "":
-                message_dict["content"] = None
-        if "tool_calls" in message.additional_kwargs:
-            message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
-            # If tool calls only, content is None not empty string
-            if message_dict["content"] == "":
-                message_dict["content"] = None
-    elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
-    elif isinstance(message, FunctionMessage):
-        message_dict = {
-            "role": "function",
-            "content": message.content,
-            "name": message.name,
-        }
-    elif isinstance(message, ToolMessage):
-        message_dict = {
-            "role": "tool",
-            "content": message.content,
-            "tool_call_id": message.tool_call_id,
-        }
-    else:
-        raise TypeError(f"Got unknown type {message}")
-    if "name" in message.additional_kwargs:
-        message_dict["name"] = message.additional_kwargs["name"]
-    return message_dict
