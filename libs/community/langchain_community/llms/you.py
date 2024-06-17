@@ -7,8 +7,8 @@ from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 
-SMART_ENDPOINT = ""  # TODO: Update before submitting PR
-RESEARCH_ENDPOINT = ""  # TODO: Update before submitting PR
+SMART_ENDPOINT = "https://chat-api.you.com/smart"
+RESEARCH_ENDPOINT = "https://chat-api.you.com/research"
 
 
 def _request(base_url: str, api_key: str, **kwargs) -> Dict[str, Any]:
@@ -17,7 +17,7 @@ def _request(base_url: str, api_key: str, **kwargs) -> Dict[str, Any]:
     for better input/output typing support.
     """
     headers = {"x-api-key": api_key}
-    response = requests.get(base_url, headers=headers, params=kwargs)
+    response = requests.post(base_url, headers=headers, json=kwargs)
     response.raise_for_status()
     return response.json()
 
@@ -27,7 +27,7 @@ def _request_stream(
 ) -> Generator[str, None, None]:
     headers = {"x-api-key": api_key}
     params = dict(**kwargs, stream=True)
-    response = requests.get(base_url, headers=headers, stream=True, params=params)
+    response = requests.post(base_url, headers=headers, stream=True, json=params)
     response.raise_for_status()
 
     client = sseclient.SSEClient(response)
