@@ -871,6 +871,7 @@ Retrieval is the process of providing relevant information to an LLM to improve 
 :::
 
 RAG is only as good as the retrieved documents’ relevance and quality. Fortunately, an emerging set of techniques can be employed to design and improve RAG systems. We've focused on taxonomizing and summarizing many of these techniques (see below figure) and will share some high-level strategic guidance in the following sections.
+You can and should experiment with using different pieces together. You might also find [this LangSmith guide](https://docs.smith.langchain.com/how_to_guides/evaluation/evaluate_llm_application) useful for showing how to evaluate different iterations of your app.
 
 ![](/img/rag_landscape.png)
 
@@ -882,7 +883,7 @@ For example, this can be as simple as extracting keywords or as complex as gener
 
 | Name          | When to use | Description |
 |---------------|-------------|-------------|
-| [Multi-query](docs/how_to/MultiQueryRetriever/)   | When you need to cover multiple perspectives of a question. | Rewrite the user question from multiple perspectives, retrieve documents for each rewritten question, return the unique documents for all queries. |
+| [Multi-query](/docs/how_to/MultiQueryRetriever/)   | When you need to cover multiple perspectives of a question. | Rewrite the user question from multiple perspectives, retrieve documents for each rewritten question, return the unique documents for all queries. |
 | [Decomposition](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb) | When a question can be broken down into smaller subproblems. | Decompose a question into a set of subproblems / questions, which can either be solved sequentially (use the answer from first + retrieval to answer the second) or in parallel (consolidate each answer into final answer). |
 | [Step-back](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb)     | When a higher-level conceptual understanding is required. | First prompt the LLM to ask a generic step-back question about higher-level concepts or principles, and retrieve relevant facts about them. Use this grounding to help answer the user question. |
 | [HyDE](https://github.com/langchain-ai/rag-from-scratch/blob/main/rag_from_scratch_5_to_9.ipynb)          | If you have challenges retrieving relevant documents using the raw user inputs. | Use an LLM to convert questions into hypothetical documents that answer the question. Use the embedded hypothetical documents to retrieve real documents with the premise that doc-doc similarity search can produce more relevant matches. |
@@ -903,8 +904,8 @@ Second, consider the data sources available to your RAG system. You want to quer
 
 | Name             | When to use                                | Description |
 |------------------|--------------------------------------------|-------------|
-| [Logical routing](docs/how_to/routing/#using-a-runnablebranch)  | When you can prompt an LLM with rules to decide where to route the input. | Logical routing can use an LLM to reason about the query and choose which datastore is most appropriate. |
-| [Semantic routing](docs/how_to/routing/#using-a-runnablebranch) | When semantic similarity is an effective way to determine where to route the input. | Semantic routing embeds both query and, typically a set of prompts. It then chooses the appropriate prompt based upon similarity. |
+| [Logical routing](/docs/how_to/routing/#using-a-runnablebranch)  | When you can prompt an LLM with rules to decide where to route the input. | Logical routing can use an LLM to reason about the query and choose which datastore is most appropriate. |
+| [Semantic routing](/docs/how_to/routing/#using-a-runnablebranch) | When semantic similarity is an effective way to determine where to route the input. | Semantic routing embeds both query and, typically a set of prompts. It then chooses the appropriate prompt based upon similarity. |
 
 :::tip
 
@@ -961,9 +962,9 @@ There are some additional tricks to improve the quality of your retrieval. Embed
 
 | Name              | When to use                                              | Description |
 |-------------------|----------------------------------------------------------|-------------|
-| [ColBERT](docs/integrations/providers/ragatouille/#using-colbert-as-a-reranker)           | When higher granularity embeddings are needed.           | ColBERT uses contextually influenced embeddings for each token in the document and query to get a granular query-document similarity score. |
-| [Hybrid search](docs/integrations/retrievers/pinecone_hybrid_search/)     | When combining keyword-based and semantic similarity.    | Hybrid search combines keyword and semantic similarity, marrying the benefits of both approaches. |
-| [Maximal Marginal Relevance (MMR) ](docs/integrations/vectorstores/pinecone/#maximal-marginal-relevance-searches) | When needing to diversify search results. | MMR attempts to diversify the results of a search to avoid returning similar and redundant documents. |
+| [ColBERT](/docs/integrations/providers/ragatouille/#using-colbert-as-a-reranker)           | When higher granularity embeddings are needed.           | ColBERT uses contextually influenced embeddings for each token in the document and query to get a granular query-document similarity score. |
+| [Hybrid search](/docs/integrations/retrievers/pinecone_hybrid_search/)     | When combining keyword-based and semantic similarity.    | Hybrid search combines keyword and semantic similarity, marrying the benefits of both approaches. |
+| [Maximal Marginal Relevance (MMR) ](/docs/integrations/vectorstores/pinecone/#maximal-marginal-relevance-searches) | When needing to diversify search results. | MMR attempts to diversify the results of a search to avoid returning similar and redundant documents. |
 
 :::tip
 
