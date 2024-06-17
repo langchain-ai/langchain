@@ -55,7 +55,6 @@ class CohereProvider(Provider):
     stop_sequence_key = "stop_sequences"
 
     def __init__(self) -> None:
-
         from oci.generative_ai_inference import models
 
         self.oci_chat_request = models.CohereChatRequest
@@ -108,7 +107,6 @@ class MetaProvider(Provider):
     stop_sequence_key = "stop"
 
     def __init__(self) -> None:
-
         from oci.generative_ai_inference import models
 
         self.oci_chat_request = models.GenericChatRequest
