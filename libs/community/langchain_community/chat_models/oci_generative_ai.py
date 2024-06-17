@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, List, Optional, Sequence
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import (
@@ -20,6 +20,8 @@ from langchain_core.pydantic_v1 import Extra
 
 from langchain_community.llms.oci_generative_ai import OCIGenAIBase
 from langchain_community.llms.utils import enforce_stop_tokens
+
+CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
 
 class Provider(ABC):
@@ -53,14 +55,15 @@ class CohereProvider(Provider):
     stop_sequence_key = "stop_sequences"
 
     def __init__(self) -> None:
-        try:
-            from oci.generative_ai_inference import models
+        # try:
+        #     from oci.generative_ai_inference import models
 
-        except ImportError as ex:
-            raise ModuleNotFoundError(
-                "Could not import oci python package. "
-                "Please make sure you have the oci package installed."
-            ) from ex
+        # except ImportError as ex:
+        #     raise ModuleNotFoundError(
+        #         "Could not import oci python package. "
+        #         "Please make sure you have the oci package installed."
+        #     ) from ex
+        from oci.generative_ai_inference import models
 
         self.oci_chat_request = models.CohereChatRequest
         self.oci_chat_message = {
@@ -112,14 +115,16 @@ class MetaProvider(Provider):
     stop_sequence_key = "stop"
 
     def __init__(self) -> None:
-        try:
-            from oci.generative_ai_inference import models
+        # try:
+        #     from oci.generative_ai_inference import models
 
-        except ImportError as ex:
-            raise ModuleNotFoundError(
-                "Could not import oci python package. "
-                "Please make sure you have the oci package installed."
-            ) from ex
+        # except ImportError as ex:
+        #     raise ModuleNotFoundError(
+        #         "Could not import oci python package. "
+        #         "Please make sure you have the oci package installed."
+        #     ) from ex
+
+        from oci.generative_ai_inference import models
 
         self.oci_chat_request = models.GenericChatRequest
         self.oci_chat_message = {
@@ -170,14 +175,6 @@ class MetaProvider(Provider):
         }
 
         return oci_params
-
-
-CHAT_PROVIDERS = {
-    "cohere": CohereProvider(),
-    "meta": MetaProvider(),
-}
-
-CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
 
 class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
@@ -256,6 +253,19 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
         """Return type of llm."""
         return "oci_generative_ai_chat"
 
+    @property
+    def _provider_map(self) -> Mapping[str, Any]:
+        """Get the provider map"""
+        return {
+            "cohere": CohereProvider(),
+            "meta": MetaProvider(),
+        }
+
+    @property
+    def _provider(self) -> Any:
+        """Get the internal provider object"""
+        return self._get_provider(provider_map=self._provider_map)
+
     def _prepare_request(
         self,
         messages: List[BaseMessage],
@@ -271,13 +281,12 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
                 "Could not import oci python package. "
                 "Please make sure you have the oci package installed."
             ) from ex
-        provider = self._get_provider(provider_map=CHAT_PROVIDERS)
-        oci_params = provider.messages_to_oci_params(messages)
+        oci_params = self._provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = stream  # self.is_stream
         _model_kwargs = self.model_kwargs or {}
 
         if stop is not None:
-            _model_kwargs[provider.stop_sequence_key] = stop
+            _model_kwargs[self._provider.stop_sequence_key] = stop
 
         chat_params = {**_model_kwargs, **kwargs, **oci_params}
 
@@ -289,7 +298,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
         request = models.ChatDetails(
             compartment_id=self.compartment_id,
             serving_mode=serving_mode,
-            chat_request=provider.oci_chat_request(**chat_params),
+            chat_request=self._provider.oci_chat_request(**chat_params),
         )
 
         return request
@@ -327,16 +336,15 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             )
             return generate_from_stream(stream_iter)
 
-        provider = self._get_provider(provider_map=CHAT_PROVIDERS)
         request = self._prepare_request(messages, stop, kwargs, stream=False)
         response = self.client.chat(request)
 
-        content = provider.chat_response_to_text(response)
+        content = self._provider.chat_response_to_text(response)
 
         if stop is not None:
             content = enforce_stop_tokens(content, stop)
 
-        generation_info = provider.chat_generation_info(response)
+        generation_info = self._provider.chat_generation_info(response)
 
         llm_output = {
             "model_id": response.data.model_id,
@@ -361,12 +369,11 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        provider = self._get_provider(provider_map=CHAT_PROVIDERS)
         request = self._prepare_request(messages, stop, kwargs, stream=True)
         response = self.client.chat(request)
 
         for event in response.data.events():
-            delta = provider.chat_stream_to_text(json.loads(event.data))
+            delta = self._provider.chat_stream_to_text(json.loads(event.data))
             chunk = ChatGenerationChunk(message=AIMessageChunk(content=delta))
             if run_manager:
                 run_manager.on_llm_new_token(delta, chunk=chunk)

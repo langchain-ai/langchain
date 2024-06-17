@@ -30,14 +30,7 @@ class CohereProvider(Provider):
     stop_sequence_key = "stop_sequences"
 
     def __init__(self) -> None:
-        try:
-            from oci.generative_ai_inference import models
-
-        except ImportError as ex:
-            raise ModuleNotFoundError(
-                "Could not import oci python package. "
-                "Please make sure you have the oci package installed."
-            ) from ex
+        from oci.generative_ai_inference import models
 
         self.llm_inference_request = models.CohereLlmInferenceRequest
 
@@ -49,25 +42,12 @@ class MetaProvider(Provider):
     stop_sequence_key = "stop"
 
     def __init__(self) -> None:
-        try:
-            from oci.generative_ai_inference import models
-
-        except ImportError as ex:
-            raise ModuleNotFoundError(
-                "Could not import oci python package. "
-                "Please make sure you have the oci package installed."
-            ) from ex
+        from oci.generative_ai_inference import models
 
         self.llm_inference_request = models.LlamaLlmInferenceRequest
 
     def completion_response_to_text(self, response: Any) -> str:
         return response.data.inference_response.choices[0].text
-
-
-COMPLETION_PROVIDERS = {
-    "cohere": CohereProvider(),
-    "meta": MetaProvider(),
-}
 
 
 class OCIAuthType(Enum):
@@ -261,15 +241,27 @@ class OCIGenAI(LLM, OCIGenAIBase):
         """Return type of llm."""
         return "oci_generative_ai_completion"
 
+    @property
+    def _provider_map(self) -> Mapping[str, Any]:
+        """Get the provider map"""
+        return {
+            "cohere": CohereProvider(),
+            "meta": MetaProvider(),
+        }
+
+    @property
+    def _provider(self) -> Any:
+        """Get the internal provider object"""
+        return self._get_provider(provider_map=self._provider_map)
+
     def _prepare_invocation_object(
         self, prompt: str, stop: Optional[List[str]], kwargs: Dict[str, Any]
     ) -> Dict[str, Any]:
         from oci.generative_ai_inference import models
 
-        provider = self._get_provider(provider_map=COMPLETION_PROVIDERS)
         _model_kwargs = self.model_kwargs or {}
         if stop is not None:
-            _model_kwargs[provider.stop_sequence_key] = stop
+            _model_kwargs[self._provider.stop_sequence_key] = stop
 
         if self.model_id.startswith(CUSTOM_ENDPOINT_PREFIX):
             serving_mode = models.DedicatedServingMode(endpoint_id=self.model_id)
@@ -283,14 +275,13 @@ class OCIGenAI(LLM, OCIGenAIBase):
         invocation_obj = models.GenerateTextDetails(
             compartment_id=self.compartment_id,
             serving_mode=serving_mode,
-            inference_request=provider.llm_inference_request(**inference_params),
+            inference_request=self._provider.llm_inference_request(**inference_params),
         )
 
         return invocation_obj
 
     def _process_response(self, response: Any, stop: Optional[List[str]]) -> str:
-        provider = self._get_provider(provider_map=COMPLETION_PROVIDERS)
-        text = provider.completion_response_to_text(response)
+        text = self._provider.completion_response_to_text(response)
 
         if stop is not None:
             text = enforce_stop_tokens(text, stop)
