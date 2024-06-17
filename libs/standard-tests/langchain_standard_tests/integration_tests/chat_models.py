@@ -1,4 +1,5 @@
 import json
+from typing import Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
