@@ -1,4 +1,7 @@
+import os
+import requests
 from typing import Text, Dict, Set, Optional
+
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_community.chat_models.openai import (
     ChatOpenAI,
@@ -30,12 +33,39 @@ class ChatMinds(ChatOpenAI):
 
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
 
+    available_models: Optional[Set[str]] = None
+
     @staticmethod
     def get_available_models(
-        anyscale_api_key: Optional[Text] = None,
-        anyscale_api_base: str = DEFAULT_API_BASE,
+        mindsdb_api_key: Optional[Text] = None,
+        mindsdb_api_base: str = DEFAULT_API_BASE,
     ) -> Set[Text]:
-        pass
+        """
+        Get models supported by the MindsDB API.
+        """
+        try:
+            mindsdb_api_key = mindsdb_api_key or os.environ["ANYSCALE_API_KEY"]
+        except KeyError as e:
+            raise ValueError(
+                "MindsDB API key must be passed as keyword argument or "
+                "set in environment variable MINDSDB_API_KEY.",
+            ) from e
+
+        models_url = f"{mindsdb_api_base}/models"
+        models_response = requests.get(
+            models_url,
+            headers={
+                "Authorization": f"Bearer {mindsdb_api_key}",
+            },
+        )
+
+        if models_response.status_code != 200:
+            raise ValueError(
+                f"Error getting models from {models_url}: "
+                f"{models_response.status_code}",
+            )
+
+        return {model["id"] for model in models_response.json()["data"]}
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
