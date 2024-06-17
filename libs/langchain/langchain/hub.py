@@ -26,12 +26,12 @@ def _get_client(api_url: Optional[str] = None, api_key: Optional[str] = None) ->
     return Client(api_url, api_key=api_key)
 
 
-def _add_metadata(obj: Any, res_dict: _types.Repo) -> Any:
+def _add_metadata(obj: Any, repo_dict: _types.Repo) -> Any:
     if obj.metadata is None:
         obj.metadata = {}
-    obj.metadata["lc_hub_owner"] = res_dict["owner"]
-    obj.metadata["lc_hub_repo"] = res_dict["repo"]
-    obj.metadata["lc_hub_commit_hash"] = res_dict["commit_hash"]
+    obj.metadata["lc_hub_owner"] = repo_dict["owner"]
+    obj.metadata["lc_hub_repo"] = repo_dict["repo"]
+    obj.metadata["lc_hub_commit_hash"] = repo_dict["commit_hash"]
 
 
 def push(
