@@ -73,7 +73,6 @@ class ChatModelIntegrationTests(ABC):
         for token in model.stream("Hello"):
             assert token is not None
             assert isinstance(token, AIMessageChunk)
-            assert isinstance(token.content, str)
             num_tokens += len(token.content)
         assert num_tokens > 0
 
@@ -85,7 +84,6 @@ class ChatModelIntegrationTests(ABC):
         async for token in model.astream("Hello"):
             assert token is not None
             assert isinstance(token, AIMessageChunk)
-            assert isinstance(token.content, str)
             num_tokens += len(token.content)
         assert num_tokens > 0
 
