@@ -104,6 +104,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -123,7 +124,9 @@ jobs:
         shell: bash
         run: |
           echo "Running extended tests, installing dependencies with poetry..."
-          poetry install -E extended_testing --with test
+          poetry install --with test
+          poetry run pip install uv
+          poetry run uv pip install -r extended_testing_deps.txt
 
       - name: Run extended tests
         run: make extended_tests

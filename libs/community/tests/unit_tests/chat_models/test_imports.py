@@ -21,6 +21,7 @@ EXPECTED_ALL = [
     "ChatKonko",
     "ChatLiteLLM",
     "ChatLiteLLMRouter",
+    "ChatLlamaCpp",
     "ChatMLflowAIGateway",
     "ChatMaritalk",
     "ChatMlflow",
