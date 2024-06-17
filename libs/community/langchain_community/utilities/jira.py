@@ -1,4 +1,5 @@
 """Util that calls Jira."""
+
 from typing import Any, Dict, List, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
@@ -14,6 +15,7 @@ class JiraAPIWrapper(BaseModel):
     jira_username: Optional[str] = None
     jira_api_token: Optional[str] = None
     jira_instance_url: Optional[str] = None
+    jira_cloud: Optional[str] = "True"
 
     class Config:
         """Configuration for this pydantic object."""
@@ -36,6 +38,9 @@ class JiraAPIWrapper(BaseModel):
         )
         values["jira_instance_url"] = jira_instance_url
 
+        jira_cloud = get_from_dict_or_env(values, "jira_cloud", "JIRA_CLOUD")
+        values["jira_cloud"] = jira_cloud
+
         try:
             from atlassian import Confluence, Jira
         except ImportError:
@@ -48,14 +53,14 @@ class JiraAPIWrapper(BaseModel):
             url=jira_instance_url,
             username=jira_username,
             password=jira_api_token,
-            cloud=True,
+            cloud=jira_cloud.lower() == "true",
         )
 
         confluence = Confluence(
             url=jira_instance_url,
             username=jira_username,
             password=jira_api_token,
-            cloud=True,
+            cloud=jira_cloud.lower() == "true",
         )
 
         values["jira"] = jira
