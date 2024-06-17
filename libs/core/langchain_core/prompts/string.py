@@ -5,7 +5,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC
 from string import Formatter
-from typing import Any, Callable, Dict, List, Set, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Set, Tuple, Type
 
 import langchain_core.utils.mustache as mustache
 from langchain_core.prompt_values import PromptValue, StringPromptValue

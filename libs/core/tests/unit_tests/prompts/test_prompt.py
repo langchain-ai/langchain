@@ -180,14 +180,7 @@ def test_mustache_prompt_from_template() -> None:
     assert prompt.input_schema.schema() == {
         "title": "PromptInput",
         "type": "object",
-        "properties": {"foo": {"$ref": "#/definitions/foo"}},
-        "definitions": {
-            "foo": {
-                "title": "foo",
-                "type": "object",
-                "properties": {"bar": {"title": "Bar", "type": "string"}},
-            }
-        },
+        "properties": {"foo": {"title": "Foo", "type": "object"}},
     }
 
 
