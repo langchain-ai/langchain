@@ -187,9 +187,10 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
             serving_mode = models.OnDemandServingMode(model_id=self.model_id)
 
         embeddings = []
+
         def split_texts():
             for i in range(0, len(texts), self.batch_size):
-                yield texts[i:i + self.batch_size]
+                yield texts[i : i + self.batch_size]
 
         for chunk in split_texts():
             invocation_obj = models.EmbedTextDetails(
