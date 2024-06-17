@@ -81,7 +81,8 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     """Truncate embeddings that are too long from start or end ("NONE"|"START"|"END")"""
 
     batch_size: Optional[int] = 96
-    """Batch size of OCI GenAI embedding requests. OCI GenAI may handle up to 96 texts per request"""
+    """Batch size of OCI GenAI embedding requests. OCI GenAI may handle up to 96 texts
+     per request"""
 
     class Config:
         """Configuration for this pydantic object."""
