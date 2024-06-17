@@ -810,10 +810,13 @@ class ChatGroq(BaseChatModel):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
             # TODO: Remove this update once 'any' is supported.
             if tool_choice == "any":
-                warnings.warn(
-                    f"{tool_choice=} is not currently supported. Converting to 'auto'."
-                )
-                tool_choice = "auto"
+                if len(tools) > 1:
+                    raise ValueError(
+                        f"Groq does not currently support {tool_choice=}. Should "
+                        f"be one of 'auto', 'none', or the name of the tool to call."
+                    )
+                else:
+                    tool_choice = convert_to_openai_tool(tools[0])["function"]["name"]
             if isinstance(tool_choice, dict) and (len(formatted_tools) != 1):
                 raise ValueError(
                     "When specifying `tool_choice`, you must provide exactly one "
