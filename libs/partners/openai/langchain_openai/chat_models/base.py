@@ -1497,7 +1497,7 @@ class ChatOpenAI(BaseChatOpenAI):
             self.stream_usage,
         ]
         for source in stream_usage_sources:
-            if source is not None:
+            if isinstance(source, bool):
                 return source
         return self.stream_usage
 
