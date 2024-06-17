@@ -103,7 +103,7 @@ def mustache_template_vars(
             in_section = False
         elif in_section:
             continue
-        elif type in ("variable", "section") and key != ".":
+        elif type in ("variable", "section", "no escape") and key != ".":
             vars.add(key.split(".")[0])
             if type == "section":
                 in_section = True
