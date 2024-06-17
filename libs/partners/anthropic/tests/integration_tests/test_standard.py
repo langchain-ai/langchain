@@ -16,7 +16,3 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         return {"model": "claude-3-haiku-20240307"}
-
-    @property
-    def returns_usage_metadata(self) -> bool:
-        return True
