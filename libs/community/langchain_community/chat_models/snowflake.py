@@ -88,7 +88,7 @@ class ChatSnowflakeCortex(BaseChatModel):
             chat = ChatSnowflakeCortex()
     """
 
-    _sp_session: Any
+    _sp_session: Any = None
     """Snowpark session object."""
 
     model: str = "snowflake-arctic"
