@@ -35,6 +35,8 @@ class ChatMinds(ChatOpenAI):
 
     available_models: Optional[Set[str]] = None
 
+    # TODO: Add custom initializer?
+
     @staticmethod
     def get_available_models(
         mindsdb_api_key: Optional[Text] = None,
@@ -44,7 +46,7 @@ class ChatMinds(ChatOpenAI):
         Get models supported by the MindsDB API.
         """
         try:
-            mindsdb_api_key = mindsdb_api_key or os.environ["ANYSCALE_API_KEY"]
+            mindsdb_api_key = mindsdb_api_key or os.environ["MINDSDB_API_KEY"]
         except KeyError as e:
             raise ValueError(
                 "MindsDB API key must be passed as keyword argument or "
@@ -141,3 +143,5 @@ class ChatMinds(ChatOpenAI):
         values["available_models"] = available_models
 
         return values
+
+    # TODO: Evaluate need for tiktoken methods
