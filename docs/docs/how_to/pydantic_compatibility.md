@@ -22,7 +22,7 @@ the case of inheritance and in the case of passing objects to LangChain.
 
 ```python
 from pydantic.v1 import root_validator, validator
-from langchain_core.tools  BaseTool
+from langchain_core.tools import  BaseTool
 
 class CustomTool(BaseTool): # BaseTool is v1 code
     x: int = Field(default=1)
