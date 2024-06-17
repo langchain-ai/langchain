@@ -15,4 +15,4 @@ class TestMistralStandard(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "mistral-large-latest"}
+        return {"model": "mistral-large-latest", "temperature": 0}

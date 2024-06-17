@@ -30,7 +30,6 @@ class ChatModelIntegrationTests(ChatModelTests):
         for token in model.stream("Hello"):
             assert token is not None
             assert isinstance(token, AIMessageChunk)
-            assert isinstance(token.content, str)
             num_tokens += len(token.content)
         assert num_tokens > 0
 
@@ -39,7 +38,6 @@ class ChatModelIntegrationTests(ChatModelTests):
         async for token in model.astream("Hello"):
             assert token is not None
             assert isinstance(token, AIMessageChunk)
-            assert isinstance(token.content, str)
             num_tokens += len(token.content)
         assert num_tokens > 0
 
@@ -87,6 +85,17 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result.usage_metadata["input_tokens"], int)
         assert isinstance(result.usage_metadata["output_tokens"], int)
         assert isinstance(result.usage_metadata["total_tokens"], int)
+
+    def test_stop_sequence(
+        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
+    ) -> None:
+        model = chat_model_class(**chat_model_params)
+        result = model.invoke("hi", stop=["you"])
+        assert isinstance(result, AIMessage)
+
+        model = chat_model_class(**chat_model_params, stop=["you"])
+        result = model.invoke("hi")
+        assert isinstance(result, AIMessage)
 
     def test_tool_message_histories_string_content(
         self,

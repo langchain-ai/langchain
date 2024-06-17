@@ -16,7 +16,10 @@ class TestFireworksStandard(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "accounts/fireworks/models/firefunction-v1"}
+        return {
+            "model": "accounts/fireworks/models/firefunction-v1",
+            "temperature": 0,
+        }
 
     @pytest.mark.xfail(reason="Not yet implemented.")
     def test_tool_message_histories_list_content(self, model: BaseChatModel) -> None:

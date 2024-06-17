@@ -104,6 +104,7 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.infinity_local import (
         InfinityEmbeddingsLocal,
     )
+    from langchain_community.embeddings.ipex_llm import IpexLLMBgeEmbeddings
     from langchain_community.embeddings.itrex import (
         QuantizedBgeEmbeddings,
     )
@@ -175,6 +176,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.oracleai import (
         OracleEmbeddings,
     )
+    from langchain_community.embeddings.ovhcloud import (
+        OVHCloudEmbeddings,
+    )
     from langchain_community.embeddings.premai import (
         PremAIEmbeddings,
     )
@@ -224,6 +228,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.yandex import (
         YandexGPTEmbeddings,
     )
+    from langchain_community.embeddings.zhipuai import (
+        ZhipuAIEmbeddings,
+    )
 
 __all__ = [
     "AlephAlphaAsymmetricSemanticEmbedding",
@@ -258,6 +265,7 @@ __all__ = [
     "HuggingFaceInstructEmbeddings",
     "InfinityEmbeddings",
     "InfinityEmbeddingsLocal",
+    "IpexLLMBgeEmbeddings",
     "JavelinAIGatewayEmbeddings",
     "JinaEmbeddings",
     "JohnSnowLabsEmbeddings",
@@ -281,6 +289,7 @@ __all__ = [
     "OpenVINOBgeEmbeddings",
     "OpenVINOEmbeddings",
     "OracleEmbeddings",
+    "OVHCloudEmbeddings",
     "PremAIEmbeddings",
     "QianfanEmbeddingsEndpoint",
     "QuantizedBgeEmbeddings",
@@ -301,6 +310,7 @@ __all__ = [
     "VoyageEmbeddings",
     "XinferenceEmbeddings",
     "YandexGPTEmbeddings",
+    "ZhipuAIEmbeddings",
 ]
 
 _module_lookup = {
@@ -336,6 +346,7 @@ _module_lookup = {
     "HuggingFaceInstructEmbeddings": "langchain_community.embeddings.huggingface",
     "InfinityEmbeddings": "langchain_community.embeddings.infinity",
     "InfinityEmbeddingsLocal": "langchain_community.embeddings.infinity_local",
+    "IpexLLMBgeEmbeddings": "langchain_community.embeddings.ipex_llm",
     "JavelinAIGatewayEmbeddings": "langchain_community.embeddings.javelin_ai_gateway",
     "JinaEmbeddings": "langchain_community.embeddings.jina",
     "JohnSnowLabsEmbeddings": "langchain_community.embeddings.johnsnowlabs",
@@ -362,6 +373,7 @@ _module_lookup = {
     "QuantizedBgeEmbeddings": "langchain_community.embeddings.itrex",
     "QuantizedBiEncoderEmbeddings": "langchain_community.embeddings.optimum_intel",
     "OracleEmbeddings": "langchain_community.embeddings.oracleai",
+    "OVHCloudEmbeddings": "langchain_community.embeddings.ovhcloud",
     "SagemakerEndpointEmbeddings": "langchain_community.embeddings.sagemaker_endpoint",
     "SambaStudioEmbeddings": "langchain_community.embeddings.sambanova",
     "SelfHostedEmbeddings": "langchain_community.embeddings.self_hosted",
@@ -379,6 +391,7 @@ _module_lookup = {
     "TitanTakeoffEmbed": "langchain_community.embeddings.titan_takeoff",
     "PremAIEmbeddings": "langchain_community.embeddings.premai",
     "YandexGPTEmbeddings": "langchain_community.embeddings.yandex",
+    "ZhipuAIEmbeddings": "langchain_community.embeddings.zhipuai",
 }
 
 
