@@ -98,7 +98,7 @@ def _parse_tool_calling(tool_call: dict) -> ToolCall:
     return ToolCall(name=name, args=args, id=id)
 
 
-def _convert_to_tool_calling(tool_call: ToolCall) -> dict:
+def _convert_to_tool_calling(tool_call: ToolCall) -> Dict[str, Any]:
     """
     Convert a ToolCall object to a tool calling request for server.
     Args:
@@ -171,7 +171,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {
             "role": "assistant",
             "content": message.content,
-            "tool_calls": tool_calls,
+            "tool_calls": tool_calls,  # type: ignore[dict-item]
         }
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
