@@ -13,6 +13,7 @@ class MockResponseDict(dict):
         return self[val]
 
 
+@pytest.mark.requires("oci")
 @pytest.mark.parametrize(
     "test_model_id", ["cohere.command-r-16k", "meta.llama-3-70b-instruct"]
 )

@@ -12,6 +12,7 @@ class MockResponseDict(dict):
         return self[val]
 
 
+@pytest.mark.requires("oci")
 @pytest.mark.parametrize(
     "test_model_id", ["cohere.command", "cohere.command-light", "meta.llama-2-70b-chat"]
 )
@@ -70,6 +71,5 @@ def test_llm_complete(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
             )
 
     monkeypatch.setattr(llm.client, "generate_text", mocked_response)
-
     output = llm.invoke("This is a prompt.", temperature=0.2)
     assert output == "This is the completion."
