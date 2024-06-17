@@ -607,6 +607,7 @@ For specifics on how to use callbacks, see the [relevant how-to guides here](/do
 ## Techniques
 
 ### Streaming
+<span data-heading-keywords="stream,streaming"></span>
 
 Individual LLM calls often run for much longer than traditional resource requests.
 This compounds when you build more complex chains or agents that require multiple reasoning steps.
@@ -617,49 +618,9 @@ around building apps with LLMs to help alleviate latency issues, and LangChain a
 
 Below, we'll discuss some concepts and considerations around streaming in LangChain.
 
-#### Tokens
-
-The unit that most model providers use to measure input and output is via a unit called a **token**.
-Tokens are the basic units that language models read and generate when processing or producing text.
-The exact definition of a token can vary depending on the specific way the model was trained -
-for instance, in English, a token could be a single word like "apple", or a part of a word like "app".
-
-When you send a model a prompt, the words and characters in the prompt are encoded into tokens using a **tokenizer**.
-The model then streams back generated output tokens, which the tokenizer decodes into human-readable text.
-The below example shows how OpenAI models tokenize `LangChain is cool!`:
-
-![](/img/tokenization.png)
-
-You can see that it gets split into 5 different tokens, and that the boundaries between tokens are not exactly the same as word boundaries.
-
-The reason language models use tokens rather than something more immediately intuitive like "characters"
-has to do with how they process and understand text. At a high-level, language models iteratively predict their next generated output based on
-the initial input and their previous generations. Training the model using tokens language models to handle linguistic
-units (like words or subwords) that carry meaning, rather than individual characters, which makes it easier for the model
-to learn and understand the structure of the language, including grammar and context.
-Furthermore, using tokens can also improve efficiency, since the model processes fewer units of text compared to character-level processing.
-
-#### Callbacks
-
-The lowest level way to stream outputs from LLMs in LangChain is via the [callbacks](/docs/concepts/#callbacks) system. You can pass a
-callback handler that handles the [`on_llm_new_token`](https://api.python.langchain.com/en/latest/callbacks/langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.html#langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.on_llm_new_token) event into LangChain components. When that component is invoked, any
-[LLM](/docs/concepts/#llms) or [chat model](/docs/concepts/#chat-models) contained in the component calls
-the callback with the generated token. Within the callback, you could pipe the tokens into some other destination, e.g. a HTTP response.
-You can also handle the [`on_llm_end`](https://api.python.langchain.com/en/latest/callbacks/langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.html#langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.on_llm_end) event to perform any necessary cleanup.
-
-You can see [this how-to section](/docs/how_to/#callbacks) for more specifics on using callbacks.
-
-Callbacks were the first technique for streaming introduced in LangChain. While powerful and generalizable,
-they can be unwieldy for developers. For example:
-
-- You need to explicitly initialize and manage some aggregator or other stream to collect results.
-- The execution order isn't explicitly guaranteed, and you could theoretically have a callback run after the `.invoke()` method finishes.
-- Providers would often make you pass an additional parameter to stream outputs instead of returning them all at once.
-- You would often ignore the result of the actual model call in favor of callback results.
-
 #### `.stream()` and `.astream()`
 
-LangChain also includes the `.stream()` method (and the equivalent `.astream()` method for [async](https://docs.python.org/3/library/asyncio.html) environments) as a more ergonomic streaming interface.
+Most modules in LangChain include the `.stream()` method (and the equivalent `.astream()` method for [async](https://docs.python.org/3/library/asyncio.html) environments) as an ergonomic streaming interface.
 `.stream()` returns an iterator, which you can consume with a simple `for` loop. Here's an example with a chat model:
 
 ```python
@@ -672,7 +633,7 @@ for chunk in model.stream("what color is the sky?"):
 ```
 
 For models (or other components) that don't support streaming natively, this iterator would just yield a single chunk, but
-you could still use the same general pattern. Using `.stream()` will also automatically call the model in streaming mode
+you could still use the same general pattern when calling them. Using `.stream()` will also automatically call the model in streaming mode
 without the need to provide additional config.
 
 The type of each outputted chunk depends on the type of component - for example, chat models yield [`AIMessageChunks`](https://api.python.langchain.com/en/latest/messages/langchain_core.messages.ai.AIMessageChunk.html).
@@ -683,14 +644,15 @@ each yielded chunk.
 You can check out [this guide](/docs/how_to/streaming/#using-stream) for more detail on how to use `.stream()`.
 
 #### `.astream_events()`
+<span data-heading-keywords="astream_events,stream_events,stream events"></span>
 
-While the `.stream()` method is easier to use than callbacks, it only returns one type of value. This is fine for single LLM calls,
+While the `.stream()` method is intuitive, it can only return the final generated value of your chain. This is fine for single LLM calls,
 but as you build more complex chains of several LLM calls together, you may want to use the intermediate values of
 the chain alongside the final output - for example, returning sources alongside the final generation when building a chat
 over documents app.
 
-There are ways to do this using the aforementioned callbacks, or by constructing your chain in such a way that it passes intermediate
-values to the end with something like [`.assign()`](/docs/how_to/passthrough/), but LangChain also includes an
+There are ways to do this [using callbacks](/docs/concepts/#callbacks-1), or by constructing your chain in such a way that it passes intermediate
+values to the end with something like chained [`.assign()`](/docs/how_to/passthrough/) calls, but LangChain also includes an
 `.astream_events()` method that combines the flexibility of callbacks with the ergonomics of `.stream()`. When called, it returns an iterator
 which yields [various types of events](/docs/how_to/streaming/#event-reference) that you can filter and process according
 to the needs of your project.
@@ -716,7 +678,48 @@ async for event in chain.astream_events({"topic": "parrot"}, version="v2"):
 
 You can roughly think of it as an iterator over callback events (though the format differs) - and you can use it on almost all LangChain components!
 
-See [this guide](/docs/how_to/streaming/#using-stream-events) for more detailed information on how to use `.astream_events()`.
+See [this guide](/docs/how_to/streaming/#using-stream-events) for more detailed information on how to use `.astream_events()`,
+including a table listing available events.
+
+#### Callbacks
+
+The lowest level way to stream outputs from LLMs in LangChain is via the [callbacks](/docs/concepts/#callbacks) system. You can pass a
+callback handler that handles the [`on_llm_new_token`](https://api.python.langchain.com/en/latest/callbacks/langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.html#langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.on_llm_new_token) event into LangChain components. When that component is invoked, any
+[LLM](/docs/concepts/#llms) or [chat model](/docs/concepts/#chat-models) contained in the component calls
+the callback with the generated token. Within the callback, you could pipe the tokens into some other destination, e.g. a HTTP response.
+You can also handle the [`on_llm_end`](https://api.python.langchain.com/en/latest/callbacks/langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.html#langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.on_llm_end) event to perform any necessary cleanup.
+
+You can see [this how-to section](/docs/how_to/#callbacks) for more specifics on using callbacks.
+
+Callbacks were the first technique for streaming introduced in LangChain. While powerful and generalizable,
+they can be unwieldy for developers. For example:
+
+- You need to explicitly initialize and manage some aggregator or other stream to collect results.
+- The execution order isn't explicitly guaranteed, and you could theoretically have a callback run after the `.invoke()` method finishes.
+- Providers would often make you pass an additional parameter to stream outputs instead of returning them all at once.
+- You would often ignore the result of the actual model call in favor of callback results.
+
+#### Tokens
+
+The unit that most model providers use to measure input and output is via a unit called a **token**.
+Tokens are the basic units that language models read and generate when processing or producing text.
+The exact definition of a token can vary depending on the specific way the model was trained -
+for instance, in English, a token could be a single word like "apple", or a part of a word like "app".
+
+When you send a model a prompt, the words and characters in the prompt are encoded into tokens using a **tokenizer**.
+The model then streams back generated output tokens, which the tokenizer decodes into human-readable text.
+The below example shows how OpenAI models tokenize `LangChain is cool!`:
+
+![](/img/tokenization.png)
+
+You can see that it gets split into 5 different tokens, and that the boundaries between tokens are not exactly the same as word boundaries.
+
+The reason language models use tokens rather than something more immediately intuitive like "characters"
+has to do with how they process and understand text. At a high-level, language models iteratively predict their next generated output based on
+the initial input and their previous generations. Training the model using tokens language models to handle linguistic
+units (like words or subwords) that carry meaning, rather than individual characters, which makes it easier for the model
+to learn and understand the structure of the language, including grammar and context.
+Furthermore, using tokens can also improve efficiency, since the model processes fewer units of text compared to character-level processing.
 
 ### Structured output
 
