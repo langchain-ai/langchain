@@ -17,7 +17,12 @@ class MixedBreadAIClient(BaseModel):
         description="mixedbread ai API key. Must be specified directly or "
         "via environment variable 'MXBAI_API_KEY'",
     )
-    base_url: Optional[str] = Field(default=None)
+    base_url: Optional[str] = Field(
+        alias="mxbai_api_base",
+        default=None,
+        description="Base URL for the mixedbread ai API. "
+        "Leave blank if not using a proxy or service emulator.",
+    )
     timeout: Optional[float] = Field(
         default=None, description="Timeout for the mixedbread ai API"
     )
@@ -34,7 +39,7 @@ class MixedBreadAIClient(BaseModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         api_key = values.get("api_key")
-        base_url = values.get("api_base")
+        base_url = values.get("base_url")
         timeout = values.get("timeout")
         max_retries = values.get("max_retries")
 
