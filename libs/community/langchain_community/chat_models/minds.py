@@ -22,11 +22,11 @@ class ChatMinds(ChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         return False
 
+    mindsdb_api_base: str = Field(default=DEFAULT_API_BASE)
+
     mindsdb_api_key: SecretStr = Field(default=None)
 
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
-
-    anyscale_api_base: str = Field(default=DEFAULT_API_BASE)
 
     @staticmethod
     def get_available_models(
