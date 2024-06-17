@@ -2,7 +2,6 @@
 
 from typing import Type
 
-import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
 
@@ -10,6 +9,6 @@ from langchain_openai import ChatOpenAI
 
 
 class TestOpenAIStandard(ChatModelIntegrationTests):
-    @pytest.fixture
+    @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatOpenAI
