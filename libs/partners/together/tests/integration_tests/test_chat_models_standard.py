@@ -16,3 +16,7 @@ class TestTogetherStandard(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         return {"model": "mistralai/Mistral-7B-Instruct-v0.1"}
+
+    @property
+    def returns_usage_metadata(self) -> bool:
+        return True

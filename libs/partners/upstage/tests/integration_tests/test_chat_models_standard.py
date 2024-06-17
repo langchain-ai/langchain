@@ -16,3 +16,7 @@ class TestUpstageStandard(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         return {"model": "solar-1-mini-chat"}
+
+    @property
+    def returns_usage_metadata(self) -> bool:
+        return True
