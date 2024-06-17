@@ -478,7 +478,7 @@ class BaseChatOpenAI(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         with self.client.create(messages=message_dicts, **params) as response:
             for chunk in response:
                 if not isinstance(chunk, dict):
@@ -490,35 +490,41 @@ class BaseChatOpenAI(BaseChatModel):
                             output_tokens=token_usage.get("completion_tokens", 0),
                             total_tokens=token_usage.get("total_tokens", 0),
                         )
-                        chunk = ChatGenerationChunk(
+                        generation_chunk = ChatGenerationChunk(
                             message=default_chunk_class(
                                 content="", usage_metadata=usage_metadata
                             )
                         )
+                        logprobs = None
                     else:
                         continue
                 else:
                     choice = chunk["choices"][0]
                     if choice["delta"] is None:
                         continue
-                    chunk = _convert_delta_to_message_chunk(
+                    message_chunk = _convert_delta_to_message_chunk(
                         choice["delta"], default_chunk_class
                     )
                     generation_info = {}
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
+                        if model_name := chunk.get("model"):
+                            generation_info["model_name"] = model_name
+                        if system_fingerprint := chunk.get("system_fingerprint"):
+                            generation_info["system_fingerprint"] = system_fingerprint
+
                     logprobs = choice.get("logprobs")
                     if logprobs:
                         generation_info["logprobs"] = logprobs
-                    default_chunk_class = chunk.__class__
-                    chunk = ChatGenerationChunk(
-                        message=chunk, generation_info=generation_info or None
+                    default_chunk_class = message_chunk.__class__
+                    generation_chunk = ChatGenerationChunk(
+                        message=message_chunk, generation_info=generation_info or None
                     )
                 if run_manager:
                     run_manager.on_llm_new_token(
-                        chunk.text, chunk=chunk, logprobs=logprobs
+                        generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                     )
-                yield chunk
+                yield generation_chunk
 
     def _generate(
         self,
@@ -596,7 +602,7 @@ class BaseChatOpenAI(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         response = await self.async_client.create(messages=message_dicts, **params)
         async with response:
             async for chunk in response:
@@ -609,35 +615,43 @@ class BaseChatOpenAI(BaseChatModel):
                             output_tokens=token_usage.get("completion_tokens", 0),
                             total_tokens=token_usage.get("total_tokens", 0),
                         )
-                        chunk = ChatGenerationChunk(
+                        generation_chunk = ChatGenerationChunk(
                             message=default_chunk_class(
                                 content="", usage_metadata=usage_metadata
                             )
                         )
+                        logprobs = None
                     else:
                         continue
                 else:
                     choice = chunk["choices"][0]
                     if choice["delta"] is None:
                         continue
-                    chunk = _convert_delta_to_message_chunk(
+                    message_chunk = _convert_delta_to_message_chunk(
                         choice["delta"], default_chunk_class
                     )
                     generation_info = {}
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
+                        if model_name := chunk.get("model"):
+                            generation_info["model_name"] = model_name
+                        if system_fingerprint := chunk.get("system_fingerprint"):
+                            generation_info["system_fingerprint"] = system_fingerprint
+
                     logprobs = choice.get("logprobs")
                     if logprobs:
                         generation_info["logprobs"] = logprobs
-                    default_chunk_class = chunk.__class__
-                    chunk = ChatGenerationChunk(
-                        message=chunk, generation_info=generation_info or None
+                    default_chunk_class = message_chunk.__class__
+                    generation_chunk = ChatGenerationChunk(
+                        message=message_chunk, generation_info=generation_info or None
                     )
                 if run_manager:
                     await run_manager.on_llm_new_token(
-                        token=chunk.text, chunk=chunk, logprobs=logprobs
+                        token=generation_chunk.text,
+                        chunk=generation_chunk,
+                        logprobs=logprobs,
                     )
-                yield chunk
+                yield generation_chunk
 
     async def _agenerate(
         self,
@@ -1374,11 +1388,11 @@ class ChatOpenAI(BaseChatOpenAI):
 
             {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
 
-        When streaming, set the ``stream_options`` model kwarg:
+        When streaming, set the ``stream_usage`` kwarg:
 
         .. code-block:: python
 
-            stream = llm.stream(messages, stream_options={"include_usage": True})
+            stream = llm.stream(messages, stream_usage=True)
             full = next(stream)
             for chunk in stream:
                 full += chunk
@@ -1388,7 +1402,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
             {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
 
-        Alternatively, setting ``stream_options`` when instantiating the model can be
+        Alternatively, setting ``stream_usage`` when instantiating the model can be
         useful when incorporating ``ChatOpenAI`` into LCEL chains-- or when using
         methods like ``.with_structured_output``, which generate chains under the
         hood.
@@ -1397,7 +1411,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
             llm = ChatOpenAI(
                 model="gpt-4o",
-                model_kwargs={"stream_options": {"include_usage": True}},
+                stream_usage=True,
             )
             structured_llm = llm.with_structured_output(...)
 
@@ -1434,6 +1448,11 @@ class ChatOpenAI(BaseChatOpenAI):
 
     """  # noqa: E501
 
+    stream_usage: bool = False
+    """Whether to include usage metadata in streaming output. If True, additional
+    message chunks will be generated during the stream including usage metadata.
+    """
+
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
@@ -1462,6 +1481,44 @@ class ChatOpenAI(BaseChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
         return True
+
+    def _should_stream_usage(
+        self, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> bool:
+        """Determine whether to include usage metadata in streaming output.
+
+        For backwards compatibility, we check for `stream_options` passed
+        explicitly to kwargs or in the model_kwargs and override self.stream_usage.
+        """
+        stream_usage_sources = [  # order of preference
+            stream_usage,
+            kwargs.get("stream_options", {}).get("include_usage"),
+            self.model_kwargs.get("stream_options", {}).get("include_usage"),
+            self.stream_usage,
+        ]
+        for source in stream_usage_sources:
+            if isinstance(source, bool):
+                return source
+        return self.stream_usage
+
+    def _stream(
+        self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> Iterator[ChatGenerationChunk]:
+        """Set default stream_options."""
+        stream_usage = self._should_stream_usage(stream_usage, **kwargs)
+        kwargs["stream_options"] = {"include_usage": stream_usage}
+
+        return super()._stream(*args, **kwargs)
+
+    async def _astream(
+        self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        """Set default stream_options."""
+        stream_usage = self._should_stream_usage(stream_usage, **kwargs)
+        kwargs["stream_options"] = {"include_usage": stream_usage}
+
+        async for chunk in super()._astream(*args, **kwargs):
+            yield chunk
 
 
 def _is_pydantic_class(obj: Any) -> bool:
