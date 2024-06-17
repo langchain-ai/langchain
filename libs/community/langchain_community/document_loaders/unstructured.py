@@ -1,5 +1,6 @@
 """Loader that uses unstructured to load files."""
 from abc import ABC, abstractmethod
+import json
 from pathlib import Path
 from typing import (
     IO,
@@ -28,6 +29,10 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
+
+        # `single` - elements are combined into one (default)
+        # `elements` - maintain individual elements
+        # `paged` - elements are combined by page
         _valid_modes = {"single", "elements", "paged"}
 
         if mode not in _valid_modes:
@@ -45,7 +50,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
 
     @abstractmethod
     def _get_metadata(self) -> dict:
-        """Get metadata."""
+        """Get file_path metadata if available."""
 
     def _post_process_elements(self, elements: list) -> list:
         """Applies post processing functions to extracted unstructured elements.
@@ -74,13 +79,13 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
             text_dict: Dict[int, str] = {}
             meta_dict: Dict[int, Dict] = {}
 
-            for idx, element in enumerate(elements):
+            for element in elements:
                 metadata = self._get_metadata()
                 if hasattr(element, "metadata"):
                     metadata.update(element.metadata.to_dict())
                 page_number = metadata.get("page_number", 1)
 
-                # Check if this page_number already exists in docs_dict
+                # Check if this page_number already exists in text_dict
                 if page_number not in text_dict:
                     # If not, create new entry with initial text and metadata
                     text_dict[page_number] = str(element) + "\n\n"
@@ -218,6 +223,53 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
         self.api_key = api_key
 
         super().__init__(mode=mode, **unstructured_kwargs)
+
+    def lazy_load(self) -> Iterator[Document]:
+        """Load file."""
+        # This method overwrites the UnstructuredBaseLoader method because that one expects
+        # `Element` objects instead of a json, which is what the SDK returns.
+        elements_json = self._get_elements()
+        self._post_process_elements(elements_json)
+
+        if self.mode == "elements":
+            for element in elements_json:
+                metadata = self._get_metadata()
+                # NOTE(MthwRobinson) - the attribute check is for backward compatibility
+                # with unstructured<0.4.9. The metadata attributed was added in 0.4.9.
+                if element.get("metadata") is not None:
+                    metadata.update(element["metadata"])
+                if element.get("category"):
+                    metadata.update(element["category"])
+                yield Document(page_content=element.get("text"), metadata=metadata)
+        elif self.mode == "paged":
+            text_dict: Dict[int, str] = {}
+            meta_dict: Dict[int, Dict] = {}
+
+            for element in elements_json:
+                metadata = self._get_metadata()
+                if element.get("metadata") is not None:
+                    metadata.update(element.get("metadata"))
+                page_number = metadata.get("page_number", 1)
+
+                # Check if this page_number already exists in text_dict
+                if page_number not in text_dict:
+                    # If not, create new entry with initial text and metadata
+                    text_dict[page_number] = str(element.get("text")) + "\n\n"
+                    meta_dict[page_number] = metadata
+                else:
+                    # If exists, append to text and update the metadata
+                    text_dict[page_number] += str(element.get("text")) + "\n\n"
+                    meta_dict[page_number].update(metadata)
+
+            # Convert the dict to a list of Document objects
+            for key in text_dict.keys():
+                yield Document(page_content=text_dict[key], metadata=meta_dict[key])
+        elif self.mode == "single":
+            metadata = self._get_metadata()
+            text = "\n\n".join([el.get("text") for el in elements_json])
+            yield Document(page_content=text, metadata=metadata)
+        else:
+            raise ValueError(f"mode of {self.mode} not supported.")
 
     def _get_metadata(self) -> dict:
         return {"source": self.file_path}
@@ -403,13 +455,11 @@ def get_elements_from_api(
 
     try:
         import unstructured_client  # noqa:F401
-        from unstructured.staging.base import elements_from_json  # noqa:F401
     except ImportError:
         raise ImportError(
-            "unstructured_client and/or unstructured package not found, please install it with "
-            "`pip install unstructured-client` or `pip install unstructured`."
+            "unstructured_client package not found, please install it with "
+            "`pip install unstructured-client`."
         )
-    from unstructured.staging.base import elements_from_json
     from unstructured_client.models import operations, shared
 
     content = _get_content(file=file, file_path=file_path)
@@ -426,7 +476,7 @@ def get_elements_from_api(
     response = client.general.partition(req)
 
     if response.status_code == 200:
-        return elements_from_json(text=response.raw_response.text)
+        return json.loads(response.raw_response.text)
     else:
         raise ValueError(
             f"Receive unexpected status code {response.status_code} from the API.",
