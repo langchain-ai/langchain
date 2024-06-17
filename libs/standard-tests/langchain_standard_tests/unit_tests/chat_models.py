@@ -48,15 +48,11 @@ class ChatModelTests(ABC):
         )
 
     @property
-    def has_tool_calling(
-        self,
-    ) -> bool:
+    def has_tool_calling(self) -> bool:
         return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
     @property
-    def has_structured_output(
-        self,
-    ) -> bool:
+    def has_structured_output(self) -> bool:
         return (
             self.chat_model_class.with_structured_output
             is not BaseChatModel.with_structured_output
