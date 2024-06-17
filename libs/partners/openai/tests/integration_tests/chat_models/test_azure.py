@@ -5,7 +5,12 @@ from typing import Any, Optional
 
 import pytest
 from langchain_core.callbacks import CallbackManager
-from langchain_core.messages import BaseMessage, BaseMessageChunk, HumanMessage
+from langchain_core.messages import (
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    HumanMessage,
+)
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -170,6 +175,7 @@ def test_openai_streaming(llm: AzureChatOpenAI) -> None:
     for chunk in llm.stream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
     assert full.response_metadata.get("model_name") is not None
 
 
@@ -181,6 +187,7 @@ async def test_openai_astream(llm: AzureChatOpenAI) -> None:
     async for chunk in llm.astream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
     assert full.response_metadata.get("model_name") is not None
 
 
