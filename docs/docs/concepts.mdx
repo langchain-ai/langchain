@@ -907,8 +907,8 @@ Second, consider the data sources available to your RAG system. You want to quer
 
 | Name             | When to use                                | Description |
 |------------------|--------------------------------------------|-------------|
-| [Logical routing](/docs/how_to/routing/#using-a-runnablebranch)  | When you can prompt an LLM with rules to decide where to route the input. | Logical routing can use an LLM to reason about the query and choose which datastore is most appropriate. |
-| [Semantic routing](/docs/how_to/routing/#using-a-runnablebranch) | When semantic similarity is an effective way to determine where to route the input. | Semantic routing embeds both query and, typically a set of prompts. It then chooses the appropriate prompt based upon similarity. |
+| [Logical routing](/docs/how_to/routing/)  | When you can prompt an LLM with rules to decide where to route the input. | Logical routing can use an LLM to reason about the query and choose which datastore is most appropriate. |
+| [Semantic routing](/docs/how_to/routing/#routing-by-semantic-similarity) | When semantic similarity is an effective way to determine where to route the input. | Semantic routing embeds both query and, typically a set of prompts. It then chooses the appropriate prompt based upon similarity. |
 
 :::tip
 
@@ -961,13 +961,13 @@ Fifth, consider ways to improve the quality of your similarity search itself. Em
 
 ![](/img/colbert.png)
 
-There are some additional tricks to improve the quality of your retrieval. Embeddings excel at capturing semantic information, but may struggle with keyword-based queries. Many [vector stores](https://python.langchain.com/v0.2/docs/integrations/retrievers/pinecone_hybrid_search/) offer built-in [hybrid-search](https://docs.pinecone.io/guides/data/understanding-hybrid-search) to combine keyword and semantic similarity, which marries the benefits of both approaches. Furthermore, many vector stores have [maximal marginal relevance](https://python.langchain.com/v0.1/docs/modules/model_io/prompts/example_selectors/mmr/), which attempts to diversify the results of a search to avoid returning similar and redundant documents. 
+There are some additional tricks to improve the quality of your retrieval. Embeddings excel at capturing semantic information, but may struggle with keyword-based queries. Many [vector stores](/docs/integrations/retrievers/pinecone_hybrid_search/) offer built-in [hybrid-search](https://docs.pinecone.io/guides/data/understanding-hybrid-search) to combine keyword and semantic similarity, which marries the benefits of both approaches. Furthermore, many vector stores have [maximal marginal relevance](https://python.langchain.com/v0.1/docs/modules/model_io/prompts/example_selectors/mmr/), which attempts to diversify the results of a search to avoid returning similar and redundant documents. 
 
 | Name              | When to use                                              | Description |
 |-------------------|----------------------------------------------------------|-------------|
 | [ColBERT](/docs/integrations/providers/ragatouille/#using-colbert-as-a-reranker)           | When higher granularity embeddings are needed.           | ColBERT uses contextually influenced embeddings for each token in the document and query to get a granular query-document similarity score. |
 | [Hybrid search](/docs/integrations/retrievers/pinecone_hybrid_search/)     | When combining keyword-based and semantic similarity.    | Hybrid search combines keyword and semantic similarity, marrying the benefits of both approaches. |
-| [Maximal Marginal Relevance (MMR) ](/docs/integrations/vectorstores/pinecone/#maximal-marginal-relevance-searches) | When needing to diversify search results. | MMR attempts to diversify the results of a search to avoid returning similar and redundant documents. |
+| [Maximal Marginal Relevance (MMR)](/docs/integrations/vectorstores/pinecone/#maximal-marginal-relevance-searches) | When needing to diversify search results. | MMR attempts to diversify the results of a search to avoid returning similar and redundant documents. |
 
 :::tip
 
@@ -996,7 +996,7 @@ See our RAG from Scratch video on [RAG-Fusion](https://youtu.be/77qELPbNgxA?feat
 **Finally, consider ways to build self-correction into your RAG system.** RAG systems can suffer from low quality retrieval (e.g., if a user question is out of the domain for the index) and / or hallucinations in generation. A naive retrieve-generate pipeline has no ability to detect or self-correct from these kinds of errors. The concept of ["flow engineering"](https://x.com/karpathy/status/1748043513156272416) has been introduced [in the context of code generation](https://arxiv.org/abs/2401.08500): iteratively build an answer to a code question with unit tests to check and self-correct errors. Several works have applied this RAG, such as Self-RAG and Corrective-RAG. In both cases, checks for document relevance, hallucinations, and / or answer quality are performed in the RAG answer generation flow.
 
 We've found that graphs are a great way to reliably express logical flows and have implemented ideas from several of these papers [using LangGraph](https://github.com/langchain-ai/langgraph/tree/main/examples/rag), as shown in the figure below (red - routing, blue - fallback, green - self-correction):
-- **Routing:**  Adaptive RAG ([paper](https://arxiv.org/abs/2403.14403)). Route questions to different retrieval approaches, as discussed above 
+- **Routing:** Adaptive RAG ([paper](https://arxiv.org/abs/2403.14403)). Route questions to different retrieval approaches, as discussed above 
 - **Fallback:** Corrective RAG ([paper](https://arxiv.org/pdf/2401.15884.pdf)). Fallback to web search if docs are not relevant to query
 - **Self-correction:** Self-RAG ([paper](https://arxiv.org/abs/2310.11511)). Fix answers w/ hallucinations or don’t address question
 
@@ -1012,7 +1012,7 @@ We've found that graphs are a great way to reliably express logical flows and ha
 See several videos and cookbooks showcasing RAG with LangGraph: 
 - [LangGraph Corrective RAG](https://www.youtube.com/watch?v=E2shqsYwxck)
 - [LangGraph combining Adaptive, Self-RAG, and Corrective RAG](https://www.youtube.com/watch?v=-ROS6gfYIts) 
-- [Cookbooks for RAG using LangGraph ](https://github.com/langchain-ai/langgraph/tree/main/examples/rag)
+- [Cookbooks for RAG using LangGraph](https://github.com/langchain-ai/langgraph/tree/main/examples/rag)
 
 See our LangGraph RAG recipes with partners:
 - [Meta](https://github.com/meta-llama/llama-recipes/tree/main/recipes/use_cases/agents/langchain) 
