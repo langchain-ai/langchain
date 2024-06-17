@@ -16,7 +16,6 @@ from typing import (
     Literal,
     Optional,
     Sequence,
-    Tuple,
     Type,
     Union,
     cast,
@@ -121,13 +120,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Callback manager to add to the run trace."""
-
-    exceptions_to_handle: Tuple[Type[BaseException], ...] = ()
-    """The exceptions on which the model will stream `RemoveMessageChunk` objects
-    with IDs of the previously streamed message chunks need to be discarded.
-
-    Any exception that is not a subclass of these exceptions will be raised immediately.
-    """
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -270,10 +262,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                         seen_chunk_ids.append(chunk.message.id)
                         last_chunk_id = chunk.message.id
                 assert generation is not None
-            except self.exceptions_to_handle:
+            except BaseException as e:
                 for chunk_id in seen_chunk_ids:
                     yield RemoveMessageChunk(id=chunk_id)  # type: ignore[call-arg]
-            except BaseException as e:
                 run_manager.on_llm_error(
                     e,
                     response=LLMResult(

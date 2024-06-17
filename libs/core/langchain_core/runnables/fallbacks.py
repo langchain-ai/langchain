@@ -457,7 +457,6 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         )
         last_error = None
         output: Optional[Output] = None
-        is_first_stream_chunk = True
         for runnable in self.runnables:
             stream = runnable.stream(
                 input,
@@ -470,7 +469,6 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
                 for chunk in stream:
                     yield chunk
-                    is_first_stream_chunk = False
 
                     if isinstance(chunk, RemoveMessage):
                         output = None
@@ -486,7 +484,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             except self.exceptions_to_handle as e:
                 last_error = e
                 output = None
-                if not is_first_stream_chunk:
+                if not isinstance(chunk, RemoveMessage):
+                    run_manager.on_chain_error(e)
                     raise e
             except BaseException as e:
                 run_manager.on_chain_error(e)
