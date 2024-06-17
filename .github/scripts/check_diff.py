@@ -120,7 +120,7 @@ if __name__ == "__main__":
             dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
         ),
         "dirs-to-test": add_dependents(dirs_to_run["test"] | dirs_to_run["extended-test"], dependents),
-        "dirs-to-extended-test": add_dependents(dirs_to_run["extended-test"], dependents),
+        "dirs-to-extended-test": list(dirs_to_run["extended-test"]),
         "docs-edited": "true" if docs_edited else "",
     }
     for key, value in outputs.items():
