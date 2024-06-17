@@ -46,6 +46,7 @@ from langchain_core.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
+from langchain_core.messages.tool import ToolCall
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -82,15 +83,50 @@ def _create_retry_decorator(
     )
 
 
+def _parse_tool_calling(tool_call: dict) -> ToolCall:
+    """
+    Convert a tool calling response from server to a ToolCall object.
+    Args:
+        tool_call:
+
+    Returns:
+
+    """
+    name = tool_call.get("name", "")
+    args = json.loads(tool_call["function"]["arguments"])
+    id = tool_call.get("id")
+    return ToolCall(name=name, args=args, id=id)
+
+
+def _convert_to_tool_calling(tool_call: ToolCall) -> dict:
+    """
+    Convert a ToolCall object to a tool calling request for server.
+    Args:
+        tool_call:
+
+    Returns:
+
+    """
+    return {
+        "type": "function",
+        "function": {
+            "arguments": json.dumps(tool_call["args"]),
+            "name": tool_call["name"],
+        },
+        "id": tool_call.get("id"),
+    }
+
+
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict["role"]
     if role == "user":
         return HumanMessage(content=_dict["content"])
     elif role == "assistant":
-        # Fix for azure
-        # Also OpenAI returns None for tool invocations
         content = _dict.get("content", "") or ""
-        tool_calls = _dict.get("tool_calls", [])
+        tool_calls_content = _dict.get("tool_calls", []) or []
+        tool_calls = [
+            _parse_tool_calling(tool_call) for tool_call in tool_calls_content
+        ]
         return AIMessage(content=content, tool_calls=tool_calls)
     elif role == "system":
         return SystemMessage(content=_dict["content"])
@@ -109,7 +145,9 @@ def _convert_delta_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     elif role == "assistant" or default_class == AIMessageChunk:
-        tool_calls = _dict.get("tool_calls", [])
+        tool_calls = [
+            _parse_tool_calling(tool_call) for tool_call in _dict.get("tool_calls", [])
+        ]
         return AIMessageChunk(content=content, tool_calls=tool_calls)
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -127,9 +165,14 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, HumanMessage):
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
-        message_dict = {"role": "assistant", "content": message.content}
-        if "function_call" in message.additional_kwargs:
-            message_dict["function_call"] = message.additional_kwargs["function_call"]
+        tool_calls = [
+            _convert_to_tool_calling(tool_call) for tool_call in message.tool_calls
+        ]
+        message_dict = {
+            "role": "assistant",
+            "content": message.content,
+            "tool_calls": tool_calls,
+        }
     elif isinstance(message, SystemMessage):
         message_dict = {"role": "system", "content": message.content}
     elif isinstance(message, FunctionMessage):
