@@ -804,11 +804,6 @@ class ChatGroq(BaseChatModel):
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
-            if isinstance(tool_choice, str) and (
-                tool_choice not in ("auto", "any", "none")
-            ):
-                tool_choice = {"type": "function", "function": {"name": tool_choice}}
-            # TODO: Remove this update once 'any' is supported.
             if tool_choice == "any":
                 if len(tools) > 1:
                     raise ValueError(
@@ -817,6 +812,11 @@ class ChatGroq(BaseChatModel):
                     )
                 else:
                     tool_choice = convert_to_openai_tool(tools[0])["function"]["name"]
+            if isinstance(tool_choice, str) and (
+                tool_choice not in ("auto", "any", "none")
+            ):
+                tool_choice = {"type": "function", "function": {"name": tool_choice}}
+            # TODO: Remove this update once 'any' is supported.
             if isinstance(tool_choice, dict) and (len(formatted_tools) != 1):
                 raise ValueError(
                     "When specifying `tool_choice`, you must provide exactly one "
