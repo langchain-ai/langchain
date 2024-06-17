@@ -6,13 +6,13 @@ import sseclient
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from pydantic import Field
+from langchain_core.pydantic_v1 import Field
 
 SMART_ENDPOINT = "https://chat-api.you.com/smart"
 RESEARCH_ENDPOINT = "https://chat-api.you.com/research"
 
 
-def _request(base_url: str, api_key: str, **kwargs) -> Dict[str, Any]:
+def _request(base_url: str, api_key: str, **kwargs: Any) -> Dict[str, Any]:
     """
     NOTE: This function can be replaced by a OpenAPI-generated Python SDK in the future,
     for better input/output typing support.
@@ -24,14 +24,18 @@ def _request(base_url: str, api_key: str, **kwargs) -> Dict[str, Any]:
 
 
 def _request_stream(
-    base_url: str, api_key: str, **kwargs
+    base_url: str, api_key: str, **kwargs: Any
 ) -> Generator[str, None, None]:
     headers = {"x-api-key": api_key}
     params = dict(**kwargs, stream=True)
     response = requests.post(base_url, headers=headers, stream=True, json=params)
     response.raise_for_status()
 
-    client = sseclient.SSEClient(response)
+    # Explicitly coercing the response to a generator to satisfy mypy
+    event_source = (bytestring for bytestring in response)
+
+    client = sseclient.SSEClient(event_source)
+
     for event in client.events():
         if event.event in ("search_results", "done"):
             pass
@@ -71,7 +75,9 @@ class You(LLM):
 
     mode: Literal["smart", "research"] = Field(
         "smart",
-        description='You.com conversational endpoints. Choose from "smart" or "research"',
+        description=(
+            'You.com conversational endpoints. Choose from "smart" or "research"'
+        ),
     )
     ydc_api_key: Optional[str] = Field(
         None,
