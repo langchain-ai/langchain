@@ -55,14 +55,7 @@ class CohereProvider(Provider):
     stop_sequence_key = "stop_sequences"
 
     def __init__(self) -> None:
-        # try:
-        #     from oci.generative_ai_inference import models
 
-        # except ImportError as ex:
-        #     raise ModuleNotFoundError(
-        #         "Could not import oci python package. "
-        #         "Please make sure you have the oci package installed."
-        #     ) from ex
         from oci.generative_ai_inference import models
 
         self.oci_chat_request = models.CohereChatRequest
@@ -115,14 +108,6 @@ class MetaProvider(Provider):
     stop_sequence_key = "stop"
 
     def __init__(self) -> None:
-        # try:
-        #     from oci.generative_ai_inference import models
-
-        # except ImportError as ex:
-        #     raise ModuleNotFoundError(
-        #         "Could not import oci python package. "
-        #         "Please make sure you have the oci package installed."
-        #     ) from ex
 
         from oci.generative_ai_inference import models
 
