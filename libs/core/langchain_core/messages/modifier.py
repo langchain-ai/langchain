@@ -24,12 +24,13 @@ class RemoveMessage(ModifierMessage):
 RemoveMessage.update_forward_refs()
 
 
-class RemoveMessageChunk(ModifierMessage, BaseMessageChunk):
+class RemoveMessageChunk(RemoveMessage, BaseMessageChunk):
     """Remove Message chunk."""
 
-    type: Literal["RemoveMessageChunk"] = "RemoveMessageChunk"
-    # TODO: is there a better way to handle it?
-    content: str = "modifier"
+    # Ignoring mypy re-assignment here since we're overriding the value
+    # to make sure that the chunk variant can be discriminated from the
+    # non-chunk variant.
+    type: Literal["RemoveMessageChunk"] = "RemoveMessageChunk"  # type: ignore[assignment]
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:

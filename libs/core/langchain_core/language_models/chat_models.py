@@ -265,14 +265,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                         generation = chunk
                     else:
                         generation += chunk
+
+                    if chunk.message.id != last_chunk_id:
+                        seen_chunk_ids.append(chunk.message.id)
+                        last_chunk_id = chunk.message.id
                 assert generation is not None
             except self.exceptions_to_handle:
-                if chunk.message.id != last_chunk_id:
-                    seen_chunk_ids.append(chunk.message.id)
-                    last_chunk_id = chunk.message.id
-
                 for chunk_id in seen_chunk_ids:
-                    yield RemoveMessageChunk(id=chunk_id)
+                    yield RemoveMessageChunk(id=chunk_id)  # type: ignore[call-arg]
             except BaseException as e:
                 run_manager.on_llm_error(
                     e,
