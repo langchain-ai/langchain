@@ -150,6 +150,7 @@ class Doc(BaseModel):
     loader_details: dict
     loading_end: bool
     source_owner: str
+    classifier_location: str
 
 
 def get_full_path(path: str) -> str:

@@ -138,6 +138,7 @@ class PebbloRetrievalQA(Chain):
             else []
             if auth_context
             else [],
+            "classifier_location": self.classifier_location,
         }
         qa_payload = Qa(**qa)
         self._send_prompt(qa_payload)
@@ -413,15 +414,16 @@ class PebbloRetrievalQA(Chain):
         }
         app_discover_url = f"{self.classifier_url}{PROMPT_URL}"
         pebblo_resp = None
+        payload = qa_payload.dict(exclude_unset=True)
         if self.classifier_location == "local":
             try:
                 pebblo_resp = requests.post(
                     app_discover_url,
                     headers=headers,
-                    json=qa_payload.dict(),
+                    json=payload,
                     timeout=20,
                 )
-                logger.debug("prompt-payload: %s", qa_payload)
+                logger.debug("prompt-payload: %s", payload)
                 logger.debug(
                     "send_prompt[local]: request url %s, body %s len %s\
                         response status %s body %s",
@@ -450,32 +452,32 @@ class PebbloRetrievalQA(Chain):
         if self.api_key:
             if self.classifier_location == "local":
                 if pebblo_resp:
-                    qa_payload.response = (
+                    payload["response"] = (
                         json.loads(pebblo_resp.text)
                         .get("retrieval_data", {})
                         .get("response", {})
                     )
-                    qa_payload.context = (
+                    payload["context"] = (
                         json.loads(pebblo_resp.text)
                         .get("retrieval_data", {})
                         .get("context", [])
                     )
-                    qa_payload.prompt = (
+                    payload["prompt"] = (
                         json.loads(pebblo_resp.text)
                         .get("retrieval_data", {})
                         .get("prompt", {})
                     )
                 else:
-                    qa_payload.response = None
-                    qa_payload.context = None
-                    qa_payload.prompt = None
+                    payload["response"] = None
+                    payload["context"] = None
+                    payload["prompt"] = None
             headers.update({"x-api-key": self.api_key})
             pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}{PROMPT_URL}"
             try:
                 pebblo_cloud_response = requests.post(
                     pebblo_cloud_url,
                     headers=headers,
-                    json=qa_payload.dict(),
+                    json=payload,
                     timeout=20,
                 )
 

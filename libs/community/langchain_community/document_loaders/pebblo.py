@@ -207,6 +207,7 @@ class PebbloSafeLoader(BaseLoader):
             "loader_details": self.loader_details,
             "loading_end": "false",
             "source_owner": self.source_owner,
+            "classifier_location": self.classifier_location,
         }
         if loading_end is True:
             payload["loading_end"] = "true"
@@ -252,7 +253,6 @@ class PebbloSafeLoader(BaseLoader):
         if self.api_key:
             if self.classifier_location == "local":
                 payload["docs"] = classified_docs
-            payload["classifier_location"] = self.classifier_location
             headers.update({"x-api-key": self.api_key})
             pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}{LOADER_DOC_URL}"
             try:

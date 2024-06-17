@@ -143,3 +143,4 @@ class Qa(BaseModel):
     prompt_time: str
     user: str
     user_identities: Optional[List[str]]
+    classifier_location: str
