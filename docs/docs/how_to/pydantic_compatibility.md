@@ -49,7 +49,7 @@ Mixing Pydantic v2 primitives with Pydantic v1 primitives can raise cryptic erro
 
 ```python
 from pydantic import Field, field_validator # pydantic v2
-from langchain_core.tools  BaseTool
+from langchain_core.tools import BaseTool
 
 class CustomTool(BaseTool): # BaseTool is v1 code
     x: int = Field(default=1)
