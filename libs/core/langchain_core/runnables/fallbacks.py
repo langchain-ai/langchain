@@ -464,9 +464,6 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 patch_config(config, callbacks=run_manager.get_child()),
                 **kwargs,
             )
-            runnable_exceptions_to_handle: Tuple[Type[BaseException], ...] = getattr(
-                runnable, "exceptions_to_handle", ()
-            )
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error
@@ -486,9 +483,6 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                             output = output + chunk  # type: ignore
                     except TypeError:
                         output = None
-            except runnable_exceptions_to_handle as e:
-                last_error = e
-                output = None
             except self.exceptions_to_handle as e:
                 last_error = e
                 output = None
