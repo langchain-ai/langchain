@@ -30,7 +30,3 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
             "azure_endpoint": OPENAI_API_BASE,
             "api_key": OPENAI_API_KEY,
         }
-
-    @property
-    def returns_usage_metadata(self) -> bool:
-        return True

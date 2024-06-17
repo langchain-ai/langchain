@@ -21,10 +21,6 @@ class TestFireworksStandard(ChatModelIntegrationTests):
             "temperature": 0,
         }
 
-    @property
-    def returns_usage_metadata(self) -> bool:
-        return True
-
     @pytest.mark.xfail(reason="Not yet implemented.")
     def test_tool_message_histories_list_content(self, model: BaseChatModel) -> None:
         super().test_tool_message_histories_list_content(model)

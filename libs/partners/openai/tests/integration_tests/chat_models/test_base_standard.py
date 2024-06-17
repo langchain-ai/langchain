@@ -12,11 +12,3 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
     @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatOpenAI
-
-    @property
-    def returns_usage_metadata(self) -> bool:
-        return True
-
-    @property
-    def returns_usage_metadata(self) -> bool:
-        return True

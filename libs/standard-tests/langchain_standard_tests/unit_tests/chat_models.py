@@ -72,7 +72,7 @@ class ChatModelTests(ABC):
 
     @property
     def returns_usage_metadata(self) -> bool:
-        return False
+        return True
 
 
 class ChatModelUnitTests(ChatModelTests):
