@@ -43,7 +43,7 @@ from langchain_core.messages import (
     BaseMessage,
     BaseMessageChunk,
     HumanMessage,
-    RemoveMessage,
+    RemoveMessageChunk,
     convert_to_messages,
     message_chunk_to_message,
 )
@@ -123,7 +123,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """[DEPRECATED] Callback manager to add to the run trace."""
 
     exceptions_to_handle: Tuple[Type[BaseException], ...] = ()
-    """The exceptions on which the model will stream a special modifier message `RemoveMessage`.
+    """The exceptions on which the model will stream `RemoveMessageChunk` objects
+    with IDs of the previously streamed message chunks need to be discarded.
 
     Any exception that is not a subclass of these exceptions will be raised immediately.
     """
@@ -271,7 +272,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     last_chunk_id = chunk.message.id
 
                 for chunk_id in seen_chunk_ids:
-                    yield RemoveMessage(id=chunk_id)
+                    yield RemoveMessageChunk(id=chunk_id)
             except BaseException as e:
                 run_manager.on_llm_error(
                     e,

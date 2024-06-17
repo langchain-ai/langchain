@@ -21,6 +21,8 @@ EXPECTED_ALL = [
     "ToolCallChunk",
     "ToolMessage",
     "ToolMessageChunk",
+    "RemoveMessage",
+    "RemoveMessageChunk",
     "convert_to_messages",
     "get_buffer_string",
     "merge_content",

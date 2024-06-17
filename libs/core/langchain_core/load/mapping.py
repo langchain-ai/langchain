@@ -303,6 +303,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "tool",
         "ToolMessageChunk",
     ),
+    ("langchain", "schema", "messages", "RemoveMessageChunk"): (
+        "langchain_core",
+        "messages",
+        "modifier",
+        "RemoveMessageChunk",
+    ),
     ("langchain", "schema", "output", "GenerationChunk"): (
         "langchain_core",
         "outputs",

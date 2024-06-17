@@ -458,28 +458,29 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             name=config.get("run_name"),
             run_id=config.pop("run_id", None),
         )
-        first_error = None
         last_error = None
         output: Optional[Output] = None
-        last_chunk_id = None
-        seen_chunk_ids = []
+        is_first_stream_chunk = True
         for runnable in self.runnables:
             stream = runnable.stream(
                 input,
                 patch_config(config, callbacks=run_manager.get_child()),
                 **kwargs,
             )
+            runnable_exceptions_to_handle: Tuple[Type[BaseException], ...] = getattr(
+                runnable, "exceptions_to_handle", ()
+            )
             try:
                 if self.exception_key and last_error is not None:
                     input[self.exception_key] = last_error
 
                 for chunk in stream:
-                    chunk_id = getattr(chunk, "id", None)
-                    if chunk_id is not None and chunk_id != last_chunk_id:
-                        seen_chunk_ids.append(chunk.id)
-                        last_chunk_id = chunk_id
-
                     yield chunk
+                    is_first_stream_chunk = False
+
+                    if isinstance(chunk, RemoveMessage):
+                        output = None
+                        continue
 
                     try:
                         if output is None:
@@ -488,21 +489,17 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                             output = output + chunk  # type: ignore
                     except TypeError:
                         output = None
-
-            except self.exceptions_to_handle as e:
-                first_error = e if first_error is None else first_error
+            except runnable_exceptions_to_handle as e:
                 last_error = e
-
-                for chunk_id in seen_chunk_ids:
-                    yield RemoveMessage(id=chunk_id)
-
                 output = None
-                seen_chunk_ids = []
+            except self.exceptions_to_handle as e:
+                last_error = e
+                output = None
+                if not is_first_stream_chunk:
+                    raise e
             except BaseException as e:
                 run_manager.on_chain_error(e)
                 raise e
-            else:
-                first_error = None
 
         run_manager.on_chain_end(output)
 

@@ -1,6 +1,6 @@
 from typing import Any, List, Literal
 
-from langchain_core.messages.base import BaseMessage
+from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
 
 class ModifierMessage(BaseMessage):
@@ -22,3 +22,16 @@ class RemoveMessage(ModifierMessage):
 
 
 RemoveMessage.update_forward_refs()
+
+
+class RemoveMessageChunk(ModifierMessage, BaseMessageChunk):
+    """Remove Message chunk."""
+
+    type: Literal["RemoveMessageChunk"] = "RemoveMessageChunk"
+    # TODO: is there a better way to handle it?
+    content: str = "modifier"
+
+    @classmethod
+    def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
+        return ["langchain", "schema", "messages"]
