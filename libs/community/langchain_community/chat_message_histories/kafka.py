@@ -85,24 +85,37 @@ def ensure_topic_exists(
 class KafkaChatMessageHistory(BaseChatMessageHistory):
     """Chat message history stored in Kafka.
 
-    Recommended usage:
-    # Set up KafkaChatMessageHistory
-    history = KafkaChatMessageHistory(
-        session_id="your_session_id",
-        bootstrap_servers="host:port",
-    )
+    Setup:
+        Install ``confluent-kafka-python``.
 
-    # Add messages
-    history.add_messages([message1, message2, message3, ...])
+        .. code-block:: bash
 
-    # Retrieve messages
-    message_batch_0 = history.messages
+            pip install confluent_kafka
 
-    # retrieve messages after message_batch_0
-    message_batch_1 = history.messages
+    Instantiate:
+        .. code-block:: python
 
-    # Reset to beginning and retrieve messages
-    messages_from_beginning = history.messages_from_beginning()
+            from langchain_community.chat_message_histories import KafkaChatMessageHistory
+
+            history = KafkaChatMessageHistory(
+                session_id="your_session_id",
+                bootstrap_servers="host:port",
+            )
+
+    Add and retrieve messages:
+        .. code-block:: python
+
+            # Add messages
+            history.add_messages([message1, message2, message3, ...])
+
+            # Retrieve messages
+            message_batch_0 = history.messages
+
+            # retrieve messages after message_batch_0
+            message_batch_1 = history.messages
+
+            # Reset to beginning and retrieve messages
+            messages_from_beginning = history.messages_from_beginning()
 
     Retrieving messages is stateful. Internally, it uses Kafka consumer to read.
     The consumed offset is maintained persistently.
@@ -126,7 +139,7 @@ class KafkaChatMessageHistory(BaseChatMessageHistory):
      when retrieving messages. As a result, the method to retrieve messages may not
      return all messages. Change `max_message_count` and `max_time_sec` to retrieve
      all history messages.
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
