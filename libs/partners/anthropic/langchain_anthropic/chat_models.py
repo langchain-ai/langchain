@@ -1,4 +1,3 @@
-import json
 import os
 import re
 import warnings
@@ -43,6 +42,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import (
@@ -103,7 +103,12 @@ def _merge_messages(
     for curr in messages:
         curr = curr.copy(deep=True)
         if isinstance(curr, ToolMessage):
-            if isinstance(curr.content, str):
+            if isinstance(curr.content, list) and all(
+                isinstance(block, dict) and block.get("type") == "tool_result"
+                for block in curr.content
+            ):
+                curr = HumanMessage(curr.content)  # type: ignore[misc]
+            else:
                 curr = HumanMessage(  # type: ignore[misc]
                     [
                         {
@@ -113,8 +118,6 @@ def _merge_messages(
                         }
                     ]
                 )
-            else:
-                curr = HumanMessage(curr.content)  # type: ignore[misc]
         last = merged[-1] if merged else None
         if isinstance(last, HumanMessage) and isinstance(curr, HumanMessage):
             if isinstance(last.content, str):
@@ -138,7 +141,7 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
     [
                 {
                     "role": _message_type_lookups[m.type],
-                    "content": [_AnthropicMessageContent(text=m.content).dict()],
+                    "content": [_AnthropicMessageContent(text=m.content).model_dump()],
                 }
                 for m in messages
             ]
@@ -446,6 +449,24 @@ class ChatAnthropic(BaseChatModel):
 
             {'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36}
 
+        Message chunks containing token usage will be included during streaming by
+        default:
+
+        .. code-block:: python
+
+            stream = llm.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full.usage_metadata
+
+        .. code-block:: python
+
+            {'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36}
+
+        These can be disabled by setting ``stream_usage=False`` in the stream method,
+        or by setting ``stream_usage=False`` when initializing ChatAnthropic.
+
     Response metadata
         .. code-block:: python
 
@@ -492,6 +513,9 @@ class ChatAnthropic(BaseChatModel):
     max_retries: int = 2
     """Number of retries allowed for requests sent to the Anthropic Completion API."""
 
+    stop_sequences: Optional[List[str]] = Field(None, alias="stop")
+    """Default stop sequences."""
+
     anthropic_api_url: Optional[str] = Field(None, alias="base_url")
     """Base URL for API requests. Only specify if using a proxy or service emulator.
     
@@ -509,6 +533,11 @@ class ChatAnthropic(BaseChatModel):
 
     streaming: bool = False
     """Whether to use streaming or not."""
+
+    stream_usage: bool = True
+    """Whether to include usage metadata in streaming output. If True, additional
+    message chunks will be generated during the stream including usage metadata.
+    """
 
     @property
     def _llm_type(self) -> str:
@@ -611,6 +640,7 @@ class ChatAnthropic(BaseChatModel):
     ) -> Dict:
         # get system prompt if any
         system, formatted_messages = _format_messages(messages)
+        stop_sequences = stop or self.stop_sequences
         rtn = {
             "model": self.model,
             "max_tokens": self.max_tokens,
@@ -618,7 +648,7 @@ class ChatAnthropic(BaseChatModel):
             "temperature": self.temperature,
             "top_k": self.top_k,
             "top_p": self.top_p,
-            "stop_sequences": stop,
+            "stop_sequences": stop_sequences,
             "system": system,
             **self.model_kwargs,
             **kwargs,
@@ -632,37 +662,25 @@ class ChatAnthropic(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        stream_usage: Optional[bool] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        if stream_usage is None:
+            stream_usage = self.stream_usage
         params = self._format_params(messages=messages, stop=stop, **kwargs)
-        if _tools_in_params(params):
-            result = self._generate(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+        stream = self._client.messages.create(**params, stream=True)
+        coerce_content_to_string = not _tools_in_params(params)
+        for event in stream:
+            msg = _make_message_chunk_from_anthropic_event(
+                event,
+                stream_usage=stream_usage,
+                coerce_content_to_string=coerce_content_to_string,
             )
-            message = result.generations[0].message
-            if isinstance(message, AIMessage) and message.tool_calls is not None:
-                tool_call_chunks = [
-                    {
-                        "name": tool_call["name"],
-                        "args": json.dumps(tool_call["args"]),
-                        "id": tool_call["id"],
-                        "index": idx,
-                    }
-                    for idx, tool_call in enumerate(message.tool_calls)
-                ]
-                message_chunk = AIMessageChunk(
-                    content=message.content,
-                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
-                )
-                yield ChatGenerationChunk(message=message_chunk)
-            else:
-                yield cast(ChatGenerationChunk, result.generations[0])
-            return
-        with self._client.messages.stream(**params) as stream:
-            for text in stream.text_stream:
-                chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
-                if run_manager:
-                    run_manager.on_llm_new_token(text, chunk=chunk)
+            if msg is not None:
+                chunk = ChatGenerationChunk(message=msg)
+                if run_manager and isinstance(msg.content, str):
+                    run_manager.on_llm_new_token(msg.content, chunk=chunk)
                 yield chunk
 
     async def _astream(
@@ -670,38 +688,25 @@ class ChatAnthropic(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
+        stream_usage: Optional[bool] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        if stream_usage is None:
+            stream_usage = self.stream_usage
         params = self._format_params(messages=messages, stop=stop, **kwargs)
-        if _tools_in_params(params):
-            warnings.warn("stream: Tool use is not yet supported in streaming mode.")
-            result = await self._agenerate(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+        stream = await self._async_client.messages.create(**params, stream=True)
+        coerce_content_to_string = not _tools_in_params(params)
+        async for event in stream:
+            msg = _make_message_chunk_from_anthropic_event(
+                event,
+                stream_usage=stream_usage,
+                coerce_content_to_string=coerce_content_to_string,
             )
-            message = result.generations[0].message
-            if isinstance(message, AIMessage) and message.tool_calls is not None:
-                tool_call_chunks = [
-                    {
-                        "name": tool_call["name"],
-                        "args": json.dumps(tool_call["args"]),
-                        "id": tool_call["id"],
-                        "index": idx,
-                    }
-                    for idx, tool_call in enumerate(message.tool_calls)
-                ]
-                message_chunk = AIMessageChunk(
-                    content=message.content,
-                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
-                )
-                yield ChatGenerationChunk(message=message_chunk)
-            else:
-                yield cast(ChatGenerationChunk, result.generations[0])
-            return
-        async with self._async_client.messages.stream(**params) as stream:
-            async for text in stream.text_stream:
-                chunk = ChatGenerationChunk(message=AIMessageChunk(content=text))
-                if run_manager:
-                    await run_manager.on_llm_new_token(text, chunk=chunk)
+            if msg is not None:
+                chunk = ChatGenerationChunk(message=msg)
+                if run_manager and isinstance(msg.content, str):
+                    await run_manager.on_llm_new_token(msg.content, chunk=chunk)
                 yield chunk
 
     def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
@@ -740,15 +745,10 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         if self.streaming:
-            if _tools_in_params(params):
-                warnings.warn(
-                    "stream: Tool use is not yet supported in streaming mode."
-                )
-            else:
-                stream_iter = self._stream(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
-                return generate_from_stream(stream_iter)
+            stream_iter = self._stream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return generate_from_stream(stream_iter)
         data = self._client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
@@ -761,15 +761,10 @@ class ChatAnthropic(BaseChatModel):
     ) -> ChatResult:
         params = self._format_params(messages=messages, stop=stop, **kwargs)
         if self.streaming:
-            if _tools_in_params(params):
-                warnings.warn(
-                    "stream: Tool use is not yet supported in streaming mode."
-                )
-            else:
-                stream_iter = self._astream(
-                    messages, stop=stop, run_manager=run_manager, **kwargs
-                )
-                return await agenerate_from_stream(stream_iter)
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return await agenerate_from_stream(stream_iter)
         data = await self._async_client.messages.create(**params)
         return self._format_output(data, **kwargs)
 
@@ -1062,6 +1057,88 @@ def _lc_tool_calls_to_anthropic_tool_use_blocks(
             )
         )
     return blocks
+
+
+def _make_message_chunk_from_anthropic_event(
+    event: anthropic.types.RawMessageStreamEvent,
+    *,
+    stream_usage: bool = True,
+    coerce_content_to_string: bool,
+) -> Optional[AIMessageChunk]:
+    """Convert Anthropic event to AIMessageChunk.
+
+    Note that not all events will result in a message chunk. In these cases
+    we return None.
+    """
+    message_chunk: Optional[AIMessageChunk] = None
+    # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
+    if event.type == "message_start" and stream_usage:
+        input_tokens = event.message.usage.input_tokens
+        message_chunk = AIMessageChunk(
+            content="" if coerce_content_to_string else [],
+            usage_metadata=UsageMetadata(
+                input_tokens=input_tokens,
+                output_tokens=0,
+                total_tokens=input_tokens,
+            ),
+        )
+    elif (
+        event.type == "content_block_start"
+        and event.content_block is not None
+        and event.content_block.type == "tool_use"
+    ):
+        if coerce_content_to_string:
+            warnings.warn("Received unexpected tool content block.")
+        content_block = event.content_block.model_dump()
+        content_block["index"] = event.index
+        tool_call_chunk = {
+            "index": event.index,
+            "id": event.content_block.id,
+            "name": event.content_block.name,
+            "args": "",
+        }
+        message_chunk = AIMessageChunk(
+            content=[content_block],
+            tool_call_chunks=[tool_call_chunk],  # type: ignore
+        )
+    elif event.type == "content_block_delta":
+        if event.delta.type == "text_delta":
+            if coerce_content_to_string:
+                text = event.delta.text
+                message_chunk = AIMessageChunk(content=text)
+            else:
+                content_block = event.delta.model_dump()
+                content_block["index"] = event.index
+                content_block["type"] = "text"
+                message_chunk = AIMessageChunk(content=[content_block])
+        elif event.delta.type == "input_json_delta":
+            content_block = event.delta.model_dump()
+            content_block["index"] = event.index
+            content_block["type"] = "tool_use"
+            tool_call_chunk = {
+                "index": event.index,
+                "id": None,
+                "name": None,
+                "args": event.delta.partial_json,
+            }
+            message_chunk = AIMessageChunk(
+                content=[content_block],
+                tool_call_chunks=[tool_call_chunk],  # type: ignore
+            )
+    elif event.type == "message_delta" and stream_usage:
+        output_tokens = event.usage.output_tokens
+        message_chunk = AIMessageChunk(
+            content="",
+            usage_metadata=UsageMetadata(
+                input_tokens=0,
+                output_tokens=output_tokens,
+                total_tokens=output_tokens,
+            ),
+        )
+    else:
+        pass
+
+    return message_chunk
 
 
 @deprecated(since="0.1.0", removal="0.3.0", alternative="ChatAnthropic")
