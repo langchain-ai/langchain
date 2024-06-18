@@ -86,4 +86,10 @@ class DatabaseMindWrapper(BaseModel):
         return completion.choices[0].message.content
 
     def run(self, query: Text) -> Text:
-        pass
+        if not self._mind:
+            self._create_mind()
+
+        if not self._client:
+            self._create_client()
+
+        return self._query_mind(query)
