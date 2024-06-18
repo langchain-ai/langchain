@@ -62,7 +62,7 @@ class DatabaseMindWrapper(BaseModel):
             name=self.name,
             description=self.description,
             base_url=self.mindsdb_api_base,
-            api_key=self.mindsdb_api_key,
+            api_key=self.mindsdb_api_key.get_secret_value(),
             model=self.model,
             data_source_type=self.data_source_type,
             data_source_connection_args=self.data_source_connection_args
@@ -70,7 +70,7 @@ class DatabaseMindWrapper(BaseModel):
 
     def _create_client(self) -> None:
         self._client = OpenAI(
-            api_key=self.mindsdb_api_key,
+            api_key=self.mindsdb_api_key.get_secret_value(),
             base_url=self.mindsdb_api_base
         )
 
