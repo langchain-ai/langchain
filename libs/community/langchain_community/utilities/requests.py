@@ -29,11 +29,7 @@ class Requests(BaseModel):
     def get(self, url: str, **kwargs: Any) -> requests.Response:
         """GET the URL and return the text."""
         return requests.get(
-            url,
-            headers=self.headers,
-            auth=self.auth,
-            verify=self.verify,
-            **kwargs
+            url, headers=self.headers, auth=self.auth, verify=self.verify, **kwargs
         )
 
     def post(self, url: str, data: Dict[str, Any], **kwargs: Any) -> requests.Response:
@@ -44,7 +40,7 @@ class Requests(BaseModel):
             headers=self.headers,
             auth=self.auth,
             verify=self.verify,
-            **kwargs
+            **kwargs,
         )
 
     def patch(self, url: str, data: Dict[str, Any], **kwargs: Any) -> requests.Response:
@@ -55,7 +51,7 @@ class Requests(BaseModel):
             headers=self.headers,
             auth=self.auth,
             verify=self.verify,
-            **kwargs
+            **kwargs,
         )
 
     def put(self, url: str, data: Dict[str, Any], **kwargs: Any) -> requests.Response:
@@ -66,17 +62,13 @@ class Requests(BaseModel):
             headers=self.headers,
             auth=self.auth,
             verify=self.verify,
-            **kwargs
+            **kwargs,
         )
 
     def delete(self, url: str, **kwargs: Any) -> requests.Response:
         """DELETE the URL and return the text."""
         return requests.delete(
-            url,
-            headers=self.headers,
-            auth=self.auth,
-            verify=self.verify,
-            **kwargs
+            url, headers=self.headers, auth=self.auth, verify=self.verify, **kwargs
         )
 
     @asynccontextmanager
@@ -92,7 +84,7 @@ class Requests(BaseModel):
                     headers=self.headers,
                     auth=self.auth,
                     verify=self.verify,
-                    **kwargs
+                    **kwargs,
                 ) as response:
                     yield response
         else:
@@ -102,7 +94,7 @@ class Requests(BaseModel):
                 headers=self.headers,
                 auth=self.auth,
                 verify=self.verify,
-                **kwargs
+                **kwargs,
             ) as response:
                 yield response
 
@@ -168,7 +160,7 @@ class GenericRequestsWrapper(BaseModel):
             headers=self.headers,
             aiosession=self.aiosession,
             auth=self.auth,
-            verify=self.verify
+            verify=self.verify,
         )
 
     def _get_resp_content(self, response: Response) -> Union[str, Dict[str, Any]]:
