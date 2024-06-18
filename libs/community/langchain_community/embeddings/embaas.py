@@ -1,9 +1,11 @@
 from typing import Any, Dict, List, Mapping, Optional
 
 import requests
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+
 from requests.adapters import HTTPAdapter, Retry
 from typing_extensions import NotRequired, TypedDict
 
@@ -19,7 +21,11 @@ class EmbaasEmbeddingsPayload(TypedDict):
     texts: List[str]
     instruction: NotRequired[str]
 
-
+@deprecated(
+    since="0.2.5",
+    removal="0.3.0",
+    alternative_import="langchain_mixedbreadai.MixedbreadAIEmbeddings"
+)
 class EmbaasEmbeddings(BaseModel, Embeddings):
     """Embaas's embedding service.
 
