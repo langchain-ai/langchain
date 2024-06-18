@@ -39,10 +39,10 @@ will work the mixtral-8x7b-instruct model.
 from langchain_fireworks import Fireworks 
 
 llm = Fireworks(
-    api_key="<KEY>",
+    fireworks_api_key="<KEY>",
     model="accounts/fireworks/models/mixtral-8x7b-instruct",
     max_tokens=256)
-llm("Name 3 sports.")
+print(llm("Name 3 sports."))
 ```
 
 For a more detailed walkthrough, see [here](/docs/integrations/llms/Fireworks).
