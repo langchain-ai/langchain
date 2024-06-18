@@ -134,7 +134,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     | `_stream`                        | Use to implement streaming                                         | Optional          |
     | `_agenerate`                     | Use to implement a native async method                             | Optional          |
     | `_astream`                       | Use to implement async version of `_stream`                        | Optional          |
-    """
+    """  # noqa: E501
 
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Callback manager to add to the run trace."""
