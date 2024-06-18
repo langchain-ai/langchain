@@ -25,7 +25,6 @@ numpy = [
   { version = "^1.26.0", python = ">=3.12" },
 ]
 
-
 [tool.poetry.group.test]
 optional = true
 
