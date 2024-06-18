@@ -35,12 +35,14 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolMessage,
     ToolMessageChunk,
+    convert_to_messages,
 )
 from langchain_core.output_parsers.openai_tools import (
     make_invalid_tool_call,
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
@@ -458,22 +460,7 @@ class ChatWatsonx(BaseChatModel):
                     prompt += message["content"] + "\n[/INST]\n"
 
         else:
-            for message in messages:
-                if message["role"] == "system":
-                    prompt += "System:\n" + message["content"] + "\n\n"
-                elif message["role"] == "user":
-                    prompt += "Question:\n" + message["content"] + "\n\n"
-                elif message["role"] == "assistant":
-                    prompt += "Answer:\n" + message["content"] + "\n\n"
-                else:
-                    prompt += (
-                        message["role"].capitalize()
-                        + ":\n"
-                        + message["content"]
-                        + "\n\n"
-                    )
-
-            prompt += "Answer:\n"
+            prompt = ChatPromptValue(messages=convert_to_messages(messages)).to_string()
 
         return prompt
 
