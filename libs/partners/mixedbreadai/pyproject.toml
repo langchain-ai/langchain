@@ -1,8 +1,10 @@
 [tool.poetry]
 name = "langchain-mixedbreadai"
 version = "0.1.0"
-description = "An integration package connecting MixedbreadAI and LangChain"
-authors = []
+description = "An integration package connecting mixedbread ai and LangChain"
+authors = [
+  "mixedbreadai <support@mixedbread.ai>",
+]
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 license = "MIT"
@@ -13,7 +15,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.2.0"
-mixedbread-ai = "^2.2.1"
+mixedbread-ai = "^2.2.2"
 
 [tool.poetry.group.test]
 optional = true
@@ -62,7 +64,7 @@ select = [
 ]
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+disallow_untyped_defs = true
 
 [tool.coverage.run]
 omit = ["tests/*"]
