@@ -1859,25 +1859,6 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.7.3"
-description = "Data validation using Python type hints"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "pydantic-2.7.3-py3-none-any.whl", hash = "sha256:ea91b002777bf643bb20dd717c028ec43216b24a6001a280f83877fd2655d0b4"},
-    {file = "pydantic-2.7.3.tar.gz", hash = "sha256:c46c76a40bb1296728d7a8b99aa73dd70a48c3510111ff290034f860c99c419e"},
-]
-
-[package.dependencies]
-annotated-types = ">=0.4.0"
-pydantic-core = "2.18.4"
-typing-extensions = ">=4.6.1"
-
-[package.extras]
-email = ["email-validator (>=2.0.0)"]
-
-[[package]]
-name = "pydantic"
 version = "2.7.4"
 description = "Data validation using Python type hints"
 optional = false
@@ -3022,4 +3003,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "d99a238dc01826c5e145bde53ec69ddb1072eb3ea92785df4a70671244027c4e"
+content-hash = "03fa30ee08b035d61e4e14ff5455a2497caf23fe0ca3b8f9386c5437351d311e"
