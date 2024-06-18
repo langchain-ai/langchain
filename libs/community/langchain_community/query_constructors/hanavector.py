@@ -10,8 +10,12 @@ from langchain_core.structured_query import (
     Visitor,
 )
 
+
 class HANATranslator(Visitor):
-    """Translate internal query language elements to valid filters params for HANA vectorstore."""
+    """
+    Translate internal query language elements to valid filters params for
+    HANA vectorstore.
+    """
 
     allowed_operators = [Operator.AND, Operator.OR]
     """Subset of allowed logical operators."""

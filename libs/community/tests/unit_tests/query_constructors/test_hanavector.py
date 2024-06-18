@@ -31,12 +31,7 @@ def test_visit_operation() -> None:
         ],
     )
     expected = {
-        '$and':
-        [
-            {'foo': {'$lt': 2}},
-            {'bar': {'$eq': 'baz'}},
-            {'abc': {'$gt': 2.0}}
-        ]
+        "$and": [{"foo": {"$lt": 2}}, {"bar": {"$eq": "baz"}}, {"abc": {"$gt": 2.0}}]
     }
     actual = DEFAULT_TRANSLATOR.visit_operation(op)
     assert expected == actual
