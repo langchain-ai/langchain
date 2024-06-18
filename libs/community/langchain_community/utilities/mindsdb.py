@@ -14,7 +14,7 @@ class PostgresConnection(BaseModel):
     host: Text
     port: Text = Field(default=5432)
     database: Text
-    schema: Text
+    database_schema: Text = Field(alias='schema')
 
 
 # TODO: Support openai < 1
