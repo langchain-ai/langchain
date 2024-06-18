@@ -1,4 +1,5 @@
-from typing import Dict, Generator, List
+import json
+from typing import Dict, Generator, List, Optional
 
 import requests
 from langchain_core.embeddings import Embeddings
@@ -20,13 +21,26 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import SambaStudioEmbeddings
+
             embeddings = SambaStudioEmbeddings(sambastudio_embeddings_base_url=base_url,
                                           sambastudio_embeddings_base_uri=base_uri,
                                           sambastudio_embeddings_project_id=project_id,
                                           sambastudio_embeddings_endpoint_id=endpoint_id,
-                                          sambastudio_embeddings_api_key=api_key)
-                             (or)
-            embeddings = SambaStudioEmbeddings()
+                                          sambastudio_embeddings_api_key=api_key,
+                                          batch_size=32)
+            (or)
+
+            embeddings = SambaStudioEmbeddings(batch_size=32)
+
+            (or)
+
+            # CoE example
+            embeddings = SambaStudioEmbeddings(
+                batch_size=1,
+                model_kwargs={
+                    'select_expert':'e5-mistral-7b-instruct'
+                }
+            )
     """
 
     sambastudio_embeddings_base_url: str = ""
@@ -43,6 +57,12 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
 
     sambastudio_embeddings_api_key: str = ""
     """sambastudio api key"""
+
+    model_kwargs: dict = {}
+    """Key word arguments to pass to the model."""
+
+    batch_size: int = 32
+    """Batch size for the embedding models"""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -71,6 +91,20 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
         )
         return values
 
+    def _get_tuning_params(self) -> str:
+        """
+        Get the tuning parameters to use when calling the model
+
+        Returns:
+            The tuning parameters as a JSON string.
+        """
+        tuning_params_dict = {
+            k: {"type": type(v).__name__, "value": str(v)}
+            for k, v in (self.model_kwargs.items())
+        }
+        tuning_params = json.dumps(tuning_params_dict)
+        return tuning_params
+
     def _get_full_url(self, path: str) -> str:
         """
         Return the full API URL for a given path.
@@ -94,7 +128,7 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
             yield texts[i : i + batch_size]
 
     def embed_documents(
-        self, texts: List[str], batch_size: int = 32
+        self, texts: List[str], batch_size: Optional[int] = None
     ) -> List[List[float]]:
         """Returns a list of embeddings for the given sentences.
         Args:
@@ -105,16 +139,18 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
             `List[np.ndarray]` or `List[tensor]`: List of embeddings
             for the given sentences
         """
+        if batch_size is None:
+            batch_size = self.batch_size
         http_session = requests.Session()
         url = self._get_full_url(
             f"{self.sambastudio_embeddings_project_id}/{self.sambastudio_embeddings_endpoint_id}"
         )
-
+        params = json.loads(self._get_tuning_params())
         embeddings = []
 
         if "nlp" in self.sambastudio_embeddings_base_uri:
             for batch in self._iterate_over_batches(texts, batch_size):
-                data = {"inputs": batch}
+                data = {"inputs": batch, "params": params}
                 response = http_session.post(
                     url,
                     headers={"key": self.sambastudio_embeddings_api_key},
@@ -131,14 +167,17 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
 
         elif "generic" in self.sambastudio_embeddings_base_uri:
             for batch in self._iterate_over_batches(texts, batch_size):
-                data = {"instances": batch}
+                data = {"instances": batch, "params": params}
                 response = http_session.post(
                     url,
                     headers={"key": self.sambastudio_embeddings_api_key},
                     json=data,
                 )
                 try:
-                    embedding = response.json()["predictions"]
+                    if params.get("select_expert"):
+                        embedding = response.json()["predictions"][0]
+                    else:
+                        embedding = response.json()["predictions"]
                     embeddings.extend(embedding)
                 except KeyError:
                     raise KeyError(
@@ -166,10 +205,10 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
         url = self._get_full_url(
             f"{self.sambastudio_embeddings_project_id}/{self.sambastudio_embeddings_endpoint_id}"
         )
+        params = json.loads(self._get_tuning_params())
 
         if "nlp" in self.sambastudio_embeddings_base_uri:
-            data = {"inputs": [text]}
-
+            data = {"inputs": [text], "params": params}
             response = http_session.post(
                 url,
                 headers={"key": self.sambastudio_embeddings_api_key},
@@ -184,15 +223,17 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
                 )
 
         elif "generic" in self.sambastudio_embeddings_base_uri:
-            data = {"instances": [text]}
-
+            data = {"instances": [text], "params": params}
             response = http_session.post(
                 url,
                 headers={"key": self.sambastudio_embeddings_api_key},
                 json=data,
             )
             try:
-                embedding = response.json()["predictions"][0]
+                if params.get("select_expert"):
+                    embedding = response.json()["predictions"][0][0]
+                else:
+                    embedding = response.json()["predictions"][0]
             except KeyError:
                 raise KeyError(
                     "'predictions' not found in endpoint response",
