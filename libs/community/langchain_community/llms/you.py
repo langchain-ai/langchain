@@ -2,7 +2,6 @@ import os
 from typing import Any, Dict, Generator, Iterator, List, Literal, Optional
 
 import requests
-import sseclient
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
@@ -34,7 +33,17 @@ def _request_stream(
     # Explicitly coercing the response to a generator to satisfy mypy
     event_source = (bytestring for bytestring in response)
 
-    client = sseclient.SSEClient(event_source)
+    try:
+        import sseclient
+
+        client = sseclient.SSEClient(event_source)
+    except ImportError:
+        raise ImportError(
+            (
+                "Could not import `sseclient`. "
+                "Please install it with `pip install sseclient-py`."
+            )
+        )
 
     for event in client.events():
         if event.event in ("search_results", "done"):
