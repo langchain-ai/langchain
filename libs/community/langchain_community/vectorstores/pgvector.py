@@ -22,6 +22,7 @@ import sqlalchemy
 from langchain_core._api import deprecated, warn_deprecated
 from sqlalchemy import SQLColumnExpression, delete, func
 from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.orm import Session, relationship
 
 try:
@@ -58,8 +59,7 @@ class BaseModel(Base):
     """Base model for the SQL stores."""
 
     __abstract__ = True
-    uuid = sqlalchemy.Column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    uuid = sqlalchemy.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
 
 _classes: Any = None
@@ -160,8 +160,7 @@ def _get_embedding_collection_store(
                     ondelete="CASCADE",
                 ),
             )
-            collection = relationship(
-                CollectionStore, back_populates="embeddings")
+            collection = relationship(CollectionStore, back_populates="embeddings")
 
             embedding: Vector = sqlalchemy.Column(Vector(vector_dimension))
             document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
@@ -193,8 +192,7 @@ def _get_embedding_collection_store(
                     ondelete="CASCADE",
                 ),
             )
-            collection = relationship(
-                CollectionStore, back_populates="embeddings")
+            collection = relationship(CollectionStore, back_populates="embeddings")
 
             embedding: Vector = sqlalchemy.Column(Vector(vector_dimension))
             document = sqlalchemy.Column(sqlalchemy.String, nullable=True)
@@ -301,7 +299,7 @@ class PGVector(VectorStore):
         logger: Optional[logging.Logger] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         *,
-        connection: Optional[sqlalchemy.engine.Connection] = None,
+        connection: Optional[Connection] = None,
         engine_args: Optional[dict[str, Any]] = None,
         use_jsonb: bool = False,
         create_extension: bool = True,
@@ -360,14 +358,14 @@ class PGVector(VectorStore):
         self.create_collection()
 
     def __del__(self) -> None:
-        if isinstance(self._bind, sqlalchemy.engine.Connection):
+        if isinstance(self._bind, Connection):
             self._bind.close()
 
     @property
     def embeddings(self) -> Embeddings:
         return self.embedding_function
 
-    def _create_engine(self) -> sqlalchemy.engine.Engine:
+    def _create_engine(self) -> Engine:
         return sqlalchemy.create_engine(url=self.connection_string, **self.engine_args)
 
     def create_vector_extension(self) -> None:
@@ -606,7 +604,10 @@ class PGVector(VectorStore):
         """
         embedding = self.embedding_function.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, filter=filter, negative_embeddings=negative_embeddings
+            embedding=embedding,
+            k=k,
+            filter=filter,
+            negative_embeddings=negative_embeddings,
         )
         return docs
 
@@ -632,11 +633,17 @@ class PGVector(VectorStore):
         negative_embeddings: Optional[List[str]] = None,
     ) -> List[Tuple[Document, float]]:
         if negative_embeddings:
-            negative_embeddings = [self.embedding_function.embed_query(
-                text) for text in negative_embeddings]
+            negative_embeddings = [
+                self.embedding_function.embed_query(text)
+                for text in negative_embeddings
+            ]
 
         results = self.__query_collection(
-            embedding=embedding, k=k, filter=filter, negative_embeddings=negative_embeddings)
+            embedding=embedding,
+            k=k,
+            filter=filter,
+            negative_embeddings=negative_embeddings,
+        )
 
         return self._results_to_docs_and_scores(results)
 
@@ -839,8 +846,7 @@ class PGVector(VectorStore):
         filter_clauses = []
         for key, value in filter.items():
             if isinstance(value, dict):
-                filter_by_metadata = self._create_filter_clause_deprecated(
-                    key, value)
+                filter_by_metadata = self._create_filter_clause_deprecated(key, value)
 
                 if filter_by_metadata is not None:
                     filter_clauses.append(filter_by_metadata)
@@ -920,8 +926,7 @@ class PGVector(VectorStore):
                             f"Invalid filter condition. Expected a field but got: {key}"
                         )
                 # These should all be fields and combined using an $and operator
-                and_ = [self._handle_field_filter(
-                    k, v) for k, v in filters.items()]
+                and_ = [self._handle_field_filter(k, v) for k, v in filters.items()]
                 if len(and_) > 1:
                     return sqlalchemy.and_(*and_)
                 elif len(and_) == 1:
@@ -957,8 +962,7 @@ class PGVector(VectorStore):
                     if filter_clauses is not None:
                         filter_by.append(filter_clauses)
                 else:
-                    filter_clauses = self._create_filter_clause_json_deprecated(
-                        filter)
+                    filter_clauses = self._create_filter_clause_json_deprecated(filter)
                     filter_by.extend(filter_clauses)
 
             _type = self.EmbeddingStore
@@ -966,14 +970,12 @@ class PGVector(VectorStore):
             if negative_embeddings:
                 for neg_embedding in negative_embeddings:
                     # Adjust threshold as needed
-                    filter_by.append(
-                        self.distance_strategy(neg_embedding) > 0.7)
+                    filter_by.append(self.distance_strategy(neg_embedding) > 0.7)
 
             results: List[Any] = (
                 session.query(
                     self.EmbeddingStore,
-                    self.distance_strategy(embedding).label(
-                        "distance"),  # type: ignore
+                    self.distance_strategy(embedding).label("distance"),  # type: ignore
                 )
                 .filter(*filter_by)
                 .order_by(sqlalchemy.asc("distance"))
@@ -1006,7 +1008,10 @@ class PGVector(VectorStore):
             List of Documents most similar to the query vector.
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, filter=filter, negative_embeddings=negative_embeddings
+            embedding=embedding,
+            k=k,
+            filter=filter,
+            negative_embeddings=negative_embeddings,
         )
         return _results_to_docs(docs_and_scores)
 
@@ -1244,10 +1249,13 @@ class PGVector(VectorStore):
                 relevance to the query and score for each.
         """
         results = self.__query_collection(
-            embedding=embedding, k=fetch_k, filter=filter, negative_embeddings=negative_embeddings)
+            embedding=embedding,
+            k=fetch_k,
+            filter=filter,
+            negative_embeddings=negative_embeddings,
+        )
 
-        embedding_list = [
-            result.EmbeddingStore.embedding for result in results]
+        embedding_list = [result.EmbeddingStore.embedding for result in results]
 
         mmr_selected = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
