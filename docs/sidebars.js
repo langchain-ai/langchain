@@ -153,7 +153,11 @@
             id: "langsmith/index"
           },
         },
-        "langgraph",
+        {
+          type: "link",
+          label: "🦜🕸️ LangGraph",
+          href: "https://langchain-ai.github.io/langgraph/"
+        },
         "langserve",
       ]
     },
