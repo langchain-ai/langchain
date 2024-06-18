@@ -345,6 +345,8 @@ class BaseChatOpenAI(BaseChatModel):
     http_async_client: Union[Any, None] = None
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
+    stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
+    """Default stop sequences."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -441,6 +443,7 @@ class BaseChatOpenAI(BaseChatModel):
             "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
+            "stop": self.stop,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
@@ -495,6 +498,7 @@ class BaseChatOpenAI(BaseChatModel):
                                 content="", usage_metadata=usage_metadata
                             )
                         )
+                        logprobs = None
                     else:
                         continue
                 else:
@@ -547,8 +551,6 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = self._default_params
         if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
@@ -619,6 +621,7 @@ class BaseChatOpenAI(BaseChatModel):
                                 content="", usage_metadata=usage_metadata
                             )
                         )
+                        logprobs = None
                     else:
                         continue
                 else:
@@ -869,15 +872,7 @@ class BaseChatOpenAI(BaseChatModel):
                 if tool_choice == "any":
                     tool_choice = "required"
             elif isinstance(tool_choice, bool):
-                if len(tools) > 1:
-                    raise ValueError(
-                        "tool_choice=True can only be used when a single tool is "
-                        f"passed in, received {len(tools)} tools."
-                    )
-                tool_choice = {
-                    "type": "function",
-                    "function": {"name": formatted_tools[0]["function"]["name"]},
-                }
+                tool_choice = "required"
             elif isinstance(tool_choice, dict):
                 tool_names = [
                     formatted_tool["function"]["name"]
@@ -1092,7 +1087,7 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            llm = self.bind_tools([schema], tool_choice=True)
+            llm = self.bind_tools([schema], tool_choice="any")
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema], first_tool_only=True
@@ -1386,11 +1381,11 @@ class ChatOpenAI(BaseChatOpenAI):
 
             {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
 
-        When streaming, set the ``stream_options`` model kwarg:
+        When streaming, set the ``stream_usage`` kwarg:
 
         .. code-block:: python
 
-            stream = llm.stream(messages, stream_options={"include_usage": True})
+            stream = llm.stream(messages, stream_usage=True)
             full = next(stream)
             for chunk in stream:
                 full += chunk
@@ -1400,7 +1395,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
             {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
 
-        Alternatively, setting ``stream_options`` when instantiating the model can be
+        Alternatively, setting ``stream_usage`` when instantiating the model can be
         useful when incorporating ``ChatOpenAI`` into LCEL chains-- or when using
         methods like ``.with_structured_output``, which generate chains under the
         hood.
@@ -1409,7 +1404,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
             llm = ChatOpenAI(
                 model="gpt-4o",
-                model_kwargs={"stream_options": {"include_usage": True}},
+                stream_usage=True,
             )
             structured_llm = llm.with_structured_output(...)
 
@@ -1446,6 +1441,11 @@ class ChatOpenAI(BaseChatOpenAI):
 
     """  # noqa: E501
 
+    stream_usage: bool = False
+    """Whether to include usage metadata in streaming output. If True, additional
+    message chunks will be generated during the stream including usage metadata.
+    """
+
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
@@ -1474,6 +1474,44 @@ class ChatOpenAI(BaseChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by Langchain."""
         return True
+
+    def _should_stream_usage(
+        self, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> bool:
+        """Determine whether to include usage metadata in streaming output.
+
+        For backwards compatibility, we check for `stream_options` passed
+        explicitly to kwargs or in the model_kwargs and override self.stream_usage.
+        """
+        stream_usage_sources = [  # order of preference
+            stream_usage,
+            kwargs.get("stream_options", {}).get("include_usage"),
+            self.model_kwargs.get("stream_options", {}).get("include_usage"),
+            self.stream_usage,
+        ]
+        for source in stream_usage_sources:
+            if isinstance(source, bool):
+                return source
+        return self.stream_usage
+
+    def _stream(
+        self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> Iterator[ChatGenerationChunk]:
+        """Set default stream_options."""
+        stream_usage = self._should_stream_usage(stream_usage, **kwargs)
+        kwargs["stream_options"] = {"include_usage": stream_usage}
+
+        return super()._stream(*args, **kwargs)
+
+    async def _astream(
+        self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        """Set default stream_options."""
+        stream_usage = self._should_stream_usage(stream_usage, **kwargs)
+        kwargs["stream_options"] = {"include_usage": stream_usage}
+
+        async for chunk in super()._astream(*args, **kwargs):
+            yield chunk
 
 
 def _is_pydantic_class(obj: Any) -> bool:
