@@ -7,7 +7,7 @@ from langchain_community.utilities.mindsdb import DatabaseMindWrapper
 
 
 class MindsDBTool(BaseTool):
-    name: str = "mindsdb"
+    name: Text = "mindsdb"
     description: Text = (
 
     )
