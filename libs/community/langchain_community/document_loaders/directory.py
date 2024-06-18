@@ -32,7 +32,7 @@ class DirectoryLoader(BaseLoader):
     def __init__(
         self,
         path: str,
-        glob: list[str] | tuple[str] | str = "**/[!.]*",
+        glob: Union[list[str], tuple[str], str] = "**/[!.]*",
         silent_errors: bool = False,
         load_hidden: bool = False,
         loader_cls: FILE_LOADER_TYPE = UnstructuredFileLoader,
