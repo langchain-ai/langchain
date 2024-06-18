@@ -3,13 +3,18 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Type, Union
 
 import openai
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import LangSmithParams
+from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from langchain_openai.chat_models.base import BaseChatOpenAI
 
@@ -209,6 +214,27 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 **client_params, **async_specific
             ).chat.completions
         return values
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        # As of 05/2024 Azure OpenAI doesn't support tool_choice="required".
+        # TODO: Update this condition once tool_choice="required" is supported.
+        if tool_choice in ("any", "required", True):
+            if len(tools) > 1:
+                raise ValueError(
+                    f"Azure OpenAI does not currently support {tool_choice=}. Should "
+                    f"be one of 'auto', 'none', or the name of the tool to call."
+                )
+            else:
+                tool_choice = convert_to_openai_tool(tools[0])["function"]["name"]
+        return super().bind_tools(tools, tool_choice=tool_choice, **kwargs)
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

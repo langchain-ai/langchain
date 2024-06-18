@@ -73,7 +73,68 @@ chat.invoke(
 
 > If you are going to place system prompt here, then it will override your system prompt that was fixed while deploying the application from the platform. 
 
-> Please note that the current version of ChatPremAI does not support parameters: [n](https://platform.openai.com/docs/api-reference/chat/create#chat-create-n) and [stop](https://platform.openai.com/docs/api-reference/chat/create#chat-create-stop). 
+> You can find all the optional parameters [here](https://docs.premai.io/get-started/sdk#optional-parameters). Any parameters other than [these supported parameters](https://docs.premai.io/get-started/sdk#optional-parameters) will be automatically removed before calling the model.
+
+
+### Native RAG Support with Prem Repositories
+
+Prem Repositories which allows users to upload documents (.txt, .pdf etc) and connect those repositories to the LLMs. You can think Prem repositories as native RAG, where each repository can be considered as a vector database. You can connect multiple repositories. You can learn more about repositories [here](https://docs.premai.io/get-started/repositories).
+
+Repositories are also supported in langchain premai. Here is how you can do it. 
+
+```python 
+
+query = "what is the diameter of individual Galaxy"
+repository_ids = [1991, ]
+repositories = dict(
+    ids=repository_ids,
+    similarity_threshold=0.3,
+    limit=3
+)
+```
+
+First we start by defining our repository with some repository ids. Make sure that the ids are valid repository ids. You can learn more about how to get the repository id [here](https://docs.premai.io/get-started/repositories). 
+
+> Please note: Similar like `model_name` when you invoke the argument `repositories`, then you are potentially overriding the repositories connected in the launchpad. 
+
+Now, we connect the repository with our chat object to invoke RAG based generations. 
+
+```python 
+response = chat.invoke(query, max_tokens=100, repositories=repositories)
+
+print(response.content)
+print(json.dumps(response.response_metadata, indent=4))
+```
+
+This is how an output looks like. 
+
+```bash
+The diameters of individual galaxies range from 80,000-150,000 light-years.
+{
+    "document_chunks": [
+        {
+            "repository_id": 19xx,
+            "document_id": 13xx,
+            "chunk_id": 173xxx,
+            "document_name": "Kegy 202 Chapter 2",
+            "similarity_score": 0.586126983165741,
+            "content": "n thousands\n                                                                                                                                               of           light-years. The diameters of individual\n                                                                                                                                               galaxies range from 80,000-150,000 light\n                                                                                                                       "
+        },
+        {
+            "repository_id": 19xx,
+            "document_id": 13xx,
+            "chunk_id": 173xxx,
+            "document_name": "Kegy 202 Chapter 2",
+            "similarity_score": 0.4815782308578491,
+            "content": "                                                for development of galaxies. A galaxy contains\n                                                                                                                                               a large number of stars. Galaxies spread over\n                                                                                                                                               vast distances that are measured in thousands\n                                       "
+        },
+    ]
+}
+```
+
+So, this also means that you do not need to make your own RAG pipeline when using the Prem Platform. Prem uses it's own RAG technology to deliver best in class performance for Retrieval Augmented Generations.
+
+> Ideally, you do not need to connect Repository IDs here to get Retrieval Augmented Generations. You can still get the same result if you have connected the repositories in prem platform. 
 
 ### Streaming
 
@@ -102,7 +163,44 @@ for chunk in chat.stream(
 
 This will stream tokens one after the other.
 
-## PremEmbeddings
+> Please note: As of now, RAG with streaming is not supported. However we still support it with our API. You can learn more about that [here](https://docs.premai.io/get-started/chat-completion-sse). 
+
+
+## Prem Templates
+
+Writing Prompt Templates can be super messy. Prompt templates are long, hard to manage, and must be continuously tweaked to improve and keep the same throughout the application. 
+
+With **Prem**, writing and managing prompts can be super easy. The **_Templates_** tab inside the [launchpad](https://docs.premai.io/get-started/launchpad) helps you write as many prompts you need and use it inside the SDK to make your application running using those prompts. You can read more about Prompt Templates [here](https://docs.premai.io/get-started/prem-templates). 
+
+To use Prem Templates natively with LangChain, you need to pass an id the `HumanMessage`. This id should be the name the variable of your prompt template. the `content` in `HumanMessage` should be the value of that variable. 
+
+let's say for example, if your prompt template was this:
+
+```text
+Say hello to my name and say a feel-good quote
+from my age. My name is: {name} and age is {age}
+```
+
+So now your human_messages should look like:
+
+```python
+human_messages = [
+    HumanMessage(content="Shawn", id="name"),
+    HumanMessage(content="22", id="age")
+]
+```
+
+Pass this `human_messages` to ChatPremAI Client. Please note: Do not forget to
+pass the additional `template_id` to invoke generation with Prem Templates. If you are not aware of `template_id` you can learn more about that [in our docs](https://docs.premai.io/get-started/prem-templates). Here is an example:
+
+```python
+template_id = "78069ce8-xxxxx-xxxxx-xxxx-xxx"
+response = chat.invoke([human_message], template_id=template_id)
+```
+
+Prem Templates are also available for Streaming too. 
+
+## Prem Embeddings
 
 In this section we are going to dicuss how we can get access to different embedding model using `PremEmbeddings` with LangChain. Lets start by importing our modules and setting our API Key. 
 

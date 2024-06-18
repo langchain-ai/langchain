@@ -218,7 +218,7 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
         "Please read the guidelines in the doc-string of this class "
         "to follow prior to migrating as there are some differences "
         "between the implementations. "
-        "See https://github.com/langchain-ai/langchain-postgres for details about"
+        "See <https://github.com/langchain-ai/langchain-postgres> for details about"
         "the new implementation."
     ),
     alternative="from langchain_postgres import PGVector;",
@@ -733,7 +733,7 @@ class PGVector(VectorStore):
             if operator in {"$in"}:
                 return queried_field.in_([str(val) for val in filter_value])
             elif operator in {"$nin"}:
-                return queried_field.nin_([str(val) for val in filter_value])
+                return queried_field.not_in([str(val) for val in filter_value])
             elif operator in {"$like"}:
                 return queried_field.like(filter_value)
             elif operator in {"$ilike"}:
