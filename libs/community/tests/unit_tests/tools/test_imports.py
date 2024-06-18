@@ -9,6 +9,7 @@ EXPECTED_ALL = [
     "AIPluginTool",
     "APIOperation",
     "ArxivQueryRun",
+    "AskNewsSearch",
     "AzureAiServicesDocumentIntelligenceTool",
     "AzureAiServicesImageAnalysisTool",
     "AzureAiServicesSpeechToTextTool",

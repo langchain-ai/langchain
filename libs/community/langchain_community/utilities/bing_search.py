@@ -1,8 +1,4 @@
-"""Util that calls Bing Search.
-
-In order to set this up, follow instructions at:
-https://levelup.gitconnected.com/api-tutorial-how-to-use-bing-web-search-api-in-python-4165d5592a7e
-"""
+"""Util that calls Bing Search."""
 from typing import Dict, List
 
 import requests
@@ -11,11 +7,7 @@ from langchain_core.utils import get_from_dict_or_env
 
 
 class BingSearchAPIWrapper(BaseModel):
-    """Wrapper for Bing Search API.
-
-    In order to set this up, follow instructions at:
-    https://levelup.gitconnected.com/api-tutorial-how-to-use-bing-web-search-api-in-python-4165d5592a7e
-    """
+    """Wrapper for Bing Search API."""
 
     bing_subscription_key: str
     bing_search_url: str

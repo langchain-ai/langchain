@@ -4,14 +4,14 @@ from langchain_community.llms.minimax import Minimax
 
 def test_minimax_call() -> None:
     """Test valid call to minimax."""
-    llm = Minimax(max_tokens=10)
+    llm = Minimax(max_tokens=10)  # type: ignore[call-arg]
     output = llm.invoke("Hello world!")
     assert isinstance(output, str)
 
 
 def test_minimax_call_successful() -> None:
     """Test valid call to minimax."""
-    llm = Minimax()
+    llm = Minimax()  # type: ignore[call-arg]
     output = llm.invoke(
         "A chain is a serial assembly of connected pieces, called links, \
         typically made of metal, with an overall character similar to that\

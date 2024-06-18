@@ -165,13 +165,13 @@ test = ["pytest (>=6)"]
 
 [[package]]
 name = "freezegun"
-version = "1.5.0"
+version = "1.5.1"
 description = "Let your Python tests travel through time"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "freezegun-1.5.0-py3-none-any.whl", hash = "sha256:ec3f4ba030e34eb6cf7e1e257308aee2c60c3d038ff35996d7475760c9ff3719"},
-    {file = "freezegun-1.5.0.tar.gz", hash = "sha256:200a64359b363aa3653d8aac289584078386c7c3da77339d257e46a01fb5c77c"},
+    {file = "freezegun-1.5.1-py3-none-any.whl", hash = "sha256:bf111d7138a8abe55ab48a71755673dbaa4ab87f4cff5634a4442dfec34c15f1"},
+    {file = "freezegun-1.5.1.tar.gz", hash = "sha256:b29dedfcda6d5e8e083ce71b2b542753ad48cfec44037b3fc79702e2980a89e9"},
 ]
 
 [package.dependencies]
@@ -223,13 +223,13 @@ ibm-cos-sdk-core = "2.13.4"
 
 [[package]]
 name = "ibm-watsonx-ai"
-version = "1.0.1"
+version = "1.0.2"
 description = "IBM watsonx.ai API Client"
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "ibm_watsonx_ai-1.0.1-py3-none-any.whl", hash = "sha256:82243058cc51660bb1ebd13e681aeef0be676da365e713bf4cc11af9d87f0f70"},
-    {file = "ibm_watsonx_ai-1.0.1.tar.gz", hash = "sha256:a5dfeb95ec8a30858fe7b7ae050adb3c2bc702b3735099cad1ae9d85a1c5ae78"},
+    {file = "ibm_watsonx_ai-1.0.2-py3-none-any.whl", hash = "sha256:784b37f06d2f82712ab621380c7ec2e2ef7ea082cdd9e839390ae86f616764bc"},
+    {file = "ibm_watsonx_ai-1.0.2.tar.gz", hash = "sha256:2e557e0857ed2038b7350d0246d27cef7d6654f57ef8dd113f5c8fed66c43af8"},
 ]
 
 [package.dependencies]
@@ -327,7 +327,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.1.52"
+version = "0.2.0rc1"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -351,13 +351,13 @@ url = "../../core"
 
 [[package]]
 name = "langsmith"
-version = "0.1.55"
+version = "0.1.59"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.55-py3-none-any.whl", hash = "sha256:c198b4019d0e0948fa2c94efcafa0312bd5e7ce36aae8d62a38af2d6b16584fc"},
-    {file = "langsmith-0.1.55.tar.gz", hash = "sha256:08b75046471e3c32cb6b526e48ca4570bfe3911d6b0a3f8575ee062da940324c"},
+    {file = "langsmith-0.1.59-py3-none-any.whl", hash = "sha256:445e3bc1d3baa1e5340cd979907a19483b9763a2ed37b863a01113d406f69345"},
+    {file = "langsmith-0.1.59.tar.gz", hash = "sha256:e748a89f4dd6aa441349143e49e546c03b5dfb43376a25bfef6a5ca792fe1437"},
 ]
 
 [package.dependencies]
@@ -866,6 +866,7 @@ files = [
     {file = "PyYAML-6.0.1-cp311-cp311-win_amd64.whl", hash = "sha256:bf07ee2fef7014951eeb99f56f39c9bb4af143d8aa3c21b1677805985307da34"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:855fb52b0dc35af121542a76b9a84f8d1cd886ea97c84703eaa6d88e37a2ad28"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:40df9b996c2b73138957fe23a16a4f0ba614f4c0efce1e9406a184b6d07fa3a9"},
+    {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a08c6f0fe150303c1c6b71ebcd7213c2858041a7e01975da3a99aed1e7a378ef"},
     {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6c22bec3fbe2524cde73d7ada88f6566758a8f7227bfbf93a408a9d86bcc12a0"},
     {file = "PyYAML-6.0.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:8d4e9c88387b0f5c7d5f281e55304de64cf7f9c0021a3525bd3b1c542da3b0e4"},
     {file = "PyYAML-6.0.1-cp312-cp312-win32.whl", hash = "sha256:d483d2cdf104e7c9fa60c544d92981f12ad66a457afae824d146093b8c294c54"},
@@ -1123,4 +1124,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "93a9a4c4352337acc17afdf267799a6a3e9868a2af3a56d948d2a6892d5fb942"
+content-hash = "4ee7eb72c61697f46434280fe94002e6d419d0394d334407d0edfbf963370d48"

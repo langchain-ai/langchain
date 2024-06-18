@@ -73,7 +73,7 @@ class NeuralDBRetriever(BaseRetriever):
         NeuralDBRetriever._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
 
-        return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB(**model_kwargs))
+        return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB(**model_kwargs))  # type: ignore[arg-type]
 
     @classmethod
     def from_checkpoint(
@@ -108,7 +108,7 @@ class NeuralDBRetriever(BaseRetriever):
         NeuralDBRetriever._verify_thirdai_library(thirdai_key)
         from thirdai import neural_db as ndb
 
-        return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB.from_checkpoint(checkpoint))
+        return cls(thirdai_key=thirdai_key, db=ndb.NeuralDB.from_checkpoint(checkpoint))  # type: ignore[arg-type]
 
     @root_validator()
     def validate_environments(cls, values: Dict) -> Dict:

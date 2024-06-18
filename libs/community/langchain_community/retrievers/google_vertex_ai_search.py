@@ -190,7 +190,7 @@ class _BaseGoogleVertexAISearchRetriever(BaseModel):
                 print(  # noqa: T201
                     "Make sure that your data store is using Advanced Website "
                     "Indexing.\n"
-                    "https://cloud.google.com/generative-ai-app-builder/docs/about-advanced-features#advanced-website-indexing"  # noqa: E501
+                    "https://cloud.google.com/generative-ai-app-builder/docs/about-advanced-features#advanced-website-indexing"
                 )
 
         return documents

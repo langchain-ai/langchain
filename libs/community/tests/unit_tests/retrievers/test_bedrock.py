@@ -23,7 +23,7 @@ def amazon_retriever(
 ) -> AmazonKnowledgeBasesRetriever:
     return AmazonKnowledgeBasesRetriever(
         knowledge_base_id="test_kb_id",
-        retrieval_config=mock_retriever_config,
+        retrieval_config=mock_retriever_config,  # type: ignore[arg-type]
         client=mock_client,
     )
 

@@ -691,7 +691,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         # raises ValueError when multi-page and not on S3"""
 
         if self.web_path and self._is_s3_url(self.web_path):
-            blob = Blob(path=self.web_path)  # type: ignore[misc]
+            blob = Blob(path=self.web_path)  # type: ignore[call-arg] # type: ignore[misc]
         else:
             blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
             if AmazonTextractPDFLoader._get_number_of_pages(blob) > 1:

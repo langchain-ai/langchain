@@ -440,8 +440,6 @@ class BaseOpenAI(BaseLLM):
     ) -> List[List[str]]:
         """Get the sub prompts for llm call."""
         if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
         if params["max_tokens"] == -1:
             if len(prompts) != 1:
@@ -537,6 +535,8 @@ class BaseOpenAI(BaseLLM):
                 max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
         """
         model_token_mapping = {
+            "gpt-4o": 128_000,
+            "gpt-4o-2024-05-13": 128_000,
             "gpt-4": 8192,
             "gpt-4-0314": 8192,
             "gpt-4-0613": 8192,

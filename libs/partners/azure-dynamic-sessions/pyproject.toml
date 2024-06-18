@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-azure-dynamic-sessions"
-version = "0.1.0rc0"
+version = "0.1.0"
 description = "An integration package connecting Azure Container Apps dynamic sessions and LangChain"
 authors = []
 readme = "README.md"
@@ -12,7 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.52"
+langchain-core = ">=0.1.52,<0.3"
 azure-identity = "^1.16.0"
 requests = "^2.31.0"
 
@@ -22,11 +22,11 @@ optional = true
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
 freezegun = "^1.2.2"
-pytest-mock  = "^3.10.0"
+pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 python-dotenv = "^1.0.1"
 
 [tool.poetry.group.test_integration]
@@ -52,32 +52,30 @@ pytest = "^7.3.0"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 types-requests = "^2.31.0.20240406"
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-langchain-core = {path = "../../core", develop = true}
+langchain-core = { path = "../../core", develop = true }
 ipykernel = "^6.29.4"
-langchain-openai = {path = "../openai", develop = true}
+langchain-openai = { path = "../openai", develop = true }
 langchainhub = "^0.1.15"
 
 [tool.ruff]
 select = [
-  "E",  # pycodestyle
-  "F",  # pyflakes
-  "I",  # isort
+  "E", # pycodestyle
+  "F", # pyflakes
+  "I", # isort
 ]
 
 [tool.mypy]
 disallow_untyped_defs = "True"
 
 [tool.coverage.run]
-omit = [
-    "tests/*",
-]
+omit = ["tests/*"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
