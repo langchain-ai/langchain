@@ -19,20 +19,6 @@ EXAMPLE_DOCS_DIRECTORY = str(Path(__file__).parent.parent / "examples/")
 
 # -- UnstructuredFileLoader -------------------------------
 
-def test_unstructured_loader_with_post_processor() -> None:
-    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
-    loader = UnstructuredFileLoader(
-        file_path=file_path,
-        post_processors=[add_the_end],
-        strategy="fast",
-        mode="elements",
-    )
-    docs = loader.load()
-
-    assert len(docs) > 1
-    assert docs[0].page_content.endswith("THE END!")
-
-
 def test_unstructured_file_loader_multiple_files() -> None:
     """Test unstructured loader."""
     file_paths = [
@@ -48,6 +34,20 @@ def test_unstructured_file_loader_multiple_files() -> None:
     docs = loader.load()
 
     assert len(docs) > 1
+
+    
+def test_unstructured_file_loader_post_processor() -> None:
+    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
+    loader = UnstructuredFileLoader(
+        file_path=file_path,
+        post_processors=[add_the_end],
+        strategy="fast",
+        mode="elements",
+    )
+    docs = loader.load()
+
+    assert len(docs) > 1
+    assert docs[0].page_content.endswith("THE END!")
 
 
 # -- UnstructuredAPIFileLoader -------------------------------

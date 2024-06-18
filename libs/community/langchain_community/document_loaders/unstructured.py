@@ -236,12 +236,8 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
         if self.mode == "elements":
             for element in elements_json:
                 metadata = self._get_metadata()
-                # NOTE(MthwRobinson) - the attribute check is for backward compatibility
-                # with unstructured<0.4.9. The metadata attributed was added in 0.4.9.
-                if element.get("metadata") is not None:
-                    metadata.update(element["metadata"])
-                if element.get("category"):
-                    metadata.update(element["category"])
+                metadata.update({"metadata": element.get("metadata")})
+                metadata.update({"category": element.get("category")})
                 yield Document(page_content=element.get("text"), metadata=metadata)
         elif self.mode == "paged":
             text_dict: dict[int, str] = {}
@@ -249,8 +245,7 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
 
             for element in elements_json:
                 metadata = self._get_metadata()
-                if element.get("metadata") is not None:
-                    metadata.update(element.get("metadata"))
+                metadata.update({"category": element.get("category")})
                 page_number = metadata.get("page_number", 1)
 
                 # Check if this page_number already exists in text_dict
