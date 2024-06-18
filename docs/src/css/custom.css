@@ -245,7 +245,7 @@ nav, h1, h2, h3, h4 {
 }
 
 div[class^=announcementBar_] {
-  height:40px !important;
+  height: 72px !important;
   font-size: 20px !important;
 }
 
