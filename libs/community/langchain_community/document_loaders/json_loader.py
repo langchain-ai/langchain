@@ -10,7 +10,7 @@ from langchain_community.document_loaders.base import BaseLoader
 class JSONLoader(BaseLoader):
     """
     Load a `JSON` file using a `jq` schema.
-    
+
     Setup:
         .. code-block:: bash
 
