@@ -1,18 +1,10 @@
 """Loader that uses unstructured to load files."""
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 import json
 from pathlib import Path
-from typing import (
-    IO,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import IO, Any, Callable, Iterator, Optional, Sequence, Union
 
 from langchain_core.documents import Document
 
@@ -20,12 +12,12 @@ from langchain_community.document_loaders.base import BaseLoader
 
 
 class UnstructuredBaseLoader(BaseLoader, ABC):
-    """Base Loader that uses `Unstructured`."""
+    """Parent class for Unstructured Base Loaders."""
 
     def __init__(
         self,
         mode: str = "single",
-        post_processors: Optional[List[Callable]] = None,
+        post_processors: Optional[list[Callable]] = None,
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
@@ -45,21 +37,20 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
         self.post_processors = post_processors or []
 
     @abstractmethod
-    def _get_elements(self) -> List:
+    def _get_elements(self) -> list:
         """Get elements."""
 
     @abstractmethod
     def _get_metadata(self) -> dict:
         """Get file_path metadata if available."""
 
+    @abstractmethod
     def _post_process_elements(self, elements: list) -> list:
-        """Applies post processing functions to extracted unstructured elements.
-        Post processing functions are str -> str callables are passed
-        in using the post_processors kwarg when the loader is instantiated."""
-        for element in elements:
-            for post_processor in self.post_processors:
-                element.apply(post_processor)
-        return elements
+        """Apply post processing functions to extracted unstructured elements.
+
+        Post processing functions are str -> str callables passed
+        in using the post_processors kwarg when the loader is instantiated.
+        """
 
     def lazy_load(self) -> Iterator[Document]:
         """Load file."""
@@ -76,8 +67,8 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                     metadata["category"] = element.category
                 yield Document(page_content=str(element), metadata=metadata)
         elif self.mode == "paged":
-            text_dict: Dict[int, str] = {}
-            meta_dict: Dict[int, Dict] = {}
+            text_dict: dict[int, str] = {}
+            meta_dict: dict[int, dict] = {}
 
             for element in elements:
                 metadata = self._get_metadata()
@@ -134,7 +125,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
     def __init__(
         self,
-        file_path: Union[str, List[str], Path, List[Path]],
+        file_path: Union[str, list[str], Path, list[Path]],
         *,
         mode: str = "single",
         **unstructured_kwargs: Any,
@@ -156,7 +147,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
-    def _get_elements(self) -> List:
+    def _get_elements(self) -> list:
         from unstructured.partition.auto import partition
 
         if isinstance(self.file_path, list):
@@ -173,10 +164,21 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
     def _get_metadata(self) -> dict:
         return {"source": self.file_path}
+    
+    def _post_process_elements(self, elements: list) -> list:
+        """Apply post processing functions to extracted unstructured elements.
+
+        Post processing functions are str -> str callables passed
+        in using the post_processors kwarg when the loader is instantiated.
+        """
+        for element in elements:
+            for post_processor in self.post_processors:
+                element.apply(post_processor)
+        return elements
 
 
 class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
-    """Load files using `Unstructured` API.
+    """Load files using `unstructured-client` sdk to access the Unstructured API.
 
     By default, the loader makes a call to the hosted Unstructured API.
     If you are running the unstructured API locally, you can change the
@@ -209,7 +211,7 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
 
     def __init__(
         self,
-        file_path: Union[str, List[str]],
+        file_path: Union[str, list[str]],
         *,
         mode: str = "single",
         url: str = "https://api.unstructured.io/general/v0/general",
@@ -242,8 +244,8 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
                     metadata.update(element["category"])
                 yield Document(page_content=element.get("text"), metadata=metadata)
         elif self.mode == "paged":
-            text_dict: Dict[int, str] = {}
-            meta_dict: Dict[int, Dict] = {}
+            text_dict: dict[int, str] = {}
+            meta_dict: dict[int, dict] = {}
 
             for element in elements_json:
                 metadata = self._get_metadata()
@@ -274,8 +276,8 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
     def _get_metadata(self) -> dict:
         return {"source": self.file_path}
 
-    def _get_elements(self) -> List:
-        if isinstance(self.file_path, List):
+    def _get_elements(self) -> list:
+        if isinstance(self.file_path, list):
             elements = []
             for path in self.file_path:
                 elements.extend(
@@ -295,18 +297,27 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
             **self.unstructured_kwargs,
         )
 
+    def _post_process_elements(self, elements: list[dict]) -> list:
+        """Apply post processing functions to extracted unstructured elements.
+
+        Post processing functions are str -> str callables passed
+        in using the post_processors kwarg when the loader is instantiated.
+        """
+        for element in elements:
+            for post_processor in self.post_processors:
+                element["text"] = post_processor(element.get("text"))
+        return elements
+    
 
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
-    """Load files using `Unstructured`.
+    """Load file-like objects opened in read mode using `Unstructured`.
 
-    The file loader
-    uses the unstructured partition function and will automatically detect the file
-    type. You can run the loader in one of two modes: "single" and "elements".
-    If you use "single" mode, the document will be returned as a single
-    langchain Document object. If you use "elements" mode, the unstructured
-    library will split the document into elements such as Title and NarrativeText.
-    You can pass in additional unstructured kwargs after mode to apply
-    different unstructured settings.
+    The file loader uses the unstructured partition function and will automatically detect the file
+    type. You can run the loader in one of two modes: "single" and "elements". If you use "single"
+    mode, the document will be returned as a single langchain Document object. If you use "elements"
+    mode, the unstructured library will split the document into elements such as Title and
+    NarrativeText. You can pass in additional unstructured kwargs after mode to apply different
+    unstructured settings.
 
     Examples
     --------
@@ -326,7 +337,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
     def __init__(
         self,
-        file: Union[IO[bytes], Sequence[IO]],
+        file: Union[IO[bytes], Sequence[IO[bytes]]],
         *,
         mode: str = "single",
         **unstructured_kwargs: Any,
@@ -348,7 +359,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
-    def _get_elements(self) -> List:
+    def _get_elements(self) -> list:
         from unstructured.partition.auto import partition
 
         if isinstance(self.file, IO):
@@ -358,10 +369,21 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
     def _get_metadata(self) -> dict:
         return {}
+    
+    def _post_process_elements(self, elements: list) -> list:
+        """Apply post processing functions to extracted unstructured elements.
+
+        Post processing functions are str -> str callables passed
+        in using the post_processors kwarg when the loader is instantiated.
+        """
+        for element in elements:
+            for post_processor in self.post_processors:
+                element.apply(post_processor)
+        return elements
 
 
 class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
-    """Load files using `Unstructured` API.
+    """Load file-like objects using the `unstructured-client` sdk to access the Unstructured API.
 
     By default, the loader makes a call to the hosted Unstructured API.
     If you are running the unstructured API locally, you can change the
@@ -410,7 +432,7 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
-    def _get_elements(self) -> List:
+    def _get_elements(self) -> list:
         if isinstance(self.file, Sequence):
             if _metadata_filenames := self.unstructured_kwargs.pop("metadata_filename"):
                 elements = []
@@ -442,6 +464,17 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
     def _get_metadata(self) -> dict:
         return {}
 
+    def _post_process_elements(self, elements: list[dict]) -> list:
+        """Apply post processing functions to extracted unstructured elements.
+
+        Post processing functions are str -> str callables passed
+        in using the post_processors kwarg when the loader is instantiated.
+        """
+        for element in elements:
+            for post_processor in self.post_processors:
+                element["text"] = post_processor(element.get("text"))
+        return elements
+
 
 def get_elements_from_api(
     file_path: Union[str, Path],
@@ -450,7 +483,7 @@ def get_elements_from_api(
     api_url: str = "https://api.unstructured.io/general/v0/general",
     api_key: str = "",
     **unstructured_kwargs: Any,
-) -> List:
+) -> list:
     """Retrieve a list of elements from the `Unstructured API`."""
 
     try:

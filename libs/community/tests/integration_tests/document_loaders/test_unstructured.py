@@ -1,6 +1,7 @@
 import os
 from contextlib import ExitStack
 from pathlib import Path
+from typing import Any
 import pytest
 
 import pytest
@@ -19,9 +20,6 @@ EXAMPLE_DOCS_DIRECTORY = str(Path(__file__).parent.parent / "examples/")
 # -- UnstructuredFileLoader -------------------------------
 
 def test_unstructured_loader_with_post_processor() -> None:
-    def add_the_end(text: str) -> str:
-        return text + "THE END!"
-
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
     loader = UnstructuredFileLoader(
         file_path=file_path,
@@ -78,6 +76,23 @@ def test_unstructured_api_file_loader(file_paths) -> None:
     docs = loader.load()
 
     assert len(docs) > 1
+
+
+def test_unstructured_api_file_loader_post_processors() -> None:
+    """Test UnstructuredAPIFileLoader._post_proceess_elements."""
+    
+    loader = UnstructuredAPIFileLoader(
+        file_path=os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf"),
+        api_key="FAKE_API_KEY",
+        mode="elements",
+        post_processors=[add_the_end],
+        strategy="fast",
+    )
+    
+    docs = loader.load()
+
+    assert len(docs) > 1
+    assert docs[0].page_content.endswith("THE END!")
 
 
 # -- UnstructuredFileIOLoader -------------------------------
@@ -157,3 +172,9 @@ def test_get_content_from_file_path() -> None:
     
     assert type(content)==bytes
     assert content[:50]==b'%PDF-1.5\n%\x8f\n47 0 obj\n<< /Filter /FlateDecode /Leng'
+
+
+# -- helper functions -------------------------------
+
+def add_the_end(text: str) -> str:
+    return text + "THE END!"
