@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 
 def env_var_is_set(env_var: str) -> bool:
@@ -22,7 +22,7 @@ def env_var_is_set(env_var: str) -> bool:
 
 
 def get_from_dict_or_env(
-    data: Dict[str, Any], key: str, env_key: str, default: Optional[str] = None
+    data: Dict[str, Any], key: str, env_key: str, default: Optional[Any] = None
 ) -> str:
     """Get a value from a dictionary or an environment variable."""
     if key in data and data[key]:
@@ -31,10 +31,17 @@ def get_from_dict_or_env(
         return get_from_env(key, env_key, default=default)
 
 
-def get_from_env(key: str, env_key: str, default: Optional[str] = None) -> str:
+def get_from_env(
+    key: str, env_key: str, default: Optional[Any] = None
+) -> Union[str | bool]:
     """Get a value from a dictionary or an environment variable."""
     if env_key in os.environ and os.environ[env_key]:
-        return os.environ[env_key]
+        if os.environ[env_key].lower() == "true":
+            return True
+        elif os.environ[env_key].lower() == "false":
+            return False
+        else:
+            return os.environ[env_key]
     elif default is not None:
         return default
     else:

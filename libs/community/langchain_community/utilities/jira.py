@@ -15,7 +15,7 @@ class JiraAPIWrapper(BaseModel):
     jira_username: Optional[str] = None
     jira_api_token: Optional[str] = None
     jira_instance_url: Optional[str] = None
-    jira_cloud: Optional[str] = "True"
+    jira_cloud: Optional[bool] = None
 
     class Config:
         """Configuration for this pydantic object."""
@@ -53,14 +53,14 @@ class JiraAPIWrapper(BaseModel):
             url=jira_instance_url,
             username=jira_username,
             password=jira_api_token,
-            cloud=jira_cloud.lower() == "true",
+            cloud=jira_cloud,
         )
 
         confluence = Confluence(
             url=jira_instance_url,
             username=jira_username,
             password=jira_api_token,
-            cloud=jira_cloud.lower() == "true",
+            cloud=jira_cloud,
         )
 
         values["jira"] = jira

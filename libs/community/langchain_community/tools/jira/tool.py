@@ -7,7 +7,7 @@ To use this tool, you must first set as environment variables:
     JIRA_API_TOKEN
     JIRA_USERNAME
     JIRA_INSTANCE_URL
-    JIRA_CLOUD (Optional. Default "True")
+    JIRA_CLOUD
 
 Below is a sample script that uses the Jira tool:
 
