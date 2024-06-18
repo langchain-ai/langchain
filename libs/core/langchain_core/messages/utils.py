@@ -488,9 +488,7 @@ def trim_messages(
     ] = None,
     include_system: bool = False,
     text_splitter: Optional[Union[Callable[[str], List[str]], TextSplitter]] = None,
-) -> Union[
-    List[BaseMessage], Runnable[Sequence[MessageLikeRepresentation], List[BaseMessage]]
-]:
+) -> List[BaseMessage]:
     """Trim messages to be below a token count.
 
     Args:
