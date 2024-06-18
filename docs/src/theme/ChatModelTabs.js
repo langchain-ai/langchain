@@ -10,6 +10,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {string} [anthropicParams] - Parameters for Anthropic chat model. Defaults to `model="claude-3-sonnet-20240229"`
  * @property {string} [cohereParams] - Parameters for Cohere chat model. Defaults to `model="command-r"`
  * @property {string} [fireworksParams] - Parameters for Fireworks chat model. Defaults to `model="accounts/fireworks/models/mixtral-8x7b-instruct"`
+ * @property {string} [groqParams] - Parameters for Groq chat model. Defaults to `model="llama3-8b-8192"`
  * @property {string} [mistralParams] - Parameters for Mistral chat model. Defaults to `model="mistral-large-latest"`
  * @property {string} [googleParams] - Parameters for Google chat model. Defaults to `model="gemini-pro"`
  * @property {string} [togetherParams] - Parameters for Together chat model. Defaults to `model="mistralai/Mixtral-8x7B-Instruct-v0.1"`
@@ -17,6 +18,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @property {boolean} [hideAnthropic] - Whether or not to hide Anthropic chat model.
  * @property {boolean} [hideCohere] - Whether or not to hide Cohere chat model.
  * @property {boolean} [hideFireworks] - Whether or not to hide Fireworks chat model.
+ * @property {boolean} [hideGroq] - Whether or not to hide Groq chat model.
  * @property {boolean} [hideMistral] - Whether or not to hide Mistral chat model.
  * @property {boolean} [hideGoogle] - Whether or not to hide Google VertexAI chat model.
  * @property {boolean} [hideTogether] - Whether or not to hide Together chat model.
@@ -33,6 +35,7 @@ export default function ChatModelTabs(props) {
     anthropicParams,
     cohereParams,
     fireworksParams,
+    groqParams,
     mistralParams,
     googleParams,
     togetherParams,
@@ -41,6 +44,7 @@ export default function ChatModelTabs(props) {
     hideAnthropic,
     hideCohere,
     hideFireworks,
+    hideGroq,
     hideMistral,
     hideGoogle,
     hideTogether,
@@ -55,6 +59,7 @@ export default function ChatModelTabs(props) {
   const fireworksParamsOrDefault =
     fireworksParams ??
     `model="accounts/fireworks/models/mixtral-8x7b-instruct"`;
+  const groqParamsOrDefault = groqParams ?? `model="llama3-8b-8192"`;
   const mistralParamsOrDefault =
     mistralParams ?? `model="mistral-large-latest"`;
   const googleParamsOrDefault = googleParams ?? `model="gemini-pro"`;
@@ -121,6 +126,15 @@ export default function ChatModelTabs(props) {
       packageName: "langchain-fireworks",
       default: false,
       shouldHide: hideFireworks,
+    },
+    {
+      value: "Groq",
+      label: "Groq",
+      text: `from langchain_groq import ChatGroq\n\n${llmVarName} = ChatGroq(${groqParamsOrDefault})`,
+      apiKeyName: "GROQ_API_KEY",
+      packageName: "langchain-groq",
+      default: false,
+      shouldHide: hideGroq,
     },
     {
       value: "MistralAI",
