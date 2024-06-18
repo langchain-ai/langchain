@@ -10,8 +10,9 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
     """SambaNova embedding models.
 
     To use, you should have the environment variables
-    ``SAMBASTUDIO_EMBEDDINGS_BASE_URL``, ``SAMBASTUDIO_EMBEDDINGS_PROJECT_ID``,
-    ``SAMBASTUDIO_EMBEDDINGS_ENDPOINT_ID``, ``SAMBASTUDIO_EMBEDDINGS_API_KEY``,
+    ``SAMBASTUDIO_EMBEDDINGS_BASE_URL``, ``SAMBASTUDIO_EMBEDDINGS_BASE_URI``
+    ``SAMBASTUDIO_EMBEDDINGS_PROJECT_ID``, ``SAMBASTUDIO_EMBEDDINGS_ENDPOINT_ID``,
+    ``SAMBASTUDIO_EMBEDDINGS_API_KEY``
     set with your personal sambastudio variable or pass it as a named parameter
     to the constructor.
 
@@ -20,6 +21,7 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
 
             from langchain_community.embeddings import SambaStudioEmbeddings
             embeddings = SambaStudioEmbeddings(sambastudio_embeddings_base_url=base_url,
+                                          sambastudio_embeddings_base_uri=base_uri,
                                           sambastudio_embeddings_project_id=project_id,
                                           sambastudio_embeddings_endpoint_id=endpoint_id,
                                           sambastudio_embeddings_api_key=api_key)
@@ -27,11 +29,11 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
             embeddings = SambaStudioEmbeddings()
     """
 
-    API_BASE_PATH = "/api/predict/nlp/"
-    """Base path to use for the API usage"""
-
     sambastudio_embeddings_base_url: str = ""
     """Base url to use"""
+
+    sambastudio_embeddings_base_uri: str = ""
+    """endpoint base uri"""
 
     sambastudio_embeddings_project_id: str = ""
     """Project id on sambastudio for model"""
@@ -47,6 +49,12 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
         """Validate that api key and python package exists in environment."""
         values["sambastudio_embeddings_base_url"] = get_from_dict_or_env(
             values, "sambastudio_embeddings_base_url", "SAMBASTUDIO_EMBEDDINGS_BASE_URL"
+        )
+        values["sambastudio_embeddings_base_uri"] = get_from_dict_or_env(
+            values,
+            "sambastudio_embeddings_base_uri",
+            "SAMBASTUDIO_EMBEDDINGS_BASE_URI",
+            default="api/predict/generic",
         )
         values["sambastudio_embeddings_project_id"] = get_from_dict_or_env(
             values,
@@ -71,7 +79,7 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
         :returns: the full API URL for the sub-path
         :rtype: str
         """
-        return f"{self.sambastudio_embeddings_base_url}{self.API_BASE_PATH}{path}"
+        return f"{self.sambastudio_embeddings_base_url}/{self.sambastudio_embeddings_base_uri}/{path}"  # noqa: E501
 
     def _iterate_over_batches(self, texts: List[str], batch_size: int) -> Generator:
         """Generator for creating batches in the embed documents method
@@ -104,15 +112,44 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
 
         embeddings = []
 
-        for batch in self._iterate_over_batches(texts, batch_size):
-            data = {"inputs": batch}
-            response = http_session.post(
-                url,
-                headers={"key": self.sambastudio_embeddings_api_key},
-                json=data,
+        if "nlp" in self.sambastudio_embeddings_base_uri:
+            for batch in self._iterate_over_batches(texts, batch_size):
+                data = {"inputs": batch}
+                response = http_session.post(
+                    url,
+                    headers={"key": self.sambastudio_embeddings_api_key},
+                    json=data,
+                )
+                try:
+                    embedding = response.json()["data"]
+                    embeddings.extend(embedding)
+                except KeyError:
+                    raise KeyError(
+                        "'data' not found in endpoint response",
+                        response.json(),
+                    )
+
+        elif "generic" in self.sambastudio_embeddings_base_uri:
+            for batch in self._iterate_over_batches(texts, batch_size):
+                data = {"instances": batch}
+                response = http_session.post(
+                    url,
+                    headers={"key": self.sambastudio_embeddings_api_key},
+                    json=data,
+                )
+                try:
+                    embedding = response.json()["predictions"]
+                    embeddings.extend(embedding)
+                except KeyError:
+                    raise KeyError(
+                        "'predictions' not found in endpoint response",
+                        response.json(),
+                    )
+
+        else:
+            raise ValueError(
+                f"handling of endpoint uri: {self.sambastudio_embeddings_base_uri} not implemented"  # noqa: E501
             )
-            embedding = response.json()["data"]
-            embeddings.extend(embedding)
 
         return embeddings
 
@@ -130,13 +167,41 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
             f"{self.sambastudio_embeddings_project_id}/{self.sambastudio_embeddings_endpoint_id}"
         )
 
-        data = {"inputs": [text]}
+        if "nlp" in self.sambastudio_embeddings_base_uri:
+            data = {"inputs": [text]}
 
-        response = http_session.post(
-            url,
-            headers={"key": self.sambastudio_embeddings_api_key},
-            json=data,
-        )
-        embedding = response.json()["data"][0]
+            response = http_session.post(
+                url,
+                headers={"key": self.sambastudio_embeddings_api_key},
+                json=data,
+            )
+            try:
+                embedding = response.json()["data"][0]
+            except KeyError:
+                raise KeyError(
+                    "'data' not found in endpoint response",
+                    response.json(),
+                )
+
+        elif "generic" in self.sambastudio_embeddings_base_uri:
+            data = {"instances": [text]}
+
+            response = http_session.post(
+                url,
+                headers={"key": self.sambastudio_embeddings_api_key},
+                json=data,
+            )
+            try:
+                embedding = response.json()["predictions"][0]
+            except KeyError:
+                raise KeyError(
+                    "'predictions' not found in endpoint response",
+                    response.json(),
+                )
+
+        else:
+            raise ValueError(
+                f"handling of endpoint uri: {self.sambastudio_embeddings_base_uri} not implemented"  # noqa: E501
+            )
 
         return embedding
