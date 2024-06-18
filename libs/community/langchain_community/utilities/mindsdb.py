@@ -56,9 +56,17 @@ class DatabaseMindWrapper(BaseModel):
         return values
 
     def _create_mind(self) -> Mind:
-        pass
+        self._mind = create_mind(
+            name=self.name,
+            description=self.description,
+            base_url=self.mindsdb_api_base,
+            api_key=self.mindsdb_api_key,
+            model=self.model,
+            data_source_type=self.data_source_type,
+            data_source_connection_args=self.data_source_connection_args
+        )
 
-    def _query_mind(self) -> Text:
+    def _query_mind(self, query: Text) -> Text:
         pass
 
     def run(self, query: Text) -> Text:
