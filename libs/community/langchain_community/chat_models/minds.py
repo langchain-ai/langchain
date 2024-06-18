@@ -2,11 +2,10 @@ import os
 import requests
 from typing import Text, Dict, Set, Optional
 
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_community.chat_models.openai import (
-    ChatOpenAI,
-)
 from langchain_community.utils.openai import is_openai_v1
+from langchain_community.chat_models.openai import ChatOpenAI
+
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 DEFAULT_API_BASE = "https://llm.mdb.ai"
