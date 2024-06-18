@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-standard-tests"
-version = "0.1.0"
+version = "0.1.1"
 description = "Standard tests for LangChain implementations"
 authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
