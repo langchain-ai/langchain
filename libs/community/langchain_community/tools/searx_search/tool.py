@@ -11,7 +11,7 @@ from langchain_core.tools import BaseTool
 from langchain_community.utilities.searx_search import SearxSearchWrapper
 
 class SearxSearchQueryInput(BaseModel):
-    """input for the SearxSearch tool"""
+    """Input for the SearxSearch tool."""
     query: str = Field(description="query to look up on searx")
 
 class SearxSearchRun(BaseTool):
