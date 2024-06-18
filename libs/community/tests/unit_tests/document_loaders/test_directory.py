@@ -5,6 +5,7 @@ import pytest
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders import DirectoryLoader
+from langchain_community.document_loaders.text import TextLoader
 
 
 def test_raise_error_if_path_not_exist() -> None:
@@ -23,7 +24,7 @@ def test_raise_error_if_path_is_not_directory() -> None:
     assert str(e.value) == f"Expected directory, got file: '{__file__}'"
 
 
-class CustomLoader:
+class CustomLoader(TextLoader):
     """Test loader. Mimics interface of existing file loader."""
 
     def __init__(self, path: Path, **kwargs: Any) -> None:
@@ -59,7 +60,7 @@ def test_exclude_as_string_converts_to_sequence() -> None:
 
 
 class CustomLoaderMetadataOnly(CustomLoader):
-    """Test loader that just returns the file path in metadata. For test_directory_loader_glob_multiple."""
+    """Test loader that just returns the file path in metadata. For test_directory_loader_glob_multiple."""  # noqa: E501
 
     def load(self) -> List[Document]:
         metadata = {"source": self.path}
@@ -75,12 +76,10 @@ def test_directory_loader_glob_multiple() -> None:
     path_to_examples = "tests/examples/"
     list_extensions = [".rst", ".txt"]
     list_globs = [f"**/*{ext}" for ext in list_extensions]
-    is_file_type_loaded = {ext: False for ext in list_extensions} 
+    is_file_type_loaded = {ext: False for ext in list_extensions}
 
     loader = DirectoryLoader(
-        path=path_to_examples,
-        glob=list_globs,
-        loader_cls=CustomLoaderMetadataOnly
+        path=path_to_examples, glob=list_globs, loader_cls=CustomLoaderMetadataOnly
     )
 
     list_documents = loader.load()
@@ -96,6 +95,6 @@ def test_directory_loader_glob_multiple() -> None:
         else:
             # Loaded a filetype that was not specified in extensions list
             assert False
-    
+
     for ext in list_extensions:
         assert is_file_type_loaded.get(ext, False)

@@ -51,8 +51,8 @@ class DirectoryLoader(BaseLoader):
 
         Args:
             path: Path to directory.
-            glob: A glob pattern or list of glob patterns to use to find files. 
-                Defaults to "**/[!.]*" (all files except hidden). 
+            glob: A glob pattern or list of glob patterns to use to find files.
+                Defaults to "**/[!.]*" (all files except hidden).
             exclude: A pattern or list of patterns to exclude from results.
                 Use glob syntax.
             silent_errors: Whether to silently ignore errors. Defaults to False.
@@ -128,11 +128,15 @@ class DirectoryLoader(BaseLoader):
         if isinstance(self.glob, (list, tuple)):
             paths = []
             for pattern in self.glob:
-                paths.extend(list(p.rglob(pattern) if self.recursive else p.glob(pattern)))
+                paths.extend(
+                    list(p.rglob(pattern) if self.recursive else p.glob(pattern))
+                )
         elif isinstance(self.glob, str):
             paths = list(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
         else:
-            raise TypeError(f"Expected glob to be str or sequence of str, but got {type(self.glob)}")
+            raise TypeError(
+                f"Expected glob to be str or sequence of str, but got {type(self.glob)}"
+            )
 
         items = [
             path
