@@ -32,7 +32,7 @@ do not need to use these if irrelevant):
 TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S %Z"
 
 
-class ConversationTokenBufferVectorStoreMemory(ConversationTokenBufferMemory):
+class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
     """Conversation chat memory with token limit and vectordb backing.
 
     load_memory_variables() will return a dict with the key "history".
@@ -65,7 +65,7 @@ class ConversationTokenBufferVectorStoreMemory(ConversationTokenBufferMemory):
     .. code-block:: python
 
         from langchain.memory.token_buffer_vectorstore_memory import (
-                ConversationTokenBufferVectorStoreMemory
+                ConversationVectorStoreTokenBufferMemory
         )
         from langchain_community.vectorstores import Chroma
         from langchain_community.embeddings import HuggingFaceInstructEmbeddings
@@ -87,7 +87,7 @@ class ConversationTokenBufferVectorStoreMemory(ConversationTokenBufferMemory):
                 },
         )
 
-        conversation_memory = ConversationTokenBufferVectorStoreMemory(
+        conversation_memory = ConversationVectorStoreTokenBufferMemory(
                 return_messages=True,
                 llm=OpenAI(),
                 retriever=retriever,

@@ -13,7 +13,7 @@ EXPECTED_ALL = [
     "ConversationSummaryBufferMemory",
     "ConversationSummaryMemory",
     "ConversationTokenBufferMemory",
-    "ConversationTokenBufferVectorStoreMemory",
+    "ConversationVectorStoreTokenBufferMemory",
     "CosmosDBChatMessageHistory",
     "DynamoDBChatMessageHistory",
     "ElasticsearchChatMessageHistory",
