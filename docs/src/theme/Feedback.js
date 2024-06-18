@@ -158,33 +158,33 @@ export default function Feedback() {
     // Set a cookie to prevent feedback from being sent multiple times
     setCookie(cookieName, window.location.pathname, 1);
     setFeedbackSent(true);
+  };
 
-    const handleFeedbackDetails = async (e) => {
-      e.preventDefault();
-      if (!feedbackId) {
-        setFeedbackDetailsSent(true);
-        return;
-      }
-      const details = e.target.elements
-        .namedItem("details")
-        ?.value.slice(0, 1024);
-      if (!details) {
-        return;
-      }
-      const supabase = createClient(
-        siteConfig.customFields.supabaseUrl,
-        siteConfig.customFields.supabasePublicKey
-      );
-      const { error } = await supabase.from("feedback_details").insert({
-        feedback_id: feedbackId,
-        details,
-      });
-      if (error) {
-        console.error("Failed to add feedback details", error);
-        return;
-      }
+  const handleFeedbackDetails = async (e) => {
+    e.preventDefault();
+    if (!feedbackId) {
       setFeedbackDetailsSent(true);
-    };
+      return;
+    }
+    const details = e.target.elements
+      .namedItem("details")
+      ?.value.slice(0, 1024);
+    if (!details) {
+      return;
+    }
+    const supabase = createClient(
+      siteConfig.customFields.supabaseUrl,
+      siteConfig.customFields.supabasePublicKey
+    );
+    const { error } = await supabase.from("feedback_details").insert({
+      feedback_id: feedbackId,
+      details,
+    });
+    if (error) {
+      console.error("Failed to add feedback details", error);
+      return;
+    }
+    setFeedbackDetailsSent(true);
   };
 
   useEffect(() => {
