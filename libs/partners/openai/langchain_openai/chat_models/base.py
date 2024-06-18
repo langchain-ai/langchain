@@ -345,6 +345,8 @@ class BaseChatOpenAI(BaseChatModel):
     http_async_client: Union[Any, None] = None
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
+    stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
+    """Default stop sequences."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -441,6 +443,7 @@ class BaseChatOpenAI(BaseChatModel):
             "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
+            "stop": self.stop,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
@@ -548,8 +551,6 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = self._default_params
         if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
@@ -871,15 +872,7 @@ class BaseChatOpenAI(BaseChatModel):
                 if tool_choice == "any":
                     tool_choice = "required"
             elif isinstance(tool_choice, bool):
-                if len(tools) > 1:
-                    raise ValueError(
-                        "tool_choice=True can only be used when a single tool is "
-                        f"passed in, received {len(tools)} tools."
-                    )
-                tool_choice = {
-                    "type": "function",
-                    "function": {"name": formatted_tools[0]["function"]["name"]},
-                }
+                tool_choice = "required"
             elif isinstance(tool_choice, dict):
                 tool_names = [
                     formatted_tool["function"]["name"]
@@ -1094,7 +1087,7 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            llm = self.bind_tools([schema], tool_choice=True)
+            llm = self.bind_tools([schema], tool_choice="any")
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema], first_tool_only=True
