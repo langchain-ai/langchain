@@ -27,8 +27,8 @@ class DatabaseMindWrapper(BaseModel):
     data_source_type: Text = Literal['postgres']
     data_source_connection_args: Dict
 
-    _mind: Mind = PrivateAttr()
-    _client: Any = PrivateAttr()
+    _mind: Mind = PrivateAttr(default=None)
+    _client: Any = PrivateAttr(default=None)
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
