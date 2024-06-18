@@ -84,9 +84,39 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.utils import build_extra_kwargs
+from math import ceil
+from urllib.request import urlopen
+from PIL import Image
+from io import BytesIO
 
 logger = logging.getLogger(__name__)
 
+def get_image_size(url: str):
+    try:
+        with urlopen(url) as response:
+            image_data = response.read()
+            image = Image.open(BytesIO(image_data))
+            width, height = image.size
+            return width, height
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+def resize(width: int, height: int):
+    if width > 1024 or height > 1024:
+        if width > height:
+            height = int(height * 1024 / width)
+            width = 1024
+        else:
+            width = int(width * 1024 / height)
+            height = 1024
+    return width, height
+
+def count_image_tokens(width: int, height: int):
+    width, height = resize(width, height)
+    h = ceil(height / 512)
+    w = ceil(width / 512)
+    total = 85 + 1
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
@@ -760,9 +790,21 @@ class BaseChatOpenAI(BaseChatModel):
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():
-                # Cast str(value) in case the message value is not a string
-                # This occurs with function messages
-                num_tokens += len(encoding.encode(str(value)))
+                # deal with images
+                if isinstance(value, list):
+                    for val in value:
+                        if val['type'] == "text":
+                            num_tokens += len(encoding.encode(str(val['text'])))
+                        elif val['type'] == "image_url":
+                            try:
+                                image_size = get_image_size(val['image_url']['url'])
+                                num_tokens += count_image_tokens(*resize(*image_size))
+                            except:
+                                pass
+                else:
+                    # Cast str(value) in case the message value is not a string
+                    # This occurs with function messages
+                    num_tokens += len(encoding.encode(str(value)))
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant
