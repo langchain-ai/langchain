@@ -79,7 +79,15 @@ These are the core building blocks you can use when building applications.
 - [How to: stream a response back](/docs/how_to/chat_streaming)
 - [How to: track token usage](/docs/how_to/chat_token_usage_tracking)
 - [How to: track response metadata across providers](/docs/how_to/response_metadata)
-- [How to: let your end users choose their model](/docs/how_to/chat_models_universal_init/)
+- [How to: init any model in one line](/docs/how_to/chat_models_universal_init/)
+
+### Messages
+
+[Messages](/docs/concepts/#messages) are the input and output of chat models. They have some `content` and a `role`, which describes the source of the message.
+
+- [How to: trim messages](/docs/how_to/trim_messages/)
+- [How to: filter messages](/docs/how_to/filter_messages/)
+- [How to: merge consecutive messages of the same type](/docs/how_to/merge_message_runs/)
 
 ### LLMs
 
@@ -295,7 +303,15 @@ You can peruse [LangGraph how-to guides here](https://langchain-ai.github.io/lan
 ## [LangSmith](https://docs.smith.langchain.com/)
 
 LangSmith allows you to closely trace, monitor and evaluate your LLM application.
-It seamlessly integrates with LangChain, and you can use it to inspect and debug individual steps of your chains as you build.
+It seamlessly integrates with LangChain and LangGraph, and you can use it to inspect and debug individual steps of your chains and agents as you build.
 
 LangSmith documentation is hosted on a separate site.
 You can peruse [LangSmith how-to guides here](https://docs.smith.langchain.com/how_to_guides/).
+
+### Evaluation
+<span data-heading-keywords="evaluation,evaluate"></span>
+
+Evaluating performance is a vital part of building LLM-powered applications.
+LangSmith helps with every step of the process from creating a dataset to defining metrics to running evaluators.
+
+To learn more, check out the [LangSmith evaluation how-to guides](https://docs.smith.langchain.com/how_to_guides/evaluation).

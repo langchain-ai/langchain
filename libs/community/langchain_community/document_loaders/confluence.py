@@ -42,7 +42,7 @@ class ConfluenceLoader(BaseLoader):
 
     You can also specify a boolean `include_attachments` to include attachments, this
     is set to False by default, if set to True all attachments will be downloaded and
-    ConfluenceReader will extract the text from the attachments and add it to the
+    ConfluenceLoader will extract the text from the attachments and add it to the
     Document object. Currently supported attachment types are: PDF, PNG, JPEG/JPG,
     SVG, Word and Excel.
 
