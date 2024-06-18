@@ -42,11 +42,12 @@ def get_from_dict_or_env(
         for k in key:
             if k in data and data[k]:
                 return data[k]
-    elif isinstance(key, str):
+
+    if isinstance(key, str):
         if key in data and data[key]:
             return data[key]
-    else:
-        return get_from_env(key, env_key, default=default)
+
+    return get_from_env(key, env_key, default=default)
 
 
 def get_from_env(key: str, env_key: str, default: Optional[str] = None) -> str:
