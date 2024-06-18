@@ -85,22 +85,40 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.utils import build_extra_kwargs
 from math import ceil
-from urllib.request import urlopen
-from PIL import Image
 from io import BytesIO
+from urllib.parse import urlparse
+import requests
+import base64
+
 
 logger = logging.getLogger(__name__)
 
-def get_image_size(url: str):
+def _is_url(s: str) -> bool:
     try:
-        with urlopen(url) as response:
-            image_data = response.read()
-            image = Image.open(BytesIO(image_data))
-            width, height = image.size
-            return width, height
+        result = urlparse(s)
+        return all([result.scheme, result.netloc])
     except Exception as e:
-        print(f"Error: {e}")
+        logger.debug(f"Unable to parse URL: {e}")
+        return False
+    
+def _is_b64(s: str) -> bool:
+    return s.startswith("data:image")
+
+def _url_to_size(image_source: str):
+    try: 
+        from PIL import Image
+    except:
         return None
+    if _is_url(image_source):
+        response = requests.get(image_source)
+        response.raise_for_status()
+        width, height = (Image.open(BytesIO(response.content))).size
+        return width, height
+    elif _is_b64(image_source):
+        _, encoded = image_source.split(",", 1)
+        data = base64.b64decode(encoded)
+        width, height = (Image.open(BytesIO(data))).size
+        return width, height
 
 def resize(width: int, height: int):
     if width > 1024 or height > 1024:
@@ -797,10 +815,10 @@ class BaseChatOpenAI(BaseChatModel):
                             num_tokens += len(encoding.encode(str(val['text'])))
                         elif val['type'] == "image_url":
                             try:
-                                if val['image_url']['detail'] == "low":
+                                if 'detail' in val['image_url'] and val['image_url']['detail'] == "low":
                                     num_tokens += 85
                                 else:
-                                    image_size = get_image_size(val['image_url']['url'])
+                                    image_size = _url_to_size(val['image_url']['url'])
                                     num_tokens += count_image_tokens(*resize(*image_size))
                             except:
                                 pass
