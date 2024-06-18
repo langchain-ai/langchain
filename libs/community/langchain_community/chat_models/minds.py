@@ -27,15 +27,11 @@ class ChatMinds(ChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         return False
 
-    mindsdb_api_base: str = Field(default=DEFAULT_API_BASE)
-
     mindsdb_api_key: SecretStr = Field(default=None)
-
+    mindsdb_api_base: str = Field(default=DEFAULT_API_BASE)
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
 
     available_models: Optional[Set[str]] = None
-
-    # TODO: Add custom initializer?
 
     @staticmethod
     def get_available_models(
@@ -72,7 +68,8 @@ class ChatMinds(ChatOpenAI):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """
-        Validate that the MindsDB API credentials are provided and that the `openai` package exists in the environment.
+        Validate that the MindsDB API credentials are provided and create an OpenAI client.
+        Further, validate that the chosen model is supported by the MindsDB API.
         """
         # Validate that the API key and base URL are available.
         values["mindsdb_api_key"] = convert_to_secret_str(
@@ -105,7 +102,6 @@ class ChatMinds(ChatOpenAI):
                 client_params = {
                     "api_key": values["mindsdb_api_key"].get_secret_value(),
                     "base_url": values["mindsdb_api_base"],
-                    # TODO: Add other parameters
                 }
                 if not values.get("client"):
                     values["client"] = openai.OpenAI(**client_params).chat.completions
