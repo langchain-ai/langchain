@@ -60,6 +60,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         self.collection = self.db[collection_name]
 
         if create_index:
+            index_kwargs = index_kwargs or {}
             self.collection.create_index(self.session_id_key, **index_kwargs)
 
     @property
