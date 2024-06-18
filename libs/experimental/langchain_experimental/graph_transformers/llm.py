@@ -610,6 +610,13 @@ class LLMGraphTransformer:
         strict_mode (bool, optional): Determines whether the transformer should apply
           filtering to strictly adhere to `allowed_nodes` and `allowed_relationships`.
           Defaults to True.
+        node_properties (Union[bool, List[str]]): If True, the LLM can extract any
+          node properties from text. Alternatively, a list of valid properties can
+          be provided for the LLM to extract, restricting extraction to those specified.
+        relationship_properties (Union[bool, List[str]]): If True, the LLM can extract
+          any relationship properties from text. Alternatively, a list of valid
+          properties can be provided for the LLM to extract, restricting extraction to
+          those specified.
 
     Example:
         .. code-block:: python
