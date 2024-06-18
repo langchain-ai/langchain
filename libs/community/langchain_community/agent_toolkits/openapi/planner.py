@@ -277,23 +277,25 @@ def _create_api_controller_agent(
         ),
     ]
     if allow_dangerous_requests:
-        tools.extend([
-            RequestsPutToolWithParsing(  # type: ignore[call-arg]
-                requests_wrapper=requests_wrapper,
-                llm_chain=put_llm_chain,
-                allow_dangerous_requests=allow_dangerous_requests,
-            ),
-            RequestsDeleteToolWithParsing(  # type: ignore[call-arg]
-                requests_wrapper=requests_wrapper,
-                llm_chain=delete_llm_chain,
-                allow_dangerous_requests=allow_dangerous_requests,
-            ),
-            RequestsPatchToolWithParsing(  # type: ignore[call-arg]
-                requests_wrapper=requests_wrapper,
-                llm_chain=patch_llm_chain,
-                allow_dangerous_requests=allow_dangerous_requests,
-            ),
-        ])
+        tools.extend(
+            [
+                RequestsPutToolWithParsing(  # type: ignore[call-arg]
+                    requests_wrapper=requests_wrapper,
+                    llm_chain=put_llm_chain,
+                    allow_dangerous_requests=allow_dangerous_requests,
+                ),
+                RequestsDeleteToolWithParsing(  # type: ignore[call-arg]
+                    requests_wrapper=requests_wrapper,
+                    llm_chain=delete_llm_chain,
+                    allow_dangerous_requests=allow_dangerous_requests,
+                ),
+                RequestsPatchToolWithParsing(  # type: ignore[call-arg]
+                    requests_wrapper=requests_wrapper,
+                    llm_chain=patch_llm_chain,
+                    allow_dangerous_requests=allow_dangerous_requests,
+                ),
+            ]
+        )
     prompt = PromptTemplate(
         template=API_CONTROLLER_PROMPT,
         input_variables=["input", "agent_scratchpad"],
