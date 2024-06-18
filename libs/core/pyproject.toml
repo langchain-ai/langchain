@@ -15,7 +15,7 @@ pydantic = [
     {version = "==2.7.3", python = ">=3.12.4"}
 ]
 langsmith = "^0.1.75"
-tenacity = "^8.1.0"
+tenacity = "^8.1.0,!=8.4.0"
 jsonpatch = "^1.33"
 PyYAML = ">=5.3"
 packaging = ">=23.2,<25"
