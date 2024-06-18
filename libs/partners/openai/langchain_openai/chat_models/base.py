@@ -797,8 +797,11 @@ class BaseChatOpenAI(BaseChatModel):
                             num_tokens += len(encoding.encode(str(val['text'])))
                         elif val['type'] == "image_url":
                             try:
-                                image_size = get_image_size(val['image_url']['url'])
-                                num_tokens += count_image_tokens(*resize(*image_size))
+                                if val['image_url']['detail'] == "low":
+                                    num_tokens += 85
+                                else:
+                                    image_size = get_image_size(val['image_url']['url'])
+                                    num_tokens += count_image_tokens(*resize(*image_size))
                             except:
                                 pass
                 else:
