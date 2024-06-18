@@ -442,6 +442,10 @@ class ChatWatsonx(BaseChatModel):
                     prompt += "<|system|>\n" + message["content"] + "\n\n"
                 elif message["role"] == "assistant":
                     prompt += "<|assistant|>\n" + message["content"] + "\n\n"
+                elif message["role"] == "function":
+                    prompt += "<|function|>\n" + message["content"] + "\n\n"
+                elif message["role"] == "tool":
+                    prompt += "<|tool|>\n" + message["content"] + "\n\n"
                 else:
                     prompt += "<|user|>:\n" + message["content"] + "\n\n"
 
