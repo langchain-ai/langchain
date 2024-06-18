@@ -8,6 +8,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Hashable,
     List,
     NamedTuple,
     Optional,
@@ -55,7 +56,7 @@ class Edge(NamedTuple):
 
     source: str
     target: str
-    data: Optional[str] = None
+    data: Optional[Hashable] = None
     conditional: bool = False
 
 
@@ -253,7 +254,7 @@ class Graph:
         self,
         source: Node,
         target: Node,
-        data: Optional[str] = None,
+        data: Optional[Hashable] = None,
         conditional: bool = False,
     ) -> Edge:
         """Add an edge to the graph and return it."""
