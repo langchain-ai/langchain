@@ -135,8 +135,8 @@ def get_integration_packages_info() -> list[PartnerPackage]:
 def generate_table(packages: list[PartnerPackage]) -> str:
     lines = []
     table_header = """
-| Package 🔻 | Version | License | Authors | Description |
-|------------|---------|---------|---------|-------------|
+| Package 🔻 | Version | License | Description |
+|------------|---------|---------|-------------|
 """
     lines.append(table_header)
     for package in sorted(packages, key=lambda x: x.name):
@@ -146,7 +146,7 @@ def generate_table(packages: list[PartnerPackage]) -> str:
                 title_link,
                 package.version,
                 package.license,
-                ", ".join(package.authors),
+                # ", ".join(package.authors),
                 package.description,
             ]
         )
@@ -159,7 +159,7 @@ def generate_table(packages: list[PartnerPackage]) -> str:
     return "".join(lines)
 
 
-def create_file_with_table(output_file: Path, table_str: str):
+def create_file_with_table(output_file: Path, table_str: str, package_numb: int):
     index_file_content = """---
 sidebar_position: 0
 sidebar_class_name: hidden
@@ -178,7 +178,9 @@ LangChain integrates with many providers.
 
 ## Partner Packages
 
-These providers have separate `langchain-{provider}` packages for improved versioning, dependency management and testing.
+Some providers have independent `langchain-{provider}` packages for improved versioning and dependency management.
+
+Currently {package_numb} partner packages available.
 
 {table}
 
@@ -187,7 +189,9 @@ These providers have separate `langchain-{provider}` packages for improved versi
 
 [A full list of all providers](/docs/integrations/providers/).
 """
-    index_file_content = index_file_content.replace("{table}", table_str)
+    index_file_content = index_file_content.replace(
+        "{package_numb}", str(package_numb)
+    ).replace("{table}", table_str)
     with open(output_file, "w") as f:
         f.write(index_file_content)
         logger.warning(f"{output_file} file updated with the package table.")
@@ -233,7 +237,7 @@ def main():
     integration_packages = get_integration_packages_info()
     # generate the package table and update a file with the table:
     table_str = generate_table(integration_packages)
-    create_file_with_table(PLATFORMS_FILE, table_str)
+    create_file_with_table(PLATFORMS_FILE, table_str, len(integration_packages))
 
 
 if __name__ == "__main__":

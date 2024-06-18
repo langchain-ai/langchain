@@ -32,6 +32,8 @@ repos:
         path: libs/partners/azure-dynamic-sessions
       - name: langchain-chroma
         path: libs/partners/chroma
+      - name: langchain-couchbase
+        path: libs/partners/couchbase
       - name: langchain-exa
         path: libs/partners/exa
       - name: langchain-fireworks
