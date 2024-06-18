@@ -218,7 +218,7 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
         "Please read the guidelines in the doc-string of this class "
         "to follow prior to migrating as there are some differences "
         "between the implementations. "
-        "See https://github.com/langchain-ai/langchain-postgres for details about"
+        "See <https://github.com/langchain-ai/langchain-postgres> for details about"
         "the new implementation."
     ),
     alternative="from langchain_postgres import PGVector;",
