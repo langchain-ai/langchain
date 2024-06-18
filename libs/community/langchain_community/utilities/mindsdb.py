@@ -1,5 +1,5 @@
 from openai import OpenAI
-from typing import Text, Dict, Literal
+from typing import Text, Dict, Any, Literal
 from mindsdb_sdk.utils.mind import Mind, create_mind
 
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, PrivateAttr, root_validator
@@ -17,6 +17,7 @@ class PostgresConnection(BaseModel):
     schema: Text
 
 
+# TODO: Support openai < 1
 class DatabaseMindWrapper(BaseModel):
     mindsdb_api_key: SecretStr = Field(default=None)
     mindsdb_api_base: Text = Field(default=DEFAULT_API_BASE)
@@ -27,6 +28,7 @@ class DatabaseMindWrapper(BaseModel):
     data_source_connection_args: Dict
 
     _mind: Mind = PrivateAttr()
+    _client: Any = PrivateAttr()
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -55,7 +57,7 @@ class DatabaseMindWrapper(BaseModel):
 
         return values
 
-    def _create_mind(self) -> Mind:
+    def _create_mind(self) -> None:
         self._mind = create_mind(
             name=self.name,
             description=self.description,
@@ -66,8 +68,22 @@ class DatabaseMindWrapper(BaseModel):
             data_source_connection_args=self.data_source_connection_args
         )
 
+    def _create_client(self) -> None:
+        self._client = OpenAI(
+            api_key=self.mindsdb_api_key,
+            base_url=self.mindsdb_api_base
+        )
+
     def _query_mind(self, query: Text) -> Text:
-        pass
+        completion = self._client.chat.completions.create(
+            model=self._mind.name,
+            messages=[
+                {'role': 'user', 'content': query}
+            ],
+            stream=False
+        )
+
+        return completion.choices[0].message.content
 
     def run(self, query: Text) -> Text:
         pass
