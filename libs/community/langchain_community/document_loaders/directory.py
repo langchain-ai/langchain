@@ -2,7 +2,7 @@ import concurrent
 import logging
 import random
 from pathlib import Path
-from typing import Any, Callable, Iterator, List, Optional, Sequence, Type, Union, Tuple
+from typing import Any, Callable, Iterator, List, Optional, Sequence, Tuple, Type, Union
 
 from langchain_core.documents import Document
 
