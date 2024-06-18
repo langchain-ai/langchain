@@ -744,8 +744,8 @@ def test_validation_error_handling_non_validation_error(
     """Test that validation errors are handled correctly."""
 
     class _RaiseNonValidationErrorTool(BaseTool):
-        name = "raise_non_validation_error_tool"
-        description = "A tool that raises a non-validation error"
+        name: str = "raise_non_validation_error_tool"
+        description: str = "A tool that raises a non-validation error"
 
         def _parse_input(
             self,
@@ -806,8 +806,8 @@ async def test_async_validation_error_handling_non_validation_error(
     """Test that validation errors are handled correctly."""
 
     class _RaiseNonValidationErrorTool(BaseTool):
-        name = "raise_non_validation_error_tool"
-        description = "A tool that raises a non-validation error"
+        name: str = "raise_non_validation_error_tool"
+        description: str = "A tool that raises a non-validation error"
 
         def _parse_input(
             self,

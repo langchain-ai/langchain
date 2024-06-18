@@ -1,13 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import List, Literal, Optional, Type
+from typing import Any, List, Literal, Optional, Type
 
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError
+from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import tool
 
 
 class Person(BaseModel):
+    """Record attributes of a person."""
+
     name: str = Field(..., description="The name of the person.")
     age: int = Field(..., description="The age of the person.")
 
@@ -18,81 +21,105 @@ def my_adder_tool(a: int, b: int) -> int:
     return a + b
 
 
-class ChatModelUnitTests(ABC):
+class ChatModelTests(ABC):
+    @property
     @abstractmethod
-    @pytest.fixture
     def chat_model_class(self) -> Type[BaseChatModel]:
         ...
 
-    @pytest.fixture
+    @property
     def chat_model_params(self) -> dict:
         return {}
 
-    @pytest.fixture
-    def chat_model_has_tool_calling(
-        self, chat_model_class: Type[BaseChatModel]
-    ) -> bool:
-        return chat_model_class.bind_tools is not BaseChatModel.bind_tools
+    @property
+    def standard_chat_model_params(self) -> dict:
+        return {
+            "temperature": 0,
+            "max_tokens": 100,
+            "timeout": 60,
+            "stop_sequences": [],
+            "max_retries": 2,
+        }
 
     @pytest.fixture
-    def chat_model_has_structured_output(
-        self, chat_model_class: Type[BaseChatModel]
-    ) -> bool:
+    def model(self) -> BaseChatModel:
+        return self.chat_model_class(
+            **{**self.standard_chat_model_params, **self.chat_model_params}
+        )
+
+    @property
+    def has_tool_calling(self) -> bool:
+        return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
+
+    @property
+    def has_structured_output(self) -> bool:
         return (
-            chat_model_class.with_structured_output
+            self.chat_model_class.with_structured_output
             is not BaseChatModel.with_structured_output
         )
 
-    def test_chat_model_init(
-        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
-    ) -> None:
-        model = chat_model_class(**chat_model_params)
+    @property
+    def supports_image_inputs(self) -> bool:
+        return False
+
+    @property
+    def supports_video_inputs(self) -> bool:
+        return False
+
+    @property
+    def returns_usage_metadata(self) -> bool:
+        return True
+
+
+class ChatModelUnitTests(ChatModelTests):
+    @property
+    def standard_chat_model_params(self) -> dict:
+        params = super().standard_chat_model_params
+        params["api_key"] = "test"
+        return params
+
+    def test_init(self) -> None:
+        model = self.chat_model_class(
+            **{**self.standard_chat_model_params, **self.chat_model_params}
+        )
         assert model is not None
 
-    def test_chat_model_init_api_key(
-        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
-    ) -> None:
-        params = {**chat_model_params, "api_key": "test"}
-        model = chat_model_class(**params)  # type: ignore
-        assert model is not None
-
-    def test_chat_model_init_streaming(
-        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
-    ) -> None:
-        model = chat_model_class(streaming=True, **chat_model_params)  # type: ignore
-        assert model is not None
-
-    def test_chat_model_bind_tool_pydantic(
+    def test_init_streaming(
         self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-        chat_model_has_tool_calling: bool,
     ) -> None:
-        if not chat_model_has_tool_calling:
+        model = self.chat_model_class(
+            **{
+                **self.standard_chat_model_params,
+                **self.chat_model_params,
+                "streaming": True,
+            }
+        )
+        assert model is not None
+
+    def test_bind_tool_pydantic(
+        self,
+        model: BaseChatModel,
+    ) -> None:
+        if not self.has_tool_calling:
             return
 
-        model = chat_model_class(**chat_model_params)
+        tool_model = model.bind_tools(
+            [Person, Person.schema(), my_adder_tool], tool_choice="any"
+        )
+        assert isinstance(tool_model, RunnableBinding)
 
-        assert hasattr(model, "bind_tools")
-        tool_model = model.bind_tools([Person])
-        assert tool_model is not None
-
-    def test_chat_model_with_structured_output(
+    @pytest.mark.parametrize("schema", [Person, Person.schema()])
+    def test_with_structured_output(
         self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-        chat_model_has_structured_output: bool,
+        model: BaseChatModel,
+        schema: Any,
     ) -> None:
-        if not chat_model_has_structured_output:
+        if not self.has_structured_output:
             return
 
-        model = chat_model_class(**chat_model_params)
-        assert model is not None
-        assert model.with_structured_output(Person) is not None
+        assert model.with_structured_output(schema) is not None
 
-    def test_standard_params(
-        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
-    ) -> None:
+    def test_standard_params(self, model: BaseChatModel) -> None:
         class ExpectedParams(BaseModel):
             ls_provider: str
             ls_model_name: str
@@ -101,7 +128,6 @@ class ChatModelUnitTests(ABC):
             ls_max_tokens: Optional[int]
             ls_stop: Optional[List[str]]
 
-        model = chat_model_class(**chat_model_params)
         ls_params = model._get_ls_params()
         try:
             ExpectedParams(**ls_params)
@@ -109,7 +135,9 @@ class ChatModelUnitTests(ABC):
             pytest.fail(f"Validation error: {e}")
 
         # Test optional params
-        model = chat_model_class(max_tokens=10, stop=["test"], **chat_model_params)
+        model = self.chat_model_class(
+            max_tokens=10, stop=["test"], **self.chat_model_params
+        )
         ls_params = model._get_ls_params()
         try:
             ExpectedParams(**ls_params)
