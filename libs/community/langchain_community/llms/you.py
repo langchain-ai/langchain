@@ -54,11 +54,11 @@ class You(LLM):
     responses to a variety of query types, including inline citations
     and web results when relevant.
 
-    Smart Mode:
+    Smart Endpoint:
     - Quick, reliable answers for a variety of questions
     - Cites the entire web page URL
 
-    Research Mode:
+    Research Endpoint:
     - In-depth answers with extensive citations for a variety of questions
     - Cites the specific web page snippet relevant to the claim
 
@@ -69,11 +69,11 @@ class You(LLM):
     https://documentation.you.com/api-reference/.
 
     Args:
-        mode: You.com conversational endpoints. Choose from "smart" or "research"
+        endpoint: You.com conversational endpoints. Choose from "smart" or "research"
         ydc_api_key: You.com API key, if `YDC_API_KEY` is not set in the environment
     """
 
-    mode: Literal["smart", "research"] = Field(
+    endpoint: Literal["smart", "research"] = Field(
         "smart",
         description=(
             'You.com conversational endpoints. Choose from "smart" or "research"'
@@ -96,7 +96,7 @@ class You(LLM):
                 "Stop words are not implemented for You.com endpoints."
             )
         params = {"query": prompt}
-        response = _request(self.endpoint, api_key=self._api_key, **params)
+        response = _request(self._request_endpoint, api_key=self._api_key, **params)
         return response["answer"]
 
     def _stream(
@@ -111,12 +111,14 @@ class You(LLM):
                 "Stop words are not implemented for You.com endpoints."
             )
         params = {"query": prompt}
-        for token in _request_stream(self.endpoint, api_key=self._api_key, **params):
+        for token in _request_stream(
+            self._request_endpoint, api_key=self._api_key, **params
+        ):
             yield GenerationChunk(text=token)
 
     @property
-    def endpoint(self) -> str:
-        if self.mode == "smart":
+    def _request_endpoint(self) -> str:
+        if self.endpoint == "smart":
             return SMART_ENDPOINT
         return RESEARCH_ENDPOINT
 
