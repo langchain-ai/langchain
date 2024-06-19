@@ -25,8 +25,8 @@ from langchain_core.runnables.utils import (
 )
 
 if TYPE_CHECKING:
-    from langchain_core.language_models import LanguageModelLike
-    from langchain_core.messages import BaseMessage
+    from langchain_core.language_models.base import LanguageModelLike
+    from langchain_core.messages.base import BaseMessage
     from langchain_core.runnables.config import RunnableConfig
     from langchain_core.tracers.schemas import Run
 
