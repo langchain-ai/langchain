@@ -1,1 +1,1 @@
-from database_mind_wrapper import DatabaseMindWrapper
+from langchain_community.utilities.mindsdb.database_mind.database_mind_wrapper import DatabaseMindWrapper

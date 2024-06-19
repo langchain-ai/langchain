@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from langchain_community.utilities.brave_search import (
         BraveSearchWrapper,
     )
-    from langchain_community.utilities.mindsdb.database_mind import (
+    from langchain_community.utilities.mindsdb import (
         DatabaseMindWrapper
     )
     from langchain_community.utilities.dataherald import DataheraldAPIWrapper
@@ -184,6 +184,7 @@ __all__ = [
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
+    "DatabaseMindWrapper",
     "DataheraldAPIWrapper",
     "DriaAPIWrapper",
     "DuckDuckGoSearchAPIWrapper",
@@ -247,6 +248,7 @@ _module_lookup = {
     "BibtexparserWrapper": "langchain_community.utilities.bibtex",
     "BingSearchAPIWrapper": "langchain_community.utilities.bing_search",
     "BraveSearchWrapper": "langchain_community.utilities.brave_search",
+    "DatabaseMindWrapper": "langchain_community.utilities.mindsdb.database_mind.database_mind_wrapper",
     "DataheraldAPIWrapper": "langchain_community.utilities.dataherald",
     "DriaAPIWrapper": "langchain_community.utilities.dria_index",
     "DuckDuckGoSearchAPIWrapper": "langchain_community.utilities.duckduckgo_search",
