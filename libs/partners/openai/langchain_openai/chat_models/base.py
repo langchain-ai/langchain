@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import os
 import sys
+from io import BytesIO
+from math import ceil
 from operator import itemgetter
 from typing import (
     Any,
@@ -26,6 +29,7 @@ from typing import (
     cast,
     overload,
 )
+from urllib.parse import urlparse
 
 import openai
 import tiktoken
@@ -84,57 +88,9 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.utils import build_extra_kwargs
-from math import ceil
-from io import BytesIO
-from urllib.parse import urlparse
-import requests
-import base64
-
 
 logger = logging.getLogger(__name__)
 
-def _is_url(s: str) -> bool:
-    try:
-        result = urlparse(s)
-        return all([result.scheme, result.netloc])
-    except Exception as e:
-        logger.debug(f"Unable to parse URL: {e}")
-        return False
-    
-def _is_b64(s: str) -> bool:
-    return s.startswith("data:image")
-
-def _url_to_size(image_source: str):
-    try: 
-        from PIL import Image
-    except:
-        return None
-    if _is_url(image_source):
-        response = requests.get(image_source)
-        response.raise_for_status()
-        width, height = (Image.open(BytesIO(response.content))).size
-        return width, height
-    elif _is_b64(image_source):
-        _, encoded = image_source.split(",", 1)
-        data = base64.b64decode(encoded)
-        width, height = (Image.open(BytesIO(data))).size
-        return width, height
-
-def resize(width: int, height: int):
-    if width > 1024 or height > 1024:
-        if width > height:
-            height = int(height * 1024 / width)
-            width = 1024
-        else:
-            width = int(width * 1024 / height)
-            height = 1024
-    return width, height
-
-def count_image_tokens(width: int, height: int):
-    width, height = resize(width, height)
-    h = ceil(height / 512)
-    w = ceil(width / 512)
-    total = 85 + 1
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
@@ -802,7 +758,7 @@ class BaseChatOpenAI(BaseChatModel):
             raise NotImplementedError(
                 f"get_num_tokens_from_messages() is not presently implemented "
                 f"for model {model}. See "
-                "https://platform.openai.com/docs/guides/text-generation/managing-tokens"
+                "https://platform.openai.com/docs/guides/text-generation/managing-tokens"  # noqa: E501
                 " for information on how messages are converted to tokens."
             )
         num_tokens = 0
@@ -810,24 +766,27 @@ class BaseChatOpenAI(BaseChatModel):
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():
-                # deal with images
                 if isinstance(value, list):
                     for val in value:
-                        if val['type'] == "text":
-                            num_tokens += len(encoding.encode(str(val['text'])))
-                        elif val['type'] == "image_url":
-                            try:
-                                if 'detail' in val['image_url'] and val['image_url']['detail'] == "low":
-                                    num_tokens += 85
-                                else:
-                                    image_size = _url_to_size(val['image_url']['url'])
-                                    num_tokens += count_image_tokens(*resize(*image_size))
-                            except:
-                                pass
+                        if val["type"] == "text" or isinstance(val, str):
+                            text = val["text"] if isinstance(val, dict) else val
+                            num_tokens += len(encoding.encode(text))
+                        elif val["type"] == "image_url":
+                            if val["image_url"].get("detail") == "low":
+                                num_tokens += 85
+                            else:
+                                image_size = _url_to_size(val["image_url"]["url"])
+                                if not image_size:
+                                    continue
+                                num_tokens += _count_image_tokens(*image_size)
+                        else:
+                            raise ValueError(
+                                f"Unrecognized content block type\n\n{val}"
+                            )
                 else:
                     # Cast str(value) in case the message value is not a string
                     # This occurs with function messages
-                    num_tokens += len(encoding.encode(str(value)))
+                    num_tokens += len(encoding.encode(value))
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant
@@ -1605,3 +1564,66 @@ def _lc_invalid_tool_call_to_openai_tool_call(
             "arguments": invalid_tool_call["args"],
         },
     }
+
+
+def _url_to_size(image_source: str) -> Optional[Tuple[int, int]]:
+    try:
+        from PIL import Image  # type: ignore[import]
+    except ImportError:
+        logger.info(
+            "Unable to count image tokens. To count image tokens please install "
+            "`pip install -U pillow httpx`."
+        )
+        return None
+    if _is_url(image_source):
+        try:
+            import httpx
+        except ImportError:
+            logger.info(
+                "Unable to count image tokens. To count image tokens please install "
+                "`pip install -U httpx`."
+            )
+            return None
+        response = httpx.get(image_source)
+        response.raise_for_status()
+        width, height = Image.open(BytesIO(response.content)).size
+        return width, height
+    elif _is_b64(image_source):
+        _, encoded = image_source.split(",", 1)
+        data = base64.b64decode(encoded)
+        width, height = Image.open(BytesIO(data)).size
+        return width, height
+    else:
+        return None
+
+
+def _count_image_tokens(width: int, height: int) -> int:
+    # Reference: https://platform.openai.com/docs/guides/vision/calculating-costs
+    width, height = _resize(width, height)
+    h = ceil(height / 512)
+    w = ceil(width / 512)
+    return (170 * h * w) + 85
+
+
+def _is_url(s: str) -> bool:
+    try:
+        result = urlparse(s)
+        return all([result.scheme, result.netloc])
+    except Exception as e:
+        logger.debug(f"Unable to parse URL: {e}")
+        return False
+
+
+def _is_b64(s: str) -> bool:
+    return s.startswith("data:image")
+
+
+def _resize(width: int, height: int) -> Tuple[int, int]:
+    if width > 1024 or height > 1024:
+        if width > height:
+            height = int(height * 1024 / width)
+            width = 1024
+        else:
+            width = int(width * 1024 / height)
+            height = 1024
+    return width, height
