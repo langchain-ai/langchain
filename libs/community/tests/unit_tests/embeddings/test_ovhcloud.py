@@ -23,4 +23,3 @@ def test_ovhcloud_empty_access_token_should_not_raise_error() -> None:
         model_name="multilingual-e5-base", region="kepler", access_token=""
     )
     assert isinstance(llm, OVHCloudEmbeddings)
-    
