@@ -20,7 +20,7 @@ SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
 aiohttp = "^3.8.3"
-tenacity = "^8.1.0"
+tenacity = "^8.1.0,!=8.4.0"
 async-timeout = { version = "^4.0.0", python = "<3.11" }
 
 # Support Python 3.8 and 3.12+.
