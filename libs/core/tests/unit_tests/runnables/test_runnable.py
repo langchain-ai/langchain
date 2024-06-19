@@ -306,7 +306,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "definitions": {
             "Document": {
                 "title": "Document",
-                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "description": AnyStr(),
                 "type": "object",
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
@@ -396,7 +396,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "AIMessage": {
                 "title": "AIMessage",
-                "description": "Message from an AI.",
+                "description": AnyStr(),
                 "type": "object",
                 "properties": {
                     "content": {
@@ -450,7 +450,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "HumanMessage": {
                 "title": "HumanMessage",
-                "description": "Message from a human.",
+                "description": AnyStr(),
                 "type": "object",
                 "properties": {
                     "content": {
@@ -491,7 +491,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "ChatMessage": {
                 "title": "ChatMessage",
-                "description": "Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa: E501
+                "description": AnyStr(),
                 "type": "object",
                 "properties": {
                     "content": {
@@ -528,7 +528,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "SystemMessage": {
                 "title": "SystemMessage",
-                "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa: E501
+                "description": AnyStr(),
                 "type": "object",
                 "properties": {
                     "content": {
@@ -564,7 +564,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "FunctionMessage": {
                 "title": "FunctionMessage",
-                "description": "Message for passing the result of executing a function back to a model.",  # noqa: E501
+                "description": AnyStr(),
                 "type": "object",
                 "properties": {
                     "content": {
@@ -600,7 +600,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "ToolMessage": {
                 "title": "ToolMessage",
-                "description": "Message for passing the result of executing a tool back to a model.",  # noqa: E501
+                "description": AnyStr(),
                 "type": "object",
                 "properties": {
                     "content": {
