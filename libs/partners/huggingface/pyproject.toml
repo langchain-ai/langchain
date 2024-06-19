@@ -17,7 +17,15 @@ tokenizers = ">=0.19.1"
 transformers = ">=4.39.0"
 sentence-transformers = ">=2.6.0"
 huggingface-hub = ">=0.23.0"
-#
+# Support Python 3.8 and 3.12+.
+scipy = [
+    {version = "^1", python = "<3.12"},
+    {version = "^1.7.0", python = ">=3.12"}
+]
+numpy = [
+    {version = "^1", python = "<3.12"},
+    {version = "^1.26.0", python = ">=3.12"}
+]
 
 [tool.poetry.group.test]
 optional = true
