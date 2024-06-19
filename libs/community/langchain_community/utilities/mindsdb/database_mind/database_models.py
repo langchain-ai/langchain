@@ -10,7 +10,7 @@ def validate_data_source_connection_args(data_source_type: Text, data_source_con
 
 
 # TODO: Improve this method to generate the mapping dynamically.
-def get_supported_data_sources() -> Dict[Text: BaseModel]:
+def get_supported_data_sources() -> Dict:
     return {
         "postgres": PostgresModel,
         "mysql": MySQLModel,

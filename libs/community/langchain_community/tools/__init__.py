@@ -477,6 +477,7 @@ __all__ = [
 _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
 
 _module_lookup = {
+    "AIMindTool": "langchain_community.tools.mindsdb.tool",
     "AINAppOps": "langchain_community.tools.ainetwork.app",
     "AINOwnerOps": "langchain_community.tools.ainetwork.owner",
     "AINRuleOps": "langchain_community.tools.ainetwork.rule",
