@@ -78,6 +78,10 @@ select = [
   "T201", # print
 ]
 
+[tool.ruff.format]
+docstring-code-format = true
+skip-magic-trailing-comma = true
+
 [tool.mypy]
 disallow_untyped_defs = "True"
 
