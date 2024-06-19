@@ -73,12 +73,18 @@ _DictOrPydantic = Union[Dict, _BM]
 
 
 def _is_pydantic_class(obj: Any) -> bool:
+    """
+    Checks if the tool provided is a Pydantic class.
+    """
     return isinstance(obj, type) and (
         issubclass(obj, BaseModel) or BaseModel in obj.__bases__
     )
 
 
 def _is_pydantic_object(obj: Any) -> bool:
+    """
+    Checks if the tool provided is a Pydantic object.
+    """
     return isinstance(obj, BaseModel)
 
 
@@ -113,6 +119,10 @@ class _AllReturnType(TypedDict):
 
 
 def parse_json_garbage(s: str) -> Any:
+    """
+    Parse a JSON-like string and return it as a Python object.
+    Parsing begins at the first occurrence of "{" or "[".
+    """
     s = s[next(idx for idx, c in enumerate(s) if c in "{[") :]
     try:
         response = json.loads(s)
@@ -145,7 +155,98 @@ def parse_response(message: BaseMessage) -> str:
 
 
 class ToolCallingLLM(BaseChatModel, ABC):
-    """Function chat model that uses Ollama API."""
+    """ToolCallingLLM mixin to enable tool calling features on non tool calling models.
+
+    Note: This is an incomplete mixin and should not be used directly. It must be used to extent an existing Chat Model.
+
+    Setup:
+      Install dependencies for your Chat Model.
+      Any API Keys or setup needed for your Chat Model is still applicable.
+
+    Key init args — completion params:
+      Refer to the documentation of the Chat Model you wish to extend with Tool Calling.
+
+    Key init args — client params:
+      Refer to the documentation of the Chat Model you wish to extend with Tool Calling.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
+      ```
+      # Example implementation using LiteLLM
+      from langchain_community.chat_models import ChatLiteLLM
+
+      class LiteLLMFunctions(ToolCallingLLM, ChatLiteLLM):
+
+          def __init__(self, **kwargs: Any) -> None:
+              super().__init__(**kwargs)
+
+          @property
+          def _llm_type(self) -> str:
+              return "litellm_functions"
+
+      llm = LiteLLMFunctions(model="ollama/phi3")
+      ```
+
+    Invoke:
+      ```
+      messages = [
+        ("human", "What is the capital of France?")
+      ]
+      llm.invoke(messages)
+      ```
+      ```
+      AIMessage(content='The capital of France is Paris.', id='run-497d0e1a-d63b-45e8-9c8b-5e76d99b9468-0')
+      ```
+
+    # TODO: Delete if .bind_tools() isn't supported.
+    Tool calling:
+      ```
+      from langchain_core.pydantic_v1 import BaseModel, Field
+
+      class GetWeather(BaseModel):
+          '''Get the current weather in a given location'''
+
+          location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+      class GetPopulation(BaseModel):
+          '''Get the current population in a given location'''
+
+          location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+      llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+      ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
+      ai_msg.tool_calls
+      ```
+      ```
+      [{'name': 'GetWeather', 'args': {'location': 'Austin, TX'}, 'id': 'call_25ed526917b94d8fa5db3fe30a8cf3c0'}]
+      ```
+
+    Structured output:
+      ```
+      from typing import Optional
+
+      from langchain_core.pydantic_v1 import BaseModel, Field
+
+      class Joke(BaseModel):
+          '''Joke to tell user.'''
+
+          setup: str = Field(description="The setup of the joke")
+          punchline: str = Field(description="The punchline to the joke")
+          rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
+      structured_llm = llm.with_structured_output(Joke)
+      structured_llm.invoke("Tell me a joke about cats")
+      ```
+      ```
+      Joke(setup='Why was the cat sitting on the computer?', punchline='Because it wanted to be online!', rating=7)
+      ```
+      See `ToolCallingLLM.with_structured_output()` for more.
+
+    Response metadata
+      Refer to the documentation of the Chat Model you wish to extend with Tool Calling.
+
+    """  # noqa: E501
 
     tool_system_prompt_template: str = DEFAULT_SYSTEM_TEMPLATE
 
