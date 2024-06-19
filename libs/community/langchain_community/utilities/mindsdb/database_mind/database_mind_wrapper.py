@@ -4,17 +4,10 @@ from mindsdb_sdk.utils.mind import Mind, create_mind
 
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, PrivateAttr, root_validator
 
+from langchain_community.utilities.mindsdb.database_mind.database_models import validate_data_source_connection_args
+
 DEFAULT_API_BASE = "https://llm.mdb.ai"
 DEFAULT_MODEL = "gpt-3.5-turbo"
-
-
-class PostgresConnection(BaseModel):
-    user: Text
-    password: Text
-    host: Text
-    port: Text = Field(default=5432)
-    database: Text
-    database_schema: Text = Field(alias='schema')
 
 
 # TODO: Support openai < 1
@@ -52,8 +45,7 @@ class DatabaseMindWrapper(BaseModel):
             ) from e
 
         # Validate that the correct connection arguments are provided for the chosen data source.
-        if values['data_source_type'] == 'postgres':
-            PostgresConnection(**values['data_source_connection_args'])
+        validate_data_source_connection_args(values['data_source_type'], values['data_source_connection_args'])
 
         return values
 
