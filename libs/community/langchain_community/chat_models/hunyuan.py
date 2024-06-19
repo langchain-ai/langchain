@@ -73,14 +73,11 @@ class ChatHunyuan(BaseChatModel):
     For more information, see https://cloud.tencent.com/document/product/1729
     """
 
-    tencent_cloud_api_base: str = Field(default="hunyuan.tencentcloudapi.com")
-    """Hunyuan custom endpoints"""
     tencent_cloud_secret_id: SecretStr = Field(alias="secret_id", default=None)
     """Hunyuan Secret ID"""
     tencent_cloud_secret_key: SecretStr = Field(alias="secret_key", default=None)
     """Hunyuan Secret Key"""
-    streaming: bool = False
-    """Whether to stream the results or not."""
+
     model_name: str = Field(alias="model")
     """The hunyuan model name"""
     region: Literal["ap-guangzhou", "ap-beijing"] = "ap-guangzhou"
