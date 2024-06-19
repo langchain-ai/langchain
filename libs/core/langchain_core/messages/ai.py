@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, List, Literal, Optional, Union
 
 from typing_extensions import TypedDict
@@ -39,8 +40,9 @@ class AIMessage(BaseMessage):
     """Message from an AI."""
 
     example: bool = False
-    """Whether this Message is being passed in to the model as part of an example 
-        conversation.
+    """Use to denote that a message is part of an example conversation.
+    
+    At the moment, this is ignored by most models. Usage is discouraged.
     """
 
     tool_calls: List[ToolCall] = []
@@ -55,6 +57,12 @@ class AIMessage(BaseMessage):
 
     type: Literal["ai"] = "ai"
 
+    def __init__(
+        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
+    ) -> None:
+        """Pass in content as positional arg."""
+        super().__init__(content=content, **kwargs)
+
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
@@ -68,7 +76,7 @@ class AIMessage(BaseMessage):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
-    @root_validator()
+    @root_validator(pre=True)
     def _backwards_compat_tool_calls(cls, values: dict) -> dict:
         raw_tool_calls = values.get("additional_kwargs", {}).get("tool_calls")
         tool_calls = (
@@ -149,11 +157,31 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def init_tool_calls(cls, values: dict) -> dict:
         if not values["tool_call_chunks"]:
-            values["tool_calls"] = []
-            values["invalid_tool_calls"] = []
+            if values["tool_calls"]:
+                values["tool_call_chunks"] = [
+                    ToolCallChunk(
+                        name=tc["name"],
+                        args=json.dumps(tc["args"]),
+                        id=tc["id"],
+                        index=None,
+                    )
+                    for tc in values["tool_calls"]
+                ]
+            if values["invalid_tool_calls"]:
+                tool_call_chunks = values.get("tool_call_chunks", [])
+                tool_call_chunks.extend(
+                    [
+                        ToolCallChunk(
+                            name=tc["name"], args=tc["args"], id=tc["id"], index=None
+                        )
+                        for tc in values["invalid_tool_calls"]
+                    ]
+                )
+                values["tool_call_chunks"] = tool_call_chunks
+
             return values
         tool_calls = []
         invalid_tool_calls = []

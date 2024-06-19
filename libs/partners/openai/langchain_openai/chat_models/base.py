@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import os
 import sys
+from io import BytesIO
+from math import ceil
 from operator import itemgetter
 from typing import (
     Any,
@@ -26,6 +29,7 @@ from typing import (
     cast,
     overload,
 )
+from urllib.parse import urlparse
 
 import openai
 import tiktoken
@@ -345,6 +349,8 @@ class BaseChatOpenAI(BaseChatModel):
     http_async_client: Union[Any, None] = None
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
+    stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
+    """Default stop sequences."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -445,6 +451,8 @@ class BaseChatOpenAI(BaseChatModel):
         }
         if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
+        if self.stop:
+            params["stop"] = self.stop
         return params
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
@@ -478,7 +486,7 @@ class BaseChatOpenAI(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         with self.client.create(messages=message_dicts, **params) as response:
             for chunk in response:
                 if not isinstance(chunk, dict):
@@ -490,35 +498,41 @@ class BaseChatOpenAI(BaseChatModel):
                             output_tokens=token_usage.get("completion_tokens", 0),
                             total_tokens=token_usage.get("total_tokens", 0),
                         )
-                        chunk = ChatGenerationChunk(
+                        generation_chunk = ChatGenerationChunk(
                             message=default_chunk_class(
                                 content="", usage_metadata=usage_metadata
                             )
                         )
+                        logprobs = None
                     else:
                         continue
                 else:
                     choice = chunk["choices"][0]
                     if choice["delta"] is None:
                         continue
-                    chunk = _convert_delta_to_message_chunk(
+                    message_chunk = _convert_delta_to_message_chunk(
                         choice["delta"], default_chunk_class
                     )
                     generation_info = {}
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
+                        if model_name := chunk.get("model"):
+                            generation_info["model_name"] = model_name
+                        if system_fingerprint := chunk.get("system_fingerprint"):
+                            generation_info["system_fingerprint"] = system_fingerprint
+
                     logprobs = choice.get("logprobs")
                     if logprobs:
                         generation_info["logprobs"] = logprobs
-                    default_chunk_class = chunk.__class__
-                    chunk = ChatGenerationChunk(
-                        message=chunk, generation_info=generation_info or None
+                    default_chunk_class = message_chunk.__class__
+                    generation_chunk = ChatGenerationChunk(
+                        message=message_chunk, generation_info=generation_info or None
                     )
                 if run_manager:
                     run_manager.on_llm_new_token(
-                        chunk.text, chunk=chunk, logprobs=logprobs
+                        generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                     )
-                yield chunk
+                yield generation_chunk
 
     def _generate(
         self,
@@ -542,8 +556,6 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = self._default_params
         if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
@@ -581,7 +593,7 @@ class BaseChatOpenAI(BaseChatModel):
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
-            "model_name": self.model_name,
+            "model_name": response.get("model", self.model_name),
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         return ChatResult(generations=generations, llm_output=llm_output)
@@ -596,7 +608,7 @@ class BaseChatOpenAI(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         response = await self.async_client.create(messages=message_dicts, **params)
         async with response:
             async for chunk in response:
@@ -609,35 +621,43 @@ class BaseChatOpenAI(BaseChatModel):
                             output_tokens=token_usage.get("completion_tokens", 0),
                             total_tokens=token_usage.get("total_tokens", 0),
                         )
-                        chunk = ChatGenerationChunk(
+                        generation_chunk = ChatGenerationChunk(
                             message=default_chunk_class(
                                 content="", usage_metadata=usage_metadata
                             )
                         )
+                        logprobs = None
                     else:
                         continue
                 else:
                     choice = chunk["choices"][0]
                     if choice["delta"] is None:
                         continue
-                    chunk = _convert_delta_to_message_chunk(
+                    message_chunk = _convert_delta_to_message_chunk(
                         choice["delta"], default_chunk_class
                     )
                     generation_info = {}
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
+                        if model_name := chunk.get("model"):
+                            generation_info["model_name"] = model_name
+                        if system_fingerprint := chunk.get("system_fingerprint"):
+                            generation_info["system_fingerprint"] = system_fingerprint
+
                     logprobs = choice.get("logprobs")
                     if logprobs:
                         generation_info["logprobs"] = logprobs
-                    default_chunk_class = chunk.__class__
-                    chunk = ChatGenerationChunk(
-                        message=chunk, generation_info=generation_info or None
+                    default_chunk_class = message_chunk.__class__
+                    generation_chunk = ChatGenerationChunk(
+                        message=message_chunk, generation_info=generation_info or None
                     )
                 if run_manager:
                     await run_manager.on_llm_new_token(
-                        token=chunk.text, chunk=chunk, logprobs=logprobs
+                        token=generation_chunk.text,
+                        chunk=generation_chunk,
+                        logprobs=logprobs,
                     )
-                yield chunk
+                yield generation_chunk
 
     async def _agenerate(
         self,
@@ -720,7 +740,13 @@ class BaseChatOpenAI(BaseChatModel):
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
 
-        Official documentation: https://github.com/openai/openai-cookbook/blob/
+        **Requirements**: You must have the ``pillow`` installed if you want to count
+        image tokens if you are specifying the image as a base64 string, and you must
+        have both ``pillow`` and ``httpx`` installed if you are specifying the image
+        as a URL. If these aren't installed image inputs will be ignored in token
+        counting.
+
+        OpenAI reference: https://github.com/openai/openai-cookbook/blob/
         main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
@@ -737,7 +763,7 @@ class BaseChatOpenAI(BaseChatModel):
             raise NotImplementedError(
                 f"get_num_tokens_from_messages() is not presently implemented "
                 f"for model {model}. See "
-                "https://platform.openai.com/docs/guides/text-generation/managing-tokens"
+                "https://platform.openai.com/docs/guides/text-generation/managing-tokens"  # noqa: E501
                 " for information on how messages are converted to tokens."
             )
         num_tokens = 0
@@ -745,9 +771,27 @@ class BaseChatOpenAI(BaseChatModel):
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():
-                # Cast str(value) in case the message value is not a string
-                # This occurs with function messages
-                num_tokens += len(encoding.encode(str(value)))
+                if isinstance(value, list):
+                    for val in value:
+                        if isinstance(val, str) or val["type"] == "text":
+                            text = val["text"] if isinstance(val, dict) else val
+                            num_tokens += len(encoding.encode(text))
+                        elif val["type"] == "image_url":
+                            if val["image_url"].get("detail") == "low":
+                                num_tokens += 85
+                            else:
+                                image_size = _url_to_size(val["image_url"]["url"])
+                                if not image_size:
+                                    continue
+                                num_tokens += _count_image_tokens(*image_size)
+                        else:
+                            raise ValueError(
+                                f"Unrecognized content block type\n\n{val}"
+                            )
+                else:
+                    # Cast str(value) in case the message value is not a string
+                    # This occurs with function messages
+                    num_tokens += len(encoding.encode(value))
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant
@@ -857,15 +901,7 @@ class BaseChatOpenAI(BaseChatModel):
                 if tool_choice == "any":
                     tool_choice = "required"
             elif isinstance(tool_choice, bool):
-                if len(tools) > 1:
-                    raise ValueError(
-                        "tool_choice=True can only be used when a single tool is "
-                        f"passed in, received {len(tools)} tools."
-                    )
-                tool_choice = {
-                    "type": "function",
-                    "function": {"name": formatted_tools[0]["function"]["name"]},
-                }
+                tool_choice = "required"
             elif isinstance(tool_choice, dict):
                 tool_names = [
                     formatted_tool["function"]["name"]
@@ -1080,7 +1116,7 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            llm = self.bind_tools([schema], tool_choice=True)
+            llm = self.bind_tools([schema], tool_choice="any")
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema], first_tool_only=True
@@ -1141,16 +1177,16 @@ class ChatOpenAI(BaseChatOpenAI):
             streaming (``{"include_usage": True}``).
 
     Key init args — client params:
-        timeout:
+        timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
-        max_retries:
+        max_retries: int
             Max number of retries.
-        api_key:
+        api_key: Optional[str]
             OpenAI API key. If not passed in will be read from env var OPENAI_API_KEY.
-        base_url:
-            Base URL for PAI requests. Only specify if using a proxy or service
+        base_url: Optional[str]
+            Base URL for API requests. Only specify if using a proxy or service
             emulator.
-        organization:
+        organization: Optional[str]
             OpenAI organization ID. If not passed in will be read from env
             var OPENAI_ORG_ID.
 
@@ -1281,6 +1317,28 @@ class ChatOpenAI(BaseChatOpenAI):
               'args': {'location': 'New York, NY'},
               'id': 'call_6ghfKxV264jEfe1mRIkS3PE7'}]
 
+        Note that ``openai >= 1.32`` supports a ``parallel_tool_calls`` parameter
+        that defaults to ``True``. This parameter can be set to ``False`` to
+        disable parallel tool calls:
+
+        .. code-block:: python
+
+            ai_msg = llm_with_tools.invoke(
+                "What is the weather in LA and NY?",
+                parallel_tool_calls=False,
+            )
+            ai_msg.tool_calls
+
+        .. code-block:: python
+
+            [{'name': 'GetWeather',
+            'args': {'location': 'Los Angeles, CA'},
+            'id': 'call_4OoY0ZR99iEvC7fevsH8Uhtz'}]
+
+        Like other runtime parameters, ``parallel_tool_calls`` can be bound to a model
+        using ``llm.bind(parallel_tool_calls=False)`` or during instantiation by
+        setting ``model_kwargs``.
+
         See ``ChatOpenAI.bind_tools()`` method for more.
 
     Structured output:
@@ -1352,11 +1410,11 @@ class ChatOpenAI(BaseChatOpenAI):
 
             {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
 
-        When streaming, set the ``stream_options`` model kwarg:
+        When streaming, set the ``stream_usage`` kwarg:
 
         .. code-block:: python
 
-            stream = llm.stream(messages, stream_options={"include_usage": True})
+            stream = llm.stream(messages, stream_usage=True)
             full = next(stream)
             for chunk in stream:
                 full += chunk
@@ -1366,7 +1424,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
             {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
 
-        Alternatively, setting ``stream_options`` when instantiating the model can be
+        Alternatively, setting ``stream_usage`` when instantiating the model can be
         useful when incorporating ``ChatOpenAI`` into LCEL chains-- or when using
         methods like ``.with_structured_output``, which generate chains under the
         hood.
@@ -1375,7 +1433,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
             llm = ChatOpenAI(
                 model="gpt-4o",
-                model_kwargs={"stream_options": {"include_usage": True}},
+                stream_usage=True,
             )
             structured_llm = llm.with_structured_output(...)
 
@@ -1412,6 +1470,11 @@ class ChatOpenAI(BaseChatOpenAI):
 
     """  # noqa: E501
 
+    stream_usage: bool = False
+    """Whether to include usage metadata in streaming output. If True, additional
+    message chunks will be generated during the stream including usage metadata.
+    """
+
     @property
     def lc_secrets(self) -> Dict[str, str]:
         return {"openai_api_key": "OPENAI_API_KEY"}
@@ -1441,6 +1504,44 @@ class ChatOpenAI(BaseChatOpenAI):
         """Return whether this model can be serialized by Langchain."""
         return True
 
+    def _should_stream_usage(
+        self, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> bool:
+        """Determine whether to include usage metadata in streaming output.
+
+        For backwards compatibility, we check for `stream_options` passed
+        explicitly to kwargs or in the model_kwargs and override self.stream_usage.
+        """
+        stream_usage_sources = [  # order of preference
+            stream_usage,
+            kwargs.get("stream_options", {}).get("include_usage"),
+            self.model_kwargs.get("stream_options", {}).get("include_usage"),
+            self.stream_usage,
+        ]
+        for source in stream_usage_sources:
+            if isinstance(source, bool):
+                return source
+        return self.stream_usage
+
+    def _stream(
+        self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> Iterator[ChatGenerationChunk]:
+        """Set default stream_options."""
+        stream_usage = self._should_stream_usage(stream_usage, **kwargs)
+        kwargs["stream_options"] = {"include_usage": stream_usage}
+
+        return super()._stream(*args, **kwargs)
+
+    async def _astream(
+        self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        """Set default stream_options."""
+        stream_usage = self._should_stream_usage(stream_usage, **kwargs)
+        kwargs["stream_options"] = {"include_usage": stream_usage}
+
+        async for chunk in super()._astream(*args, **kwargs):
+            yield chunk
+
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and issubclass(obj, BaseModel)
@@ -1468,3 +1569,75 @@ def _lc_invalid_tool_call_to_openai_tool_call(
             "arguments": invalid_tool_call["args"],
         },
     }
+
+
+def _url_to_size(image_source: str) -> Optional[Tuple[int, int]]:
+    try:
+        from PIL import Image  # type: ignore[import]
+    except ImportError:
+        logger.info(
+            "Unable to count image tokens. To count image tokens please install "
+            "`pip install -U pillow httpx`."
+        )
+        return None
+    if _is_url(image_source):
+        try:
+            import httpx
+        except ImportError:
+            logger.info(
+                "Unable to count image tokens. To count image tokens please install "
+                "`pip install -U httpx`."
+            )
+            return None
+        response = httpx.get(image_source)
+        response.raise_for_status()
+        width, height = Image.open(BytesIO(response.content)).size
+        return width, height
+    elif _is_b64(image_source):
+        _, encoded = image_source.split(",", 1)
+        data = base64.b64decode(encoded)
+        width, height = Image.open(BytesIO(data)).size
+        return width, height
+    else:
+        return None
+
+
+def _count_image_tokens(width: int, height: int) -> int:
+    # Reference: https://platform.openai.com/docs/guides/vision/calculating-costs
+    width, height = _resize(width, height)
+    h = ceil(height / 512)
+    w = ceil(width / 512)
+    return (170 * h * w) + 85
+
+
+def _is_url(s: str) -> bool:
+    try:
+        result = urlparse(s)
+        return all([result.scheme, result.netloc])
+    except Exception as e:
+        logger.debug(f"Unable to parse URL: {e}")
+        return False
+
+
+def _is_b64(s: str) -> bool:
+    return s.startswith("data:image")
+
+
+def _resize(width: int, height: int) -> Tuple[int, int]:
+    # larger side must be <= 2048
+    if width > 2048 or height > 2048:
+        if width > height:
+            height = (height * 2048) // width
+            width = 2048
+        else:
+            width = (width * 2048) // height
+            height = 2048
+    # smaller side must be <= 768
+    if width > 768 and height > 768:
+        if width > height:
+            width = (width * 768) // height
+            height = 768
+        else:
+            height = (width * 768) // height
+            width = 768
+    return width, height
