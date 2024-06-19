@@ -3,7 +3,7 @@
 import json
 import re
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 import yaml
 from langchain_core.callbacks import BaseCallbackManager
@@ -254,48 +254,56 @@ def _create_api_controller_agent(
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
     allow_dangerous_requests: bool,
+    allow_operations: Sequence[str],
 ) -> Any:
     from langchain.agents.agent import AgentExecutor
     from langchain.agents.mrkl.base import ZeroShotAgent
     from langchain.chains.llm import LLMChain
 
-    get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
-    post_llm_chain = LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
-    put_llm_chain = LLMChain(llm=llm, prompt=PARSING_PUT_PROMPT)
-    delete_llm_chain = LLMChain(llm=llm, prompt=PARSING_DELETE_PROMPT)
-    patch_llm_chain = LLMChain(llm=llm, prompt=PARSING_PATCH_PROMPT)
-    tools: List[BaseTool] = [
-        RequestsGetToolWithParsing(  # type: ignore[call-arg]
-            requests_wrapper=requests_wrapper,
-            llm_chain=get_llm_chain,
-            allow_dangerous_requests=allow_dangerous_requests,
-        ),
-        RequestsPostToolWithParsing(  # type: ignore[call-arg]
-            requests_wrapper=requests_wrapper,
-            llm_chain=post_llm_chain,
-            allow_dangerous_requests=allow_dangerous_requests,
-        ),
-    ]
-    if allow_dangerous_requests:
-        tools.extend(
-            [
-                RequestsPutToolWithParsing(  # type: ignore[call-arg]
-                    requests_wrapper=requests_wrapper,
-                    llm_chain=put_llm_chain,
-                    allow_dangerous_requests=allow_dangerous_requests,
-                ),
-                RequestsDeleteToolWithParsing(  # type: ignore[call-arg]
-                    requests_wrapper=requests_wrapper,
-                    llm_chain=delete_llm_chain,
-                    allow_dangerous_requests=allow_dangerous_requests,
-                ),
-                RequestsPatchToolWithParsing(  # type: ignore[call-arg]
-                    requests_wrapper=requests_wrapper,
-                    llm_chain=patch_llm_chain,
-                    allow_dangerous_requests=allow_dangerous_requests,
-                ),
-            ]
+    tools: List[BaseTool] = []
+    if 'get' in allow_operations:
+        get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
+        tools.append(
+            RequestsGetToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=get_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            )
         )
+    if 'post' in allow_operations:
+        post_llm_chain = LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
+        tools.append(
+            RequestsPostToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=post_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            )
+        )
+    if 'put' in allow_operations:
+        put_llm_chain = LLMChain(llm=llm, prompt=PARSING_PUT_PROMPT)
+        tools.append(
+            RequestsPutToolWithParsing(  # type: ignore[call-arg]
+                requests_wrapper=requests_wrapper,
+                llm_chain=put_llm_chain,
+                allow_dangerous_requests=allow_dangerous_requests,
+            )
+        )
+    if 'delete' in allow_operations:
+        delete_llm_chain = LLMChain(llm=llm, prompt=PARSING_DELETE_PROMPT)
+        RequestsDeleteToolWithParsing(  # type: ignore[call-arg]
+            requests_wrapper=requests_wrapper,
+            llm_chain=delete_llm_chain,
+            allow_dangerous_requests=allow_dangerous_requests,
+        )
+    if 'patch' in allow_operations:
+        patch_llm_chain = LLMChain(llm=llm, prompt=PARSING_PATCH_PROMPT)
+        RequestsPatchToolWithParsing(  # type: ignore[call-arg]
+            requests_wrapper=requests_wrapper,
+            llm_chain=patch_llm_chain,
+            allow_dangerous_requests=allow_dangerous_requests,
+        )
+    if not tools:
+        raise ValueError("Tools not found")
     prompt = PromptTemplate(
         template=API_CONTROLLER_PROMPT,
         input_variables=["input", "agent_scratchpad"],
@@ -320,6 +328,7 @@ def _create_api_controller_tool(
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
     allow_dangerous_requests: bool,
+    allow_operations: Sequence[str],
 ) -> Tool:
     """Expose controller as a tool.
 
@@ -349,7 +358,7 @@ def _create_api_controller_tool(
                 raise ValueError(f"{endpoint_name} endpoint does not exist.")
 
         agent = _create_api_controller_agent(
-            base_url, docs_str, requests_wrapper, llm, allow_dangerous_requests
+            base_url, docs_str, requests_wrapper, llm, allow_dangerous_requests, allow_operations
         )
         return agent.run(plan_str)
 
@@ -369,6 +378,7 @@ def create_openapi_agent(
     verbose: bool = True,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     allow_dangerous_requests: bool = False,
+    allow_operations: Sequence[str] = ('get', 'post'),
     **kwargs: Any,
 ) -> Any:
     """Construct an OpenAI API planner and controller for a given spec.
@@ -394,7 +404,7 @@ def create_openapi_agent(
     tools = [
         _create_api_planner_tool(api_spec, llm),
         _create_api_controller_tool(
-            api_spec, requests_wrapper, llm, allow_dangerous_requests
+            api_spec, requests_wrapper, llm, allow_dangerous_requests, allow_operations
         ),
     ]
     prompt = PromptTemplate(
