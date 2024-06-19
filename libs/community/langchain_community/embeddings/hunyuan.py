@@ -15,9 +15,9 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
     For more information, see https://cloud.tencent.com/document/product/1729
     """
 
-    tencent_cloud_secret_id: SecretStr = Field(alias="secret_id", default=None)
+    hunyuan_secret_id: SecretStr = Field(alias="secret_id", default=None)
     """Hunyuan Secret ID"""
-    tencent_cloud_secret_key: SecretStr = Field(alias="secret_key", default=None)
+    hunyuan_secret_key: SecretStr = Field(alias="secret_key", default=None)
     """Hunyuan Secret Key"""
     region: Literal["ap-guangzhou", "ap-beijing"] = "ap-guangzhou"
     """The region of hunyuan service."""
@@ -36,18 +36,18 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["tencent_cloud_secret_id"] = convert_to_secret_str(
+        values["hunyuan_secret_id"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "tencent_cloud_secret_id",
-                "TENCENT_CLOUD_SECRET_ID",
+                "hunyuan_secret_id",
+                "HUNYUAN_SECRET_ID",
             )
         )
-        values["tencent_cloud_secret_key"] = convert_to_secret_str(
+        values["hunyuan_secret_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "tencent_cloud_secret_key",
-                "TENCENT_CLOUD_SECRET_KEY",
+                "hunyuan_secret_key",
+                "HUNYUAN_SECRET_KEY",
             )
         )
         # Check OPENAI_ORGANIZATION for backwards compatibility.
@@ -63,7 +63,7 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
         client_profile = ClientProfile()
         client_profile.httpProfile.pre_conn_pool_size = 3
 
-        credential = Credential(values["tencent_cloud_secret_id"].get_secret_value(), values["tencent_cloud_secret_key"].get_secret_value())
+        credential = Credential(values["hunyuan_secret_id"].get_secret_value(), values["hunyuan_secret_key"].get_secret_value())
 
         values["request_cls"] = GetEmbeddingRequest
 

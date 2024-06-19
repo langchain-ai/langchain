@@ -73,9 +73,9 @@ class ChatHunyuan(BaseChatModel):
     For more information, see https://cloud.tencent.com/document/product/1729
     """
 
-    tencent_cloud_secret_id: SecretStr = Field(alias="secret_id", default=None)
+    hunyuan_secret_id: SecretStr = Field(alias="secret_id", default=None)
     """TencentCloud Secret ID"""
-    tencent_cloud_secret_key: SecretStr = Field(alias="secret_key", default=None)
+    hunyuan_secret_key: SecretStr = Field(alias="secret_key", default=None)
     """TencentCloud Secret Key"""
 
     model_name: str = Field(alias="model")
@@ -98,7 +98,7 @@ class ChatHunyuan(BaseChatModel):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
-        return {"tencent_cloud_secret_id": "TENCENT_CLOUD_SECRET_ID", "tencent_cloud_secret_key": "TENCENT_CLOUD_SECRET_KEY"}
+        return {"hunyuan_secret_id": "HUNYUAN_SECRET_ID", "hunyuan_secret_key": "HUNYUAN_SECRET_KEY"}
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -113,21 +113,20 @@ class ChatHunyuan(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["tencent_cloud_secret_id"] = convert_to_secret_str(
+        values["hunyuan_secret_id"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "tencent_cloud_secret_id",
-                "TENCENT_CLOUD_SECRET_ID",
+                "hunyuan_secret_id",
+                "HUNYUAN_SECRET_ID",
             )
         )
-        values["tencent_cloud_secret_key"] = convert_to_secret_str(
+        values["hunyuan_secret_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "tencent_cloud_secret_key",
-                "TENCENT_CLOUD_SECRET_KEY",
+                "hunyuan_secret_key",
+                "HUNYUAN_SECRET_KEY",
             )
         )
-        # Check OPENAI_ORGANIZATION for backwards compatibility.
 
         try:
             from tencentcloud.common.credential import Credential
@@ -135,12 +134,14 @@ class ChatHunyuan(BaseChatModel):
             from tencentcloud.hunyuan.v20230901.hunyuan_client import HunyuanClient
             from tencentcloud.hunyuan.v20230901.models import ChatCompletionsRequest, Message
         except ImportError:
-            raise ImportError("Could not import tencentcloud sdk python package. " "Please install it with `pip install \"tencentcloud-sdk-python>=3.0.1139\"`.")
+            raise ImportError(
+                "Could not import tencentcloud sdk python package. " 'Please install it with `pip install "tencentcloud-sdk-python>=3.0.1139"`.'
+            )
 
         client_profile = ClientProfile()
         client_profile.httpProfile.pre_conn_pool_size = 3
 
-        credential = Credential(values["tencent_cloud_secret_id"].get_secret_value(), values["tencent_cloud_secret_key"].get_secret_value())
+        credential = Credential(values["hunyuan_secret_id"].get_secret_value(), values["hunyuan_secret_key"].get_secret_value())
 
         values["message_cls"] = Message
         values["request_cls"] = ChatCompletionsRequest
