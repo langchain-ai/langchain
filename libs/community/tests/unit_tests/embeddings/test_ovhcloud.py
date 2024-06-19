@@ -24,7 +24,6 @@ def test_ovhcloud_empty_access_token_should_not_raise_error() -> None:
     )
     assert isinstance(llm, OVHCloudEmbeddings)
 
-
 @pytest.mark.xfail(reason="Attempts to make network requests.")
 def test_ovhcloud_embed_documents() -> None:
     llm = OVHCloudEmbeddings(model_name="multilingual-e5-base")
