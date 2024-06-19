@@ -21,7 +21,7 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput, BaseChatModel
+from langchain_core.language_models import BaseChatModel, LanguageModelInput
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -74,7 +74,7 @@ _DictOrPydantic = Union[Dict, _BM]
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and (
-            issubclass(obj, BaseModel) or BaseModel in obj.__bases__
+        issubclass(obj, BaseModel) or BaseModel in obj.__bases__
     )
 
 
@@ -112,6 +112,16 @@ class _AllReturnType(TypedDict):
     parsing_error: Optional[BaseException]
 
 
+def parse_json_garbage(s):
+    s = s[next(idx for idx, c in enumerate(s) if c in "{[") :]
+    try:
+        response = json.loads(s)
+        return response
+    except (json.JSONDecodeError, ValueError) as e:
+        response = json.loads(s[: e.pos])
+        return response
+
+
 def parse_response(message: BaseMessage) -> str:
     """Extract `function_call` from `AIMessage`."""
     if isinstance(message, AIMessage):
@@ -141,38 +151,38 @@ class ToolCallingLLM(BaseChatModel, ABC):
         super().__init__(**kwargs)
 
     def bind_tools(
-            self,
-            tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-            **kwargs: Any,
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.bind(functions=tools, **kwargs)
 
     @overload
     def with_structured_output(
-            self,
-            schema: Optional[_DictOrPydanticClass] = None,
-            *,
-            include_raw: Literal[True] = True,
-            **kwargs: Any,
+        self,
+        schema: Optional[_DictOrPydanticClass] = None,
+        *,
+        include_raw: Literal[True] = True,
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _AllReturnType]:
         ...
 
     @overload
     def with_structured_output(
-            self,
-            schema: Optional[_DictOrPydanticClass] = None,
-            *,
-            include_raw: Literal[False] = False,
-            **kwargs: Any,
+        self,
+        schema: Optional[_DictOrPydanticClass] = None,
+        *,
+        include_raw: Literal[False] = False,
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         ...
 
     def with_structured_output(
-            self,
-            schema: Optional[_DictOrPydanticClass] = None,
-            *,
-            include_raw: bool = False,
-            **kwargs: Any,
+        self,
+        schema: Optional[_DictOrPydanticClass] = None,
+        *,
+        include_raw: bool = False,
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
@@ -277,7 +287,7 @@ class ToolCallingLLM(BaseChatModel, ABC):
                 "schema must be specified when method is 'function_calling'. "
                 "Received None."
             )
-        llm = self.bind_tools(tools=[schema], format="json")
+        llm = self.bind_tools(tools=[schema])
         if is_pydantic_schema:
             output_parser: OutputParserLike = PydanticOutputParser(
                 pydantic_object=schema
@@ -299,11 +309,11 @@ class ToolCallingLLM(BaseChatModel, ABC):
             return llm | parser_chain
 
     def _generate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         functions = kwargs.get("functions", [])
         if "functions" in kwargs:
@@ -335,11 +345,14 @@ class ToolCallingLLM(BaseChatModel, ABC):
         try:
             parsed_chat_result = json.loads(chat_generation_content)
         except json.JSONDecodeError:
-            raise ValueError(
-                f"""'{self.model}' did not respond with valid JSON. 
-                Please try again. 
-                Response: {chat_generation_content}"""
-            )
+            try:
+                parsed_chat_result = parse_json_garbage(chat_generation_content)
+            except json.JSONDecodeError:
+                raise ValueError(
+                    f"""'{self.model}' did not respond with valid JSON. 
+                    Please try again. 
+                    Response: {chat_generation_content}"""
+                )
         called_tool_name = (
             parsed_chat_result["tool"] if "tool" in parsed_chat_result else None
         )
@@ -347,12 +360,12 @@ class ToolCallingLLM(BaseChatModel, ABC):
             (fn for fn in functions if fn["name"] == called_tool_name), None
         )
         if (
-                called_tool is None
-                or called_tool["name"] == DEFAULT_RESPONSE_FUNCTION["name"]
+            called_tool is None
+            or called_tool["name"] == DEFAULT_RESPONSE_FUNCTION["name"]
         ):
             if (
-                    "tool_input" in parsed_chat_result
-                    and "response" in parsed_chat_result["tool_input"]
+                "tool_input" in parsed_chat_result
+                and "response" in parsed_chat_result["tool_input"]
             ):
                 response = parsed_chat_result["tool_input"]["response"]
             elif "response" in parsed_chat_result:
@@ -394,11 +407,11 @@ class ToolCallingLLM(BaseChatModel, ABC):
         )
 
     async def _agenerate(
-            self,
-            messages: List[BaseMessage],
-            stop: Optional[List[str]] = None,
-            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-            **kwargs: Any,
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
     ) -> ChatResult:
         functions = kwargs.get("functions", [])
         if "functions" in kwargs:

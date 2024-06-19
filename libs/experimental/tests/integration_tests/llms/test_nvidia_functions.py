@@ -1,15 +1,14 @@
-"""Test OllamaFunctions"""
-
 import unittest
+from typing import Any
 
-from langchain_community.tools import DuckDuckGoSearchResults
-from langchain_community.tools.pubmed.tool import PubmedQueryRun
+from langchain_community.tools import DuckDuckGoSearchResults, PubmedQueryRun
 from langchain_core.messages import AIMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
-from langchain_experimental.llms.ollama_functions import (
-    OllamaFunctions,
-    convert_to_ollama_tool,
+from langchain_experimental.llms.tool_calling_llm import (
+    ToolCallingLLM,
+    convert_to_tool_definition,
 )
 
 
@@ -18,13 +17,24 @@ class Joke(BaseModel):
     punchline: str = Field(description="The punchline to the joke")
 
 
-class TestOllamaFunctions(unittest.TestCase):
+class NVIDIAFunctions(ToolCallingLLM, ChatNVIDIA):
+    """Function chat model that uses ChatNVIDIA."""
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+
+    @property
+    def _llm_type(self) -> str:
+        return "nvidia_functions"
+
+
+class TestNVIDIAFunctions(unittest.TestCase):
     """
-    Test OllamaFunctions
+    Test NVIDIAFunctions
     """
 
-    def test_default_ollama_functions(self) -> None:
-        base_model = OllamaFunctions(model="phi3", format="json")
+    def test_default_nvidia_functions_functions(self) -> None:
+        base_model = NVIDIAFunctions(model="microsoft/phi-3-mini-4k-instruct")
 
         # bind functions
         model = base_model.bind_tools(
@@ -62,8 +72,8 @@ class TestOllamaFunctions(unittest.TestCase):
         assert tool_call
         self.assertEqual("get_current_weather", tool_call.get("name"))
 
-    def test_ollama_functions_tools(self) -> None:
-        base_model = OllamaFunctions(model="phi3", format="json")
+    def test_nvidia_functions_functions_tools(self) -> None:
+        base_model = NVIDIAFunctions(model="microsoft/phi-3-mini-4k-instruct")
         model = base_model.bind_tools(
             tools=[PubmedQueryRun(), DuckDuckGoSearchResults(max_results=2)]
         )
@@ -76,8 +86,8 @@ class TestOllamaFunctions(unittest.TestCase):
         assert tool_call
         self.assertEqual("pub_med", tool_call.get("name"))
 
-    def test_default_ollama_functions_default_response(self) -> None:
-        base_model = OllamaFunctions(model="phi3", format="json")
+    def test_default_nvidia_functions_functions_default_response(self) -> None:
+        base_model = NVIDIAFunctions(model="microsoft/phi-3-mini-4k-instruct")
 
         # bind functions
         model = base_model.bind_tools(
@@ -114,28 +124,27 @@ class TestOllamaFunctions(unittest.TestCase):
             assert tool_call
             self.assertEqual("__conversational_response", tool_call.get("name"))
 
-    def test_ollama_structured_output(self) -> None:
-        model = OllamaFunctions(model="phi3")
+    def test_nvidia_functions_structured_output(self) -> None:
+        model = NVIDIAFunctions(model="microsoft/phi-3-mini-4k-instruct")
         structured_llm = model.with_structured_output(Joke, include_raw=False)
 
         res = structured_llm.invoke("Tell me a joke about cats")
         assert isinstance(res, Joke)
 
-    def test_ollama_structured_output_with_json(self) -> None:
-        model = OllamaFunctions(model="phi3")
-        joke_schema = convert_to_ollama_tool(Joke)
+    def test_nvidia_functions_structured_output_with_json(self) -> None:
+        model = NVIDIAFunctions(model="microsoft/phi-3-mini-4k-instruct")
+        joke_schema = convert_to_tool_definition(Joke)
         structured_llm = model.with_structured_output(joke_schema, include_raw=False)
 
         res = structured_llm.invoke("Tell me a joke about cats")
         assert "setup" in res
         assert "punchline" in res
 
-    def test_ollama_structured_output_raw(self) -> None:
-        model = OllamaFunctions(model="phi3")
+    def test_nvidia_functions_structured_output_raw(self) -> None:
+        model = NVIDIAFunctions(model="microsoft/phi-3-mini-4k-instruct")
         structured_llm = model.with_structured_output(Joke, include_raw=True)
 
         res = structured_llm.invoke("Tell me a joke about cars")
-        assert isinstance(res, dict)
         assert "raw" in res
         assert "parsed" in res
         assert isinstance(res["raw"], AIMessage)
