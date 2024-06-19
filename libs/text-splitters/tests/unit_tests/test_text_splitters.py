@@ -19,7 +19,10 @@ from langchain_text_splitters.base import split_text_on_tokens
 from langchain_text_splitters.character import CharacterTextSplitter
 from langchain_text_splitters.html import HTMLHeaderTextSplitter, HTMLSectionSplitter
 from langchain_text_splitters.json import RecursiveJsonSplitter
-from langchain_text_splitters.markdown import MarkdownHeaderTextSplitter
+from langchain_text_splitters.markdown import (
+    ExperimentalMarkdownSyntaxTextSplitter,
+    MarkdownHeaderTextSplitter,
+)
 from langchain_text_splitters.python import PythonCodeTextSplitter
 
 FAKE_PYTHON_TEXT = """
@@ -1290,6 +1293,210 @@ def test_md_header_text_splitter_with_invisible_characters(characters: str) -> N
         Document(
             page_content="bar()",
             metadata={"Header 1": "Foo", "Header 2": "Bar"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+EXPERIMENTAL_MARKDOWN_DOCUMENT = (
+    "# My Header 1\n"
+    "Content for header 1\n"
+    "## Header 2\n"
+    "Content for header 2\n"
+    "```python\n"
+    "def func_definition():\n"
+    "   print('Keep the whitespace consistent')\n"
+    "```\n"
+    "# Header 1 again\n"
+    "We should also split on the horizontal line\n"
+    "----\n"
+    "This will be a new doc but with the same header metadata\n\n"
+    "And it includes a new paragraph"
+)
+
+
+def test_experimental_markdown_syntax_text_splitter() -> None:
+    """Test experimental markdown syntax splitter."""
+
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter()
+    output = markdown_splitter.split_text(EXPERIMENTAL_MARKDOWN_DOCUMENT)
+
+    expected_output = [
+        Document(
+            page_content="Content for header 1\n",
+            metadata={"Header 1": "My Header 1"},
+        ),
+        Document(
+            page_content="Content for header 2\n",
+            metadata={"Header 1": "My Header 1", "Header 2": "Header 2"},
+        ),
+        Document(
+            page_content=(
+                "```python\ndef func_definition():\n   "
+                "print('Keep the whitespace consistent')\n```\n"
+            ),
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+            },
+        ),
+        Document(
+            page_content="We should also split on the horizontal line\n",
+            metadata={"Header 1": "Header 1 again"},
+        ),
+        Document(
+            page_content=(
+                "This will be a new doc but with the same header metadata\n\n"
+                "And it includes a new paragraph"
+            ),
+            metadata={"Header 1": "Header 1 again"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_experimental_markdown_syntax_text_splitter_header_configuration() -> None:
+    """Test experimental markdown syntax splitter."""
+
+    headers_to_split_on = [("#", "Encabezamiento 1")]
+
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter(
+        headers_to_split_on=headers_to_split_on
+    )
+    output = markdown_splitter.split_text(EXPERIMENTAL_MARKDOWN_DOCUMENT)
+
+    expected_output = [
+        Document(
+            page_content="Content for header 1\n## Header 2\nContent for header 2\n",
+            metadata={"Encabezamiento 1": "My Header 1"},
+        ),
+        Document(
+            page_content=(
+                "```python\ndef func_definition():\n   "
+                "print('Keep the whitespace consistent')\n```\n"
+            ),
+            metadata={"Code": "python", "Encabezamiento 1": "My Header 1"},
+        ),
+        Document(
+            page_content="We should also split on the horizontal line\n",
+            metadata={"Encabezamiento 1": "Header 1 again"},
+        ),
+        Document(
+            page_content=(
+                "This will be a new doc but with the same header metadata\n\n"
+                "And it includes a new paragraph"
+            ),
+            metadata={"Encabezamiento 1": "Header 1 again"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_experimental_markdown_syntax_text_splitter_with_headers() -> None:
+    """Test experimental markdown syntax splitter."""
+
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter(strip_headers=False)
+    output = markdown_splitter.split_text(EXPERIMENTAL_MARKDOWN_DOCUMENT)
+
+    expected_output = [
+        Document(
+            page_content="# My Header 1\nContent for header 1\n",
+            metadata={"Header 1": "My Header 1"},
+        ),
+        Document(
+            page_content="## Header 2\nContent for header 2\n",
+            metadata={"Header 1": "My Header 1", "Header 2": "Header 2"},
+        ),
+        Document(
+            page_content=(
+                "```python\ndef func_definition():\n   "
+                "print('Keep the whitespace consistent')\n```\n"
+            ),
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+            },
+        ),
+        Document(
+            page_content=(
+                "# Header 1 again\nWe should also split on the horizontal line\n"
+            ),
+            metadata={"Header 1": "Header 1 again"},
+        ),
+        Document(
+            page_content=(
+                "This will be a new doc but with the same header metadata\n\n"
+                "And it includes a new paragraph"
+            ),
+            metadata={"Header 1": "Header 1 again"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_experimental_markdown_syntax_text_splitter_split_lines() -> None:
+    """Test experimental markdown syntax splitter."""
+
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter(return_each_line=True)
+    output = markdown_splitter.split_text(EXPERIMENTAL_MARKDOWN_DOCUMENT)
+
+    expected_output = [
+        Document(
+            page_content="Content for header 1", metadata={"Header 1": "My Header 1"}
+        ),
+        Document(
+            page_content="Content for header 2",
+            metadata={"Header 1": "My Header 1", "Header 2": "Header 2"},
+        ),
+        Document(
+            page_content="```python",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+            },
+        ),
+        Document(
+            page_content="def func_definition():",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+            },
+        ),
+        Document(
+            page_content="   print('Keep the whitespace consistent')",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+            },
+        ),
+        Document(
+            page_content="```",
+            metadata={
+                "Code": "python",
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+            },
+        ),
+        Document(
+            page_content="We should also split on the horizontal line",
+            metadata={"Header 1": "Header 1 again"},
+        ),
+        Document(
+            page_content="This will be a new doc but with the same header metadata",
+            metadata={"Header 1": "Header 1 again"},
+        ),
+        Document(
+            page_content="And it includes a new paragraph",
+            metadata={"Header 1": "Header 1 again"},
         ),
     ]
 
