@@ -57,7 +57,7 @@ if __name__ == "__main__":
     }
     docs_edited = False
 
-    if len(files) == 300:
+    if len(files) >= 300:
         # max diff length is 300 files - there are likely files missing
         dirs_to_run["lint"] = all_package_dirs()
         dirs_to_run["test"] = all_package_dirs()
