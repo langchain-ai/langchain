@@ -42,10 +42,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
     async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
         return ImagePromptValue(image_url=await self.aformat(**kwargs))
 
-    def format(
-        self,
-        **kwargs: Any,
-    ) -> ImageURL:
+    def format(self, **kwargs: Any) -> ImageURL:
         """Format the prompt with the inputs.
 
         Args:

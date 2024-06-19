@@ -39,9 +39,7 @@ class QueryCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):
     args_schema: Type[BaseModel] = _QueryCassandraDatabaseToolInput
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> Union[str, Sequence[Dict[str, Any]], ResultSet]:
         """Execute the query, return the results or an error message."""
         try:
@@ -53,8 +51,7 @@ class QueryCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):
 
 class _GetSchemaCassandraDatabaseToolInput(BaseModel):
     keyspace: str = Field(
-        ...,
-        description=("The name of the keyspace for which to return the schema."),
+        ..., description=("The name of the keyspace for which to return the schema.")
     )
 
 
@@ -73,9 +70,7 @@ class GetSchemaCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):
     args_schema: Type[BaseModel] = _GetSchemaCassandraDatabaseToolInput
 
     def _run(
-        self,
-        keyspace: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, keyspace: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Get the schema for a keyspace."""
         try:
@@ -88,21 +83,15 @@ class GetSchemaCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):
 
 class _GetTableDataCassandraDatabaseToolInput(BaseModel):
     keyspace: str = Field(
-        ...,
-        description=("The name of the keyspace containing the table."),
+        ..., description=("The name of the keyspace containing the table.")
     )
     table: str = Field(
-        ...,
-        description=("The name of the table for which to return data."),
+        ..., description=("The name of the table for which to return data.")
     )
     predicate: str = Field(
-        ...,
-        description=("The predicate for the query that uses the primary key."),
+        ..., description=("The predicate for the query that uses the primary key.")
     )
-    limit: int = Field(
-        ...,
-        description=("The maximum number of rows to return."),
-    )
+    limit: int = Field(..., description=("The maximum number of rows to return."))
 
 
 class GetTableDataCassandraDatabaseTool(BaseCassandraDatabaseTool, BaseTool):

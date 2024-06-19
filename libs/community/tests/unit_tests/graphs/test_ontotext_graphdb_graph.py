@@ -169,7 +169,7 @@ class TestOntotextGraphDBGraph(unittest.TestCase):
 
         with self.assertRaises(ValueError) as e:
             OntotextGraphDBGraph(
-                query_endpoint="http://localhost:7200/repositories/non-existing-repository",
+                query_endpoint="http://localhost:7200/repositories/non-existing-repository"
             )
         self.assertEqual(
             "Neither file nor query provided. One is required.", str(e.exception)

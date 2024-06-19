@@ -28,10 +28,7 @@ documents = [Document(page_content=x) for x in doc_list]
 
 @pytest.mark.requires("voyageai")
 def test_init() -> None:
-    VoyageAIRerank(
-        voyage_api_key="foo",
-        model="rerank-lite-1",
-    )
+    VoyageAIRerank(voyage_api_key="foo", model="rerank-lite-1")
 
 
 def get_mock_rerank_result() -> RerankingObject:
@@ -62,10 +59,7 @@ def test_rerank_unit_test(mocker: Any) -> None:
         ),
     ]
 
-    rerank = VoyageAIRerank(
-        voyage_api_key="foo",
-        model="rerank-lite-1",
-    )
+    rerank = VoyageAIRerank(voyage_api_key="foo", model="rerank-lite-1")
     result = rerank.compress_documents(
         documents=documents, query="When is the Apple's conference call scheduled?"
     )
@@ -73,10 +67,7 @@ def test_rerank_unit_test(mocker: Any) -> None:
 
 
 def test_rerank_empty_input() -> None:
-    rerank = VoyageAIRerank(
-        voyage_api_key="foo",
-        model="rerank-lite-1",
-    )
+    rerank = VoyageAIRerank(voyage_api_key="foo", model="rerank-lite-1")
     result = rerank.compress_documents(
         documents=[], query="When is the Apple's conference call scheduled?"
     )

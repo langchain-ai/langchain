@@ -78,7 +78,7 @@ class TestQuipLoader:
         ]
 
         mock_quip.get_folder.side_effect = [
-            self._get_mock_folder(self.MOCK_FOLDER_IDS[0]),
+            self._get_mock_folder(self.MOCK_FOLDER_IDS[0])
         ]
 
         mock_quip.get_thread.side_effect = [
@@ -145,10 +145,7 @@ class TestQuipLoader:
                 "link": "https://example.quip.com/YPH9OAR2Eu5",
             },
             "member_ids": [],
-            "children": [
-                {"thread_id": "ABC"},
-                {"thread_id": "DEF"},
-            ],
+            "children": [{"thread_id": "ABC"}, {"thread_id": "DEF"}],
         }
 
     def _get_mock_thread(self, thread_id: str) -> Dict:

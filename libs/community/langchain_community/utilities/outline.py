@@ -61,10 +61,7 @@ class OutlineAPIWrapper(BaseModel):
         )
         doc = Document(
             page_content=outline_res["document"]["text"][: self.doc_content_chars_max],
-            metadata={
-                **main_meta,
-                **add_meta,
-            },
+            metadata={**main_meta, **add_meta},
         )
         return doc
 

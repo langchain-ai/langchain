@@ -18,7 +18,7 @@ def populate_arangodb_database(db: Any) -> None:
                 "edge_collection": "ChildOf",
                 "from_vertex_collections": ["Characters"],
                 "to_vertex_collections": ["Characters"],
-            },
+            }
         ],
     )
 
@@ -64,10 +64,7 @@ def test_empty_schema_on_no_data() -> None:
 
     graph = ArangoGraph(db)
 
-    assert graph.schema == {
-        "Graph Schema": [],
-        "Collection Schema": [],
-    }
+    assert graph.schema == {"Graph Schema": [], "Collection Schema": []}
 
 
 def test_aql_generation() -> None:

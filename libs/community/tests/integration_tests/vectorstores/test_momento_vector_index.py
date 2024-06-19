@@ -62,9 +62,7 @@ def vector_store(
             ),
         )
         vector_store = MomentoVectorIndex(
-            embedding=embedding_openai,
-            client=client,
-            index_name=random_index_name,
+            embedding=embedding_openai, client=client, index_name=random_index_name
         )
         yield vector_store
     finally:
@@ -75,10 +73,7 @@ def vector_store(
 def test_from_texts(
     random_index_name: str, embedding_openai: OpenAIEmbeddings, texts: List[str]
 ) -> None:
-    from momento import (
-        CredentialProvider,
-        VectorIndexConfigurations,
-    )
+    from momento import CredentialProvider, VectorIndexConfigurations
 
     random_text = random_string()
     random_document = f"Hello world {random_text} goodbye world!"
@@ -108,10 +103,7 @@ def test_from_texts_with_metadatas(
     random_index_name: str, embedding_openai: OpenAIEmbeddings, texts: List[str]
 ) -> None:
     """Test end to end construction and search."""
-    from momento import (
-        CredentialProvider,
-        VectorIndexConfigurations,
-    )
+    from momento import CredentialProvider, VectorIndexConfigurations
 
     random_text = random_string()
     random_document = f"Hello world {random_text} goodbye world!"

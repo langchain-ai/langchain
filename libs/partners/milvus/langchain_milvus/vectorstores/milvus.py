@@ -11,9 +11,7 @@ from langchain_core.vectorstores import VectorStore
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MILVUS_CONNECTION = {
-    "uri": "http://localhost:19530",
-}
+DEFAULT_MILVUS_CONNECTION = {"uri": "http://localhost:19530"}
 
 Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
 
@@ -266,10 +264,7 @@ class Milvus(VectorStore):
 
         # Grab the existing collection if it exists
         if utility.has_collection(self.collection_name, using=self.alias):
-            self.col = Collection(
-                self.collection_name,
-                using=self.alias,
-            )
+            self.col = Collection(self.collection_name, using=self.alias)
             if self.collection_properties is not None:
                 self.col.set_properties(self.collection_properties)
         # If need to drop old, drop it

@@ -74,9 +74,7 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
 
             from langchain_community.chat_models import FriendliChat
 
-            chat = Friendli(
-                model="llama-2-13b-chat", friendli_token="YOUR FRIENDLI TOKEN"
-            )
+            chat = Friendli(model="llama-2-13b-chat", friendli_token="YOUR FRIENDLI TOKEN")
             chat.invoke("What is generative AI?")
     """
 
@@ -172,10 +170,7 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
         params = self._get_invocation_params(stop=stop, **kwargs)
         response = self.client.chat.completions.create(
             messages=[
-                {
-                    "role": get_role(message),
-                    "content": message.content,
-                }
+                {"role": get_role(message), "content": message.content}
                 for message in messages
             ],
             stream=False,
@@ -202,10 +197,7 @@ class ChatFriendli(BaseChatModel, BaseFriendli):
         params = self._get_invocation_params(stop=stop, **kwargs)
         response = await self.async_client.chat.completions.create(
             messages=[
-                {
-                    "role": get_role(message),
-                    "content": message.content,
-                }
+                {"role": get_role(message), "content": message.content}
                 for message in messages
             ],
             stream=False,

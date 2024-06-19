@@ -27,8 +27,7 @@ def test_duckdb_loader_page_content_columns() -> None:
     """Test DuckDB loader."""
 
     loader = DuckDBLoader(
-        "SELECT 1 AS a, 2 AS b UNION SELECT 3 AS a, 4 AS b",
-        page_content_columns=["a"],
+        "SELECT 1 AS a, 2 AS b UNION SELECT 3 AS a, 4 AS b", page_content_columns=["a"]
     )
     docs = loader.load()
 
@@ -45,9 +44,7 @@ def test_duckdb_loader_metadata_columns() -> None:
     """Test DuckDB loader."""
 
     loader = DuckDBLoader(
-        "SELECT 1 AS a, 2 AS b",
-        page_content_columns=["a"],
-        metadata_columns=["b"],
+        "SELECT 1 AS a, 2 AS b", page_content_columns=["a"], metadata_columns=["b"]
     )
     docs = loader.load()
 

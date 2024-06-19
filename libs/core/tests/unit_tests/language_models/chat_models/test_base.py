@@ -105,10 +105,7 @@ async def test_stream_error_callback() -> None:
             assert llm_result.generations[0][0].text == message[:i]
 
     for i in range(0, 2):
-        llm = FakeListChatModel(
-            responses=[message],
-            error_on_chunk_number=i,
-        )
+        llm = FakeListChatModel(responses=[message], error_on_chunk_number=i)
         with pytest.raises(Exception):
             cb_async = FakeAsyncCallbackHandler()
             async for _ in llm.astream("Dummy message", callbacks=[cb_async]):

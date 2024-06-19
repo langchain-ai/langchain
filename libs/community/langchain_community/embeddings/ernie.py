@@ -37,14 +37,10 @@ class ErnieEmbeddings(BaseModel, Embeddings):
             values, "ernie_api_base", "ERNIE_API_BASE", "https://aip.baidubce.com"
         )
         values["ernie_client_id"] = get_from_dict_or_env(
-            values,
-            "ernie_client_id",
-            "ERNIE_CLIENT_ID",
+            values, "ernie_client_id", "ERNIE_CLIENT_ID"
         )
         values["ernie_client_secret"] = get_from_dict_or_env(
-            values,
-            "ernie_client_secret",
-            "ERNIE_CLIENT_SECRET",
+            values, "ernie_client_secret", "ERNIE_CLIENT_SECRET"
         )
         return values
 
@@ -54,9 +50,7 @@ class ErnieEmbeddings(BaseModel, Embeddings):
         )
         resp = requests.post(
             f"{base_url}/embedding-v1",
-            headers={
-                "Content-Type": "application/json",
-            },
+            headers={"Content-Type": "application/json"},
             params={"access_token": self.access_token},
             json=json,
         )

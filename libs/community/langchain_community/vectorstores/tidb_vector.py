@@ -275,11 +275,7 @@ class TiDBVectorStore(VectorStore):
             texts=texts, embeddings=embeddings, metadatas=metadatas, ids=ids, **kwargs
         )
 
-    def delete(
-        self,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> None:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         """
         Delete vector data from the TiDB Vector Store.
 
@@ -291,11 +287,7 @@ class TiDBVectorStore(VectorStore):
         self._tidb.delete(ids=ids, **kwargs)
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
-        **kwargs: Any,
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """
         Perform a similarity search using the given query.
@@ -314,11 +306,7 @@ class TiDBVectorStore(VectorStore):
         return [doc for doc, _ in result]
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 5,
-        filter: Optional[dict] = None,
-        **kwargs: Any,
+        self, query: str, k: int = 5, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """
         Perform a similarity search with score based on the given query.
@@ -338,13 +326,7 @@ class TiDBVectorStore(VectorStore):
             query_vector=query_vector, k=k, filter=filter, **kwargs
         )
         return [
-            (
-                Document(
-                    page_content=doc.document,
-                    metadata=doc.metadata,
-                ),
-                doc.distance,
-            )
+            (Document(page_content=doc.document, metadata=doc.metadata), doc.distance)
             for doc in relevant_docs
         ]
 

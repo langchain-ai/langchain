@@ -80,8 +80,7 @@ class RemoteFileMetadata:
         """Create a RemoteFileMetadata object from a dictionary."""
         properties = data.get("properties", {})
         return RemoteFileMetadata(
-            filename=properties.get("filename"),
-            size_in_bytes=properties.get("size"),
+            filename=properties.get("filename"), size_in_bytes=properties.get("size")
         )
 
 
@@ -210,10 +209,7 @@ class SessionsPythonREPLTool(BaseTool):
 
         access_token = self.access_token_provider()
         api_url = self._build_url("files/upload")
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "User-Agent": USER_AGENT,
-        }
+        headers = {"Authorization": f"Bearer {access_token}", "User-Agent": USER_AGENT}
         files = [("file", (remote_file_path, file_data, "application/octet-stream"))]
 
         response = requests.request(
@@ -241,10 +237,7 @@ class SessionsPythonREPLTool(BaseTool):
         access_token = self.access_token_provider()
         encoded_remote_file_path = urllib.parse.quote(remote_file_path)
         api_url = self._build_url(f"files/content/{encoded_remote_file_path}")
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "User-Agent": USER_AGENT,
-        }
+        headers = {"Authorization": f"Bearer {access_token}", "User-Agent": USER_AGENT}
 
         response = requests.get(api_url, headers=headers)
         response.raise_for_status()
@@ -263,10 +256,7 @@ class SessionsPythonREPLTool(BaseTool):
         """
         access_token = self.access_token_provider()
         api_url = self._build_url("files")
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "User-Agent": USER_AGENT,
-        }
+        headers = {"Authorization": f"Bearer {access_token}", "User-Agent": USER_AGENT}
 
         response = requests.get(api_url, headers=headers)
         response.raise_for_status()

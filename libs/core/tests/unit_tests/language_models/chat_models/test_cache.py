@@ -238,12 +238,7 @@ def test_global_cache_batch() -> None:
         global_cache = InMemoryCache()
         set_llm_cache(global_cache)
         assert global_cache._cache == {}
-        results = chat_model.batch(
-            [
-                "prompt",
-                "prompt",
-            ]
-        )
+        results = chat_model.batch(["prompt", "prompt"])
         assert {results[0].content, results[1].content} == {"meow"}
     finally:
         set_llm_cache(None)

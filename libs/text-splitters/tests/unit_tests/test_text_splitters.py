@@ -283,26 +283,14 @@ def test_iterative_text_splitter_keep_separator() -> None:
     chunk_size = 5
     output = __test_iterative_text_splitter(chunk_size=chunk_size, keep_separator=True)
 
-    assert output == [
-        "....5",
-        "X..3",
-        "Y...4",
-        "X....5",
-        "Y...",
-    ]
+    assert output == ["....5", "X..3", "Y...4", "X....5", "Y..."]
 
 
 def test_iterative_text_splitter_discard_separator() -> None:
     chunk_size = 5
     output = __test_iterative_text_splitter(chunk_size=chunk_size, keep_separator=False)
 
-    assert output == [
-        "....5",
-        "..3",
-        "...4",
-        "....5",
-        "...",
-    ]
+    assert output == ["....5", "..3", "...4", "....5", "..."]
 
 
 def __test_iterative_text_splitter(chunk_size: int, keep_separator: bool) -> List[str]:
@@ -1000,12 +988,9 @@ def test_md_header_text_splitter_1() -> None:
         " ## Baz\n\n"
         " Hi this is Molly"
     )
-    headers_to_split_on = [
-        ("#", "Header 1"),
-        ("##", "Header 2"),
-    ]
+    headers_to_split_on = [("#", "Header 1"), ("##", "Header 2")]
     markdown_splitter = MarkdownHeaderTextSplitter(
-        headers_to_split_on=headers_to_split_on,
+        headers_to_split_on=headers_to_split_on
     )
     output = markdown_splitter.split_text(markdown_document)
     expected_output = [
@@ -1034,13 +1019,9 @@ def test_md_header_text_splitter_2() -> None:
         " Hi this is Molly"
     )
 
-    headers_to_split_on = [
-        ("#", "Header 1"),
-        ("##", "Header 2"),
-        ("###", "Header 3"),
-    ]
+    headers_to_split_on = [("#", "Header 1"), ("##", "Header 2"), ("###", "Header 3")]
     markdown_splitter = MarkdownHeaderTextSplitter(
-        headers_to_split_on=headers_to_split_on,
+        headers_to_split_on=headers_to_split_on
     )
     output = markdown_splitter.split_text(markdown_document)
     expected_output = [
@@ -1084,7 +1065,7 @@ def test_md_header_text_splitter_3() -> None:
     ]
 
     markdown_splitter = MarkdownHeaderTextSplitter(
-        headers_to_split_on=headers_to_split_on,
+        headers_to_split_on=headers_to_split_on
     )
     output = markdown_splitter.split_text(markdown_document)
 
@@ -1128,12 +1109,9 @@ def test_md_header_text_splitter_preserve_headers_1() -> None:
         "This is Alice\n\n"
         "This is Bob"
     )
-    headers_to_split_on = [
-        ("#", "Header 1"),
-    ]
+    headers_to_split_on = [("#", "Header 1")]
     markdown_splitter = MarkdownHeaderTextSplitter(
-        headers_to_split_on=headers_to_split_on,
-        strip_headers=False,
+        headers_to_split_on=headers_to_split_on, strip_headers=False
     )
     output = markdown_splitter.split_text(markdown_document)
     expected_output = [
@@ -1164,14 +1142,9 @@ def test_md_header_text_splitter_preserve_headers_2() -> None:
         "    ## Buz\n"
         "# Bop"
     )
-    headers_to_split_on = [
-        ("#", "Header 1"),
-        ("##", "Header 2"),
-        ("###", "Header 3"),
-    ]
+    headers_to_split_on = [("#", "Header 1"), ("##", "Header 2"), ("###", "Header 3")]
     markdown_splitter = MarkdownHeaderTextSplitter(
-        headers_to_split_on=headers_to_split_on,
-        strip_headers=False,
+        headers_to_split_on=headers_to_split_on, strip_headers=False
     )
     output = markdown_splitter.split_text(markdown_document)
     expected_output = [
@@ -1188,8 +1161,7 @@ def test_md_header_text_splitter_preserve_headers_2() -> None:
             metadata={"Header 1": "Foo", "Header 2": "Baz"},
         ),
         Document(
-            page_content="## Buz",
-            metadata={"Header 1": "Foo", "Header 2": "Buz"},
+            page_content="## Buz", metadata={"Header 1": "Foo", "Header 2": "Buz"}
         ),
         Document(page_content="# Bop", metadata={"Header 1": "Bop"}),
     ]
@@ -1209,13 +1181,10 @@ def test_md_header_text_splitter_fenced_code_block(fence: str) -> None:
         f"{fence}"
     )
 
-    headers_to_split_on = [
-        ("#", "Header 1"),
-        ("##", "Header 2"),
-    ]
+    headers_to_split_on = [("#", "Header 1"), ("##", "Header 2")]
 
     markdown_splitter = MarkdownHeaderTextSplitter(
-        headers_to_split_on=headers_to_split_on,
+        headers_to_split_on=headers_to_split_on
     )
     output = markdown_splitter.split_text(markdown_document)
 
@@ -1223,7 +1192,7 @@ def test_md_header_text_splitter_fenced_code_block(fence: str) -> None:
         Document(
             page_content=f"{fence}\nfoo()\n# Not a header\nbar()\n{fence}",
             metadata={"Header 1": "This is a Header"},
-        ),
+        )
     ]
 
     assert output == expected_output
@@ -1245,13 +1214,10 @@ def test_md_header_text_splitter_fenced_code_block_interleaved(
         f"{fence}"
     )
 
-    headers_to_split_on = [
-        ("#", "Header 1"),
-        ("##", "Header 2"),
-    ]
+    headers_to_split_on = [("#", "Header 1"), ("##", "Header 2")]
 
     markdown_splitter = MarkdownHeaderTextSplitter(
-        headers_to_split_on=headers_to_split_on,
+        headers_to_split_on=headers_to_split_on
     )
     output = markdown_splitter.split_text(markdown_document)
 
@@ -1261,7 +1227,7 @@ def test_md_header_text_splitter_fenced_code_block_interleaved(
                 f"{fence}\nfoo\n# Not a header\n{other_fence}\n# Not a header\n{fence}"
             ),
             metadata={"Header 1": "This is a Header"},
-        ),
+        )
     ]
 
     assert output == expected_output
@@ -1275,25 +1241,16 @@ def test_md_header_text_splitter_with_invisible_characters(characters: str) -> N
         f"{characters}# Foo\n\n" "foo()\n" f"{characters}## Bar\n\n" "bar()"
     )
 
-    headers_to_split_on = [
-        ("#", "Header 1"),
-        ("##", "Header 2"),
-    ]
+    headers_to_split_on = [("#", "Header 1"), ("##", "Header 2")]
 
     markdown_splitter = MarkdownHeaderTextSplitter(
-        headers_to_split_on=headers_to_split_on,
+        headers_to_split_on=headers_to_split_on
     )
     output = markdown_splitter.split_text(markdown_document)
 
     expected_output = [
-        Document(
-            page_content="foo()",
-            metadata={"Header 1": "Foo"},
-        ),
-        Document(
-            page_content="bar()",
-            metadata={"Header 1": "Foo", "Header 2": "Bar"},
-        ),
+        Document(page_content="foo()", metadata={"Header 1": "Foo"}),
+        Document(page_content="bar()", metadata={"Header 1": "Foo", "Header 2": "Bar"}),
     ]
 
     assert output == expected_output
@@ -1324,8 +1281,7 @@ def test_experimental_markdown_syntax_text_splitter() -> None:
 
     expected_output = [
         Document(
-            page_content="Content for header 1\n",
-            metadata={"Header 1": "My Header 1"},
+            page_content="Content for header 1\n", metadata={"Header 1": "My Header 1"}
         ),
         Document(
             page_content="Content for header 2\n",

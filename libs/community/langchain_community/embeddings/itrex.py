@@ -36,11 +36,11 @@ class QuantizedBgeEmbeddings(BaseModel, Embeddings):
             from langchain_community.embeddings import QuantizedBgeEmbeddings
 
             model_name = "Intel/bge-small-en-v1.5-sts-int8-static-inc"
-            encode_kwargs = {'normalize_embeddings': True}
+            encode_kwargs = {"normalize_embeddings": True}
             hf = QuantizedBgeEmbeddings(
                 model_name,
                 encode_kwargs=encode_kwargs,
-                query_instruction="Represent this sentence for searching relevant passages: "
+                query_instruction="Represent this sentence for searching relevant passages: ",
             )
     """  # noqa: E501
 
@@ -107,7 +107,7 @@ class QuantizedBgeEmbeddings(BaseModel, Embeddings):
             self.model_name_or_path
         ).hidden_size
         self.transformer_tokenizer = AutoTokenizer.from_pretrained(
-            self.model_name_or_path,
+            self.model_name_or_path
         )
         onnx_model_path = os.path.join(self.model_name_or_path, self.onnx_file_name)  # type: ignore[arg-type]
         if not os.path.exists(onnx_model_path):

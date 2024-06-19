@@ -35,7 +35,7 @@ class BESVectorStore(VectorStore):
             vectorstore = BESVectorStore(
                 embedding=OpenAIEmbeddings(),
                 index_name="langchain-demo",
-                bes_url="http://localhost:9200"
+                bes_url="http://localhost:9200",
             )
 
     Args:
@@ -181,11 +181,7 @@ class BESVectorStore(VectorStore):
                 }
             }
 
-    def delete(
-        self,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> Optional[bool]:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete documents from the index.
 
         Args:
@@ -297,11 +293,7 @@ class BESVectorStore(VectorStore):
         return docs_and_scores
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
-        **kwargs: Any,
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """Return documents most similar to query.
 

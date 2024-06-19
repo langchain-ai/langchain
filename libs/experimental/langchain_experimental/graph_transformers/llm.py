@@ -105,10 +105,7 @@ system_prompt = (
 
 default_prompt = ChatPromptTemplate.from_messages(
     [
-        (
-            "system",
-            system_prompt,
-        ),
+        ("system", system_prompt),
         (
             "human",
             (
@@ -461,11 +458,7 @@ def _parse_and_clean_json(
             for p in node["properties"]:
                 node_properties[format_property_key(p["key"])] = p["value"]
         nodes.append(
-            Node(
-                id=node["id"],
-                type=node.get("type"),
-                properties=node_properties,
-            )
+            Node(id=node["id"], type=node.get("type"), properties=node_properties)
         )
     relationships = []
     for rel in argument_json["relationships"]:
@@ -502,14 +495,8 @@ def _parse_and_clean_json(
             for p in rel["properties"]:
                 rel_properties[format_property_key(p["key"])] = p["value"]
 
-        source_node = Node(
-            id=rel["source_node_id"],
-            type=rel["source_node_type"],
-        )
-        target_node = Node(
-            id=rel["target_node_id"],
-            type=rel["target_node_type"],
-        )
+        source_node = Node(id=rel["source_node_id"], type=rel["source_node_type"])
+        target_node = Node(id=rel["target_node_id"], type=rel["target_node_type"])
         relationships.append(
             Relationship(
                 source=source_node,
@@ -624,10 +611,8 @@ class LLMGraphTransformer:
             from langchain_core.documents import Document
             from langchain_openai import ChatOpenAI
 
-            llm=ChatOpenAI(temperature=0)
-            transformer = LLMGraphTransformer(
-                llm=llm,
-                allowed_nodes=["Person", "Organization"])
+            llm = ChatOpenAI(temperature=0)
+            transformer = LLMGraphTransformer(llm=llm, allowed_nodes=["Person", "Organization"])
 
             doc = Document(page_content="Elon Musk is suing OpenAI")
             graph_documents = transformer.convert_to_graph_documents([doc])

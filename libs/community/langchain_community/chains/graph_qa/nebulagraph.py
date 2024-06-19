@@ -69,9 +69,7 @@ class NebulaGraphQAChain(Chain):
         ngql_generation_chain = LLMChain(llm=llm, prompt=ngql_prompt)
 
         return cls(
-            qa_chain=qa_chain,
-            ngql_generation_chain=ngql_generation_chain,
-            **kwargs,
+            qa_chain=qa_chain, ngql_generation_chain=ngql_generation_chain, **kwargs
         )
 
     def _call(
@@ -100,7 +98,6 @@ class NebulaGraphQAChain(Chain):
         )
 
         result = self.qa_chain(
-            {"question": question, "context": context},
-            callbacks=callbacks,
+            {"question": question, "context": context}, callbacks=callbacks
         )
         return {self.output_key: result[self.qa_chain.output_key]}

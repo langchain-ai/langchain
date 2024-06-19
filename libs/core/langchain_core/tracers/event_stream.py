@@ -23,17 +23,9 @@ from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
-from langchain_core.outputs import (
-    ChatGenerationChunk,
-    GenerationChunk,
-    LLMResult,
-)
+from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
 from langchain_core.runnables.schema import EventData, StreamEvent
-from langchain_core.runnables.utils import (
-    Input,
-    Output,
-    _RootEventFilter,
-)
+from langchain_core.runnables.utils import Input, Output, _RootEventFilter
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.log_stream import LogEntry
 from langchain_core.tracers.memory_stream import _MemoryStream
@@ -174,10 +166,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             yield cast(T, first)
             # consume the rest of the output
             async for chunk in output:
-                self._send(
-                    {**event, "data": {"chunk": chunk}},
-                    run_info["run_type"],
-                )
+                self._send({**event, "data": {"chunk": chunk}}, run_info["run_type"])
                 yield chunk
         else:
             # otherwise just pass through
@@ -216,10 +205,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             yield cast(T, first)
             # consume the rest of the output
             for chunk in output:
-                self._send(
-                    {**event, "data": {"chunk": chunk}},
-                    run_info["run_type"],
-                )
+                self._send({**event, "data": {"chunk": chunk}}, run_info["run_type"])
                 yield chunk
         else:
             # otherwise just pass through
@@ -286,9 +272,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self._send(
             {
                 "event": "on_chat_model_start",
-                "data": {
-                    "input": {"messages": messages},
-                },
+                "data": {"input": {"messages": messages}},
                 "name": name_,
                 "tags": tags or [],
                 "run_id": str(run_id),
@@ -327,11 +311,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self._send(
             {
                 "event": "on_llm_start",
-                "data": {
-                    "input": {
-                        "prompts": prompts,
-                    }
-                },
+                "data": {"input": {"prompts": prompts}},
                 "name": name_,
                 "tags": tags or [],
                 "run_id": str(run_id),
@@ -378,9 +358,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self._send(
             {
                 "event": event,
-                "data": {
-                    "chunk": chunk_,
-                },
+                "data": {"chunk": chunk_},
                 "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
@@ -507,10 +485,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
         inputs = inputs or run_info.get("inputs") or {}
 
-        data: EventData = {
-            "output": outputs,
-            "input": inputs,
-        }
+        data: EventData = {"output": outputs, "input": inputs}
 
         self._send(
             {
@@ -554,9 +529,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self._send(
             {
                 "event": "on_tool_start",
-                "data": {
-                    "input": inputs or {},
-                },
+                "data": {"input": inputs or {}},
                 "name": name_,
                 "tags": tags or [],
                 "run_id": str(run_id),
@@ -579,10 +552,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self._send(
             {
                 "event": "on_tool_end",
-                "data": {
-                    "output": output,
-                    "input": inputs,
-                },
+                "data": {"output": output, "input": inputs},
                 "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
@@ -621,11 +591,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self._send(
             {
                 "event": "on_retriever_start",
-                "data": {
-                    "input": {
-                        "query": query,
-                    }
-                },
+                "data": {"input": {"query": query}},
                 "name": name_,
                 "tags": tags or [],
                 "run_id": str(run_id),
@@ -644,10 +610,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self._send(
             {
                 "event": "on_retriever_end",
-                "data": {
-                    "output": documents,
-                    "input": run_info["inputs"],
-                },
+                "data": {"output": documents, "input": run_info["inputs"]},
                 "run_id": str(run_id),
                 "name": run_info["name"],
                 "tags": run_info["tags"],
@@ -739,9 +702,7 @@ async def _astream_events_implementation_v1(
                 name=root_name,
                 tags=root_tags,
                 metadata=root_metadata,
-                data={
-                    "input": input,
-                },
+                data={"input": input},
                 parent_ids=[],  # Not supported in v1
             )
 
@@ -845,9 +806,7 @@ async def _astream_events_implementation_v1(
         run_id=state["id"],
         tags=root_tags,
         metadata=root_metadata,
-        data={
-            "output": state["final_output"],
-        },
+        data={"output": state["final_output"]},
         parent_ids=[],  # Not supported in v1
     )
     if _root_event_filter.include_event(event, state["type"]):

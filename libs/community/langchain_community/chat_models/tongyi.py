@@ -43,11 +43,7 @@ from langchain_core.output_parsers.openai_tools import (
     make_invalid_tool_call,
     parse_tool_call,
 )
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatGenerationChunk,
-    ChatResult,
-)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
@@ -232,6 +228,7 @@ class ChatTongyi(BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models import ChatTongyi
+
             Tongyi_chat = ChatTongyi()
     """
 
@@ -455,10 +452,7 @@ class ChatTongyi(BaseChatModel):
                 ChatGeneration(**self._chat_generation_from_qwen_resp(resp))
             )
         return ChatResult(
-            generations=generations,
-            llm_output={
-                "model_name": self.model_name,
-            },
+            generations=generations, llm_output={"model_name": self.model_name}
         )
 
     async def _agenerate(
@@ -485,17 +479,13 @@ class ChatTongyi(BaseChatModel):
                 messages=messages, stop=stop, **kwargs
             )
             resp = await asyncio.get_running_loop().run_in_executor(
-                None,
-                functools.partial(self.completion_with_retry, **params),
+                None, functools.partial(self.completion_with_retry, **params)
             )
             generations.append(
                 ChatGeneration(**self._chat_generation_from_qwen_resp(resp))
             )
         return ChatResult(
-            generations=generations,
-            llm_output={
-                "model_name": self.model_name,
-            },
+            generations=generations, llm_output={"model_name": self.model_name}
         )
 
     def _stream(

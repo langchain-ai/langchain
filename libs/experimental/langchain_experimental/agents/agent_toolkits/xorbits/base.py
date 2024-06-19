@@ -103,9 +103,7 @@ def create_xorbits_agent(
         partial_input = str(data[: len(data) // 2])
     partial_prompt = prompt.partial(data=partial_input)
     llm_chain = LLMChain(
-        llm=llm,
-        prompt=partial_prompt,
-        callback_manager=callback_manager,
+        llm=llm, prompt=partial_prompt, callback_manager=callback_manager
     )
     tool_names = [tool.name for tool in tools]
     agent = ZeroShotAgent(

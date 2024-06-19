@@ -85,8 +85,7 @@ def chain_pass_exceptions() -> Runnable:
 
 
 @pytest.mark.parametrize(
-    "runnable",
-    ["llm", "llm_multi", "chain", "chain_pass_exceptions"],
+    "runnable", ["llm", "llm_multi", "chain", "chain_pass_exceptions"]
 )
 async def test_fallbacks(
     runnable: RunnableWithFallbacks, request: Any, snapshot: SnapshotAssertion

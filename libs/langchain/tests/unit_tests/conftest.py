@@ -84,7 +84,7 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
                         pytest.fail(
                             f"Package `{pkg}` is not installed but is required for "
                             f"extended tests. Please install the given package and "
-                            f"try again.",
+                            f"try again."
                         )
 
                     else:

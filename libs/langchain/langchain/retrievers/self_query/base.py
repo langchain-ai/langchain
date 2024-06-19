@@ -80,18 +80,14 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Vectara,
         Weaviate,
     )
-    from langchain_community.vectorstores import (
-        Chroma as CommunityChroma,
-    )
+    from langchain_community.vectorstores import Chroma as CommunityChroma
     from langchain_community.vectorstores import (
         ElasticsearchStore as ElasticsearchStoreCommunity,
     )
     from langchain_community.vectorstores import (
         MongoDBAtlasVectorSearch as CommunityMongoDBAtlasVectorSearch,
     )
-    from langchain_community.vectorstores import (
-        Pinecone as CommunityPinecone,
-    )
+    from langchain_community.vectorstores import Pinecone as CommunityPinecone
 
     BUILTIN_TRANSLATORS: Dict[Type[VectorStore], Type[Visitor]] = {
         AstraDB: AstraDBTranslator,

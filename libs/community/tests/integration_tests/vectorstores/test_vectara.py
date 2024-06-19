@@ -40,11 +40,7 @@ def vectara1() -> Iterable[Vectara]:
     # start with some initial texts, added with add_texts
     texts1 = ["grounded generation", "retrieval augmented generation", "data privacy"]
     md = [{"abbr": get_abbr(t)} for t in texts1]
-    doc_id1 = vectara1.add_texts(
-        texts1,
-        metadatas=md,
-        doc_metadata={"test_num": "1"},
-    )
+    doc_id1 = vectara1.add_texts(texts1, metadatas=md, doc_metadata={"test_num": "1"})
 
     # then add some additional documents, now with add_documents
     texts2 = ["large language model", "information retrieval", "question answering"]
@@ -65,10 +61,7 @@ def test_vectara_add_documents(vectara1: Vectara) -> None:
 
     # test without filter
     output1 = vectara1.similarity_search(
-        "large language model",
-        k=2,
-        n_sentence_before=0,
-        n_sentence_after=0,
+        "large language model", k=2, n_sentence_before=0, n_sentence_after=0
     )
     assert len(output1) == 2
     assert output1[0].page_content == "large language model"
@@ -125,8 +118,7 @@ def vectara2():  # type: ignore[no-untyped-def]
         files_list.append(name)
 
     doc_ids = vectara2.add_files(
-        files_list=files_list,
-        metadatas=[{"url": url, "test_num": "2"} for url in urls],
+        files_list=files_list, metadatas=[{"url": url, "test_num": "2"} for url in urls]
     )
 
     yield vectara2

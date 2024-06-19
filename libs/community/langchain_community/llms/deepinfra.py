@@ -29,8 +29,8 @@ class DeepInfra(LLM):
         .. code-block:: python
 
             from langchain_community.llms import DeepInfra
-            di = DeepInfra(model_id="google/flan-t5-xl",
-                                deepinfra_api_token="my-api-key")
+
+            di = DeepInfra(model_id="google/flan-t5-xl", deepinfra_api_token="my-api-key")
     """
 
     model_id: str = DEFAULT_MODEL_ID
@@ -55,10 +55,7 @@ class DeepInfra(LLM):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {
-            **{"model_id": self.model_id},
-            **{"model_kwargs": self.model_kwargs},
-        }
+        return {**{"model_id": self.model_id}, **{"model_kwargs": self.model_kwargs}}
 
     @property
     def _llm_type(self) -> str:
@@ -78,10 +75,7 @@ class DeepInfra(LLM):
         model_kwargs = self.model_kwargs or {}
         model_kwargs = {**model_kwargs, **kwargs}
 
-        return {
-            "input": prompt,
-            **model_kwargs,
-        }
+        return {"input": prompt, **model_kwargs}
 
     def _handle_status(self, code: int, text: Any) -> None:
         if code >= 500:
@@ -241,8 +235,6 @@ def _parse_stream_helper(line: bytes) -> Optional[str]:
 def _handle_sse_line(line: str) -> Optional[GenerationChunk]:
     try:
         obj = json.loads(line)
-        return GenerationChunk(
-            text=obj.get("token", {}).get("text"),
-        )
+        return GenerationChunk(text=obj.get("token", {}).get("text"))
     except Exception:
         return None

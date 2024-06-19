@@ -157,18 +157,11 @@ class YouSearchAPIWrapper(BaseModel):
         Args:
             query: The query to search for.
         """
-        params = {
-            "safesearch": self.safesearch,
-            "country": self.country,
-            **kwargs,
-        }
+        params = {"safesearch": self.safesearch, "country": self.country, **kwargs}
 
         # Add endpoint-specific params
         if self.endpoint_type in ("search", "snippet"):
-            params.update(
-                query=query,
-                num_web_results=self.num_web_results,
-            )
+            params.update(query=query, num_web_results=self.num_web_results)
         elif self.endpoint_type == "news":
             params.update(
                 q=query,
@@ -219,11 +212,7 @@ class YouSearchAPIWrapper(BaseModel):
                     return docs
         return docs
 
-    def raw_results(
-        self,
-        query: str,
-        **kwargs: Any,
-    ) -> Dict:
+    def raw_results(self, query: str, **kwargs: Any) -> Dict:
         """Run query through you.com Search and return hits.
 
         Args:
@@ -245,24 +234,15 @@ class YouSearchAPIWrapper(BaseModel):
         response.raise_for_status()
         return response.json()
 
-    def results(
-        self,
-        query: str,
-        **kwargs: Any,
-    ) -> List[Document]:
+    def results(self, query: str, **kwargs: Any) -> List[Document]:
         """Run query through you.com Search and parses results into Documents."""
 
         raw_search_results = self.raw_results(
-            query,
-            **{key: value for key, value in kwargs.items() if value is not None},
+            query, **{key: value for key, value in kwargs.items() if value is not None}
         )
         return self._parse_results(raw_search_results)
 
-    async def raw_results_async(
-        self,
-        query: str,
-        **kwargs: Any,
-    ) -> Dict:
+    async def raw_results_async(self, query: str, **kwargs: Any) -> Dict:
         """Get results from the you.com Search API asynchronously."""
 
         headers = {"X-API-Key": self.ydc_api_key or ""}
@@ -284,13 +264,8 @@ class YouSearchAPIWrapper(BaseModel):
                 else:
                     raise Exception(f"Error {res.status}: {res.reason}")
 
-    async def results_async(
-        self,
-        query: str,
-        **kwargs: Any,
-    ) -> List[Document]:
+    async def results_async(self, query: str, **kwargs: Any) -> List[Document]:
         raw_search_results_async = await self.raw_results_async(
-            query,
-            **{key: value for key, value in kwargs.items() if value is not None},
+            query, **{key: value for key, value in kwargs.items() if value is not None}
         )
         return self._parse_results(raw_search_results_async)

@@ -170,18 +170,11 @@ class GPTRouter(BaseChatModel):
     @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["gpt_router_api_base"] = get_from_dict_or_env(
-            values,
-            "gpt_router_api_base",
-            "GPT_ROUTER_API_BASE",
-            DEFAULT_API_BASE_URL,
+            values, "gpt_router_api_base", "GPT_ROUTER_API_BASE", DEFAULT_API_BASE_URL
         )
 
         values["gpt_router_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "gpt_router_api_key",
-                "GPT_ROUTER_API_KEY",
-            )
+            get_from_dict_or_env(values, "gpt_router_api_key", "GPT_ROUTER_API_KEY")
         )
 
         try:
@@ -380,14 +373,10 @@ class GPTRouter(BaseChatModel):
         generations = []
         for res in response.choices:
             message = convert_dict_to_message(
-                {
-                    "role": "assistant",
-                    "content": res.text,
-                }
+                {"role": "assistant", "content": res.text}
             )
             gen = ChatGeneration(
-                message=message,
-                generation_info=dict(finish_reason=res.finish_reason),
+                message=message, generation_info=dict(finish_reason=res.finish_reason)
             )
             generations.append(gen)
         llm_output = {"token_usage": response.meta, "model": response.model}

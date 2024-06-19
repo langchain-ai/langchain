@@ -8,9 +8,7 @@ if TYPE_CHECKING:
 # Create a way to dynamically look up deprecated imports.
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
-DEPRECATED_LOOKUP = {
-    "OpenAPIEndpointChain": "langchain_community.chains.openapi.chain",
-}
+DEPRECATED_LOOKUP = {"OpenAPIEndpointChain": "langchain_community.chains.openapi.chain"}
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 

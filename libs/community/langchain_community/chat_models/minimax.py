@@ -102,6 +102,7 @@ class MiniMaxChat(BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models import MiniMaxChat
+
             llm = MiniMaxChat(model="abab5-chat")
 
     """
@@ -164,10 +165,7 @@ class MiniMaxChat(BaseChatModel):
         )
         # Get custom api url from environment.
         values["minimax_api_host"] = get_from_dict_or_env(
-            values,
-            "minimax_api_host",
-            "MINIMAX_API_HOST",
-            values["minimax_api_host"],
+            values, "minimax_api_host", "MINIMAX_API_HOST", values["minimax_api_host"]
         )
         return values
 
@@ -182,10 +180,7 @@ class MiniMaxChat(BaseChatModel):
                 ChatGeneration(message=message, generation_info=generation_info)
             )
         token_usage = response.get("usage", {})
-        llm_output = {
-            "token_usage": token_usage,
-            "model_name": self.model,
-        }
+        llm_output = {"token_usage": token_usage, "model_name": self.model}
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _create_payload_parameters(  # type: ignore[no-untyped-def]

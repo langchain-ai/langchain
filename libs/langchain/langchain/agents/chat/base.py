@@ -123,11 +123,7 @@ class ChatAgent(Agent):
             format_instructions=format_instructions,
             input_variables=input_variables,
         )
-        llm_chain = LLMChain(
-            llm=llm,
-            prompt=prompt,
-            callback_manager=callback_manager,
-        )
+        llm_chain = LLMChain(llm=llm, prompt=prompt, callback_manager=callback_manager)
         tool_names = [tool.name for tool in tools]
         _output_parser = output_parser or cls._get_default_output_parser()
         return cls(

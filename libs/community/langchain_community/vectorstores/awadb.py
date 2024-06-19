@@ -113,11 +113,7 @@ class AwaDB(VectorStore):
             is_duplicate_texts,
         )
 
-    def load_local(
-        self,
-        table_name: str,
-        **kwargs: Any,
-    ) -> bool:
+    def load_local(self, table_name: str, **kwargs: Any) -> bool:
         """Load the local specified table.
 
         Args:
@@ -232,10 +228,7 @@ class AwaDB(VectorStore):
         return results
 
     def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         return self.similarity_search_with_score(query, k, **kwargs)
 
@@ -459,11 +452,7 @@ class AwaDB(VectorStore):
             results[doc_detail["_id"]] = doc
         return results
 
-    def delete(
-        self,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> Optional[bool]:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete the documents which have the specified ids.
 
         Args:
@@ -506,11 +495,7 @@ class AwaDB(VectorStore):
             ids=ids, text_field_name="embedding_text", texts=texts, metadatas=metadatas
         )
 
-    def create_table(
-        self,
-        table_name: str,
-        **kwargs: Any,
-    ) -> bool:
+    def create_table(self, table_name: str, **kwargs: Any) -> bool:
         """Create a new table."""
 
         if self.awadb_client is None:
@@ -522,11 +507,7 @@ class AwaDB(VectorStore):
             self.using_table_name = table_name
         return ret
 
-    def use(
-        self,
-        table_name: str,
-        **kwargs: Any,
-    ) -> bool:
+    def use(self, table_name: str, **kwargs: Any) -> bool:
         """Use the specified table. Don't know the tables, please invoke list_tables."""
 
         if self.awadb_client is None:
@@ -538,10 +519,7 @@ class AwaDB(VectorStore):
 
         return ret
 
-    def list_tables(
-        self,
-        **kwargs: Any,
-    ) -> List[str]:
+    def list_tables(self, **kwargs: Any) -> List[str]:
         """List all the tables created by the client."""
 
         if self.awadb_client is None:
@@ -549,10 +527,7 @@ class AwaDB(VectorStore):
 
         return self.awadb_client.ListAllTables()
 
-    def get_current_table(
-        self,
-        **kwargs: Any,
-    ) -> str:
+    def get_current_table(self, **kwargs: Any) -> str:
         """Get the current table."""
 
         return self.using_table_name

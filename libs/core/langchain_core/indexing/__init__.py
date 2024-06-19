@@ -7,9 +7,4 @@ if it's unchanged.
 from langchain_core.indexing.api import IndexingResult, aindex, index
 from langchain_core.indexing.base import RecordManager
 
-__all__ = [
-    "aindex",
-    "index",
-    "IndexingResult",
-    "RecordManager",
-]
+__all__ = ["aindex", "index", "IndexingResult", "RecordManager"]

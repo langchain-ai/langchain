@@ -406,10 +406,7 @@ class ConversationEntityMemory(BaseChatMemory):
         # Generates a comma-separated list of named entities,
         # e.g. "Jane, White House, UFO"
         # or "NONE" if no named entities are extracted:
-        output = chain.predict(
-            history=buffer_string,
-            input=inputs[prompt_input_key],
-        )
+        output = chain.predict(history=buffer_string, input=inputs[prompt_input_key])
 
         # If no named entities are extracted, assigns an empty list.
         if output.strip() == "NONE":
@@ -436,10 +433,7 @@ class ConversationEntityMemory(BaseChatMemory):
             # Reuse the string we made earlier:
             buffer = buffer_string
 
-        return {
-            self.chat_history_key: buffer,
-            "entities": entity_summaries,
-        }
+        return {self.chat_history_key: buffer, "entities": entity_summaries}
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         """

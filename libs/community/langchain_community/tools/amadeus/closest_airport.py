@@ -47,9 +47,7 @@ class AmadeusClosestAirport(AmadeusBaseTool):
         return values
 
     def _run(
-        self,
-        location: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, location: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         content = (
             f" What is the nearest airport to {location}? Please respond with the "

@@ -123,9 +123,7 @@ class PebbloRetrievalQA(Chain):
                 if isinstance(doc, Document)
             ],
             "prompt": {"data": question},
-            "response": {
-                "data": answer,
-            },
+            "response": {"data": answer},
             "prompt_time": prompt_time,
             "user": auth_context.user_id if auth_context else "unknown",
             "user_identities": auth_context.user_auth
@@ -234,11 +232,7 @@ class PebbloRetrievalQA(Chain):
 
         # generate app
         app = PebbloRetrievalQA._get_app_details(
-            app_name=app_name,
-            description=description,
-            owner=owner,
-            llm=llm,
-            **kwargs,
+            app_name=app_name, description=description, owner=owner, llm=llm, **kwargs
         )
 
         PebbloRetrievalQA._send_discover(
@@ -323,10 +317,7 @@ class PebbloRetrievalQA(Chain):
     @staticmethod
     def _send_discover(app, api_key, classifier_url) -> None:  # type: ignore
         """Send app discovery payload to pebblo-server. Internal method."""
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
         payload = app.dict(exclude_unset=True)
         app_discover_url = f"{classifier_url}{APP_DISCOVER_URL}"
         try:
@@ -391,10 +382,7 @@ class PebbloRetrievalQA(Chain):
         cls._prompt_sent = True
 
     def _send_prompt(self, qa_payload: Qa) -> None:
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
         app_discover_url = f"{self.classifier_url}{PROMPT_URL}"
         try:
             pebblo_resp = requests.post(

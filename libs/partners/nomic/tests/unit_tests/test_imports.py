@@ -1,8 +1,6 @@
 from langchain_nomic import __all__
 
-EXPECTED_ALL = [
-    "NomicEmbeddings",
-]
+EXPECTED_ALL = ["NomicEmbeddings"]
 
 
 def test_all_imports() -> None:

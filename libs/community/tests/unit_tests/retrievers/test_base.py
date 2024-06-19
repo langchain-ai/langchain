@@ -24,23 +24,19 @@ def fake_retriever_v1() -> BaseRetriever:
 
         class FakeRetrieverV1(BaseRetriever):
             def get_relevant_documents(  # type: ignore[override]
-                self,
-                query: str,
+                self, query: str
             ) -> List[Document]:
                 assert isinstance(self, FakeRetrieverV1)
-                return [
-                    Document(page_content=query, metadata={"uuid": "1234"}),
-                ]
+                return [Document(page_content=query, metadata={"uuid": "1234"})]
 
             async def aget_relevant_documents(  # type: ignore[override]
-                self,
-                query: str,
+                self, query: str
             ) -> List[Document]:
                 assert isinstance(self, FakeRetrieverV1)
                 return [
                     Document(
                         page_content=f"Async query {query}", metadata={"uuid": "1234"}
-                    ),
+                    )
                 ]
 
         return FakeRetrieverV1()  # type: ignore[abstract]
@@ -88,9 +84,7 @@ def fake_retriever_v1_with_kwargs() -> BaseRetriever:
                 self, query: str, where_filter: Optional[Dict[str, object]] = None
             ) -> List[Document]:
                 assert isinstance(self, FakeRetrieverV1)
-                return [
-                    Document(page_content=query, metadata=where_filter or {}),
-                ]
+                return [Document(page_content=query, metadata=where_filter or {})]
 
             async def aget_relevant_documents(  # type: ignore[override]
                 self, query: str, where_filter: Optional[Dict[str, object]] = None
@@ -99,7 +93,7 @@ def fake_retriever_v1_with_kwargs() -> BaseRetriever:
                 return [
                     Document(
                         page_content=f"Async query {query}", metadata=where_filter or {}
-                    ),
+                    )
                 ]
 
         return FakeRetrieverV1()  # type: ignore[abstract]
@@ -151,9 +145,7 @@ class FakeRetrieverV2(BaseRetriever):
         assert isinstance(run_manager, CallbackManagerForRetrieverRun)
         if self.throw_error:
             raise ValueError("Test error")
-        return [
-            Document(page_content=query),
-        ]
+        return [Document(page_content=query)]
 
     async def _aget_relevant_documents(
         self,
@@ -166,9 +158,7 @@ class FakeRetrieverV2(BaseRetriever):
         assert isinstance(run_manager, AsyncCallbackManagerForRetrieverRun)
         if self.throw_error:
             raise ValueError("Test error")
-        return [
-            Document(page_content=f"Async query {query}"),
-        ]
+        return [Document(page_content=f"Async query {query}")]
 
 
 @pytest.fixture

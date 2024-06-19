@@ -36,11 +36,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
     graph = sequence.get_graph()
     assert graph.to_json() == {
         "nodes": [
-            {
-                "id": 0,
-                "type": "schema",
-                "data": "PromptInput",
-            },
+            {"id": 0, "type": "schema", "data": "PromptInput"},
             {
                 "id": 1,
                 "type": "runnable",
@@ -70,11 +66,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
                     "name": "CommaSeparatedListOutputParser",
                 },
             },
-            {
-                "id": 4,
-                "type": "schema",
-                "data": "CommaSeparatedListOutputParserOutput",
-            },
+            {"id": 4, "type": "schema", "data": "CommaSeparatedListOutputParserOutput"},
         ],
         "edges": [
             {"source": 0, "target": 1},
@@ -158,12 +150,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
             return xml_parser
 
     sequence: Runnable = (
-        prompt
-        | fake_llm
-        | {
-            "as_list": list_parser,
-            "as_str": conditional_str_parser,
-        }
+        prompt | fake_llm | {"as_list": list_parser, "as_str": conditional_str_parser}
     )
     graph = sequence.get_graph()
     assert graph.to_json(with_schemas=True) == {
@@ -596,11 +583,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
     }
     assert graph.to_json() == {
         "nodes": [
-            {
-                "id": 0,
-                "type": "schema",
-                "data": "PromptInput",
-            },
+            {"id": 0, "type": "schema", "data": "PromptInput"},
             {
                 "id": 1,
                 "type": "runnable",
@@ -617,16 +600,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                     "name": "FakeListLLM",
                 },
             },
-            {
-                "id": 3,
-                "type": "schema",
-                "data": "Parallel<as_list,as_str>Input",
-            },
-            {
-                "id": 4,
-                "type": "schema",
-                "data": "Parallel<as_list,as_str>Output",
-            },
+            {"id": 3, "type": "schema", "data": "Parallel<as_list,as_str>Input"},
+            {"id": 4, "type": "schema", "data": "Parallel<as_list,as_str>Output"},
             {
                 "id": 5,
                 "type": "runnable",
@@ -640,16 +615,8 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                     "name": "CommaSeparatedListOutputParser",
                 },
             },
-            {
-                "id": 6,
-                "type": "schema",
-                "data": "conditional_str_parser_input",
-            },
-            {
-                "id": 7,
-                "type": "schema",
-                "data": "conditional_str_parser_output",
-            },
+            {"id": 6, "type": "schema", "data": "conditional_str_parser_input"},
+            {"id": 7, "type": "schema", "data": "conditional_str_parser_output"},
             {
                 "id": 8,
                 "type": "runnable",
@@ -699,11 +666,7 @@ def test_runnable_get_graph_with_invalid_input_type() -> None:
         def InputType(self) -> type:
             raise TypeError()
 
-        def invoke(
-            self,
-            input: int,
-            config: Optional[RunnableConfig] = None,
-        ) -> int:
+        def invoke(self, input: int, config: Optional[RunnableConfig] = None) -> int:
             return input
 
     runnable = InvalidInputTypeRunnable()
@@ -721,11 +684,7 @@ def test_runnable_get_graph_with_invalid_output_type() -> None:
         def OutputType(self) -> type:
             raise TypeError()
 
-        def invoke(
-            self,
-            input: int,
-            config: Optional[RunnableConfig] = None,
-        ) -> int:
+        def invoke(self, input: int, config: Optional[RunnableConfig] = None) -> int:
             return input
 
     runnable = InvalidOutputTypeRunnable()

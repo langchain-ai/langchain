@@ -75,9 +75,9 @@ class Cassandra(VectorStore):
                     from langchain_openai import OpenAIEmbeddings
 
                     embeddings = OpenAIEmbeddings()
-                    session = ...             # create your Cassandra session object
-                    keyspace = 'my_keyspace'  # the keyspace should exist already
-                    table_name = 'my_vector_store'
+                    session = ...  # create your Cassandra session object
+                    keyspace = "my_keyspace"  # the keyspace should exist already
+                    table_name = "my_vector_store"
                     vectorstore = Cassandra(embeddings, session, keyspace, table_name)
 
         Args:
@@ -341,10 +341,7 @@ class Cassandra(VectorStore):
         # (1=most relevant), as required by this class' contract.
         return [
             (
-                Document(
-                    page_content=hit["body_blob"],
-                    metadata=hit["metadata"],
-                ),
+                Document(page_content=hit["body_blob"], metadata=hit["metadata"]),
                 0.5 + 0.5 * hit["distance"],
                 hit["row_id"],
             )
@@ -377,10 +374,7 @@ class Cassandra(VectorStore):
             kwargs["body_search"] = body_search
 
         hits = self.table.metric_ann_search(
-            vector=embedding,
-            n=k,
-            metric="cos",
-            **kwargs,
+            vector=embedding, n=k, metric="cos", **kwargs
         )
         return self._search_to_documents(hits)
 
@@ -409,10 +403,7 @@ class Cassandra(VectorStore):
             kwargs["body_search"] = body_search
 
         hits = await self.table.ametric_ann_search(
-            vector=embedding,
-            n=k,
-            metric="cos",
-            **kwargs,
+            vector=embedding, n=k, metric="cos", **kwargs
         )
         return self._search_to_documents(hits)
 
@@ -436,10 +427,7 @@ class Cassandra(VectorStore):
         """
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_id_by_vector(
-            embedding=embedding_vector,
-            k=k,
-            filter=filter,
-            body_search=body_search,
+            embedding=embedding_vector, k=k, filter=filter, body_search=body_search
         )
 
     async def asimilarity_search_with_score_id(
@@ -462,10 +450,7 @@ class Cassandra(VectorStore):
         """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_with_score_id_by_vector(
-            embedding=embedding_vector,
-            k=k,
-            filter=filter,
-            body_search=body_search,
+            embedding=embedding_vector, k=k, filter=filter, body_search=body_search
         )
 
     # id-unaware search facilities
@@ -490,10 +475,7 @@ class Cassandra(VectorStore):
         return [
             (doc, score)
             for (doc, score, docId) in self.similarity_search_with_score_id_by_vector(
-                embedding=embedding,
-                k=k,
-                filter=filter,
-                body_search=body_search,
+                embedding=embedding, k=k, filter=filter, body_search=body_search
             )
         ]
 
@@ -522,10 +504,7 @@ class Cassandra(VectorStore):
                 score,
                 _,
             ) in await self.asimilarity_search_with_score_id_by_vector(
-                embedding=embedding,
-                k=k,
-                filter=filter,
-                body_search=body_search,
+                embedding=embedding, k=k, filter=filter, body_search=body_search
             )
         ]
 
@@ -550,10 +529,7 @@ class Cassandra(VectorStore):
         """
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_by_vector(
-            embedding_vector,
-            k,
-            filter=filter,
-            body_search=body_search,
+            embedding_vector, k, filter=filter, body_search=body_search
         )
 
     async def asimilarity_search(
@@ -577,10 +553,7 @@ class Cassandra(VectorStore):
         """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_by_vector(
-            embedding_vector,
-            k,
-            filter=filter,
-            body_search=body_search,
+            embedding_vector, k, filter=filter, body_search=body_search
         )
 
     def similarity_search_by_vector(
@@ -605,10 +578,7 @@ class Cassandra(VectorStore):
         return [
             doc
             for doc, _ in self.similarity_search_with_score_by_vector(
-                embedding,
-                k,
-                filter=filter,
-                body_search=body_search,
+                embedding, k, filter=filter, body_search=body_search
             )
         ]
 
@@ -634,10 +604,7 @@ class Cassandra(VectorStore):
         return [
             doc
             for doc, _ in await self.asimilarity_search_with_score_by_vector(
-                embedding,
-                k,
-                filter=filter,
-                body_search=body_search,
+                embedding, k, filter=filter, body_search=body_search
             )
         ]
 
@@ -661,10 +628,7 @@ class Cassandra(VectorStore):
         """
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_by_vector(
-            embedding_vector,
-            k,
-            filter=filter,
-            body_search=body_search,
+            embedding_vector, k, filter=filter, body_search=body_search
         )
 
     async def asimilarity_search_with_score(
@@ -687,10 +651,7 @@ class Cassandra(VectorStore):
         """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_with_score_by_vector(
-            embedding_vector,
-            k,
-            filter=filter,
-            body_search=body_search,
+            embedding_vector, k, filter=filter, body_search=body_search
         )
 
     @staticmethod
@@ -713,10 +674,7 @@ class Cassandra(VectorStore):
             if pf_index in mmr_chosen_indices
         ]
         return [
-            Document(
-                page_content=hit["body_blob"],
-                metadata=hit["metadata"],
-            )
+            Document(page_content=hit["body_blob"], metadata=hit["metadata"])
             for hit in mmr_hits
         ]
 
@@ -756,10 +714,7 @@ class Cassandra(VectorStore):
 
         prefetch_hits = list(
             self.table.metric_ann_search(
-                vector=embedding,
-                n=fetch_k,
-                metric="cos",
-                **_kwargs,
+                vector=embedding, n=fetch_k, metric="cos", **_kwargs
             )
         )
         return self._mmr_search_to_documents(prefetch_hits, embedding, k, lambda_mult)
@@ -800,10 +755,7 @@ class Cassandra(VectorStore):
 
         prefetch_hits = list(
             await self.table.ametric_ann_search(
-                vector=embedding,
-                n=fetch_k,
-                metric="cos",
-                **_kwargs,
+                vector=embedding, n=fetch_k, metric="cos", **_kwargs
             )
         )
         return self._mmr_search_to_documents(prefetch_hits, embedding, k, lambda_mult)
@@ -1132,30 +1084,26 @@ class Cassandra(VectorStore):
             # Retrieve more documents with higher diversity
             # Useful if your dataset has many similar documents
             docsearch.as_retriever(
-                search_type="mmr",
-                search_kwargs={'k': 6, 'lambda_mult': 0.25}
+                search_type="mmr", search_kwargs={"k": 6, "lambda_mult": 0.25}
             )
 
             # Fetch more documents for the MMR algorithm to consider
             # But only return the top 5
-            docsearch.as_retriever(
-                search_type="mmr",
-                search_kwargs={'k': 5, 'fetch_k': 50}
-            )
+            docsearch.as_retriever(search_type="mmr", search_kwargs={"k": 5, "fetch_k": 50})
 
             # Only retrieve documents that have a relevance score
             # Above a certain threshold
             docsearch.as_retriever(
                 search_type="similarity_score_threshold",
-                search_kwargs={'score_threshold': 0.8}
+                search_kwargs={"score_threshold": 0.8},
             )
 
             # Only get the single most similar document from the dataset
-            docsearch.as_retriever(search_kwargs={'k': 1})
+            docsearch.as_retriever(search_kwargs={"k": 1})
 
             # Use a filter to only retrieve documents from a specific paper
             docsearch.as_retriever(
-                search_kwargs={'filter': {'paper_title':'GPT-4 Technical Report'}}
+                search_kwargs={"filter": {"paper_title": "GPT-4 Technical Report"}}
             )
         """
         _tags = tags or [] + self._get_retriever_tags()

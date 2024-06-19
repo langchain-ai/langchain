@@ -74,11 +74,7 @@ def get_text_complexity_metrics() -> List[str]:
     ]
 
 
-def analyze_text(
-    text: str,
-    nlp: Any = None,
-    textstat: Any = None,
-) -> dict:
+def analyze_text(text: str, nlp: Any = None, textstat: Any = None) -> dict:
     """Analyze text using textstat and spacy.
 
     Parameters:
@@ -106,10 +102,7 @@ def analyze_text(
 
         ent_out = spacy.displacy.render(doc, style="ent", jupyter=False, page=True)
 
-        text_visualizations = {
-            "dependency_tree": dep_out,
-            "entities": ent_out,
-        }
+        text_visualizations = {"dependency_tree": dep_out, "entities": ent_out}
 
         resp.update(text_visualizations)
 
@@ -399,20 +392,13 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
                 generation_resp = deepcopy(resp)
                 generation_resp.update(flatten_dict(generation.dict()))
                 generation_resp.update(
-                    analyze_text(
-                        generation.text,
-                        nlp=self.nlp,
-                        textstat=self.textstat,
-                    )
+                    analyze_text(generation.text, nlp=self.nlp, textstat=self.textstat)
                 )
                 if "text_complexity_metrics" in generation_resp:
                     complexity_metrics: Dict[str, float] = generation_resp.pop(
                         "text_complexity_metrics"
                     )
-                    self.mlflg.metrics(
-                        complexity_metrics,
-                        step=self.metrics["step"],
-                    )
+                    self.mlflg.metrics(complexity_metrics, step=self.metrics["step"])
                 self.records["on_llm_end_records"].append(generation_resp)
                 self.records["action_records"].append(generation_resp)
                 self.mlflg.jsonf(resp, f"llm_end_{llm_ends}_generation_{idx}")
@@ -600,10 +586,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.mlflg.jsonf(resp, f"agent_action_{tool_starts}")
 
     def on_retriever_start(
-        self,
-        serialized: Dict[str, Any],
-        query: str,
-        **kwargs: Any,
+        self, serialized: Dict[str, Any], query: str, **kwargs: Any
     ) -> Any:
         """Run when Retriever starts running."""
         self.metrics["step"] += 1
@@ -623,11 +606,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.records["action_records"].append(resp)
         self.mlflg.jsonf(resp, f"retriever_start_{retriever_starts}")
 
-    def on_retriever_end(
-        self,
-        documents: Sequence[Document],
-        **kwargs: Any,
-    ) -> Any:
+    def on_retriever_end(self, documents: Sequence[Document], **kwargs: Any) -> Any:
         """Run when Retriever ends running."""
         self.metrics["step"] += 1
         self.metrics["retriever_ends"] += 1
@@ -703,10 +682,7 @@ class MlflowCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
 
         llm_outputs_df = (
             on_llm_end_records_df[
-                [
-                    "step",
-                    "text",
-                ]
+                ["step", "text"]
                 + token_usage_columns
                 + complexity_metrics_columns
                 + visualizations_columns

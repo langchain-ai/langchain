@@ -19,7 +19,10 @@ class DeepSparse(LLM):
     Example:
         .. code-block:: python
             from langchain_community.llms import DeepSparse
-            llm = DeepSparse(model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base_quant-none")
+
+            llm = DeepSparse(
+                model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base_quant-none"
+            )
     """  # noqa: E501
 
     pipeline: Any  #: :meta private:
@@ -69,9 +72,7 @@ class DeepSparse(LLM):
         model_config = values["model_config"] or {}
 
         values["pipeline"] = Pipeline.create(
-            task="text_generation",
-            model_path=values["model"],
-            **model_config,
+            task="text_generation", model_path=values["model"], **model_config
         )
         return values
 
@@ -91,7 +92,10 @@ class DeepSparse(LLM):
         Example:
             .. code-block:: python
                 from langchain_community.llms import DeepSparse
-                llm = DeepSparse(model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base_quant-none")
+
+                llm = DeepSparse(
+                    model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base_quant-none"
+                )
                 llm.invoke("Tell me a joke.")
         """
         if self.streaming:
@@ -129,7 +133,10 @@ class DeepSparse(LLM):
         Example:
             .. code-block:: python
                 from langchain_community.llms import DeepSparse
-                llm = DeepSparse(model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base_quant-none")
+
+                llm = DeepSparse(
+                    model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base_quant-none"
+                )
                 llm.invoke("Tell me a joke.")
         """
         if self.streaming:
@@ -171,13 +178,13 @@ class DeepSparse(LLM):
         Example:
             .. code-block:: python
                 from langchain_community.llms import DeepSparse
+
                 llm = DeepSparse(
                     model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base_quant-none",
-                    streaming=True
+                    streaming=True,
                 )
-                for chunk in llm.stream("Tell me a joke",
-                        stop=["'","\n"]):
-                    print(chunk, end='', flush=True)  # noqa: T201
+                for chunk in llm.stream("Tell me a joke", stop=["'", "\n"]):
+                    print(chunk, end="", flush=True)  # noqa: T201
         """
         inference = self.pipeline(
             sequences=prompt, streaming=True, **self.generation_config
@@ -209,13 +216,13 @@ class DeepSparse(LLM):
         Example:
             .. code-block:: python
                 from langchain_community.llms import DeepSparse
+
                 llm = DeepSparse(
                     model="zoo:nlg/text_generation/codegen_mono-350m/pytorch/huggingface/bigpython_bigquery_thepile/base_quant-none",
-                    streaming=True
+                    streaming=True,
                 )
-                for chunk in llm.stream("Tell me a joke",
-                        stop=["'","\n"]):
-                    print(chunk, end='', flush=True)  # noqa: T201
+                for chunk in llm.stream("Tell me a joke", stop=["'", "\n"]):
+                    print(chunk, end="", flush=True)  # noqa: T201
         """
         inference = self.pipeline(
             sequences=prompt, streaming=True, **self.generation_config

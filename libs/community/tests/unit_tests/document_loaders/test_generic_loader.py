@@ -57,8 +57,7 @@ class AsIsParser(BaseBlobParser):
 def test__init__(toy_dir: str) -> None:
     """Test initialization from init."""
     loader = GenericLoader(
-        FileSystemBlobLoader(toy_dir, suffixes=[".txt"]),
-        AsIsParser(),
+        FileSystemBlobLoader(toy_dir, suffixes=[".txt"]), AsIsParser()
     )
     docs = loader.load()
     assert len(docs) == 3
@@ -111,10 +110,7 @@ def test_from_filesystem_classmethod_show_progress(toy_dir: str) -> None:
 
 def test_from_filesystem_using_default_parser(toy_dir: str) -> None:
     """Use the default generic parser."""
-    loader = GenericLoader.from_filesystem(
-        toy_dir,
-        suffixes=[".txt"],
-    )
+    loader = GenericLoader.from_filesystem(toy_dir, suffixes=[".txt"])
     docs = loader.load()
     assert len(docs) == 3
     # Glob order seems to be deterministic with recursion. If this test becomes flaky,

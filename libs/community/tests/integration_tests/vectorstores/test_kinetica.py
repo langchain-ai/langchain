@@ -270,9 +270,7 @@ def test_kinetica_retriever_search_threshold(create_config: KineticaSettings) ->
         search_kwargs={"k": 3, "score_threshold": 0.999},
     )
     output = retriever.invoke("summer")
-    assert output == [
-        Document(page_content="foo", metadata={"page": "0"}),
-    ]
+    assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
 @pytest.mark.requires("gpudb")

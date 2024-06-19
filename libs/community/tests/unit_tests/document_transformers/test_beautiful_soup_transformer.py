@@ -238,9 +238,7 @@ def test_remove_comments() -> None:
     html_with_comments = (
         "<html><!-- Google tag (gtag.js) --><p>First paragraph.</p</html>"
     )
-    documents = [
-        Document(page_content=html_with_comments),
-    ]
+    documents = [Document(page_content=html_with_comments)]
 
     docs_transformed = bs_transformer.transform_documents(
         documents, tags_to_extract=["html"], remove_comments=True
@@ -254,12 +252,9 @@ def test_do_not_remove_comments() -> None:
     html_with_comments = (
         "<html><!-- Google tag (gtag.js) --><p>First paragraph.</p</html>"
     )
-    documents = [
-        Document(page_content=html_with_comments),
-    ]
+    documents = [Document(page_content=html_with_comments)]
 
     docs_transformed = bs_transformer.transform_documents(
-        documents,
-        tags_to_extract=["html"],
+        documents, tags_to_extract=["html"]
     )
     assert docs_transformed[0].page_content == "Google tag (gtag.js) First paragraph."

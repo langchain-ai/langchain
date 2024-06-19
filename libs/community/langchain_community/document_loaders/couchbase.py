@@ -58,10 +58,7 @@ class CouchbaseLoader(BaseLoader):
         if not db_password:
             raise ValueError("db_password must be provided.")
 
-        auth = PasswordAuthenticator(
-            db_username,
-            db_password,
-        )
+        auth = PasswordAuthenticator(db_username, db_password)
 
         self.cluster: Cluster = Cluster(connection_string, ClusterOptions(auth))
         self.query = query

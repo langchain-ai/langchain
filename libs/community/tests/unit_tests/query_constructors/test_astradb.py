@@ -58,11 +58,7 @@ def test_visit_operation() -> None:
         ],
     )
     expected = {
-        "$and": [
-            {"qty": {"$gte": 10}},
-            {"qty": {"$lte": 20}},
-            {"name": {"$eq": "foo"}},
-        ]
+        "$and": [{"qty": {"$gte": 10}}, {"qty": {"$lte": 20}}, {"name": {"$eq": "foo"}}]
     }
     actual = DEFAULT_TRANSLATOR.visit_operation(op)
     assert expected == actual
@@ -70,10 +66,7 @@ def test_visit_operation() -> None:
 
 def test_visit_structured_query_no_filter() -> None:
     query = "What is the capital of France?"
-    structured_query = StructuredQuery(
-        query=query,
-        filter=None,
-    )
+    structured_query = StructuredQuery(query=query, filter=None)
     expected: Tuple[str, Dict] = (query, {})
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
@@ -82,14 +75,8 @@ def test_visit_structured_query_no_filter() -> None:
 def test_visit_structured_query_one_attr() -> None:
     query = "What is the capital of France?"
     comp = Comparison(comparator=Comparator.IN, attribute="qty", value=[5, 15, 20])
-    structured_query = StructuredQuery(
-        query=query,
-        filter=comp,
-    )
-    expected = (
-        query,
-        {"filter": {"qty": {"$in": [5, 15, 20]}}},
-    )
+    structured_query = StructuredQuery(query=query, filter=comp)
+    expected = (query, {"filter": {"qty": {"$in": [5, 15, 20]}}})
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
 
@@ -113,10 +100,7 @@ def test_visit_structured_query_deep_nesting() -> None:
             ),
         ],
     )
-    structured_query = StructuredQuery(
-        query=query,
-        filter=op,
-    )
+    structured_query = StructuredQuery(query=query, filter=op)
     expected = (
         query,
         {

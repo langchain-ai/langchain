@@ -150,8 +150,7 @@ class GremlinQAChain(Chain):
             intermediate_steps.append({"context": context})
 
             result = self.qa_chain.invoke(
-                {"question": question, "context": context},
-                callbacks=callbacks,
+                {"question": question, "context": context}, callbacks=callbacks
             )
             final_result = result[self.qa_chain.output_key]
 

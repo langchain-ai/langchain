@@ -42,10 +42,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
             from langchain_mistralai import MistralAIEmbeddings
 
-            mistral = MistralAIEmbeddings(
-                model="mistral-embed",
-                api_key="my-api-key"
-            )
+            mistral = MistralAIEmbeddings(model="mistral-embed", api_key="my-api-key")
     """
 
     client: httpx.Client = Field(default=None)  #: :meta private:
@@ -147,11 +144,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         try:
             batch_responses = (
                 self.client.post(
-                    url="/embeddings",
-                    json=dict(
-                        model=self.model,
-                        input=batch,
-                    ),
+                    url="/embeddings", json=dict(model=self.model, input=batch)
                 )
                 for batch in self._get_batches(texts)
             )
@@ -177,11 +170,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             batch_responses = await asyncio.gather(
                 *[
                     self.async_client.post(
-                        url="/embeddings",
-                        json=dict(
-                            model=self.model,
-                            input=batch,
-                        ),
+                        url="/embeddings", json=dict(model=self.model, input=batch)
                     )
                     for batch in self._get_batches(texts)
                 ]

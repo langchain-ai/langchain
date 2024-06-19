@@ -23,8 +23,7 @@ class BraveSearchLoader(BaseLoader):
 
     def load(self) -> List[Document]:
         brave_client = BraveSearchWrapper(
-            api_key=self.api_key,
-            search_kwargs=self.search_kwargs,
+            api_key=self.api_key, search_kwargs=self.search_kwargs
         )
         return brave_client.download_documents(self.query)
 

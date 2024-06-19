@@ -166,10 +166,7 @@ def test_invoke_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     chat = ChatGroq(
-        max_tokens=2,
-        streaming=True,
-        temperature=0,
-        callbacks=[callback_handler],
+        max_tokens=2, streaming=True, temperature=0, callbacks=[callback_handler]
     )
     message = HumanMessage(content="Welcome to the Groqetship")
     response = chat.invoke([message])
@@ -182,10 +179,7 @@ async def test_agenerate_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandlerWithChatStart()
     chat = ChatGroq(
-        max_tokens=10,
-        streaming=True,
-        temperature=0,
-        callbacks=[callback_handler],
+        max_tokens=10, streaming=True, temperature=0, callbacks=[callback_handler]
     )
     message = HumanMessage(content="Welcome to the Groqetship")
     response = await chat.agenerate([[message], [message]])
@@ -211,20 +205,12 @@ def test_streaming_generation_info() -> None:
     class _FakeCallback(FakeCallbackHandler):
         saved_things: dict = {}
 
-        def on_llm_end(
-            self,
-            *args: Any,
-            **kwargs: Any,
-        ) -> Any:
+        def on_llm_end(self, *args: Any, **kwargs: Any) -> Any:
             # Save the generation
             self.saved_things["generation"] = args[0]
 
     callback = _FakeCallback()
-    chat = ChatGroq(
-        max_tokens=2,
-        temperature=0,
-        callbacks=[callback],
-    )
+    chat = ChatGroq(max_tokens=2, temperature=0, callbacks=[callback])
     list(chat.stream("Respond with the single word Hello", stop=["o"]))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned

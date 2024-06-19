@@ -73,12 +73,8 @@ from langchain_core.load.load import loads
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils import get_from_env
 
-from langchain_community.utilities.astradb import (
-    SetupMode as AstraSetupMode,
-)
-from langchain_community.utilities.astradb import (
-    _AstraDBCollectionEnvironment,
-)
+from langchain_community.utilities.astradb import SetupMode as AstraSetupMode
+from langchain_community.utilities.astradb import _AstraDBCollectionEnvironment
 from langchain_community.vectorstores import AzureCosmosDBVectorSearch
 from langchain_community.vectorstores import (
     OpenSearchVectorSearch as OpenSearchVectorStore,
@@ -602,9 +598,7 @@ class RedisSemanticCache(BaseCache):
 
     DEFAULT_SCHEMA = {
         "content_key": "prompt",
-        "text": [
-            {"name": "prompt"},
-        ],
+        "text": [{"name": "prompt"}],
         "extra": [{"name": "return_val"}, {"name": "llm_string"}],
     }
 
@@ -627,10 +621,11 @@ class RedisSemanticCache(BaseCache):
             from langchain_community.cache import RedisSemanticCache
             from langchain_community.embeddings import OpenAIEmbeddings
 
-            set_llm_cache(RedisSemanticCache(
-                redis_url="redis://localhost:6379",
-                embedding=OpenAIEmbeddings()
-            ))
+            set_llm_cache(
+                RedisSemanticCache(
+                    redis_url="redis://localhost:6379", embedding=OpenAIEmbeddings()
+                )
+            )
 
         """
         self._cache_dict: Dict[str, RedisVectorstore] = {}
@@ -685,9 +680,7 @@ class RedisSemanticCache(BaseCache):
         generations: List = []
         # Read from a Hash
         results = llm_cache.similarity_search(
-            query=prompt,
-            k=1,
-            distance_threshold=self.score_threshold,
+            query=prompt, k=1, distance_threshold=self.score_threshold
         )
         if results:
             for document in results:
@@ -1131,10 +1124,7 @@ class CassandraCache(BaseCache):
         )
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
-        item = self.kv_cache.get(
-            llm_string=_hash(llm_string),
-            prompt=_hash(prompt),
-        )
+        item = self.kv_cache.get(llm_string=_hash(llm_string), prompt=_hash(prompt))
         if item is not None:
             return _loads_generations(item["body_blob"])
         else:
@@ -1142,8 +1132,7 @@ class CassandraCache(BaseCache):
 
     async def alookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         item = await self.kv_cache.aget(
-            llm_string=_hash(llm_string),
-            prompt=_hash(prompt),
+            llm_string=_hash(llm_string), prompt=_hash(prompt)
         )
         if item is not None:
             return _loads_generations(item["body_blob"])
@@ -1153,9 +1142,7 @@ class CassandraCache(BaseCache):
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         blob = _dumps_generations(return_val)
         self.kv_cache.put(
-            llm_string=_hash(llm_string),
-            prompt=_hash(prompt),
-            body_blob=blob,
+            llm_string=_hash(llm_string), prompt=_hash(prompt), body_blob=blob
         )
 
     async def aupdate(
@@ -1163,9 +1150,7 @@ class CassandraCache(BaseCache):
     ) -> None:
         blob = _dumps_generations(return_val)
         await self.kv_cache.aput(
-            llm_string=_hash(llm_string),
-            prompt=_hash(prompt),
-            body_blob=blob,
+            llm_string=_hash(llm_string), prompt=_hash(prompt), body_blob=blob
         )
 
     def delete_through_llm(
@@ -1176,18 +1161,12 @@ class CassandraCache(BaseCache):
         In case the llm.invoke(prompt) calls have a `stop` param, you should
         pass it here
         """
-        llm_string = get_prompts(
-            {**llm.dict(), **{"stop": stop}},
-            [],
-        )[1]
+        llm_string = get_prompts({**llm.dict(), **{"stop": stop}}, [])[1]
         return self.delete(prompt, llm_string=llm_string)
 
     def delete(self, prompt: str, llm_string: str) -> None:
         """Evict from cache if there's an entry."""
-        return self.kv_cache.delete(
-            llm_string=_hash(llm_string),
-            prompt=_hash(prompt),
-        )
+        return self.kv_cache.delete(llm_string=_hash(llm_string), prompt=_hash(prompt))
 
     def clear(self, **kwargs: Any) -> None:
         """Clear cache. This is for all LLMs at once."""
@@ -1224,10 +1203,9 @@ class CassandraSemanticCache(BaseCache):
 
             my_embedding = ...
 
-            set_llm_cache(CassandraSemanticCache(
-                embedding=my_embedding,
-                table_name="my_semantic_cache",
-            ))
+            set_llm_cache(
+                CassandraSemanticCache(embedding=my_embedding, table_name="my_semantic_cache")
+            )
 
     It uses a single (vector) Cassandra table and stores, in principle,
     cached values from several LLMs, so the LLM's llm_string is part
@@ -1374,17 +1352,11 @@ class CassandraSemanticCache(BaseCache):
         embedding_vector = self._get_embedding(text=prompt)
         llm_string_hash = _hash(llm_string)
         body = _dumps_generations(return_val)
-        metadata = {
-            "_prompt": prompt,
-            "_llm_string_hash": llm_string_hash,
-        }
+        metadata = {"_prompt": prompt, "_llm_string_hash": llm_string_hash}
         row_id = f"{_hash(prompt)}-{llm_string_hash}"
 
         self.table.put(
-            body_blob=body,
-            vector=embedding_vector,
-            row_id=row_id,
-            metadata=metadata,
+            body_blob=body, vector=embedding_vector, row_id=row_id, metadata=metadata
         )
 
     async def aupdate(
@@ -1393,17 +1365,11 @@ class CassandraSemanticCache(BaseCache):
         embedding_vector = await self._aget_embedding(text=prompt)
         llm_string_hash = _hash(llm_string)
         body = _dumps_generations(return_val)
-        metadata = {
-            "_prompt": prompt,
-            "_llm_string_hash": llm_string_hash,
-        }
+        metadata = {"_prompt": prompt, "_llm_string_hash": llm_string_hash}
         row_id = f"{_hash(prompt)}-{llm_string_hash}"
 
         await self.table.aput(
-            body_blob=body,
-            vector=embedding_vector,
-            row_id=row_id,
-            metadata=metadata,
+            body_blob=body, vector=embedding_vector, row_id=row_id, metadata=metadata
         )
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
@@ -1442,10 +1408,7 @@ class CassandraSemanticCache(BaseCache):
             generations = _loads_generations(hit["body_blob"])
             if generations is not None:
                 # this protects against malformed cached items:
-                return (
-                    hit["row_id"],
-                    generations,
-                )
+                return (hit["row_id"], generations)
             else:
                 return None
         else:
@@ -1473,10 +1436,7 @@ class CassandraSemanticCache(BaseCache):
             generations = _loads_generations(hit["body_blob"])
             if generations is not None:
                 # this protects against malformed cached items:
-                return (
-                    hit["row_id"],
-                    generations,
-                )
+                return (hit["row_id"], generations)
             else:
                 return None
         else:
@@ -1485,21 +1445,13 @@ class CassandraSemanticCache(BaseCache):
     def lookup_with_id_through_llm(
         self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
     ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
-        llm_string = get_prompts(
-            {**llm.dict(), **{"stop": stop}},
-            [],
-        )[1]
+        llm_string = get_prompts({**llm.dict(), **{"stop": stop}}, [])[1]
         return self.lookup_with_id(prompt, llm_string=llm_string)
 
     async def alookup_with_id_through_llm(
         self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
     ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
-        llm_string = (
-            await aget_prompts(
-                {**llm.dict(), **{"stop": stop}},
-                [],
-            )
-        )[1]
+        llm_string = (await aget_prompts({**llm.dict(), **{"stop": stop}}, []))[1]
         return await self.alookup_with_id(prompt, llm_string=llm_string)
 
     def delete_by_document_id(self, document_id: str) -> None:
@@ -1611,9 +1563,7 @@ ASTRA_DB_CACHE_DEFAULT_COLLECTION_NAME = "langchain_astradb_cache"
 
 
 @deprecated(
-    since="0.0.28",
-    removal="0.3.0",
-    alternative_import="langchain_astradb.AstraDBCache",
+    since="0.0.28", removal="0.3.0", alternative_import="langchain_astradb.AstraDBCache"
 )
 class AstraDBCache(BaseCache):
     @staticmethod
@@ -1675,12 +1625,7 @@ class AstraDBCache(BaseCache):
         self.astra_env.ensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
         item = self.collection.find_one(
-            filter={
-                "_id": doc_id,
-            },
-            projection={
-                "body_blob": 1,
-            },
+            filter={"_id": doc_id}, projection={"body_blob": 1}
         )["data"]["document"]
         return _loads_generations(item["body_blob"]) if item is not None else None
 
@@ -1689,12 +1634,7 @@ class AstraDBCache(BaseCache):
         doc_id = self._make_id(prompt, llm_string)
         item = (
             await self.async_collection.find_one(
-                filter={
-                    "_id": doc_id,
-                },
-                projection={
-                    "body_blob": 1,
-                },
+                filter={"_id": doc_id}, projection={"body_blob": 1}
             )
         )["data"]["document"]
         return _loads_generations(item["body_blob"]) if item is not None else None
@@ -1703,12 +1643,7 @@ class AstraDBCache(BaseCache):
         self.astra_env.ensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
         blob = _dumps_generations(return_val)
-        self.collection.upsert(
-            {
-                "_id": doc_id,
-                "body_blob": blob,
-            },
-        )
+        self.collection.upsert({"_id": doc_id, "body_blob": blob})
 
     async def aupdate(
         self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE
@@ -1716,12 +1651,7 @@ class AstraDBCache(BaseCache):
         await self.astra_env.aensure_db_setup()
         doc_id = self._make_id(prompt, llm_string)
         blob = _dumps_generations(return_val)
-        await self.async_collection.upsert(
-            {
-                "_id": doc_id,
-                "body_blob": blob,
-            },
-        )
+        await self.async_collection.upsert({"_id": doc_id, "body_blob": blob})
 
     def delete_through_llm(
         self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
@@ -1731,10 +1661,7 @@ class AstraDBCache(BaseCache):
         In case the llm.invoke(prompt) calls have a `stop` param, you should
         pass it here
         """
-        llm_string = get_prompts(
-            {**llm.dict(), **{"stop": stop}},
-            [],
-        )[1]
+        llm_string = get_prompts({**llm.dict(), **{"stop": stop}}, [])[1]
         return self.delete(prompt, llm_string=llm_string)
 
     async def adelete_through_llm(
@@ -1745,12 +1672,7 @@ class AstraDBCache(BaseCache):
         In case the llm.invoke(prompt) calls have a `stop` param, you should
         pass it here
         """
-        llm_string = (
-            await aget_prompts(
-                {**llm.dict(), **{"stop": stop}},
-                [],
-            )
-        )[1]
+        llm_string = (await aget_prompts({**llm.dict(), **{"stop": stop}}, []))[1]
         return await self.adelete(prompt, llm_string=llm_string)
 
     def delete(self, prompt: str, llm_string: str) -> None:
@@ -1984,9 +1906,7 @@ class AstraDBSemanticCache(BaseCache):
 
         hit = self.collection.vector_find_one(
             vector=prompt_embedding,
-            filter={
-                "llm_string_hash": llm_string_hash,
-            },
+            filter={"llm_string_hash": llm_string_hash},
             fields=["body_blob", "_id"],
             include_similarity=True,
         )
@@ -2014,9 +1934,7 @@ class AstraDBSemanticCache(BaseCache):
 
         hit = await self.async_collection.vector_find_one(
             vector=prompt_embedding,
-            filter={
-                "llm_string_hash": llm_string_hash,
-            },
+            filter={"llm_string_hash": llm_string_hash},
             fields=["body_blob", "_id"],
             include_similarity=True,
         )
@@ -2034,21 +1952,13 @@ class AstraDBSemanticCache(BaseCache):
     def lookup_with_id_through_llm(
         self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
     ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
-        llm_string = get_prompts(
-            {**llm.dict(), **{"stop": stop}},
-            [],
-        )[1]
+        llm_string = get_prompts({**llm.dict(), **{"stop": stop}}, [])[1]
         return self.lookup_with_id(prompt, llm_string=llm_string)
 
     async def alookup_with_id_through_llm(
         self, prompt: str, llm: LLM, stop: Optional[List[str]] = None
     ) -> Optional[Tuple[str, RETURN_VAL_TYPE]]:
-        llm_string = (
-            await aget_prompts(
-                {**llm.dict(), **{"stop": stop}},
-                [],
-            )
-        )[1]
+        llm_string = (await aget_prompts({**llm.dict(), **{"stop": stop}}, []))[1]
         return await self.alookup_with_id(prompt, llm_string=llm_string)
 
     def delete_by_document_id(self, document_id: str) -> None:
@@ -2184,9 +2094,7 @@ class AzureCosmosDBSemanticCache(BaseCache):
         if self.cosmosdb_client:
             collection = self.cosmosdb_client[self.database_name][self.collection_name]
             self._cache_dict[index_name] = AzureCosmosDBVectorSearch(
-                collection=collection,
-                embedding=self.embedding,
-                index_name=index_name,
+                collection=collection, embedding=self.embedding, index_name=index_name
             )
         else:
             self._cache_dict[
@@ -2289,9 +2197,9 @@ class OpenSearchSemanticCache(BaseCache):
             import langchain
             from langchain.cache import OpenSearchSemanticCache
             from langchain.embeddings import OpenAIEmbeddings
+
             langchain.llm_cache = OpenSearchSemanticCache(
-                opensearch_url="http//localhost:9200",
-                embedding=OpenAIEmbeddings()
+                opensearch_url="http//localhost:9200", embedding=OpenAIEmbeddings()
             )
         """
         self._cache_dict: Dict[str, OpenSearchVectorStore] = {}
@@ -2330,9 +2238,7 @@ class OpenSearchSemanticCache(BaseCache):
         generations: List = []
         # Read from a Hash
         results = llm_cache.similarity_search(
-            query=prompt,
-            k=1,
-            score_threshold=self.score_threshold,
+            query=prompt, k=1, score_threshold=self.score_threshold
         )
         if results:
             for document in results:

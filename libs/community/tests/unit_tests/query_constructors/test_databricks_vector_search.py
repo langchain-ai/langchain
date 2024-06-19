@@ -64,9 +64,7 @@ def test_visit_operation_or() -> None:
 def test_visit_operation_not() -> None:
     op = Operation(
         operator=Operator.NOT,
-        arguments=[
-            Comparison(comparator=Comparator.EQ, attribute="foo", value=2),
-        ],
+        arguments=[Comparison(comparator=Comparator.EQ, attribute="foo", value=2)],
     )
     expected = {"foo NOT": 2}
     actual = DEFAULT_TRANSLATOR.visit_operation(op)
@@ -91,10 +89,7 @@ def test_visit_operation_not_that_raises_for_more_than_one_filter_condition() ->
 
 def test_visit_structured_query_with_no_filter() -> None:
     query = "What is the capital of France?"
-    structured_query = StructuredQuery(
-        query=query,
-        filter=None,
-    )
+    structured_query = StructuredQuery(query=query, filter=None)
     expected: Tuple[str, Dict] = (query, {})
 
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
@@ -104,10 +99,7 @@ def test_visit_structured_query_with_no_filter() -> None:
 def test_visit_structured_query_with_one_arg_filter() -> None:
     query = "What is the capital of France?"
     comp = Comparison(comparator=Comparator.EQ, attribute="country", value="France")
-    structured_query = StructuredQuery(
-        query=query,
-        filter=comp,
-    )
+    structured_query = StructuredQuery(query=query, filter=comp)
 
     expected = (query, {"filters": {"country": "France"}})
 
@@ -127,10 +119,7 @@ def test_visit_structured_query_with_multiple_arg_filter_and_operator() -> None:
         ],
     )
 
-    structured_query = StructuredQuery(
-        query=query,
-        filter=op,
-    )
+    structured_query = StructuredQuery(query=query, filter=op)
 
     expected = (
         query,

@@ -208,9 +208,7 @@ def test__get_transcript_chunks() -> None:
     ]
 
     ytl = YoutubeLoader(
-        "TKCMw0utiak",
-        transcript_format=TranscriptFormat.CHUNKS,
-        chunk_size_seconds=30,
+        "TKCMw0utiak", transcript_format=TranscriptFormat.CHUNKS, chunk_size_seconds=30
     )
     assert (
         list(ytl._get_transcript_chunks(test_transcript_pieces))

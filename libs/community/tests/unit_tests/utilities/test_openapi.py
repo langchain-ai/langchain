@@ -36,7 +36,7 @@ def test_header_param() -> None:
         Path(__file__).parent.parent
         / "data"
         / "openapi_specs"
-        / "openapi_spec_header_param.json",
+        / "openapi_spec_header_param.json"
     )
 
     openai_functions, _ = openapi_spec_to_openai_fn(spec)

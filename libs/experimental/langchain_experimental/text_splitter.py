@@ -4,9 +4,7 @@ import re
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Tuple, cast
 
 import numpy as np
-from langchain_community.utils.math import (
-    cosine_similarity,
-)
+from langchain_community.utils.math import cosine_similarity
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.embeddings import Embeddings
 
@@ -135,8 +133,7 @@ class SemanticChunker(BaseDocumentTransformer):
     ) -> Tuple[float, List[float]]:
         if self.breakpoint_threshold_type == "percentile":
             return cast(
-                float,
-                np.percentile(distances, self.breakpoint_threshold_amount),
+                float, np.percentile(distances, self.breakpoint_threshold_amount)
             ), distances
         elif self.breakpoint_threshold_type == "standard_deviation":
             return cast(
@@ -201,10 +198,7 @@ class SemanticChunker(BaseDocumentTransformer):
 
         return calculate_cosine_distances(sentences)
 
-    def split_text(
-        self,
-        text: str,
-    ) -> List[str]:
+    def split_text(self, text: str) -> List[str]:
         # Splitting the essay (by default on '.', '?', and '!')
         single_sentences_list = re.split(self.sentence_split_regex, text)
 

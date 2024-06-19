@@ -1,13 +1,6 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncIterator,
-    Iterator,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, AsyncIterator, Iterator, Optional, Union
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.output_parsers.base import BaseOutputParser, T

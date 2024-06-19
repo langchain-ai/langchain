@@ -273,11 +273,7 @@ class PickBest(base.RLChain[PickBestEvent]):
         feature_embedder (PickBestFeatureEmbedder, optional): Is an advanced attribute. Responsible for embedding the `BasedOn` and `ToSelectFrom` inputs. If omitted, a default embedder is utilized.
     """  # noqa E501
 
-    def __init__(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ):
+    def __init__(self, *args: Any, **kwargs: Any):
         auto_embed = kwargs.get("auto_embed", False)
 
         feature_embedder = kwargs.get("feature_embedder", None)

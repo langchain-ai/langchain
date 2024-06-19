@@ -40,9 +40,7 @@ def test_chat_wasm_service_streaming() -> None:
 
     # create message sequence
     user_message = HumanMessage(content="What is the capital of France?")
-    messages = [
-        user_message,
-    ]
+    messages = [user_message]
 
     output = ""
     for chunk in chat.stream(messages):

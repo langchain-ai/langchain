@@ -23,11 +23,9 @@ class PredictionGuard(LLM):
     Example:
         .. code-block:: python
 
-            pgllm = PredictionGuard(model="MPT-7B-Instruct",
-                                    token="my-access-token",
-                                    output={
-                                        "type": "boolean"
-                                    })
+            pgllm = PredictionGuard(
+                model="MPT-7B-Instruct", token="my-access-token", output={"type": "boolean"}
+            )
     """
 
     client: Any  #: :meta private:
@@ -71,10 +69,7 @@ class PredictionGuard(LLM):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling the Prediction Guard API."""
-        return {
-            "max_tokens": self.max_tokens,
-            "temperature": self.temperature,
-        }
+        return {"max_tokens": self.max_tokens, "temperature": self.temperature}
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

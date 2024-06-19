@@ -34,9 +34,7 @@ def test_titan_takeoff_call(
         )
     else:
         httpx_mock.add_response(
-            method="POST",
-            url=url,
-            json={"text": "ask someone else"},
+            method="POST", url=url, json={"text": "ask someone else"}
         )
 
     llm = takeoff_object(port=port, streaming=streaming)
@@ -95,8 +93,7 @@ def test_titan_takeoff_bad_call(
 @pytest.mark.requires("takeoff_client")
 @pytest.mark.parametrize("takeoff_object", [TitanTakeoff, TitanTakeoffPro])
 def test_titan_takeoff_model_initialisation(
-    httpx_mock: Any,
-    takeoff_object: Union[TitanTakeoff, TitanTakeoffPro],
+    httpx_mock: Any, takeoff_object: Union[TitanTakeoff, TitanTakeoffPro]
 ) -> None:
     """Test valid call to Titan Takeoff."""
     mgnt_port = 36452

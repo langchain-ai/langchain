@@ -15,6 +15,7 @@ class TensorflowHubEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import TensorflowHubEmbeddings
+
             url = "https://tfhub.dev/google/universal-sentence-encoder-multilingual/3"
             tf = TensorflowHubEmbeddings(model_url=url)
     """

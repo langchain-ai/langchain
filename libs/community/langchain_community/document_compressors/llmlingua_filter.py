@@ -5,9 +5,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
-from langchain_core.documents.compressor import (
-    BaseDocumentCompressor,
-)
+from langchain_core.documents.compressor import BaseDocumentCompressor
 from langchain_core.pydantic_v1 import root_validator
 
 DEFAULT_LLM_LINGUA_INSTRUCTION = (

@@ -84,27 +84,17 @@ async def test_retry_output_parser_aparse_with_prompt_fail() -> None:
     assert base_parser.parse_count == n
 
 
-@pytest.mark.parametrize(
-    "base_parser",
-    [
-        BooleanOutputParser(),
-        DatetimeOutputParser(),
-    ],
-)
+@pytest.mark.parametrize("base_parser", [BooleanOutputParser(), DatetimeOutputParser()])
 def test_retry_output_parser_output_type(base_parser: BaseOutputParser) -> None:
     parser = RetryOutputParser(
-        parser=base_parser,
-        retry_chain=RunnablePassthrough(),
-        legacy=False,
+        parser=base_parser, retry_chain=RunnablePassthrough(), legacy=False
     )
     assert parser.OutputType is base_parser.OutputType
 
 
 def test_retry_output_parser_parse_is_not_implemented() -> None:
     parser = RetryOutputParser(
-        parser=BooleanOutputParser(),
-        retry_chain=RunnablePassthrough(),
-        legacy=False,
+        parser=BooleanOutputParser(), retry_chain=RunnablePassthrough(), legacy=False
     )
     with pytest.raises(NotImplementedError):
         parser.parse("completion")
@@ -168,29 +158,19 @@ async def test_retry_with_error_output_parser_aparse_with_prompt_fail() -> None:
     assert base_parser.parse_count == n
 
 
-@pytest.mark.parametrize(
-    "base_parser",
-    [
-        BooleanOutputParser(),
-        DatetimeOutputParser(),
-    ],
-)
+@pytest.mark.parametrize("base_parser", [BooleanOutputParser(), DatetimeOutputParser()])
 def test_retry_with_error_output_parser_output_type(
     base_parser: BaseOutputParser,
 ) -> None:
     parser = RetryWithErrorOutputParser(
-        parser=base_parser,
-        retry_chain=RunnablePassthrough(),
-        legacy=False,
+        parser=base_parser, retry_chain=RunnablePassthrough(), legacy=False
     )
     assert parser.OutputType is base_parser.OutputType
 
 
 def test_retry_with_error_output_parser_parse_is_not_implemented() -> None:
     parser = RetryWithErrorOutputParser(
-        parser=BooleanOutputParser(),
-        retry_chain=RunnablePassthrough(),
-        legacy=False,
+        parser=BooleanOutputParser(), retry_chain=RunnablePassthrough(), legacy=False
     )
     with pytest.raises(NotImplementedError):
         parser.parse("completion")

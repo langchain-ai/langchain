@@ -61,7 +61,7 @@ def test_hub_runnable_configurable_fields(mock_pull: Mock) -> None:
 
     original: HubRunnable = HubRunnable("efriis/my-prompt-1")
     obj_configurable = original.configurable_fields(
-        owner_repo_commit=ConfigurableField(id="owner_repo_commit", name="Hub ID"),
+        owner_repo_commit=ConfigurableField(id="owner_repo_commit", name="Hub ID")
     )
 
     templated_1 = obj_configurable.invoke({})

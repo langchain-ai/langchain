@@ -218,9 +218,7 @@ class GooglePalm(BaseLLM, BaseModel):
             yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(
-                    stream_resp.text,
-                    chunk=chunk,
-                    verbose=self.verbose,
+                    stream_resp.text, chunk=chunk, verbose=self.verbose
                 )
 
     @property

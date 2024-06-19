@@ -6,11 +6,7 @@ from langchain.globals import get_llm_cache, set_llm_cache
 from langchain.llms.base import __all__
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
-EXPECTED_ALL = [
-    "BaseLLM",
-    "LLM",
-    "BaseLanguageModel",
-]
+EXPECTED_ALL = ["BaseLLM", "LLM", "BaseLanguageModel"]
 
 
 def test_all_imports() -> None:
@@ -35,8 +31,5 @@ def test_caching() -> None:
         [Generation(text="foo")],
         [Generation(text="fizz")],
     ]
-    expected_output = LLMResult(
-        generations=expected_generations,
-        llm_output=None,
-    )
+    expected_output = LLMResult(generations=expected_generations, llm_output=None)
     assert output == expected_output

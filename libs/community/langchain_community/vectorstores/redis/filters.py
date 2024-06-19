@@ -361,10 +361,10 @@ class RedisText(RedisFilterField):
 
         Example:
             >>> from langchain_community.vectorstores.redis import RedisText
-            >>> filter = RedisText("job") % "engine*"         # suffix wild card match
-            >>> filter = RedisText("job") % "%%engine%%"      # fuzzy match w/ LD
-            >>> filter = RedisText("job") % "engineer|doctor" # contains either term
-            >>> filter = RedisText("job") % "engineer doctor" # contains both terms
+            >>> filter = RedisText("job") % "engine*"  # suffix wild card match
+            >>> filter = RedisText("job") % "%%engine%%"  # fuzzy match w/ LD
+            >>> filter = RedisText("job") % "engineer|doctor"  # contains either term
+            >>> filter = RedisText("job") % "engineer doctor"  # contains both terms
         """
         self._set_value(other, self.SUPPORTED_VAL_TYPES, RedisFilterOperator.LIKE)  # type: ignore
         return RedisFilterExpression(str(self))
@@ -374,10 +374,7 @@ class RedisText(RedisFilterField):
         if not self._value:
             return "*"
 
-        return self.OPERATOR_MAP[self._operator] % (
-            self._field,
-            self._value,
-        )
+        return self.OPERATOR_MAP[self._operator] % (self._field, self._value)
 
 
 class RedisFilterExpression:

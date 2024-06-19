@@ -66,19 +66,21 @@ class DuckDB(VectorStore):
         .. code-block:: python
 
             import duckdb
-            conn = duckdb.connect(database=':memory:',
+
+            conn = duckdb.connect(
+                database=":memory:",
                 config={
                     # Sample configuration to restrict some DuckDB capabilities
                     # List is not exhaustive. Please review DuckDB documentation.
-                        "enable_external_access": "false",
-                        "autoinstall_known_extensions": "false",
-                        "autoload_known_extensions": "false"
-                    }
+                    "enable_external_access": "false",
+                    "autoinstall_known_extensions": "false",
+                    "autoload_known_extensions": "false",
+                },
             )
-            embedding_function = ... # Define or import your embedding function here
+            embedding_function = ...  # Define or import your embedding function here
             vector_store = DuckDB(conn, embedding_function)
-            vector_store.add_texts(['text1', 'text2'])
-            result = vector_store.similarity_search('text1')
+            vector_store.add_texts(["text1", "text2"])
+            result = vector_store.similarity_search("text1")
     """
 
     def __init__(
@@ -191,9 +193,7 @@ class DuckDB(VectorStore):
         if have_pandas:
             # noinspection PyUnusedLocal
             df = pd.DataFrame.from_dict(data)  # noqa: F841
-            self._connection.execute(
-                f"INSERT INTO {self._table_name} SELECT * FROM df",
-            )
+            self._connection.execute(f"INSERT INTO {self._table_name} SELECT * FROM df")
         return ids
 
     def similarity_search(

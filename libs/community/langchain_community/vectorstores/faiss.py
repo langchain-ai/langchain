@@ -7,17 +7,7 @@ import pickle
 import uuid
 import warnings
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sized,
-    Tuple,
-    Union,
-)
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sized, Tuple, Union
 
 import numpy as np
 from langchain_core.documents import Document
@@ -90,10 +80,7 @@ class FAISS(VectorStore):
 
     def __init__(
         self,
-        embedding_function: Union[
-            Callable[[str], List[float]],
-            Embeddings,
-        ],
+        embedding_function: Union[Callable[[str], List[float]], Embeddings],
         index: Any,
         docstore: Docstore,
         index_to_docstore_id: Dict[int, str],
@@ -401,11 +388,7 @@ class FAISS(VectorStore):
         """
         embedding = self._embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
-            embedding,
-            k,
-            filter=filter,
-            fetch_k=fetch_k,
-            **kwargs,
+            embedding, k, filter=filter, fetch_k=fetch_k, **kwargs
         )
         return docs
 
@@ -435,11 +418,7 @@ class FAISS(VectorStore):
         """
         embedding = await self._aembed_query(query)
         docs = await self.asimilarity_search_with_score_by_vector(
-            embedding,
-            k,
-            filter=filter,
-            fetch_k=fetch_k,
-            **kwargs,
+            embedding, k, filter=filter, fetch_k=fetch_k, **kwargs
         )
         return docs
 
@@ -467,11 +446,7 @@ class FAISS(VectorStore):
             List of Documents most similar to the embedding.
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding,
-            k,
-            filter=filter,
-            fetch_k=fetch_k,
-            **kwargs,
+            embedding, k, filter=filter, fetch_k=fetch_k, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -499,11 +474,7 @@ class FAISS(VectorStore):
             List of Documents most similar to the embedding.
         """
         docs_and_scores = await self.asimilarity_search_with_score_by_vector(
-            embedding,
-            k,
-            filter=filter,
-            fetch_k=fetch_k,
-            **kwargs,
+            embedding, k, filter=filter, fetch_k=fetch_k, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -929,12 +900,7 @@ class FAISS(VectorStore):
         """
         embeddings = embedding.embed_documents(texts)
         return cls.__from(
-            texts,
-            embeddings,
-            embedding,
-            metadatas=metadatas,
-            ids=ids,
-            **kwargs,
+            texts, embeddings, embedding, metadatas=metadatas, ids=ids, **kwargs
         )
 
     @classmethod
@@ -966,12 +932,7 @@ class FAISS(VectorStore):
         """
         embeddings = await embedding.aembed_documents(texts)
         return cls.__from(
-            texts,
-            embeddings,
-            embedding,
-            metadatas=metadatas,
-            ids=ids,
-            **kwargs,
+            texts, embeddings, embedding, metadatas=metadatas, ids=ids, **kwargs
         )
 
     @classmethod
@@ -1024,11 +985,7 @@ class FAISS(VectorStore):
     ) -> FAISS:
         """Construct FAISS wrapper from raw documents asynchronously."""
         return cls.from_embeddings(
-            text_embeddings,
-            embedding,
-            metadatas=metadatas,
-            ids=ids,
-            **kwargs,
+            text_embeddings, embedding, metadatas=metadatas, ids=ids, **kwargs
         )
 
     def save_local(self, folder_path: str, index_name: str = "index") -> None:
@@ -1183,11 +1140,7 @@ class FAISS(VectorStore):
                 " FAISS constructor to normalize scores"
             )
         docs_and_scores = self.similarity_search_with_score(
-            query,
-            k=k,
-            filter=filter,
-            fetch_k=fetch_k,
-            **kwargs,
+            query, k=k, filter=filter, fetch_k=fetch_k, **kwargs
         )
         docs_and_rel_scores = [
             (doc, relevance_score_fn(score)) for doc, score in docs_and_scores
@@ -1212,11 +1165,7 @@ class FAISS(VectorStore):
                 " FAISS constructor to normalize scores"
             )
         docs_and_scores = await self.asimilarity_search_with_score(
-            query,
-            k=k,
-            filter=filter,
-            fetch_k=fetch_k,
-            **kwargs,
+            query, k=k, filter=filter, fetch_k=fetch_k, **kwargs
         )
         docs_and_rel_scores = [
             (doc, relevance_score_fn(score)) for doc, score in docs_and_scores

@@ -130,9 +130,9 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import LocalAIEmbeddings
+
             openai = LocalAIEmbeddings(
-                openai_api_key="random-string",
-                openai_api_base="http://localhost:8080"
+                openai_api_key="random-string", openai_api_base="http://localhost:8080"
             )
 
     """
@@ -200,16 +200,10 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             values, "openai_api_key", "OPENAI_API_KEY"
         )
         values["openai_api_base"] = get_from_dict_or_env(
-            values,
-            "openai_api_base",
-            "OPENAI_API_BASE",
-            default="",
+            values, "openai_api_base", "OPENAI_API_BASE", default=""
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
 
         default_api_version = ""
@@ -220,10 +214,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             default=default_api_version,
         )
         values["openai_organization"] = get_from_dict_or_env(
-            values,
-            "openai_organization",
-            "OPENAI_ORGANIZATION",
-            default="",
+            values, "openai_organization", "OPENAI_ORGANIZATION", default=""
         )
         try:
             import openai
@@ -251,10 +242,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
         if self.openai_proxy:
             import openai
 
-            openai.proxy = {
-                "http": self.openai_proxy,
-                "https": self.openai_proxy,
-            }  # type: ignore[assignment]
+            openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]
         return openai_args
 
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:
@@ -264,11 +252,9 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             # See: https://github.com/openai/openai-python/issues/418#issuecomment-1525939500
             # replace newlines, which can negatively affect performance.
             text = text.replace("\n", " ")
-        return embed_with_retry(
-            self,
-            input=[text],
-            **self._invocation_params,
-        )["data"][0]["embedding"]
+        return embed_with_retry(self, input=[text], **self._invocation_params)["data"][
+            0
+        ]["embedding"]
 
     async def _aembedding_func(self, text: str, *, engine: str) -> List[float]:
         """Call out to LocalAI's embedding endpoint."""
@@ -278,11 +264,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             # replace newlines, which can negatively affect performance.
             text = text.replace("\n", " ")
         return (
-            await async_embed_with_retry(
-                self,
-                input=[text],
-                **self._invocation_params,
-            )
+            await async_embed_with_retry(self, input=[text], **self._invocation_params)
         )["data"][0]["embedding"]
 
     def embed_documents(

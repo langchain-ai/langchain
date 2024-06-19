@@ -50,10 +50,7 @@ def create_spark_sql_agent(
         **prompt_params,
     )
     llm_chain = LLMChain(
-        llm=llm,
-        prompt=prompt,
-        callback_manager=callback_manager,
-        callbacks=callbacks,
+        llm=llm, prompt=prompt, callback_manager=callback_manager, callbacks=callbacks
     )
     tool_names = [tool.name for tool in tools]
     agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)

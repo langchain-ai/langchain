@@ -133,11 +133,7 @@ def test_convert_to_openai_function(
 @pytest.mark.xfail(reason="Pydantic converts Optional[str] to str in .schema()")
 def test_function_optional_param() -> None:
     @tool
-    def func5(
-        a: Optional[str],
-        b: str,
-        c: Optional[List[Optional[str]]],
-    ) -> None:
+    def func5(a: Optional[str], b: str, c: Optional[List[Optional[str]]]) -> None:
         """A test function"""
         pass
 
@@ -208,9 +204,7 @@ def test_multiple_tool_calls() -> None:
 def test_tool_outputs() -> None:
     messages = tool_example_to_messages(
         input="This is an example",
-        tool_calls=[
-            FakeCall(data="ToolCall1"),
-        ],
+        tool_calls=[FakeCall(data="ToolCall1")],
         tool_outputs=["Output1"],
     )
     assert len(messages) == 3
@@ -222,6 +216,6 @@ def test_tool_outputs() -> None:
             "id": messages[2].tool_call_id,
             "type": "function",
             "function": {"name": "FakeCall", "arguments": '{"data": "ToolCall1"}'},
-        },
+        }
     ]
     assert messages[2].content == "Output1"

@@ -13,11 +13,7 @@ logger = logging.getLogger(__name__)
 class SurrealDBLoader(BaseLoader):
     """Load SurrealDB documents."""
 
-    def __init__(
-        self,
-        filter_criteria: Optional[Dict] = None,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, filter_criteria: Optional[Dict] = None, **kwargs: Any) -> None:
         try:
             from surrealdb import Surreal
         except ImportError as e:
@@ -75,11 +71,7 @@ class SurrealDBLoader(BaseLoader):
             for idx, key in enumerate(self.filter_criteria):
                 query += f""" {"AND" if idx > 0 else ""} {key} = ${key}"""
 
-        metadata = {
-            "ns": self.ns,
-            "db": self.db,
-            "table": self.table,
-        }
+        metadata = {"ns": self.ns, "db": self.db, "table": self.table}
         results = await self.sdb.query(
             query, {"table": self.table, **self.filter_criteria}
         )

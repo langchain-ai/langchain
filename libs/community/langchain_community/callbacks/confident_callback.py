@@ -24,8 +24,7 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
         >>> from deepeval.metrics import AnswerRelevancy
         >>> metric = AnswerRelevancy(minimum_score=0.3)
         >>> deepeval_callback = DeepEvalCallbackHandler(
-        ...     implementation_name="exampleImplementation",
-        ...     metrics=[metric],
+        ...     implementation_name="exampleImplementation", metrics=[metric]
         ... )
         >>> llm = OpenAI(
         ...     temperature=0,
@@ -33,9 +32,7 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
         ...     verbose=True,
         ...     openai_api_key="API_KEY_HERE",
         ... )
-        >>> llm.generate([
-        ...     "What is the best evaluation tool out there? (no bias at all)",
-        ... ])
+        >>> llm.generate(["What is the best evaluation tool out there? (no bias at all)"])
         "Deepeval, no doubt about it."
     """
 
@@ -44,9 +41,7 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
     BLOG_URL: str = "https://docs.confident-ai.com"  # noqa: E501
 
     def __init__(
-        self,
-        metrics: List[Any],
-        implementation_name: Optional[str] = None,
+        self, metrics: List[Any], implementation_name: Optional[str] = None
     ) -> None:
         """Initializes the `deepevalCallbackHandler`.
 
@@ -86,7 +81,7 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
                 "The `DeepEvalCallbackHandler` is currently in beta and is subject to"
                 " change based on updates to `langchain`. Please report any issues to"
                 f" {self.ISSUES_URL} as an `integration` issue."
-            ),
+            )
         )
 
     def on_llm_start(
@@ -112,10 +107,7 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
                 output = generation[0].text
                 query = self.prompts[i]
                 if isinstance(metric, AnswerRelevancy):
-                    result = metric.measure(
-                        output=output,
-                        query=query,
-                    )
+                    result = metric.measure(output=output, query=query)
                     print(f"Answer Relevancy: {result}")  # noqa: T201
                 elif isinstance(metric, UnBiasedMetric):
                     score = metric.measure(output)
@@ -148,10 +140,7 @@ class DeepEvalCallbackHandler(BaseCallbackHandler):
         pass
 
     def on_tool_start(
-        self,
-        serialized: Dict[str, Any],
-        input_str: str,
-        **kwargs: Any,
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Do nothing when tool starts."""
         pass

@@ -100,7 +100,7 @@ def test__format_output() -> None:
                         "total_tokens": 3,
                     },
                 )
-            ),
+            )
         ],
         llm_output={
             "id": "foo",
@@ -149,7 +149,7 @@ def test__merge_messages() -> None:
                         "media_type": "image/jpeg",
                         "data": "fake_image_data",
                     },
-                },
+                }
             ],
             tool_call_id="2",
         ),  # type: ignore[misc]
@@ -191,7 +191,7 @@ def test__merge_messages() -> None:
                                 "media_type": "image/jpeg",
                                 "data": "fake_image_data",
                             },
-                        },
+                        }
                     ],
                     "tool_use_id": "2",
                 },
@@ -236,7 +236,7 @@ def test__merge_messages_mutation() -> None:
     expected = [
         HumanMessage(  # type: ignore[misc]
             [{"type": "text", "text": "bar"}, {"type": "text", "text": "next thing"}]
-        ),
+        )
     ]
     actual = _merge_messages(messages)
     assert expected == actual
@@ -356,12 +356,10 @@ def test__format_messages_with_tool_calls() -> None:
     system = SystemMessage("fuzz")  # type: ignore[misc]
     human = HumanMessage("foo")  # type: ignore[misc]
     ai = AIMessage(  # type: ignore[misc]
-        "",
-        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
+        "", tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}]
     )
     tool = ToolMessage(  # type: ignore[misc]
-        "blurb",
-        tool_call_id="1",
+        "blurb", tool_call_id="1"
     )
     messages = [system, human, ai, tool]
     expected = (
@@ -397,8 +395,7 @@ def test__format_messages_with_str_content_and_tool_calls() -> None:
     # If content and tool_calls are specified and content is a string, then both are
     # included with content first.
     ai = AIMessage(  # type: ignore[misc]
-        "thought",
-        tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
+        "thought", tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}]
     )
     tool = ToolMessage("blurb", tool_call_id="1")  # type: ignore[misc]
     messages = [system, human, ai, tool]
@@ -440,18 +437,14 @@ def test__format_messages_with_list_content_and_tool_calls() -> None:
         tool_calls=[{"name": "bar", "id": "1", "args": {"baz": "buzz"}}],
     )
     tool = ToolMessage(  # type: ignore[misc]
-        "blurb",
-        tool_call_id="1",
+        "blurb", tool_call_id="1"
     )
     messages = [system, human, ai, tool]
     expected = (
         "fuzz",
         [
             {"role": "user", "content": "foo"},
-            {
-                "role": "assistant",
-                "content": [{"type": "text", "text": "thought"}],
-            },
+            {"role": "assistant", "content": [{"type": "text", "text": "thought"}]},
             {
                 "role": "user",
                 "content": [
@@ -514,8 +507,7 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
 def test_anthropic_api_key_is_secret_string() -> None:
     """Test that the API key is stored as a SecretStr."""
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
-        model="claude-3-opus-20240229",
-        anthropic_api_key="secret-api-key",
+        model="claude-3-opus-20240229", anthropic_api_key="secret-api-key"
     )
     assert isinstance(chat_model.anthropic_api_key, SecretStr)
 
@@ -526,7 +518,7 @@ def test_anthropic_api_key_masked_when_passed_from_env(
     """Test that the API key is masked when passed from an environment variable."""
     monkeypatch.setenv("ANTHROPIC_API_KEY ", "secret-api-key")
     chat_model = ChatAnthropic(  # type: ignore[call-arg]
-        model="claude-3-opus-20240229",
+        model="claude-3-opus-20240229"
     )
     print(chat_model.anthropic_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
@@ -539,8 +531,7 @@ def test_anthropic_api_key_masked_when_passed_via_constructor(
 ) -> None:
     """Test that the API key is masked when passed via the constructor."""
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
-        model="claude-3-opus-20240229",
-        anthropic_api_key="secret-api-key",
+        model="claude-3-opus-20240229", anthropic_api_key="secret-api-key"
     )
     print(chat_model.anthropic_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
@@ -551,8 +542,7 @@ def test_anthropic_api_key_masked_when_passed_via_constructor(
 def test_anthropic_uses_actual_secret_value_from_secretstr() -> None:
     """Test that the actual secret value is correctly retrieved."""
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
-        model="claude-3-opus-20240229",
-        anthropic_api_key="secret-api-key",
+        model="claude-3-opus-20240229", anthropic_api_key="secret-api-key"
     )
     assert (
         cast(SecretStr, chat_model.anthropic_api_key).get_secret_value()
@@ -568,8 +558,7 @@ class GetWeather(BaseModel):
 
 def test_anthropic_bind_tools_tool_choice() -> None:
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
-        model="claude-3-opus-20240229",
-        anthropic_api_key="secret-api-key",
+        model="claude-3-opus-20240229", anthropic_api_key="secret-api-key"
     )
     chat_model_with_tools = chat_model.bind_tools(
         [GetWeather], tool_choice={"type": "tool", "name": "GetWeather"}

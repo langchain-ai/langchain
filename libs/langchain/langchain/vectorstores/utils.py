@@ -26,8 +26,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "DistanceStrategy",
-    "maximal_marginal_relevance",
-    "filter_complex_metadata",
-]
+__all__ = ["DistanceStrategy", "maximal_marginal_relevance", "filter_complex_metadata"]

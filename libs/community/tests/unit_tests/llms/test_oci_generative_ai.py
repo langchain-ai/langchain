@@ -35,11 +35,7 @@ def test_llm_call(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                             "inference_response": MockResponseDict(
                                 {
                                     "generated_texts": [
-                                        MockResponseDict(
-                                            {
-                                                "text": response_text,
-                                            }
-                                        )
+                                        MockResponseDict({"text": response_text})
                                     ]
                                 }
                             )
@@ -55,15 +51,7 @@ def test_llm_call(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                     "data": MockResponseDict(
                         {
                             "inference_response": MockResponseDict(
-                                {
-                                    "choices": [
-                                        MockResponseDict(
-                                            {
-                                                "text": response_text,
-                                            }
-                                        )
-                                    ]
-                                }
+                                {"choices": [MockResponseDict({"text": response_text})]}
                             )
                         }
                     ),

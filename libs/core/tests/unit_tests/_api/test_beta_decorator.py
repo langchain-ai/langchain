@@ -12,10 +12,7 @@ from langchain_core.pydantic_v1 import BaseModel
     "kwargs, expected_message",
     [
         (
-            {
-                "name": "OldClass",
-                "obj_type": "class",
-            },
+            {"name": "OldClass", "obj_type": "class"},
             "The class `OldClass` is in beta. It is actively being worked on, so the "
             "API may change.",
         ),

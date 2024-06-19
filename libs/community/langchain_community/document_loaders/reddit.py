@@ -114,10 +114,7 @@ class RedditPostsLoader(BaseLoader):
                 "post_url": post.url,
                 "post_author": post.author,
             }
-            yield Document(
-                page_content=post.selftext,
-                metadata=metadata,
-            )
+            yield Document(page_content=post.selftext, metadata=metadata)
 
     def _user_posts_loader(
         self, search_query: str, category: str, reddit: praw.reddit.Reddit
@@ -137,7 +134,4 @@ class RedditPostsLoader(BaseLoader):
                 "post_url": post.url,
                 "post_author": post.author,
             }
-            yield Document(
-                page_content=post.selftext,
-                metadata=metadata,
-            )
+            yield Document(page_content=post.selftext, metadata=metadata)

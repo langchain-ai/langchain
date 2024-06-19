@@ -44,9 +44,7 @@ class TestWeaviate:
         """Test end to end construction and search without metadata."""
         texts = ["foo", "bar", "baz"]
         docsearch = Weaviate.from_texts(
-            texts,
-            embedding_openai,
-            weaviate_url=weaviate_url,
+            texts, embedding_openai, weaviate_url=weaviate_url
         )
 
         output = docsearch.similarity_search("foo", k=1)
@@ -92,11 +90,7 @@ class TestWeaviate:
         docsearch = Weaviate.from_texts(
             texts, embedding_openai, metadatas=metadatas, weaviate_url=weaviate_url
         )
-        output = docsearch.similarity_search(
-            "foo",
-            k=1,
-            additional=["certainty"],
-        )
+        output = docsearch.similarity_search("foo", k=1, additional=["certainty"])
         assert output == [
             Document(
                 page_content="foo",
@@ -205,9 +199,7 @@ class TestWeaviate:
         output = docsearch.max_marginal_relevance_search(
             "foo", k=2, fetch_k=3, lambda_mult=0.0, where_filter=where_filter
         )
-        assert output == [
-            Document(page_content="foo", metadata={"page": 0}),
-        ]
+        assert output == [Document(page_content="foo", metadata={"page": 0})]
 
     def test_add_texts_with_given_embedding(self, weaviate_url: str) -> None:
         texts = ["foo", "bar", "baz"]
@@ -221,10 +213,7 @@ class TestWeaviate:
         output = docsearch.similarity_search_by_vector(
             embedding.embed_query("foo"), k=2
         )
-        assert output == [
-            Document(page_content="foo"),
-            Document(page_content="foo"),
-        ]
+        assert output == [Document(page_content="foo"), Document(page_content="foo")]
 
     def test_add_texts_with_given_uuids(self, weaviate_url: str) -> None:
         texts = ["foo", "bar", "baz"]
@@ -232,10 +221,7 @@ class TestWeaviate:
         uuids = [uuid.uuid5(uuid.NAMESPACE_DNS, text) for text in texts]
 
         docsearch = Weaviate.from_texts(
-            texts,
-            embedding=embedding,
-            weaviate_url=weaviate_url,
-            uuids=uuids,
+            texts, embedding=embedding, weaviate_url=weaviate_url, uuids=uuids
         )
 
         # Weaviate replaces the object if the UUID already exists

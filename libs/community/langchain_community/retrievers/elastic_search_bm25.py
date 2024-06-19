@@ -65,13 +65,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         # Define the index settings and mappings
         settings = {
             "analysis": {"analyzer": {"default": {"type": "standard"}}},
-            "similarity": {
-                "custom_bm25": {
-                    "type": "BM25",
-                    "k1": k1,
-                    "b": b,
-                }
-            },
+            "similarity": {"custom_bm25": {"type": "BM25", "k1": k1, "b": b}},
         }
         mappings = {
             "properties": {
@@ -87,9 +81,7 @@ class ElasticSearchBM25Retriever(BaseRetriever):
         return cls(client=es, index_name=index_name)
 
     def add_texts(
-        self,
-        texts: Iterable[str],
-        refresh_indices: bool = True,
+        self, texts: Iterable[str], refresh_indices: bool = True
     ) -> List[str]:
         """Run more texts through the embeddings and add to the retriever.
 

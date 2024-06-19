@@ -91,19 +91,12 @@ class OpenAPIEndpointChain(Chain, BaseModel):
         path = self._construct_path(args)
         body_params = self._extract_body_params(args)
         query_params = self._extract_query_params(args)
-        return {
-            "url": path,
-            "data": body_params,
-            "params": query_params,
-        }
+        return {"url": path, "data": body_params, "params": query_params}
 
     def _get_output(self, output: str, intermediate_steps: dict) -> dict:
         """Return the output from the API call."""
         if self.return_intermediate_steps:
-            return {
-                self.output_key: output,
-                "intermediate_steps": intermediate_steps,
-            }
+            return {self.output_key: output, "intermediate_steps": intermediate_steps}
         else:
             return {self.output_key: output}
 

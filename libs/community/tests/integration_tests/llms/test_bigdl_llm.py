@@ -15,10 +15,7 @@ model_ids_to_test = [model_id.strip() for model_id in model_ids_to_test.split(",
 
 
 @skip_if_no_model_ids
-@pytest.mark.parametrize(
-    "model_id",
-    model_ids_to_test,
-)
+@pytest.mark.parametrize("model_id", model_ids_to_test)
 def test_call(model_id: str) -> None:
     """Test valid call to bigdl-llm."""
     llm = BigdlLLM.from_model_id(
@@ -30,10 +27,7 @@ def test_call(model_id: str) -> None:
 
 
 @skip_if_no_model_ids
-@pytest.mark.parametrize(
-    "model_id",
-    model_ids_to_test,
-)
+@pytest.mark.parametrize("model_id", model_ids_to_test)
 def test_generate(model_id: str) -> None:
     """Test valid call to bigdl-llm."""
     llm = BigdlLLM.from_model_id(

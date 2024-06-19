@@ -197,10 +197,7 @@ class WandbCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             "of the `WandbTracer`. Please update your code to use the `WandbTracer` "
             "instead."
         )
-        wandb.termwarn(
-            warning,
-            repeat=False,
-        )
+        wandb.termwarn(warning, repeat=False)
         self.callback_columns: list = []
         self.action_records: list = []
         self.complexity_metrics = complexity_metrics

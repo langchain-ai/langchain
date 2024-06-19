@@ -147,10 +147,7 @@ def test_vald_max_marginal_relevance_search() -> None:
 
     output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3)
 
-    assert output == [
-        Document(page_content="foo"),
-        Document(page_content="bar"),
-    ]
+    assert output == [Document(page_content="foo"), Document(page_content="bar")]
 
 
 def test_vald_max_marginal_relevance_search_by_vector() -> None:
@@ -165,7 +162,4 @@ def test_vald_max_marginal_relevance_search_by_vector() -> None:
         embedding, k=2, fetch_k=3
     )
 
-    assert output == [
-        Document(page_content="foo"),
-        Document(page_content="bar"),
-    ]
+    assert output == [Document(page_content="foo"), Document(page_content="bar")]

@@ -52,10 +52,7 @@ def test_convert_pydantic_to_openai_function_nested() -> None:
                     "description": "The data to return.",
                     "type": "object",
                     "properties": {
-                        "key": {
-                            "description": "API key",
-                            "type": "string",
-                        },
+                        "key": {"description": "API key", "type": "string"},
                         "days": {
                             "description": "Number of days to forecast",
                             "default": 0,

@@ -89,9 +89,7 @@ try:
                                             chain's prompt template.
             """  # noqa: E501
             chat_message_history = ZepChatMessageHistory(
-                session_id=session_id,
-                url=url,
-                api_key=api_key,
+                session_id=session_id, url=url, api_key=api_key
             )
             super().__init__(
                 chat_memory=chat_message_history,

@@ -91,10 +91,7 @@ class PGVecto_rs(VectorStore):
 
     @classmethod
     def from_collection_name(
-        cls,
-        embedding: Embeddings,
-        db_url: str,
-        collection_name: str,
+        cls, embedding: Embeddings, db_url: str, collection_name: str
     ) -> PGVecto_rs:
         """Create new empty vectorstore with collection_name.
         Or connect to an existing vectorstore in database if exists.
@@ -178,20 +175,11 @@ class PGVecto_rs(VectorStore):
         else:
             real_filter = filter
         results = self._store.search(  # type: ignore[union-attr]
-            query_vector,
-            distance_func_map[distance_func],
-            k,
-            filter=real_filter,
+            query_vector, distance_func_map[distance_func], k, filter=real_filter
         )
 
         return [
-            (
-                Document(
-                    page_content=res[0].text,
-                    metadata=res[0].meta,
-                ),
-                res[1],
-            )
+            (Document(page_content=res[0].text, metadata=res[0].meta), res[1])
             for res in results
         ]
 

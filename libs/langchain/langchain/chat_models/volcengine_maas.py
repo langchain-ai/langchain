@@ -24,7 +24,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "convert_dict_to_message",
-    "VolcEngineMaasChat",
-]
+__all__ = ["convert_dict_to_message", "VolcEngineMaasChat"]

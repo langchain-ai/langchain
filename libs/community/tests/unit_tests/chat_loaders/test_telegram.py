@@ -11,8 +11,7 @@ from langchain_community.chat_loaders import telegram, utils
 
 
 def _assert_messages_are_equal(
-    actual_messages: Sequence[BaseMessage],
-    expected_messages: Sequence[BaseMessage],
+    actual_messages: Sequence[BaseMessage], expected_messages: Sequence[BaseMessage]
 ) -> None:
     assert len(actual_messages) == len(expected_messages)
     for actual, expected in zip(actual_messages, expected_messages):
@@ -74,11 +73,7 @@ def _check_telegram_chat_loader(path: str) -> None:
 
 @pytest.mark.parametrize(
     "path",
-    [
-        "telegram_chat_json",
-        "telegram_chat_json.zip",
-        "telegram_chat_json/result.json",
-    ],
+    ["telegram_chat_json", "telegram_chat_json.zip", "telegram_chat_json/result.json"],
 )
 def test_telegram_chat_loader(path: str) -> None:
     _check_telegram_chat_loader(path)
@@ -87,11 +82,7 @@ def test_telegram_chat_loader(path: str) -> None:
 @pytest.mark.skip(reason="requires bs4 but marking it as such doesn't seem to work")
 @pytest.mark.parametrize(
     "path",
-    [
-        "telegram_chat_json",
-        "telegram_chat_json.zip",
-        "telegram_chat_json/result.json",
-    ],
+    ["telegram_chat_json", "telegram_chat_json.zip", "telegram_chat_json/result.json"],
 )
 def test_telegram_chat_loader_html(path: str) -> None:
     _check_telegram_chat_loader(path)

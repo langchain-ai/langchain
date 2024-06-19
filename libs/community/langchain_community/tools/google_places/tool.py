@@ -35,9 +35,7 @@ class GooglePlacesTool(BaseTool):
     args_schema: Type[BaseModel] = GooglePlacesSchema
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         return self.api_wrapper.run(query)

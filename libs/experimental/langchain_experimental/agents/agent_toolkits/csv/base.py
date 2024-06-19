@@ -39,10 +39,7 @@ def create_csv_agent(
 
             llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
             agent_executor = create_pandas_dataframe_agent(
-                llm,
-                "titanic.csv",
-                agent_type="openai-tools",
-                verbose=True
+                llm, "titanic.csv", agent_type="openai-tools", verbose=True
             )
     """  # noqa: E501
     try:

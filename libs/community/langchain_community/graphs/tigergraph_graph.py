@@ -66,9 +66,7 @@ class TigerGraph(GraphStore):
         """
         self._schema = self.generate_schema() if schema is None else schema
 
-    def generate_schema(
-        self,
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    def generate_schema(self) -> Dict[str, List[Dict[str, Any]]]:
         """
         Generates the schema of the TigerGraph Database and returns it
         User can specify a **sample_ratio** (0 to 1) to determine the

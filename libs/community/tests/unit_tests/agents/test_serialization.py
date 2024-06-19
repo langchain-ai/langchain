@@ -9,13 +9,7 @@ from langchain_core.tools import Tool
 
 def test_mrkl_serialization() -> None:
     agent = initialize_agent(
-        [
-            Tool(
-                name="Test tool",
-                func=lambda x: x,
-                description="Test description",
-            )
-        ],
+        [Tool(name="Test tool", func=lambda x: x, description="Test description")],
         FakeListLLM(responses=[]),
         agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,

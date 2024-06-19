@@ -49,9 +49,7 @@ class TestKuzu(unittest.TestCase):
             query="MATCH (n:Movie) WHERE n.name = $name RETURN n.name",
             params={"name": "The Godfather"},
         )
-        excepted_result = [
-            {"n.name": "The Godfather"},
-        ]
+        excepted_result = [{"n.name": "The Godfather"}]
         self.assertEqual(result, excepted_result)
 
     def test_refresh_schema(self) -> None:

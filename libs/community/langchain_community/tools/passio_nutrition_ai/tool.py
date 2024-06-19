@@ -30,9 +30,7 @@ class NutritionAI(BaseTool):
     args_schema: Type[BaseModel] = NutritionAIInputs
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> Optional[Dict]:
         """Use the tool."""
         return self.api_wrapper.run(query)

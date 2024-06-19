@@ -25,9 +25,9 @@ class PaiEasEndpoint(LLM):
         .. code-block:: python
 
             from langchain_community.llms.pai_eas_endpoint import PaiEasEndpoint
+
             eas_chat_endpoint = PaiEasChatEndpoint(
-                eas_service_url="your_service_url",
-                eas_service_token="your_service_token"
+                eas_service_url="your_service_url", eas_service_token="your_service_token"
             )
     """
 
@@ -147,13 +147,9 @@ class PaiEasEndpoint(LLM):
             "Authorization": f"{self.eas_service_token}",
         }
         if self.version == "1.0":
-            body = {
-                "input_ids": f"{prompt}",
-            }
+            body = {"input_ids": f"{prompt}"}
         else:
-            body = {
-                "prompt": f"{prompt}",
-            }
+            body = {"prompt": f"{prompt}"}
 
         # add params to body
         for key, value in params.items():

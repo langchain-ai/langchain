@@ -10,8 +10,7 @@ from langchain_experimental.synthetic_data.prompts import SENTENCE_PROMPT
 
 
 def create_data_generation_chain(
-    llm: BaseLanguageModel,
-    prompt: Optional[PromptTemplate] = None,
+    llm: BaseLanguageModel, prompt: Optional[PromptTemplate] = None
 ) -> Chain:
     """Create a chain that generates synthetic sentences with
      provided fields.
@@ -22,10 +21,7 @@ def create_data_generation_chain(
         If not provided, the default one will be used.
     """
     prompt = prompt or SENTENCE_PROMPT
-    return LLMChain(
-        llm=llm,
-        prompt=prompt,
-    )
+    return LLMChain(llm=llm, prompt=prompt)
 
 
 class DatasetGenerator:

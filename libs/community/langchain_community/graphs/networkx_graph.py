@@ -185,7 +185,7 @@ class NetworkxEntityGraph:
 
             >>> from IPython.display import SVG
             >>> self.draw_graphviz_svg(layout="dot", filename="web.svg")
-            >>> SVG('web.svg')
+            >>> SVG("web.svg")
         """
         from networkx.drawing.nx_agraph import to_agraph
 

@@ -34,10 +34,7 @@ class AirbyteLoader:
 
             from langchain_airbyte import AirbyteLoader
 
-            loader = AirbyteLoader(
-                source="github",
-                stream="pull_requests",
-            )
+            loader = AirbyteLoader(source="github", stream="pull_requests")
             documents = loader.lazy_load()
     """
 
@@ -102,10 +99,7 @@ class AirbyteLoader:
                         "_id": document.id,
                     }
                 )
-                yield Document(
-                    page_content=document.content,
-                    metadata=metadata,
-                )
+                yield Document(page_content=document.content, metadata=metadata)
         else:
             records: Iterator[Mapping[str, Any]] = self._airbyte_source.get_records(
                 self._stream

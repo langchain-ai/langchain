@@ -64,10 +64,7 @@ class ChatWrapper(BaseChatModel):
         )
         return self._to_chat_result(llm_result)
 
-    def _to_chat_prompt(
-        self,
-        messages: List[BaseMessage],
-    ) -> str:
+    def _to_chat_prompt(self, messages: List[BaseMessage]) -> str:
         """Convert a list of messages into a prompt format expected by wrapped LLM."""
         if not messages:
             raise ValueError("at least one HumanMessage must be provided")

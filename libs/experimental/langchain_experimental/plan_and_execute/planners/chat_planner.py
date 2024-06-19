@@ -6,11 +6,7 @@ from langchain_core.messages import SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 
 from langchain_experimental.plan_and_execute.planners.base import LLMPlanner
-from langchain_experimental.plan_and_execute.schema import (
-    Plan,
-    PlanOutputParser,
-    Step,
-)
+from langchain_experimental.plan_and_execute.schema import Plan, PlanOutputParser, Step
 
 SYSTEM_PROMPT = (
     "Let's first understand the problem and devise a plan to solve the problem."

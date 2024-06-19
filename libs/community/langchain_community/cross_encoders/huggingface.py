@@ -16,11 +16,8 @@ class HuggingFaceCrossEncoder(BaseModel, BaseCrossEncoder):
             from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
             model_name = "BAAI/bge-reranker-base"
-            model_kwargs = {'device': 'cpu'}
-            hf = HuggingFaceCrossEncoder(
-                model_name=model_name,
-                model_kwargs=model_kwargs
-            )
+            model_kwargs = {"device": "cpu"}
+            hf = HuggingFaceCrossEncoder(model_name=model_name, model_kwargs=model_kwargs)
     """
 
     client: Any  #: :meta private:

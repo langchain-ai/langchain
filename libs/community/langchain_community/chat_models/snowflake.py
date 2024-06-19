@@ -19,11 +19,7 @@ from langchain_core.utils import (
 )
 from langchain_core.utils.utils import build_extra_kwargs
 
-SUPPORTED_ROLES: List[str] = [
-    "system",
-    "user",
-    "assistant",
-]
+SUPPORTED_ROLES: List[str] = ["system", "user", "assistant"]
 
 
 class ChatSnowflakeCortexError(Exception):
@@ -39,9 +35,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     Returns:
         The dictionary.
     """
-    message_dict: Dict[str, Any] = {
-        "content": message.content,
-    }
+    message_dict: Dict[str, Any] = {"content": message.content}
 
     # populate role and additional message data
     if isinstance(message, ChatMessage) and message.role in SUPPORTED_ROLES:
@@ -57,10 +51,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _truncate_at_stop_tokens(
-    text: str,
-    stop: Optional[List[str]],
-) -> str:
+def _truncate_at_stop_tokens(text: str, stop: Optional[List[str]]) -> str:
     """Truncates text at the earliest stop token found."""
     if stop is None:
         return text
@@ -85,6 +76,7 @@ class ChatSnowflakeCortex(BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models import ChatSnowflakeCortex
+
             chat = ChatSnowflakeCortex()
     """
 
@@ -224,9 +216,6 @@ class ChatSnowflakeCortex(BaseChatModel):
         ai_message_content = response["choices"][0]["messages"]
 
         content = _truncate_at_stop_tokens(ai_message_content, stop)
-        message = AIMessage(
-            content=content,
-            response_metadata=response["usage"],
-        )
+        message = AIMessage(content=content, response_metadata=response["usage"])
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])

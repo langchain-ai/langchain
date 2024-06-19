@@ -197,33 +197,20 @@ class LanguageParser(BaseBlobParser):
         )
 
         if language is None:
-            yield Document(
-                page_content=code,
-                metadata={
-                    "source": blob.source,
-                },
-            )
+            yield Document(page_content=code, metadata={"source": blob.source})
             return
 
         if self.parser_threshold >= len(code.splitlines()):
             yield Document(
                 page_content=code,
-                metadata={
-                    "source": blob.source,
-                    "language": language,
-                },
+                metadata={"source": blob.source, "language": language},
             )
             return
 
         self.Segmenter = LANGUAGE_SEGMENTERS[language]
         segmenter = self.Segmenter(blob.as_string())
         if not segmenter.is_valid():
-            yield Document(
-                page_content=code,
-                metadata={
-                    "source": blob.source,
-                },
-            )
+            yield Document(page_content=code, metadata={"source": blob.source})
             return
 
         for functions_classes in segmenter.extract_functions_classes():

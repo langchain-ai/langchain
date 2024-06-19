@@ -26,7 +26,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "CreateDraftMessageSchema",
-    "O365CreateDraftMessage",
-]
+__all__ = ["CreateDraftMessageSchema", "O365CreateDraftMessage"]

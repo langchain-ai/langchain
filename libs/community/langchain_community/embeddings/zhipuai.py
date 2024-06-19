@@ -19,6 +19,7 @@ class ZhipuAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import ZhipuAIEmbeddings
+
             embeddings = ZhipuAIEmbeddings(api_key="your-api-key")
             text = "This is a test query."
             query_result = embeddings.embed_query(text)

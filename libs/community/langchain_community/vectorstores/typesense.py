@@ -27,15 +27,11 @@ class Typesense(VectorStore):
 
             node = {
                 "host": "localhost",  # For Typesense Cloud use xxx.a1.typesense.net
-                "port": "8108",       # For Typesense Cloud use 443
-                "protocol": "http"    # For Typesense Cloud use https
+                "port": "8108",  # For Typesense Cloud use 443
+                "protocol": "http",  # For Typesense Cloud use https
             }
             typesense_client = typesense.Client(
-                {
-                  "nodes": [node],
-                  "api_key": "<API_KEY>",
-                  "connection_timeout_seconds": 2
-                }
+                {"nodes": [node], "api_key": "<API_KEY>", "connection_timeout_seconds": 2}
             )
             typesense_collection_name = "langchain-memory"
 
@@ -139,10 +135,7 @@ class Typesense(VectorStore):
         return [doc["id"] for doc in docs]
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 10,
-        filter: Optional[str] = "",
+        self, query: str, k: int = 10, filter: Optional[str] = ""
     ) -> List[Tuple[Document, float]]:
         """Return typesense documents most similar to query, along with scores.
 
@@ -175,11 +168,7 @@ class Typesense(VectorStore):
         return docs
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 10,
-        filter: Optional[str] = "",
-        **kwargs: Any,
+        self, query: str, k: int = 10, filter: Optional[str] = "", **kwargs: Any
     ) -> List[Document]:
         """Return typesense documents most similar to query.
 
@@ -232,11 +221,7 @@ class Typesense(VectorStore):
                 "Please install it with `pip install typesense`."
             )
 
-        node = {
-            "host": host,
-            "port": str(port),
-            "protocol": protocol,
-        }
+        node = {"host": host, "port": str(port), "protocol": protocol}
         typesense_api_key = typesense_api_key or get_from_env(
             "typesense_api_key", "TYPESENSE_API_KEY"
         )

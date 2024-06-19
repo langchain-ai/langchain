@@ -39,7 +39,7 @@ class MintbaseDocumentLoader(BaseLoader):
 
             contractAddress = "nft.yearofchef.near"  # Year of chef contract address
             blockchainLoader = MintbaseDocumentLoader(
-                contract_address=contractAddress, blockchain_type="mainnet",api_key="omni-site"
+                contract_address=contractAddress, blockchain_type="mainnet", api_key="omni-site"
             )
     """  # noqa: E501
 

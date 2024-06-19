@@ -66,15 +66,10 @@ class InfobipAPIWrapper(BaseModel):
         }
 
         session: requests.Session = self._get_requests_session()
-        session.headers.update(
-            {
-                "Content-Type": "application/json",
-            }
-        )
+        session.headers.update({"Content-Type": "application/json"})
 
         response: requests.Response = session.post(
-            f"{self.infobip_base_url}/sms/2/text/advanced",
-            json=json,
+            f"{self.infobip_base_url}/sms/2/text/advanced", json=json
         )
 
         response_json: Dict = response.json()
@@ -113,15 +108,10 @@ class InfobipAPIWrapper(BaseModel):
         data = MultipartEncoder(fields=form_data)
 
         session: requests.Session = self._get_requests_session()
-        session.headers.update(
-            {
-                "Content-Type": data.content_type,
-            }
-        )
+        session.headers.update({"Content-Type": data.content_type})
 
         response: requests.Response = session.post(
-            f"{self.infobip_base_url}/email/3/send",
-            data=data,
+            f"{self.infobip_base_url}/email/3/send", data=data
         )
 
         response_json: Dict = response.json()
@@ -158,9 +148,7 @@ class InfobipAPIWrapper(BaseModel):
                 raise ValueError("Body must be specified for SMS messages")
 
             return self._send_sms(
-                sender=sender,
-                destination_phone_numbers=[to],
-                text=body,
+                sender=sender, destination_phone_numbers=[to], text=body
             )
         elif channel == "email":
             if sender == "":
@@ -176,10 +164,7 @@ class InfobipAPIWrapper(BaseModel):
                 raise ValueError("Body must be specified for email messages")
 
             return self._send_email(
-                from_email=sender,
-                to_email=to,
-                subject=subject,
-                body=body,
+                from_email=sender, to_email=to, subject=subject, body=body
             )
         else:
             raise ValueError(f"Channel {channel} is not supported")

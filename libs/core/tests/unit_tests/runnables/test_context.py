@@ -18,11 +18,7 @@ class _TestCase(NamedTuple):
 
 
 def seq_naive_rag() -> Runnable:
-    context = [
-        "Hi there!",
-        "How are you?",
-        "What's your name?",
-    ]
+    context = ["Hi there!", "How are you?", "What's your name?"]
 
     retriever = RunnableLambda(lambda x: context)
     prompt = PromptTemplate.from_template("{context} {question}")
@@ -46,11 +42,7 @@ def seq_naive_rag() -> Runnable:
 
 
 def seq_naive_rag_alt() -> Runnable:
-    context = [
-        "Hi there!",
-        "How are you?",
-        "What's your name?",
-    ]
+    context = ["Hi there!", "How are you?", "What's your name?"]
 
     retriever = RunnableLambda(lambda x: context)
     prompt = PromptTemplate.from_template("{context} {question}")
@@ -71,11 +63,7 @@ def seq_naive_rag_alt() -> Runnable:
 
 
 def seq_naive_rag_scoped() -> Runnable:
-    context = [
-        "Hi there!",
-        "How are you?",
-        "What's your name?",
-    ]
+    context = ["Hi there!", "How are you?", "What's your name?"]
 
     retriever = RunnableLambda(lambda x: context)
     prompt = PromptTemplate.from_template("{context} {question}")
@@ -101,24 +89,15 @@ def seq_naive_rag_scoped() -> Runnable:
 test_cases = [
     (
         Context.setter("foo") | Context.getter("foo"),
-        (
-            _TestCase("foo", "foo"),
-            _TestCase("bar", "bar"),
-        ),
+        (_TestCase("foo", "foo"), _TestCase("bar", "bar")),
     ),
     (
         Context.setter("input") | {"bar": Context.getter("input")},
-        (
-            _TestCase("foo", {"bar": "foo"}),
-            _TestCase("bar", {"bar": "bar"}),
-        ),
+        (_TestCase("foo", {"bar": "foo"}), _TestCase("bar", {"bar": "bar"})),
     ),
     (
         {"bar": Context.setter("input")} | Context.getter("input"),
-        (
-            _TestCase("foo", "foo"),
-            _TestCase("bar", "bar"),
-        ),
+        (_TestCase("foo", "foo"), _TestCase("bar", "bar")),
     ),
     (
         (
@@ -126,10 +105,7 @@ test_cases = [
             | Context.setter("prompt")
             | FakeListLLM(responses=["hello"])
             | StrOutputParser()
-            | {
-                "response": RunnablePassthrough(),
-                "prompt": Context.getter("prompt"),
-            }
+            | {"response": RunnablePassthrough(), "prompt": Context.getter("prompt")}
         ),
         (
             _TestCase(
@@ -223,10 +199,7 @@ test_cases = [
             | Context.setter("prompt")
             | FakeStreamingListLLM(responses=["hello"])
             | StrOutputParser()
-            | {
-                "response": RunnablePassthrough(),
-                "prompt": Context.getter("prompt"),
-            }
+            | {"response": RunnablePassthrough(), "prompt": Context.getter("prompt")}
         ),
         (
             _TestCase(
@@ -246,11 +219,7 @@ test_cases = [
                 "What up",
                 {
                     "result": "hello",
-                    "context": [
-                        "Hi there!",
-                        "How are you?",
-                        "What's your name?",
-                    ],
+                    "context": ["Hi there!", "How are you?", "What's your name?"],
                     "input": "What up",
                 },
             ),
@@ -258,11 +227,7 @@ test_cases = [
                 "Howdy",
                 {
                     "result": "hello",
-                    "context": [
-                        "Hi there!",
-                        "How are you?",
-                        "What's your name?",
-                    ],
+                    "context": ["Hi there!", "How are you?", "What's your name?"],
                     "input": "Howdy",
                 },
             ),
@@ -275,11 +240,7 @@ test_cases = [
                 "What up",
                 {
                     "result": "hello",
-                    "context": [
-                        "Hi there!",
-                        "How are you?",
-                        "What's your name?",
-                    ],
+                    "context": ["Hi there!", "How are you?", "What's your name?"],
                     "input": "What up",
                 },
             ),
@@ -287,11 +248,7 @@ test_cases = [
                 "Howdy",
                 {
                     "result": "hello",
-                    "context": [
-                        "Hi there!",
-                        "How are you?",
-                        "What's your name?",
-                    ],
+                    "context": ["Hi there!", "How are you?", "What's your name?"],
                     "input": "Howdy",
                 },
             ),
@@ -304,11 +261,7 @@ test_cases = [
                 "What up",
                 {
                     "result": "hello",
-                    "context": [
-                        "Hi there!",
-                        "How are you?",
-                        "What's your name?",
-                    ],
+                    "context": ["Hi there!", "How are you?", "What's your name?"],
                     "input": "What up",
                 },
             ),
@@ -316,11 +269,7 @@ test_cases = [
                 "Howdy",
                 {
                     "result": "hello",
-                    "context": [
-                        "Hi there!",
-                        "How are you?",
-                        "What's your name?",
-                    ],
+                    "context": ["Hi there!", "How are you?", "What's your name?"],
                     "input": "Howdy",
                 },
             ),
@@ -385,10 +334,7 @@ async def test_runnable_seq_streaming_chunks() -> None:
         | Context.setter("prompt")
         | FakeStreamingListLLM(responses=["hello"])
         | StrOutputParser()
-        | {
-            "response": RunnablePassthrough(),
-            "prompt": Context.getter("prompt"),
-        }
+        | {"response": RunnablePassthrough(), "prompt": Context.getter("prompt")}
     )
 
     chunks = [c for c in chain.stream({"foo": "foo", "bar": "bar"})]
@@ -407,5 +353,5 @@ async def test_runnable_seq_streaming_chunks() -> None:
         {"response": "o"},
     ]
     assert [c for c in chunks if c.get("prompt")] == [
-        {"prompt": StringPromptValue(text="foo bar")},
+        {"prompt": StringPromptValue(text="foo bar")}
     ]

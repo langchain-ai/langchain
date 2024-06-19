@@ -72,10 +72,7 @@ class GitHubAPIWrapper(BaseModel):
         except Exception:
             private_key = github_app_private_key
 
-        auth = Auth.AppAuth(
-            github_app_id,
-            private_key,
-        )
+        auth = Auth.AppAuth(github_app_id, private_key)
         gi = GithubIntegration(auth=auth)
         installation = gi.get_installations()
         if not installation:
@@ -105,10 +102,7 @@ class GitHubAPIWrapper(BaseModel):
         )
 
         active_branch = get_from_dict_or_env(
-            values,
-            "active_branch",
-            "ACTIVE_BRANCH",
-            default=repo.default_branch,
+            values, "active_branch", "ACTIVE_BRANCH", default=repo.default_branch
         )
 
         values["github"] = g

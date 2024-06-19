@@ -204,10 +204,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             params["filter"] = pre_filter
         query = {"$vectorSearch": params}
 
-        pipeline = [
-            query,
-            {"$set": {"score": {"$meta": "vectorSearchScore"}}},
-        ]
+        pipeline = [query, {"$set": {"score": {"$meta": "vectorSearchScore"}}}]
         if post_filter_pipeline is not None:
             pipeline.extend(post_filter_pipeline)
         cursor = self._collection.aggregate(pipeline)  # type: ignore[arg-type]
@@ -276,10 +273,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """
         additional = kwargs.get("additional")
         docs_and_scores = self.similarity_search_with_score(
-            query,
-            k=k,
-            pre_filter=pre_filter,
-            post_filter_pipeline=post_filter_pipeline,
+            query, k=k, pre_filter=pre_filter, post_filter_pipeline=post_filter_pipeline
         )
 
         if additional and "similarity_score" in additional:
@@ -363,10 +357,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 collection = mongo_client["<db_name>"]["<collection_name>"]
                 embeddings = OpenAIEmbeddings()
                 vectorstore = MongoDBAtlasVectorSearch.from_texts(
-                    texts,
-                    embeddings,
-                    metadatas=metadatas,
-                    collection=collection
+                    texts, embeddings, metadatas=metadatas, collection=collection
                 )
         """
         if collection is None:

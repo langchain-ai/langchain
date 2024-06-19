@@ -36,9 +36,7 @@ class BashOutputParser(BaseOutputParser):
         if "```bash" in text:
             return self.get_code_blocks(text)
         else:
-            raise OutputParserException(
-                f"Failed to parse bash output. Got: {text}",
-            )
+            raise OutputParserException(f"Failed to parse bash output. Got: {text}")
 
     @staticmethod
     def get_code_blocks(t: str) -> List[str]:

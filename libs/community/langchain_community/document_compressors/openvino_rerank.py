@@ -166,10 +166,7 @@ class OpenVINOReranker(BaseDocumentCompressor):
             final_results.append(doc)
         return final_results
 
-    def save_model(
-        self,
-        model_path: str,
-    ) -> bool:
+    def save_model(self, model_path: str) -> bool:
         self.ov_model.half()
         self.ov_model.save_pretrained(model_path)
         self.tokenizer.save_pretrained(model_path)

@@ -17,18 +17,15 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import OllamaEmbeddings
-            ollama_emb = OllamaEmbeddings(
-                model="llama:7b",
-            )
+
+            ollama_emb = OllamaEmbeddings(model="llama:7b")
             r1 = ollama_emb.embed_documents(
                 [
                     "Alpha is the first letter of Greek alphabet",
                     "Beta is the second letter of Greek alphabet",
                 ]
             )
-            r2 = ollama_emb.embed_query(
-                "What is the second letter of Greek alphabet"
-            )
+            r2 = ollama_emb.embed_query("What is the second letter of Greek alphabet")
 
     """
 
@@ -155,10 +152,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         Returns:
             The response as a dictionary.
         """
-        headers = {
-            "Content-Type": "application/json",
-            **(self.headers or {}),
-        }
+        headers = {"Content-Type": "application/json", **(self.headers or {})}
 
         try:
             res = requests.post(

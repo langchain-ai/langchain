@@ -115,12 +115,7 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
                 "model_uri"
             ] = f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
         if values["disable_request_logging"]:
-            values["_grpc_metadata"].append(
-                (
-                    "x-data-logging-enabled",
-                    "false",
-                )
-            )
+            values["_grpc_metadata"].append(("x-data-logging-enabled", "false"))
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

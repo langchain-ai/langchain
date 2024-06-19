@@ -15,10 +15,7 @@ from langchain_community.llms.loading import load_llm
 model_names = [None, "models/text-bison-001", "gemini-pro"]
 
 
-@pytest.mark.parametrize(
-    "model_name",
-    model_names,
-)
+@pytest.mark.parametrize("model_name", model_names)
 def test_google_generativeai_call(model_name: str) -> None:
     """Test valid call to Google GenerativeAI text API."""
     if model_name:
@@ -34,10 +31,7 @@ def test_google_generativeai_call(model_name: str) -> None:
         assert llm.model_name == "models/text-bison-001"
 
 
-@pytest.mark.parametrize(
-    "model_name",
-    model_names,
-)
+@pytest.mark.parametrize("model_name", model_names)
 def test_google_generativeai_generate(model_name: str) -> None:
     n = 1 if model_name == "gemini-pro" else 2
     if model_name:

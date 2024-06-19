@@ -38,8 +38,7 @@ def vdms_client() -> vdms.vdms:
 def test_init_from_client(vdms_client: vdms.vdms) -> None:
     embedding_function = FakeEmbeddings()
     _ = VDMS(  # type: ignore[call-arg]
-        embedding_function=embedding_function,
-        client=vdms_client,
+        embedding_function=embedding_function, client=vdms_client
     )
 
 

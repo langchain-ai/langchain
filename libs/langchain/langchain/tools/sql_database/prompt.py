@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 _importer = create_importer(
     __package__,
     deprecated_lookups={
-        "QUERY_CHECKER": "langchain_community.tools.sql_database.prompt",
+        "QUERY_CHECKER": "langchain_community.tools.sql_database.prompt"
     },
 )
 

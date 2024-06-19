@@ -7,9 +7,7 @@ from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 
-from langchain.agents.format_scratchpad.tools import (
-    format_to_tool_messages,
-)
+from langchain.agents.format_scratchpad.tools import format_to_tool_messages
 from langchain.agents.output_parsers.tools import ToolsAgentOutputParser
 
 MessageFormatter = Callable[[Sequence[Tuple[AgentAction, str]]], List[BaseMessage]]
@@ -93,7 +91,7 @@ def create_tool_calling_agent(
 
     if not hasattr(llm, "bind_tools"):
         raise ValueError(
-            "This function requires a .bind_tools method be implemented on the LLM.",
+            "This function requires a .bind_tools method be implemented on the LLM."
         )
     llm_with_tools = llm.bind_tools(tools)
 

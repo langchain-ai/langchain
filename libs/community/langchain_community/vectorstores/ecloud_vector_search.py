@@ -35,7 +35,7 @@ class EcloudESVectorStore(VectorStore):
             vectorstore = EcloudESVectorStore(
                 embedding=OpenAIEmbeddings(),
                 index_name="langchain-demo",
-                es_url="http://localhost:9200"
+                es_url="http://localhost:9200",
             )
 
     Args:
@@ -194,11 +194,7 @@ class EcloudESVectorStore(VectorStore):
                 }
             }
 
-    def delete(
-        self,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> Optional[bool]:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete documents from the index.
 
         Args:
@@ -269,10 +265,7 @@ class EcloudESVectorStore(VectorStore):
                 "function_score": {"query": filter, "functions": [query_vector_body]}
             }
 
-        return {
-            "size": search_params.get("size", 4),
-            "query": query_vector_body,
-        }
+        return {"size": search_params.get("size", 4), "query": query_vector_body}
 
     @staticmethod
     def get_dense_specific_model_similarity_params(
@@ -376,11 +369,7 @@ class EcloudESVectorStore(VectorStore):
         return docs_and_scores
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
-        **kwargs: Any,
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """Return documents most similar to query.
 

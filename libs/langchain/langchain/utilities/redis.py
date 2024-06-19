@@ -26,8 +26,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "TokenEscaper",
-    "check_redis_module_exist",
-    "get_client",
-]
+__all__ = ["TokenEscaper", "check_redis_module_exist", "get_client"]

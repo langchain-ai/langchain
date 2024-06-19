@@ -109,8 +109,7 @@ class TestAstraDBCaches:
         self.do_cache_test(llm, astradb_semantic_cache, "bar")
         output = llm.generate(["bar"])  # 'fizz' is erased away now
         assert output != LLMResult(
-            generations=[[Generation(text="fizz")]],
-            llm_output={},
+            generations=[[Generation(text="fizz")]], llm_output={}
         )
         astradb_semantic_cache.clear()
 
@@ -121,8 +120,7 @@ class TestAstraDBCaches:
         await self.ado_cache_test(llm, async_astradb_semantic_cache, "bar")
         output = await llm.agenerate(["bar"])  # 'fizz' is erased away now
         assert output != LLMResult(
-            generations=[[Generation(text="fizz")]],
-            llm_output={},
+            generations=[[Generation(text="fizz")]], llm_output={}
         )
         await async_astradb_semantic_cache.aclear()
 
@@ -135,8 +133,7 @@ class TestAstraDBCaches:
         get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])
         output = llm.generate([prompt])
         expected_output = LLMResult(
-            generations=[[Generation(text="fizz")]],
-            llm_output={},
+            generations=[[Generation(text="fizz")]], llm_output={}
         )
         assert output == expected_output
         # clear the cache
@@ -151,8 +148,7 @@ class TestAstraDBCaches:
         await get_llm_cache().aupdate("foo", llm_string, [Generation(text="fizz")])
         output = await llm.agenerate([prompt])
         expected_output = LLMResult(
-            generations=[[Generation(text="fizz")]],
-            llm_output={},
+            generations=[[Generation(text="fizz")]], llm_output={}
         )
         assert output == expected_output
         # clear the cache

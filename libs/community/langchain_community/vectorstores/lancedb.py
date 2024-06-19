@@ -554,11 +554,7 @@ class LanceDB(VectorStore):
 
         embedding = self._embedding.embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding,
-            k,
-            fetch_k,
-            lambda_mult=lambda_mult,
-            filter=filter,
+            embedding, k, fetch_k, lambda_mult=lambda_mult, filter=filter
         )
         return docs
 
@@ -589,12 +585,7 @@ class LanceDB(VectorStore):
             List of Documents selected by maximal marginal relevance.
         """
 
-        results = self._query(
-            query=embedding,
-            k=fetch_k,
-            filter=filter,
-            **kwargs,
-        )
+        results = self._query(query=embedding, k=fetch_k, filter=filter, **kwargs)
         mmr_selected = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
             results["vector"].to_pylist(),

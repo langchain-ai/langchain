@@ -14,7 +14,7 @@ def test_kay_retriever() -> None:
     )
     docs = retriever.invoke(
         "What were the biggest strategy changes and partnerships made by Roku "
-        "in 2023?",
+        "in 2023?"
     )
     assert len(docs) == 3
     for doc in docs:

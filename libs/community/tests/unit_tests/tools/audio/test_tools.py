@@ -17,8 +17,7 @@ def test_huggingface_tts_constructor() -> None:
     with pytest.raises(ValueError):
         os.environ.pop("HUGGINGFACE_API_KEY", None)
         HuggingFaceTextToSpeechModelInference(
-            model="test/model",
-            file_extension=AUDIO_FORMAT_EXT,
+            model="test/model", file_extension=AUDIO_FORMAT_EXT
         )
 
     with pytest.raises(ValueError):
@@ -36,8 +35,7 @@ def test_huggingface_tts_constructor() -> None:
 
     os.environ["HUGGINGFACE_API_KEY"] = "foo"
     HuggingFaceTextToSpeechModelInference(
-        model="test/model",
-        file_extension=AUDIO_FORMAT_EXT,
+        model="test/model", file_extension=AUDIO_FORMAT_EXT
     )
 
 

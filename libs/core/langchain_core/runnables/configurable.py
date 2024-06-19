@@ -145,8 +145,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
             return []
 
         def invoke(
-            prepared: Tuple[Runnable[Input, Output], RunnableConfig],
-            input: Input,
+            prepared: Tuple[Runnable[Input, Output], RunnableConfig], input: Input
         ) -> Union[Output, Exception]:
             bound, config = prepared
             if return_exceptions:
@@ -187,8 +186,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
             return []
 
         async def ainvoke(
-            prepared: Tuple[Runnable[Input, Output], RunnableConfig],
-            input: Input,
+            prepared: Tuple[Runnable[Input, Output], RunnableConfig], input: Input
         ) -> Union[Output, Exception]:
             bound, config = prepared
             if return_exceptions:
@@ -412,10 +410,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                 for k, v in self.default.__dict__.items()
                 if k in self.default.__fields__
             }
-            return (
-                self.default.__class__(**{**init_params, **configurable}),
-                config,
-            )
+            return (self.default.__class__(**{**init_params, **configurable}), config)
         else:
             return (self.default, config)
 
@@ -459,7 +454,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             ).configurable_alternatives(
                 ConfigurableField(id="prompt"),
                 default_key="joke",
-                poem=PromptTemplate.from_template("Write a short poem about {topic}")
+                poem=PromptTemplate.from_template("Write a short poem about {topic}"),
             )
 
             # When invoking the created RunnableSequence, you can pass in the
@@ -482,11 +477,13 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             from langchain_openai import ChatOpenAI
 
             prompt = RunnableConfigurableAlternatives(
-                which=ConfigurableField(id='prompt'),
+                which=ConfigurableField(id="prompt"),
                 default=PromptTemplate.from_template("Tell me a joke about {topic}"),
-                default_key='joke',
+                default_key="joke",
                 prefix_keys=False,
-                alternatives={"poem":PromptTemplate.from_template("Write a short poem about {topic}")}
+                alternatives={
+                    "poem": PromptTemplate.from_template("Write a short poem about {topic}")
+                },
             )
             chain = prompt | ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
             chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
@@ -496,8 +493,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     which: ConfigurableField
 
     alternatives: Dict[
-        str,
-        Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
+        str, Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]]
     ]
 
     default_key: str = "default"
@@ -537,7 +533,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                     annotation=which_enum,
                     default=self.default_key,
                     is_shared=self.which.is_shared,
-                ),
+                )
             ]
             # config specs of the default option
             + (
@@ -648,8 +644,7 @@ def make_options_spec(
             pass
         else:
             enum = StrEnum(  # type: ignore[call-overload]
-                spec.name or spec.id,
-                ((v, v) for v in list(spec.options.keys())),
+                spec.name or spec.id, ((v, v) for v in list(spec.options.keys()))
             )
             _enums_for_spec[spec] = cast(Type[StrEnum], enum)
     if isinstance(spec, ConfigurableFieldSingleOption):

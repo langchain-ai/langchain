@@ -42,12 +42,10 @@ class GenerationChunk(Generation):
     def __add__(self, other: GenerationChunk) -> GenerationChunk:
         if isinstance(other, GenerationChunk):
             generation_info = merge_dicts(
-                self.generation_info or {},
-                other.generation_info or {},
+                self.generation_info or {}, other.generation_info or {}
             )
             return GenerationChunk(
-                text=self.text + other.text,
-                generation_info=generation_info or None,
+                text=self.text + other.text, generation_info=generation_info or None
             )
         else:
             raise TypeError(

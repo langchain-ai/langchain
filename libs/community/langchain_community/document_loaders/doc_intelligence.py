@@ -68,7 +68,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
         ...     api_key="APIKEY",
         ...     api_version="2023-10-31-preview",
         ...     api_model="prebuilt-layout",
-        ...     mode="markdown"
+        ...     mode="markdown",
         ... )
         """
 
@@ -87,9 +87,7 @@ class AzureAIDocumentIntelligenceLoader(BaseLoader):
             analysis_features=analysis_features,
         )
 
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Lazy load given path as pages."""
         if self.file_path is not None:
             blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]

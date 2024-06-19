@@ -34,10 +34,7 @@ _EXAMPLE_MESSAGE = {
 _VALID_MESSAGES = [
     {"messages": [_EXAMPLE_MESSAGE], "other_key": "value"},
     {"messages": [], "other_key": "value"},
-    {
-        "messages": [[_EXAMPLE_MESSAGE, _EXAMPLE_MESSAGE]],
-        "other_key": "value",
-    },
+    {"messages": [[_EXAMPLE_MESSAGE, _EXAMPLE_MESSAGE]], "other_key": "value"},
     {"any_key": [_EXAMPLE_MESSAGE]},
     {"any_key": [[_EXAMPLE_MESSAGE, _EXAMPLE_MESSAGE]]},
 ]
@@ -58,37 +55,25 @@ _INVALID_PROMPTS = (
 )
 
 
-@pytest.mark.parametrize(
-    "inputs",
-    _VALID_MESSAGES,
-)
+@pytest.mark.parametrize("inputs", _VALID_MESSAGES)
 def test__get_messages_valid(inputs: Dict[str, Any]) -> None:
     {"messages": []}
     _get_messages(inputs)
 
 
-@pytest.mark.parametrize(
-    "inputs",
-    _VALID_PROMPTS,
-)
+@pytest.mark.parametrize("inputs", _VALID_PROMPTS)
 def test__get_prompts_valid(inputs: Dict[str, Any]) -> None:
     _get_prompt(inputs)
 
 
-@pytest.mark.parametrize(
-    "inputs",
-    _VALID_PROMPTS,
-)
+@pytest.mark.parametrize("inputs", _VALID_PROMPTS)
 def test__validate_example_inputs_for_language_model(inputs: Dict[str, Any]) -> None:
     mock_ = mock.MagicMock()
     mock_.inputs = inputs
     _validate_example_inputs_for_language_model(mock_, None)
 
 
-@pytest.mark.parametrize(
-    "inputs",
-    _INVALID_PROMPTS,
-)
+@pytest.mark.parametrize("inputs", _INVALID_PROMPTS)
 def test__validate_example_inputs_for_language_model_invalid(
     inputs: Dict[str, Any],
 ) -> None:

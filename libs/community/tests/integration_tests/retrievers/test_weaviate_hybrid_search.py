@@ -115,9 +115,7 @@ class TestWeaviateHybridSearchRetriever:
         where_filter = {"path": ["page"], "operator": "Equal", "valueNumber": 0}
 
         output = retriever.invoke("foo", where_filter=where_filter)
-        assert output == [
-            Document(page_content="foo", metadata={"page": 0}),
-        ]
+        assert output == [Document(page_content="foo", metadata={"page": 0})]
 
     @pytest.mark.vcr(ignore_localhost=True)
     def test_invoke_with_uuids(self, weaviate_url: str) -> None:

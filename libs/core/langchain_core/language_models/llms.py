@@ -501,10 +501,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         generation: Optional[GenerationChunk] = None
         try:
             async for chunk in self._astream(
-                prompt,
-                stop=stop,
-                run_manager=run_manager,
-                **kwargs,
+                prompt, stop=stop, run_manager=run_manager, **kwargs
             ):
                 yield chunk.text
                 if generation is None:
@@ -514,8 +511,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             assert generation is not None
         except BaseException as e:
             await run_manager.on_llm_error(
-                e,
-                response=LLMResult(generations=[[generation]] if generation else []),
+                e, response=LLMResult(generations=[[generation]] if generation else [])
             )
             raise e
         else:

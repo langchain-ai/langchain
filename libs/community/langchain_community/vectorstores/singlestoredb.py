@@ -3,15 +3,7 @@ from __future__ import annotations
 import json
 import re
 from enum import Enum
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-)
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -192,8 +184,7 @@ class SingleStoreDB(VectorStore):
                 from langchain_community.vectorstores import SingleStoreDB
 
                 vectorstore = SingleStoreDB(
-                    OpenAIEmbeddings(),
-                    host="https://user:password@127.0.0.1:3306/database"
+                    OpenAIEmbeddings(), host="https://user:password@127.0.0.1:3306/database"
                 )
 
             Advanced Usage:
@@ -223,7 +214,7 @@ class SingleStoreDB(VectorStore):
                 from langchain_openai import OpenAIEmbeddings
                 from langchain_community.vectorstores import SingleStoreDB
 
-                os.environ['SINGLESTOREDB_URL'] = 'me:p455w0rd@s2-host.com/my_db'
+                os.environ["SINGLESTOREDB_URL"] = "me:p455w0rd@s2-host.com/my_db"
                 vectorstore = SingleStoreDB(OpenAIEmbeddings())
 
             Using vector index:
@@ -233,11 +224,8 @@ class SingleStoreDB(VectorStore):
                 from langchain_openai import OpenAIEmbeddings
                 from langchain_community.vectorstores import SingleStoreDB
 
-                os.environ['SINGLESTOREDB_URL'] = 'me:p455w0rd@s2-host.com/my_db'
-                vectorstore = SingleStoreDB(
-                    OpenAIEmbeddings(),
-                    use_vector_index=True,
-                )
+                os.environ["SINGLESTOREDB_URL"] = "me:p455w0rd@s2-host.com/my_db"
+                vectorstore = SingleStoreDB(OpenAIEmbeddings(), use_vector_index=True)
 
             Using full-text index:
 
@@ -245,11 +233,8 @@ class SingleStoreDB(VectorStore):
                 from langchain_openai import OpenAIEmbeddings
                 from langchain_community.vectorstores import SingleStoreDB
 
-                os.environ['SINGLESTOREDB_URL'] = 'me:p455w0rd@s2-host.com/my_db'
-                vectorstore = SingleStoreDB(
-                    OpenAIEmbeddings(),
-                    use_full_text_search=True,
-                )
+                os.environ["SINGLESTOREDB_URL"] = "me:p455w0rd@s2-host.com/my_db"
+                vectorstore = SingleStoreDB(OpenAIEmbeddings(), use_full_text_search=True)
         """
 
         self.embedding = embedding
@@ -328,7 +313,7 @@ class SingleStoreDB(VectorStore):
                             self.vector_field,
                             index_options,
                             full_text_index,
-                        ),
+                        )
                     )
                 else:
                     cur.execute(
@@ -342,7 +327,7 @@ class SingleStoreDB(VectorStore):
                             self.vector_field,
                             self.metadata_field,
                             full_text_index,
-                        ),
+                        )
                     )
             finally:
                 cur.close()
@@ -499,12 +484,11 @@ class SingleStoreDB(VectorStore):
                 from langchain_openai import OpenAIEmbeddings
 
                 s2 = SingleStoreDB.from_documents(
-                    docs,
-                    OpenAIEmbeddings(),
-                    host="username:password@localhost:3306/database"
+                    docs, OpenAIEmbeddings(), host="username:password@localhost:3306/database"
                 )
-                results = s2.similarity_search("query text", 1,
-                                    {"metadata_field": "metadata_value"})
+                results = s2.similarity_search(
+                    "query text", 1, {"metadata_field": "metadata_value"}
+                )
 
             Different Search Strategies:
             .. code-block:: python
@@ -519,9 +503,12 @@ class SingleStoreDB(VectorStore):
                     use_full_text_search=True,
                     use_vector_index=True,
                 )
-                results = s2.similarity_search("query text", 1,
-                        search_strategy=SingleStoreDB.SearchStrategy.FILTER_BY_TEXT,
-                        filter_threshold=0.5)
+                results = s2.similarity_search(
+                    "query text",
+                    1,
+                    search_strategy=SingleStoreDB.SearchStrategy.FILTER_BY_TEXT,
+                    filter_threshold=0.5,
+                )
 
             Weighted Sum Search Strategy:
             .. code-block:: python
@@ -536,10 +523,13 @@ class SingleStoreDB(VectorStore):
                     use_full_text_search=True,
                     use_vector_index=True,
                 )
-                results = s2.similarity_search("query text", 1,
+                results = s2.similarity_search(
+                    "query text",
+                    1,
                     search_strategy=SingleStoreDB.SearchStrategy.WEIGHTED_SUM,
                     text_weight=0.3,
-                    vector_weight=0.7)
+                    vector_weight=0.7,
+                )
         """
         docs_and_scores = self.similarity_search_with_score(
             query=query,
@@ -621,12 +611,11 @@ class SingleStoreDB(VectorStore):
                 from langchain_openai import OpenAIEmbeddings
 
                 s2 = SingleStoreDB.from_documents(
-                    docs,
-                    OpenAIEmbeddings(),
-                    host="username:password@localhost:3306/database"
+                    docs, OpenAIEmbeddings(), host="username:password@localhost:3306/database"
                 )
-                results = s2.similarity_search_with_score("query text", 1,
-                                    {"metadata_field": "metadata_value"})
+                results = s2.similarity_search_with_score(
+                    "query text", 1, {"metadata_field": "metadata_value"}
+                )
 
             Different Search Strategies:
 
@@ -642,9 +631,12 @@ class SingleStoreDB(VectorStore):
                     use_full_text_search=True,
                     use_vector_index=True,
                 )
-                results = s2.similarity_search_with_score("query text", 1,
-                        search_strategy=SingleStoreDB.SearchStrategy.FILTER_BY_VECTOR,
-                        filter_threshold=0.5)
+                results = s2.similarity_search_with_score(
+                    "query text",
+                    1,
+                    search_strategy=SingleStoreDB.SearchStrategy.FILTER_BY_VECTOR,
+                    filter_threshold=0.5,
+                )
 
             Weighted Sum Search Strategy:
             .. code-block:: python
@@ -659,10 +651,13 @@ class SingleStoreDB(VectorStore):
                     use_full_text_search=True,
                     use_vector_index=True,
                 )
-                results = s2.similarity_search_with_score("query text", 1,
+                results = s2.similarity_search_with_score(
+                    "query text",
+                    1,
                     search_strategy=SingleStoreDB.SearchStrategy.WEIGHTED_SUM,
                     text_weight=0.3,
-                    vector_weight=0.7)
+                    vector_weight=0.7,
+                )
         """
 
         if (
@@ -968,9 +963,7 @@ class SingleStoreDB(VectorStore):
                 from langchain_openai import OpenAIEmbeddings
 
                 s2 = SingleStoreDB.from_texts(
-                    texts,
-                    OpenAIEmbeddings(),
-                    host="username:password@localhost:3306/database"
+                    texts, OpenAIEmbeddings(), host="username:password@localhost:3306/database"
                 )
         """
 

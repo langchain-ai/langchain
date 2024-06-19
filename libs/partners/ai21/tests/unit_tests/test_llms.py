@@ -5,9 +5,7 @@ from unittest.mock import Mock, call
 
 import pytest
 from ai21 import MissingApiKeyError
-from ai21.models import (
-    Penalty,
-)
+from ai21.models import Penalty
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
@@ -24,17 +22,12 @@ def test_initialization__when_no_api_key__should_raise_exception() -> None:
     """Test integration initialization."""
     with temporarily_unset_api_key():
         with pytest.raises(MissingApiKeyError):
-            AI21LLM(
-                model="j2-ultra",
-            )
+            AI21LLM(model="j2-ultra")
 
 
 def test_initialization__when_default_parameters() -> None:
     """Test integration initialization."""
-    AI21LLM(
-        api_key=DUMMY_API_KEY,
-        model="j2-ultra",
-    )
+    AI21LLM(api_key=DUMMY_API_KEY, model="j2-ultra")
 
 
 def test_initialization__when_custom_parameters_to_init() -> None:
@@ -77,17 +70,11 @@ def test_generate(mock_client_with_completion: Mock) -> None:
     )
 
     # Make call to testing function
-    ai21.generate(
-        [prompt0, prompt1],
-        stop=stop,
-    )
+    ai21.generate([prompt0, prompt1], stop=stop)
 
     # Assertions
     mock_client_with_completion.count_tokens.assert_has_calls(
-        [
-            call(prompt0),
-            call(prompt1),
-        ],
+        [call(prompt0), call(prompt1)]
     )
 
     mock_client_with_completion.completion.create.assert_has_calls(
@@ -129,9 +116,7 @@ def test_api_key_masked_when_passed_from_env(
     assert captured.out == "**********"
 
 
-def test_api_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
-) -> None:
+def test_api_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> None:
     """Test initialization with an API key provided via the initializer"""
     llm = AI21LLM(model="j2-ultra", api_key="secret-api-key")
     print(llm.api_key, end="")

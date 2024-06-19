@@ -22,7 +22,7 @@ class OctoAIEndpoint(BaseOpenAI):
     Example:
         .. code-block:: python
 
-            from langchain_community.llms.octoai_endpoint  import OctoAIEndpoint
+            from langchain_community.llms.octoai_endpoint import OctoAIEndpoint
 
             llm = OctoAIEndpoint(
                 model="llama-2-13b-chat-fp16",
@@ -47,10 +47,7 @@ class OctoAIEndpoint(BaseOpenAI):
     def _invocation_params(self) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
 
-        params: Dict[str, Any] = {
-            "model": self.model_name,
-            **self._default_params,
-        }
+        params: Dict[str, Any] = {"model": self.model_name, **self._default_params}
         if not is_openai_v1():
             params.update(
                 {
@@ -70,19 +67,13 @@ class OctoAIEndpoint(BaseOpenAI):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["octoai_api_base"] = get_from_dict_or_env(
-            values,
-            "octoai_api_base",
-            "OCTOAI_API_BASE",
-            default=DEFAULT_BASE_URL,
+            values, "octoai_api_base", "OCTOAI_API_BASE", default=DEFAULT_BASE_URL
         )
         values["octoai_api_token"] = convert_to_secret_str(
             get_from_dict_or_env(values, "octoai_api_token", "OCTOAI_API_TOKEN")
         )
         values["model_name"] = get_from_dict_or_env(
-            values,
-            "model_name",
-            "MODEL_NAME",
-            default=DEFAULT_MODEL,
+            values, "model_name", "MODEL_NAME", default=DEFAULT_MODEL
         )
 
         try:

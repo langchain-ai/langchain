@@ -25,18 +25,12 @@ def test_input_variables() -> None:
 def fake_llm_summarization_checker_chain() -> LLMSummarizationCheckerChain:
     """Fake LLMCheckerChain for testing."""
     queries = {
-        CREATE_ASSERTIONS_PROMPT.format(
-            summary="a",
-        ): "b",
-        CHECK_ASSERTIONS_PROMPT.format(
-            assertions="b",
-        ): "- b - True",
+        CREATE_ASSERTIONS_PROMPT.format(summary="a"): "b",
+        CHECK_ASSERTIONS_PROMPT.format(assertions="b"): "- b - True",
         REVISED_SUMMARY_PROMPT.format(
             checked_assertions="- b - True", summary="a"
         ): "b",
-        ARE_ALL_TRUE_PROMPT.format(
-            checked_assertions="- b - True",
-        ): "True",
+        ARE_ALL_TRUE_PROMPT.format(checked_assertions="- b - True"): "True",
     }
     fake_llm = FakeLLM(queries=queries)
     return LLMSummarizationCheckerChain.from_llm(

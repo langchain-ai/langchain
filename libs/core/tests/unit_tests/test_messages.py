@@ -274,25 +274,20 @@ class TestGetBufferString(unittest.TestCase):
 
     def test_valid_single_message(self) -> None:
         expected_output = f"Human: {self.human_msg.content}"
-        self.assertEqual(
-            get_buffer_string([self.human_msg]),
-            expected_output,
-        )
+        self.assertEqual(get_buffer_string([self.human_msg]), expected_output)
 
     def test_custom_human_prefix(self) -> None:
         prefix = "H"
         expected_output = f"{prefix}: {self.human_msg.content}"
         self.assertEqual(
-            get_buffer_string([self.human_msg], human_prefix="H"),
-            expected_output,
+            get_buffer_string([self.human_msg], human_prefix="H"), expected_output
         )
 
     def test_custom_ai_prefix(self) -> None:
         prefix = "A"
         expected_output = f"{prefix}: {self.ai_msg.content}"
         self.assertEqual(
-            get_buffer_string([self.ai_msg], ai_prefix="A"),
-            expected_output,
+            get_buffer_string([self.ai_msg], ai_prefix="A"), expected_output
         )
 
     def test_multiple_msg(self) -> None:
@@ -316,10 +311,7 @@ class TestGetBufferString(unittest.TestCase):
                 "AI: tool",
             ]
         )
-        self.assertEqual(
-            get_buffer_string(msgs),
-            expected_output,
-        )
+        self.assertEqual(get_buffer_string(msgs), expected_output)
 
 
 def test_multiple_msg() -> None:
@@ -327,23 +319,13 @@ def test_multiple_msg() -> None:
     ai_msg = AIMessage(content="ai")
     sys_msg = SystemMessage(content="sys")
 
-    msgs = [
-        human_msg,
-        ai_msg,
-        sys_msg,
-    ]
+    msgs = [human_msg, ai_msg, sys_msg]
     assert messages_from_dict(messages_to_dict(msgs)) == msgs
 
     # Test with tool calls
     msgs = [
-        AIMessage(
-            content="",
-            tool_calls=[ToolCall(name="a", args={"b": 1}, id=None)],
-        ),
-        AIMessage(
-            content="",
-            tool_calls=[ToolCall(name="c", args={"c": 2}, id=None)],
-        ),
+        AIMessage(content="", tool_calls=[ToolCall(name="a", args={"b": 1}, id=None)]),
+        AIMessage(content="", tool_calls=[ToolCall(name="c", args={"c": 2}, id=None)]),
     ]
     assert messages_from_dict(messages_to_dict(msgs)) == msgs
 
@@ -355,11 +337,7 @@ def test_multiple_msg_with_name() -> None:
     ai_msg = AIMessage(content="ai", name="ai erick")
     sys_msg = SystemMessage(content="sys", name="sys erick")
 
-    msgs = [
-        human_msg,
-        ai_msg,
-        sys_msg,
-    ]
+    msgs = [human_msg, ai_msg, sys_msg]
     assert messages_from_dict(messages_to_dict(msgs)) == msgs
 
 
@@ -690,13 +668,7 @@ def test_convert_to_messages() -> None:
 
 @pytest.mark.parametrize(
     "MessageClass",
-    [
-        AIMessage,
-        AIMessageChunk,
-        HumanMessage,
-        HumanMessageChunk,
-        SystemMessage,
-    ],
+    [AIMessage, AIMessageChunk, HumanMessage, HumanMessageChunk, SystemMessage],
 )
 def test_message_name(MessageClass: Type) -> None:
     msg = MessageClass(content="foo", name="bar")
@@ -709,20 +681,14 @@ def test_message_name(MessageClass: Type) -> None:
     assert msg3.name is None
 
 
-@pytest.mark.parametrize(
-    "MessageClass",
-    [FunctionMessage, FunctionMessageChunk],
-)
+@pytest.mark.parametrize("MessageClass", [FunctionMessage, FunctionMessageChunk])
 def test_message_name_function(MessageClass: Type) -> None:
     # functionmessage doesn't support name=None
     msg = MessageClass(name="foo", content="bar")
     assert msg.name == "foo"
 
 
-@pytest.mark.parametrize(
-    "MessageClass",
-    [ChatMessage, ChatMessageChunk],
-)
+@pytest.mark.parametrize("MessageClass", [ChatMessage, ChatMessageChunk])
 def test_message_name_chat(MessageClass: Type) -> None:
     msg = MessageClass(content="foo", role="user", name="bar")
     assert msg.name == "bar"

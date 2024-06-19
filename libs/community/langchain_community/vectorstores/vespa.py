@@ -32,7 +32,7 @@ class VespaStore(VectorStore):
                 page_content_field="text",
                 embedding_field="embedding",
                 input_field="query_embedding",
-                metadata_fields=["date", "rating", "author"]
+                metadata_fields=["date", "rating", "author"],
             )
 
             embedding_function = OpenAIEmbeddings()

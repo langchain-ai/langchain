@@ -28,9 +28,7 @@ class RSSFeedLoader(BaseLoader):
 
             from langchain_community.document_loaders import RSSFeedLoader
 
-            loader = RSSFeedLoader(
-                urls=["<url-1>", "<url-2>"],
-            )
+            loader = RSSFeedLoader(urls=["<url-1>", "<url-2>"])
             docs = loader.load()
 
     The loader uses feedparser to parse RSS feeds.  The feedparser library is not installed by default so you should
@@ -118,10 +116,7 @@ class RSSFeedLoader(BaseLoader):
                     raise e
             try:
                 for entry in feed.entries:
-                    loader = NewsURLLoader(
-                        urls=[entry.link],
-                        **self.newsloader_kwargs,
-                    )
+                    loader = NewsURLLoader(urls=[entry.link], **self.newsloader_kwargs)
                     article = loader.load()[0]
                     article.metadata["feed"] = url
                     yield article

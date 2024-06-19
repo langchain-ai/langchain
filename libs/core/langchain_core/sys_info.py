@@ -13,11 +13,7 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = tuple()) -> None:
     from importlib import metadata, util
 
     # Packages that do not start with "langchain" prefix.
-    other_langchain_packages = [
-        "langserve",
-        "langgraph",
-        "langsmith",
-    ]
+    other_langchain_packages = ["langserve", "langgraph", "langsmith"]
 
     langchain_pkgs = [
         name for _, name, _ in pkgutil.iter_modules() if name.startswith("langchain")

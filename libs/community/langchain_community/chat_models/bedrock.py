@@ -3,9 +3,7 @@ from collections import defaultdict
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 from langchain_core._api.deprecation import deprecated
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -118,24 +116,14 @@ def _format_anthropic_messages(
             content = []
             for item in message.content:
                 if isinstance(item, str):
-                    content.append(
-                        {
-                            "type": "text",
-                            "text": item,
-                        }
-                    )
+                    content.append({"type": "text", "text": item})
                 elif isinstance(item, dict):
                     if "type" not in item:
                         raise ValueError("Dict content item must have a type key")
                     if item["type"] == "image_url":
                         # convert format
                         source = _format_image(item["image_url"]["url"])
-                        content.append(
-                            {
-                                "type": "image",
-                                "source": source,
-                            }
-                        )
+                        content.append({"type": "image", "source": source})
                     else:
                         content.append(item)
                 else:
@@ -145,12 +133,7 @@ def _format_anthropic_messages(
         else:
             content = message.content
 
-        formatted_messages.append(
-            {
-                "role": role,
-                "content": content,
-            }
-        )
+        formatted_messages.append({"role": role, "content": content})
     return system, formatted_messages
 
 
@@ -171,9 +154,7 @@ class ChatPromptAdapter:
             prompt = convert_messages_to_prompt_mistral(messages=messages)
         elif provider == "amazon":
             prompt = convert_messages_to_prompt_anthropic(
-                messages=messages,
-                human_prompt="\n\nUser:",
-                ai_prompt="\n\nBot:",
+                messages=messages, human_prompt="\n\nUser:", ai_prompt="\n\nBot:"
             )
         else:
             raise NotImplementedError(

@@ -51,9 +51,7 @@ def test_api_key_is_string() -> None:
     assert isinstance(llm.dashscope_api_key, SecretStr)
 
 
-def test_api_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
-) -> None:
+def test_api_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> None:
     llm = ChatTongyi(dashscope_api_key="secret-api-key")  # type: ignore[call-arg]
     print(llm.dashscope_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
@@ -100,9 +98,7 @@ def test_functions_call_thoughts() -> None:
     chat = ChatTongyi(model="qwen-plus")  # type: ignore[call-arg]
 
     prompt_tmpl = "Use the given functions to answer following question: {input}"
-    prompt_msgs = [
-        HumanMessagePromptTemplate.from_template(prompt_tmpl),
-    ]
+    prompt_msgs = [HumanMessagePromptTemplate.from_template(prompt_tmpl)]
     prompt = ChatPromptTemplate(messages=prompt_msgs)  # type: ignore[arg-type, call-arg]
 
     chain = prompt | chat.bind(functions=_FUNCTIONS)

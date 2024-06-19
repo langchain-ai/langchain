@@ -6,11 +6,7 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Any, List, Optional, Type
 
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.messages import (
-    BaseMessage,
-    messages_from_dict,
-    messages_to_dict,
-)
+from langchain_core.messages import BaseMessage, messages_from_dict, messages_to_dict
 
 logger = logging.getLogger(__name__)
 
@@ -78,8 +74,7 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
             )
         elif self.conn_string:
             self._client = CosmosClient.from_connection_string(
-                conn_str=self.conn_string,
-                **cosmos_client_kwargs or {},
+                conn_str=self.conn_string, **cosmos_client_kwargs or {}
             )
         else:
             raise ValueError("Either a connection string or a credential must be set.")

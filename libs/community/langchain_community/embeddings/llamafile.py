@@ -26,6 +26,7 @@ class LlamafileEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import LlamafileEmbeddings
+
             embedder = LlamafileEmbeddings()
             doc_embeddings = embedder.embed_documents(
                 [
@@ -49,12 +50,8 @@ class LlamafileEmbeddings(BaseModel, Embeddings):
         try:
             response = requests.post(
                 url=f"{self.base_url}/embedding",
-                headers={
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "content": text,
-                },
+                headers={"Content-Type": "application/json"},
+                json={"content": text},
                 timeout=self.request_timeout,
             )
         except requests.exceptions.ConnectionError:

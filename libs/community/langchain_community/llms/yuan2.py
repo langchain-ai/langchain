@@ -87,13 +87,7 @@ class Yuan2(LLM):
 
     @staticmethod
     def _model_param_names() -> Set[str]:
-        return {
-            "max_tokens",
-            "temp",
-            "top_k",
-            "top_p",
-            "do_sample",
-        }
+        return {"max_tokens", "temp", "top_k", "top_p", "do_sample"}
 
     def _default_params(self) -> Dict[str, Any]:
         return {

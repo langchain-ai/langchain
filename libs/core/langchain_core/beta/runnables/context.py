@@ -126,8 +126,7 @@ def _config_with_context(
 
 
 def aconfig_with_context(
-    config: RunnableConfig,
-    steps: List[Runnable],
+    config: RunnableConfig, steps: List[Runnable]
 ) -> RunnableConfig:
     """Asynchronously patch a runnable config with context getters and setters.
 
@@ -142,8 +141,7 @@ def aconfig_with_context(
 
 
 def config_with_context(
-    config: RunnableConfig,
-    steps: List[Runnable],
+    config: RunnableConfig, steps: List[Runnable]
 ) -> RunnableConfig:
     """Patch a runnable config with context getters and setters.
 
@@ -180,10 +178,7 @@ class ContextGet(RunnableSerializable):
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
         return super().config_specs + [
-            ConfigurableFieldSpec(
-                id=id_,
-                annotation=Callable[[], Any],
-            )
+            ConfigurableFieldSpec(id=id_, annotation=Callable[[], Any])
             for id_ in self.ids
         ]
 
@@ -276,10 +271,7 @@ class ContextSet(RunnableSerializable):
                         f"Circular reference in context setter for key {getter_key}"
                     )
         return super().config_specs + [
-            ConfigurableFieldSpec(
-                id=id_,
-                annotation=Callable[[], Any],
-            )
+            ConfigurableFieldSpec(id=id_, annotation=Callable[[], Any])
             for id_ in self.ids
         ]
 
@@ -327,8 +319,7 @@ class Context:
             chain = (
                 Context.setter("input")
                 | {
-                    "context": RunnablePassthrough()
-                            | Context.setter("context"),
+                    "context": RunnablePassthrough() | Context.setter("context"),
                     "question": RunnablePassthrough(),
                 }
                 | PromptTemplate.from_template("{context} {question}")

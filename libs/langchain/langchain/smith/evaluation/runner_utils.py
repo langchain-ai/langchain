@@ -36,13 +36,8 @@ from langchain_core.tracers.evaluation import (
 from langchain_core.tracers.langchain import LangChainTracer
 from langsmith.client import Client
 from langsmith.env import get_git_info, get_langchain_env_var_metadata
-from langsmith.evaluation import (
-    EvaluationResult,
-    RunEvaluator,
-)
-from langsmith.evaluation import (
-    run_evaluator as run_evaluator_dec,
-)
+from langsmith.evaluation import EvaluationResult, RunEvaluator
+from langsmith.evaluation import run_evaluator as run_evaluator_dec
 from langsmith.run_helpers import as_runnable, is_traceable_function
 from langsmith.schemas import Dataset, DataType, Example, Run, TracerSession
 from langsmith.utils import LangSmithError
@@ -85,9 +80,7 @@ class InputFormatError(Exception):
 class TestResult(dict):
     """A dictionary of the results of a single test run."""
 
-    def get_aggregate_feedback(
-        self,
-    ) -> pd.DataFrame:
+    def get_aggregate_feedback(self) -> pd.DataFrame:
         """Return quantiles for the feedback scores.
 
         This method calculates and prints the quantiles for the feedback scores
@@ -130,10 +123,7 @@ class TestResult(dict):
             else:
                 output = {"output": output_}
 
-            r = {
-                **{f"inputs.{k}": v for k, v in result["input"].items()},
-                **output,
-            }
+            r = {**{f"inputs.{k}": v for k, v in result["input"].items()}, **output}
             if "reference" in result:
                 if isinstance(result["reference"], dict):
                     r.update(
@@ -169,8 +159,7 @@ class EvalError(dict):
 
 
 def _wrap_in_chain_factory(
-    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY,
-    dataset_name: str = "<my_dataset>",
+    llm_or_chain_factory: MODEL_OR_CHAIN_FACTORY, dataset_name: str = "<my_dataset>"
 ) -> MCF:
     """Forgive the user if they pass in a chain without memory instead of a chain
     factory. It's a common mistake. Raise a more helpful error message as well."""
@@ -331,8 +320,7 @@ def _get_messages(inputs: Dict[str, Any]) -> dict:
 
 ## Shared data validation utilities
 def _validate_example_inputs_for_language_model(
-    first_example: Example,
-    input_mapper: Optional[Callable[[Dict], Any]],
+    first_example: Example, input_mapper: Optional[Callable[[Dict], Any]]
 ) -> None:
     if input_mapper:
         prompt_input = input_mapper(first_example.inputs)
@@ -364,9 +352,7 @@ def _validate_example_inputs_for_language_model(
 
 
 def _validate_example_inputs_for_chain(
-    first_example: Example,
-    chain: Chain,
-    input_mapper: Optional[Callable[[Dict], Any]],
+    first_example: Example, chain: Chain, input_mapper: Optional[Callable[[Dict], Any]]
 ) -> None:
     """Validate that the example inputs match the chain input keys."""
     if input_mapper:
@@ -451,8 +437,7 @@ def _setup_evaluation(
 
 
 def _determine_input_key(
-    config: smith_eval.RunEvalConfig,
-    run_inputs: Optional[List[str]],
+    config: smith_eval.RunEvalConfig, run_inputs: Optional[List[str]]
 ) -> Optional[str]:
     input_key = None
     if config.input_key:
@@ -475,8 +460,7 @@ def _determine_input_key(
 
 
 def _determine_prediction_key(
-    config: smith_eval.RunEvalConfig,
-    run_outputs: Optional[List[str]],
+    config: smith_eval.RunEvalConfig, run_outputs: Optional[List[str]]
 ) -> Optional[str]:
     prediction_key = None
     if config.prediction_key:
@@ -498,8 +482,7 @@ def _determine_prediction_key(
 
 
 def _determine_reference_key(
-    config: smith_eval.RunEvalConfig,
-    example_outputs: Optional[List[str]],
+    config: smith_eval.RunEvalConfig, example_outputs: Optional[List[str]]
 ) -> Optional[str]:
     if config.reference_key:
         reference_key = config.reference_key
@@ -989,10 +972,7 @@ def _prepare_eval_run(
         project_metadata = project_metadata or {}
         git_info = get_git_info()
         if git_info:
-            project_metadata = {
-                **project_metadata,
-                "git": git_info,
-            }
+            project_metadata = {**project_metadata, "git": git_info}
 
         project_metadata["dataset_version"] = inferred_version
         project = client.create_project(
@@ -1045,9 +1025,7 @@ class _DatasetRunContainer:
     batch_evaluators: Optional[List[smith_eval_config.BATCH_EVALUATOR_LIKE]] = None
 
     def _merge_test_outputs(
-        self,
-        batch_results: list,
-        all_eval_results: Dict[str, _RowResult],
+        self, batch_results: list, all_eval_results: Dict[str, _RowResult]
     ) -> dict:
         results: dict = {}
         for example, output in zip(self.examples, batch_results):
@@ -1111,18 +1089,13 @@ class _DatasetRunContainer:
                     )
                     run_id = str(run.id) if run else None
                     all_eval_results.setdefault(str(callback.example_id), {}).update(
-                        {
-                            "execution_time": execution_time,
-                            "run_id": run_id,
-                            "run": run,
-                        }
+                        {"execution_time": execution_time, "run_id": run_id, "run": run}
                     )
                     all_runs[str(callback.example_id)] = run
         return cast(Dict[str, _RowResult], all_eval_results), all_runs
 
     def _collect_test_results(
-        self,
-        batch_results: List[Union[dict, str, LLMResult, ChatResult]],
+        self, batch_results: List[Union[dict, str, LLMResult, ChatResult]]
     ) -> TestResult:
         logger.info("Waiting for evaluators to complete.")
         wait_for_all_evaluators()
@@ -1200,9 +1173,7 @@ class _DatasetRunContainer:
             RunnableConfig(
                 callbacks=[
                     LangChainTracer(
-                        project_name=project.name,
-                        client=client,
-                        example_id=example.id,
+                        project_name=project.name, client=client, example_id=example.id
                     ),
                     EvaluatorCallbackHandler(
                         evaluators=run_evaluators or [],

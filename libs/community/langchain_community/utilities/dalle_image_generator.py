@@ -4,10 +4,7 @@ import os
 from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
-from langchain_core.utils import (
-    get_from_dict_or_env,
-    get_pydantic_field_names,
-)
+from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 
 from langchain_community.utils.openai import is_openai_v1
 
@@ -106,10 +103,7 @@ class DallEAPIWrapper(BaseModel):
             "OPENAI_API_BASE"
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
 
         try:

@@ -36,8 +36,7 @@ def test_api_key_masked_when_passed_via_constructor() -> None:
 def test_api_key_alias() -> None:
     for model in [
         ChatJavelinAIGateway(
-            route="<javelin-ai-gateway-chat-route>",
-            javelin_api_key="secret-api-key",
+            route="<javelin-ai-gateway-chat-route>", javelin_api_key="secret-api-key"
         ),
         ChatJavelinAIGateway(
             route="<javelin-ai-gateway-chat-route>", api_key="secret-api-key"

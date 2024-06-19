@@ -1,12 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import (
-    TYPE_CHECKING,
-    List,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, List, Optional, Union
 
 if TYPE_CHECKING:
     import rdflib
@@ -197,10 +192,7 @@ class OntotextGraphDBGraph:
         """
         return self.schema
 
-    def query(
-        self,
-        query: str,
-    ) -> List[rdflib.query.ResultRow]:
+    def query(self, query: str) -> List[rdflib.query.ResultRow]:
         """
         Query the graph.
         """

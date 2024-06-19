@@ -26,8 +26,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "concatenate_cells",
-    "remove_newlines",
-    "NotebookLoader",
-]
+__all__ = ["concatenate_cells", "remove_newlines", "NotebookLoader"]

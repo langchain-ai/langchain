@@ -16,11 +16,7 @@ TEST_DATA_CONTENT = open(TEST_DATA_PATH, "rb").read()
 def test_end_to_end() -> None:
     tool = SessionsPythonREPLTool(pool_management_endpoint=POOL_MANAGEMENT_ENDPOINT)
     result = tool.run("print('hello world')\n1 + 1")
-    assert json.loads(result) == {
-        "result": 2,
-        "stdout": "hello world\n",
-        "stderr": "",
-    }
+    assert json.loads(result) == {"result": 2, "stdout": "hello world\n", "stderr": ""}
 
     # upload file content
     uploaded_file1_metadata = tool.upload_file(

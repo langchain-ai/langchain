@@ -22,7 +22,13 @@ class DoctranPropertyExtractor(BaseDocumentTransformer):
                     "name": "category",
                     "description": "What type of email this is.",
                     "type": "string",
-                    "enum": ["update", "action_item", "customer_feedback", "announcement", "other"],
+                    "enum": [
+                        "update",
+                        "action_item",
+                        "customer_feedback",
+                        "announcement",
+                        "other",
+                    ],
                     "required": True,
                 },
                 {

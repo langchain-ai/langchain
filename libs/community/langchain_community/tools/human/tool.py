@@ -25,9 +25,7 @@ class HumanInputRun(BaseTool):
     input_func: Callable = Field(default_factory=lambda: input)
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the Human input tool."""
         self.prompt_func(query)

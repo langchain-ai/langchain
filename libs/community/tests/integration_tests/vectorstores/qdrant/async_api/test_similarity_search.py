@@ -138,8 +138,7 @@ async def test_qdrant_similarity_search_filters(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_with_relevance_score_no_threshold(
-    vector_name: Optional[str],
-    qdrant_location: str,
+    vector_name: Optional[str], qdrant_location: str
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -166,8 +165,7 @@ async def test_qdrant_similarity_search_with_relevance_score_no_threshold(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_with_relevance_score_with_threshold(
-    vector_name: Optional[str],
-    qdrant_location: str,
+    vector_name: Optional[str], qdrant_location: str
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -195,8 +193,7 @@ async def test_qdrant_similarity_search_with_relevance_score_with_threshold(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_similarity_search_with_relevance_score_with_threshold_and_filter(
-    vector_name: Optional[str],
-    qdrant_location: str,
+    vector_name: Optional[str], qdrant_location: str
 ) -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -230,8 +227,7 @@ async def test_similarity_search_with_relevance_score_with_threshold_and_filter(
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_similarity_search_filters_with_qdrant_filters(
-    vector_name: Optional[str],
-    qdrant_location: str,
+    vector_name: Optional[str], qdrant_location: str
 ) -> None:
     """Test end to end construction and search."""
     from qdrant_client.http import models as rest
@@ -251,17 +247,12 @@ async def test_qdrant_similarity_search_filters_with_qdrant_filters(
 
     qdrant_filter = rest.Filter(
         must=[
+            rest.FieldCondition(key="metadata.page", match=rest.MatchValue(value=1)),
             rest.FieldCondition(
-                key="metadata.page",
-                match=rest.MatchValue(value=1),
+                key="metadata.details.page", match=rest.MatchValue(value=2)
             ),
             rest.FieldCondition(
-                key="metadata.details.page",
-                match=rest.MatchValue(value=2),
-            ),
-            rest.FieldCondition(
-                key="metadata.details.pages",
-                match=rest.MatchAny(any=[3]),
+                key="metadata.details.pages", match=rest.MatchAny(any=[3])
             ),
         ]
     )

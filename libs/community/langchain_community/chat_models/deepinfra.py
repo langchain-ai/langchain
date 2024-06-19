@@ -47,11 +47,7 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.messages.tool import ToolCall
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatGenerationChunk,
-    ChatResult,
-)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
@@ -255,9 +251,7 @@ class ChatDeepInfra(BaseChatModel):
         return _completion_with_retry(**kwargs)
 
     async def acompletion_with_retry(
-        self,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+        self, run_manager: Optional[AsyncCallbackManagerForLLMRun] = None, **kwargs: Any
     ) -> Any:
         """Use tenacity to retry the async completion call."""
         retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
@@ -283,16 +277,10 @@ class ChatDeepInfra(BaseChatModel):
         """Validate api key, python package exists, temperature, top_p, and top_k."""
         # For compatibility with LiteLLM
         api_key = get_from_dict_or_env(
-            values,
-            "deepinfra_api_key",
-            "DEEPINFRA_API_KEY",
-            default="",
+            values, "deepinfra_api_key", "DEEPINFRA_API_KEY", default=""
         )
         values["deepinfra_api_token"] = get_from_dict_or_env(
-            values,
-            "deepinfra_api_token",
-            "DEEPINFRA_API_TOKEN",
-            default=api_key,
+            values, "deepinfra_api_token", "DEEPINFRA_API_TOKEN", default=api_key
         )
 
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:

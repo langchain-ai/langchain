@@ -84,11 +84,7 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
     fake_llm = FakeListLLM(cache=False, responses=responses)
 
     tools = [
-        Tool(
-            name="Search",
-            func=lambda x: x,
-            description="Useful for searching",
-        ),
+        Tool(name="Search", func=lambda x: x, description="Useful for searching"),
         Tool(
             name="Lookup",
             func=lambda x: x,
@@ -138,17 +134,9 @@ def test_agent_with_callbacks() -> None:
     ]
     # Only fake LLM gets callbacks for handler2
     fake_llm = FakeListLLM(responses=responses, callbacks=[handler2])
-    tools = [
-        Tool(
-            name="Search",
-            func=lambda x: x,
-            description="Useful for searching",
-        ),
-    ]
+    tools = [Tool(name="Search", func=lambda x: x, description="Useful for searching")]
     agent = initialize_agent(
-        tools,
-        fake_llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION
     )
 
     output = agent.run("when was langchain made", callbacks=[handler1])
@@ -193,12 +181,10 @@ def test_agent_stream() -> None:
             name="Search",
             func=lambda x: f"Results for: {x}",
             description="Useful for searching",
-        ),
+        )
     ]
     agent = initialize_agent(
-        tools,
-        fake_llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION
     )
 
     output = [a for a in agent.stream("when was langchain made")]
@@ -322,12 +308,10 @@ def test_agent_tool_return_direct() -> None:
             func=lambda x: x,
             description="Useful for searching",
             return_direct=True,
-        ),
+        )
     ]
     agent = initialize_agent(
-        tools,
-        fake_llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION
     )
 
     output = agent.run("when was langchain made")
@@ -348,7 +332,7 @@ def test_agent_tool_return_direct_in_intermediate_steps() -> None:
             func=lambda x: x,
             description="Useful for searching",
             return_direct=True,
-        ),
+        )
     ]
     agent = initialize_agent(
         tools,
@@ -376,7 +360,7 @@ def test_agent_with_new_prefix_suffix() -> None:
             func=lambda x: x,
             description="Useful for searching",
             return_direct=True,
-        ),
+        )
     ]
     prefix = "FooBarBaz"
 
@@ -407,12 +391,10 @@ def test_agent_lookup_tool() -> None:
             func=lambda x: x,
             description="Useful for searching",
             return_direct=True,
-        ),
+        )
     ]
     agent = initialize_agent(
-        tools=tools,
-        llm=fake_llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        tools=tools, llm=fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION
     )
 
     assert agent.lookup_tool("Search") == tools[0]
@@ -427,7 +409,7 @@ def test_agent_invalid_tool() -> None:
             func=lambda x: x,
             description="Useful for searching",
             return_direct=True,
-        ),
+        )
     ]
     agent = initialize_agent(
         tools=tools,
@@ -495,12 +477,7 @@ async def test_runnable_agent() -> None:
     # astream
     results = [r async for r in executor.astream({"question": "hello"})]
     assert results == [
-        {
-            "foo": "meow",
-            "messages": [
-                AIMessage(content="hard-coded-message"),
-            ],
-        }
+        {"foo": "meow", "messages": [AIMessage(content="hard-coded-message")]}
     ]
 
     # stream log
@@ -548,18 +525,9 @@ async def test_runnable_agent_with_function_calls() -> None:
 
     parser_responses = cycle(
         [
-            AgentAction(
-                tool="find_pet",
-                tool_input={
-                    "pet": "cat",
-                },
-                log="find_pet()",
-            ),
-            AgentFinish(
-                return_values={"foo": "meow"},
-                log="hard-coded-message",
-            ),
-        ],
+            AgentAction(tool="find_pet", tool_input={"pet": "cat"}, log="find_pet()"),
+            AgentFinish(return_values={"foo": "meow"}, log="hard-coded-message"),
+        ]
     )
 
     def fake_parse(inputs: dict) -> Union[AgentFinish, AgentAction]:
@@ -646,25 +614,16 @@ async def test_runnable_with_multi_action_per_step() -> None:
         [
             [
                 AgentAction(
-                    tool="find_pet",
-                    tool_input={
-                        "pet": "cat",
-                    },
-                    log="find_pet()",
+                    tool="find_pet", tool_input={"pet": "cat"}, log="find_pet()"
                 ),
                 AgentAction(
                     tool="pet_pet",  # A function that allows you to pet the given pet.
-                    tool_input={
-                        "pet": "cat",
-                    },
+                    tool_input={"pet": "cat"},
                     log="pet_pet()",
                 ),
             ],
-            AgentFinish(
-                return_values={"foo": "meow"},
-                log="hard-coded-message",
-            ),
-        ],
+            AgentFinish(return_values={"foo": "meow"}, log="hard-coded-message"),
+        ]
     )
 
     def fake_parse(inputs: dict) -> Union[AgentFinish, AgentAction]:
@@ -777,10 +736,7 @@ def _make_func_invocation(name: str, **kwargs: Any) -> AIMessage:
     return AIMessage(
         content="",
         additional_kwargs={
-            "function_call": {
-                "name": name,
-                "arguments": json.dumps(kwargs),
-            }
+            "function_call": {"name": name, "arguments": json.dumps(kwargs)}
         },
     )
 
@@ -807,9 +763,7 @@ async def test_openai_agent_with_streaming() -> None:
         [
             ("system", "You are a helpful AI bot. Your name is kitty power meow."),
             ("human", "{question}"),
-            MessagesPlaceholder(
-                variable_name="agent_scratchpad",
-            ),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
     )
 
@@ -950,9 +904,7 @@ def _make_tools_invocation(name_to_arguments: Dict[str, Dict[str, Any]]) -> AIMe
     ]
     return AIMessage(
         content="",
-        additional_kwargs={
-            "tool_calls": raw_tool_calls,
-        },
+        additional_kwargs={"tool_calls": raw_tool_calls},
         tool_calls=tool_calls,  # type: ignore[arg-type]
     )
 
@@ -961,12 +913,7 @@ async def test_openai_agent_tools_agent() -> None:
     """Test OpenAI tools agent."""
     infinite_cycle = cycle(
         [
-            _make_tools_invocation(
-                {
-                    "find_pet": {"pet": "cat"},
-                    "check_time": {},
-                }
-            ),
+            _make_tools_invocation({"find_pet": {"pet": "cat"}, "check_time": {}}),
             AIMessage(content="The cat is spying from under the bed."),
         ]
     )
@@ -990,9 +937,7 @@ async def test_openai_agent_tools_agent() -> None:
         [
             ("system", "You are a helpful AI bot. Your name is kitty power meow."),
             ("human", "{question}"),
-            MessagesPlaceholder(
-                variable_name="agent_scratchpad",
-            ),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
     )
 

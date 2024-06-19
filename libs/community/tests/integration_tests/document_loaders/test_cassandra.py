@@ -110,19 +110,11 @@ async def test_loader_metadata_mapper(keyspace: str) -> None:
     expected = [
         Document(
             page_content="Row(row_id='id1', body_blob='text1')",
-            metadata={
-                "table": CASSANDRA_TABLE,
-                "keyspace": keyspace,
-                "id": "id1",
-            },
+            metadata={"table": CASSANDRA_TABLE, "keyspace": keyspace, "id": "id1"},
         ),
         Document(
             page_content="Row(row_id='id2', body_blob='text2')",
-            metadata={
-                "table": CASSANDRA_TABLE,
-                "keyspace": keyspace,
-                "id": "id2",
-            },
+            metadata={"table": CASSANDRA_TABLE, "keyspace": keyspace, "id": "id2"},
         ),
     ]
     assert loader.load() == expected

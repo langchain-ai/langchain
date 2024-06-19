@@ -103,11 +103,7 @@ class NLAToolkit(BaseToolkit):
         spec = OpenAPISpec.from_url(ai_plugin.api.url)
         # TODO: Merge optional Auth information with the `requests` argument
         return cls.from_llm_and_spec(
-            llm=llm,
-            spec=spec,
-            requests=requests,
-            verbose=verbose,
-            **kwargs,
+            llm=llm, spec=spec, requests=requests, verbose=verbose, **kwargs
         )
 
     @classmethod

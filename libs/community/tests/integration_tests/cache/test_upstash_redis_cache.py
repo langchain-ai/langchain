@@ -38,10 +38,7 @@ def test_redis_cache() -> None:
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     langchain.llm_cache.update("foo", llm_string, [Generation(text="fizz")])
     output = llm.generate(["foo"])
-    expected_output = LLMResult(
-        generations=[[Generation(text="fizz")]],
-        llm_output={},
-    )
+    expected_output = LLMResult(generations=[[Generation(text="fizz")]], llm_output={})
     assert output == expected_output
 
     lookup_output = langchain.llm_cache.lookup("foo", llm_string)
@@ -70,8 +67,7 @@ def test_redis_cache_multi() -> None:
         ["foo"]
     )  # foo and bar will have the same embedding produced by FakeEmbeddings
     expected_output = LLMResult(
-        generations=[[Generation(text="fizz"), Generation(text="Buzz")]],
-        llm_output={},
+        generations=[[Generation(text="fizz"), Generation(text="Buzz")]], llm_output={}
     )
     assert output == expected_output
     # clear the cache

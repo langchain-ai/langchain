@@ -1,19 +1,14 @@
 from langchain_core.documents import Document
 
 from langchain_community.vectorstores import Bagel
-from tests.integration_tests.vectorstores.fake_embeddings import (
-    FakeEmbeddings,
-)
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
 def test_similarity_search() -> None:
     """Test similarity search"""
     from bagel.config import Settings
 
-    setting = Settings(
-        bagel_api_impl="rest",
-        bagel_server_host="api.bageldb.ai",
-    )
+    setting = Settings(bagel_api_impl="rest", bagel_server_host="api.bageldb.ai")
     bagel = Bagel(client_settings=setting)
     bagel.add_texts(texts=["hello bagel", "hello langchain"])
     result = bagel.similarity_search(query="bagel", k=1)
@@ -35,9 +30,7 @@ def test_with_metadatas() -> None:
     texts = ["hello bagel", "hello langchain"]
     metadatas = [{"metadata": str(i)} for i in range(len(texts))]
     txt_search = Bagel.from_texts(
-        cluster_name="testing",
-        texts=texts,
-        metadatas=metadatas,
+        cluster_name="testing", texts=texts, metadatas=metadatas
     )
     output = txt_search.similarity_search("hello bagel", k=1)
     assert output == [Document(page_content="hello bagel", metadata={"metadata": "0"})]
@@ -108,9 +101,7 @@ def test_search_filter() -> None:
     texts = ["hello bagel", "hello langchain"]
     metadatas = [{"first_letter": text[0]} for text in texts]
     txt_search = Bagel.from_texts(
-        cluster_name="testing",
-        texts=texts,
-        metadatas=metadatas,
+        cluster_name="testing", texts=texts, metadatas=metadatas
     )
     output = txt_search.similarity_search("bagel", k=1, where={"first_letter": "h"})
     assert output == [
@@ -127,9 +118,7 @@ def test_search_filter_with_scores() -> None:
     texts = ["hello bagel", "this is langchain"]
     metadatas = [{"source": "notion"}, {"source": "google"}]
     txt_search = Bagel.from_texts(
-        cluster_name="testing",
-        texts=texts,
-        metadatas=metadatas,
+        cluster_name="testing", texts=texts, metadatas=metadatas
     )
     output = txt_search.similarity_search_with_score(
         "hello bagel", k=1, where={"source": "notion"}
@@ -158,9 +147,7 @@ def test_bagel_update_document() -> None:
     original_doc = Document(page_content=initial_content, metadata={"page": "0"})
 
     docsearch = Bagel.from_documents(
-        cluster_name="testing_docs",
-        documents=[original_doc],
-        ids=[document_id],
+        cluster_name="testing_docs", documents=[original_doc], ids=[document_id]
     )
 
     updated_content = "updated bagel doc"

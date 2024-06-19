@@ -65,9 +65,12 @@ class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
         .. code-block:: python
 
             from langchain_community.llms import VolcEngineMaasLLM
-            model = VolcEngineMaasChat(model="skylark-lite-public",
-                                          volc_engine_maas_ak="your_ak",
-                                          volc_engine_maas_sk="your_sk")
+
+            model = VolcEngineMaasChat(
+                model="skylark-lite-public",
+                volc_engine_maas_ak="your_ak",
+                volc_engine_maas_sk="your_sk",
+            )
     """
 
     @property
@@ -88,15 +91,9 @@ class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
         }
 
     def _convert_prompt_msg_params(
-        self,
-        messages: List[BaseMessage],
-        **kwargs: Any,
+        self, messages: List[BaseMessage], **kwargs: Any
     ) -> Dict[str, Any]:
-        model_req = {
-            "model": {
-                "name": self.model,
-            }
-        }
+        model_req = {"model": {"name": self.model}}
         if self.model_version is not None:
             model_req["model"]["version"] = self.model_version
         return {

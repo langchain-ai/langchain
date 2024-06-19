@@ -59,7 +59,9 @@ class Xinference(LLM):
 
         llm = Xinference(
             server_url="http://0.0.0.0:9997",
-            model_uid = {model_uid} # replace model_uid with the model UID return from launching the model
+            model_uid={
+                model_uid
+            },  # replace model_uid with the model UID return from launching the model
         )
 
         llm.invoke(

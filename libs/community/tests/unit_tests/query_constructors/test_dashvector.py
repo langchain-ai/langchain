@@ -1,12 +1,7 @@
 from typing import Any, Tuple
 
 import pytest
-from langchain_core.structured_query import (
-    Comparator,
-    Comparison,
-    Operation,
-    Operator,
-)
+from langchain_core.structured_query import Comparator, Comparison, Operation, Operator
 
 from langchain_community.query_constructors.dashvector import DashvectorTranslator
 

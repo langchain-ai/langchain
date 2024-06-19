@@ -12,11 +12,7 @@ if TYPE_CHECKING:
     from cassio.table.table_types import RowType
 
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.messages import (
-    BaseMessage,
-    message_to_dict,
-    messages_from_dict,
-)
+from langchain_core.messages import BaseMessage, message_to_dict, messages_from_dict
 
 DEFAULT_TABLE_NAME = "message_store"
 DEFAULT_TTL_SECONDS = None
@@ -80,17 +76,13 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve all session messages from DB"""
         # The latest are returned, in chronological order
-        rows = self.table.get_partition(
-            partition_id=self.session_id,
-        )
+        rows = self.table.get_partition(partition_id=self.session_id)
         return _rows_to_messages(rows)
 
     async def aget_messages(self) -> List[BaseMessage]:
         """Retrieve all session messages from DB"""
         # The latest are returned, in chronological order
-        rows = await self.table.aget_partition(
-            partition_id=self.session_id,
-        )
+        rows = await self.table.aget_partition(partition_id=self.session_id)
         return _rows_to_messages(rows)
 
     def add_message(self, message: BaseMessage) -> None:

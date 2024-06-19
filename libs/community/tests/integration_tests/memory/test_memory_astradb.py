@@ -5,9 +5,7 @@ import pytest
 from langchain.memory import ConversationBufferMemory
 from langchain_core.messages import AIMessage, HumanMessage
 
-from langchain_community.chat_message_histories.astradb import (
-    AstraDBChatMessageHistory,
-)
+from langchain_community.chat_message_histories.astradb import AstraDBChatMessageHistory
 from langchain_community.utilities.astradb import SetupMode
 
 
@@ -79,9 +77,7 @@ async def async_history2() -> AsyncIterable[AstraDBChatMessageHistory]:
 def test_memory_with_message_store(history1: AstraDBChatMessageHistory) -> None:
     """Test the memory with a message store."""
     memory = ConversationBufferMemory(
-        memory_key="baz",
-        chat_memory=history1,
-        return_messages=True,
+        memory_key="baz", chat_memory=history1, return_messages=True
     )
 
     assert memory.chat_memory.messages == []
@@ -114,9 +110,7 @@ async def test_memory_with_message_store_async(
 ) -> None:
     """Test the memory with a message store."""
     memory = ConversationBufferMemory(
-        memory_key="baz",
-        chat_memory=async_history1,
-        return_messages=True,
+        memory_key="baz", chat_memory=async_history1, return_messages=True
     )
 
     assert await memory.chat_memory.aget_messages() == []
@@ -149,14 +143,10 @@ def test_memory_separate_session_ids(
 ) -> None:
     """Test that separate session IDs do not share entries."""
     memory1 = ConversationBufferMemory(
-        memory_key="mk1",
-        chat_memory=history1,
-        return_messages=True,
+        memory_key="mk1", chat_memory=history1, return_messages=True
     )
     memory2 = ConversationBufferMemory(
-        memory_key="mk2",
-        chat_memory=history2,
-        return_messages=True,
+        memory_key="mk2", chat_memory=history2, return_messages=True
     )
 
     memory1.chat_memory.add_messages([AIMessage(content="Just saying.")])
@@ -179,14 +169,10 @@ async def test_memory_separate_session_ids_async(
 ) -> None:
     """Test that separate session IDs do not share entries."""
     memory1 = ConversationBufferMemory(
-        memory_key="mk1",
-        chat_memory=async_history1,
-        return_messages=True,
+        memory_key="mk1", chat_memory=async_history1, return_messages=True
     )
     memory2 = ConversationBufferMemory(
-        memory_key="mk2",
-        chat_memory=async_history2,
-        return_messages=True,
+        memory_key="mk2", chat_memory=async_history2, return_messages=True
     )
 
     await memory1.chat_memory.aadd_messages([AIMessage(content="Just saying.")])

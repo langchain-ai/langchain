@@ -1,15 +1,6 @@
 import re
 import warnings
-from typing import (
-    Any,
-    AsyncIterator,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-)
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
@@ -118,10 +109,7 @@ class _AnthropicCommon(BaseLanguageModel):
     @property
     def _default_params(self) -> Mapping[str, Any]:
         """Get the default parameters for calling Anthropic API."""
-        d = {
-            "max_tokens_to_sample": self.max_tokens_to_sample,
-            "model": self.model,
-        }
+        d = {"max_tokens_to_sample": self.max_tokens_to_sample, "model": self.model}
         if self.temperature is not None:
             d["temperature"] = self.temperature
         if self.top_k is not None:
@@ -149,9 +137,7 @@ class _AnthropicCommon(BaseLanguageModel):
 
 
 @deprecated(
-    since="0.0.28",
-    removal="0.3",
-    alternative_import="langchain_anthropic.AnthropicLLM",
+    since="0.0.28", removal="0.3", alternative_import="langchain_anthropic.AnthropicLLM"
 )
 class Anthropic(LLM, _AnthropicCommon):
     """Anthropic large language models.
@@ -250,9 +236,7 @@ class Anthropic(LLM, _AnthropicCommon):
         stop = self._get_anthropic_stop(stop)
         params = {**self._default_params, **kwargs}
         response = self.client.completions.create(
-            prompt=self._wrap_prompt(prompt),
-            stop_sequences=stop,
-            **params,
+            prompt=self._wrap_prompt(prompt), stop_sequences=stop, **params
         )
         return response.completion
 
@@ -279,9 +263,7 @@ class Anthropic(LLM, _AnthropicCommon):
         params = {**self._default_params, **kwargs}
 
         response = await self.async_client.completions.create(
-            prompt=self._wrap_prompt(prompt),
-            stop_sequences=stop,
-            **params,
+            prompt=self._wrap_prompt(prompt), stop_sequences=stop, **params
         )
         return response.completion
 
@@ -345,10 +327,7 @@ class Anthropic(LLM, _AnthropicCommon):
         params = {**self._default_params, **kwargs}
 
         async for token in await self.async_client.completions.create(
-            prompt=self._wrap_prompt(prompt),
-            stop_sequences=stop,
-            stream=True,
-            **params,
+            prompt=self._wrap_prompt(prompt), stop_sequences=stop, stream=True, **params
         ):
             chunk = GenerationChunk(text=token.completion)
             if run_manager:

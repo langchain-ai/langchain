@@ -55,6 +55,7 @@ def load_dataset(uri: str) -> List[Dict]:
     .. code-block:: python
 
         from langchain.evaluation import load_dataset
+
         ds = load_dataset("llm-math")
     """
     try:
@@ -96,10 +97,7 @@ _EVALUATOR_MAP: Dict[
 
 
 def load_evaluator(
-    evaluator: EvaluatorType,
-    *,
-    llm: Optional[BaseLanguageModel] = None,
-    **kwargs: Any,
+    evaluator: EvaluatorType, *, llm: Optional[BaseLanguageModel] = None, **kwargs: Any
 ) -> Union[Chain, StringEvaluator]:
     """Load the requested evaluation chain specified by a string.
 

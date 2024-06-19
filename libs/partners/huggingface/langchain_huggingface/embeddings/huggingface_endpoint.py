@@ -20,11 +20,10 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_huggingface import HuggingFaceEndpointEmbeddings
+
             model = "sentence-transformers/all-mpnet-base-v2"
             hf = HuggingFaceEndpointEmbeddings(
-                model=model,
-                task="feature-extraction",
-                huggingfacehub_api_token="my-api-key",
+                model=model, task="feature-extraction", huggingfacehub_api_token="my-api-key"
             )
     """
 
@@ -68,13 +67,11 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
                 values["repo_id"] = DEFAULT_MODEL
 
             client = InferenceClient(
-                model=values["model"],
-                token=huggingfacehub_api_token,
+                model=values["model"], token=huggingfacehub_api_token
             )
 
             async_client = AsyncInferenceClient(
-                model=values["model"],
-                token=huggingfacehub_api_token,
+                model=values["model"], token=huggingfacehub_api_token
             )
 
             if values["task"] not in VALID_TASKS:

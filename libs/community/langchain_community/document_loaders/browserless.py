@@ -26,38 +26,18 @@ class BrowserlessLoader(BaseLoader):
             if self.text_content:
                 response = requests.post(
                     "https://chrome.browserless.io/scrape",
-                    params={
-                        "token": self.api_token,
-                    },
-                    json={
-                        "url": url,
-                        "elements": [
-                            {
-                                "selector": "body",
-                            }
-                        ],
-                    },
+                    params={"token": self.api_token},
+                    json={"url": url, "elements": [{"selector": "body"}]},
                 )
                 yield Document(
                     page_content=response.json()["data"][0]["results"][0]["text"],
-                    metadata={
-                        "source": url,
-                    },
+                    metadata={"source": url},
                 )
             else:
                 response = requests.post(
                     "https://chrome.browserless.io/content",
-                    params={
-                        "token": self.api_token,
-                    },
-                    json={
-                        "url": url,
-                    },
+                    params={"token": self.api_token},
+                    json={"url": url},
                 )
 
-                yield Document(
-                    page_content=response.text,
-                    metadata={
-                        "source": url,
-                    },
-                )
+                yield Document(page_content=response.text, metadata={"source": url})

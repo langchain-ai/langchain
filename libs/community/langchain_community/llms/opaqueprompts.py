@@ -96,16 +96,13 @@ class OpaquePrompts(LLM):
 
         # TODO: Add in callbacks once child runs for LLMs are supported by LangSmith.
         # call the LLM with the sanitized prompt and get the response
-        llm_response = self.base_llm.bind(stop=stop).invoke(
-            sanitized_prompt_value_str,
-        )
+        llm_response = self.base_llm.bind(stop=stop).invoke(sanitized_prompt_value_str)
         if isinstance(llm_response, AIMessage):
             llm_response = llm_response.content
 
         # desanitize the response by restoring the original sensitive information
         desanitize_response: op.DesanitizeResponse = op.desanitize(
-            llm_response,
-            secure_context=sanitize_response.secure_context,
+            llm_response, secure_context=sanitize_response.secure_context
         )
         return desanitize_response.desanitized_text
 

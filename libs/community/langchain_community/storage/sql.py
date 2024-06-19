@@ -16,14 +16,7 @@ from typing import (
 )
 
 from langchain_core.stores import BaseStore
-from sqlalchemy import (
-    Engine,
-    LargeBinary,
-    and_,
-    create_engine,
-    delete,
-    select,
-)
+from sqlalchemy import Engine, LargeBinary, and_, create_engine, delete, select
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -109,10 +102,7 @@ class SQLStore(BaseStore[str, bytes]):
             if async_mode is None:
                 async_mode = False
             if async_mode:
-                _engine = create_async_engine(
-                    url=str(db_url),
-                    **(engine_kwargs or {}),
-                )
+                _engine = create_async_engine(url=str(db_url), **(engine_kwargs or {}))
             else:
                 _engine = create_engine(url=str(db_url), **(engine_kwargs or {}))
         elif engine:

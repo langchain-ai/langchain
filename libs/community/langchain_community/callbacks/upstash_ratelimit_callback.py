@@ -103,20 +103,14 @@ class UpstashRatelimitHandler(BaseCallbackHandler):
 
                 user_id = "foo"
                 handler = UpstashRatelimitHandler(
-                    identifier=user_id,
-                    request_ratelimit=ratelimit
+                    identifier=user_id, request_ratelimit=ratelimit
                 )
 
                 # Initialize a simple runnable to test
                 chain = RunnableLambda(str)
 
                 # pass handler as callback:
-                output = chain.invoke(
-                    "input",
-                    config={
-                        "callbacks": [handler]
-                    }
-                )
+                output = chain.invoke("input", config={"callbacks": [handler]})
 
         """
         if not any([token_ratelimit, request_ratelimit]):

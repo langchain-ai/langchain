@@ -1,8 +1,6 @@
 from langchain_airbyte import __all__
 
-EXPECTED_ALL = [
-    "AirbyteLoader",
-]
+EXPECTED_ALL = ["AirbyteLoader"]
 
 
 def test_all_imports() -> None:

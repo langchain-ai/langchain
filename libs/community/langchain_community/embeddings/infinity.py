@@ -28,10 +28,8 @@ class InfinityEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import InfinityEmbeddings
-            InfinityEmbeddings(
-                model="BAAI/bge-small",
-                infinity_api_url="http://localhost:7997",
-            )
+
+            InfinityEmbeddings(model="BAAI/bge-small", infinity_api_url="http://localhost:7997")
     """
 
     model: str
@@ -58,7 +56,7 @@ class InfinityEmbeddings(BaseModel, Embeddings):
         )
 
         values["client"] = TinyAsyncOpenAIInfinityEmbeddingClient(
-            host=values["infinity_api_url"],
+            host=values["infinity_api_url"]
         )
         return values
 
@@ -71,10 +69,7 @@ class InfinityEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = self.client.embed(
-            model=self.model,
-            texts=texts,
-        )
+        embeddings = self.client.embed(model=self.model, texts=texts)
         return embeddings
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -86,10 +81,7 @@ class InfinityEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
-        embeddings = await self.client.aembed(
-            model=self.model,
-            texts=texts,
-        )
+        embeddings = await self.client.aembed(model=self.model, texts=texts)
         return embeddings
 
     def embed_query(self, text: str) -> List[float]:
@@ -126,17 +118,10 @@ class TinyAsyncOpenAIInfinityEmbeddingClient:  #: :meta private:
         .. code-block:: python
 
 
-            mini_client = TinyAsyncInfinityEmbeddingClient(
-            )
-            embeds = mini_client.embed(
-                model="BAAI/bge-small",
-                text=["doc1", "doc2"]
-            )
+            mini_client = TinyAsyncInfinityEmbeddingClient()
+            embeds = mini_client.embed(model="BAAI/bge-small", text=["doc1", "doc2"])
             # or
-            embeds = await mini_client.aembed(
-                model="BAAI/bge-small",
-                text=["doc1", "doc2"]
-            )
+            embeds = await mini_client.aembed(model="BAAI/bge-small", text=["doc1", "doc2"])
 
     """
 
@@ -170,7 +155,7 @@ class TinyAsyncOpenAIInfinityEmbeddingClient:  #: :meta private:
 
         Example:
             ```
-            texts = ["one","three","four"]
+            texts = ["one", "three", "four"]
             perm_texts, undo = self._permute(texts)
             texts == undo(perm_texts)
             ```
@@ -230,12 +215,9 @@ class TinyAsyncOpenAIInfinityEmbeddingClient:  #: :meta private:
             url=f"{self.host}/embeddings",
             headers={
                 # "accept": "application/json",
-                "content-type": "application/json",
+                "content-type": "application/json"
             },
-            json=dict(
-                input=texts,
-                model=model,
-            ),
+            json=dict(input=texts, model=model),
         )
 
     def _sync_request_embed(

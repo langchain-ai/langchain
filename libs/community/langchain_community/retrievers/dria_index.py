@@ -49,10 +49,7 @@ class DriaRetriever(BaseRetriever):
         )
         return response
 
-    def add_texts(
-        self,
-        texts: List,
-    ) -> None:
+    def add_texts(self, texts: List) -> None:
         """Add texts to the Dria knowledge base.
 
         Args:

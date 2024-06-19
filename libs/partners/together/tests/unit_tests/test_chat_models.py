@@ -36,11 +36,7 @@ def test_function_dict_to_message_function_message() -> None:
     content = json.dumps({"result": "Example #1"})
     name = "test_function"
     result = _convert_dict_to_message(
-        {
-            "role": "function",
-            "name": name,
-            "content": content,
-        }
+        {"role": "function", "name": name, "content": content}
     )
     assert isinstance(result, FunctionMessage)
     assert result.name == name
@@ -113,11 +109,7 @@ def mock_completion() -> dict:
         "choices": [
             {
                 "index": 0,
-                "message": {
-                    "role": "assistant",
-                    "content": "Bab",
-                    "name": "KimSolar",
-                },
+                "message": {"role": "assistant", "content": "Bab", "name": "KimSolar"},
                 "finish_reason": "stop",
             }
         ],
@@ -135,11 +127,7 @@ def test_together_invoke(mock_completion: dict) -> None:
         return mock_completion
 
     mock_client.create = mock_create
-    with patch.object(
-        llm,
-        "client",
-        mock_client,
-    ):
+    with patch.object(llm, "client", mock_client):
         res = llm.invoke("bab")
         assert res.content == "Bab"
     assert completed
@@ -156,11 +144,7 @@ async def test_together_ainvoke(mock_completion: dict) -> None:
         return mock_completion
 
     mock_client.create = mock_create
-    with patch.object(
-        llm,
-        "async_client",
-        mock_client,
-    ):
+    with patch.object(llm, "async_client", mock_client):
         res = await llm.ainvoke("bab")
         assert res.content == "Bab"
     assert completed
@@ -172,14 +156,8 @@ def test_together_invoke_name(mock_completion: dict) -> None:
     mock_client = MagicMock()
     mock_client.create.return_value = mock_completion
 
-    with patch.object(
-        llm,
-        "client",
-        mock_client,
-    ):
-        messages = [
-            HumanMessage(content="Foo", name="Zorba"),
-        ]
+    with patch.object(llm, "client", mock_client):
+        messages = [HumanMessage(content="Foo", name="Zorba")]
         res = llm.invoke(messages)
         call_args, call_kwargs = mock_client.create.call_args
         assert len(call_args) == 0  # no positional args

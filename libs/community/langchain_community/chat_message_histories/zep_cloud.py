@@ -4,11 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 if TYPE_CHECKING:
     from zep_cloud import (

@@ -10,10 +10,7 @@ from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 from langchain_community.adapters.openai import convert_message_to_dict
-from langchain_community.chat_models.openai import (
-    ChatOpenAI,
-    _import_tiktoken,
-)
+from langchain_community.chat_models.openai import ChatOpenAI, _import_tiktoken
 
 if TYPE_CHECKING:
     import tiktoken
@@ -39,6 +36,7 @@ class ChatEverlyAI(ChatOpenAI):
         .. code-block:: python
 
             from langchain_community.chat_models import ChatEverlyAI
+
             chat = ChatEverlyAI(model_name="meta-llama/Llama-2-7b-chat-hf")
     """
 
@@ -79,9 +77,7 @@ class ChatEverlyAI(ChatOpenAI):
     def validate_environment_override(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(
-            values,
-            "everlyai_api_key",
-            "EVERLYAI_API_KEY",
+            values, "everlyai_api_key", "EVERLYAI_API_KEY"
         )
         values["openai_api_base"] = DEFAULT_API_BASE
 
@@ -91,7 +87,7 @@ class ChatEverlyAI(ChatOpenAI):
         except ImportError as e:
             raise ImportError(
                 "Could not import openai python package. "
-                "Please install it with `pip install openai`.",
+                "Please install it with `pip install openai`."
             ) from e
         try:
             values["client"] = openai.ChatCompletion
@@ -99,7 +95,7 @@ class ChatEverlyAI(ChatOpenAI):
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "
                 "due to an old version of the openai package. Try upgrading it "
-                "with `pip install --upgrade openai`.",
+                "with `pip install --upgrade openai`."
             ) from exc
 
         if "model_name" not in values.keys():
@@ -112,7 +108,7 @@ class ChatEverlyAI(ChatOpenAI):
         if model_name not in available_models:
             raise ValueError(
                 f"Model name {model_name} not found in available models: "
-                f"{available_models}.",
+                f"{available_models}."
             )
 
         values["available_models"] = available_models

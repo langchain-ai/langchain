@@ -81,10 +81,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                         except (NotImplementedError, AttributeError):
                             # Case: self.parser does not have get_format_instructions  # noqa: E501
                             completion = self.retry_chain.invoke(
-                                dict(
-                                    input=completion,
-                                    error=repr(e),
-                                )
+                                dict(input=completion, error=repr(e))
                             )
 
         raise OutputParserException("Failed to parse")
@@ -118,10 +115,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                         except (NotImplementedError, AttributeError):
                             # Case: self.parser does not have get_format_instructions  # noqa: E501
                             completion = await self.retry_chain.ainvoke(
-                                dict(
-                                    input=completion,
-                                    error=repr(e),
-                                )
+                                dict(input=completion, error=repr(e))
                             )
 
         raise OutputParserException("Failed to parse")

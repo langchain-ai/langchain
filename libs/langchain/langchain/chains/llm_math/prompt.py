@@ -38,7 +38,4 @@ Answer: 8.222831614237718
 Question: {question}
 """
 
-PROMPT = PromptTemplate(
-    input_variables=["question"],
-    template=_PROMPT_TEMPLATE,
-)
+PROMPT = PromptTemplate(input_variables=["question"], template=_PROMPT_TEMPLATE)

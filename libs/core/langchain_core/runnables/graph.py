@@ -162,10 +162,7 @@ def node_data_json(
     if isinstance(node.data, RunnableSerializable):
         return {
             "type": "runnable",
-            "data": {
-                "id": node.data.lc_id(),
-                "name": node.data.get_name(),
-            },
+            "data": {"id": node.data.lc_id(), "name": node.data.get_name()},
         }
     elif isinstance(node.data, Runnable):
         return {
@@ -177,21 +174,12 @@ def node_data_json(
         }
     elif inspect.isclass(node.data) and issubclass(node.data, BaseModel):
         return (
-            {
-                "type": "schema",
-                "data": node.data.schema(),
-            }
+            {"type": "schema", "data": node.data.schema()}
             if with_schemas
-            else {
-                "type": "schema",
-                "data": node_data_str(node),
-            }
+            else {"type": "schema", "data": node_data_str(node)}
         )
     else:
-        return {
-            "type": "unknown",
-            "data": node_data_str(node),
-        }
+        return {"type": "unknown", "data": node_data_str(node)}
 
 
 @dataclass
@@ -358,8 +346,7 @@ class Graph:
         from langchain_core.runnables.graph_ascii import draw_ascii
 
         return draw_ascii(
-            {node.id: node_data_str(node) for node in self.nodes.values()},
-            self.edges,
+            {node.id: node_data_str(node) for node in self.nodes.values()}, self.edges
         )
 
     def print_ascii(self) -> None:

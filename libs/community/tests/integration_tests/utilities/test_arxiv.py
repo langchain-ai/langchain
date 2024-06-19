@@ -158,11 +158,7 @@ def test_load_arxiv_from_universal_entry() -> None:
 
 
 def test_load_arxiv_from_universal_entry_with_params() -> None:
-    params = {
-        "top_k_results": 1,
-        "load_max_docs": 10,
-        "load_all_available_meta": True,
-    }
+    params = {"top_k_results": 1, "load_max_docs": 10, "load_all_available_meta": True}
     arxiv_tool = _load_arxiv_from_universal_entry(**params)
     assert isinstance(arxiv_tool, ArxivQueryRun)
     wp = arxiv_tool.api_wrapper

@@ -42,16 +42,11 @@ def test_pass_headers_if_provided(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_handle_if_headers_not_provided(monkeypatch: MonkeyPatch) -> None:
-    embedder = OllamaEmbeddings(
-        base_url="https://ollama-hostname:8000",
-        model="foo",
-    )
+    embedder = OllamaEmbeddings(base_url="https://ollama-hostname:8000", model="foo")
 
     def mock_post(url: str, headers: dict, json: str) -> MockResponse:
         assert url == "https://ollama-hostname:8000/api/embeddings"
-        assert headers == {
-            "Content-Type": "application/json",
-        }
+        assert headers == {"Content-Type": "application/json"}
         assert json is not None
 
         return mock_response()

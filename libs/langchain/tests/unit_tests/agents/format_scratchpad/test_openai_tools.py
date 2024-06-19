@@ -16,7 +16,7 @@ def test_calls_convert_agent_action_to_messages() -> None:
                 "function": {"arguments": '{"a": 3, "b": 5}', "name": "add"},
                 "type": "function",
             }
-        ],
+        ]
     }
     message1 = AIMessage(content="", additional_kwargs=additional_kwargs1)
 
@@ -28,7 +28,7 @@ def test_calls_convert_agent_action_to_messages() -> None:
                 "function": {"arguments": '{"a": 3, "b": 5}', "name": "subtract"},
                 "type": "function",
             }
-        ],
+        ]
     }
     message2 = AIMessage(content="", additional_kwargs=additional_kwargs2)
     actions2 = parse_ai_message_to_openai_tool_action(message2)
@@ -45,7 +45,7 @@ def test_calls_convert_agent_action_to_messages() -> None:
                 "function": {"arguments": '{"a": 3, "b": 5}', "name": "divide"},
                 "type": "function",
             },
-        ],
+        ]
     }
     message3 = AIMessage(content="", additional_kwargs=additional_kwargs3)
     actions3 = parse_ai_message_to_openai_tool_action(message3)

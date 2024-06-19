@@ -68,10 +68,7 @@ class BibtexLoader(BaseLoader):
         if self.max_content_chars:
             content = content[: self.max_content_chars]
         metadata = self.parser.get_metadata(entry, load_extra=self.load_extra_metadata)
-        return Document(
-            page_content=content,
-            metadata=metadata,
-        )
+        return Document(page_content=content, metadata=metadata)
 
     def lazy_load(self) -> Iterator[Document]:
         """Load bibtex file using bibtexparser and get the article texts plus the

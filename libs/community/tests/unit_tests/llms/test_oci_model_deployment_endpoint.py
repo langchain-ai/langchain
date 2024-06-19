@@ -14,9 +14,7 @@ def test_call_vllm(mocker: MockerFixture) -> None:
     responses.add(
         responses.POST,
         endpoint,
-        json={
-            "choices": [{"index": 0, "text": "This is a completion."}],
-        },
+        json={"choices": [{"index": 0, "text": "This is a completion."}]},
         status=200,
     )
     mocker.patch("ads.common.auth.default_signer", return_value=dict(signer=None))
@@ -34,9 +32,7 @@ def test_call_tgi(mocker: MockerFixture) -> None:
     responses.add(
         responses.POST,
         endpoint,
-        json={
-            "generated_text": "This is a completion.",
-        },
+        json={"generated_text": "This is a completion."},
         status=200,
     )
     mocker.patch("ads.common.auth.default_signer", return_value=dict(signer=None))

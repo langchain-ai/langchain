@@ -518,7 +518,7 @@ def _create_openai_json_runnable(
     """"""
     if isinstance(output_schema, type) and issubclass(output_schema, BaseModel):
         output_parser = output_parser or PydanticOutputParser(
-            pydantic_object=output_schema,  # type: ignore
+            pydantic_object=output_schema  # type: ignore
         )
         schema_as_dict = convert_to_openai_function(output_schema)["parameters"]
     else:
@@ -564,9 +564,5 @@ def _create_openai_functions_structured_output_runnable(
             pydantic_schema=_OutputFormatter, attr_name="output"
         )
     return create_openai_fn_runnable(
-        [function],
-        llm,
-        prompt=prompt,
-        output_parser=output_parser,
-        **llm_kwargs,
+        [function], llm, prompt=prompt, output_parser=output_parser, **llm_kwargs
     )

@@ -8,12 +8,7 @@ from langchain_core._api import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from tenacity import (
-    before_sleep_log,
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-)
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +53,7 @@ class SolarEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import SolarEmbeddings
+
             embeddings = SolarEmbeddings()
 
             query_text = "This is a test query."
@@ -89,14 +85,8 @@ class SolarEmbeddings(BaseModel, Embeddings):
         values["solar_api_key"] = solar_api_key
         return values
 
-    def embed(
-        self,
-        text: str,
-    ) -> List[List[float]]:
-        payload = {
-            "model": self.model,
-            "input": text,
-        }
+    def embed(self, text: str) -> List[List[float]]:
+        payload = {"model": self.model, "input": text}
 
         # HTTP headers for authorization
         headers = {

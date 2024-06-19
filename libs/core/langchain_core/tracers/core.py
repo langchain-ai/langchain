@@ -87,10 +87,7 @@ class _TracerCore(ABC):
         """Persist a run."""
 
     @staticmethod
-    def _add_child_run(
-        parent_run: Run,
-        child_run: Run,
-    ) -> None:
+    def _add_child_run(parent_run: Run, child_run: Run) -> None:
         """Add child run to a chain run or tool run."""
         parent_run.child_runs.append(child_run)
 
@@ -242,15 +239,12 @@ class _TracerCore(ABC):
                 "name": "new_token",
                 "time": datetime.now(timezone.utc),
                 "kwargs": event_kwargs,
-            },
+            }
         )
         return llm_run
 
     def _llm_run_with_retry_event(
-        self,
-        retry_state: RetryCallState,
-        run_id: UUID,
-        **kwargs: Any,
+        self, retry_state: RetryCallState, run_id: UUID, **kwargs: Any
     ) -> Run:
         llm_run = self._get_run(run_id)
         retry_d: Dict[str, Any] = {
@@ -268,11 +262,7 @@ class _TracerCore(ABC):
             retry_d["outcome"] = "success"
             retry_d["result"] = str(retry_state.outcome.result())
         llm_run.events.append(
-            {
-                "name": "retry",
-                "time": datetime.now(timezone.utc),
-                "kwargs": retry_d,
-            },
+            {"name": "retry", "time": datetime.now(timezone.utc), "kwargs": retry_d}
         )
         return llm_run
 
@@ -334,9 +324,7 @@ class _TracerCore(ABC):
         if self._schema_format in ("original", "original+chat"):
             return inputs if isinstance(inputs, dict) else {"input": inputs}
         elif self._schema_format == "streaming_events":
-            return {
-                "input": inputs,
-            }
+            return {"input": inputs}
         else:
             raise ValueError(f"Invalid format: {self._schema_format}")
 
@@ -345,9 +333,7 @@ class _TracerCore(ABC):
         if self._schema_format in ("original", "original+chat"):
             return outputs if isinstance(outputs, dict) else {"output": outputs}
         elif self._schema_format == "streaming_events":
-            return {
-                "output": outputs,
-            }
+            return {"output": outputs}
         else:
             raise ValueError(f"Invalid format: {self._schema_format}")
 
@@ -422,10 +408,7 @@ class _TracerCore(ABC):
         )
 
     def _complete_tool_run(
-        self,
-        output: Dict[str, Any],
-        run_id: UUID,
-        **kwargs: Any,
+        self, output: Dict[str, Any], run_id: UUID, **kwargs: Any
     ) -> Run:
         """Update a tool run with outputs and end time."""
         tool_run = self._get_run(run_id, run_type="tool")
@@ -435,10 +418,7 @@ class _TracerCore(ABC):
         return tool_run
 
     def _errored_tool_run(
-        self,
-        error: BaseException,
-        run_id: UUID,
-        **kwargs: Any,
+        self, error: BaseException, run_id: UUID, **kwargs: Any
     ) -> Run:
         """Update a tool run with error and end time."""
         tool_run = self._get_run(run_id, run_type="tool")
@@ -477,10 +457,7 @@ class _TracerCore(ABC):
         )
 
     def _complete_retrieval_run(
-        self,
-        documents: Sequence[Document],
-        run_id: UUID,
-        **kwargs: Any,
+        self, documents: Sequence[Document], run_id: UUID, **kwargs: Any
     ) -> Run:
         """Update a retrieval run with outputs and end time."""
         retrieval_run = self._get_run(run_id, run_type="retriever")
@@ -490,10 +467,7 @@ class _TracerCore(ABC):
         return retrieval_run
 
     def _errored_retrieval_run(
-        self,
-        error: BaseException,
-        run_id: UUID,
-        **kwargs: Any,
+        self, error: BaseException, run_id: UUID, **kwargs: Any
     ) -> Run:
         retrieval_run = self._get_run(run_id, run_type="retriever")
         retrieval_run.error = self._get_stacktrace(error)

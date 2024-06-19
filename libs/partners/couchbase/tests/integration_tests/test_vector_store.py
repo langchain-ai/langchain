@@ -8,9 +8,7 @@ import pytest
 from langchain_core.documents import Document
 
 from langchain_couchbase import CouchbaseVectorStore
-from tests.utils import (
-    ConsistentFakeEmbeddings,
-)
+from tests.utils import ConsistentFakeEmbeddings
 
 CONNECTION_STRING = os.getenv("COUCHBASE_CONNECTION_STRING", "")
 BUCKET_NAME = os.getenv("COUCHBASE_BUCKET_NAME", "")
@@ -108,11 +106,7 @@ class TestCouchbaseVectorStore:
     def test_from_texts(self, cluster: Any) -> None:
         """Test end to end search using a list of texts."""
 
-        texts = [
-            "foo",
-            "bar",
-            "baz",
-        ]
+        texts = ["foo", "bar", "baz"]
 
         vectorstore = CouchbaseVectorStore.from_texts(
             texts,
@@ -134,11 +128,7 @@ class TestCouchbaseVectorStore:
     def test_from_texts_with_metadatas(self, cluster: Any) -> None:
         """Test end to end search using a list of texts and metadatas."""
 
-        texts = [
-            "foo",
-            "bar",
-            "baz",
-        ]
+        texts = ["foo", "bar", "baz"]
 
         metadatas = [{"a": 1}, {"b": 2}, {"c": 3}]
 
@@ -163,11 +153,7 @@ class TestCouchbaseVectorStore:
     def test_add_texts_with_ids_and_metadatas(self, cluster: Any) -> None:
         """Test end to end search by adding a list of texts, ids and metadatas."""
 
-        texts = [
-            "foo",
-            "bar",
-            "baz",
-        ]
+        texts = ["foo", "bar", "baz"]
 
         ids = ["a", "b", "c"]
 
@@ -182,11 +168,7 @@ class TestCouchbaseVectorStore:
             collection_name=COLLECTION_NAME,
         )
 
-        results = vectorstore.add_texts(
-            texts,
-            ids=ids,
-            metadatas=metadatas,
-        )
+        results = vectorstore.add_texts(texts, ids=ids, metadatas=metadatas)
         assert results == ids
 
         # Wait for the documents to be indexed
@@ -198,11 +180,7 @@ class TestCouchbaseVectorStore:
 
     def test_delete_texts_with_ids(self, cluster: Any) -> None:
         """Test deletion of documents by ids."""
-        texts = [
-            "foo",
-            "bar",
-            "baz",
-        ]
+        texts = ["foo", "bar", "baz"]
 
         ids = ["a", "b", "c"]
 
@@ -217,11 +195,7 @@ class TestCouchbaseVectorStore:
             collection_name=COLLECTION_NAME,
         )
 
-        results = vectorstore.add_texts(
-            texts,
-            ids=ids,
-            metadatas=metadatas,
-        )
+        results = vectorstore.add_texts(texts, ids=ids, metadatas=metadatas)
         assert results == ids
         assert vectorstore.delete(ids)
 
@@ -294,11 +268,7 @@ class TestCouchbaseVectorStore:
     def test_output_fields(self, cluster: Any) -> None:
         """Test that output fields are set correctly."""
 
-        texts = [
-            "foo",
-            "bar",
-            "baz",
-        ]
+        texts = ["foo", "bar", "baz"]
 
         metadatas = [{"page": 1, "a": 1}, {"page": 2, "b": 2}, {"page": 3, "c": 3}]
 
@@ -325,11 +295,7 @@ class TestCouchbaseVectorStore:
     def test_hybrid_search(self, cluster: Any) -> None:
         """Test hybrid search."""
 
-        texts = [
-            "foo",
-            "bar",
-            "baz",
-        ]
+        texts = ["foo", "bar", "baz"]
 
         metadatas = [
             {"section": "index"},

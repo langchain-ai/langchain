@@ -7,15 +7,9 @@ from langchain_core.pydantic_v1 import BaseModel
 from langchain_anthropic.output_parsers import ToolsOutputParser
 
 _CONTENT: List = [
-    {
-        "type": "text",
-        "text": "thought",
-    },
+    {"type": "text", "text": "thought"},
     {"type": "tool_use", "input": {"bar": 0}, "id": "1", "name": "_Foo1"},
-    {
-        "type": "text",
-        "text": "thought",
-    },
+    {"type": "text", "text": "thought"},
     {"type": "tool_use", "input": {"baz": "a"}, "id": "2", "name": "_Foo2"},
 ]
 
@@ -42,10 +36,7 @@ def test_tools_output_parser() -> None:
 
 def test_tools_output_parser_args_only() -> None:
     output_parser = ToolsOutputParser(args_only=True)
-    expected = [
-        {"bar": 0},
-        {"baz": "a"},
-    ]
+    expected = [{"bar": 0}, {"baz": "a"}]
     actual = output_parser.parse_result(_RESULT)
     assert expected == actual
 

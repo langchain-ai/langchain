@@ -1,15 +1,6 @@
 import re
 from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -360,9 +351,7 @@ class AmazonKendraRetriever(BaseRetriever):
     Example:
         .. code-block:: python
 
-            retriever = AmazonKendraRetriever(
-                index_id="c0806df7-e76b-4bce-9b5c-d5582f6b1a03"
-            )
+            retriever = AmazonKendraRetriever(index_id="c0806df7-e76b-4bce-9b5c-d5582f6b1a03")
 
     """
 
@@ -470,17 +459,14 @@ class AmazonKendraRetriever(BaseRetriever):
         return filtered_docs
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Run search on Kendra index and get top k documents
 
         Example:
         .. code-block:: python
 
-            docs = retriever.invoke('This is my query')
+            docs = retriever.invoke("This is my query")
 
         """
         result_items = self._kendra_query(query)

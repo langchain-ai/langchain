@@ -19,10 +19,7 @@ module_lookup = {
 
 # Temporary code for backwards compatibility for deprecated imports.
 # This will eventually be removed.
-import_lookup = create_importer(
-    __package__,
-    deprecated_lookups=module_lookup,
-)
+import_lookup = create_importer(__package__, deprecated_lookups=module_lookup)
 
 
 def __getattr__(name: str) -> Any:

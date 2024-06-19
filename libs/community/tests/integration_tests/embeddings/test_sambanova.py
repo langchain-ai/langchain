@@ -1,8 +1,6 @@
 """Test SambaNova Embeddings."""
 
-from langchain_community.embeddings.sambanova import (
-    SambaStudioEmbeddings,
-)
+from langchain_community.embeddings.sambanova import SambaStudioEmbeddings
 
 
 def test_embedding_documents() -> None:

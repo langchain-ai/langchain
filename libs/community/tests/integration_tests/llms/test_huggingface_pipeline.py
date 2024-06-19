@@ -73,10 +73,7 @@ def test_init_with_pipeline() -> None:
 
 def test_huggingface_pipeline_runtime_kwargs() -> None:
     """Test pipelines specifying the device map parameter."""
-    llm = HuggingFacePipeline.from_model_id(
-        model_id="gpt2",
-        task="text-generation",
-    )
+    llm = HuggingFacePipeline.from_model_id(model_id="gpt2", task="text-generation")
     prompt = "Say foo:"
     output = llm.invoke(prompt, pipeline_kwargs={"max_new_tokens": 2})
     assert len(output) < 10

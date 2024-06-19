@@ -1,13 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-)
+from typing import Any, Callable, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
@@ -81,18 +75,19 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import DashScopeEmbeddings
+
             embeddings = DashScopeEmbeddings(dashscope_api_key="my-api-key")
 
     Example:
         .. code-block:: python
 
             import os
+
             os.environ["DASHSCOPE_API_KEY"] = "your DashScope API KEY"
 
             from langchain_community.embeddings.dashscope import DashScopeEmbeddings
-            embeddings = DashScopeEmbeddings(
-                model="text-embedding-v1",
-            )
+
+            embeddings = DashScopeEmbeddings(model="text-embedding-v1")
             text = "This is a test query."
             query_result = embeddings.embed_query(text)
 

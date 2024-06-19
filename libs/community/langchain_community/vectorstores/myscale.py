@@ -52,10 +52,10 @@ class MyScaleSettings(BaseSettings):
                             .. code-block:: python
 
                                 {
-                                    'id': 'text_id',
-                                    'vector': 'text_embedding',
-                                    'text': 'text_plain',
-                                    'metadata': 'metadata_dictionary_in_json',
+                                    "id": "text_id",
+                                    "vector": "text_embedding",
+                                    "text": "text_plain",
+                                    "metadata": "metadata_dictionary_in_json",
                                 }
 
                             Defaults to identity map.

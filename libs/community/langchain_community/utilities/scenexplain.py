@@ -31,13 +31,7 @@ class SceneXplainAPIWrapper(BaseSettings, BaseModel):
             "content-type": "application/json",
         }
         payload = {
-            "data": [
-                {
-                    "image": image,
-                    "algorithm": "Ember",
-                    "languages": ["en"],
-                }
-            ]
+            "data": [{"image": image, "algorithm": "Ember", "languages": ["en"]}]
         }
         response = requests.post(self.scenex_api_url, headers=headers, json=payload)
         response.raise_for_status()

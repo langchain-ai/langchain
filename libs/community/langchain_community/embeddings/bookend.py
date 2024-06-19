@@ -58,10 +58,7 @@ class BookendEmbeddings(BaseModel, Embeddings):
         result = []
         headers = self.auth_header
         headers["Content-Type"] = "application/json; charset=utf-8"
-        params = {
-            "model_id": self.model_id,
-            "task": DEFAULT_TASK,
-        }
+        params = {"model_id": self.model_id, "task": DEFAULT_TASK}
 
         for text in texts:
             data = json.dumps(

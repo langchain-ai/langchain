@@ -25,6 +25,7 @@ class LlamaCpp(LLM):
         .. code-block:: python
 
             from langchain_community.llms import LlamaCpp
+
             llm = LlamaCpp(model_path="/path/to/llama/model")
     """
 
@@ -277,6 +278,7 @@ class LlamaCpp(LLM):
             .. code-block:: python
 
                 from langchain_community.llms import LlamaCpp
+
                 llm = LlamaCpp(model_path="/path/to/local/llama/model.bin")
                 llm.invoke("This is a prompt.")
         """
@@ -286,10 +288,7 @@ class LlamaCpp(LLM):
             # and return the combined strings from the first choices's text:
             combined_text_output = ""
             for chunk in self._stream(
-                prompt=prompt,
-                stop=stop,
-                run_manager=run_manager,
-                **kwargs,
+                prompt=prompt, stop=stop, run_manager=run_manager, **kwargs
             ):
                 combined_text_output += chunk.text
             return combined_text_output
@@ -326,14 +325,13 @@ class LlamaCpp(LLM):
             .. code-block:: python
 
                 from langchain_community.llms import LlamaCpp
-                llm = LlamaCpp(
-                    model_path="/path/to/local/model.bin",
-                    temperature = 0.5
-                )
-                for chunk in llm.stream("Ask 'Hi, how are you?' like a pirate:'",
-                        stop=["'","\n"]):
+
+                llm = LlamaCpp(model_path="/path/to/local/model.bin", temperature=0.5)
+                for chunk in llm.stream(
+                    "Ask 'Hi, how are you?' like a pirate:'", stop=["'", "\n"]
+                ):
                     result = chunk["choices"][0]
-                    print(result["text"], end='', flush=True)  # noqa: T201
+                    print(result["text"], end="", flush=True)  # noqa: T201
 
         """
         params = {**self._get_parameters(stop), **kwargs}
@@ -341,8 +339,7 @@ class LlamaCpp(LLM):
         for part in result:
             logprobs = part["choices"][0].get("logprobs", None)
             chunk = GenerationChunk(
-                text=part["choices"][0]["text"],
-                generation_info={"logprobs": logprobs},
+                text=part["choices"][0]["text"], generation_info={"logprobs": logprobs}
             )
             if run_manager:
                 run_manager.on_llm_new_token(

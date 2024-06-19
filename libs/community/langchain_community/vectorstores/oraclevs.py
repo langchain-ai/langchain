@@ -169,9 +169,7 @@ def _create_table(client: Connection, table_name: str, embedding_dim: int) -> No
 
 @_handle_exceptions
 def create_index(
-    client: Connection,
-    vector_store: OracleVS,
-    params: Optional[dict[str, Any]] = None,
+    client: Connection, vector_store: OracleVS, params: Optional[dict[str, Any]] = None
 ) -> None:
     if params:
         if params["idx_type"] == "HNSW":
@@ -400,10 +398,7 @@ class OracleVS(VectorStore):
     def __init__(
         self,
         client: Connection,
-        embedding_function: Union[
-            Callable[[str], List[float]],
-            Embeddings,
-        ],
+        embedding_function: Union[Callable[[str], List[float]], Embeddings],
         table_name: str,
         distance_strategy: DistanceStrategy = DistanceStrategy.EUCLIDEAN_DISTANCE,
         query: Optional[str] = "What is a Oracle database",

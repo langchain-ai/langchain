@@ -63,9 +63,7 @@ def test_doubly_set_configurable() -> None:
     runnable = MyRunnable(my_property="a")  # type: ignore
     configurable_runnable = runnable.configurable_fields(
         my_property=ConfigurableField(
-            id="my_property",
-            name="My property",
-            description="The property to test",
+            id="my_property", name="My property", description="The property to test"
         )
     )
 
@@ -117,9 +115,7 @@ def test_config_passthrough() -> None:
     runnable = MyRunnable(my_property="a")  # type: ignore
     configurable_runnable = runnable.configurable_fields(
         my_property=ConfigurableField(
-            id="my_property",
-            name="My property",
-            description="The property to test",
+            id="my_property", name="My property", description="The property to test"
         )
     )
     # first one
@@ -153,9 +149,7 @@ def test_config_passthrough_nested() -> None:
     runnable = MyRunnable(my_property="a")  # type: ignore
     configurable_runnable = runnable.configurable_fields(
         my_property=ConfigurableField(
-            id="my_property",
-            name="My property",
-            description="The property to test",
+            id="my_property", name="My property", description="The property to test"
         )
     ).configurable_alternatives(
         ConfigurableField(id="which", description="Which runnable to use"),

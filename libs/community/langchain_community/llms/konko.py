@@ -84,10 +84,7 @@ class Konko(LLM):
         return values
 
     def construct_payload(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        **kwargs: Any,
+        self, prompt: str, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> Dict[str, Any]:
         stop_to_use = stop[0] if stop and len(stop) == 1 else stop
         payload: Dict[str, Any] = {

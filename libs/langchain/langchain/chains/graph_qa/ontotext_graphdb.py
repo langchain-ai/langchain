@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "OntotextGraphDBQAChain": "langchain_community.chains.graph_qa.ontotext_graphdb",
+    "OntotextGraphDBQAChain": "langchain_community.chains.graph_qa.ontotext_graphdb"
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

@@ -11,7 +11,5 @@ def test_initialization() -> None:
     with TemporaryDirectory() as tmp_dir:
         Milvus(
             embedding_function=embedding,
-            connection_args={
-                "uri": os.path.join(tmp_dir, "milvus.db"),
-            },
+            connection_args={"uri": os.path.join(tmp_dir, "milvus.db")},
         )

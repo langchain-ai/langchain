@@ -92,10 +92,7 @@ if TYPE_CHECKING:
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
-    from langchain_core.tracers.log_stream import (
-        RunLog,
-        RunLogPatch,
-    )
+    from langchain_core.tracers.log_stream import RunLog, RunLogPatch
     from langchain_core.tracers.root_listeners import AsyncListener
     from langchain_core.tracers.schemas import Run
 
@@ -155,16 +152,16 @@ class Runnable(Generic[Input, Output], ABC):
 
         # A RunnableSequence constructed using the `|` operator
         sequence = RunnableLambda(lambda x: x + 1) | RunnableLambda(lambda x: x * 2)
-        sequence.invoke(1) # 4
-        sequence.batch([1, 2, 3]) # [4, 6, 8]
+        sequence.invoke(1)  # 4
+        sequence.batch([1, 2, 3])  # [4, 6, 8]
 
 
         # A sequence that contains a RunnableParallel constructed using a dict literal
         sequence = RunnableLambda(lambda x: x + 1) | {
-            'mul_2': RunnableLambda(lambda x: x * 2),
-            'mul_5': RunnableLambda(lambda x: x * 5)
+            "mul_2": RunnableLambda(lambda x: x * 2),
+            "mul_5": RunnableLambda(lambda x: x * 5),
         }
-        sequence.invoke(1) # {'mul_2': 4, 'mul_5': 10}
+        sequence.invoke(1)  # {'mul_2': 4, 'mul_5': 10}
 
     Standard Methods
     ================
@@ -183,6 +180,7 @@ class Runnable(Generic[Input, Output], ABC):
 
         import random
 
+
         def add_one(x: int) -> int:
             return x + 1
 
@@ -190,21 +188,20 @@ class Runnable(Generic[Input, Output], ABC):
         def buggy_double(y: int) -> int:
             '''Buggy code that will fail 70% of the time'''
             if random.random() > 0.3:
-                print('This code failed, and will probably be retried!')  # noqa: T201
-                raise ValueError('Triggered buggy code')
+                print("This code failed, and will probably be retried!")  # noqa: T201
+                raise ValueError("Triggered buggy code")
             return y * 2
 
-        sequence = (
-            RunnableLambda(add_one) |
-            RunnableLambda(buggy_double).with_retry( # Retry on failure
-                stop_after_attempt=10,
-                wait_exponential_jitter=False
-            )
+
+        sequence = RunnableLambda(add_one) | RunnableLambda(
+            buggy_double
+        ).with_retry(  # Retry on failure
+            stop_after_attempt=10, wait_exponential_jitter=False
         )
 
-        print(sequence.input_schema.schema()) # Show inferred input schema
-        print(sequence.output_schema.schema()) # Show inferred output schema
-        print(sequence.invoke(2)) # invoke the sequence (note the retry above!!)
+        print(sequence.input_schema.schema())  # Show inferred input schema
+        print(sequence.output_schema.schema())  # Show inferred output schema
+        print(sequence.invoke(2))  # invoke the sequence (note the retry above!!)
 
     Debugging and tracing
     =====================
@@ -217,6 +214,7 @@ class Runnable(Generic[Input, Output], ABC):
         .. code-block:: python
 
             from langchain_core.globals import set_debug
+
             set_debug(True)
 
     Alternatively, you can pass existing or custom callbacks to any given chain:
@@ -225,10 +223,7 @@ class Runnable(Generic[Input, Output], ABC):
 
             from langchain_core.tracers import ConsoleCallbackHandler
 
-            chain.invoke(
-                ...,
-                config={'callbacks': [ConsoleCallbackHandler()]}
-            )
+            chain.invoke(..., config={"callbacks": [ConsoleCallbackHandler()]})
 
     For a UI (and much more) checkout LangSmith: https://docs.smith.langchain.com/
     """  # noqa: E501
@@ -302,10 +297,7 @@ class Runnable(Generic[Input, Output], ABC):
         if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
             return root_type
 
-        return create_model(
-            self.get_name("Input"),
-            __root__=(root_type, None),
-        )
+        return create_model(self.get_name("Input"), __root__=(root_type, None))
 
     @property
     def output_schema(self) -> Type[BaseModel]:
@@ -334,10 +326,7 @@ class Runnable(Generic[Input, Output], ABC):
         if inspect.isclass(root_type) and issubclass(root_type, BaseModel):
             return root_type
 
-        return create_model(
-            self.get_name("Output"),
-            __root__=(root_type, None),
-        )
+        return create_model(self.get_name("Output"), __root__=(root_type, None))
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
@@ -455,11 +444,14 @@ class Runnable(Generic[Input, Output], ABC):
 
                 from langchain_core.runnables import RunnableLambda
 
+
                 def add_one(x: int) -> int:
                     return x + 1
 
+
                 def mul_two(x: int) -> int:
                     return x * 2
+
 
                 runnable_1 = RunnableLambda(add_one)
                 runnable_2 = RunnableLambda(mul_two)
@@ -509,14 +501,13 @@ class Runnable(Generic[Input, Output], ABC):
 
                 as_str = RunnableLambda(str)
                 as_json = RunnableLambda(json.loads)
+
+
                 def as_bytes(x: Any) -> bytes:
                     return bytes(x, "utf-8")
 
-                chain = RunnableMap(
-                    str=as_str,
-                    json=as_json,
-                    bytes=RunnableLambda(as_bytes)
-                )
+
+                chain = RunnableMap(str=as_str, json=as_json, bytes=RunnableLambda(as_bytes))
 
                 chain.invoke("[1, 2, 3]")
                 # -> {"str": "[1, 2, 3]", "json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
@@ -1022,6 +1013,7 @@ class Runnable(Generic[Input, Output], ABC):
                 '''Format the docs.'''
                 return ", ".join([doc.page_content for doc in docs])
 
+
             format_docs = RunnableLambda(format_docs)
 
         `some_tool`:
@@ -1048,14 +1040,14 @@ class Runnable(Generic[Input, Output], ABC):
 
             from langchain_core.runnables import RunnableLambda
 
+
             async def reverse(s: str) -> str:
                 return s[::-1]
 
+
             chain = RunnableLambda(func=reverse)
 
-            events = [
-                event async for event in chain.astream_events("hello", version="v2")
-            ]
+            events = [event async for event in chain.astream_events("hello", version="v2")]
 
             # will produce the following events (run_id, and parent_ids
             # has been omitted for brevity):
@@ -1229,22 +1221,16 @@ class Runnable(Generic[Input, Output], ABC):
             from langchain_community.chat_models import ChatOllama
             from langchain_core.output_parsers import StrOutputParser
 
-            llm = ChatOllama(model='llama2')
+            llm = ChatOllama(model="llama2")
 
             # Without bind.
-            chain = (
-                llm
-                | StrOutputParser()
-            )
+            chain = llm | StrOutputParser()
 
             chain.invoke("Repeat quoted words exactly: 'One two three four five.'")
             # Output is 'One two three four five.'
 
             # With bind.
-            chain = (
-                llm.bind(stop=["three"])
-                | StrOutputParser()
-            )
+            chain = llm.bind(stop=["three"]) | StrOutputParser()
 
             chain.invoke("Repeat quoted words exactly: 'One two three four five.'")
             # Output is 'One two'
@@ -1263,10 +1249,7 @@ class Runnable(Generic[Input, Output], ABC):
         """
         return RunnableBinding(
             bound=self,
-            config=cast(
-                RunnableConfig,
-                {**(config or {}), **kwargs},
-            ),  # type: ignore[misc]
+            config=cast(RunnableConfig, {**(config or {}), **kwargs}),  # type: ignore[misc]
             kwargs={},
         )
 
@@ -1303,18 +1286,21 @@ class Runnable(Generic[Input, Output], ABC):
 
             import time
 
-            def test_runnable(time_to_sleep : int):
+
+            def test_runnable(time_to_sleep: int):
                 time.sleep(time_to_sleep)
+
 
             def fn_start(run_obj: Run):
                 print("start_time:", run_obj.start_time)
 
+
             def fn_end(run_obj: Run):
                 print("end_time:", run_obj.end_time)
 
+
             chain = RunnableLambda(test_runnable).with_listeners(
-                on_start=fn_start,
-                on_end=fn_end
+                on_start=fn_start, on_end=fn_end
             )
             chain.invoke(2)
         """
@@ -1331,7 +1317,7 @@ class Runnable(Generic[Input, Output], ABC):
                             on_end=on_end,
                             on_error=on_error,
                         )
-                    ],
+                    ]
                 }
             ],
         )
@@ -1411,7 +1397,7 @@ class Runnable(Generic[Input, Output], ABC):
                             on_end=on_end,
                             on_error=on_error,
                         )
-                    ],
+                    ]
                 }
             ],
         )
@@ -1456,19 +1442,18 @@ class Runnable(Generic[Input, Output], ABC):
                 if x == 1:
                     raise ValueError("x is 1")
                 else:
-                     pass
+                    pass
 
 
             runnable = RunnableLambda(_lambda)
             try:
                 runnable.with_retry(
-                    stop_after_attempt=2,
-                    retry_if_exception_type=(ValueError,),
+                    stop_after_attempt=2, retry_if_exception_type=(ValueError,)
                 ).invoke(1)
             except ValueError:
                 pass
 
-            assert (count == 2)
+            assert count == 2
 
 
         Args:
@@ -1502,11 +1487,13 @@ class Runnable(Generic[Input, Output], ABC):
 
                     from langchain_core.runnables import RunnableLambda
 
+
                     def _lambda(x: int) -> int:
                         return x + 1
 
+
                     runnable = RunnableLambda(_lambda)
-                    print(runnable.map().invoke([1, 2, 3])) # [2, 3, 4]
+                    print(runnable.map().invoke([1, 2, 3]))  # [2, 3, 4]
         """
         return RunnableEach(bound=self)
 
@@ -1539,8 +1526,8 @@ class Runnable(Generic[Input, Output], ABC):
 
                 runnable = RunnableGenerator(_generate_immediate_error).with_fallbacks(
                     [RunnableGenerator(_generate)]
-                    )
-                print(''.join(runnable.stream({}))) #foo bar
+                )
+                print("".join(runnable.stream({})))  # foo bar
 
         Args:
             fallbacks: A sequence of runnables to try if the original runnable fails.
@@ -1807,11 +1794,7 @@ class Runnable(Generic[Input, Output], ABC):
             Callable[[Iterator[Input]], Iterator[Output]],
             Callable[[Iterator[Input], CallbackManagerForChainRun], Iterator[Output]],
             Callable[
-                [
-                    Iterator[Input],
-                    CallbackManagerForChainRun,
-                    RunnableConfig,
-                ],
+                [Iterator[Input], CallbackManagerForChainRun, RunnableConfig],
                 Iterator[Output],
             ],
         ],
@@ -1907,11 +1890,7 @@ class Runnable(Generic[Input, Output], ABC):
                 AsyncIterator[Output],
             ],
             Callable[
-                [
-                    AsyncIterator[Input],
-                    AsyncCallbackManagerForChainRun,
-                    RunnableConfig,
-                ],
+                [AsyncIterator[Input], AsyncCallbackManagerForChainRun, RunnableConfig],
                 AsyncIterator[Output],
             ],
         ],
@@ -2047,15 +2026,14 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             )
 
             # max_tokens = 20
-            print(
-                "max_tokens_20: ",
-                model.invoke("tell me something about chess").content
-            )
+            print("max_tokens_20: ", model.invoke("tell me something about chess").content)
 
             # max_tokens = 200
-            print("max_tokens_200: ", model.with_config(
-                configurable={"output_token_number": 200}
-                ).invoke("tell me something about chess").content
+            print(
+                "max_tokens_200: ",
+                model.with_config(configurable={"output_token_number": 200})
+                .invoke("tell me something about chess")
+                .content,
             )
         """
         from langchain_core.runnables.configurable import RunnableConfigurableFields
@@ -2088,9 +2066,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
             model = ChatAnthropic(
                 model_name="claude-3-sonnet-20240229"
             ).configurable_alternatives(
-                ConfigurableField(id="llm"),
-                default_key="anthropic",
-                openai=ChatOpenAI()
+                ConfigurableField(id="llm"), default_key="anthropic", openai=ChatOpenAI()
             )
 
             # uses the default model ChatAnthropic
@@ -2098,9 +2074,9 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
 
             # uses ChatOpenAI
             print(
-                model.with_config(
-                    configurable={"llm": "openai"}
-                ).invoke("which organization created you?").content
+                model.with_config(configurable={"llm": "openai"})
+                .invoke("which organization created you?")
+                .content
             )
         """
         from langchain_core.runnables.configurable import (
@@ -2184,8 +2160,7 @@ def _seq_output_schema(
             else:
                 field = prev_output_schema.__fields__[last.keys]
                 return create_model(  # type: ignore[call-overload]
-                    "RunnableSequenceOutput",
-                    __root__=(field.annotation, field.default),
+                    "RunnableSequenceOutput", __root__=(field.annotation, field.default)
                 )
 
     return last.get_output_schema(config)
@@ -2232,11 +2207,14 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
             from langchain_core.runnables import RunnableLambda
 
+
             def add_one(x: int) -> int:
                 return x + 1
 
+
             def mul_two(x: int) -> int:
                 return x * 2
+
 
             runnable_1 = RunnableLambda(add_one)
             runnable_2 = RunnableLambda(mul_two)
@@ -2257,17 +2235,17 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             from langchain_openai import ChatOpenAI
 
             prompt = PromptTemplate.from_template(
-                'In JSON format, give me a list of {topic} and their '
-                'corresponding names in French, Spanish and in a '
-                'Cat Language.'
+                "In JSON format, give me a list of {topic} and their "
+                "corresponding names in French, Spanish and in a "
+                "Cat Language."
             )
 
             model = ChatOpenAI()
             chain = prompt | model | SimpleJsonOutputParser()
 
-            async for chunk in chain.astream({'topic': 'colors'}):
-                print('-')  # noqa: T201
-                print(chunk, sep='', flush=True)  # noqa: T201
+            async for chunk in chain.astream({"topic": "colors"}):
+                print("-")  # noqa: T201
+                print(chunk, sep="", flush=True)  # noqa: T201
     """
 
     # The steps are broken into first, middle and last, solely for type checking
@@ -2850,8 +2828,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         final_pipeline = cast(AsyncIterator[Output], input)
         for idx, step in enumerate(steps):
             config = patch_config(
-                config,
-                callbacks=run_manager.get_child(f"seq:step:{idx+1}"),
+                config, callbacks=run_manager.get_child(f"seq:step:{idx+1}")
             )
             if idx == 0:
                 final_pipeline = step.atransform(final_pipeline, config, **kwargs)
@@ -2926,14 +2903,18 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
 
             from langchain_core.runnables import RunnableLambda
 
+
             def add_one(x: int) -> int:
                 return x + 1
+
 
             def mul_two(x: int) -> int:
                 return x * 2
 
+
             def mul_three(x: int) -> int:
                 return x * 3
+
 
             runnable_1 = RunnableLambda(add_one)
             runnable_2 = RunnableLambda(mul_two)
@@ -2970,12 +2951,10 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
 
             model = ChatOpenAI()
             joke_chain = (
-                ChatPromptTemplate.from_template("tell me a joke about {topic}")
-                | model
+                ChatPromptTemplate.from_template("tell me a joke about {topic}") | model
             )
             poem_chain = (
-                ChatPromptTemplate.from_template("write a 2-line poem about {topic}")
-                | model
+                ChatPromptTemplate.from_template("write a 2-line poem about {topic}") | model
             )
 
             runnable = RunnableParallel(joke=joke_chain, poem=poem_chain)
@@ -3140,8 +3119,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                         input,
                         # mark each step as a child run
                         patch_config(
-                            config,
-                            callbacks=run_manager.get_child(f"map:key:{key}"),
+                            config, callbacks=run_manager.get_child(f"map:key:{key}")
                         ),
                     )
                     for key, step in steps.items()
@@ -3382,9 +3360,10 @@ class RunnableGenerator(Runnable[Input, Output]):
                 for token in ["Have", " a", " nice", " day"]:
                     yield token
 
+
             runnable = RunnableGenerator(agen)
             await runnable.ainvoke(None)  # "Have a nice day"
-            [p async for p in runnable.astream(None)] # ["Have", " a", " nice", " day"]
+            [p async for p in runnable.astream(None)]  # ["Have", " a", " nice", " day"]
 
     RunnableGenerator makes it easy to implement custom behavior within a streaming
     context. Below we show an example:
@@ -3403,6 +3382,7 @@ class RunnableGenerator(Runnable[Input, Output]):
                 | StrOutputParser()
             )
 
+
             def character_generator(input: Iterator[str]) -> Iterator[str]:
                 for token in input:
                     if "," in token or "." in token:
@@ -3413,7 +3393,8 @@ class RunnableGenerator(Runnable[Input, Output]):
 
             runnable = chant_chain | character_generator
             assert type(runnable.last) is RunnableGenerator
-            "".join(runnable.stream({"topic": "waste"})) # Reduce👏, Reuse👏, Recycle👏.
+            "".join(runnable.stream({"topic": "waste"}))  # Reduce👏, Reuse👏, Recycle👏.
+
 
             # Note that RunnableLambda can be used to delay streaming of one step in a
             # sequence until the previous step is finished:
@@ -3421,6 +3402,7 @@ class RunnableGenerator(Runnable[Input, Output]):
                 # Yield characters of input in reverse order.
                 for character in input[::-1]:
                     yield character
+
 
             runnable = chant_chain | RunnableLambda(reverse_generator)
             "".join(runnable.stream({"topic": "waste"}))  # ".elcycer ,esuer ,ecudeR"
@@ -3513,10 +3495,7 @@ class RunnableGenerator(Runnable[Input, Output]):
         )
 
     def stream(
-        self,
-        input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Iterator[Output]:
         return self.transform(iter([input]), config, **kwargs)
 
@@ -3545,10 +3524,7 @@ class RunnableGenerator(Runnable[Input, Output]):
         )
 
     def astream(
-        self,
-        input: Input,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
+        self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> AsyncIterator[Output]:
         async def input_aiter() -> AsyncIterator[Input]:
             yield input
@@ -3583,26 +3559,29 @@ class RunnableLambda(Runnable[Input, Output]):
             # This is a RunnableLambda
             from langchain_core.runnables import RunnableLambda
 
+
             def add_one(x: int) -> int:
                 return x + 1
 
+
             runnable = RunnableLambda(add_one)
 
-            runnable.invoke(1) # returns 2
-            runnable.batch([1, 2, 3]) # returns [2, 3, 4]
+            runnable.invoke(1)  # returns 2
+            runnable.batch([1, 2, 3])  # returns [2, 3, 4]
 
             # Async is supported by default by delegating to the sync implementation
-            await runnable.ainvoke(1) # returns 2
-            await runnable.abatch([1, 2, 3]) # returns [2, 3, 4]
+            await runnable.ainvoke(1)  # returns 2
+            await runnable.abatch([1, 2, 3])  # returns [2, 3, 4]
 
 
             # Alternatively, can provide both synd and sync implementations
             async def add_one_async(x: int) -> int:
                 return x + 1
 
+
             runnable = RunnableLambda(add_one, afunc=add_one_async)
-            runnable.invoke(1) # Uses add_one
-            await runnable.ainvoke(1) # Uses add_one_async
+            runnable.invoke(1)  # Uses add_one
+            await runnable.ainvoke(1)  # Uses add_one_async
     """
 
     def __init__(
@@ -3712,10 +3691,7 @@ class RunnableLambda(Runnable[Input, Output]):
                     **{item[1:-1]: (Any, None) for item in items},  # type: ignore
                 )
             else:
-                return create_model(
-                    self.get_name("Input"),
-                    __root__=(List[Any], None),
-                )
+                return create_model(self.get_name("Input"), __root__=(List[Any], None))
 
         if self.InputType != Any:
             return super().get_input_schema(config)
@@ -3920,18 +3896,11 @@ class RunnableLambda(Runnable[Input, Output]):
                 cast(
                     AsyncGenerator[Any, Any],
                     acall_func_with_variable_args(
-                        cast(Callable, afunc),
-                        input,
-                        config,
-                        run_manager,
-                        **kwargs,
+                        cast(Callable, afunc), input, config, run_manager, **kwargs
                     ),
                 )
             ) as stream:
-                async for chunk in cast(
-                    AsyncIterator[Output],
-                    stream,
-                ):
+                async for chunk in cast(AsyncIterator[Output], stream):
                     if output is None:
                         output = chunk
                     else:
@@ -3974,10 +3943,7 @@ class RunnableLambda(Runnable[Input, Output]):
         """Invoke this runnable synchronously."""
         if hasattr(self, "func"):
             return self._call_with_config(
-                self._invoke,
-                input,
-                self._config(config, self.func),
-                **kwargs,
+                self._invoke, input, self._config(config, self.func), **kwargs
             )
         else:
             raise TypeError(
@@ -3994,10 +3960,7 @@ class RunnableLambda(Runnable[Input, Output]):
         """Invoke this runnable asynchronously."""
         the_func = self.afunc if hasattr(self, "afunc") else self.func
         return await self._acall_with_config(
-            self._ainvoke,
-            input,
-            self._config(config, the_func),
-            **kwargs,
+            self._ainvoke, input, self._config(config, the_func), **kwargs
         )
 
     def _transform(
@@ -4070,10 +4033,7 @@ class RunnableLambda(Runnable[Input, Output]):
     ) -> Iterator[Output]:
         if hasattr(self, "func"):
             for output in self._transform_stream_with_config(
-                input,
-                self._transform,
-                self._config(config, self.func),
-                **kwargs,
+                input, self._transform, self._config(config, self.func), **kwargs
             ):
                 yield output
         else:
@@ -4571,9 +4531,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Output:
         return self.bound.invoke(
-            input,
-            self._merge_configs(config),
-            **{**self.kwargs, **kwargs},
+            input, self._merge_configs(config), **{**self.kwargs, **kwargs}
         )
 
     async def ainvoke(
@@ -4583,9 +4541,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Output:
         return await self.bound.ainvoke(
-            input,
-            self._merge_configs(config),
-            **{**self.kwargs, **kwargs},
+            input, self._merge_configs(config), **{**self.kwargs, **kwargs}
         )
 
     def batch(
@@ -4598,8 +4554,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     ) -> List[Output]:
         if isinstance(config, list):
             configs = cast(
-                List[RunnableConfig],
-                [self._merge_configs(conf) for conf in config],
+                List[RunnableConfig], [self._merge_configs(conf) for conf in config]
             )
         else:
             configs = [self._merge_configs(config) for _ in range(len(inputs))]
@@ -4620,8 +4575,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     ) -> List[Output]:
         if isinstance(config, list):
             configs = cast(
-                List[RunnableConfig],
-                [self._merge_configs(conf) for conf in config],
+                List[RunnableConfig], [self._merge_configs(conf) for conf in config]
             )
         else:
             configs = [self._merge_configs(config) for _ in range(len(inputs))]
@@ -4664,8 +4618,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
         if isinstance(config, Sequence):
             configs = cast(
-                List[RunnableConfig],
-                [self._merge_configs(conf) for conf in config],
+                List[RunnableConfig], [self._merge_configs(conf) for conf in config]
             )
         else:
             configs = [self._merge_configs(config) for _ in range(len(inputs))]
@@ -4717,8 +4670,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
         if isinstance(config, Sequence):
             configs = cast(
-                List[RunnableConfig],
-                [self._merge_configs(conf) for conf in config],
+                List[RunnableConfig], [self._merge_configs(conf) for conf in config]
             )
         else:
             configs = [self._merge_configs(config) for _ in range(len(inputs))]
@@ -4746,9 +4698,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
         yield from self.bound.stream(
-            input,
-            self._merge_configs(config),
-            **{**self.kwargs, **kwargs},
+            input, self._merge_configs(config), **{**self.kwargs, **kwargs}
         )
 
     async def astream(
@@ -4758,9 +4708,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
         async for item in self.bound.astream(
-            input,
-            self._merge_configs(config),
-            **{**self.kwargs, **kwargs},
+            input, self._merge_configs(config), **{**self.kwargs, **kwargs}
         ):
             yield item
 
@@ -4782,9 +4730,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         **kwargs: Any,
     ) -> Iterator[Output]:
         yield from self.bound.transform(
-            input,
-            self._merge_configs(config),
-            **{**self.kwargs, **kwargs},
+            input, self._merge_configs(config), **{**self.kwargs, **kwargs}
         )
 
     async def atransform(
@@ -4794,9 +4740,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
         async for item in self.bound.atransform(
-            input,
-            self._merge_configs(config),
-            **{**self.kwargs, **kwargs},
+            input, self._merge_configs(config), **{**self.kwargs, **kwargs}
         ):
             yield item
 
@@ -4833,23 +4777,25 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
             # Create a runnable binding that invokes the ChatModel with the
             # additional kwarg `stop=['-']` when running it.
             from langchain_community.chat_models import ChatOpenAI
+
             model = ChatOpenAI()
-            model.invoke('Say "Parrot-MAGIC"', stop=['-']) # Should return `Parrot`
+            model.invoke('Say "Parrot-MAGIC"', stop=["-"])  # Should return `Parrot`
             # Using it the easy way via `bind` method which returns a new
             # RunnableBinding
-            runnable_binding = model.bind(stop=['-'])
-            runnable_binding.invoke('Say "Parrot-MAGIC"') # Should return `Parrot`
+            runnable_binding = model.bind(stop=["-"])
+            runnable_binding.invoke('Say "Parrot-MAGIC"')  # Should return `Parrot`
 
         Can also be done by instantiating a RunnableBinding directly (not recommended):
 
         .. code-block:: python
 
             from langchain_core.runnables import RunnableBinding
+
             runnable_binding = RunnableBinding(
                 bound=model,
-                kwargs={'stop': ['-']} # <-- Note the additional kwargs
+                kwargs={"stop": ["-"]},  # <-- Note the additional kwargs
             )
-            runnable_binding.invoke('Say "Parrot-MAGIC"') # Should return `Parrot`
+            runnable_binding.invoke('Say "Parrot-MAGIC"')  # Should return `Parrot`
     """
 
     @classmethod
@@ -4929,7 +4875,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):
                             on_end=on_end,
                             on_error=on_error,
                         )
-                    ],
+                    ]
                 }
             ],
             custom_input_type=self.custom_input_type,
@@ -5042,23 +4988,17 @@ def chain(
 
 
 @overload
-def chain(
-    func: Callable[[Input], Iterator[Output]],
-) -> Runnable[Input, Output]:
+def chain(func: Callable[[Input], Iterator[Output]]) -> Runnable[Input, Output]:
     ...
 
 
 @overload
-def chain(
-    func: Callable[[Input], AsyncIterator[Output]],
-) -> Runnable[Input, Output]:
+def chain(func: Callable[[Input], AsyncIterator[Output]]) -> Runnable[Input, Output]:
     ...
 
 
 @overload
-def chain(
-    func: Callable[[Input], Output],
-) -> Runnable[Input, Output]:
+def chain(func: Callable[[Input], Output]) -> Runnable[Input, Output]:
     ...
 
 
@@ -5087,6 +5027,7 @@ def chain(
         from langchain_core.runnables import chain
         from langchain_core.prompts import PromptTemplate
         from langchain_openai import OpenAI
+
 
         @chain
         def my_func(fields):

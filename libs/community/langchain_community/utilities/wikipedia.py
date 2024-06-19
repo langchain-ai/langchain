@@ -81,10 +81,7 @@ class WikipediaAPIWrapper(BaseModel):
         )
         doc = Document(
             page_content=wiki_page.content[: self.doc_content_chars_max],
-            metadata={
-                **main_meta,
-                **add_meta,
-            },
+            metadata={**main_meta, **add_meta},
         )
         return doc
 

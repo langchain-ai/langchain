@@ -157,9 +157,7 @@ def _get_sleep() -> BaseTool:
     return SleepTool()
 
 
-_BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {
-    "sleep": _get_sleep,
-}
+_BASE_TOOLS: Dict[str, Callable[[], BaseTool]] = {"sleep": _get_sleep}
 
 DANGEROUS_TOOLS = {
     # Tools that contain some level of risk.
@@ -196,9 +194,7 @@ def _get_llm_math(llm: BaseLanguageModel) -> BaseTool:
 def _get_open_meteo_api(llm: BaseLanguageModel) -> BaseTool:
     try:
         from langchain.chains.api.base import APIChain
-        from langchain.chains.api import (
-            open_meteo_docs,
-        )
+        from langchain.chains.api import open_meteo_docs
     except ImportError:
         raise ImportError(
             "API tools require the library `langchain` to be installed."
@@ -226,9 +222,7 @@ def _get_news_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
     news_api_key = kwargs["news_api_key"]
     try:
         from langchain.chains.api.base import APIChain
-        from langchain.chains.api import (
-            news_docs,
-        )
+        from langchain.chains.api import news_docs
     except ImportError:
         raise ImportError(
             "API tools require the library `langchain` to be installed."
@@ -251,9 +245,7 @@ def _get_tmdb_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
     tmdb_bearer_token = kwargs["tmdb_bearer_token"]
     try:
         from langchain.chains.api.base import APIChain
-        from langchain.chains.api import (
-            tmdb_docs,
-        )
+        from langchain.chains.api import tmdb_docs
     except ImportError:
         raise ImportError(
             "API tools require the library `langchain` to be installed."
@@ -276,9 +268,7 @@ def _get_podcast_api(llm: BaseLanguageModel, **kwargs: Any) -> BaseTool:
     listen_api_key = kwargs["listen_api_key"]
     try:
         from langchain.chains.api.base import APIChain
-        from langchain.chains.api import (
-            podcast_docs,
-        )
+        from langchain.chains.api import podcast_docs
     except ImportError:
         raise ImportError(
             "API tools require the library `langchain` to be installed."
@@ -496,18 +486,9 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         _get_google_scholar,
         ["top_k_results", "hl", "lr", "serp_api_key"],
     ),
-    "google-finance": (
-        _get_google_finance,
-        ["serp_api_key"],
-    ),
-    "google-trends": (
-        _get_google_trends,
-        ["serp_api_key"],
-    ),
-    "google-jobs": (
-        _get_google_jobs,
-        ["serp_api_key"],
-    ),
+    "google-finance": (_get_google_finance, ["serp_api_key"]),
+    "google-trends": (_get_google_trends, ["serp_api_key"]),
+    "google-jobs": (_get_google_jobs, ["serp_api_key"]),
     "google-serper-results-json": (
         _get_google_serper_results_json,
         ["serper_api_key", "aiosession"],

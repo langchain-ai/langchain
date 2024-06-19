@@ -4,9 +4,7 @@ from typing import Dict, List, Optional, Union
 
 from exa_py import Exa  # type: ignore
 from exa_py.api import HighlightsContentsOptions, TextContentsOptions  # type: ignore
-from langchain_core.callbacks import (
-    CallbackManagerForToolRun,
-)
+from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.tools import BaseTool
 

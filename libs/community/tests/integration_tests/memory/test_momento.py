@@ -32,9 +32,7 @@ def message_history() -> Iterator[MomentoChatMessageHistory]:
     )
     try:
         chat_message_history = MomentoChatMessageHistory(
-            session_id="my-test-session",
-            cache_client=client,
-            cache_name=cache_name,
+            session_id="my-test-session", cache_client=client, cache_name=cache_name
         )
         yield chat_message_history
     finally:

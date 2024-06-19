@@ -15,10 +15,7 @@ logger = logging.getLogger(__name__)
 class SlackChatLoader(BaseChatLoader):
     """Load `Slack` conversations from a dump zip file."""
 
-    def __init__(
-        self,
-        path: Union[str, Path],
-    ):
+    def __init__(self, path: Union[str, Path]):
         """
         Initialize the chat loader with the path to the exported Slack dump zip file.
 

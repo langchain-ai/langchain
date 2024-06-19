@@ -4,30 +4,16 @@ from __future__ import annotations
 import logging
 import os
 import warnings
-from typing import (
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
 
 import requests
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
-from langchain_community.adapters.openai import (
-    convert_message_to_dict,
-)
+from langchain_community.adapters.openai import convert_message_to_dict
 from langchain_community.chat_models.openai import (
     ChatOpenAI,
     _convert_delta_to_message_chunk,
@@ -54,6 +40,7 @@ class ChatKonko(ChatOpenAI):
         .. code-block:: python
 
             from langchain_community.chat_models import ChatKonko
+
             llm = ChatKonko(model="meta-llama/Llama-2-13b-chat-hf")
     """
 
@@ -165,9 +152,7 @@ class ChatKonko(ChatOpenAI):
 
         models_url = f"{konko_api_base}/models"
 
-        headers = {
-            "Authorization": f"Bearer {konko_api_key.get_secret_value()}",
-        }
+        headers = {"Authorization": f"Bearer {konko_api_key.get_secret_value()}"}
 
         if openai_api_key:
             headers["X-OpenAI-Api-Key"] = cast(

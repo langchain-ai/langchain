@@ -54,9 +54,7 @@ class NeuralDBVectorStore(VectorStore):
 
     @classmethod
     def from_scratch(  # type: ignore[no-untyped-def, no-untyped-def]
-        cls,
-        thirdai_key: Optional[str] = None,
-        **model_kwargs,
+        cls, thirdai_key: Optional[str] = None, **model_kwargs
     ):
         """
         Create a NeuralDBVectorStore from scratch.
@@ -69,15 +67,11 @@ class NeuralDBVectorStore(VectorStore):
 
                 from langchain_community.vectorstores import NeuralDBVectorStore
 
-                vectorstore = NeuralDBVectorStore.from_scratch(
-                    thirdai_key="your-thirdai-key",
-                )
+                vectorstore = NeuralDBVectorStore.from_scratch(thirdai_key="your-thirdai-key")
 
-                vectorstore.insert([
-                    "/path/to/doc.pdf",
-                    "/path/to/doc.docx",
-                    "/path/to/doc.csv",
-                ])
+                vectorstore.insert(
+                    ["/path/to/doc.pdf", "/path/to/doc.docx", "/path/to/doc.csv"]
+                )
 
                 documents = vectorstore.similarity_search("AI-driven music therapy")
         """
@@ -88,9 +82,7 @@ class NeuralDBVectorStore(VectorStore):
 
     @classmethod
     def from_checkpoint(  # type: ignore[no-untyped-def]
-        cls,
-        checkpoint: Union[str, Path],
-        thirdai_key: Optional[str] = None,
+        cls, checkpoint: Union[str, Path], thirdai_key: Optional[str] = None
     ):
         """
         Create a NeuralDBVectorStore with a base model from a saved checkpoint
@@ -104,15 +96,12 @@ class NeuralDBVectorStore(VectorStore):
                 from langchain_community.vectorstores import NeuralDBVectorStore
 
                 vectorstore = NeuralDBVectorStore.from_checkpoint(
-                    checkpoint="/path/to/checkpoint.ndb",
-                    thirdai_key="your-thirdai-key",
+                    checkpoint="/path/to/checkpoint.ndb", thirdai_key="your-thirdai-key"
                 )
 
-                vectorstore.insert([
-                    "/path/to/doc.pdf",
-                    "/path/to/doc.docx",
-                    "/path/to/doc.csv",
-                ])
+                vectorstore.insert(
+                    ["/path/to/doc.pdf", "/path/to/doc.docx", "/path/to/doc.csv"]
+                )
 
                 documents = vectorstore.similarity_search("AI-driven music therapy")
         """
@@ -170,20 +159,12 @@ class NeuralDBVectorStore(VectorStore):
     def validate_environments(cls, values: Dict) -> Dict:
         """Validate ThirdAI environment variables."""
         values["thirdai_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "thirdai_key",
-                "THIRDAI_KEY",
-            )
+            get_from_dict_or_env(values, "thirdai_key", "THIRDAI_KEY")
         )
         return values
 
     def insert(  # type: ignore[no-untyped-def, no-untyped-def]
-        self,
-        sources: List[Any],
-        train: bool = True,
-        fast_mode: bool = True,
-        **kwargs,
+        self, sources: List[Any], train: bool = True, fast_mode: bool = True, **kwargs
     ):
         """Inserts files / document sources into the vectorstore.
 
@@ -196,10 +177,7 @@ class NeuralDBVectorStore(VectorStore):
         """
         sources = self._preprocess_sources(sources)
         self.db.insert(
-            sources=sources,
-            train=train,
-            fast_approximation=fast_mode,
-            **kwargs,
+            sources=sources, train=train, fast_approximation=fast_mode, **kwargs
         )
 
     def _preprocess_sources(self, sources):  # type: ignore[no-untyped-def]
@@ -333,10 +311,10 @@ class NeuralDBClientVectorStore(VectorStore):
             ndb_client = NeuralDBClient(
                 deployment_identifier="user/model-0:user/deployment-0",
                 base_url="http://{NEURAL_DB_ENTERPRISE_IP}/api/",
-                bazaar=bazaar
+                bazaar=bazaar,
             )
             vectorstore = NeuralDBClientVectorStore(db=ndb_client)
-            retriever = vectorstore.as_retriever(search_kwargs={'k':5})
+            retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
 
     """
 

@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Union
 
-from langchain_core.retrievers import (
-    BaseRetriever,
-    RetrieverOutput,
-)
+from langchain_core.retrievers import BaseRetriever, RetrieverOutput
 from langchain_core.runnables import Runnable, RunnablePassthrough
 
 
@@ -47,9 +44,7 @@ def create_retrieval_chain(
             retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
             llm = ChatOpenAI()
             retriever = ...
-            combine_docs_chain = create_stuff_documents_chain(
-                llm, retrieval_qa_chat_prompt
-            )
+            combine_docs_chain = create_stuff_documents_chain(llm, retrieval_qa_chat_prompt)
             retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
 
             chain.invoke({"input": "..."})
@@ -62,7 +57,7 @@ def create_retrieval_chain(
 
     retrieval_chain = (
         RunnablePassthrough.assign(
-            context=retrieval_docs.with_config(run_name="retrieve_documents"),
+            context=retrieval_docs.with_config(run_name="retrieve_documents")
         ).assign(answer=combine_docs_chain)
     ).with_config(run_name="retrieval_chain")
 

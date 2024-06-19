@@ -73,10 +73,7 @@ class LMFormatEnforcer(HuggingFacePipeline):
         self.pipeline._forward_params["prefix_allowed_tokens_fn"] = prefix_function
 
         result = super()._generate(
-            prompts,
-            stop=stop,
-            run_manager=run_manager,
-            **kwargs,
+            prompts, stop=stop, run_manager=run_manager, **kwargs
         )
 
         del self.pipeline._forward_params["prefix_allowed_tokens_fn"]

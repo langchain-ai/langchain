@@ -57,9 +57,7 @@ def retriever() -> QdrantSparseVectorRetriever:
         vectors_config={},
         sparse_vectors_config={
             vector_name: models.SparseVectorParams(
-                index=models.SparseIndexParams(
-                    on_disk=False,
-                )
+                index=models.SparseIndexParams(on_disk=False)
             )
         },
     )
@@ -144,18 +142,12 @@ def test_invoke(retriever: QdrantSparseVectorRetriever) -> None:
     assert retriever.invoke("Hai there!") == expected
 
 
-def test_invoke_with_filter(
-    retriever: QdrantSparseVectorRetriever,
-) -> None:
+def test_invoke_with_filter(retriever: QdrantSparseVectorRetriever) -> None:
     from qdrant_client import models
 
     retriever.add_texts(
         ["Hai there!", "Hello world!", "Foo bar baz!"],
-        [
-            {"value": 1},
-            {"value": 2},
-            {"value": 3},
-        ],
+        [{"value": 1}, {"value": 2}, {"value": 3}],
     )
 
     retriever.filter = models.Filter(

@@ -157,9 +157,7 @@ def test_run_arg_with_memory() -> None:
 def test_run_with_callback() -> None:
     """Test run method works when callback manager is passed."""
     handler = FakeCallbackHandler()
-    chain = FakeChain(
-        callbacks=[handler],
-    )
+    chain = FakeChain(callbacks=[handler])
     output = chain.run("bar")
     assert output == "baz"
     assert handler.starts == 1
@@ -170,10 +168,7 @@ def test_run_with_callback() -> None:
 def test_run_with_callback_and_input_error() -> None:
     """Test callback manager catches run validation input error."""
     handler = FakeCallbackHandler()
-    chain = FakeChain(
-        the_input_keys=["foo", "bar"],
-        callbacks=[handler],
-    )
+    chain = FakeChain(the_input_keys=["foo", "bar"], callbacks=[handler])
 
     with pytest.raises(ValueError):
         chain({"bar": "foo"})
@@ -217,10 +212,7 @@ async def test_manually_specify_rid_async() -> None:
 def test_run_with_callback_and_output_error() -> None:
     """Test callback manager catches run validation output error."""
     handler = FakeCallbackHandler()
-    chain = FakeChain(
-        the_output_keys=["foo", "bar"],
-        callbacks=[handler],
-    )
+    chain = FakeChain(the_output_keys=["foo", "bar"], callbacks=[handler])
 
     with pytest.raises(ValueError):
         chain("foo")

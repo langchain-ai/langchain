@@ -20,6 +20,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "get_parser",
-]
+__all__ = ["get_parser"]

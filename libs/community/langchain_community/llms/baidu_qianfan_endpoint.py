@@ -1,14 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import (
-    Any,
-    AsyncIterator,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-)
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -36,8 +29,13 @@ class QianfanLLMEndpoint(LLM):
         .. code-block:: python
 
             from langchain_community.llms import QianfanLLMEndpoint
-            qianfan_model = QianfanLLMEndpoint(model="ERNIE-Bot",
-                endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
+
+            qianfan_model = QianfanLLMEndpoint(
+                model="ERNIE-Bot",
+                endpoint="your_endpoint",
+                qianfan_ak="your_ak",
+                qianfan_sk="your_sk",
+            )
     """
 
     init_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -79,26 +77,13 @@ class QianfanLLMEndpoint(LLM):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "qianfan_ak",
-                "QIANFAN_AK",
-                default="",
-            )
+            get_from_dict_or_env(values, "qianfan_ak", "QIANFAN_AK", default="")
         )
         values["qianfan_sk"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "qianfan_sk",
-                "QIANFAN_SK",
-                default="",
-            )
+            get_from_dict_or_env(values, "qianfan_sk", "QIANFAN_SK", default="")
         )
 
-        params = {
-            **values.get("init_kwargs", {}),
-            "model": values["model"],
-        }
+        params = {**values.get("init_kwargs", {}), "model": values["model"]}
         if values["qianfan_ak"].get_secret_value() != "":
             params["ak"] = values["qianfan_ak"].get_secret_value()
         if values["qianfan_sk"].get_secret_value() != "":
@@ -143,11 +128,7 @@ class QianfanLLMEndpoint(LLM):
 
         return {**normal_params, **self.model_kwargs}
 
-    def _convert_prompt_msg_params(
-        self,
-        prompt: str,
-        **kwargs: Any,
-    ) -> dict:
+    def _convert_prompt_msg_params(self, prompt: str, **kwargs: Any) -> dict:
         if "streaming" in kwargs:
             kwargs["stream"] = kwargs.pop("streaming")
         return {

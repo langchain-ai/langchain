@@ -20,10 +20,7 @@ from urllib.parse import urlparse
 if TYPE_CHECKING:
     from cloudpathlib import AnyPath
 
-from langchain_community.document_loaders.blob_loaders.schema import (
-    Blob,
-    BlobLoader,
-)
+from langchain_community.document_loaders.blob_loaders.schema import Blob, BlobLoader
 
 T = TypeVar("T")
 
@@ -170,7 +167,7 @@ class CloudBlobLoader(BlobLoader):
                 from langchain_community.document_loaders.blob_loaders import CloudBlobLoader
 
                 # Load a single file.
-                loader = CloudBlobLoader("s3://mybucket/id") # az://
+                loader = CloudBlobLoader("s3://mybucket/id")  # az://
 
                 # Recursively load all text files in a directory.
                 loader = CloudBlobLoader("az://mybucket/id", glob="**/*.txt")
@@ -183,9 +180,7 @@ class CloudBlobLoader(BlobLoader):
 
                 # Recursively load all files in a directory, except for py or pyc files.
                 loader = CloudBlobLoader(
-                    "s3://mybucket/id",
-                    glob="**/*.txt",
-                    exclude=["**/*.py", "**/*.pyc"]
+                    "s3://mybucket/id", glob="**/*.txt", exclude=["**/*.py", "**/*.pyc"]
                 )
         """  # noqa: E501
         from cloudpathlib import AnyPath
@@ -205,9 +200,7 @@ class CloudBlobLoader(BlobLoader):
         self.show_progress = show_progress
         self.exclude = exclude
 
-    def yield_blobs(
-        self,
-    ) -> Iterable[Blob]:
+    def yield_blobs(self) -> Iterable[Blob]:
         """Yield blobs that match the requested pattern."""
         iterator = _make_iterator(
             length_func=self.count_matching_files, show_progress=self.show_progress

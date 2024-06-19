@@ -88,7 +88,4 @@ class SpiderLoader(BaseLoader):
                 metadata = doc.get("metadata", {})
 
                 if page_content is not None:
-                    yield Document(
-                        page_content=page_content,
-                        metadata=metadata,
-                    )
+                    yield Document(page_content=page_content, metadata=metadata)

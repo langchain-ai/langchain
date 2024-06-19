@@ -40,9 +40,7 @@ def test_chat_snowflake_cortex_system_message(chat: ChatSnowflakeCortex) -> None
 
 def test_chat_snowflake_cortex_model() -> None:
     """Test ChatSnowflakeCortex handles model_name."""
-    chat = ChatSnowflakeCortex(
-        model="foo",
-    )
+    chat = ChatSnowflakeCortex(model="foo")
     assert chat.model == "foo"
 
 

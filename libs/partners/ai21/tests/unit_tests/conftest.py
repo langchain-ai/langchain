@@ -35,9 +35,7 @@ BASIC_EXAMPLE_LLM_PARAMETERS = {
     "frequency_penalty": Penalty(scale=0.2, apply_to_numbers=True),
     "presence_penalty": Penalty(scale=0.2, apply_to_stopwords=True),
     "count_penalty": Penalty(
-        scale=0.2,
-        apply_to_punctuation=True,
-        apply_to_emojis=True,
+        scale=0.2, apply_to_punctuation=True, apply_to_emojis=True
     ),
 }
 
@@ -51,9 +49,7 @@ BASIC_EXAMPLE_CHAT_PARAMETERS = {
     "frequency_penalty": Penalty(scale=0.2, apply_to_numbers=True),
     "presence_penalty": Penalty(scale=0.2, apply_to_stopwords=True),
     "count_penalty": Penalty(
-        scale=0.2,
-        apply_to_punctuation=True,
-        apply_to_emojis=True,
+        scale=0.2, apply_to_punctuation=True, apply_to_emojis=True
     ),
     "n": 3,
 }
@@ -95,9 +91,7 @@ BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT = {
     "frequency_penalty": Penalty(scale=0.2, apply_to_numbers=True).to_dict(),
     "presence_penalty": Penalty(scale=0.2, apply_to_stopwords=True).to_dict(),
     "count_penalty": Penalty(
-        scale=0.2,
-        apply_to_punctuation=True,
-        apply_to_emojis=True,
+        scale=0.2, apply_to_punctuation=True, apply_to_emojis=True
     ).to_dict(),
 }
 
@@ -111,9 +105,7 @@ BASIC_EXAMPLE_CHAT_PARAMETERS_AS_DICT = {
     "frequency_penalty": Penalty(scale=0.2, apply_to_numbers=True).to_dict(),
     "presence_penalty": Penalty(scale=0.2, apply_to_stopwords=True).to_dict(),
     "count_penalty": Penalty(
-        scale=0.2,
-        apply_to_punctuation=True,
-        apply_to_emojis=True,
+        scale=0.2, apply_to_punctuation=True, apply_to_emojis=True
     ).to_dict(),
     "n": 3,
 }
@@ -179,9 +171,7 @@ def mock_client_with_contextual_answers(mocker: MockerFixture) -> Mock:
     mock_client = mocker.MagicMock(spec=AI21Client)
     mock_client.answer = mocker.MagicMock()
     mock_client.answer.create.return_value = AnswerResponse(
-        id="some_id",
-        answer="some answer",
-        answer_in_context=False,
+        id="some_id", answer="some answer", answer_in_context=False
     )
 
     return mock_client
@@ -192,8 +182,7 @@ def mock_client_with_semantic_text_splitter(mocker: MockerFixture) -> Mock:
     mock_client = mocker.MagicMock(spec=AI21Client)
     mock_client.segmentation = mocker.MagicMock()
     mock_client.segmentation.create.return_value = SegmentationResponse(
-        id="12345",
-        segments=SEGMENTS,
+        id="12345", segments=SEGMENTS
     )
 
     return mock_client

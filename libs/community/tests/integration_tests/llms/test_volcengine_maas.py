@@ -21,9 +21,7 @@ def test_api_key_is_string() -> None:
     assert isinstance(llm.volc_engine_maas_sk, SecretStr)
 
 
-def test_api_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
-) -> None:
+def test_api_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> None:
     llm = VolcEngineMaasBase(  # type: ignore[call-arg]
         volc_engine_maas_ak="secret-volc-ak",  # type: ignore[arg-type]
         volc_engine_maas_sk="secret-volc-sk",  # type: ignore[arg-type]

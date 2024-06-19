@@ -26,6 +26,7 @@ class WatsonxLLM(BaseLLM):
         .. code-block:: python
 
             from ibm_watsonx_ai.metanames import GenTextParamsMetaNames
+
             parameters = {
                 GenTextParamsMetaNames.DECODING_METHOD: "sample",
                 GenTextParamsMetaNames.MAX_NEW_TOKENS: 100,
@@ -36,6 +37,7 @@ class WatsonxLLM(BaseLLM):
             }
 
             from langchain_ibm import WatsonxLLM
+
             watsonx_llm = WatsonxLLM(
                 model_id="google/flan-ul2",
                 url="https://us-south.ml.cloud.ibm.com",
@@ -134,8 +136,7 @@ class WatsonxLLM(BaseLLM):
                 values["watsonx_model"], "deployment_id", ""
             )
             values["project_id"] = getattr(
-                getattr(values["watsonx_model"], "_client"),
-                "default_project_id",
+                getattr(values["watsonx_model"], "_client"), "default_project_id"
             )
             values["space_id"] = getattr(
                 getattr(values["watsonx_model"], "_client"), "default_space_id"
@@ -294,8 +295,7 @@ class WatsonxLLM(BaseLLM):
         return LLMResult(generations=generations, llm_output=llm_output)
 
     def _stream_response_to_generation_chunk(
-        self,
-        stream_response: Dict[str, Any],
+        self, stream_response: Dict[str, Any]
     ) -> GenerationChunk:
         """Convert a stream response to a generation chunk."""
         if not stream_response["results"]:
@@ -401,7 +401,7 @@ class WatsonxLLM(BaseLLM):
 
                 response = watsonx_llm.stream("What is a molecule")
                 for chunk in response:
-                    print(chunk, end='')
+                    print(chunk, end="")
         """
         params = self._get_chat_params(stop=stop)
         for stream_resp in self.watsonx_model.generate_text_stream(

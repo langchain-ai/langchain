@@ -13,15 +13,9 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from langchain_community.cross_encoders.base import (
-        BaseCrossEncoder,
-    )
-    from langchain_community.cross_encoders.fake import (
-        FakeCrossEncoder,
-    )
-    from langchain_community.cross_encoders.huggingface import (
-        HuggingFaceCrossEncoder,
-    )
+    from langchain_community.cross_encoders.base import BaseCrossEncoder
+    from langchain_community.cross_encoders.fake import FakeCrossEncoder
+    from langchain_community.cross_encoders.huggingface import HuggingFaceCrossEncoder
     from langchain_community.cross_encoders.sagemaker_endpoint import (
         SagemakerEndpointCrossEncoder,
     )

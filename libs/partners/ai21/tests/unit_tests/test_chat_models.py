@@ -5,17 +5,11 @@ from unittest.mock import Mock, call
 import pytest
 from ai21 import MissingApiKeyError
 from ai21.models import ChatMessage, Penalty, RoleType
-from langchain_core.messages import (
-    AIMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
-from langchain_ai21.chat_models import (
-    ChatAI21,
-)
+from langchain_ai21.chat_models import ChatAI21
 from tests.unit_tests.conftest import (
     BASIC_EXAMPLE_CHAT_PARAMETERS,
     BASIC_EXAMPLE_CHAT_PARAMETERS_AS_DICT,
@@ -104,9 +98,7 @@ def test_generate(mock_client_with_chat: Mock) -> None:
         HumanMessage(content="What is 1 + 1"),
     ]
     llm = ChatAI21(
-        model="j2-ultra",
-        client=mock_client_with_chat,
-        **BASIC_EXAMPLE_CHAT_PARAMETERS,
+        model="j2-ultra", client=mock_client_with_chat, **BASIC_EXAMPLE_CHAT_PARAMETERS
     )
 
     llm.generate(messages=[messages0, messages1])
@@ -115,10 +107,7 @@ def test_generate(mock_client_with_chat: Mock) -> None:
             call(
                 model="j2-ultra",
                 messages=[
-                    ChatMessage(
-                        role=RoleType.USER,
-                        text=str(messages0[0].content),
-                    ),
+                    ChatMessage(role=RoleType.USER, text=str(messages0[0].content)),
                     ChatMessage(
                         role=RoleType.ASSISTANT, text=str(messages0[1].content)
                     ),
@@ -130,7 +119,7 @@ def test_generate(mock_client_with_chat: Mock) -> None:
             call(
                 model="j2-ultra",
                 messages=[
-                    ChatMessage(role=RoleType.USER, text=str(messages1[1].content)),
+                    ChatMessage(role=RoleType.USER, text=str(messages1[1].content))
                 ],
                 system="system message",
                 **BASIC_EXAMPLE_CHAT_PARAMETERS_AS_DICT,
@@ -156,9 +145,7 @@ def test_api_key_masked_when_passed_from_env(
     assert captured.out == "**********"
 
 
-def test_api_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
-) -> None:
+def test_api_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> None:
     """Test initialization with an API key provided via the initializer"""
     llm = ChatAI21(model="j2-ultra", api_key="secret-api-key")
     print(llm.api_key, end="")

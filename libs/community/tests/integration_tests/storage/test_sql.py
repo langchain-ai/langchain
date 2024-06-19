@@ -31,13 +31,13 @@ def test_mget(sql_engine: Engine) -> None:
             text(
                 "insert into langchain_key_value_stores ('namespace', 'key', 'value') "
                 "values('test','key1',:value)"
-            ).bindparams(value=b"value1"),
+            ).bindparams(value=b"value1")
         )
         session.execute(
             text(
                 "insert into langchain_key_value_stores ('namespace', 'key', 'value') "
                 "values('test','key2',:value)"
-            ).bindparams(value=b"value2"),
+            ).bindparams(value=b"value2")
         )
         session.commit()
 
@@ -56,13 +56,13 @@ async def test_amget(sql_aengine: AsyncEngine) -> None:
             text(
                 "insert into langchain_key_value_stores ('namespace', 'key', 'value') "
                 "values('test','key1',:value)"
-            ).bindparams(value=b"value1"),
+            ).bindparams(value=b"value1")
         )
         await session.execute(
             text(
                 "insert into langchain_key_value_stores ('namespace', 'key', 'value') "
                 "values('test','key2',:value)"
-            ).bindparams(value=b"value2"),
+            ).bindparams(value=b"value2")
         )
         await session.commit()
 
@@ -113,13 +113,13 @@ def test_mdelete(sql_engine: Engine) -> None:
             text(
                 "insert into langchain_key_value_stores ('namespace', 'key', 'value') "
                 "values('test','key1',:value)"
-            ).bindparams(value=b"value1"),
+            ).bindparams(value=b"value1")
         )
         session.execute(
             text(
                 "insert into langchain_key_value_stores ('namespace', 'key', 'value') "
                 "values('test','key2',:value)"
-            ).bindparams(value=b"value2"),
+            ).bindparams(value=b"value2")
         )
         session.commit()
     store.mdelete(keys)
@@ -142,13 +142,13 @@ async def test_amdelete(sql_aengine: AsyncEngine) -> None:
             text(
                 "insert into langchain_key_value_stores ('namespace', 'key', 'value') "
                 "values('test','key1',:value)"
-            ).bindparams(value=b"value1"),
+            ).bindparams(value=b"value1")
         )
         await session.execute(
             text(
                 "insert into langchain_key_value_stores ('namespace', 'key', 'value') "
                 "values('test','key2',:value)"
-            ).bindparams(value=b"value2"),
+            ).bindparams(value=b"value2")
         )
         await session.commit()
     await store.amdelete(keys)

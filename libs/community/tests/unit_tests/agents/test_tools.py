@@ -55,9 +55,7 @@ def test_tool_no_args_specified_assumes_str() -> None:
         return args[0]
 
     some_tool = Tool(
-        name="chain_run",
-        description="Run the chain",
-        func=ambiguous_function,
+        name="chain_run", description="Run the chain", func=ambiguous_function
     )
     expected_args = {"tool_input": {"type": "string"}}
     assert some_tool.args == expected_args

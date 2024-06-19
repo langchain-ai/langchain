@@ -264,7 +264,7 @@ class ChatLlamaCpp(BaseChatModel):
             generations.append(gen)
         token_usage = response.get("usage", {})
         llm_output = {
-            "token_usage": token_usage,
+            "token_usage": token_usage
             # "system_fingerprint": response.get("system_fingerprint", ""),
         }
         return ChatResult(generations=generations, llm_output=llm_output)
@@ -430,13 +430,16 @@ class ChatLlamaCpp(BaseChatModel):
                 from langchain_community.chat_models import ChatLlamaCpp
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
 
+
                 llm = ChatLlamaCpp(
-                    temperature=0.,
+                    temperature=0.0,
                     model_path="./SanctumAI-meta-llama-3-8b-instruct.Q8_0.gguf",
                     n_ctx=10000,
                     n_gpu_layers=4,
@@ -449,7 +452,9 @@ class ChatLlamaCpp(BaseChatModel):
                 )
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
 
                 # -> AnswerWithJustification(
                 #     answer='They weigh the same',
@@ -462,13 +467,16 @@ class ChatLlamaCpp(BaseChatModel):
                 from langchain_community.chat_models import ChatLlamaCpp
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
 
+
                 llm = ChatLlamaCpp(
-                    temperature=0.,
+                    temperature=0.0,
                     model_path="./SanctumAI-meta-llama-3-8b-instruct.Q8_0.gguf",
                     n_ctx=10000,
                     n_gpu_layers=4,
@@ -479,9 +487,13 @@ class ChatLlamaCpp(BaseChatModel):
                     top_p=0.5,
                     stop=["<|end_of_text|>", "<|eot_id|>"],
                 )
-                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, include_raw=True
+                )
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
                 #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
@@ -495,14 +507,17 @@ class ChatLlamaCpp(BaseChatModel):
                 from langchain_core.pydantic_v1 import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
 
+
                 dict_schema = convert_to_openai_tool(AnswerWithJustification)
                 llm = ChatLlamaCpp(
-                    temperature=0.,
+                    temperature=0.0,
                     model_path="./SanctumAI-meta-llama-3-8b-instruct.Q8_0.gguf",
                     n_ctx=10000,
                     n_gpu_layers=4,
@@ -515,7 +530,9 @@ class ChatLlamaCpp(BaseChatModel):
                 )
                 structured_llm = llm.with_structured_output(dict_schema)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
@@ -712,9 +729,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     Returns:
         The dictionary.
     """
-    message_dict: Dict[str, Any] = {
-        "content": _format_message_content(message.content),
-    }
+    message_dict: Dict[str, Any] = {"content": _format_message_content(message.content)}
     if (name := message.name or message.additional_kwargs.get("name")) is not None:
         message_dict["name"] = name
 

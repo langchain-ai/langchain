@@ -22,10 +22,7 @@ class CurrentWebPageTool(BaseBrowserTool):
     description: str = "Returns the URL of the current page"
     args_schema: Type[BaseModel] = BaseModel
 
-    def _run(
-        self,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
+    def _run(self, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
         """Use the tool."""
         if self.sync_browser is None:
             raise ValueError(f"Synchronous browser not provided to {self.name}")
@@ -33,8 +30,7 @@ class CurrentWebPageTool(BaseBrowserTool):
         return str(page.url)
 
     async def _arun(
-        self,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         if self.async_browser is None:

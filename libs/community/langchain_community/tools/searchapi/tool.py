@@ -24,17 +24,13 @@ class SearchAPIRun(BaseTool):
     api_wrapper: SearchApiAPIWrapper
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         return self.api_wrapper.run(query)
 
     async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool asynchronously."""
         return await self.api_wrapper.arun(query)
@@ -53,17 +49,13 @@ class SearchAPIResults(BaseTool):
     api_wrapper: SearchApiAPIWrapper = Field(default_factory=SearchApiAPIWrapper)
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         return str(self.api_wrapper.results(query))
 
     async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool asynchronously."""
         return (await self.api_wrapper.aresults(query)).__str__()

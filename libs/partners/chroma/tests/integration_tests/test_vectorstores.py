@@ -491,9 +491,7 @@ def test_create_collection_if_not_exist_true_non_existing(
     vectorstore.delete_collection()
 
 
-def test_collection_none_after_delete(
-    client: chromadb.ClientAPI,
-) -> None:
+def test_collection_none_after_delete(client: chromadb.ClientAPI) -> None:
     """Tests create_collection_if_not_exists=True and collection non-existing. ."""
     vectorstore = Chroma(
         client=client,

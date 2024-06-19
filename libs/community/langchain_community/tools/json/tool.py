@@ -93,9 +93,7 @@ class JsonListKeysTool(BaseTool):
     spec: JsonSpec
 
     def _run(
-        self,
-        tool_input: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, tool_input: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         return self.spec.keys(tool_input)
 
@@ -119,9 +117,7 @@ class JsonGetValueTool(BaseTool):
     spec: JsonSpec
 
     def _run(
-        self,
-        tool_input: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, tool_input: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         return self.spec.value(tool_input)
 

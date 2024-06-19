@@ -109,10 +109,7 @@ class QdrantSparseVectorRetriever(BaseRetriever):
             query_filter=self.filter,
             query_vector=models.NamedSparseVector(
                 name=self.sparse_vector_name,
-                vector=models.SparseVector(
-                    indices=query_indices,
-                    values=query_values,
-                ),
+                vector=models.SparseVector(indices=query_indices, values=query_values),
             ),
             limit=self.k,
             with_vectors=False,
@@ -188,8 +185,7 @@ class QdrantSparseVectorRetriever(BaseRetriever):
                     id=point_id,
                     vector={
                         self.sparse_vector_name: rest.SparseVector(
-                            indices=sparse_vector[0],
-                            values=sparse_vector[1],
+                            indices=sparse_vector[0], values=sparse_vector[1]
                         )
                     },
                     payload=payload,

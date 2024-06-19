@@ -21,9 +21,7 @@ def _get_default_parser() -> BaseBlobParser:
     )
 
 
-_REGISTRY = {
-    "default": _get_default_parser,
-}
+_REGISTRY = {"default": _get_default_parser}
 
 # PUBLIC API
 

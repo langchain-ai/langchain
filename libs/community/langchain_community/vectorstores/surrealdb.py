@@ -1,12 +1,5 @@
 import asyncio
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-)
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -56,11 +49,7 @@ class SurrealDBStore(VectorStore):
                     db_user=db_user, db_pass=db_pass)
     """
 
-    def __init__(
-        self,
-        embedding_function: Embeddings,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, embedding_function: Embeddings, **kwargs: Any) -> None:
         try:
             from surrealdb import Surreal
         except ImportError as e:
@@ -124,10 +113,7 @@ class SurrealDBStore(VectorStore):
                 data["metadata"] = metadatas[idx]  # type: ignore[assignment]
             else:
                 data["metadata"] = []
-            record = await self.sdb.create(
-                self.collection,
-                data,
-            )
+            record = await self.sdb.create(self.collection, data)
             ids.append(record[0]["id"])
         return ids
 
@@ -147,9 +133,7 @@ class SurrealDBStore(VectorStore):
         """
 
         async def _add_texts(
-            texts: Iterable[str],
-            metadatas: Optional[List[dict]] = None,
-            **kwargs: Any,
+            texts: Iterable[str], metadatas: Optional[List[dict]] = None, **kwargs: Any
         ) -> List[str]:
             await self.initialize()
             return await self.aadd_texts(texts, metadatas, **kwargs)
@@ -157,9 +141,7 @@ class SurrealDBStore(VectorStore):
         return asyncio.run(_add_texts(texts, metadatas, **kwargs))
 
     async def adelete(
-        self,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
+        self, ids: Optional[List[str]] = None, **kwargs: Any
     ) -> Optional[bool]:
         """Delete by document ID asynchronously.
 
@@ -185,11 +167,7 @@ class SurrealDBStore(VectorStore):
                     return True
         return False
 
-    def delete(
-        self,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> Optional[bool]:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete by document ID.
 
         Args:

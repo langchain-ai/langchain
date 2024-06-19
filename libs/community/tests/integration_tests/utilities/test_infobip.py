@@ -7,8 +7,7 @@ from langchain_community.utilities.infobip import InfobipAPIWrapper
 
 def test_send_sms() -> None:
     infobip: InfobipAPIWrapper = InfobipAPIWrapper(
-        infobip_api_key="test",
-        infobip_base_url="https://api.infobip.com",
+        infobip_api_key="test", infobip_base_url="https://api.infobip.com"
     )
 
     json_response: Dict = {
@@ -36,18 +35,14 @@ def test_send_sms() -> None:
         )
 
         response: str = infobip.run(
-            body="test",
-            to="41793026727",
-            sender="41793026727",
-            channel="sms",
+            body="test", to="41793026727", sender="41793026727", channel="sms"
         )
         assert response == "123"
 
 
 def test_send_email() -> None:
     infobip: InfobipAPIWrapper = InfobipAPIWrapper(
-        infobip_api_key="test",
-        infobip_base_url="https://api.infobip.com",
+        infobip_api_key="test", infobip_base_url="https://api.infobip.com"
     )
 
     json_response: Dict = {

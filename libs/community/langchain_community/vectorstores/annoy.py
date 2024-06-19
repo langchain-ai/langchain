@@ -35,6 +35,7 @@ class Annoy(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import Annoy
+
             db = Annoy(embedding_function, index, docstore, index_to_docstore_id)
 
     """
@@ -346,6 +347,7 @@ class Annoy(VectorStore):
 
                 from langchain_community.vectorstores import Annoy
                 from langchain_community.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 index = Annoy.from_texts(texts, embeddings)
         """
@@ -386,6 +388,7 @@ class Annoy(VectorStore):
 
                 from langchain_community.vectorstores import Annoy
                 from langchain_community.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))
@@ -410,10 +413,7 @@ class Annoy(VectorStore):
         os.makedirs(path, exist_ok=True)
         # save index, index config, docstore and index_to_docstore_id
         config_object = ConfigParser()
-        config_object["ANNOY"] = {
-            "f": self.index.f,
-            "metric": self.metric,
-        }
+        config_object["ANNOY"] = {"f": self.index.f, "metric": self.metric}
         self.index.save(str(path / "index.annoy"), prefault=prefault)
         with open(path / "index.pkl", "wb") as file:
             pickle.dump((self.docstore, self.index_to_docstore_id, config_object), file)

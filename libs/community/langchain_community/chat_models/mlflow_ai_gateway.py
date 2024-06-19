@@ -2,9 +2,7 @@ import logging
 import warnings
 from typing import Any, Dict, List, Mapping, Optional
 
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -14,10 +12,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatResult,
-)
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Extra
 
 logger = logging.getLogger(__name__)
@@ -49,9 +44,7 @@ class ChatMLflowAIGateway(BaseChatModel):
             chat = ChatMLflowAIGateway(
                 gateway_uri="<your-mlflow-ai-gateway-uri>",
                 route="<your-mlflow-ai-gateway-chat-route>",
-                params={
-                    "temperature": 0.1
-                }
+                params={"temperature": 0.1},
             )
     """
 
@@ -186,8 +179,7 @@ class ChatMLflowAIGateway(BaseChatModel):
             message = ChatMLflowAIGateway._convert_dict_to_message(candidate["message"])
             message_metadata = candidate.get("metadata", {})
             gen = ChatGeneration(
-                message=message,
-                generation_info=dict(message_metadata),
+                message=message, generation_info=dict(message_metadata)
             )
             generations.append(gen)
 

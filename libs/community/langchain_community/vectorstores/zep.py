@@ -330,10 +330,7 @@ class ZepVectorStore(VectorStore):
 
         return [
             (
-                Document(
-                    page_content=doc.content,
-                    metadata=doc.metadata,
-                ),
+                Document(page_content=doc.content, metadata=doc.metadata),
                 doc.score or 0.0,
             )
             for doc in results
@@ -365,10 +362,7 @@ class ZepVectorStore(VectorStore):
 
         return [
             (
-                Document(
-                    page_content=doc.content,
-                    metadata=doc.metadata,
-                ),
+                Document(page_content=doc.content, metadata=doc.metadata),
                 doc.score or 0.0,
             )
             for doc in results
@@ -416,11 +410,7 @@ class ZepVectorStore(VectorStore):
         )
 
         return [
-            Document(
-                page_content=doc.content,
-                metadata=doc.metadata,
-            )
-            for doc in results
+            Document(page_content=doc.content, metadata=doc.metadata) for doc in results
         ]
 
     async def asimilarity_search_by_vector(
@@ -441,11 +431,7 @@ class ZepVectorStore(VectorStore):
         )
 
         return [
-            Document(
-                page_content=doc.content,
-                metadata=doc.metadata,
-            )
-            for doc in results
+            Document(page_content=doc.content, metadata=doc.metadata) for doc in results
         ]
 
     def max_marginal_relevance_search(

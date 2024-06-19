@@ -20,10 +20,7 @@ def test_connect_file_rdf() -> None:
     """
     berners_lee_card = "http://www.w3.org/People/Berners-Lee/card"
 
-    graph = RdfGraph(
-        source_file=berners_lee_card,
-        standard="rdf",
-    )
+    graph = RdfGraph(source_file=berners_lee_card, standard="rdf")
 
     query = """SELECT ?s ?p ?o\n""" """WHERE { ?s ?p ?o }"""
 
@@ -39,18 +36,12 @@ def test_sparql_select() -> None:
 
     berners_lee_card = "http://www.w3.org/People/Berners-Lee/card"
 
-    graph = RdfGraph(
-        source_file=berners_lee_card,
-        standard="rdf",
-    )
+    graph = RdfGraph(source_file=berners_lee_card, standard="rdf")
 
     question = "What is Tim Berners-Lee's work homepage?"
     answer = "Tim Berners-Lee's work homepage is http://www.w3.org/People/Berners-Lee/."
 
-    chain = GraphSparqlQAChain.from_llm(
-        Mock(ChatOpenAI),
-        graph=graph,
-    )
+    chain = GraphSparqlQAChain.from_llm(Mock(ChatOpenAI), graph=graph)
     chain.sparql_intent_chain = Mock(LLMChain)
     chain.sparql_generation_select_chain = Mock(LLMChain)
     chain.sparql_generation_update_chain = Mock(LLMChain)
@@ -66,11 +57,7 @@ def test_sparql_select() -> None:
                         }"""
     )
     chain.qa_chain = MagicMock(
-        return_value={
-            "text": answer,
-            "prompt": question,
-            "context": [],
-        }
+        return_value={"text": answer, "prompt": question, "context": []}
     )
     chain.qa_chain.output_key = "text"
 
@@ -93,9 +80,7 @@ def test_sparql_insert(tmp_path: pathlib.Path) -> None:
     local_copy = tmp_path / "test.ttl"
 
     graph = RdfGraph(
-        source_file=berners_lee_card,
-        standard="rdf",
-        local_copy=str(local_copy),
+        source_file=berners_lee_card, standard="rdf", local_copy=str(local_copy)
     )
 
     query = (
@@ -103,10 +88,7 @@ def test_sparql_insert(tmp_path: pathlib.Path) -> None:
         "has a work homepage at 'http://www.w3.org/foo/bar/'"
     )
 
-    chain = GraphSparqlQAChain.from_llm(
-        Mock(ChatOpenAI),
-        graph=graph,
-    )
+    chain = GraphSparqlQAChain.from_llm(Mock(ChatOpenAI), graph=graph)
     chain.sparql_intent_chain = Mock(LLMChain)
     chain.sparql_generation_select_chain = Mock(LLMChain)
     chain.sparql_generation_update_chain = Mock(LLMChain)
@@ -152,18 +134,13 @@ def test_sparql_select_return_query() -> None:
 
     berners_lee_card = "http://www.w3.org/People/Berners-Lee/card"
 
-    graph = RdfGraph(
-        source_file=berners_lee_card,
-        standard="rdf",
-    )
+    graph = RdfGraph(source_file=berners_lee_card, standard="rdf")
 
     question = "What is Tim Berners-Lee's work homepage?"
     answer = "Tim Berners-Lee's work homepage is http://www.w3.org/People/Berners-Lee/."
 
     chain = GraphSparqlQAChain.from_llm(
-        Mock(ChatOpenAI),
-        graph=graph,
-        return_sparql_query=True,
+        Mock(ChatOpenAI), graph=graph, return_sparql_query=True
     )
     chain.sparql_intent_chain = Mock(LLMChain)
     chain.sparql_generation_select_chain = Mock(LLMChain)
@@ -180,11 +157,7 @@ def test_sparql_select_return_query() -> None:
                         }"""
     )
     chain.qa_chain = MagicMock(
-        return_value={
-            "text": answer,
-            "prompt": question,
-            "context": [],
-        }
+        return_value={"text": answer, "prompt": question, "context": []}
     )
     chain.qa_chain.output_key = "text"
 
@@ -232,10 +205,7 @@ def test_graph_qa_chain_with_ontotext_graphdb() -> None:
         graph_kwargs={"bind_namespaces": "none"},
     )
 
-    chain = GraphSparqlQAChain.from_llm(
-        Mock(ChatOpenAI),
-        graph=graph,
-    )
+    chain = GraphSparqlQAChain.from_llm(Mock(ChatOpenAI), graph=graph)
     chain.sparql_intent_chain = Mock(LLMChain)
     chain.sparql_generation_select_chain = Mock(LLMChain)
     chain.sparql_generation_update_chain = Mock(LLMChain)
@@ -251,11 +221,7 @@ def test_graph_qa_chain_with_ontotext_graphdb() -> None:
                         }"""
     )
     chain.qa_chain = MagicMock(
-        return_value={
-            "text": answer,
-            "prompt": question,
-            "context": [],
-        }
+        return_value={"text": answer, "prompt": question, "context": []}
     )
     chain.qa_chain.output_key = "text"
 

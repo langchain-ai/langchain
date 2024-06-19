@@ -5,12 +5,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
 
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
 if TYPE_CHECKING:
     from zep_python import Memory, MemorySearchResult, Message, NotFoundError

@@ -67,10 +67,7 @@ def _execute_test(
         expected_output = response
     else:
         output = llm.generate([prompt])  # type: ignore
-        expected_output = LLMResult(
-            generations=[response],
-            llm_output={},
-        )
+        expected_output = LLMResult(generations=[response], llm_output={})
 
     assert output == expected_output  # type: ignore
 
@@ -86,11 +83,7 @@ def _execute_test(
             [ChatGeneration(message=AIMessage(content="foo"))],
         ),
     ],
-    ids=[
-        "plain_cache",
-        "cache_with_llm",
-        "cache_with_chat",
-    ],
+    ids=["plain_cache", "cache_with_llm", "cache_with_chat"],
 )
 @pytest.mark.parametrize("cacher", [MongoDBCache, MongoDBAtlasSemanticCache])
 @pytest.mark.parametrize("remove_score", [True, False])
@@ -133,8 +126,7 @@ def test_mongodb_cache(
     ],
 )
 def test_mongodb_atlas_cache_matrix(
-    prompts: List[str],
-    generations: List[List[str]],
+    prompts: List[str], generations: List[List[str]]
 ) -> None:
     llm_cache(MongoDBAtlasSemanticCache)
     llm = FakeLLM()

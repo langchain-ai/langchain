@@ -56,6 +56,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         .. code-block:: python
 
             from langchain_community.chat_models import ChatOllama
+
             ollama = ChatOllama(model="llama2")
     """
 
@@ -166,13 +167,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                             "with a string 'image_url' field."
                         )
 
-            ollama_messages.append(
-                {
-                    "role": role,
-                    "content": content,
-                    "images": images,
-                }
-            )
+            ollama_messages.append({"role": role, "content": content, "images": images})
 
         return ollama_messages
 
@@ -223,9 +218,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                     final_chunk += chunk
                 if run_manager:
                     run_manager.on_llm_new_token(
-                        chunk.text,
-                        chunk=chunk,
-                        verbose=verbose,
+                        chunk.text, chunk=chunk, verbose=verbose
                     )
         if final_chunk is None:
             raise ValueError("No data received from Ollama stream.")
@@ -250,9 +243,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                     final_chunk += chunk
                 if run_manager:
                     await run_manager.on_llm_new_token(
-                        chunk.text,
-                        chunk=chunk,
-                        verbose=verbose,
+                        chunk.text, chunk=chunk, verbose=verbose
                     )
         if final_chunk is None:
             raise ValueError("No data received from Ollama stream.")
@@ -278,17 +269,11 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         Example:
             .. code-block:: python
 
-                response = ollama([
-                    HumanMessage(content="Tell me about the history of AI")
-                ])
+                response = ollama([HumanMessage(content="Tell me about the history of AI")])
         """
 
         final_chunk = self._chat_stream_with_aggregation(
-            messages,
-            stop=stop,
-            run_manager=run_manager,
-            verbose=self.verbose,
-            **kwargs,
+            messages, stop=stop, run_manager=run_manager, verbose=self.verbose, **kwargs
         )
         chat_generation = ChatGeneration(
             message=AIMessage(content=final_chunk.text),
@@ -315,17 +300,11 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
         Example:
             .. code-block:: python
 
-                response = ollama([
-                    HumanMessage(content="Tell me about the history of AI")
-                ])
+                response = ollama([HumanMessage(content="Tell me about the history of AI")])
         """
 
         final_chunk = await self._achat_stream_with_aggregation(
-            messages,
-            stop=stop,
-            run_manager=run_manager,
-            verbose=self.verbose,
-            **kwargs,
+            messages, stop=stop, run_manager=run_manager, verbose=self.verbose, **kwargs
         )
         chat_generation = ChatGeneration(
             message=AIMessage(content=final_chunk.text),
@@ -346,9 +325,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                     chunk = _chat_stream_response_to_chat_generation_chunk(stream_resp)
                     if run_manager:
                         run_manager.on_llm_new_token(
-                            chunk.text,
-                            chunk=chunk,
-                            verbose=self.verbose,
+                            chunk.text, chunk=chunk, verbose=self.verbose
                         )
                     yield chunk
         except OllamaEndpointNotFoundError:
@@ -366,9 +343,7 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                 chunk = _chat_stream_response_to_chat_generation_chunk(stream_resp)
                 if run_manager:
                     await run_manager.on_llm_new_token(
-                        chunk.text,
-                        chunk=chunk,
-                        verbose=self.verbose,
+                        chunk.text, chunk=chunk, verbose=self.verbose
                     )
                 yield chunk
 
@@ -386,8 +361,6 @@ class ChatOllama(BaseChatModel, _OllamaCommon):
                 chunk = _stream_response_to_chat_generation_chunk(stream_resp)
                 if run_manager:
                     run_manager.on_llm_new_token(
-                        chunk.text,
-                        chunk=chunk,
-                        verbose=self.verbose,
+                        chunk.text, chunk=chunk, verbose=self.verbose
                     )
                 yield chunk

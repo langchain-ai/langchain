@@ -92,9 +92,7 @@ def create_spark_dataframe_agent(
     )
     partial_prompt = prompt.partial(df=str(df.first()))
     llm_chain = LLMChain(
-        llm=llm,
-        prompt=partial_prompt,
-        callback_manager=callback_manager,
+        llm=llm, prompt=partial_prompt, callback_manager=callback_manager
     )
     tool_names = [tool.name for tool in tools]
     agent = ZeroShotAgent(

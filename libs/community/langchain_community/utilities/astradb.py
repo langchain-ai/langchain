@@ -7,10 +7,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Awaitable, Optional, Union
 
 if TYPE_CHECKING:
-    from astrapy.db import (
-        AstraDB,
-        AsyncAstraDB,
-    )
+    from astrapy.db import AstraDB, AsyncAstraDB
 
 
 class SetupMode(Enum):
@@ -37,10 +34,7 @@ class _AstraDBEnvironment:
         self.namespace = namespace
 
         try:
-            from astrapy.db import (
-                AstraDB,
-                AsyncAstraDB,
-            )
+            from astrapy.db import AstraDB, AsyncAstraDB
         except (ImportError, ModuleNotFoundError):
             raise ImportError(
                 "Could not import a recent astrapy python package. "
@@ -57,14 +51,10 @@ class _AstraDBEnvironment:
 
         if token and api_endpoint:
             astra_db = AstraDB(
-                token=token,
-                api_endpoint=api_endpoint,
-                namespace=self.namespace,
+                token=token, api_endpoint=api_endpoint, namespace=self.namespace
             )
             async_astra_db = AsyncAstraDB(
-                token=token,
-                api_endpoint=api_endpoint,
-                namespace=self.namespace,
+                token=token, api_endpoint=api_endpoint, namespace=self.namespace
             )
 
         if astra_db:
@@ -116,13 +106,11 @@ class _AstraDBCollectionEnvironment(_AstraDBEnvironment):
         )
         self.collection_name = collection_name
         self.collection = AstraDBCollection(
-            collection_name=collection_name,
-            astra_db=self.astra_db,
+            collection_name=collection_name, astra_db=self.astra_db
         )
 
         self.async_collection = AsyncAstraDBCollection(
-            collection_name=collection_name,
-            astra_db=self.async_astra_db,
+            collection_name=collection_name, astra_db=self.async_astra_db
         )
 
         self.async_setup_db_task: Optional[Task] = None

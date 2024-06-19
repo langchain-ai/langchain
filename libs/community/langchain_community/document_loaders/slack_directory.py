@@ -68,10 +68,7 @@ class SlackDirectoryLoader(BaseLoader):
         """
         text = message.get("text", "")
         metadata = self._get_message_metadata(message, channel_name)
-        return Document(
-            page_content=text,
-            metadata=metadata,
-        )
+        return Document(page_content=text, metadata=metadata)
 
     def _get_message_metadata(self, message: dict, channel_name: str) -> dict:
         """Create and return metadata for a given message and channel."""

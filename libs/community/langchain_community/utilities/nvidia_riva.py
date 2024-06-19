@@ -74,6 +74,7 @@ class RivaAudioEncoding(str, Enum):
     with the following commands:
     ```python
     import riva.client
+
     print(riva.client.AudioEncoding.keys())  # noqa: T201
     ```
     """
@@ -469,17 +470,14 @@ class RivaASR(
             ) from err
 
     def invoke(
-        self,
-        input: ASRInputType,
-        _: Optional[RunnableConfig] = None,
+        self, input: ASRInputType, _: Optional[RunnableConfig] = None
     ) -> ASROutputType:
         """Transcribe the audio bytes into a string with Riva."""
         # create an output text generator with Riva
         if not input.running:
             service = self._get_service()
             responses = service.streaming_response_generator(
-                audio_chunks=input,
-                streaming_config=self.config,
+                audio_chunks=input, streaming_config=self.config
             )
             input.register(responses)
 

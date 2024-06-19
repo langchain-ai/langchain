@@ -3,9 +3,7 @@ from typing import Any, List, Union
 
 import pytest
 
-from langchain_core._api.deprecation import (
-    LangChainPendingDeprecationWarning,
-)
+from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -33,8 +31,7 @@ def messages() -> List[BaseMessagePromptTemplate]:
     """Create messages."""
     system_message_prompt = SystemMessagePromptTemplate(
         prompt=PromptTemplate(
-            template="Here's some context: {context}",
-            input_variables=["context"],
+            template="Here's some context: {context}", input_variables=["context"]
         )
     )
     human_message_prompt = HumanMessagePromptTemplate(
@@ -45,8 +42,7 @@ def messages() -> List[BaseMessagePromptTemplate]:
     )
     ai_message_prompt = AIMessagePromptTemplate(
         prompt=PromptTemplate(
-            template="I'm an AI. I'm {foo}. I'm {bar}.",
-            input_variables=["foo", "bar"],
+            template="I'm an AI. I'm {foo}. I'm {bar}.", input_variables=["foo", "bar"]
         )
     )
     chat_message_prompt = ChatMessagePromptTemplate(
@@ -456,13 +452,7 @@ def test_chat_prompt_template_append_and_extend() -> None:
     assert len(template) == 3
     template.extend([message2, message3])
     assert len(template) == 5
-    assert template.messages == [
-        message1,
-        message2,
-        message3,
-        message2,
-        message3,
-    ]
+    assert template.messages == [message1, message2, message3, message2, message3]
     template.append(("system", "hello!"))
     assert template[-1] == SystemMessagePromptTemplate.from_template("hello!")
 
@@ -608,16 +598,10 @@ async def test_chat_tmpl_from_messages_multipart_image() -> None:
                         "url": f"data:image/jpeg;base64,{other_base64_image}"
                     },
                 },
+                {"type": "image_url", "image_url": {"url": f"{other_base64_image}"}},
                 {
                     "type": "image_url",
-                    "image_url": {"url": f"{other_base64_image}"},
-                },
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"{other_base64_image}",
-                        "detail": "medium",
-                    },
+                    "image_url": {"url": f"{other_base64_image}", "detail": "medium"},
                 },
                 {
                     "type": "image_url",
@@ -664,9 +648,7 @@ def test_chat_prompt_message_placeholder_partial() -> None:
     ]
 
     prompt = ChatPromptTemplate.from_messages(
-        [
-            MessagesPlaceholder("history", optional=True),
-        ]
+        [MessagesPlaceholder("history", optional=True)]
     )
     assert prompt.format_messages() == []
     prompt = prompt.partial(history=[("system", "foo")])

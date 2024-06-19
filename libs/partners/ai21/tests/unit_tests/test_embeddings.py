@@ -48,8 +48,7 @@ def test_embed_query(mock_client_with_embeddings: Mock) -> None:
     response = llm.embed_query(text=text)
     assert response == _EXAMPLE_EMBEDDING_0
     mock_client_with_embeddings.embed.create.assert_called_once_with(
-        texts=[text],
-        type=EmbedType.QUERY,
+        texts=[text], type=EmbedType.QUERY
     )
 
 
@@ -64,8 +63,7 @@ def test_embed_documents(mock_client_with_embeddings: Mock) -> None:
         _EXAMPLE_EMBEDDING_2,
     ]
     mock_client_with_embeddings.embed.create.assert_called_once_with(
-        texts=texts,
-        type=EmbedType.SEGMENT,
+        texts=texts, type=EmbedType.SEGMENT
     )
 
 

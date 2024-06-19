@@ -380,11 +380,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self._prune_old_thought_containers()
 
     def on_text(
-        self,
-        text: str,
-        color: Optional[str] = None,
-        end: str = "",
-        **kwargs: Any,
+        self, text: str, color: Optional[str] = None, end: str = "", **kwargs: Any
     ) -> None:
         pass
 

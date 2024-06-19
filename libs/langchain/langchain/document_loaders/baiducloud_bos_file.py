@@ -22,6 +22,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "BaiduBOSFileLoader",
-]
+__all__ = ["BaiduBOSFileLoader"]

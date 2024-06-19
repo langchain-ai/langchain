@@ -38,26 +38,16 @@ class WeightOnlyQuantPipeline(LLM):
         .. code-block:: python
 
             from langchain_community.llms import WeightOnlyQuantPipeline
-            from intel_extension_for_transformers.transformers import (
-                AutoModelForSeq2SeqLM
-            )
-            from intel_extension_for_transformers.transformers import (
-                WeightOnlyQuantConfig
-            )
+            from intel_extension_for_transformers.transformers import AutoModelForSeq2SeqLM
+            from intel_extension_for_transformers.transformers import WeightOnlyQuantConfig
             from transformers import AutoTokenizer, pipeline
 
             model_id = "google/flan-t5-large"
             tokenizer = AutoTokenizer.from_pretrained(model_id)
             config = WeightOnlyQuantConfig
-            model = AutoModelForSeq2SeqLM.from_pretrained(
-                model_id,
-                quantization_config=config,
-            )
+            model = AutoModelForSeq2SeqLM.from_pretrained(model_id, quantization_config=config)
             pipe = pipeline(
-                "text-generation",
-                model=model,
-                tokenizer=tokenizer,
-                max_new_tokens=10,
+                "text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10
             )
             hf = WeightOnlyQuantPipeline(pipeline=pipe)
     """
@@ -218,9 +208,9 @@ class WeightOnlyQuantPipeline(LLM):
             .. code-block:: python
 
                 from langchain_community.llms import WeightOnlyQuantPipeline
+
                 llm = WeightOnlyQuantPipeline.from_model_id(
-                    model_id="google/flan-t5-large",
-                    task="text2text-generation",
+                    model_id="google/flan-t5-large", task="text2text-generation"
                 )
                 llm.invoke("This is a prompt.")
         """

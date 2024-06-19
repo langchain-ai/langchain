@@ -70,10 +70,7 @@ def test_prompt_missing_input_variables() -> None:
             validate_template=True,
         )
     assert FewShotPromptTemplate(
-        input_variables=[],
-        suffix=template,
-        examples=[],
-        example_prompt=EXAMPLE_PROMPT,
+        input_variables=[], suffix=template, examples=[], example_prompt=EXAMPLE_PROMPT
     ).input_variables == ["foo"]
 
     # Test when missing in prefix
@@ -312,10 +309,7 @@ def test_prompt_jinja2_extra_input_variables(
 
 async def test_few_shot_chat_message_prompt_template() -> None:
     """Tests for few shot chat message template."""
-    examples = [
-        {"input": "2+2", "output": "4"},
-        {"input": "2+3", "output": "5"},
-    ]
+    examples = [{"input": "2+2", "output": "4"}, {"input": "2+3", "output": "5"}]
 
     example_prompt = ChatPromptTemplate.from_messages(
         [
@@ -325,9 +319,7 @@ async def test_few_shot_chat_message_prompt_template() -> None:
     )
 
     few_shot_prompt = FewShotChatMessagePromptTemplate(
-        input_variables=["input"],
-        example_prompt=example_prompt,
-        examples=examples,
+        input_variables=["input"], example_prompt=example_prompt, examples=examples
     )
     final_prompt: ChatPromptTemplate = (
         SystemMessagePromptTemplate.from_template("You are a helpful AI Assistant")
@@ -387,10 +379,7 @@ def test_few_shot_prompt_template_with_selector() -> None:
 
 def test_few_shot_chat_message_prompt_template_with_selector() -> None:
     """Tests for few shot chat message template with an example selector."""
-    examples = [
-        {"input": "2+2", "output": "4"},
-        {"input": "2+3", "output": "5"},
-    ]
+    examples = [{"input": "2+2", "output": "4"}, {"input": "2+3", "output": "5"}]
     example_selector = AsIsSelector(examples)
     example_prompt = ChatPromptTemplate.from_messages(
         [
@@ -461,10 +450,7 @@ async def test_few_shot_prompt_template_with_selector_async() -> None:
 
 async def test_few_shot_chat_message_prompt_template_with_selector_async() -> None:
     """Tests for few shot chat message template with an async example selector."""
-    examples = [
-        {"input": "2+2", "output": "4"},
-        {"input": "2+3", "output": "5"},
-    ]
+    examples = [{"input": "2+2", "output": "4"}, {"input": "2+3", "output": "5"}]
     example_selector = AsyncAsIsSelector(examples)
     example_prompt = ChatPromptTemplate.from_messages(
         [

@@ -63,9 +63,7 @@ class OCIModelDeploymentLLM(LLM):
         if not values.get("auth", None):
             values["auth"] = ads.common.auth.default_signer()
         values["endpoint"] = get_from_dict_or_env(
-            values,
-            "endpoint",
-            "OCI_LLM_ENDPOINT",
+            values, "endpoint", "OCI_LLM_ENDPOINT"
         )
         return values
 
@@ -77,10 +75,7 @@ class OCIModelDeploymentLLM(LLM):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {
-            **{"endpoint": self.endpoint},
-            **self._default_params,
-        }
+        return {**{"endpoint": self.endpoint}, **self._default_params}
 
     def _construct_json_body(self, prompt: str, params: dict) -> dict:
         """Constructs the request body as a dictionary (JSON)."""
@@ -143,11 +138,7 @@ class OCIModelDeploymentLLM(LLM):
         return completion
 
     def _send_request(
-        self,
-        data: Any,
-        endpoint: str,
-        header: Optional[dict] = {},
-        **kwargs: Any,
+        self, data: Any, endpoint: str, header: Optional[dict] = {}, **kwargs: Any
     ) -> Dict:
         """Sends request to the oci data science model deployment endpoint.
 
@@ -269,10 +260,7 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
         }
 
     def _construct_json_body(self, prompt: str, params: dict) -> dict:
-        return {
-            "inputs": prompt,
-            "parameters": params,
-        }
+        return {"inputs": prompt, "parameters": params}
 
     def _process_response(self, response_json: dict) -> str:
         return str(response_json.get("generated_text", response_json)) + "\n"
@@ -297,8 +285,7 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
             from langchain_community.llms import OCIModelDeploymentVLLM
 
             oci_md = OCIModelDeploymentVLLM(
-                endpoint="https://<MD_OCID>/predict",
-                model="mymodel"
+                endpoint="https://<MD_OCID>/predict", model="mymodel"
             )
 
     """
@@ -353,10 +340,7 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
         }
 
     def _construct_json_body(self, prompt: str, params: dict) -> dict:
-        return {
-            "prompt": prompt,
-            **params,
-        }
+        return {"prompt": prompt, **params}
 
     def _process_response(self, response_json: dict) -> str:
         return response_json["choices"][0]["text"]

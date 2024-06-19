@@ -34,10 +34,7 @@ def get_sqlite_cache() -> SQLAlchemyCache:
     )
 
 
-CACHE_OPTIONS = [
-    InMemoryCache,
-    get_sqlite_cache,
-]
+CACHE_OPTIONS = [InMemoryCache, get_sqlite_cache]
 
 
 @pytest.fixture(autouse=True, params=CACHE_OPTIONS)
@@ -252,8 +249,5 @@ def test_sql_alchemy_cache() -> None:
         [Generation(text="foo")],
         [Generation(text="fizz")],
     ]
-    expected_output = LLMResult(
-        generations=expected_generations,
-        llm_output=None,
-    )
+    expected_output = LLMResult(generations=expected_generations, llm_output=None)
     assert output == expected_output

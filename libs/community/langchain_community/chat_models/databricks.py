@@ -18,9 +18,7 @@ class ChatDatabricks(ChatMlflow):
             from langchain_community.chat_models import ChatDatabricks
 
             chat_model = ChatDatabricks(
-                target_uri="databricks",
-                endpoint="databricks-llama-2-70b-chat",
-                temperature=0.1,
+                target_uri="databricks", endpoint="databricks-llama-2-70b-chat", temperature=0.1
             )
 
             # single input invocation

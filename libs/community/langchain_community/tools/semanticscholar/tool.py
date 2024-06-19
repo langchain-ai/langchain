@@ -31,9 +31,7 @@ class SemanticScholarQueryRun(BaseTool):
     args_schema: Type[BaseModel] = SemantscholarInput
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the Semantic Scholar tool."""
         return self.api_wrapper.run(query)

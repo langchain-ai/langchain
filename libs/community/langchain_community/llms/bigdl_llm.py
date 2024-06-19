@@ -15,6 +15,7 @@ class BigdlLLM(IpexLLM):
         .. code-block:: python
 
             from langchain_community.llms import BigdlLLM
+
             llm = BigdlLLM.from_model_id(model_id="THUDM/chatglm-6b")
     """
 
@@ -46,10 +47,7 @@ class BigdlLLM(IpexLLM):
         logger.warning("BigdlLLM was deprecated. Please use IpexLLM instead.")
 
         try:
-            from bigdl.llm.transformers import (
-                AutoModel,
-                AutoModelForCausalLM,
-            )
+            from bigdl.llm.transformers import AutoModel, AutoModelForCausalLM
             from transformers import AutoTokenizer, LlamaTokenizer
 
         except ImportError:
@@ -129,10 +127,7 @@ class BigdlLLM(IpexLLM):
         logger.warning("BigdlLLM was deprecated. Please use IpexLLM instead.")
 
         try:
-            from bigdl.llm.transformers import (
-                AutoModel,
-                AutoModelForCausalLM,
-            )
+            from bigdl.llm.transformers import AutoModel, AutoModelForCausalLM
             from transformers import AutoTokenizer, LlamaTokenizer
 
         except ImportError:

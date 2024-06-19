@@ -22,10 +22,7 @@ class DatabricksEmbeddings(MlflowEmbeddings):
 
             from langchain_community.embeddings import DatabricksEmbeddings
 
-            embeddings = DatabricksEmbeddings(
-                target_uri="databricks",
-                endpoint="embeddings",
-            )
+            embeddings = DatabricksEmbeddings(target_uri="databricks", endpoint="embeddings")
     """
 
     target_uri: str = "databricks"

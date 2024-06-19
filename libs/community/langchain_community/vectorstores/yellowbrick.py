@@ -36,6 +36,7 @@ class Yellowbrick(VectorStore):
         .. code-block:: python
             from langchain_community.vectorstores import Yellowbrick
             from langchain_community.embeddings.openai import OpenAIEmbeddings
+
             ...
     """
 
@@ -189,9 +190,7 @@ class Yellowbrick(VectorStore):
                     """
                     CREATE SCHEMA IF NOT EXISTS {s}
                 """
-                ).format(
-                    s=sql.Identifier(self._schema),
-                )
+                ).format(s=sql.Identifier(self._schema))
             )
 
     def _create_table(self, cursor: "PgCursor") -> None:
@@ -213,10 +212,7 @@ class Yellowbrick(VectorStore):
                 CONSTRAINT {c} PRIMARY KEY (doc_id))
                 DISTRIBUTE ON (doc_id) SORT ON (doc_id)
             """
-            ).format(
-                t=t,
-                c=c,
-            )
+            ).format(t=t, c=c)
         )
 
         schema_prefix = (self._schema,) if self._schema else ()
@@ -237,12 +233,7 @@ class Yellowbrick(VectorStore):
                 CONSTRAINT {c2} FOREIGN KEY (doc_id) REFERENCES {t2}(doc_id))
                 DISTRIBUTE ON (doc_id) SORT ON (doc_id)
             """
-            ).format(
-                t1=t1,
-                t2=t2,
-                c1=c1,
-                c2=c2,
-            )
+            ).format(t1=t1, t2=t2, c1=c1, c2=c2)
         )
 
     def drop(
@@ -262,10 +253,7 @@ class Yellowbrick(VectorStore):
             self._drop_table(cursor, table, schema=schema)
 
     def _drop_table(
-        self,
-        cursor: "PgCursor",
-        table: str,
-        schema: Optional[str] = None,
+        self, cursor: "PgCursor", table: str, schema: Optional[str] = None
     ) -> None:
         """
         Executes the drop table command using the given cursor.
@@ -444,9 +432,7 @@ class Yellowbrick(VectorStore):
                 """
                 WHERE doc_id IN ({ids})
             """
-            ).format(
-                ids=ids_formatted,
-            )
+            ).format(ids=ids_formatted)
         else:
             raise ValueError("Either ids or delete_all must be provided.")
 
@@ -496,10 +482,7 @@ class Yellowbrick(VectorStore):
                 FROM sys.table t INNER JOIN sys.schema s ON t.schema_id = s.schema_id
                 WHERE s.name = {schema} AND t.name = {table_name}
             """
-            ).format(
-                schema=schema,
-                table_name=table_name,
-            )
+            ).format(schema=schema, table_name=table_name)
         )
         return cursor.fetchone()[0] > 0
 
@@ -562,9 +545,7 @@ class Yellowbrick(VectorStore):
             if index_params.index_type == Yellowbrick.IndexType.LSH:
                 tmp_hash_table = self._table + "_tmp_hash"
                 self._generate_tmp_lsh_hashes(
-                    cursor,
-                    tmp_embeddings_table,
-                    tmp_hash_table,
+                    cursor, tmp_embeddings_table, tmp_hash_table
                 )
 
                 schema_prefix = (self._schema,) if self._schema else ()
@@ -617,10 +598,7 @@ class Yellowbrick(VectorStore):
                         index_params.get_param("hamming_distance", 0)
                     ),
                 )
-                cursor.execute(
-                    sql_query,
-                    (k,),
-                )
+                cursor.execute(sql_query, (k,))
                 results = cursor.fetchall()
             else:
                 sql_query = sql.SQL(
@@ -648,11 +626,7 @@ class Yellowbrick(VectorStore):
                     ON v4.doc_id = v3.doc_id
                     ORDER BY score DESC
                 """
-                ).format(
-                    v1=v1,
-                    v2=v2,
-                    v3=v3,
-                )
+                ).format(v1=v1, v2=v2, v3=v3)
                 cursor.execute(sql_query, (k,))
                 results = cursor.fetchall()
 
@@ -727,9 +701,7 @@ class Yellowbrick(VectorStore):
         return [doc for doc, _ in documents]
 
     def _update_lsh_hashes(
-        self,
-        cursor: "PgCursor",
-        doc_id: Optional[uuid.UUID] = None,
+        self, cursor: "PgCursor", doc_id: Optional[uuid.UUID] = None
     ) -> None:
         """Add hashes to LSH index"""
         from psycopg2 import sql
@@ -869,12 +841,7 @@ class Yellowbrick(VectorStore):
                 CONSTRAINT {c2} FOREIGN KEY (doc_id) REFERENCES {t2}(doc_id))
                 DISTRIBUTE ON (doc_id) SORT ON (doc_id)
             """
-            ).format(
-                t1=t1,
-                t2=t2,
-                c1=c1,
-                c2=c2,
-            )
+            ).format(t1=t1, t2=t2, c1=c1, c2=c2)
         )
 
         schema_prefix = (self._schema,) if self._schema else ()
@@ -890,10 +857,7 @@ class Yellowbrick(VectorStore):
                 CONSTRAINT {c} PRIMARY KEY (id, hyperplane_id))
                 DISTRIBUTE REPLICATE SORT ON (id)
             """
-            ).format(
-                t=t,
-                c=c,
-            )
+            ).format(t=t, c=c)
         )
 
     def _drop_lsh_index_tables(self, cursor: "PgCursor") -> None:
@@ -944,8 +908,7 @@ class Yellowbrick(VectorStore):
                     *schema_prefix, self._table + self.CONTENT_TABLE
                 )
                 alter_table_query = sql.SQL("ALTER TABLE {t1} RENAME TO {t2}").format(
-                    t1=embeddings,
-                    t2=old_embeddings,
+                    t1=embeddings, t2=old_embeddings
                 )
                 cursor.execute(alter_table_query)
 
@@ -956,10 +919,7 @@ class Yellowbrick(VectorStore):
                     INSERT INTO {t1} (doc_id, embedding_id, embedding) 
                     SELECT id, embedding_id, embedding FROM {t2}
                 """
-                ).format(
-                    t1=embeddings,
-                    t2=old_embeddings,
-                )
+                ).format(t1=embeddings, t2=old_embeddings)
                 cursor.execute(insert_query)
 
                 insert_content_query = sql.SQL(

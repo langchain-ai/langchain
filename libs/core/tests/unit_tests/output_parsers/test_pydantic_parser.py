@@ -30,9 +30,7 @@ class ForecastV1(V1BaseModel):
 
 
 @pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
-def test_pydantic_parser_chaining(
-    pydantic_object: TBaseModel,
-) -> None:
+def test_pydantic_parser_chaining(pydantic_object: TBaseModel) -> None:
     prompt = PromptTemplate(
         template="""{{
         "temperature": 20,
@@ -75,9 +73,7 @@ def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
 
 # JSON output parser tests
 @pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
-def test_json_parser_chaining(
-    pydantic_object: TBaseModel,
-) -> None:
+def test_json_parser_chaining(pydantic_object: TBaseModel) -> None:
     prompt = PromptTemplate(
         template="""{{
         "temperature": 20,

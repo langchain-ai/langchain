@@ -73,8 +73,7 @@ def _result_to_chunked_message(generated_result: ChatResult) -> ChatGenerationCh
             for idx, tool_call in enumerate(message.tool_calls)
         ]
         message_chunk = AIMessageChunk(
-            content=message.content,
-            tool_call_chunks=tool_call_chunks,
+            content=message.content, tool_call_chunks=tool_call_chunks
         )
         return ChatGenerationChunk(message=message_chunk)
     else:
@@ -169,11 +168,7 @@ def _format_tool_calls_to_edenai_tool_calls(message: BaseMessage) -> List:
         except TypeError:
             arguments = str(tool_args)
         edenai_tool_calls.append(
-            {
-                "arguments": arguments,
-                "id": tool_call["id"],
-                "name": tool_call["name"],
-            }
+            {"arguments": arguments, "id": tool_call["id"], "name": tool_call["name"]}
         )
     return edenai_tool_calls
 
@@ -229,10 +224,8 @@ class ChatEdenAI(BaseChatModel):
 
             # Initialize `ChatEdenAI` with the desired configuration
             chat = ChatEdenAI(
-                provider="openai",
-                model="gpt-4",
-                max_tokens=256,
-                temperature=0.75)
+                provider="openai", model="gpt-4", max_tokens=256, temperature=0.75
+            )
 
             # Create a list of messages to interact with the model
             messages = [HumanMessage(content="hello")]
@@ -265,7 +258,8 @@ class ChatEdenAI(BaseChatModel):
                 model="gpt-4",
                 max_tokens=256,
                 temperature=0.75,
-                fallback_provider="google")
+                fallback_provider="google",
+            )
 
     you can find more details here : https://docs.edenai.co/reference/text_chat_create
     """

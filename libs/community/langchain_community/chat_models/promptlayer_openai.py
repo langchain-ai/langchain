@@ -33,6 +33,7 @@ class PromptLayerChatOpenAI(ChatOpenAI):
         .. code-block:: python
 
             from langchain_community.chat_models import PromptLayerChatOpenAI
+
             openai = PromptLayerChatOpenAI(model="gpt-3.5-turbo")
     """
 

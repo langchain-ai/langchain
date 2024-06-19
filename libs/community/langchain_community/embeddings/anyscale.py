@@ -29,25 +29,16 @@ class AnyscaleEmbeddings(OpenAIEmbeddings):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
-        return {
-            "anyscale_api_key": "ANYSCALE_API_KEY",
-        }
+        return {"anyscale_api_key": "ANYSCALE_API_KEY"}
 
     @root_validator()
     def validate_environment(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
         values["anyscale_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "anyscale_api_key",
-                "ANYSCALE_API_KEY",
-            )
+            get_from_dict_or_env(values, "anyscale_api_key", "ANYSCALE_API_KEY")
         )
         values["anyscale_api_base"] = get_from_dict_or_env(
-            values,
-            "anyscale_api_base",
-            "ANYSCALE_API_BASE",
-            default=DEFAULT_API_BASE,
+            values, "anyscale_api_base", "ANYSCALE_API_BASE", default=DEFAULT_API_BASE
         )
         try:
             import openai

@@ -55,9 +55,7 @@ class FakeCompletion:
         return result, choices
 
     @staticmethod
-    def _get_next_result(
-        agen: AsyncGenerator[Dict[str, Any], None],
-    ) -> Dict[str, Any]:
+    def _get_next_result(agen: AsyncGenerator[Dict[str, Any], None]) -> Dict[str, Any]:
         coroutine = cast(Coroutine, agen.__anext__())
         return asyncio.run(coroutine)
 
@@ -68,11 +66,7 @@ class FakeCompletion:
 
         self.seen_inputs.append(kwargs)
         base_result = {
-            "choices": [
-                {
-                    "index": 0,
-                }
-            ],
+            "choices": [{"index": 0}],
             "created": 0,
             "id": "",
             "model": model_group,
@@ -102,10 +96,7 @@ class FakeCompletion:
         else:
             result, choices = self._get_new_result_and_choices(base_result)
             choice = choices[0]
-            choice["message"] = {
-                "content": fake_answer,
-                "role": "assistant",
-            }
+            choice["message"] = {"content": fake_answer, "role": "assistant"}
             choice["finish_reason"] = "stop"
             result["usage"] = Usage(
                 completion_tokens=1, prompt_tokens=2, total_tokens=3
@@ -171,9 +162,7 @@ def litellm_router() -> Any:
     """LiteLLM router for testing."""
     from litellm import Router
 
-    return Router(
-        model_list=model_list,
-    )
+    return Router(model_list=model_list)
 
 
 @pytest.mark.scheduled

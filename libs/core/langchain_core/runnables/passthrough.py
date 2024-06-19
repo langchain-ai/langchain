@@ -83,23 +83,21 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
                 RunnablePassthrough,
             )
 
-            runnable = RunnableParallel(
-                origin=RunnablePassthrough(),
-                modified=lambda x: x+1
-            )
+            runnable = RunnableParallel(origin=RunnablePassthrough(), modified=lambda x: x + 1)
 
-            runnable.invoke(1) # {'origin': 1, 'modified': 2}
+            runnable.invoke(1)  # {'origin': 1, 'modified': 2}
 
 
-            def fake_llm(prompt: str) -> str: # Fake LLM for the example
+            def fake_llm(prompt: str) -> str:  # Fake LLM for the example
                 return "completion"
 
+
             chain = RunnableLambda(fake_llm) | {
-                'original': RunnablePassthrough(), # Original LLM output
-                'parsed': lambda text: text[::-1] # Parsing logic
+                "original": RunnablePassthrough(),  # Original LLM output
+                "parsed": lambda text: text[::-1],  # Parsing logic
             }
 
-            chain.invoke('hello') # {'original': 'completion', 'parsed': 'noitelpmoc'}
+            chain.invoke("hello")  # {'original': 'completion', 'parsed': 'noitelpmoc'}
 
     In some cases, it may be useful to pass the input through while adding some
     keys to the output. In this case, you can use the `assign` method:
@@ -108,17 +106,16 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
             from langchain_core.runnables import RunnablePassthrough
 
-            def fake_llm(prompt: str) -> str: # Fake LLM for the example
+
+            def fake_llm(prompt: str) -> str:  # Fake LLM for the example
                 return "completion"
 
-            runnable = {
-                'llm1':  fake_llm,
-                'llm2':  fake_llm,
-            } | RunnablePassthrough.assign(
-                total_chars=lambda inputs: len(inputs['llm1'] + inputs['llm2'])
+
+            runnable = {"llm1": fake_llm, "llm2": fake_llm} | RunnablePassthrough.assign(
+                total_chars=lambda inputs: len(inputs["llm1"] + inputs["llm2"])
             )
 
-            runnable.invoke('hello')
+            runnable.invoke("hello")
             # {'llm1': 'completion', 'llm2': 'completion', 'total_chars': 20}
     """
 
@@ -305,18 +302,12 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
                     call_func_with_variable_args(self.func, final, config, **kwargs)
 
     def stream(
-        self,
-        input: Other,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
+        self, input: Other, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Iterator[Other]:
         return self.transform(iter([input]), config, **kwargs)
 
     async def astream(
-        self,
-        input: Other,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
+        self, input: Other, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> AsyncIterator[Other]:
         async def input_aiter() -> AsyncIterator[Other]:
             yield input
@@ -341,18 +332,15 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
 
             # This is a RunnableAssign
             from typing import Dict
-            from langchain_core.runnables.passthrough import (
-                RunnableAssign,
-                RunnableParallel,
-            )
+            from langchain_core.runnables.passthrough import RunnableAssign, RunnableParallel
             from langchain_core.runnables.base import RunnableLambda
+
 
             def add_ten(x: Dict[str, int]) -> Dict[str, int]:
                 return {"added": x["input"] + 10}
 
-            mapper = RunnableParallel(
-                {"add_step": RunnableLambda(add_ten),}
-            )
+
+            mapper = RunnableParallel({"add_step": RunnableLambda(add_ten)})
 
             runnable_assign = RunnableAssign(mapper)
 
@@ -454,9 +442,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         return {
             **input,
             **self.mapper.invoke(
-                input,
-                patch_config(config, callbacks=run_manager.get_child()),
-                **kwargs,
+                input, patch_config(config, callbacks=run_manager.get_child()), **kwargs
             ),
         }
 
@@ -482,9 +468,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         return {
             **input,
             **await self.mapper.ainvoke(
-                input,
-                patch_config(config, callbacks=run_manager.get_child()),
-                **kwargs,
+                input, patch_config(config, callbacks=run_manager.get_child()), **kwargs
             ),
         }
 
@@ -510,12 +494,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
 
         # create map output stream
         map_output = self.mapper.transform(
-            for_map,
-            patch_config(
-                config,
-                callbacks=run_manager.get_child(),
-            ),
-            **kwargs,
+            for_map, patch_config(config, callbacks=run_manager.get_child()), **kwargs
         )
 
         # get executor to start map output stream in background
@@ -565,16 +544,11 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         for_passthrough, for_map = atee(input, 2, lock=asyncio.Lock())
         # create map output stream
         map_output = self.mapper.atransform(
-            for_map,
-            patch_config(
-                config,
-                callbacks=run_manager.get_child(),
-            ),
-            **kwargs,
+            for_map, patch_config(config, callbacks=run_manager.get_child()), **kwargs
         )
         # start map output stream
         first_map_chunk_task: asyncio.Task = asyncio.create_task(
-            py_anext(map_output, None),  # type: ignore[arg-type]
+            py_anext(map_output, None)  # type: ignore[arg-type]
         )
         # consume passthrough stream
         async for chunk in for_passthrough:
@@ -637,14 +611,9 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
 
             from langchain_core.runnables.passthrough import RunnablePick
 
-            input_data = {
-                'name': 'John',
-                'age': 30,
-                'city': 'New York',
-                'country': 'USA'
-            }
+            input_data = {"name": "John", "age": 30, "city": "New York", "country": "USA"}
 
-            runnable = RunnablePick(keys=['name', 'age'])
+            runnable = RunnablePick(keys=["name", "age"])
 
             output_data = runnable.invoke(input_data)
 
@@ -689,10 +658,7 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
             else:
                 return None
 
-    def _invoke(
-        self,
-        input: Dict[str, Any],
-    ) -> Dict[str, Any]:
+    def _invoke(self, input: Dict[str, Any]) -> Dict[str, Any]:
         return self._pick(input)
 
     def invoke(
@@ -703,10 +669,7 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     ) -> Dict[str, Any]:
         return self._call_with_config(self._invoke, input, config, **kwargs)
 
-    async def _ainvoke(
-        self,
-        input: Dict[str, Any],
-    ) -> Dict[str, Any]:
+    async def _ainvoke(self, input: Dict[str, Any]) -> Dict[str, Any]:
         return self._pick(input)
 
     async def ainvoke(
@@ -717,10 +680,7 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
     ) -> Dict[str, Any]:
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 
-    def _transform(
-        self,
-        input: Iterator[Dict[str, Any]],
-    ) -> Iterator[Dict[str, Any]]:
+    def _transform(self, input: Iterator[Dict[str, Any]]) -> Iterator[Dict[str, Any]]:
         for chunk in input:
             picked = self._pick(chunk)
             if picked is not None:
@@ -737,8 +697,7 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         )
 
     async def _atransform(
-        self,
-        input: AsyncIterator[Dict[str, Any]],
+        self, input: AsyncIterator[Dict[str, Any]]
     ) -> AsyncIterator[Dict[str, Any]]:
         async for chunk in input:
             picked = self._pick(chunk)

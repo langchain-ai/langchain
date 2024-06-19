@@ -13,25 +13,14 @@ from langchain_community.tools.gmail.base import GmailBaseTool
 class SendMessageSchema(BaseModel):
     """Input for SendMessageTool."""
 
-    message: str = Field(
-        ...,
-        description="The message to send.",
-    )
-    to: Union[str, List[str]] = Field(
-        ...,
-        description="The list of recipients.",
-    )
-    subject: str = Field(
-        ...,
-        description="The subject of the message.",
-    )
+    message: str = Field(..., description="The message to send.")
+    to: Union[str, List[str]] = Field(..., description="The list of recipients.")
+    subject: str = Field(..., description="The subject of the message.")
     cc: Optional[Union[str, List[str]]] = Field(
-        None,
-        description="The list of CC recipients.",
+        None, description="The list of CC recipients."
     )
     bcc: Optional[Union[str, List[str]]] = Field(
-        None,
-        description="The list of BCC recipients.",
+        None, description="The list of BCC recipients."
     )
 
 

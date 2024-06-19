@@ -26,12 +26,9 @@ def test_qdrant_max_marginal_relevance_search(
     filter = models.Filter(
         must=[
             models.FieldCondition(
-                key=f"{metadata_payload_key}.page",
-                match=models.MatchValue(
-                    value=2,
-                ),
-            ),
-        ],
+                key=f"{metadata_payload_key}.page", match=models.MatchValue(value=2)
+            )
+        ]
     )
 
     texts = ["foo", "bar", "baz"]
@@ -62,6 +59,5 @@ def test_qdrant_max_marginal_relevance_search(
         "foo", k=2, fetch_k=3, lambda_mult=0.0, filter=filter
     )
     assert_documents_equals(
-        output,
-        [Document(page_content="baz", metadata={"page": 2})],
+        output, [Document(page_content="baz", metadata={"page": 2})]
     )

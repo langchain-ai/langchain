@@ -28,7 +28,4 @@ class AmadeusToolkit(BaseToolkit):
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        return [
-            AmadeusClosestAirport(llm=self.llm),
-            AmadeusFlightSearch(),
-        ]
+        return [AmadeusClosestAirport(llm=self.llm), AmadeusFlightSearch()]

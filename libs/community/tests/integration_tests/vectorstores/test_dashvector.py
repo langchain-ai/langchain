@@ -10,11 +10,7 @@ ids = ["1", "2", "3"]
 
 
 def test_dashvector_from_texts() -> None:
-    dashvector = DashVector.from_texts(
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        ids=ids,
-    )
+    dashvector = DashVector.from_texts(texts=texts, embedding=FakeEmbeddings(), ids=ids)
 
     # the vector insert operation is async by design, we wait here a bit for the
     # insertion to complete.
@@ -26,10 +22,7 @@ def test_dashvector_from_texts() -> None:
 def test_dashvector_with_text_with_metadatas() -> None:
     metadatas = [{"meta": i} for i in range(len(texts))]
     dashvector = DashVector.from_texts(
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        metadatas=metadatas,
-        ids=ids,
+        texts=texts, embedding=FakeEmbeddings(), metadatas=metadatas, ids=ids
     )
 
     # the vector insert operation is async by design, we wait here a bit for the
@@ -42,10 +35,7 @@ def test_dashvector_with_text_with_metadatas() -> None:
 def test_dashvector_search_with_filter() -> None:
     metadatas = [{"meta": i} for i in range(len(texts))]
     dashvector = DashVector.from_texts(
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        metadatas=metadatas,
-        ids=ids,
+        texts=texts, embedding=FakeEmbeddings(), metadatas=metadatas, ids=ids
     )
 
     # the vector insert operation is async by design, we wait here a bit for the
@@ -56,11 +46,7 @@ def test_dashvector_search_with_filter() -> None:
 
 
 def test_dashvector_search_with_scores() -> None:
-    dashvector = DashVector.from_texts(
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        ids=ids,
-    )
+    dashvector = DashVector.from_texts(texts=texts, embedding=FakeEmbeddings(), ids=ids)
 
     # the vector insert operation is async by design, we wait here a bit for the
     # insertion to complete.

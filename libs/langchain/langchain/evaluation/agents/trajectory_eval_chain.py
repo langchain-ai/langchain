@@ -6,17 +6,7 @@ chain (LLMChain) to generate the reasoning and scores.
 """
 
 import re
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    TypedDict,
-    Union,
-    cast,
-)
+from typing import Any, Dict, List, Optional, Sequence, Tuple, TypedDict, Union, cast
 
 from langchain_core.agents import AgentAction
 from langchain_core.callbacks.manager import (

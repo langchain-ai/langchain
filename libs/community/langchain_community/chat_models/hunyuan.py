@@ -193,27 +193,16 @@ class ChatHunyuan(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         values["hunyuan_api_base"] = get_from_dict_or_env(
-            values,
-            "hunyuan_api_base",
-            "HUNYUAN_API_BASE",
-            DEFAULT_API_BASE,
+            values, "hunyuan_api_base", "HUNYUAN_API_BASE", DEFAULT_API_BASE
         )
         values["hunyuan_app_id"] = get_from_dict_or_env(
-            values,
-            "hunyuan_app_id",
-            "HUNYUAN_APP_ID",
+            values, "hunyuan_app_id", "HUNYUAN_APP_ID"
         )
         values["hunyuan_secret_id"] = get_from_dict_or_env(
-            values,
-            "hunyuan_secret_id",
-            "HUNYUAN_SECRET_ID",
+            values, "hunyuan_secret_id", "HUNYUAN_SECRET_ID"
         )
         values["hunyuan_secret_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "hunyuan_secret_key",
-                "HUNYUAN_SECRET_KEY",
-            )
+            get_from_dict_or_env(values, "hunyuan_secret_key", "HUNYUAN_SECRET_KEY")
         )
 
         return values

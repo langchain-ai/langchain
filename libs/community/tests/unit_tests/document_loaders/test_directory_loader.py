@@ -137,16 +137,13 @@ class TestDirectoryLoader:
         file_path = self._get_csv_file_path(file_name)
         expected_docs += [
             Document(
-                page_content="column1: value1",
-                metadata={"source": file_path, "row": 0},
+                page_content="column1: value1", metadata={"source": file_path, "row": 0}
             ),
             Document(
-                page_content="column1: value2",
-                metadata={"source": file_path, "row": 1},
+                page_content="column1: value2", metadata={"source": file_path, "row": 1}
             ),
             Document(
-                page_content="column1: value3",
-                metadata={"source": file_path, "row": 2},
+                page_content="column1: value3", metadata={"source": file_path, "row": 2}
             ),
         ]
         file_name = "test_one_row.csv"

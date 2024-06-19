@@ -89,9 +89,7 @@ class _VectorStoreClient:
 
         url = self.url + "/v1/statistics"
         response = requests.post(
-            url,
-            json={},
-            headers={"Content-Type": "application/json"},
+            url, json={}, headers={"Content-Type": "application/json"}
         )
         responses = response.json()
         return responses
@@ -187,10 +185,7 @@ class PathwayVectorClient(VectorStore):
         ]
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        metadata_filter: Optional[str] = None,
+        self, query: str, k: int = 4, metadata_filter: Optional[str] = None
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with Pathway with distance.
 

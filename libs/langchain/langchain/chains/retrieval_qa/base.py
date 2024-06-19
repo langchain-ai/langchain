@@ -110,10 +110,7 @@ class BaseRetrievalQA(Chain):
 
     @abstractmethod
     def _get_docs(
-        self,
-        question: str,
-        *,
-        run_manager: CallbackManagerForChainRun,
+        self, question: str, *, run_manager: CallbackManagerForChainRun
     ) -> List[Document]:
         """Get documents to do question answering over."""
 
@@ -153,10 +150,7 @@ class BaseRetrievalQA(Chain):
 
     @abstractmethod
     async def _aget_docs(
-        self,
-        question: str,
-        *,
-        run_manager: AsyncCallbackManagerForChainRun,
+        self, question: str, *, run_manager: AsyncCallbackManagerForChainRun
     ) -> List[Document]:
         """Get documents to do question answering over."""
 
@@ -220,10 +214,7 @@ class RetrievalQA(BaseRetrievalQA):
                 "Context: {context}"
             )
             prompt = ChatPromptTemplate.from_messages(
-                [
-                    ("system", system_prompt),
-                    ("human", "{input}"),
-                ]
+                [("system", system_prompt), ("human", "{input}")]
             )
             question_answer_chain = create_stuff_documents_chain(llm, prompt)
             chain = create_retrieval_chain(retriever, question_answer_chain)
@@ -237,6 +228,7 @@ class RetrievalQA(BaseRetrievalQA):
             from langchain.chains import RetrievalQA
             from langchain_community.vectorstores import FAISS
             from langchain_core.vectorstores import VectorStoreRetriever
+
             retriever = VectorStoreRetriever(vectorstore=FAISS(...))
             retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=retriever)
 
@@ -245,10 +237,7 @@ class RetrievalQA(BaseRetrievalQA):
     retriever: BaseRetriever = Field(exclude=True)
 
     def _get_docs(
-        self,
-        question: str,
-        *,
-        run_manager: CallbackManagerForChainRun,
+        self, question: str, *, run_manager: CallbackManagerForChainRun
     ) -> List[Document]:
         """Get docs."""
         return self.retriever.invoke(
@@ -256,10 +245,7 @@ class RetrievalQA(BaseRetrievalQA):
         )
 
     async def _aget_docs(
-        self,
-        question: str,
-        *,
-        run_manager: AsyncCallbackManagerForChainRun,
+        self, question: str, *, run_manager: AsyncCallbackManagerForChainRun
     ) -> List[Document]:
         """Get docs."""
         return await self.retriever.ainvoke(
@@ -302,10 +288,7 @@ class VectorDBQA(BaseRetrievalQA):
         return values
 
     def _get_docs(
-        self,
-        question: str,
-        *,
-        run_manager: CallbackManagerForChainRun,
+        self, question: str, *, run_manager: CallbackManagerForChainRun
     ) -> List[Document]:
         """Get docs."""
         if self.search_type == "similarity":
@@ -321,10 +304,7 @@ class VectorDBQA(BaseRetrievalQA):
         return docs
 
     async def _aget_docs(
-        self,
-        question: str,
-        *,
-        run_manager: AsyncCallbackManagerForChainRun,
+        self, question: str, *, run_manager: AsyncCallbackManagerForChainRun
     ) -> List[Document]:
         """Get docs."""
         raise NotImplementedError("VectorDBQA does not support async")

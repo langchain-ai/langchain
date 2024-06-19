@@ -427,7 +427,8 @@ class AmazonTextractPDFParser(BaseBlobParser):
 
     ```python
     from langchain_community.document_loaders import AmazonTextractPDFLoader
-    loader=AmazonTextractPDFLoader("example_data/alejandro_rosalez_sample-small.jpeg")
+
+    loader = AmazonTextractPDFLoader("example_data/alejandro_rosalez_sample-small.jpeg")
     documents = loader.load()
     ```
 
@@ -436,10 +437,12 @@ class AmazonTextractPDFParser(BaseBlobParser):
 
     ```python
     from langchain_community.document_loaders import AmazonTextractPDFLoader
+
     # you can mix and match each of the features
-    loader=AmazonTextractPDFLoader(
+    loader = AmazonTextractPDFLoader(
         "example_data/alejandro_rosalez_sample-small.jpeg",
-        textract_features=["TABLES", "LAYOUT"])
+        textract_features=["TABLES", "LAYOUT"],
+    )
     documents = loader.load()
     ```
 

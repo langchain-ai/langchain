@@ -9,9 +9,7 @@ from hashlib import md5
 from typing import Any, Iterable, Iterator, List, Optional, Tuple, Type
 
 import requests
-from langchain_core.callbacks.manager import (
-    CallbackManagerForRetrieverRun,
-)
+from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import Runnable, RunnableConfig
@@ -178,7 +176,7 @@ class Vectara(VectorStore):
             vectorstore = Vectara(
                 vectara_customer_id=vectara_customer_id,
                 vectara_corpus_id=vectara_corpus_id,
-                vectara_api_key=vectara_api_key
+                vectara_api_key=vectara_api_key,
             )
     """
 
@@ -474,7 +472,7 @@ class Vectara(VectorStore):
             }
         elif config.rerank_config.reranker == "rerank_multilingual_v1":
             body["query"][0]["rerankingConfig"] = {
-                "rerankerId": RERANKER_MULTILINGUAL_V1_ID,
+                "rerankerId": RERANKER_MULTILINGUAL_V1_ID
             }
 
         if config.summary_config.is_enabled:
@@ -493,10 +491,7 @@ class Vectara(VectorStore):
         return body
 
     def vectara_query(
-        self,
-        query: str,
-        config: VectaraQueryConfig,
-        **kwargs: Any,
+        self, query: str, config: VectaraQueryConfig, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Run a Vectara query
 
@@ -546,13 +541,7 @@ class Vectara(VectorStore):
             metadatas.append(md)
 
         res = [
-            (
-                Document(
-                    page_content=x["text"],
-                    metadata=md,
-                ),
-                x["score"],
-            )
+            (Document(page_content=x["text"], metadata=md), x["score"])
             for x, md in zip(responses, metadatas)
         ]
 
@@ -572,9 +561,7 @@ class Vectara(VectorStore):
         return res
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        **kwargs: Any,
+        self, query: str, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return Vectara documents most similar to query, along with scores.
 
@@ -600,9 +587,7 @@ class Vectara(VectorStore):
         return docs
 
     def similarity_search(  # type: ignore[override]
-        self,
-        query: str,
-        **kwargs: Any,
+        self, query: str, **kwargs: Any
     ) -> List[Document]:
         """Return Vectara documents most similar to query, along with scores.
 
@@ -613,18 +598,11 @@ class Vectara(VectorStore):
         Returns:
             List of Documents most similar to the query
         """
-        docs_and_scores = self.similarity_search_with_score(
-            query,
-            **kwargs,
-        )
+        docs_and_scores = self.similarity_search_with_score(query, **kwargs)
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search(  # type: ignore[override]
-        self,
-        query: str,
-        fetch_k: int = 50,
-        lambda_mult: float = 0.5,
-        **kwargs: Any,
+        self, query: str, fetch_k: int = 50, lambda_mult: float = 0.5, **kwargs: Any
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -662,6 +640,7 @@ class Vectara(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import Vectara
+
                 vectara = Vectara.from_texts(
                     texts,
                     vectara_customer_id=customer_id,
@@ -694,6 +673,7 @@ class Vectara(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import Vectara
+
                 vectara = Vectara.from_files(
                     files_list,
                     vectara_customer_id=customer_id,
@@ -757,10 +737,7 @@ class VectaraRAG(Runnable):
         self.conv_id = None
 
     def stream(
-        self,
-        input: str,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
+        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Iterator[dict]:
         """get streaming output from Vectara RAG
 
@@ -857,13 +834,7 @@ class VectaraRAG(Runnable):
                         md.update(doc_md)
                         metadatas.append(md)
                     res = [
-                        (
-                            Document(
-                                page_content=x["text"],
-                                metadata=md,
-                            ),
-                            x["score"],
-                        )
+                        (Document(page_content=x["text"], metadata=md), x["score"])
                         for x, md in zip(responses, metadatas)
                     ]
                     if self.config.rerank_config.reranker in [
@@ -874,11 +845,7 @@ class VectaraRAG(Runnable):
                     yield {"context": res}
         return
 
-    def invoke(
-        self,
-        input: str,
-        config: Optional[RunnableConfig] = None,
-    ) -> dict:
+    def invoke(self, input: str, config: Optional[RunnableConfig] = None) -> dict:
         res = {"answer": ""}
         for chunk in self.stream(input):
             if "context" in chunk:

@@ -182,10 +182,7 @@ class TestAzureCosmosDBVectorSearch:
             "That fence is purple.",
         ]
         vectorstore = AzureCosmosDBVectorSearch.from_texts(
-            texts,
-            azure_openai_embeddings,
-            collection=collection,
-            index_name=INDEX_NAME,
+            texts, azure_openai_embeddings, collection=collection, index_name=INDEX_NAME
         )
 
         # Create the IVF index that will be leveraged later for vector search
@@ -438,10 +435,7 @@ class TestAzureCosmosDBVectorSearch:
     ) -> None:
         texts = ["foo", "foo", "fou", "foy"]
         vectorstore = AzureCosmosDBVectorSearch.from_texts(
-            texts,
-            azure_openai_embeddings,
-            collection=collection,
-            index_name=INDEX_NAME,
+            texts, azure_openai_embeddings, collection=collection, index_name=INDEX_NAME
         )
 
         # Create the IVF index that will be leveraged later for vector search
@@ -466,10 +460,7 @@ class TestAzureCosmosDBVectorSearch:
     ) -> None:
         texts = ["foo", "foo", "fou", "foy"]
         vectorstore = AzureCosmosDBVectorSearch.from_texts(
-            texts,
-            azure_openai_embeddings,
-            collection=collection,
-            index_name=INDEX_NAME,
+            texts, azure_openai_embeddings, collection=collection, index_name=INDEX_NAME
         )
 
         # Create the IVF index that will be leveraged later for vector search

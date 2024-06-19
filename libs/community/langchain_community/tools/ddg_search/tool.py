@@ -31,9 +31,7 @@ class DuckDuckGoSearchRun(BaseTool):
     args_schema: Type[BaseModel] = DDGInput
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         return self.api_wrapper.run(query)
@@ -57,9 +55,7 @@ class DuckDuckGoSearchResults(BaseTool):
     args_schema: Type[BaseModel] = DDGInput
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         res = self.api_wrapper.results(query, self.max_results, source=self.backend)

@@ -30,11 +30,7 @@ T = TypeVar("T", bound=Union[Callable[..., Any], Type])
 
 
 def beta(
-    *,
-    message: str = "",
-    name: str = "",
-    obj_type: str = "",
-    addendum: str = "",
+    *, message: str = "", name: str = "", obj_type: str = "", addendum: str = ""
 ) -> Callable[[T], T]:
     """Decorator to mark a function, a class, or a property as beta.
 
@@ -85,10 +81,7 @@ def beta(
         def emit_warning() -> None:
             """Emit the warning."""
             warn_beta(
-                message=_message,
-                name=_name,
-                obj_type=_obj_type,
-                addendum=_addendum,
+                message=_message, name=_name, obj_type=_obj_type, addendum=_addendum
             )
 
         warned = False
@@ -220,10 +213,7 @@ def beta(
 
         # Modify the docstring to include a beta notice.
         notes_header = "\nNotes\n-----"
-        components = [
-            message,
-            addendum,
-        ]
+        components = [message, addendum]
         details = " ".join([component.strip() for component in components if component])
         new_doc = (
             f"[*Beta*] {old_doc}\n"
@@ -250,11 +240,7 @@ def suppress_langchain_beta_warning() -> Generator[None, None, None]:
 
 
 def warn_beta(
-    *,
-    message: str = "",
-    name: str = "",
-    obj_type: str = "",
-    addendum: str = "",
+    *, message: str = "", name: str = "", obj_type: str = "", addendum: str = ""
 ) -> None:
     """Display a standardized beta annotation.
 
@@ -290,7 +276,4 @@ def warn_beta(
 
 def surface_langchain_beta_warnings() -> None:
     """Unmute LangChain beta warnings."""
-    warnings.filterwarnings(
-        "default",
-        category=LangChainBetaWarning,
-    )
+    warnings.filterwarnings("default", category=LangChainBetaWarning)

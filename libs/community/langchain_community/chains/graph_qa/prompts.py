@@ -221,8 +221,7 @@ The question delimited by triple backticks is:
 ```
 """
 GRAPHDB_SPARQL_GENERATION_PROMPT = PromptTemplate(
-    input_variables=["schema", "prompt"],
-    template=GRAPHDB_SPARQL_GENERATION_TEMPLATE,
+    input_variables=["schema", "prompt"], template=GRAPHDB_SPARQL_GENERATION_TEMPLATE
 )
 
 GRAPHDB_SPARQL_FIX_TEMPLATE = """
@@ -339,12 +338,7 @@ Corrected AQL Query:
 """
 
 AQL_FIX_PROMPT = PromptTemplate(
-    input_variables=[
-        "adb_schema",
-        "aql_query",
-        "aql_error",
-    ],
-    template=AQL_FIX_TEMPLATE,
+    input_variables=["adb_schema", "aql_query", "aql_error"], template=AQL_FIX_TEMPLATE
 )
 
 AQL_QA_TEMPLATE = """Task: Generate a natural language `Summary` from the results of an ArangoDB Query Language query.

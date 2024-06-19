@@ -9,13 +9,9 @@ from langchain_community.tools.slack.base import SlackBaseTool
 class SendMessageSchema(BaseModel):
     """Input for SendMessageTool."""
 
-    message: str = Field(
-        ...,
-        description="The message to be sent.",
-    )
+    message: str = Field(..., description="The message to be sent.")
     channel: str = Field(
-        ...,
-        description="The channel, private group, or IM channel to send message to.",
+        ..., description="The channel, private group, or IM channel to send message to."
     )
 
 

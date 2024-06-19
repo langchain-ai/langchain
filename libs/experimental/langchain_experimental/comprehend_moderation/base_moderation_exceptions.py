@@ -33,9 +33,6 @@ class ModerationPromptSafetyError(Exception):
         message -- explanation of the error
     """
 
-    def __init__(
-        self,
-        message: str = ("The prompt is unsafe and cannot be processed"),
-    ):
+    def __init__(self, message: str = ("The prompt is unsafe and cannot be processed")):
         self.message = message
         super().__init__(self.message)

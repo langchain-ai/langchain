@@ -294,11 +294,7 @@ def tokenize(
 def _html_escape(string: str) -> str:
     """HTML escape all of these " & < >"""
 
-    html_codes = {
-        '"': "&quot;",
-        "<": "&lt;",
-        ">": "&gt;",
-    }
+    html_codes = {'"': "&quot;", "<": "&lt;", ">": "&gt;"}
 
     # & must be handled first
     string = string.replace("&", "&amp;")
@@ -308,12 +304,7 @@ def _html_escape(string: str) -> str:
 
 
 def _get_key(
-    key: str,
-    scopes: Scopes,
-    warn: bool,
-    keep: bool,
-    def_ldel: str,
-    def_rdel: str,
+    key: str, scopes: Scopes, warn: bool, keep: bool, def_ldel: str, def_rdel: str
 ) -> Any:
     """Get a key from the current scope"""
 

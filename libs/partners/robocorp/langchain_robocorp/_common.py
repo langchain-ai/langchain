@@ -64,11 +64,7 @@ def reduce_openapi_spec(url: str, spec: dict) -> ReducedOpenAPISpec:
     ]
 
     return ReducedOpenAPISpec(
-        servers=[
-            {
-                "url": url,
-            }
-        ],
+        servers=[{"url": url}],
         description=spec["info"].get("description", ""),
         endpoints=endpoints,
     )
@@ -157,9 +153,7 @@ def get_param_fields(endpoint_spec: dict) -> dict:
     return fields
 
 
-def model_to_dict(
-    item: Union[BaseModel, List, Dict[str, Any]],
-) -> Any:
+def model_to_dict(item: Union[BaseModel, List, Dict[str, Any]]) -> Any:
     if isinstance(item, BaseModel):
         return item.dict()
     elif isinstance(item, dict):

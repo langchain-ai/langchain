@@ -18,6 +18,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "NIBittensorLLM",
-]
+__all__ = ["NIBittensorLLM"]

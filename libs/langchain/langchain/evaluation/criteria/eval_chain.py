@@ -105,23 +105,13 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
                 1 if verdict.upper() == "Y" else (0 if verdict.upper() == "N" else None)
             )
 
-        return {
-            "reasoning": text.strip(),
-            "value": verdict,
-            "score": score,
-        }
+        return {"reasoning": text.strip(), "value": verdict, "score": score}
 
 
-CRITERIA_TYPE = Union[
-    Mapping[str, str],
-    Criteria,
-    ConstitutionalPrinciple,
-]
+CRITERIA_TYPE = Union[Mapping[str, str], Criteria, ConstitutionalPrinciple]
 
 
-def resolve_criteria(
-    criteria: Optional[Union[CRITERIA_TYPE, str]],
-) -> Dict[str, str]:
+def resolve_criteria(criteria: Optional[Union[CRITERIA_TYPE, str]]) -> Dict[str, str]:
     """Resolve the criteria to evaluate.
 
     Parameters
@@ -144,9 +134,7 @@ def resolve_criteria(
     {'relevance': 'Is the submission referring to a real quote from the text?'}
     """
     if criteria is None:
-        return {
-            "helpfulness": _SUPPORTED_CRITERIA[Criteria.HELPFULNESS],
-        }
+        return {"helpfulness": _SUPPORTED_CRITERIA[Criteria.HELPFULNESS]}
     if isinstance(criteria, Criteria):
         criteria_ = {criteria.value: _SUPPORTED_CRITERIA[criteria]}
     elif isinstance(criteria, str):
@@ -198,7 +186,10 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     >>> llm = ChatAnthropic(temperature=0)
     >>> criteria = {"my-custom-criterion": "Is the submission the most amazing ever?"}
     >>> evaluator = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
-    >>> evaluator.evaluate_strings(prediction="Imagine an ice cream flavor for the color aquamarine", input="Tell me an idea")
+    >>> evaluator.evaluate_strings(
+    ...     prediction="Imagine an ice cream flavor for the color aquamarine",
+    ...     input="Tell me an idea",
+    ... )
     {
         'reasoning': 'Here is my step-by-step reasoning for the given criteria:\\n\\nThe criterion is: "Is the submission the most amazing ever?" This is a subjective criterion and open to interpretation. The submission suggests an aquamarine-colored ice cream flavor which is creative but may or may not be considered the most amazing idea ever conceived. There are many possible amazing ideas and this one ice cream flavor suggestion may or may not rise to that level for every person. \\n\\nN',
         'value': 'N',
@@ -209,15 +200,12 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     >>> from langchain.evaluation.criteria import LabeledCriteriaEvalChain
     >>> llm = ChatOpenAI(model="gpt-4", temperature=0)
     >>> criteria = "correctness"
-    >>> evaluator = LabeledCriteriaEvalChain.from_llm(
-    ...     llm=llm,
-    ...     criteria=criteria,
-    ... )
+    >>> evaluator = LabeledCriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
     >>> evaluator.evaluate_strings(
-    ...   prediction="The answer is 4",
-    ...   input="How many apples are there?",
-    ...   reference="There are 3 apples",
-    ...   )
+    ...     prediction="The answer is 4",
+    ...     input="How many apples are there?",
+    ...     reference="There are 3 apples",
+    ... )
     {
         'score': 0,
         'reasoning': 'The criterion for this task is the correctness of the submission. The submission states that there are 4 apples, but the reference indicates that there are actually 3 apples. Therefore, the submission is not correct, accurate, or factual according to the given criterion.\\n\\nN',
@@ -284,8 +272,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
     @classmethod
     def resolve_criteria(
-        cls,
-        criteria: Optional[Union[CRITERIA_TYPE, str]],
+        cls, criteria: Optional[Union[CRITERIA_TYPE, str]]
     ) -> Dict[str, str]:
         """Resolve the criteria to evaluate.
 
@@ -370,23 +357,14 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         criteria_str = "\n".join(f"{k}: {v}" for k, v in criteria_.items())
         prompt_ = prompt_.partial(criteria=criteria_str)
         return cls(
-            llm=llm,
-            prompt=prompt_,
-            criterion_name="-".join(criteria_),
-            **kwargs,
+            llm=llm, prompt=prompt_, criterion_name="-".join(criteria_), **kwargs
         )
 
     def _get_eval_input(
-        self,
-        prediction: str,
-        reference: Optional[str],
-        input: Optional[str],
+        self, prediction: str, reference: Optional[str], input: Optional[str]
     ) -> dict:
         """Get the evaluation input."""
-        input_ = {
-            "input": input,
-            "output": prediction,
-        }
+        input_ = {"input": input, "output": prediction}
         if self.requires_reference:
             input_["reference"] = reference
         return input_
@@ -587,8 +565,5 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
         criteria_str = "\n".join(f"{k}: {v}" for k, v in criteria_.items())
         prompt_ = prompt.partial(criteria=criteria_str)
         return cls(
-            llm=llm,
-            prompt=prompt_,
-            criterion_name="-".join(criteria_),
-            **kwargs,
+            llm=llm, prompt=prompt_, criterion_name="-".join(criteria_), **kwargs
         )

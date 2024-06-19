@@ -144,8 +144,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
                     metadata.update(additional_doc_metadata)
 
             return Document(
-                page_content=text[: self.max_text_length],
-                metadata=metadata,
+                page_content=text[: self.max_text_length], metadata=metadata
             )
 
         # Parse the tree and return chunks
@@ -184,8 +183,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
 
         while url:
             response = requests.get(
-                url,
-                headers={"Authorization": f"Bearer {self.access_token}"},
+                url, headers={"Authorization": f"Bearer {self.access_token}"}
             )
             if response.ok:
                 data = response.json()
@@ -361,8 +359,7 @@ class DocugamiLoader(BaseLoader, BaseModel):
                 path = Path(path)
                 with open(path, "rb") as file:
                     chunks += self._parse_dgml(
-                        content=file.read(),
-                        document_name=path.name,
+                        content=file.read(), document_name=path.name
                     )
 
         return chunks

@@ -21,11 +21,7 @@ class VectorSQLDatabaseChainRetriever(BaseRetriever):
     """column name for page content of documents"""
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> List[Document]:
         ret: List[Dict[str, Any]] = self.sql_db_chain(
             query, callbacks=run_manager.get_child(), **kwargs

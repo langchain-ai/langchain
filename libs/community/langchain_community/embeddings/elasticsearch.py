@@ -28,11 +28,7 @@ class ElasticsearchEmbeddings(Embeddings):
     """
 
     def __init__(
-        self,
-        client: MlClient,
-        model_id: str,
-        *,
-        input_field: str = "text_field",
+        self, client: MlClient, model_id: str, *, input_field: str = "text_field"
     ):
         """
         Initialize the ElasticsearchEmbeddings instance.
@@ -159,9 +155,7 @@ class ElasticsearchEmbeddings(Embeddings):
 
                 # Instantiate ElasticsearchEmbeddings using the existing connection
                 embeddings = ElasticsearchEmbeddings.from_es_connection(
-                    model_id,
-                    es_connection,
-                    input_field=input_field,
+                    model_id, es_connection, input_field=input_field
                 )
 
                 documents = [

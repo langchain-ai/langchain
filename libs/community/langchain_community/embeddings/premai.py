@@ -68,9 +68,7 @@ class PremAIEmbeddings(BaseModel, Embeddings):
 
 
 def create_prem_retry_decorator(
-    embedder: PremAIEmbeddings,
-    *,
-    max_retries: int = 1,
+    embedder: PremAIEmbeddings, *, max_retries: int = 1
 ) -> Callable[[Any], Any]:
     """Create a retry decorator for PremAIEmbeddings.
 

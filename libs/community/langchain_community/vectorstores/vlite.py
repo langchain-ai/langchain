@@ -60,11 +60,7 @@ class VLite(VectorStore):
         results = self.vlite.add(data_points)
         return [result[0] for result in results]
 
-    def add_documents(
-        self,
-        documents: List[Document],
-        **kwargs: Any,
-    ) -> List[str]:
+    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add a list of documents to the vectorstore.
 
         Args:
@@ -98,10 +94,7 @@ class VLite(VectorStore):
         return self.add_texts(texts, metadatas, ids=ids)
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query.
 
@@ -170,10 +163,7 @@ class VLite(VectorStore):
 
     @classmethod
     def from_existing_index(
-        cls,
-        embedding: Embeddings,
-        collection: str,
-        **kwargs: Any,
+        cls, embedding: Embeddings, collection: str, **kwargs: Any
     ) -> VLite:
         """Load an existing VLite index.
 

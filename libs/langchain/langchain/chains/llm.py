@@ -12,10 +12,7 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
     Callbacks,
 )
-from langchain_core.language_models import (
-    BaseLanguageModel,
-    LanguageModelInput,
-)
+from langchain_core.language_models import BaseLanguageModel, LanguageModelInput
 from langchain_core.load.dump import dumpd
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import BaseLLMOutputParser, StrOutputParser
@@ -52,9 +49,7 @@ class LLMChain(Chain):
             from langchain_openai import OpenAI
 
             prompt_template = "Tell me a {adjective} joke"
-            prompt = PromptTemplate(
-                input_variables=["adjective"], template=prompt_template
-            )
+            prompt = PromptTemplate(input_variables=["adjective"], template=prompt_template)
             llm = OpenAI()
             chain = prompt | llm
 
@@ -66,10 +61,9 @@ class LLMChain(Chain):
             from langchain.chains import LLMChain
             from langchain_community.llms import OpenAI
             from langchain_core.prompts import PromptTemplate
+
             prompt_template = "Tell me a {adjective} joke"
-            prompt = PromptTemplate(
-                input_variables=["adjective"], template=prompt_template
-            )
+            prompt = PromptTemplate(input_variables=["adjective"], template=prompt_template)
             llm = LLMChain(llm=OpenAI(), prompt=prompt)
     """
 
@@ -136,10 +130,7 @@ class LLMChain(Chain):
         callbacks = run_manager.get_child() if run_manager else None
         if isinstance(self.llm, BaseLanguageModel):
             return self.llm.generate_prompt(
-                prompts,
-                stop,
-                callbacks=callbacks,
-                **self.llm_kwargs,
+                prompts, stop, callbacks=callbacks, **self.llm_kwargs
             )
         else:
             results = self.llm.bind(stop=stop, **self.llm_kwargs).batch(
@@ -163,10 +154,7 @@ class LLMChain(Chain):
         callbacks = run_manager.get_child() if run_manager else None
         if isinstance(self.llm, BaseLanguageModel):
             return await self.llm.agenerate_prompt(
-                prompts,
-                stop,
-                callbacks=callbacks,
-                **self.llm_kwargs,
+                prompts, stop, callbacks=callbacks, **self.llm_kwargs
             )
         else:
             results = await self.llm.bind(stop=stop, **self.llm_kwargs).abatch(
@@ -240,8 +228,7 @@ class LLMChain(Chain):
             callbacks, self.callbacks, self.verbose
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
-            {"input_list": input_list},
+            dumpd(self), {"input_list": input_list}
         )
         try:
             response = self.generate(input_list, run_manager=run_manager)
@@ -260,8 +247,7 @@ class LLMChain(Chain):
             callbacks, self.callbacks, self.verbose
         )
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
-            {"input_list": input_list},
+            dumpd(self), {"input_list": input_list}
         )
         try:
             response = await self.agenerate(input_list, run_manager=run_manager)

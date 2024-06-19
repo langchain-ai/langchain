@@ -1,12 +1,5 @@
 """Wrapper around Anyscale Endpoint"""
-from typing import (
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Set,
-)
+from typing import Any, Dict, List, Mapping, Optional, Set
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -71,12 +64,17 @@ class Anyscale(BaseOpenAI):
     Example:
         .. code-block:: python
             from langchain.llms import Anyscale
+
             anyscalellm = Anyscale(anyscale_api_key="ANYSCALE_API_KEY")
+
+
             # To leverage Ray for parallel processing
             @ray.remote(num_cpus=1)
             def send_query(llm, text):
                 resp = llm.invoke(text)
                 return resp
+
+
             futures = [send_query.remote(anyscalellm, text) for text in texts]
             results = ray.get(futures)
     """
@@ -96,19 +94,13 @@ class Anyscale(BaseOpenAI):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["anyscale_api_base"] = get_from_dict_or_env(
-            values,
-            "anyscale_api_base",
-            "ANYSCALE_API_BASE",
-            default=DEFAULT_BASE_URL,
+            values, "anyscale_api_base", "ANYSCALE_API_BASE", default=DEFAULT_BASE_URL
         )
         values["anyscale_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "anyscale_api_key", "ANYSCALE_API_KEY")
         )
         values["model_name"] = get_from_dict_or_env(
-            values,
-            "model_name",
-            "MODEL_NAME",
-            default=DEFAULT_MODEL,
+            values, "model_name", "MODEL_NAME", default=DEFAULT_MODEL
         )
 
         try:
@@ -151,17 +143,12 @@ class Anyscale(BaseOpenAI):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {
-            **{"model_name": self.model_name},
-            **super()._identifying_params,
-        }
+        return {**{"model_name": self.model_name}, **super()._identifying_params}
 
     @property
     def _invocation_params(self) -> Dict[str, Any]:
         """Get the parameters used to invoke the model."""
-        openai_creds: Dict[str, Any] = {
-            "model": self.model_name,
-        }
+        openai_creds: Dict[str, Any] = {"model": self.model_name}
         if not is_openai_v1():
             openai_creds.update(
                 {
@@ -248,11 +235,7 @@ class Anyscale(BaseOpenAI):
                 if not system_fingerprint:
                     system_fingerprint = response.get("system_fingerprint")
         return self.create_llm_result(
-            choices,
-            prompts,
-            params,
-            token_usage,
-            system_fingerprint=system_fingerprint,
+            choices, prompts, params, token_usage, system_fingerprint=system_fingerprint
         )
 
     async def _agenerate(
@@ -310,9 +293,5 @@ class Anyscale(BaseOpenAI):
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(
-            choices,
-            prompts,
-            params,
-            token_usage,
-            system_fingerprint=system_fingerprint,
+            choices, prompts, params, token_usage, system_fingerprint=system_fingerprint
         )

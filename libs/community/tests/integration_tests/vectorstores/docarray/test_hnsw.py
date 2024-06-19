@@ -17,10 +17,7 @@ def texts() -> List[str]:
 def test_from_texts(texts: List[str], tmp_path: Path) -> None:
     """Test end to end construction and simple similarity search."""
     docsearch = DocArrayHnswSearch.from_texts(
-        texts,
-        FakeEmbeddings(),
-        work_dir=str(tmp_path),
-        n_dim=10,
+        texts, FakeEmbeddings(), work_dir=str(tmp_path), n_dim=10
     )
     assert docsearch.doc_index.num_docs() == 3
 
@@ -28,9 +25,7 @@ def test_from_texts(texts: List[str], tmp_path: Path) -> None:
 def test_add_texts(texts: List[str], tmp_path: Path) -> None:
     """Test end to end construction and simple similarity search."""
     docsearch = DocArrayHnswSearch.from_params(
-        work_dir=str(tmp_path),
-        n_dim=10,
-        embedding=FakeEmbeddings(),
+        work_dir=str(tmp_path), n_dim=10, embedding=FakeEmbeddings()
     )
     docsearch.add_texts(texts=texts)
     assert docsearch.doc_index.num_docs() == 3
@@ -77,11 +72,7 @@ def test_sim_search_all_configurations(
 def test_sim_search_by_vector(metric: str, texts: List[str], tmp_path: Path) -> None:
     """Test end to end construction and similarity search by vector."""
     hnsw_vec_store = DocArrayHnswSearch.from_texts(
-        texts,
-        FakeEmbeddings(),
-        work_dir=str(tmp_path),
-        n_dim=10,
-        dist_metric=metric,
+        texts, FakeEmbeddings(), work_dir=str(tmp_path), n_dim=10, dist_metric=metric
     )
     embedding = [1.0] * 10
     output = hnsw_vec_store.similarity_search_by_vector(embedding, k=1)
@@ -94,11 +85,7 @@ def test_sim_search_with_score(metric: str, tmp_path: Path) -> None:
     """Test end to end construction and similarity search with score."""
     texts = ["foo", "bar", "baz"]
     hnsw_vec_store = DocArrayHnswSearch.from_texts(
-        texts,
-        FakeEmbeddings(),
-        work_dir=str(tmp_path),
-        n_dim=10,
-        dist_metric=metric,
+        texts, FakeEmbeddings(), work_dir=str(tmp_path), n_dim=10, dist_metric=metric
     )
     output = hnsw_vec_store.similarity_search_with_score("foo", k=1)
     assert len(output) == 1
@@ -114,11 +101,7 @@ def test_sim_search_with_score_for_ip_metric(texts: List[str], tmp_path: Path) -
     (inner-product) metric.
     """
     hnsw_vec_store = DocArrayHnswSearch.from_texts(
-        texts,
-        FakeEmbeddings(),
-        work_dir=str(tmp_path),
-        n_dim=10,
-        dist_metric="ip",
+        texts, FakeEmbeddings(), work_dir=str(tmp_path), n_dim=10, dist_metric="ip"
     )
     output = hnsw_vec_store.similarity_search_with_score("foo", k=3)
     assert len(output) == 3

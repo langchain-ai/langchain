@@ -8,15 +8,9 @@ from tests.unit_tests.conftest import J2_CHAT_MODEL_NAME, JAMBA_CHAT_MODEL_NAME
 
 
 @pytest.mark.parametrize(
-    ids=[
-        "when_j2_model",
-        "when_jamba_model",
-    ],
+    ids=["when_j2_model", "when_jamba_model"],
     argnames=["model"],
-    argvalues=[
-        (J2_CHAT_MODEL_NAME,),
-        (JAMBA_CHAT_MODEL_NAME,),
-    ],
+    argvalues=[(J2_CHAT_MODEL_NAME,), (JAMBA_CHAT_MODEL_NAME,)],
 )
 def test_invoke(model: str) -> None:
     """Test invoke tokens from AI21."""
@@ -62,15 +56,9 @@ def test_generation(model: str, num_results: int) -> None:
 
 
 @pytest.mark.parametrize(
-    ids=[
-        "when_j2_model",
-        "when_jamba_model",
-    ],
+    ids=["when_j2_model", "when_jamba_model"],
     argnames=["model"],
-    argvalues=[
-        (J2_CHAT_MODEL_NAME,),
-        (JAMBA_CHAT_MODEL_NAME,),
-    ],
+    argvalues=[(J2_CHAT_MODEL_NAME,), (JAMBA_CHAT_MODEL_NAME,)],
 )
 async def test_ageneration(model: str) -> None:
     """Test invoke tokens from AI21."""

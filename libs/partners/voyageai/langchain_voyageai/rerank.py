@@ -51,9 +51,7 @@ class VoyageAIRerank(BaseDocumentCompressor):
         return values
 
     def _rerank(
-        self,
-        documents: Sequence[Union[str, Document]],
-        query: str,
+        self, documents: Sequence[Union[str, Document]], query: str
     ) -> RerankingObject:
         """Returns an ordered list of documents ordered by their relevance
         to the provided query.
@@ -74,9 +72,7 @@ class VoyageAIRerank(BaseDocumentCompressor):
         )
 
     async def _arerank(
-        self,
-        documents: Sequence[Union[str, Document]],
-        query: str,
+        self, documents: Sequence[Union[str, Document]], query: str
     ) -> RerankingObject:
         """Returns an ordered list of documents ordered by their relevance
         to the provided query.

@@ -74,11 +74,7 @@ def init_vertexai(
     except ImportError:
         raise_vertex_import_error()
 
-    vertexai.init(
-        project=project,
-        location=location,
-        credentials=credentials,
-    )
+    vertexai.init(project=project, location=location, credentials=credentials)
 
 
 def get_client_info(module: Optional[str] = None) -> "ClientInfo":

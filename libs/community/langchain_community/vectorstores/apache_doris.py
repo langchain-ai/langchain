@@ -34,10 +34,10 @@ class ApacheDorisSettings(BaseSettings):
                             .. code-block:: python
 
                                 {
-                                    'id': 'text_id',
-                                    'embedding': 'text_embedding',
-                                    'document': 'text_plain',
-                                    'metadata': 'metadata_dictionary_in_json',
+                                    "id": "text_id",
+                                    "embedding": "text_embedding",
+                                    "document": "text_plain",
+                                    "metadata": "metadata_dictionary_in_json",
                                 }
 
                             Defaults to identity map.

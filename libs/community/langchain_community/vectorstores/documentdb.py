@@ -338,7 +338,7 @@ class DocumentDBVectorSearch(VectorStore):
                         "k": k,
                         "efSearch": ef_search,
                     }
-                },
+                }
             },
         ]
 

@@ -5,11 +5,7 @@ from langchain_core._api import internal, warn_deprecated
 
 from langchain._api.interactive_env import is_interactive_env
 
-ALLOWED_TOP_LEVEL_PKGS = {
-    "langchain_community",
-    "langchain_core",
-    "langchain",
-}
+ALLOWED_TOP_LEVEL_PKGS = {"langchain_community", "langchain_core", "langchain"}
 
 
 def create_importer(

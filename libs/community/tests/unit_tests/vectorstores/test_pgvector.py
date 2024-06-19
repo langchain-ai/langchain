@@ -40,12 +40,9 @@ def test_given_no_connection_or_engine_args_provided_default_engine_should_be_us
 ) -> None:
     """When no connection or engine arguments are provided then the default configuration must be used."""  # noqa: E501
     pgvector.PGVector(
-        connection_string=_CONNECTION_STRING,
-        embedding_function=_EMBEDDING_FUNCTION,
+        connection_string=_CONNECTION_STRING, embedding_function=_EMBEDDING_FUNCTION
     )
-    create_engine.assert_called_with(
-        url=_CONNECTION_STRING,
-    )
+    create_engine.assert_called_with(url=_CONNECTION_STRING)
 
 
 @pytest.mark.requires("pgvector")
@@ -67,7 +64,4 @@ def test_given_engine_args_are_provided_then_they_should_be_used(
         embedding_function=_EMBEDDING_FUNCTION,
         engine_args=engine_args,
     )
-    create_engine.assert_called_with(
-        url=_CONNECTION_STRING,
-        **engine_args,
-    )
+    create_engine.assert_called_with(url=_CONNECTION_STRING, **engine_args)

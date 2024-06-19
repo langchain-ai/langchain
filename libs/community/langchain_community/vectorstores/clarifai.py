@@ -26,10 +26,8 @@ class Clarifai(VectorStore):
                 from langchain_community.vectorstores import Clarifai
 
                 clarifai_vector_db = Clarifai(
-                        user_id=USER_ID,
-                        app_id=APP_ID,
-                        number_of_docs=NUMBER_OF_DOCS,
-                        )
+                    user_id=USER_ID, app_id=APP_ID, number_of_docs=NUMBER_OF_DOCS
+                )
     """
 
     def __init__(
@@ -228,10 +226,7 @@ class Clarifai(VectorStore):
         return docs_and_scores
 
     def similarity_search(
-        self,
-        query: str,
-        k: Optional[int] = None,
-        **kwargs: Any,
+        self, query: str, k: Optional[int] = None, **kwargs: Any
     ) -> List[Document]:
         """Run similarity search using Clarifai.
 

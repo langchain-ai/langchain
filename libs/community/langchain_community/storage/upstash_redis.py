@@ -80,10 +80,7 @@ class _UpstashRedisStore(BaseStore[str, str]):
         """Get the values associated with the given keys."""
 
         keys = [self._get_prefixed_key(key) for key in keys]
-        return cast(
-            List[Optional[str]],
-            self.client.mget(*keys),
-        )
+        return cast(List[Optional[str]], self.client.mget(*keys))
 
     def mset(self, key_value_pairs: Sequence[Tuple[str, str]]) -> None:
         """Set the given key-value pairs."""

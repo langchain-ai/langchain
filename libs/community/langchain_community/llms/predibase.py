@@ -31,11 +31,7 @@ class Predibase(LLM):
     adapter_version: Optional[int] = None
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     default_options_for_generation: dict = Field(
-        {
-            "max_new_tokens": 256,
-            "temperature": 0.1,
-        },
-        const=True,
+        {"max_new_tokens": 256, "temperature": 0.1}, const=True
     )
 
     @property
@@ -56,10 +52,7 @@ class Predibase(LLM):
             try:
                 from predibase import PredibaseClient
                 from predibase.pql import get_session
-                from predibase.pql.api import (
-                    ServerResponseError,
-                    Session,
-                )
+                from predibase.pql.api import ServerResponseError, Session
                 from predibase.resource.llm.interface import (
                     HuggingFaceLLM,
                     LLMDeployment,
@@ -102,14 +95,10 @@ class Predibase(LLM):
                     # Predibase does not recognize the adapter ID (query HuggingFace).
                     adapter_model = pc.LLM(uri=f"hf://{self.adapter_id}")
                 result = base_llm_deployment.with_adapter(model=adapter_model).generate(
-                    prompt=prompt,
-                    options=options,
+                    prompt=prompt, options=options
                 )
             else:
-                result = base_llm_deployment.generate(
-                    prompt=prompt,
-                    options=options,
-                )
+                result = base_llm_deployment.generate(prompt=prompt, options=options)
             return result.response
 
         from predibase import Predibase
@@ -139,9 +128,7 @@ class Predibase(LLM):
                 pb_adapter_id: str = f"{self.adapter_id}/{self.adapter_version}"
                 try:
                     response = lorax_client.generate(
-                        prompt=prompt,
-                        adapter_id=pb_adapter_id,
-                        **options,
+                        prompt=prompt, adapter_id=pb_adapter_id, **options
                     )
                 except GenerationError as ge:
                     raise ValueError(
@@ -167,10 +154,7 @@ base model (please make sure that the adapter configuration is consistent).
                     ) from ge
         else:
             try:
-                response = lorax_client.generate(
-                    prompt=prompt,
-                    **options,
-                )
+                response = lorax_client.generate(prompt=prompt, **options)
             except requests.JSONDecodeError as jde:
                 raise ValueError(
                     f"""An LLM with the deployment ID "{self.model}" cannot be found \
@@ -186,9 +170,7 @@ supported models).
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {
-            **{"model_kwargs": self.model_kwargs},
-        }
+        return {**{"model_kwargs": self.model_kwargs}}
 
     def _is_deprecated_sdk_version(self) -> bool:
         try:

@@ -290,11 +290,7 @@ async def test_bedrock_async_streaming_call() -> None:
             Bedrock, "_aprepare_input_and_invoke_stream", mock_invoke_method
         ):
             # Instantiate the Bedrock LLM
-            llm = Bedrock(
-                client=None,
-                model_id="anthropic.claude-v2",
-                streaming=True,
-            )
+            llm = Bedrock(client=None, model_id="anthropic.claude-v2", streaming=True)
             # Call the _astream method
             chunks = [
                 json.loads(chunk["chunk"]["bytes"])["text"]  # type: ignore

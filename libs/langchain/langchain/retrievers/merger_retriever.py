@@ -16,10 +16,7 @@ class MergerRetriever(BaseRetriever):
     """A list of retrievers to merge."""
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """
         Get the relevant documents for a given query.
@@ -37,10 +34,7 @@ class MergerRetriever(BaseRetriever):
         return merged_documents
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         """
         Asynchronously get the relevant documents for a given query.

@@ -18,12 +18,7 @@ def test_async_recursive_url_loader() -> None:
 
 def test_async_recursive_url_loader_deterministic() -> None:
     url = "https://docs.python.org/3.9/"
-    loader = RecursiveUrlLoader(
-        url,
-        use_async=True,
-        max_depth=3,
-        timeout=None,
-    )
+    loader = RecursiveUrlLoader(url, use_async=True, max_depth=3, timeout=None)
     docs = sorted(loader.load(), key=lambda d: d.metadata["source"])
     docs_2 = sorted(loader.load(), key=lambda d: d.metadata["source"])
     assert docs == docs_2

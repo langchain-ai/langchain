@@ -1,8 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
@@ -24,8 +22,7 @@ def test_interfaces() -> None:
 
 
 def _get_get_session_history(
-    *,
-    store: Optional[Dict[str, Any]] = None,
+    *, store: Optional[Dict[str, Any]] = None
 ) -> Callable[..., ChatMessageHistory]:
     chat_history_store = store if store is not None else {}
 
@@ -156,10 +153,7 @@ def test_input_messages_output_message() -> None:
 
     runnable = LengthChatModel()
     get_session_history = _get_get_session_history()
-    with_history = RunnableWithMessageHistory(
-        runnable,
-        get_session_history,
-    )
+    with_history = RunnableWithMessageHistory(runnable, get_session_history)
     config: RunnableConfig = {"configurable": {"session_id": "4"}}
     output = with_history.invoke([HumanMessage(content="hi")], config)
     assert output.content == "1"
@@ -342,14 +336,10 @@ def test_using_custom_config_specs() -> None:
         ],
     )
     result = with_message_history.invoke(
-        {
-            "messages": [HumanMessage(content="hello")],
-        },
+        {"messages": [HumanMessage(content="hello")]},
         {"configurable": {"user_id": "user1", "conversation_id": "1"}},
     )
-    assert result == [
-        AIMessage(content="you said: hello"),
-    ]
+    assert result == [AIMessage(content="you said: hello")]
     assert store == {
         ("user1", "1"): ChatMessageHistory(
             messages=[
@@ -360,14 +350,10 @@ def test_using_custom_config_specs() -> None:
     }
 
     result = with_message_history.invoke(
-        {
-            "messages": [HumanMessage(content="goodbye")],
-        },
+        {"messages": [HumanMessage(content="goodbye")]},
         {"configurable": {"user_id": "user1", "conversation_id": "1"}},
     )
-    assert result == [
-        AIMessage(content="you said: goodbye"),
-    ]
+    assert result == [AIMessage(content="you said: goodbye")]
     assert store == {
         ("user1", "1"): ChatMessageHistory(
             messages=[
@@ -380,14 +366,10 @@ def test_using_custom_config_specs() -> None:
     }
 
     result = with_message_history.invoke(
-        {
-            "messages": [HumanMessage(content="meow")],
-        },
+        {"messages": [HumanMessage(content="meow")]},
         {"configurable": {"user_id": "user2", "conversation_id": "1"}},
     )
-    assert result == [
-        AIMessage(content="you said: meow"),
-    ]
+    assert result == [AIMessage(content="you said: meow")]
     assert store == {
         ("user1", "1"): ChatMessageHistory(
             messages=[
@@ -398,9 +380,6 @@ def test_using_custom_config_specs() -> None:
             ]
         ),
         ("user2", "1"): ChatMessageHistory(
-            messages=[
-                HumanMessage(content="meow"),
-                AIMessage(content="you said: meow"),
-            ]
+            messages=[HumanMessage(content="meow"), AIMessage(content="you said: meow")]
         ),
     }

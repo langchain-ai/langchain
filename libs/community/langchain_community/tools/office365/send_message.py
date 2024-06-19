@@ -9,26 +9,11 @@ from langchain_community.tools.office365.base import O365BaseTool
 class SendMessageSchema(BaseModel):
     """Input for SendMessageTool."""
 
-    body: str = Field(
-        ...,
-        description="The message body to be sent.",
-    )
-    to: List[str] = Field(
-        ...,
-        description="The list of recipients.",
-    )
-    subject: str = Field(
-        ...,
-        description="The subject of the message.",
-    )
-    cc: Optional[List[str]] = Field(
-        None,
-        description="The list of CC recipients.",
-    )
-    bcc: Optional[List[str]] = Field(
-        None,
-        description="The list of BCC recipients.",
-    )
+    body: str = Field(..., description="The message body to be sent.")
+    to: List[str] = Field(..., description="The list of recipients.")
+    subject: str = Field(..., description="The subject of the message.")
+    cc: Optional[List[str]] = Field(None, description="The list of CC recipients.")
+    bcc: Optional[List[str]] = Field(None, description="The list of BCC recipients.")
 
 
 class O365SendMessage(O365BaseTool):

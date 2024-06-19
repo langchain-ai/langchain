@@ -75,14 +75,10 @@ def test_takeoff_initialization(httpx_mock: Any) -> None:
     mgnt_url = f"http://localhost:{mgnt_port}/reader"
     embed_url = f"http://localhost:{inf_port}/embed"
     reader_1 = ReaderConfig(
-        model_name="test",
-        device=Device.cpu,
-        consumer_group="embed",
+        model_name="test", device=Device.cpu, consumer_group="embed"
     )
     reader_2 = ReaderConfig(
-        model_name="test2",
-        device=Device.cuda,
-        consumer_group="embed",
+        model_name="test2", device=Device.cuda, consumer_group="embed"
     )
 
     httpx_mock.add_response(
@@ -133,14 +129,10 @@ def test_takeoff_initialization_with_more_than_one_consumer_group(
     mgnt_url = f"http://localhost:{mgnt_port}/reader"
     embed_url = f"http://localhost:{inf_port}/embed"
     reader_1 = ReaderConfig(
-        model_name="test",
-        device=Device.cpu,
-        consumer_group="embed",
+        model_name="test", device=Device.cpu, consumer_group="embed"
     )
     reader_2 = ReaderConfig(
-        model_name="test2",
-        device=Device.cuda,
-        consumer_group="embed2",
+        model_name="test2", device=Device.cuda, consumer_group="embed2"
     )
 
     httpx_mock.add_response(

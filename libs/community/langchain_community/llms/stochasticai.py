@@ -23,6 +23,7 @@ class StochasticAI(LLM):
         .. code-block:: python
 
             from langchain_community.llms import StochasticAI
+
             stochasticai = StochasticAI(api_url="")
     """
 
@@ -70,10 +71,7 @@ class StochasticAI(LLM):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {
-            **{"endpoint_url": self.api_url},
-            **{"model_kwargs": self.model_kwargs},
-        }
+        return {**{"endpoint_url": self.api_url}, **{"model_kwargs": self.model_kwargs}}
 
     @property
     def _llm_type(self) -> str:

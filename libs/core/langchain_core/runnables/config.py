@@ -139,12 +139,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     Returns:
         RunnableConfig: The ensured config.
     """
-    empty = RunnableConfig(
-        tags=[],
-        metadata={},
-        callbacks=None,
-        recursion_limit=25,
-    )
+    empty = RunnableConfig(tags=[], metadata={}, callbacks=None, recursion_limit=25)
     if var_config := var_child_runnable_config.get():
         empty.update(
             cast(RunnableConfig, {k: v for k, v in var_config.items() if v is not None})
@@ -271,7 +266,7 @@ def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
                 }
             elif key == "tags":
                 base[key] = list(  # type: ignore
-                    set(base.get(key, []) + (config.get(key) or [])),  # type: ignore
+                    set(base.get(key, []) + (config.get(key) or []))  # type: ignore
                 )
             elif key == "configurable":
                 base[key] = {  # type: ignore
@@ -386,8 +381,7 @@ def acall_func_with_variable_args(
         Callable[[Input, RunnableConfig], Awaitable[Output]],
         Callable[[Input, AsyncCallbackManagerForChainRun], Awaitable[Output]],
         Callable[
-            [Input, AsyncCallbackManagerForChainRun, RunnableConfig],
-            Awaitable[Output],
+            [Input, AsyncCallbackManagerForChainRun, RunnableConfig], Awaitable[Output]
         ],
     ],
     input: Input,
@@ -467,10 +461,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
     """ThreadPoolExecutor that copies the context to the child thread."""
 
     def submit(  # type: ignore[override]
-        self,
-        func: Callable[P, T],
-        *args: P.args,
-        **kwargs: P.kwargs,
+        self, func: Callable[P, T], *args: P.args, **kwargs: P.kwargs
     ) -> Future[T]:
         """Submit a function to the executor.
 
@@ -499,10 +490,7 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
             return contexts.pop().run(fn, *args)
 
         return super().map(
-            _wrapped_fn,
-            *iterables,
-            timeout=timeout,
-            chunksize=chunksize,
+            _wrapped_fn, *iterables, timeout=timeout, chunksize=chunksize
         )
 
 
@@ -555,8 +543,7 @@ async def run_in_executor(
     if executor_or_config is None or isinstance(executor_or_config, dict):
         # Use default executor with context copied from current context
         return await asyncio.get_running_loop().run_in_executor(
-            None,
-            cast(Callable[..., T], partial(copy_context().run, wrapper)),
+            None, cast(Callable[..., T], partial(copy_context().run, wrapper))
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)

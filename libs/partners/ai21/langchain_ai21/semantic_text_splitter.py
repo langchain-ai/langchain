@@ -1,12 +1,7 @@
 import copy
 import logging
 import re
-from typing import (
-    Any,
-    Iterable,
-    List,
-    Optional,
-)
+from typing import Any, Iterable, List, Optional
 
 from ai21.models import DocumentType
 from langchain_core.documents import Document
@@ -35,11 +30,7 @@ class AI21SemanticTextSplitter(TextSplitter):
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
-        super().__init__(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            **kwargs,
-        )
+        super().__init__(chunk_size=chunk_size, chunk_overlap=chunk_overlap, **kwargs)
 
         self._segmentation = AI21Base(
             client=client,
@@ -110,10 +101,7 @@ class AI21SemanticTextSplitter(TextSplitter):
                     previous_chunk_len = len(normalized_chunk)
 
                 documents.append(
-                    Document(
-                        page_content=chunk.page_content,
-                        metadata=metadata,
-                    )
+                    Document(page_content=chunk.page_content, metadata=metadata)
                 )
 
         return documents

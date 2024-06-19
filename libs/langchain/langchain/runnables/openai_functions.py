@@ -26,13 +26,7 @@ class OpenAIFunctionsRouter(RunnableBindingBase[BaseMessage, Any]):
 
     def __init__(
         self,
-        runnables: Mapping[
-            str,
-            Union[
-                Runnable[dict, Any],
-                Callable[[dict], Any],
-            ],
-        ],
+        runnables: Mapping[str, Union[Runnable[dict, Any], Callable[[dict], Any]]],
         functions: Optional[List[OpenAIFunction]] = None,
     ):
         if functions is not None:

@@ -262,8 +262,10 @@ class ChatFireworks(BaseChatModel):
         .. code-block:: python
 
             from langchain_fireworks.chat_models import ChatFireworks
+
             fireworks = ChatFireworks(
-                model_name="accounts/fireworks/models/mixtral-8x7b-instruct")
+                model_name="accounts/fireworks/models/mixtral-8x7b-instruct"
+            )
     """
 
     @property
@@ -502,10 +504,7 @@ class ChatFireworks(BaseChatModel):
             generation_info = dict(finish_reason=res.get("finish_reason"))
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
-            gen = ChatGeneration(
-                message=message,
-                generation_info=generation_info,
-            )
+            gen = ChatGeneration(message=message, generation_info=generation_info)
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
@@ -646,10 +645,7 @@ class ChatFireworks(BaseChatModel):
                     f"provided function was {formatted_functions[0]['name']}."
                 )
             kwargs = {**kwargs, "function_call": function_call}
-        return super().bind(
-            functions=formatted_functions,
-            **kwargs,
-        )
+        return super().bind(functions=formatted_functions, **kwargs)
 
     def bind_tools(
         self,
@@ -705,10 +701,7 @@ class ChatFireworks(BaseChatModel):
                         f"{len(tools)} tools."
                     )
                 tool_name = formatted_tools[0]["function"]["name"]
-                tool_choice = {
-                    "type": "function",
-                    "function": {"name": tool_name},
-                }
+                tool_choice = {"type": "function", "function": {"name": tool_name}}
 
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
@@ -765,15 +758,22 @@ class ChatFireworks(BaseChatModel):
                 from langchain_fireworks import ChatFireworks
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
 
-                llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
+
+                llm = ChatFireworks(
+                    model="accounts/fireworks/models/firefunction-v1", temperature=0
+                )
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
 
                 # -> AnswerWithJustification(
                 #     answer='They weigh the same',
@@ -786,15 +786,24 @@ class ChatFireworks(BaseChatModel):
                 from langchain_fireworks import ChatFireworks
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
 
-                llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                llm = ChatFireworks(
+                    model="accounts/fireworks/models/firefunction-v1", temperature=0
+                )
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
                 #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
@@ -808,16 +817,23 @@ class ChatFireworks(BaseChatModel):
                 from langchain_core.pydantic_v1 import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
 
+
                 dict_schema = convert_to_openai_tool(AnswerWithJustification)
-                llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
+                llm = ChatFireworks(
+                    model="accounts/fireworks/models/firefunction-v1", temperature=0
+                )
                 structured_llm = llm.with_structured_output(dict_schema)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'

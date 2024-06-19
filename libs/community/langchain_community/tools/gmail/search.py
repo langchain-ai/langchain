@@ -38,8 +38,7 @@ class SearchArgsSchema(BaseModel):
         description="Whether to search for threads or messages.",
     )
     max_results: int = Field(
-        default=10,
-        description="The maximum number of results to return.",
+        default=10, description="The maximum number of results to return."
     )
 
 

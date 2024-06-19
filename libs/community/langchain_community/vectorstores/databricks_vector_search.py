@@ -31,8 +31,7 @@ class DatabricksVectorSearch(VectorStore):
 
             vs_client = VectorSearchClient()
             vs_index = vs_client.get_index(
-              endpoint_name="vs_endpoint",
-              index_name="ml.llm.index"
+                endpoint_name="vs_endpoint", index_name="ml.llm.index"
             )
             vectorstore = DatabricksVectorSearch(vs_index)
 
@@ -65,13 +64,10 @@ class DatabricksVectorSearch(VectorStore):
 
             vs_client = VectorSearchClient()
             vs_index = vs_client.get_index(
-              endpoint_name="vs_endpoint",
-              index_name="ml.llm.index"
+                endpoint_name="vs_endpoint", index_name="ml.llm.index"
             )
             vectorstore = DatabricksVectorSearch(
-              index=vs_index,
-              embedding=OpenAIEmbeddings(),
-              text_column="document_content"
+                index=vs_index, embedding=OpenAIEmbeddings(), text_column="document_content"
             )
 
     If you want to manage the documents ingestion/deletion yourself, you can use a
@@ -86,17 +82,12 @@ class DatabricksVectorSearch(VectorStore):
 
             vs_client = VectorSearchClient()
             vs_index = vs_client.get_index(
-              endpoint_name="vs_endpoint",
-              index_name="ml.llm.index"
+                endpoint_name="vs_endpoint", index_name="ml.llm.index"
             )
             vectorstore = DatabricksVectorSearch(
-              index=vs_index,
-              embedding=OpenAIEmbeddings(),
-              text_column="document_content"
+                index=vs_index, embedding=OpenAIEmbeddings(), text_column="document_content"
             )
-            vectorstore.add_texts(
-              texts=["text1", "text2"]
-            )
+            vectorstore.add_texts(texts=["text1", "text2"])
 
     For more information on Databricks Vector Search, see `Databricks Vector Search
     documentation: https://docs.databricks.com/en/generative-ai/vector-search.html.
@@ -372,11 +363,7 @@ class DatabricksVectorSearch(VectorStore):
             )
 
         docs = self.max_marginal_relevance_search_by_vector(
-            query_vector,
-            k,
-            fetch_k,
-            lambda_mult=lambda_mult,
-            filters=filters,
+            query_vector, k, fetch_k, lambda_mult=lambda_mult, filters=filters
         )
         return docs
 
@@ -489,10 +476,7 @@ class DatabricksVectorSearch(VectorStore):
                 "Databricks-managed embeddings."
             )
         search_resp = self.index.similarity_search(
-            columns=self.columns,
-            query_vector=embedding,
-            filters=filters,
-            num_results=k,
+            columns=self.columns, query_vector=embedding, filters=filters, num_results=k
         )
         return self._parse_search_response(search_resp)
 

@@ -16,13 +16,9 @@ from langchain_community.tools.file_management.utils import (
 class FileSearchInput(BaseModel):
     """Input for FileSearchTool."""
 
-    dir_path: str = Field(
-        default=".",
-        description="Subdirectory to search in.",
-    )
+    dir_path: str = Field(default=".", description="Subdirectory to search in.")
     pattern: str = Field(
-        ...,
-        description="Unix shell regex, where * matches everything.",
+        ..., description="Unix shell regex, where * matches everything."
     )
 
 

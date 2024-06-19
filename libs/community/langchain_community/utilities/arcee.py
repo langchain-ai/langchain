@@ -177,10 +177,7 @@ class ArceeWrapper:
                 f"arcee_api_key must be a SecretStr. Got {type(self.arcee_api_key)}"
             )
         api_key = self.arcee_api_key.get_secret_value()
-        internal_headers = {
-            "X-Token": api_key,
-            "Content-Type": "application/json",
-        }
+        internal_headers = {"X-Token": api_key, "Content-Type": "application/json"}
         headers.update(internal_headers)
         return headers
 
@@ -203,11 +200,7 @@ class ArceeWrapper:
             id=self.model_id,
         )
 
-    def generate(
-        self,
-        prompt: str,
-        **kwargs: Any,
-    ) -> str:
+    def generate(self, prompt: str, **kwargs: Any) -> str:
         """Generate text from Arcee DALM.
 
         Args:
@@ -220,18 +213,11 @@ class ArceeWrapper:
         response = self._make_request(
             method="post",
             route=ArceeRoute.generate.value,
-            body=self._make_request_body_for_models(
-                prompt=prompt,
-                **kwargs,
-            ),
+            body=self._make_request_body_for_models(prompt=prompt, **kwargs),
         )
         return response["text"]
 
-    def retrieve(
-        self,
-        query: str,
-        **kwargs: Any,
-    ) -> List[Document]:
+    def retrieve(self, query: str, **kwargs: Any) -> List[Document]:
         """Retrieve {size} contexts with your retriever for a given query
 
         Args:
@@ -244,10 +230,7 @@ class ArceeWrapper:
         response = self._make_request(
             method="post",
             route=ArceeRoute.retrieve.value,
-            body=self._make_request_body_for_models(
-                prompt=query,
-                **kwargs,
-            ),
+            body=self._make_request_body_for_models(prompt=query, **kwargs),
         )
         return [
             ArceeDocumentAdapter.adapt(ArceeDocument(**doc))

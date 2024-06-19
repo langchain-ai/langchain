@@ -294,10 +294,7 @@ class VectorStore(ABC):
         )
 
     def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """
         Default similarity search with relevance scores. Modify if necessary
@@ -321,10 +318,7 @@ class VectorStore(ABC):
         return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
 
     async def _asimilarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """
         Default similarity search with relevance scores. Modify if necessary
@@ -348,10 +342,7 @@ class VectorStore(ABC):
         return [(doc, relevance_score_fn(score)) for doc, score in docs_and_scores]
 
     def similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs and relevance scores in the range [0, 1].
 
@@ -395,10 +386,7 @@ class VectorStore(ABC):
         return docs_and_similarities
 
     async def asimilarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs and relevance scores in the range [0, 1].
 
@@ -619,10 +607,7 @@ class VectorStore(ABC):
 
     @classmethod
     def from_documents(
-        cls: Type[VST],
-        documents: List[Document],
-        embedding: Embeddings,
-        **kwargs: Any,
+        cls: Type[VST], documents: List[Document], embedding: Embeddings, **kwargs: Any
     ) -> VST:
         """Return VectorStore initialized from documents and embeddings.
 
@@ -636,10 +621,7 @@ class VectorStore(ABC):
 
     @classmethod
     async def afrom_documents(
-        cls: Type[VST],
-        documents: List[Document],
-        embedding: Embeddings,
-        **kwargs: Any,
+        cls: Type[VST], documents: List[Document], embedding: Embeddings, **kwargs: Any
     ) -> VST:
         """Return VectorStore initialized from documents and embeddings.
 
@@ -722,30 +704,26 @@ class VectorStore(ABC):
             # Retrieve more documents with higher diversity
             # Useful if your dataset has many similar documents
             docsearch.as_retriever(
-                search_type="mmr",
-                search_kwargs={'k': 6, 'lambda_mult': 0.25}
+                search_type="mmr", search_kwargs={"k": 6, "lambda_mult": 0.25}
             )
 
             # Fetch more documents for the MMR algorithm to consider
             # But only return the top 5
-            docsearch.as_retriever(
-                search_type="mmr",
-                search_kwargs={'k': 5, 'fetch_k': 50}
-            )
+            docsearch.as_retriever(search_type="mmr", search_kwargs={"k": 5, "fetch_k": 50})
 
             # Only retrieve documents that have a relevance score
             # Above a certain threshold
             docsearch.as_retriever(
                 search_type="similarity_score_threshold",
-                search_kwargs={'score_threshold': 0.8}
+                search_kwargs={"score_threshold": 0.8},
             )
 
             # Only get the single most similar document from the dataset
-            docsearch.as_retriever(search_kwargs={'k': 1})
+            docsearch.as_retriever(search_kwargs={"k": 1})
 
             # Use a filter to only retrieve documents from a specific paper
             docsearch.as_retriever(
-                search_kwargs={'filter': {'paper_title':'GPT-4 Technical Report'}}
+                search_kwargs={"filter": {"paper_title": "GPT-4 Technical Report"}}
             )
         """
         tags = kwargs.pop("tags", None) or [] + self._get_retriever_tags()

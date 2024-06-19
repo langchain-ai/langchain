@@ -21,10 +21,7 @@ query = "What is IPEX-LLM?"
 
 
 @skip_if_no_model_ids
-@pytest.mark.parametrize(
-    "model_id",
-    model_ids_to_test,
-)
+@pytest.mark.parametrize("model_id", model_ids_to_test)
 def test_embed_documents(model_id: str) -> None:
     """Test IpexLLMBgeEmbeddings embed_documents"""
     embedding_model = IpexLLMBgeEmbeddings(
@@ -37,10 +34,7 @@ def test_embed_documents(model_id: str) -> None:
 
 
 @skip_if_no_model_ids
-@pytest.mark.parametrize(
-    "model_id",
-    model_ids_to_test,
-)
+@pytest.mark.parametrize("model_id", model_ids_to_test)
 def test_embed_query(model_id: str) -> None:
     """Test IpexLLMBgeEmbeddings embed_documents"""
     embedding_model = IpexLLMBgeEmbeddings(

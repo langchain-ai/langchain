@@ -20,12 +20,10 @@ class CloudflareWorkersAIEmbeddings(BaseModel, Embeddings):
 
             account_id = "my_account_id"
             api_token = "my_secret_api_token"
-            model_name =  "@cf/baai/bge-small-en-v1.5"
+            model_name = "@cf/baai/bge-small-en-v1.5"
 
             cf = CloudflareWorkersAIEmbeddings(
-                account_id=account_id,
-                api_token=api_token,
-                model_name=model_name
+                account_id=account_id, api_token=api_token, model_name=model_name
             )
     """
 

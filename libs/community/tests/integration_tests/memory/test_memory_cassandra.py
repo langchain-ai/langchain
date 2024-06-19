@@ -54,9 +54,7 @@ def test_memory_with_message_store() -> None:
     # setup cassandra as a message store
     message_history = _chat_message_history()
     memory = ConversationBufferMemory(
-        memory_key="baz",
-        chat_memory=message_history,
-        return_messages=True,
+        memory_key="baz", chat_memory=message_history, return_messages=True
     )
 
     assert memory.chat_memory.messages == []
@@ -82,15 +80,11 @@ def test_memory_separate_session_ids() -> None:
     """Test that separate session IDs do not share entries."""
     message_history1 = _chat_message_history(session_id="test-session1")
     memory1 = ConversationBufferMemory(
-        memory_key="mk1",
-        chat_memory=message_history1,
-        return_messages=True,
+        memory_key="mk1", chat_memory=message_history1, return_messages=True
     )
     message_history2 = _chat_message_history(session_id="test-session2")
     memory2 = ConversationBufferMemory(
-        memory_key="mk2",
-        chat_memory=message_history2,
-        return_messages=True,
+        memory_key="mk2", chat_memory=message_history2, return_messages=True
     )
 
     memory1.chat_memory.add_ai_message("Just saying.")
@@ -105,9 +99,7 @@ def test_memory_ttl() -> None:
     """Test time-to-live feature of the memory."""
     message_history = _chat_message_history(ttl_seconds=5)
     memory = ConversationBufferMemory(
-        memory_key="baz",
-        chat_memory=message_history,
-        return_messages=True,
+        memory_key="baz", chat_memory=message_history, return_messages=True
     )
     #
     assert memory.chat_memory.messages == []

@@ -18,22 +18,11 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from langchain_community.storage.astradb import (
-        AstraDBByteStore,
-        AstraDBStore,
-    )
-    from langchain_community.storage.cassandra import (
-        CassandraByteStore,
-    )
-    from langchain_community.storage.mongodb import (
-        MongoDBStore,
-    )
-    from langchain_community.storage.redis import (
-        RedisStore,
-    )
-    from langchain_community.storage.sql import (
-        SQLStore,
-    )
+    from langchain_community.storage.astradb import AstraDBByteStore, AstraDBStore
+    from langchain_community.storage.cassandra import CassandraByteStore
+    from langchain_community.storage.mongodb import MongoDBStore
+    from langchain_community.storage.redis import RedisStore
+    from langchain_community.storage.sql import SQLStore
     from langchain_community.storage.upstash_redis import (
         UpstashRedisByteStore,
         UpstashRedisStore,

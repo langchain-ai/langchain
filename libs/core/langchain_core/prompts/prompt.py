@@ -52,9 +52,7 @@ class PromptTemplate(StringPromptTemplate):
 
     @property
     def lc_attributes(self) -> Dict[str, Any]:
-        return {
-            "template_format": self.template_format,
-        }
+        return {"template_format": self.template_format}
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:

@@ -153,8 +153,7 @@ class EvaluatorCallbackHandler(BaseTracer):
                 )
 
     def _select_eval_results(
-        self,
-        results: Union[EvaluationResult, EvaluationResults],
+        self, results: Union[EvaluationResult, EvaluationResults]
     ) -> List[EvaluationResult]:
         if isinstance(results, EvaluationResult):
             results_ = [results]

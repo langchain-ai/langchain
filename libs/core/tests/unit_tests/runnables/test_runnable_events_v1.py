@@ -440,11 +440,7 @@ async def test_astream_events_from_model() -> None:
     model = (
         GenericFakeChatModel(messages=infinite_cycle)
         .with_config(
-            {
-                "metadata": {"a": "b"},
-                "tags": ["my_model"],
-                "run_name": "my_model",
-            }
+            {"metadata": {"a": "b"}, "tags": ["my_model"], "run_name": "my_model"}
         )
         .bind(stop="<stop_token>")
     )
@@ -716,21 +712,13 @@ async def test_event_stream_with_simple_chain() -> None:
     model = (
         GenericFakeChatModel(messages=infinite_cycle)
         .with_config(
-            {
-                "metadata": {"a": "b"},
-                "tags": ["my_model"],
-                "run_name": "my_model",
-            }
+            {"metadata": {"a": "b"}, "tags": ["my_model"], "run_name": "my_model"}
         )
         .bind(stop="<stop_token>")
     )
 
     chain = (template | model).with_config(
-        {
-            "metadata": {"foo": "bar"},
-            "tags": ["my_chain"],
-            "run_name": "my_chain",
-        }
+        {"metadata": {"foo": "bar"}, "tags": ["my_chain"], "run_name": "my_chain"}
     )
 
     events = await _collect_events(
@@ -1081,14 +1069,8 @@ async def test_event_stream_with_retriever() -> None:
     """Test the event stream with a retriever."""
     retriever = HardCodedRetriever(
         documents=[
-            Document(
-                page_content="hello world!",
-                metadata={"foo": "bar"},
-            ),
-            Document(
-                page_content="goodbye world!",
-                metadata={"food": "spare"},
-            ),
+            Document(page_content="hello world!", metadata={"foo": "bar"}),
+            Document(page_content="goodbye world!", metadata={"food": "spare"}),
         ]
     )
     events = await _collect_events(
@@ -1096,9 +1078,7 @@ async def test_event_stream_with_retriever() -> None:
     )
     assert events == [
         {
-            "data": {
-                "input": {"query": "hello"},
-            },
+            "data": {"input": {"query": "hello"}},
             "event": "on_retriever_start",
             "metadata": {},
             "name": "HardCodedRetriever",
@@ -1125,7 +1105,7 @@ async def test_event_stream_with_retriever() -> None:
                 "output": [
                     Document(page_content="hello world!", metadata={"foo": "bar"}),
                     Document(page_content="goodbye world!", metadata={"food": "spare"}),
-                ],
+                ]
             },
             "event": "on_retriever_end",
             "metadata": {},
@@ -1141,14 +1121,8 @@ async def test_event_stream_with_retriever_and_formatter() -> None:
     """Test the event stream with a retriever."""
     retriever = HardCodedRetriever(
         documents=[
-            Document(
-                page_content="hello world!",
-                metadata={"foo": "bar"},
-            ),
-            Document(
-                page_content="goodbye world!",
-                metadata={"food": "spare"},
-            ),
+            Document(page_content="hello world!", metadata={"foo": "bar"}),
+            Document(page_content="goodbye world!", metadata={"food": "spare"}),
         ]
     )
 
@@ -1467,7 +1441,7 @@ async def test_event_stream_with_retry() -> None:
         raise Exception("fail")
 
     chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
-        stop_after_attempt=1,
+        stop_after_attempt=1
     )
     iterable = chain.astream_events("q", version="v1")
 
@@ -1679,9 +1653,7 @@ async def test_events_astream_config() -> None:
     good_world_on_repeat = cycle([AIMessage(content="Goodbye world", id="ai2")])
     model = GenericFakeChatModel(messages=infinite_cycle).configurable_fields(
         messages=ConfigurableField(
-            id="messages",
-            name="Messages",
-            description="Messages return by the LLM",
+            id="messages", name="Messages", description="Messages return by the LLM"
         )
     )
 

@@ -69,13 +69,7 @@ def test_visit_structured_query() -> None:
                             "bool": {
                                 "should": [
                                     {"range": {"metadata.bar": {"lte": 7}}},
-                                    {
-                                        "fuzzy": {
-                                            "metadata.baz": {
-                                                "value": "abc",
-                                            }
-                                        }
-                                    },
+                                    {"fuzzy": {"metadata.baz": {"value": "abc"}}},
                                 ]
                             }
                         },

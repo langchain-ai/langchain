@@ -96,10 +96,7 @@ class PowerBIToolkit(BaseToolkit):
             )
         )
         human_prompt = HumanMessagePromptTemplate(
-            prompt=PromptTemplate(
-                template=USER_INPUT,
-                input_variables=["tool_input"],
-            )
+            prompt=PromptTemplate(template=USER_INPUT, input_variables=["tool_input"])
         )
         return LLMChain(
             llm=self.llm,

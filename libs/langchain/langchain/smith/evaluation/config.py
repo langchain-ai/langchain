@@ -121,12 +121,9 @@ class RunEvalConfig(BaseModel):
         The language model to pass to any evaluators that use a language model.
     """  # noqa: E501
 
-    evaluators: List[
-        Union[
-            SINGLE_EVAL_CONFIG_TYPE,
-            CUSTOM_EVALUATOR_TYPE,
-        ]
-    ] = Field(default_factory=list)
+    evaluators: List[Union[SINGLE_EVAL_CONFIG_TYPE, CUSTOM_EVALUATOR_TYPE]] = Field(
+        default_factory=list
+    )
     """Configurations for which evaluators to apply to the dataset run.
     Each can be the string of an
     :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such

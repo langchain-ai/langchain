@@ -52,8 +52,9 @@ class SelfHostedEmbeddings(SelfHostedPipeline, Embeddings):
 
             gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
             pipeline = pipeline(model="bert-base-uncased", task="feature-extraction")
-            rh.blob(pickle.dumps(pipeline),
-                path="models/pipeline.pkl").save().to(gpu, path="models")
+            rh.blob(pickle.dumps(pipeline), path="models/pipeline.pkl").save().to(
+                gpu, path="models"
+            )
             embeddings = SelfHostedHFEmbeddings.from_pipeline(
                 pipeline="models/pipeline.pkl",
                 hardware=gpu,

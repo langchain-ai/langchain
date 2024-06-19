@@ -333,11 +333,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         generation: Optional[ChatGenerationChunk] = None
         try:
-            async for chunk in self._astream(
-                messages,
-                stop=stop,
-                **kwargs,
-            ):
+            async for chunk in self._astream(messages, stop=stop, **kwargs):
                 if chunk.message.id is None:
                     chunk.message.id = f"run-{run_manager.run_id}"
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
@@ -352,14 +348,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             assert generation is not None
         except BaseException as e:
             await run_manager.on_llm_error(
-                e,
-                response=LLMResult(generations=[[generation]] if generation else []),
+                e, response=LLMResult(generations=[[generation]] if generation else [])
             )
             raise e
         else:
-            await run_manager.on_llm_end(
-                LLMResult(generations=[[generation]]),
-            )
+            await run_manager.on_llm_end(LLMResult(generations=[[generation]]))
 
     # --- Custom methods ---
 
@@ -367,18 +360,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         return {}
 
     def _get_invocation_params(
-        self,
-        stop: Optional[List[str]] = None,
-        **kwargs: Any,
+        self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> dict:
         params = self.dict()
         params["stop"] = stop
         return {**params, **kwargs}
 
     def _get_ls_params(
-        self,
-        stop: Optional[List[str]] = None,
-        **kwargs: Any,
+        self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         ls_params = LangSmithParams(ls_model_type="chat")

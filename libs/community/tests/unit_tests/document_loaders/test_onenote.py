@@ -24,9 +24,7 @@ def test_initialization() -> None:
     assert loader.section_name == "test_section"
     assert loader.page_title == "test_title"
     assert loader.access_token == "access_token"
-    assert loader._headers == {
-        "Authorization": "Bearer access_token",
-    }
+    assert loader._headers == {"Authorization": "Bearer access_token"}
 
 
 @pytest.mark.requires("bs4")

@@ -41,9 +41,7 @@ class ClickTool(BaseBrowserTool):
         return f"{selector} >> visible=1"
 
     def _run(
-        self,
-        selector: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, selector: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         if self.sync_browser is None:

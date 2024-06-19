@@ -122,10 +122,7 @@ def test_watsonxllm_stream() -> None:
 def test_watsonxllm_invoke_from_wx_model() -> None:
     model = Model(
         model_id=MODEL_ID,
-        credentials={
-            "apikey": WX_APIKEY,
-            "url": "https://us-south.ml.cloud.ibm.com",
-        },
+        credentials={"apikey": WX_APIKEY, "url": "https://us-south.ml.cloud.ibm.com"},
         project_id=WX_PROJECT_ID,
     )
     watsonxllm = WatsonxLLM(watsonx_model=model)
@@ -140,9 +137,7 @@ def test_watsonxllm_invoke_from_wx_model_inference() -> None:
         api_key=WX_APIKEY, url="https://us-south.ml.cloud.ibm.com"
     )
     model = ModelInference(
-        model_id=MODEL_ID,
-        credentials=credentials,
-        project_id=WX_PROJECT_ID,
+        model_id=MODEL_ID, credentials=credentials, project_id=WX_PROJECT_ID
     )
     watsonxllm = WatsonxLLM(watsonx_model=model)
     response = watsonxllm.invoke("What color sunflower is?")
@@ -162,10 +157,7 @@ def test_watsonxllm_invoke_from_wx_model_inference_with_params() -> None:
     }
     model = ModelInference(
         model_id=MODEL_ID,
-        credentials={
-            "apikey": WX_APIKEY,
-            "url": "https://us-south.ml.cloud.ibm.com",
-        },
+        credentials={"apikey": WX_APIKEY, "url": "https://us-south.ml.cloud.ibm.com"},
         project_id=WX_PROJECT_ID,
         params=parameters,
     )
@@ -187,10 +179,7 @@ def test_watsonxllm_invoke_from_wx_model_inference_with_params_as_enum() -> None
     }
     model = ModelInference(
         model_id=ModelTypes.FLAN_UL2,
-        credentials={
-            "apikey": WX_APIKEY,
-            "url": "https://us-south.ml.cloud.ibm.com",
-        },
+        credentials={"apikey": WX_APIKEY, "url": "https://us-south.ml.cloud.ibm.com"},
         project_id=WX_PROJECT_ID,
         params=parameters,
     )

@@ -98,9 +98,7 @@ class AstraDBBaseStore(Generic[V], BaseStore[str, V], ABC):
 
 
 @deprecated(
-    since="0.0.22",
-    removal="0.3.0",
-    alternative_import="langchain_astradb.AstraDBStore",
+    since="0.0.22", removal="0.3.0", alternative_import="langchain_astradb.AstraDBStore"
 )
 class AstraDBStore(AstraDBBaseStore[Any]):
     def __init__(

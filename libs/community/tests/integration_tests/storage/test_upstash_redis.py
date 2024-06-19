@@ -78,10 +78,7 @@ def test_namespace(redis_client: Redis) -> None:
         if len(keys) != 0:
             all_keys.extend(keys)
 
-    assert sorted(all_keys) == [
-        "meow/key1",
-        "meow/key2",
-    ]
+    assert sorted(all_keys) == ["meow/key1", "meow/key2"]
 
     store.mdelete(["key1"])
 
@@ -91,9 +88,7 @@ def test_namespace(redis_client: Redis) -> None:
         if len(keys) != 0:
             all_keys.extend(keys)
 
-    assert sorted(all_keys) == [
-        "meow/key2",
-    ]
+    assert sorted(all_keys) == ["meow/key2"]
 
     assert list(store.yield_keys()) == ["key2"]
     assert list(store.yield_keys(prefix="key*")) == ["key2"]

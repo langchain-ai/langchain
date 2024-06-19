@@ -2,9 +2,7 @@
 from langchain_core.documents import Document
 from langchain_core.language_models import FakeListLLM
 
-from langchain.chains.conversational_retrieval.base import (
-    ConversationalRetrievalChain,
-)
+from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
 from langchain.memory.buffer import ConversationBufferMemory
 from tests.unit_tests.retrievers.sequential_retriever import SequentialRetriever
 

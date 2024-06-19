@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 DEPRECATED_LOOKUP = {
     "BaiduBOSDirectoryLoader": (
         "langchain_community.document_loaders.baiducloud_bos_directory"
-    ),
+    )
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
@@ -24,6 +24,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "BaiduBOSDirectoryLoader",
-]
+__all__ = ["BaiduBOSDirectoryLoader"]

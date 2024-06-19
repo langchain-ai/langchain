@@ -37,9 +37,7 @@ class BraveSearch(BaseTool):
         return cls(search_wrapper=wrapper, **kwargs)
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         return self.search_wrapper.run(query)

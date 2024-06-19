@@ -366,11 +366,7 @@ class Dingo(VectorStore):
                 raise Exception("vector add fail")
         return cls(embedding, text_key, client=dingo_client, index_name=index_name)
 
-    def delete(
-        self,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> Any:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Any:
         """Delete by vector IDs or filter.
         Args:
             ids: List of ids to delete.

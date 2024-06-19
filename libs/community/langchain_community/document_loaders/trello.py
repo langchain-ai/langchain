@@ -149,11 +149,7 @@ class TrelloLoader(BaseLoader):
             text_content += "Comments:" + "\n".join(comments)
 
         # Default metadata fields
-        metadata = {
-            "title": card.name,
-            "id": card.id,
-            "url": card.url,
-        }
+        metadata = {"title": card.name, "id": card.id, "url": card.url}
 
         # Extra metadata fields. Card object is not subscriptable.
         if "labels" in self.extra_metadata:

@@ -28,11 +28,7 @@ class BedrockAsyncCallbackHandler(AsyncCallbackHandler):
 
     guardrails_intervened: bool = False
 
-    async def on_llm_error(
-        self,
-        error: BaseException,
-        **kwargs: Any,
-    ) -> Any:
+    async def on_llm_error(self, error: BaseException, **kwargs: Any) -> Any:
         reason = kwargs.get("reason")
         if reason == "GUARDRAIL_INTERVENED":
             self.guardrails_intervened = True
@@ -47,8 +43,7 @@ def bedrock_runtime_client():  # type: ignore[no-untyped-def]
 
     try:
         client = boto3.client(
-            "bedrock-runtime",
-            region_name=os.environ.get("AWS_REGION", "us-east-1"),
+            "bedrock-runtime", region_name=os.environ.get("AWS_REGION", "us-east-1")
         )
         return client
     except Exception as e:
@@ -61,8 +56,7 @@ def bedrock_client():  # type: ignore[no-untyped-def]
 
     try:
         client = boto3.client(
-            "bedrock",
-            region_name=os.environ.get("AWS_REGION", "us-east-1"),
+            "bedrock", region_name=os.environ.get("AWS_REGION", "us-east-1")
         )
         return client
     except Exception as e:

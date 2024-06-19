@@ -81,16 +81,11 @@ class MultiQueryRetriever(BaseRetriever):
         output_parser = LineListOutputParser()
         llm_chain = prompt | llm | output_parser
         return cls(
-            retriever=retriever,
-            llm_chain=llm_chain,
-            include_original=include_original,
+            retriever=retriever, llm_chain=llm_chain, include_original=include_original
         )
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get relevant documents given a user query.
 
@@ -150,10 +145,7 @@ class MultiQueryRetriever(BaseRetriever):
         return [doc for docs in document_lists for doc in docs]
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get relevant documents given a user query.
 

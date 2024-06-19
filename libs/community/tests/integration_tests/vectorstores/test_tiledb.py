@@ -133,9 +133,7 @@ def test_similarity_search_with_score_by_vector_with_score_threshold(
     )
     query_vec = FakeEmbeddings().embed_query(text="foo")
     output = docsearch.similarity_search_with_score_by_vector(
-        query_vec,
-        k=2,
-        score_threshold=0.2,
+        query_vec, k=2, score_threshold=0.2
     )
     assert len(output) == 1
     assert output[0][0] == Document(page_content="foo")
@@ -285,10 +283,7 @@ def test_tiledb_flat_updates(tmp_path: Path) -> None:
         vector_type=np.dtype("float32"),
         metadatas=False,
     )
-    docsearch = TileDB.load(
-        index_uri=index_uri,
-        embedding=embedding,
-    )
+    docsearch = TileDB.load(index_uri=index_uri, embedding=embedding)
     output = docsearch.similarity_search("foo", k=2)
     assert output == []
 
@@ -328,10 +323,7 @@ def test_tiledb_ivf_flat_updates(tmp_path: Path) -> None:
         vector_type=np.dtype("float32"),
         metadatas=False,
     )
-    docsearch = TileDB.load(
-        index_uri=index_uri,
-        embedding=embedding,
-    )
+    docsearch = TileDB.load(index_uri=index_uri, embedding=embedding)
     output = docsearch.similarity_search("foo", k=2)
     assert output == []
 

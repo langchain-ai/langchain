@@ -15,7 +15,7 @@ class JohnSnowLabsEmbeddings(BaseModel, Embeddings):
 
             from langchain_community.embeddings.johnsnowlabs import JohnSnowLabsEmbeddings
 
-            embedding = JohnSnowLabsEmbeddings(model='embed_sentence.bert')
+            embedding = JohnSnowLabsEmbeddings(model="embed_sentence.bert")
             output = embedding.embed_query("foo bar")
     """  # noqa: E501
 

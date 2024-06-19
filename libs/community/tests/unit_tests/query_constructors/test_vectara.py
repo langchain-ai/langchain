@@ -36,22 +36,14 @@ def test_visit_operation() -> None:
 
 def test_visit_structured_query() -> None:
     query = "What is the capital of France?"
-    structured_query = StructuredQuery(
-        query=query,
-        filter=None,
-        limit=None,
-    )
+    structured_query = StructuredQuery(query=query, filter=None, limit=None)
     expected: Tuple[str, Dict] = (query, {})
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
 
     comp = Comparison(comparator=Comparator.LT, attribute="foo", value=1)
     expected = (query, {"filter": "( doc.foo < 1 )"})
-    structured_query = StructuredQuery(
-        query=query,
-        filter=comp,
-        limit=None,
-    )
+    structured_query = StructuredQuery(query=query, filter=comp, limit=None)
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
 

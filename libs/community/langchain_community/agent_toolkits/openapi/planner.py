@@ -49,15 +49,10 @@ MAX_RESPONSE_LENGTH = 5000
 def _get_default_llm_chain(prompt: BasePromptTemplate) -> Any:
     from langchain.chains.llm import LLMChain
 
-    return LLMChain(
-        llm=OpenAI(),
-        prompt=prompt,
-    )
+    return LLMChain(llm=OpenAI(), prompt=prompt)
 
 
-def _get_default_llm_chain_factory(
-    prompt: BasePromptTemplate,
-) -> Callable[[], Any]:
+def _get_default_llm_chain_factory(prompt: BasePromptTemplate) -> Callable[[], Any]:
     """Returns a default LLMChain factory."""
     return partial(_get_default_llm_chain, prompt)
 

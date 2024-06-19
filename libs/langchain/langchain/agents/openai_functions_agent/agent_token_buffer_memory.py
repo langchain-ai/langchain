@@ -45,9 +45,7 @@ class AgentTokenBufferMemory(BaseChatMemory):
             final_buffer: Any = self.buffer
         else:
             final_buffer = get_buffer_string(
-                self.buffer,
-                human_prefix=self.human_prefix,
-                ai_prefix=self.ai_prefix,
+                self.buffer, human_prefix=self.human_prefix, ai_prefix=self.ai_prefix
             )
         return {self.memory_key: final_buffer}
 

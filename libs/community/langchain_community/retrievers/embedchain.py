@@ -37,10 +37,7 @@ class EmbedchainRetriever(BaseRetriever):
             client = Pipeline()
         return cls(client=client)
 
-    def add_texts(
-        self,
-        texts: Iterable[str],
-    ) -> List[str]:
+    def add_texts(self, texts: Iterable[str]) -> List[str]:
         """Run more texts through the embeddings and add to the retriever.
 
         Args:

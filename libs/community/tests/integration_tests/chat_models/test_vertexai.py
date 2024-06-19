@@ -115,14 +115,8 @@ def test_multimodal() -> None:
         "gs://cloud-samples-data/generative-ai/image/"
         "320px-Felis_catus-cat_on_snow.jpg"
     )
-    image_message = {
-        "type": "image_url",
-        "image_url": {"url": gcs_url},
-    }
-    text_message = {
-        "type": "text",
-        "text": "What is shown in this image?",
-    }
+    image_message = {"type": "image_url", "image_url": {"url": gcs_url}}
+    text_message = {"type": "text", "text": "What is shown in this image?"}
     message = HumanMessage(content=[text_message, image_message])
     output = llm.invoke([message])
     assert isinstance(output.content, str)
@@ -134,14 +128,8 @@ def test_multimodal_history() -> None:
         "gs://cloud-samples-data/generative-ai/image/"
         "320px-Felis_catus-cat_on_snow.jpg"
     )
-    image_message = {
-        "type": "image_url",
-        "image_url": {"url": gcs_url},
-    }
-    text_message = {
-        "type": "text",
-        "text": "What is shown in this image?",
-    }
+    image_message = {"type": "image_url", "image_url": {"url": gcs_url}}
+    text_message = {"type": "text", "text": "What is shown in this image?"}
     message1 = HumanMessage(content=[text_message, image_message])
     message2 = AIMessage(
         content=(

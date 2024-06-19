@@ -83,7 +83,7 @@ class ElasticVectorSearch(VectorStore):
             elastic_vector_search = ElasticVectorSearch(
                 elasticsearch_url="http://localhost:9200",
                 index_name="test_index",
-                embedding=embedding
+                embedding=embedding,
             )
 
 
@@ -122,7 +122,7 @@ class ElasticVectorSearch(VectorStore):
             elastic_vector_search = ElasticVectorSearch(
                 elasticsearch_url=elasticsearch_url,
                 index_name="test_index",
-                embedding=embedding
+                embedding=embedding,
             )
 
     Args:
@@ -308,11 +308,10 @@ class ElasticVectorSearch(VectorStore):
 
                 from langchain_community.vectorstores import ElasticVectorSearch
                 from langchain_community.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 elastic_vector_search = ElasticVectorSearch.from_texts(
-                    texts,
-                    embeddings,
-                    elasticsearch_url="http://localhost:9200"
+                    texts, embeddings, elasticsearch_url="http://localhost:9200"
                 )
         """
         elasticsearch_url = get_from_dict_or_env(
@@ -400,10 +399,10 @@ class ElasticKnnSearch(VectorStore):
 
     Usage:
         >>> from embeddings import Embeddings
-        >>> embedding = Embeddings.load('glove')
-        >>> es_search = ElasticKnnSearch('my_index', embedding)
-        >>> es_search.add_texts(['Hello world!', 'Another text'])
-        >>> results = es_search.knn_search('Hello')
+        >>> embedding = Embeddings.load("glove")
+        >>> es_search = ElasticKnnSearch("my_index", embedding)
+        >>> es_search.add_texts(["Hello world!", "Another text"])
+        >>> results = es_search.knn_search("Hello")
         [(Document(page_content='Hello world!', metadata={}), 0.9)]
     """
 

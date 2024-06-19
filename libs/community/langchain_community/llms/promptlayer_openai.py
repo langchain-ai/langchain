@@ -31,6 +31,7 @@ class PromptLayerOpenAI(OpenAI):
         .. code-block:: python
 
             from langchain_community.llms import PromptLayerOpenAI
+
             openai = PromptLayerOpenAI(model_name="gpt-3.5-turbo-instruct")
     """
 
@@ -144,6 +145,7 @@ class PromptLayerOpenAIChat(OpenAIChat):
         .. code-block:: python
 
             from langchain_community.llms import PromptLayerOpenAIChat
+
             openaichat = PromptLayerOpenAIChat(model_name="gpt-3.5-turbo")
     """
 

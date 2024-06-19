@@ -111,10 +111,7 @@ class NomicEmbeddings(Embeddings):
         Args:
             texts: list of texts to embed as documents
         """
-        return self.embed(
-            texts=texts,
-            task_type="search_document",
-        )
+        return self.embed(texts=texts, task_type="search_document")
 
     def embed_query(self, text: str) -> List[float]:
         """Embed query text.
@@ -122,13 +119,7 @@ class NomicEmbeddings(Embeddings):
         Args:
             text: query text
         """
-        return self.embed(
-            texts=[text],
-            task_type="search_query",
-        )[0]
+        return self.embed(texts=[text], task_type="search_query")[0]
 
     def embed_image(self, uris: List[str]) -> List[List[float]]:
-        return embed.image(
-            images=uris,
-            model=self.vision_model,
-        )["embeddings"]
+        return embed.image(images=uris, model=self.vision_model)["embeddings"]

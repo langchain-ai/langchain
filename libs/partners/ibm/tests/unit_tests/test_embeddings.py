@@ -12,9 +12,7 @@ MODEL_ID = "ibm/slate-125m-english-rtrvr"
 
 def test_initialize_watsonx_embeddings_bad_path_without_url() -> None:
     try:
-        WatsonxEmbeddings(
-            model_id=MODEL_ID,
-        )
+        WatsonxEmbeddings(model_id=MODEL_ID)
     except ValueError as e:
         assert "WATSONX_URL" in e.__str__()
 
@@ -29,8 +27,7 @@ def test_initialize_watsonx_embeddings_cloud_bad_path() -> None:
 def test_initialize_watsonx_embeddings_cpd_bad_path_without_all() -> None:
     try:
         WatsonxEmbeddings(
-            model_id=MODEL_ID,
-            url="https://cpd-zen.apps.cpd48.cp.fyre.ibm.com",
+            model_id=MODEL_ID, url="https://cpd-zen.apps.cpd48.cp.fyre.ibm.com"
         )
     except ValueError as e:
         assert (

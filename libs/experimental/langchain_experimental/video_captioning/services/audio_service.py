@@ -11,11 +11,7 @@ from langchain_experimental.video_captioning.models import AudioModel, BaseModel
 
 
 class AudioProcessor:
-    def __init__(
-        self,
-        api_key: str,
-        output_audio_path: str = "output_audio.mp3",
-    ):
+    def __init__(self, api_key: str, output_audio_path: str = "output_audio.mp3"):
         self.output_audio_path = Path(output_audio_path)
         self.api_key = api_key
 

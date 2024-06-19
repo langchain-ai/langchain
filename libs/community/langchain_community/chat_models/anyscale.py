@@ -12,10 +12,7 @@ from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.adapters.openai import convert_message_to_dict
-from langchain_community.chat_models.openai import (
-    ChatOpenAI,
-    _import_tiktoken,
-)
+from langchain_community.chat_models.openai import ChatOpenAI, _import_tiktoken
 from langchain_community.utils.openai import is_openai_v1
 
 if TYPE_CHECKING:
@@ -43,6 +40,7 @@ class ChatAnyscale(ChatOpenAI):
         .. code-block:: python
 
             from langchain_community.chat_models import ChatAnyscale
+
             chat = ChatAnyscale(model_name="meta-llama/Llama-2-7b-chat-hf")
     """
 
@@ -82,21 +80,18 @@ class ChatAnyscale(ChatOpenAI):
         except KeyError as e:
             raise ValueError(
                 "Anyscale API key must be passed as keyword argument or "
-                "set in environment variable ANYSCALE_API_KEY.",
+                "set in environment variable ANYSCALE_API_KEY."
             ) from e
 
         models_url = f"{anyscale_api_base}/models"
         models_response = requests.get(
-            models_url,
-            headers={
-                "Authorization": f"Bearer {anyscale_api_key}",
-            },
+            models_url, headers={"Authorization": f"Bearer {anyscale_api_key}"}
         )
 
         if models_response.status_code != 200:
             raise ValueError(
                 f"Error getting models from {models_url}: "
-                f"{models_response.status_code}",
+                f"{models_response.status_code}"
             )
 
         return {model["id"] for model in models_response.json()["data"]}
@@ -105,23 +100,13 @@ class ChatAnyscale(ChatOpenAI):
     def validate_environment(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
         values["anyscale_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "anyscale_api_key",
-                "ANYSCALE_API_KEY",
-            )
+            get_from_dict_or_env(values, "anyscale_api_key", "ANYSCALE_API_KEY")
         )
         values["anyscale_api_base"] = get_from_dict_or_env(
-            values,
-            "anyscale_api_base",
-            "ANYSCALE_API_BASE",
-            default=DEFAULT_API_BASE,
+            values, "anyscale_api_base", "ANYSCALE_API_BASE", default=DEFAULT_API_BASE
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "anyscale_proxy",
-            "ANYSCALE_PROXY",
-            default="",
+            values, "anyscale_proxy", "ANYSCALE_PROXY", default=""
         )
         try:
             import openai
@@ -129,7 +114,7 @@ class ChatAnyscale(ChatOpenAI):
         except ImportError as e:
             raise ImportError(
                 "Could not import openai python package. "
-                "Please install it with `pip install openai`.",
+                "Please install it with `pip install openai`."
             ) from e
         try:
             if is_openai_v1():
@@ -158,7 +143,7 @@ class ChatAnyscale(ChatOpenAI):
             raise ValueError(
                 "`openai` has no `ChatCompletion` attribute, this is likely "
                 "due to an old version of the openai package. Try upgrading it "
-                "with `pip install --upgrade openai`.",
+                "with `pip install --upgrade openai`."
             ) from exc
 
         if "model_name" not in values.keys():
@@ -166,14 +151,13 @@ class ChatAnyscale(ChatOpenAI):
 
         model_name = values["model_name"]
         available_models = cls.get_available_models(
-            values["anyscale_api_key"].get_secret_value(),
-            values["anyscale_api_base"],
+            values["anyscale_api_key"].get_secret_value(), values["anyscale_api_base"]
         )
 
         if model_name not in available_models:
             raise ValueError(
                 f"Model name {model_name} not found in available models: "
-                f"{available_models}.",
+                f"{available_models}."
             )
 
         values["available_models"] = available_models

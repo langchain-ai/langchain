@@ -82,19 +82,14 @@ def test_chat_bedrock_streaming_generation_info() -> None:
     class _FakeCallback(FakeCallbackHandler):
         saved_things: dict = {}
 
-        def on_llm_end(
-            self,
-            *args: Any,
-            **kwargs: Any,
-        ) -> Any:
+        def on_llm_end(self, *args: Any, **kwargs: Any) -> Any:
             # Save the generation
             self.saved_things["generation"] = args[0]
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
     chat = BedrockChat(  # type: ignore[call-arg]
-        model_id="anthropic.claude-v2",
-        callback_manager=callback_manager,
+        model_id="anthropic.claude-v2", callback_manager=callback_manager
     )
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]

@@ -52,11 +52,7 @@ def test_redis_vector_field_validation() -> None:
 
 def test_flat_vector_field_defaults() -> None:
     """Test defaults for FlatVectorField."""
-    flat_vector_field_data = {
-        "name": "example",
-        "dims": 100,
-        "algorithm": "FLAT",
-    }
+    flat_vector_field_data = {"name": "example", "dims": 100, "algorithm": "FLAT"}
 
     flat_vector = FlatVectorField(**flat_vector_field_data)  # type: ignore[arg-type]
     assert flat_vector.datatype == "FLOAT32"
@@ -82,11 +78,7 @@ def test_flat_vector_field_optional_values() -> None:
 
 def test_hnsw_vector_field_defaults() -> None:
     """Test defaults for HNSWVectorField."""
-    hnsw_vector_field_data = {
-        "name": "example",
-        "dims": 100,
-        "algorithm": "HNSW",
-    }
+    hnsw_vector_field_data = {"name": "example", "dims": 100, "algorithm": "HNSW"}
 
     hnsw_vector = HNSWVectorField(**hnsw_vector_field_data)  # type: ignore[arg-type]
     assert hnsw_vector.datatype == "FLOAT32"

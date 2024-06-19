@@ -161,10 +161,7 @@ async def test_cassandra_max_marginal_relevance_search() -> None:
         texts, metadatas=metadatas, embedding_class=AngularTwoDimensionalEmbeddings
     )
 
-    expected_set = {
-        ("+0.25", "2.0"),
-        ("-0.124", "0.0"),
-    }
+    expected_set = {("+0.25", "2.0"), ("-0.124", "0.0")}
 
     output = docsearch.max_marginal_relevance_search("0.0", k=2, fetch_k=3)
     output_set = {

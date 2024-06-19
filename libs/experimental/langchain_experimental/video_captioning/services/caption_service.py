@@ -76,8 +76,7 @@ class CaptionProcessor:
         return video_models_post_clustering
 
     def _remove_consecutive_duplicates(
-        self,
-        video_models: List[VideoModel],
+        self, video_models: List[VideoModel]
     ) -> List[VideoModel]:
         buffer: List[VideoModel] = []
 

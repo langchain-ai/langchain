@@ -1,8 +1,6 @@
 from langchain_chroma import __all__
 
-EXPECTED_ALL = [
-    "Chroma",
-]
+EXPECTED_ALL = ["Chroma"]
 
 
 def test_all_imports() -> None:

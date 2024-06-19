@@ -5,13 +5,8 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.chat_models import (
-    BaseChatModel,
-)
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-)
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import Extra, Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -53,7 +48,8 @@ class ChatDappierAI(BaseChatModel):
             # Initialize `ChatDappierAI` with the desired configuration
             chat = ChatDappierAI(
                 dappier_endpoint="https://api.dappier.com/app/datamodel/dm_01hpsxyfm2fwdt2zet9cg6fdxt",
-                dappier_api_key="<YOUR_KEY>")
+                dappier_api_key="<YOUR_KEY>",
+            )
 
             # Create a list of messages to interact with the model
             messages = [HumanMessage(content="hello")]

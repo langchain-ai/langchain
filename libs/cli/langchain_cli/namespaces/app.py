@@ -36,15 +36,11 @@ app_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 @app_cli.command()
 def new(
     name: Annotated[
-        Optional[str],
-        typer.Argument(
-            help="The name of the folder to create",
-        ),
+        Optional[str], typer.Argument(help="The name of the folder to create")
     ] = None,
     *,
     package: Annotated[
-        Optional[List[str]],
-        typer.Option(help="Packages to seed the project with"),
+        Optional[List[str]], typer.Option(help="Packages to seed the project with")
     ] = None,
     pip: Annotated[
         Optional[bool],
@@ -210,7 +206,7 @@ def add(
             destination_path = package_dir / inner_api_path
             if destination_path.exists():
                 typer.echo(
-                    f"Folder {str(inner_api_path)} already exists. " "Skipping...",
+                    f"Folder {str(inner_api_path)} already exists. " "Skipping..."
                 )
                 continue
             copy_repo(source_path, destination_path)

@@ -22,9 +22,9 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import DeepInfraEmbeddings
+
             deepinfra_emb = DeepInfraEmbeddings(
-                model_id="sentence-transformers/clip-ViT-B-32",
-                deepinfra_api_token="my-api-key"
+                model_id="sentence-transformers/clip-ViT-B-32", deepinfra_api_token="my-api-key"
             )
             r1 = deepinfra_emb.embed_documents(
                 [
@@ -32,9 +32,7 @@ class DeepInfraEmbeddings(BaseModel, Embeddings):
                     "Beta is the second letter of Greek alphabet",
                 ]
             )
-            r2 = deepinfra_emb.embed_query(
-                "What is the second letter of Greek alphabet"
-            )
+            r2 = deepinfra_emb.embed_query("What is the second letter of Greek alphabet")
 
     """
 

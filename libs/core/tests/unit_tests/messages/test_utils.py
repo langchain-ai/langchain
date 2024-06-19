@@ -58,7 +58,7 @@ def test_merge_message_runs_content() -> None:
                 ToolCall(name="foo_tool", args={"x": 5}, id="tool2"),
             ],
             id="1",
-        ),
+        )
     ]
     actual = merge_message_runs(messages)
     assert actual == expected
@@ -201,10 +201,7 @@ def test_trim_messages_last_40_include_system_allow_partial() -> None:
     expected = [
         SystemMessage("This is a 4 token text."),
         AIMessage(
-            [
-                {"type": "text", "text": "This is the SECOND 4 token block."},
-            ],
-            id="second",
+            [{"type": "text", "text": "This is the SECOND 4 token block."}], id="second"
         ),
         HumanMessage("This is a 4 token text.", id="third"),
         AIMessage("This is a 4 token text.", id="fourth"),
@@ -227,10 +224,7 @@ def test_trim_messages_last_30_include_system_allow_partial_end_on_human() -> No
     expected = [
         SystemMessage("This is a 4 token text."),
         AIMessage(
-            [
-                {"type": "text", "text": "This is the SECOND 4 token block."},
-            ],
-            id="second",
+            [{"type": "text", "text": "This is the SECOND 4 token block."}], id="second"
         ),
         HumanMessage("This is a 4 token text.", id="third"),
     ]

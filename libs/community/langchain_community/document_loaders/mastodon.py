@@ -90,7 +90,4 @@ class MastodonTootsLoader(BaseLoader):
                 "user_info": user_info,
                 "is_reply": toot["in_reply_to_id"] is not None,
             }
-            yield Document(
-                page_content=toot["content"],
-                metadata=metadata,
-            )
+            yield Document(page_content=toot["content"], metadata=metadata)

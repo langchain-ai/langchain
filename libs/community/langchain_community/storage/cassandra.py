@@ -63,8 +63,7 @@ class CassandraByteStore(ByteStore):
         self.delete_statement = None
 
         create_cql = CREATE_TABLE_CQL_TEMPLATE.format(
-            keyspace=self.keyspace,
-            table=self.table,
+            keyspace=self.keyspace, table=self.table
         )
         self.db_setup_task: Optional[Task[None]] = None
         if setup_mode == SetupMode.ASYNC:

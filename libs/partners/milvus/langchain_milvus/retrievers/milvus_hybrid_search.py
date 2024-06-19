@@ -49,10 +49,7 @@ class MilvusCollectionHybridSearchRetriever(BaseRetriever):
 
         # If some parameters are not specified, set default values
         if self.field_search_params is None:
-            default_search_params = {
-                "metric_type": "L2",
-                "params": {"nprobe": 10},
-            }
+            default_search_params = {"metric_type": "L2", "params": {"nprobe": 10}}
             self.field_search_params = [default_search_params] * len(self.anns_fields)
         if self.field_limits is None:
             self.field_limits = [self.top_k] * len(self.anns_fields)
@@ -130,10 +127,7 @@ class MilvusCollectionHybridSearchRetriever(BaseRetriever):
         return search_requests
 
     def _parse_document(self, data: dict) -> Document:
-        return Document(
-            page_content=data.pop(self.text_field),
-            metadata=data,
-        )
+        return Document(page_content=data.pop(self.text_field), metadata=data)
 
     def _process_search_result(
         self, search_results: List[SearchResult]
@@ -146,11 +140,7 @@ class MilvusCollectionHybridSearchRetriever(BaseRetriever):
         return documents
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> List[Document]:
         requests = self._build_ann_search_requests(query)
         search_result = self.collection.hybrid_search(

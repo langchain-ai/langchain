@@ -4,15 +4,8 @@ import pytest
 from ai21.models import ChatMessage as J2ChatMessage
 from ai21.models import RoleType
 from ai21.models.chat import ChatMessage
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    SystemMessage,
-)
-from langchain_core.messages import (
-    ChatMessage as LangChainChatMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import ChatMessage as LangChainChatMessage
 
 from langchain_ai21.chat.chat_adapter import ChatAdapter
 
@@ -52,25 +45,17 @@ _JAMBA_MODEL_NAME = "jamba-instruct-preview"
     ],
 )
 def test_convert_message_to_ai21_message(
-    message: BaseMessage,
-    expected_ai21_message: ChatMessage,
-    chat_adapter: ChatAdapter,
+    message: BaseMessage, expected_ai21_message: ChatMessage, chat_adapter: ChatAdapter
 ) -> None:
     ai21_message = chat_adapter._convert_message_to_ai21_message(message)
     assert ai21_message == expected_ai21_message
 
 
 @pytest.mark.parametrize(
-    ids=[
-        "when_system_message_j2_model",
-        "when_langchain_chat_message_j2_model",
-    ],
+    ids=["when_system_message_j2_model", "when_langchain_chat_message_j2_model"],
     argnames=["model", "message"],
     argvalues=[
-        (
-            _J2_MODEL_NAME,
-            SystemMessage(content="System Message Content"),
-        ),
+        (_J2_MODEL_NAME, SystemMessage(content="System Message Content")),
         (
             _J2_MODEL_NAME,
             LangChainChatMessage(content="Chat Message Content", role="human"),
@@ -78,8 +63,7 @@ def test_convert_message_to_ai21_message(
     ],
 )
 def test_convert_message_to_ai21_message__when_invalid_role__should_raise_exception(
-    message: BaseMessage,
-    chat_adapter: ChatAdapter,
+    message: BaseMessage, chat_adapter: ChatAdapter
 ) -> None:
     with pytest.raises(ValueError) as e:
         chat_adapter._convert_message_to_ai21_message(message)
@@ -107,14 +91,8 @@ def test_convert_message_to_ai21_message__when_invalid_role__should_raise_except
             {
                 "system": "",
                 "messages": [
-                    J2ChatMessage(
-                        role=RoleType.USER,
-                        text="Human Message Content 1",
-                    ),
-                    J2ChatMessage(
-                        role=RoleType.USER,
-                        text="Human Message Content 2",
-                    ),
+                    J2ChatMessage(role=RoleType.USER, text="Human Message Content 1"),
+                    J2ChatMessage(role=RoleType.USER, text="Human Message Content 2"),
                 ],
             },
         ),
@@ -127,10 +105,7 @@ def test_convert_message_to_ai21_message__when_invalid_role__should_raise_except
             {
                 "system": "System Message Content 1",
                 "messages": [
-                    J2ChatMessage(
-                        role=RoleType.USER,
-                        text="Human Message Content 1",
-                    ),
+                    J2ChatMessage(role=RoleType.USER, text="Human Message Content 1")
                 ],
             },
         ),
@@ -142,14 +117,8 @@ def test_convert_message_to_ai21_message__when_invalid_role__should_raise_except
             ],
             {
                 "messages": [
-                    ChatMessage(
-                        role=RoleType.USER,
-                        content="Human Message Content 1",
-                    ),
-                    ChatMessage(
-                        role=RoleType.USER,
-                        content="Human Message Content 2",
-                    ),
+                    ChatMessage(role=RoleType.USER, content="Human Message Content 1"),
+                    ChatMessage(role=RoleType.USER, content="Human Message Content 2"),
                 ]
             },
         ),
@@ -163,7 +132,7 @@ def test_convert_message_to_ai21_message__when_invalid_role__should_raise_except
                 "messages": [
                     ChatMessage(role="system", content="System Message Content 1"),
                     ChatMessage(role="user", content="Human Message Content 1"),
-                ],
+                ]
             },
         ),
     ],
@@ -178,13 +147,7 @@ def test_convert_messages(
 
 
 @pytest.mark.parametrize(
-    ids=[
-        "when_j2_model",
-    ],
-    argnames=["model"],
-    argvalues=[
-        (_J2_MODEL_NAME,),
-    ],
+    ids=["when_j2_model"], argnames=["model"], argvalues=[(_J2_MODEL_NAME,)]
 )
 def test_convert_messages__when_system_is_not_first(chat_adapter: ChatAdapter) -> None:
     messages = [

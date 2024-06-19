@@ -179,8 +179,6 @@ def test_get_tools_with_complex_inputs() -> None:
         ), "`properties` should be a dictionary."
         assert isinstance(params["required"], list), "`required` should be a list."
 
-        assert set(params["required"]) == {
-            "event",
-        }, "Required fields mismatch."
+        assert set(params["required"]) == {"event"}, "Required fields mismatch."
 
         assert set(params["properties"].keys()) == {"calendar_id", "event"}

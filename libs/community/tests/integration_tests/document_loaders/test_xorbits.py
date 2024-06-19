@@ -38,10 +38,7 @@ def test_load_converts_dataframe_columns_to_document_metadata() -> None:
     }
     loader = XorbitsLoader(pd.DataFrame(data))
     docs = loader.load()
-    expected = {
-        "author": ["Alice", "Bob"],
-        "date": ["2022-01-01", "2022-01-02"],
-    }
+    expected = {"author": ["Alice", "Bob"], "date": ["2022-01-01", "2022-01-02"]}
     for i, doc in enumerate(docs):
         assert doc.metadata["author"] == expected["author"][i]
         assert doc.metadata["date"] == expected["date"][i]

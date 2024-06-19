@@ -296,7 +296,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
         from google.cloud.discoveryengine_v1beta import SearchRequest
 
         query_expansion_spec = SearchRequest.QueryExpansionSpec(
-            condition=self.query_expansion_condition,
+            condition=self.query_expansion_condition
         )
 
         spell_correction_spec = SearchRequest.SpellCorrectionSpec(
@@ -307,13 +307,13 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
             if self.get_extractive_answers:
                 extractive_content_spec = (
                     SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
-                        max_extractive_answer_count=self.max_extractive_answer_count,
+                        max_extractive_answer_count=self.max_extractive_answer_count
                     )
                 )
             else:
                 extractive_content_spec = (
                     SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
-                        max_extractive_segment_count=self.max_extractive_segment_count,
+                        max_extractive_segment_count=self.max_extractive_segment_count
                     )
                 )
             content_search_spec = SearchRequest.ContentSearchSpec(
@@ -324,7 +324,7 @@ class GoogleVertexAISearchRetriever(BaseRetriever, _BaseGoogleVertexAISearchRetr
         elif self.engine_data_type in (2, 3):
             content_search_spec = SearchRequest.ContentSearchSpec(
                 extractive_content_spec=SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
-                    max_extractive_answer_count=self.max_extractive_answer_count,
+                    max_extractive_answer_count=self.max_extractive_answer_count
                 ),
                 snippet_spec=SearchRequest.ContentSearchSpec.SnippetSpec(
                     return_snippet=True

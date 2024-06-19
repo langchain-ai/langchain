@@ -87,9 +87,7 @@ def _stream_response_to_generation_chunk(
         return GenerationChunk(text="")
     return GenerationChunk(
         text=stream_response["delta"]["text"],
-        generation_info=dict(
-            finish_reason=stream_response.get("stop_reason", None),
-        ),
+        generation_info=dict(finish_reason=stream_response.get("stop_reason", None)),
     )
 
 
@@ -245,7 +243,7 @@ class LLMInputOutputAdapter:
                             chunk_obj.get(GUARDRAILS_BODY_KEY)
                             if GUARDRAILS_BODY_KEY in chunk_obj
                             else None
-                        ),
+                        )
                     },
                 )
 
@@ -407,10 +405,7 @@ class BedrockBase(BaseModel, ABC):
                 session = boto3.Session()
 
             values["region_name"] = get_from_dict_or_env(
-                values,
-                "region_name",
-                "AWS_DEFAULT_REGION",
-                default=session.region_name,
+                values, "region_name", "AWS_DEFAULT_REGION", default=session.region_name
             )
 
             client_params = {}
@@ -443,9 +438,7 @@ class BedrockBase(BaseModel, ABC):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
-        return {
-            **{"model_kwargs": _model_kwargs},
-        }
+        return {**{"model_kwargs": _model_kwargs}}
 
     def _get_provider(self) -> str:
         if self.provider:
@@ -588,11 +581,7 @@ class BedrockBase(BaseModel, ABC):
                 "trace": body.get(AMAZON_BEDROCK_TRACE_KEY),
             }
 
-        return {
-            "signal": False,
-            "reason": None,
-            "trace": None,
-        }
+        return {"signal": False, "reason": None, "trace": None}
 
     def _is_guardrails_intervention(self, body: dict) -> bool:
         return body.get(GUARDRAILS_BODY_KEY) == "GUARDRAIL_INTERVENED"

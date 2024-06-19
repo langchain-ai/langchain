@@ -18,6 +18,7 @@ class MarkdownifyTransformer(BaseDocumentTransformer):
     Example:
         .. code-block:: python
             from langchain_community.document_transformers import MarkdownifyTransformer
+
             markdownify = MarkdownifyTransformer()
             docs_transform = markdownify.transform_documents(docs)
 
@@ -40,9 +41,7 @@ class MarkdownifyTransformer(BaseDocumentTransformer):
         self.additional_options = kwargs
 
     def transform_documents(
-        self,
-        documents: Sequence[Document],
-        **kwargs: Any,
+        self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         try:
             from markdownify import markdownify
@@ -76,8 +75,6 @@ class MarkdownifyTransformer(BaseDocumentTransformer):
         return converted_documents
 
     async def atransform_documents(
-        self,
-        documents: Sequence[Document],
-        **kwargs: Any,
+        self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         raise NotImplementedError

@@ -58,10 +58,7 @@ class AnalyticDB(VectorStore):
         self.logger = logger or logging.getLogger(__name__)
         self.__post_init__(engine_args)
 
-    def __post_init__(
-        self,
-        engine_args: Optional[dict] = None,
-    ) -> None:
+    def __post_init__(self, engine_args: Optional[dict] = None) -> None:
         """
         Initialize the store.
         """
@@ -203,11 +200,7 @@ class AnalyticDB(VectorStore):
         return ids
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
-        **kwargs: Any,
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """Run similarity search with AnalyticDB with distance.
 
@@ -220,17 +213,10 @@ class AnalyticDB(VectorStore):
             List of Documents most similar to the query.
         """
         embedding = self.embedding_function.embed_query(text=query)
-        return self.similarity_search_by_vector(
-            embedding=embedding,
-            k=k,
-            filter=filter,
-        )
+        return self.similarity_search_by_vector(embedding=embedding, k=k, filter=filter)
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
+        self, query: str, k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -249,10 +235,7 @@ class AnalyticDB(VectorStore):
         return docs
 
     def similarity_search_with_score_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        filter: Optional[dict] = None,
+        self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
         # Add the filter if provided
         try:
@@ -288,10 +271,7 @@ class AnalyticDB(VectorStore):
 
         documents_with_scores = [
             (
-                Document(
-                    page_content=result.document,
-                    metadata=result.metadata,
-                ),
+                Document(page_content=result.document, metadata=result.metadata),
                 result.distance if self.embedding_function is not None else None,
             )
             for result in results
@@ -387,9 +367,7 @@ class AnalyticDB(VectorStore):
     @classmethod
     def get_connection_string(cls, kwargs: Dict[str, Any]) -> str:
         connection_string: str = get_from_dict_or_env(
-            data=kwargs,
-            key="connection_string",
-            env_key="PG_CONNECTION_STRING",
+            data=kwargs, key="connection_string", env_key="PG_CONNECTION_STRING"
         )
 
         if not connection_string:
@@ -440,13 +418,7 @@ class AnalyticDB(VectorStore):
 
     @classmethod
     def connection_string_from_db_params(
-        cls,
-        driver: str,
-        host: str,
-        port: int,
-        database: str,
-        user: str,
-        password: str,
+        cls, driver: str, host: str, port: int, database: str, user: str, password: str
     ) -> str:
         """Return connection string from database parameters."""
         return f"postgresql+{driver}://{user}:{password}@{host}:{port}/{database}"

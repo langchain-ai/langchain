@@ -25,12 +25,8 @@ class BashProcess:
 
             from langchain_community.utilities.bash import BashProcess
 
-            bash = BashProcess(
-                strip_newlines = False,
-                return_err_output = False,
-                persistent = False
-            )
-            bash.run('echo \'hello world\'')
+            bash = BashProcess(strip_newlines=False, return_err_output=False, persistent=False)
+            bash.run("echo 'hello world'")
 
     """
 
@@ -112,9 +108,7 @@ class BashProcess:
             commands = [commands]
         commands = ";".join(commands)
         if self.process is not None:
-            return self._run_persistent(
-                commands,
-            )
+            return self._run_persistent(commands)
         else:
             return self._run(commands)
 

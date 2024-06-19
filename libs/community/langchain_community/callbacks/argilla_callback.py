@@ -46,9 +46,9 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         ...     verbose=True,
         ...     openai_api_key="API_KEY_HERE",
         ... )
-        >>> llm.generate([
-        ...     "What is the best NLP-annotation tool out there? (no bias at all)",
-        ... ])
+        >>> llm.generate(
+        ...     ["What is the best NLP-annotation tool out there? (no bias at all)"]
+        ... )
         "Argilla, no doubt about it."
     """
 
@@ -116,7 +116,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                     "Since `api_url` is None, and the env var `ARGILLA_API_URL` is not"
                     f" set, it will default to `{self.DEFAULT_API_URL}`, which is the"
                     " default API URL in Argilla Quickstart."
-                ),
+                )
             )
             api_url = self.DEFAULT_API_URL
 
@@ -132,7 +132,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                     "Since `api_key` is None, and the env var `ARGILLA_API_KEY` is not"
                     f" set, it will default to `{self.DEFAULT_API_KEY}`, which is the"
                     " default API key in Argilla Quickstart."
-                ),
+                )
             )
             api_key = self.DEFAULT_API_KEY
 
@@ -162,9 +162,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 )
                 extra_args = {"with_records": False}
             self.dataset = rg.FeedbackDataset.from_argilla(
-                name=self.dataset_name,
-                workspace=self.workspace_name,
-                **extra_args,
+                name=self.dataset_name, workspace=self.workspace_name, **extra_args
             )
         except Exception as e:
             raise FileNotFoundError(
@@ -194,7 +192,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                 "The `ArgillaCallbackHandler` is currently in beta and is subject to"
                 " change based on updates to `langchain`. Please report any issues to"
                 f" {self.ISSUES_URL} as an `integration` issue."
-            ),
+            )
         )
 
     def on_llm_start(
@@ -219,12 +217,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         for prompt, generations in zip(prompts, response.generations):
             self.dataset.add_records(
                 records=[
-                    {
-                        "fields": {
-                            "prompt": prompt,
-                            "response": generation.text.strip(),
-                        },
-                    }
+                    {"fields": {"prompt": prompt, "response": generation.text.strip()}}
                     for generation in generations
                 ]
             )
@@ -281,7 +274,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                             "fields": {
                                 "prompt": prompt,
                                 "response": output["text"].strip(),
-                            },
+                            }
                         }
                         for prompt, output in zip(prompts, chain_output_val)
                     ]
@@ -294,7 +287,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
                             "fields": {
                                 "prompt": " ".join(prompts),
                                 "response": chain_output_val.strip(),
-                            },
+                            }
                         }
                     ]
                 )
@@ -314,10 +307,7 @@ class ArgillaCallbackHandler(BaseCallbackHandler):
         pass
 
     def on_tool_start(
-        self,
-        serialized: Dict[str, Any],
-        input_str: str,
-        **kwargs: Any,
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Do nothing when tool starts."""
         pass

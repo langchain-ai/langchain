@@ -219,10 +219,7 @@ class LlamaEdgeChatService(BaseChatModel):
         res = requests.post(
             url=service_url,
             timeout=self.request_timeout,
-            headers={
-                "accept": "application/json",
-                "Content-Type": "application/json",
-            },
+            headers={"accept": "application/json", "Content-Type": "application/json"},
             data=json.dumps(payload),
         )
 

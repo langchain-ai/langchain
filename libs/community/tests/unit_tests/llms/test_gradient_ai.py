@@ -32,10 +32,7 @@ def mocked_requests_post(url: str, headers: dict, json: dict) -> MockResponse:
     assert query and isinstance(query, str)
     output = "bar" if "foo" in query else "baz"
 
-    return MockResponse(
-        json_data={"generatedOutput": output},
-        status_code=200,
-    )
+    return MockResponse(json_data={"generatedOutput": output}, status_code=200)
 
 
 @pytest.mark.parametrize(

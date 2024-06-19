@@ -43,11 +43,7 @@ def test_anthropic_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    llm = Anthropic(
-        streaming=True,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
+    llm = Anthropic(streaming=True, callback_manager=callback_manager, verbose=True)
     llm.invoke("Write me a sentence with 100 words.")
     assert callback_handler.llm_streams > 1
 
@@ -63,11 +59,7 @@ async def test_anthropic_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
-    llm = Anthropic(
-        streaming=True,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
+    llm = Anthropic(streaming=True, callback_manager=callback_manager, verbose=True)
     result = await llm.agenerate(["How many toes do dogs have?"])
     assert callback_handler.llm_streams > 1
     assert isinstance(result, LLMResult)

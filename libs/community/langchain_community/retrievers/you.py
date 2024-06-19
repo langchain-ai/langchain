@@ -18,11 +18,7 @@ class YouRetriever(BaseRetriever, YouSearchAPIWrapper):
     """
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> List[Document]:
         return self.results(query, run_manager=run_manager.get_child(), **kwargs)
 

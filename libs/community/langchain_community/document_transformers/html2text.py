@@ -13,6 +13,7 @@ class Html2TextTransformer(BaseDocumentTransformer):
     Example:
         .. code-block:: python
             from langchain_community.document_transformers import Html2TextTransformer
+
             html2text = Html2TextTransformer()
             docs_transform = html2text.transform_documents(docs)
     """
@@ -22,9 +23,7 @@ class Html2TextTransformer(BaseDocumentTransformer):
         self.ignore_images = ignore_images
 
     def transform_documents(
-        self,
-        documents: Sequence[Document],
-        **kwargs: Any,
+        self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         try:
             import html2text
@@ -49,8 +48,6 @@ class Html2TextTransformer(BaseDocumentTransformer):
         return new_documents
 
     async def atransform_documents(
-        self,
-        documents: Sequence[Document],
-        **kwargs: Any,
+        self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         raise NotImplementedError

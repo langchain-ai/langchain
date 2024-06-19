@@ -13,10 +13,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import (
-    ChatGeneration,
-    LLMResult,
-)
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 if TYPE_CHECKING:
     import promptlayer
@@ -101,10 +98,7 @@ class PromptLayerCallbackHandler(BaseCallbackHandler):
         for i in range(len(response.generations)):
             generation = response.generations[i][0]
 
-            resp = {
-                "text": generation.text,
-                "llm_output": response.llm_output,
-            }
+            resp = {"text": generation.text, "llm_output": response.llm_output}
             model_params = run_info.get("invocation_params", {})
             is_chat_model = run_info.get("messages", None) is not None
             model_input = (

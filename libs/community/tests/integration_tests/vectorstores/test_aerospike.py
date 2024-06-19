@@ -9,9 +9,7 @@ from typing import Any, Generator
 import pytest
 from langchain_core.documents import Document
 
-from langchain_community.vectorstores.aerospike import (
-    Aerospike,
-)
+from langchain_community.vectorstores.aerospike import Aerospike
 from langchain_community.vectorstores.utils import DistanceStrategy
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
@@ -63,10 +61,7 @@ def seeds() -> Generator[Any, None, None]:
     except ImportError:
         pytest.skip("aerospike_vector_search not installed")
 
-    yield HostPort(
-        host=TEST_AEROSPIKE_HOST_PORT[0],
-        port=TEST_AEROSPIKE_HOST_PORT[1],
-    )
+    yield HostPort(host=TEST_AEROSPIKE_HOST_PORT[0], port=TEST_AEROSPIKE_HOST_PORT[1])
 
 
 @pytest.fixture(scope="class")
@@ -127,10 +122,7 @@ TODO: Add tests for delete()
 
 class TestAerospike:
     def test_from_text(
-        self,
-        client: Any,
-        admin_client: Any,
-        embedder: ConsistentFakeEmbeddings,
+        self, client: Any, admin_client: Any, embedder: ConsistentFakeEmbeddings
     ) -> None:
         index_name = set_name = get_func_name()
         admin_client.index_create(
@@ -180,10 +172,7 @@ class TestAerospike:
         assert actual == expected
 
     def test_from_documents(
-        self,
-        client: Any,
-        admin_client: Any,
-        embedder: ConsistentFakeEmbeddings,
+        self, client: Any, admin_client: Any, embedder: ConsistentFakeEmbeddings
     ) -> None:
         index_name = set_name = get_func_name()
         admin_client.index_create(
@@ -484,10 +473,7 @@ class TestAerospike:
         assert actual == expected
 
     def test_max_marginal_relevance_search_by_vector(
-        self,
-        client: Any,
-        admin_client: Any,
-        embedder: ConsistentFakeEmbeddings,
+        self, client: Any, admin_client: Any, embedder: ConsistentFakeEmbeddings
     ) -> None:
         """Test max marginal relevance search."""
 
@@ -780,48 +766,13 @@ class TestAerospike:
         )
 
         documents = [
-            Document(
-                page_content="foo1",
-                metadata={
-                    "a": 1,
-                },
-            ),
-            Document(
-                page_content="foo2",
-                metadata={
-                    "a": 2,
-                },
-            ),
-            Document(
-                page_content="foo3",
-                metadata={
-                    "a": 3,
-                },
-            ),
-            Document(
-                page_content="bar4",
-                metadata={
-                    "a": 4,
-                },
-            ),
-            Document(
-                page_content="bar5",
-                metadata={
-                    "a": 5,
-                },
-            ),
-            Document(
-                page_content="bar6",
-                metadata={
-                    "a": 6,
-                },
-            ),
-            Document(
-                page_content="bar7",
-                metadata={
-                    "a": 7,
-                },
-            ),
+            Document(page_content="foo1", metadata={"a": 1}),
+            Document(page_content="foo2", metadata={"a": 2}),
+            Document(page_content="foo3", metadata={"a": 3}),
+            Document(page_content="bar4", metadata={"a": 4}),
+            Document(page_content="bar5", metadata={"a": 5}),
+            Document(page_content="bar6", metadata={"a": 6}),
+            Document(page_content="bar7", metadata={"a": 7}),
         ]
         retriever.add_documents(
             documents,

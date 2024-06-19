@@ -105,10 +105,7 @@ class EnsembleRetriever(BaseRetriever):
             local_metadata=self.metadata,
         )
         run_manager = callback_manager.on_retriever_start(
-            dumpd(self),
-            input,
-            name=config.get("run_name"),
-            **kwargs,
+            dumpd(self), input, name=config.get("run_name"), **kwargs
         )
         try:
             result = self.rank_fusion(input, run_manager=run_manager, config=config)
@@ -116,10 +113,7 @@ class EnsembleRetriever(BaseRetriever):
             run_manager.on_retriever_error(e)
             raise e
         else:
-            run_manager.on_retriever_end(
-                result,
-                **kwargs,
-            )
+            run_manager.on_retriever_end(result, **kwargs)
             return result
 
     async def ainvoke(
@@ -138,10 +132,7 @@ class EnsembleRetriever(BaseRetriever):
             local_metadata=self.metadata,
         )
         run_manager = await callback_manager.on_retriever_start(
-            dumpd(self),
-            input,
-            name=config.get("run_name"),
-            **kwargs,
+            dumpd(self), input, name=config.get("run_name"), **kwargs
         )
         try:
             result = await self.arank_fusion(
@@ -151,17 +142,11 @@ class EnsembleRetriever(BaseRetriever):
             await run_manager.on_retriever_error(e)
             raise e
         else:
-            await run_manager.on_retriever_end(
-                result,
-                **kwargs,
-            )
+            await run_manager.on_retriever_end(result, **kwargs)
             return result
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """
         Get the relevant documents for a given query.
@@ -179,10 +164,7 @@ class EnsembleRetriever(BaseRetriever):
         return fused_documents
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         """
         Asynchronously get the relevant documents for a given query.

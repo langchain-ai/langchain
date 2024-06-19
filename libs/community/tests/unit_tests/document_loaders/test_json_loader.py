@@ -14,14 +14,8 @@ pytestmark = pytest.mark.requires("jq")
 def test_load_valid_string_content(mocker: MockerFixture) -> None:
     file_path = "/workspaces/langchain/test.json"
     expected_docs = [
-        Document(
-            page_content="value1",
-            metadata={"source": file_path, "seq_num": 1},
-        ),
-        Document(
-            page_content="value2",
-            metadata={"source": file_path, "seq_num": 2},
-        ),
+        Document(page_content="value1", metadata={"source": file_path, "seq_num": 1}),
+        Document(page_content="value2", metadata={"source": file_path, "seq_num": 2}),
     ]
 
     mocker.patch("builtins.open", mocker.mock_open())
@@ -66,14 +60,8 @@ def test_load_valid_dict_content(mocker: MockerFixture) -> None:
 def test_load_valid_bool_content(mocker: MockerFixture) -> None:
     file_path = "/workspaces/langchain/test.json"
     expected_docs = [
-        Document(
-            page_content="False",
-            metadata={"source": file_path, "seq_num": 1},
-        ),
-        Document(
-            page_content="True",
-            metadata={"source": file_path, "seq_num": 2},
-        ),
+        Document(page_content="False", metadata={"source": file_path, "seq_num": 1}),
+        Document(page_content="True", metadata={"source": file_path, "seq_num": 2}),
     ]
 
     mocker.patch("builtins.open", mocker.mock_open())
@@ -95,14 +83,8 @@ def test_load_valid_bool_content(mocker: MockerFixture) -> None:
 def test_load_valid_numeric_content(mocker: MockerFixture) -> None:
     file_path = "/workspaces/langchain/test.json"
     expected_docs = [
-        Document(
-            page_content="99",
-            metadata={"source": file_path, "seq_num": 1},
-        ),
-        Document(
-            page_content="99.5",
-            metadata={"source": file_path, "seq_num": 2},
-        ),
+        Document(page_content="99", metadata={"source": file_path, "seq_num": 1}),
+        Document(page_content="99.5", metadata={"source": file_path, "seq_num": 2}),
     ]
 
     mocker.patch("builtins.open", mocker.mock_open())
@@ -141,14 +123,8 @@ def test_load_invalid_test_content(mocker: MockerFixture) -> None:
 def test_load_jsonlines(mocker: MockerFixture) -> None:
     file_path = "/workspaces/langchain/test.json"
     expected_docs = [
-        Document(
-            page_content="value1",
-            metadata={"source": file_path, "seq_num": 1},
-        ),
-        Document(
-            page_content="value2",
-            metadata={"source": file_path, "seq_num": 2},
-        ),
+        Document(page_content="value1", metadata={"source": file_path, "seq_num": 1}),
+        Document(page_content="value2", metadata={"source": file_path, "seq_num": 2}),
     ]
 
     mocker.patch(
@@ -170,31 +146,15 @@ def test_load_jsonlines(mocker: MockerFixture) -> None:
 
 
 @pytest.mark.parametrize(
-    "params",
-    (
-        {"jq_schema": ".[].text"},
-        {"jq_schema": ".[]", "content_key": "text"},
-    ),
+    "params", ({"jq_schema": ".[].text"}, {"jq_schema": ".[]", "content_key": "text"})
 )
 def test_load_jsonlines_list(params: Dict, mocker: MockerFixture) -> None:
     file_path = "/workspaces/langchain/test.json"
     expected_docs = [
-        Document(
-            page_content="value1",
-            metadata={"source": file_path, "seq_num": 1},
-        ),
-        Document(
-            page_content="value2",
-            metadata={"source": file_path, "seq_num": 2},
-        ),
-        Document(
-            page_content="value3",
-            metadata={"source": file_path, "seq_num": 3},
-        ),
-        Document(
-            page_content="value4",
-            metadata={"source": file_path, "seq_num": 4},
-        ),
+        Document(page_content="value1", metadata={"source": file_path, "seq_num": 1}),
+        Document(page_content="value2", metadata={"source": file_path, "seq_num": 2}),
+        Document(page_content="value3", metadata={"source": file_path, "seq_num": 3}),
+        Document(page_content="value4", metadata={"source": file_path, "seq_num": 4}),
     ]
 
     mocker.patch(
@@ -338,14 +298,8 @@ def test_load_json_with_jq_parsable_content_key(
 ) -> None:
     file_path = "/workspaces/langchain/test.json"
     expected_docs = [
-        Document(
-            page_content="value1",
-            metadata={"source": file_path, "seq_num": 1},
-        ),
-        Document(
-            page_content="value2",
-            metadata={"source": file_path, "seq_num": 2},
-        ),
+        Document(page_content="value1", metadata={"source": file_path, "seq_num": 1}),
+        Document(page_content="value2", metadata={"source": file_path, "seq_num": 2}),
     ]
 
     mocker.patch(
@@ -366,14 +320,8 @@ def test_load_json_with_jq_parsable_content_key(
 def test_load_json_with_nested_jq_parsable_content_key(mocker: MockerFixture) -> None:
     file_path = "/workspaces/langchain/test.json"
     expected_docs = [
-        Document(
-            page_content="message1",
-            metadata={"source": file_path, "seq_num": 1},
-        ),
-        Document(
-            page_content="message2",
-            metadata={"source": file_path, "seq_num": 2},
-        ),
+        Document(page_content="message1", metadata={"source": file_path, "seq_num": 1}),
+        Document(page_content="message2", metadata={"source": file_path, "seq_num": 2}),
     ]
 
     mocker.patch(

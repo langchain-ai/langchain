@@ -16,9 +16,7 @@ from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplat
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture, MonkeyPatch
 
-from langchain_community.chat_models.baidu_qianfan_endpoint import (
-    QianfanChatEndpoint,
-)
+from langchain_community.chat_models.baidu_qianfan_endpoint import QianfanChatEndpoint
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 _FUNCTIONS: Any = [
@@ -58,28 +56,16 @@ _FUNCTIONS: Any = [
         "parameters": {
             "type": "object",
             "properties": {
-                "location": {
-                    "type": "string",
-                    "description": "city name",
-                },
-                "unit": {
-                    "type": "string",
-                    "enum": ["centigrade", "Fahrenheit"],
-                },
+                "location": {"type": "string", "description": "city name"},
+                "unit": {"type": "string", "enum": ["centigrade", "Fahrenheit"]},
             },
             "required": ["location", "unit"],
         },
         "responses": {
             "type": "object",
             "properties": {
-                "temperature": {
-                    "type": "integer",
-                    "description": "city temperature",
-                },
-                "unit": {
-                    "type": "string",
-                    "enum": ["centigrade", "Fahrenheit"],
-                },
+                "temperature": {"type": "integer", "description": "city temperature"},
+                "unit": {"type": "string", "enum": ["centigrade", "Fahrenheit"]},
             },
         },
     },
@@ -262,9 +248,7 @@ def test_functions_call_thoughts() -> None:
     chat = QianfanChatEndpoint(model="ERNIE-Bot")  # type: ignore[call-arg]
 
     prompt_tmpl = "Use the given functions to answer following question: {input}"
-    prompt_msgs = [
-        HumanMessagePromptTemplate.from_template(prompt_tmpl),
-    ]
+    prompt_msgs = [HumanMessagePromptTemplate.from_template(prompt_tmpl)]
     prompt = ChatPromptTemplate(messages=prompt_msgs)  # type: ignore[arg-type, call-arg]
 
     chain = prompt | chat.bind(functions=_FUNCTIONS)
@@ -336,9 +320,7 @@ def test_qianfan_key_masked_when_passed_from_env(
     assert captured.out == "**********"
 
 
-def test_qianfan_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
-) -> None:
+def test_qianfan_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> None:
     """Test initialization with an API key provided via the initializer"""
     chat = QianfanChatEndpoint(  # type: ignore[call-arg]
         qianfan_ak="test-api-key",  # type: ignore[arg-type]

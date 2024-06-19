@@ -225,11 +225,7 @@ class VDMS(VectorStore):
         if self.override_relevance_score_fn is None:
             kwargs["normalize_distance"] = True
         docs_and_scores = self.similarity_search_with_score(
-            query,
-            k,
-            fetch_k,
-            filter,
-            **kwargs,
+            query, k, fetch_k, filter, **kwargs
         )
 
         docs_and_rel_scores: List[Any] = []
@@ -386,10 +382,7 @@ class VDMS(VectorStore):
 
         blob = embedding2bytes(embedding)
 
-        return (
-            query,
-            blob,
-        )
+        return (query, blob)
 
     def __get_properties(
         self,
@@ -465,11 +458,7 @@ class VDMS(VectorStore):
             response, response_array = self.__run_vdms_query([query])
 
             query, blob = self.__get_add_query(
-                collection_name,
-                metadata=meta,
-                embedding=emb,
-                document=doc,
-                id=id,
+                collection_name, metadata=meta, embedding=emb, document=doc, id=id
             )
             if blob is not None:
                 response, response_array = self.__run_vdms_query([query], [blob])
@@ -720,10 +709,7 @@ class VDMS(VectorStore):
         max_dist = 1
         command_str = "FindDescriptor"
         query = _add_descriptor(
-            command_str,
-            setname,
-            k_neighbors=fetch_k,
-            results=results,
+            command_str, setname, k_neighbors=fetch_k, results=results
         )
         response, response_array = self.__run_vdms_query([query], all_blobs)
 
@@ -763,10 +749,7 @@ class VDMS(VectorStore):
 
             # (1) Find docs satisfy constraints
             query = _add_descriptor(
-                command_str,
-                setname,
-                constraints=constraints,
-                results=results,
+                command_str, setname, constraints=constraints, results=results
             )
             response, response_array = self.__run_vdms_query([query])
             ids_of_interest = [
@@ -965,11 +948,7 @@ class VDMS(VectorStore):
 
         embedding_vector: List[float] = self._embed_query(query)
         docs = self.max_marginal_relevance_search_by_vector(
-            embedding_vector,
-            k,
-            fetch_k,
-            lambda_mult=lambda_mult,
-            filter=filter,
+            embedding_vector, k, fetch_k, lambda_mult=lambda_mult, filter=filter
         )
         return docs
 
@@ -1053,11 +1032,7 @@ class VDMS(VectorStore):
 
         embedding = self._embed_query(query)
         docs = self.max_marginal_relevance_search_with_score_by_vector(
-            embedding,
-            k,
-            fetch_k,
-            lambda_mult=lambda_mult,
-            filter=filter,
+            embedding, k, fetch_k, lambda_mult=lambda_mult, filter=filter
         )
         return docs
 
@@ -1393,10 +1368,7 @@ def _add_descriptorset(
     if command_str == "AddDescriptorSet" and all(
         var is not None for var in [name, num_dims]
     ):
-        entity: Dict[str, Any] = {
-            "name": name,
-            "dimensions": num_dims,
-        }
+        entity: Dict[str, Any] = {"name": name, "dimensions": num_dims}
 
         if engine is not None:
             entity["engine"] = engine
@@ -1514,9 +1486,7 @@ def _check_valid_response(all_queries: List[dict], response: Any) -> bool:
 
 
 def _check_descriptor_exists_by_id(
-    client: vdms.vdms,
-    setname: str,
-    id: str,
+    client: vdms.vdms, setname: str, id: str
 ) -> Tuple[bool, Any]:
     constraints = {"id": ["==", id]}
     findDescriptor = _add_descriptor(

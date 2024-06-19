@@ -2,22 +2,16 @@ import importlib
 from typing import Any
 
 from langchain.retrievers.document_compressors.base import DocumentCompressorPipeline
-from langchain.retrievers.document_compressors.chain_extract import (
-    LLMChainExtractor,
-)
-from langchain.retrievers.document_compressors.chain_filter import (
-    LLMChainFilter,
-)
+from langchain.retrievers.document_compressors.chain_extract import LLMChainExtractor
+from langchain.retrievers.document_compressors.chain_filter import LLMChainFilter
 from langchain.retrievers.document_compressors.cohere_rerank import CohereRerank
 from langchain.retrievers.document_compressors.cross_encoder_rerank import (
     CrossEncoderReranker,
 )
-from langchain.retrievers.document_compressors.embeddings_filter import (
-    EmbeddingsFilter,
-)
+from langchain.retrievers.document_compressors.embeddings_filter import EmbeddingsFilter
 
 _module_lookup = {
-    "FlashrankRerank": "langchain_community.document_compressors.flashrank_rerank",
+    "FlashrankRerank": "langchain_community.document_compressors.flashrank_rerank"
 }
 
 

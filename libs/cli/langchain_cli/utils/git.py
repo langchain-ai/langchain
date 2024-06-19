@@ -181,10 +181,7 @@ def update_repo(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     return repo_path
 
 
-def copy_repo(
-    source: Path,
-    destination: Path,
-) -> None:
+def copy_repo(source: Path, destination: Path) -> None:
     """
     Copies a repo, ignoring git folders.
 

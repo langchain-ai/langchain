@@ -81,10 +81,7 @@ def test_visit_operation(translator: RedisTranslator) -> None:
 def test_visit_structured_query_no_filter(translator: RedisTranslator) -> None:
     query = "What is the capital of France?"
 
-    structured_query = StructuredQuery(
-        query=query,
-        filter=None,
-    )
+    structured_query = StructuredQuery(query=query, filter=None)
     expected: Tuple[str, Dict] = (query, {})
     actual = translator.visit_structured_query(structured_query)
     assert expected == actual
@@ -93,10 +90,7 @@ def test_visit_structured_query_no_filter(translator: RedisTranslator) -> None:
 def test_visit_structured_query_comparison(translator: RedisTranslator) -> None:
     query = "What is the capital of France?"
     comp = Comparison(comparator=Comparator.GTE, attribute="foo", value=2)
-    structured_query = StructuredQuery(
-        query=query,
-        filter=comp,
-    )
+    structured_query = StructuredQuery(query=query, filter=comp)
     expected_filter = RedisNum("foo") >= 2
     actual_query, actual_filter = translator.visit_structured_query(structured_query)
     assert actual_query == query
@@ -112,10 +106,7 @@ def test_visit_structured_query_operation(translator: RedisTranslator) -> None:
             Comparison(comparator=Comparator.CONTAIN, attribute="bar", value="baz"),
         ],
     )
-    structured_query = StructuredQuery(
-        query=query,
-        filter=op,
-    )
+    structured_query = StructuredQuery(query=query, filter=op)
     expected_filter = (RedisNum("foo") == 2) | (RedisText("bar") == "baz")
     actual_query, actual_filter = translator.visit_structured_query(structured_query)
     assert actual_query == query

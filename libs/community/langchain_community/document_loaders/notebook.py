@@ -103,9 +103,7 @@ class NotebookLoader(BaseLoader):
         self.remove_newline = remove_newline
         self.traceback = traceback
 
-    def load(
-        self,
-    ) -> List[Document]:
+    def load(self) -> List[Document]:
         """Load documents."""
         p = Path(self.file_path)
 

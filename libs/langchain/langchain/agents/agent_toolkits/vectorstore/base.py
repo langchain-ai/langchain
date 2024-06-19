@@ -39,11 +39,7 @@ def create_vectorstore_agent(
     """  # noqa: E501
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
-    llm_chain = LLMChain(
-        llm=llm,
-        prompt=prompt,
-        callback_manager=callback_manager,
-    )
+    llm_chain = LLMChain(llm=llm, prompt=prompt, callback_manager=callback_manager)
     tool_names = [tool.name for tool in tools]
     agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
     return AgentExecutor.from_agent_and_tools(
@@ -80,11 +76,7 @@ def create_vectorstore_router_agent(
     """  # noqa: E501
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
-    llm_chain = LLMChain(
-        llm=llm,
-        prompt=prompt,
-        callback_manager=callback_manager,
-    )
+    llm_chain = LLMChain(llm=llm, prompt=prompt, callback_manager=callback_manager)
     tool_names = [tool.name for tool in tools]
     agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
     return AgentExecutor.from_agent_and_tools(

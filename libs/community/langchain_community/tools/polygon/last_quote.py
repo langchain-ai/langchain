@@ -28,9 +28,7 @@ class PolygonLastQuote(BaseTool):
     api_wrapper: PolygonAPIWrapper
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the Polygon API tool."""
         return self.api_wrapper.run(self.mode, ticker=query)

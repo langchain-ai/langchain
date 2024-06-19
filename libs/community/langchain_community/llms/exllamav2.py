@@ -188,10 +188,7 @@ class ExLlamaV2(LLM):
             generated_tokens += 1
 
             if run_manager:
-                run_manager.on_llm_new_token(
-                    token=chunk,
-                    verbose=self.verbose,
-                )
+                run_manager.on_llm_new_token(token=chunk, verbose=self.verbose)
             yield chunk
             if eos or generated_tokens == self.max_new_tokens:
                 break

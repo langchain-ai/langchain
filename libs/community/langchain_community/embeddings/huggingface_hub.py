@@ -26,11 +26,10 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import HuggingFaceHubEmbeddings
+
             model = "sentence-transformers/all-mpnet-base-v2"
             hf = HuggingFaceHubEmbeddings(
-                model=model,
-                task="feature-extraction",
-                huggingfacehub_api_token="my-api-key",
+                model=model, task="feature-extraction", huggingfacehub_api_token="my-api-key"
             )
     """
 
@@ -71,13 +70,11 @@ class HuggingFaceHubEmbeddings(BaseModel, Embeddings):
                 values["repo_id"] = DEFAULT_MODEL
 
             client = InferenceClient(
-                model=values["model"],
-                token=huggingfacehub_api_token,
+                model=values["model"], token=huggingfacehub_api_token
             )
 
             async_client = AsyncInferenceClient(
-                model=values["model"],
-                token=huggingfacehub_api_token,
+                model=values["model"], token=huggingfacehub_api_token
             )
 
             values["client"] = client

@@ -33,11 +33,7 @@ class AI21Embeddings(Embeddings, AI21Base):
     """Maximum number of texts to embed in each batch"""
 
     def embed_documents(
-        self,
-        texts: List[str],
-        *,
-        batch_size: Optional[int] = None,
-        **kwargs: Any,
+        self, texts: List[str], *, batch_size: Optional[int] = None, **kwargs: Any
     ) -> List[List[float]]:
         """Embed search docs."""
         return self._send_embeddings(
@@ -48,11 +44,7 @@ class AI21Embeddings(Embeddings, AI21Base):
         )
 
     def embed_query(
-        self,
-        text: str,
-        *,
-        batch_size: Optional[int] = None,
-        **kwargs: Any,
+        self, text: str, *, batch_size: Optional[int] = None, **kwargs: Any
     ) -> List[float]:
         """Embed query text."""
         return self._send_embeddings(
@@ -67,11 +59,7 @@ class AI21Embeddings(Embeddings, AI21Base):
     ) -> List[List[float]]:
         chunks = _split_texts_into_batches(texts, batch_size)
         responses = [
-            self.client.embed.create(
-                texts=chunk,
-                type=embed_type,
-                **kwargs,
-            )
+            self.client.embed.create(texts=chunk, type=embed_type, **kwargs)
             for chunk in chunks
         ]
 

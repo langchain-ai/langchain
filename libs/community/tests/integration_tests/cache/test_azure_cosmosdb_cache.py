@@ -18,9 +18,7 @@ from langchain_community.vectorstores.azure_cosmos_db import (
     CosmosDBSimilarityType,
     CosmosDBVectorSearchType,
 )
-from tests.integration_tests.cache.fake_embeddings import (
-    FakeEmbeddings,
-)
+from tests.integration_tests.cache.fake_embeddings import FakeEmbeddings
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 INDEX_NAME = "langchain-test-index"

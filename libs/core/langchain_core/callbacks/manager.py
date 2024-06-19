@@ -108,9 +108,7 @@ def trace_as_chain_group(
         project_name, example_id, callback_manager=callback_manager
     )
     cm = CallbackManager.configure(
-        inheritable_callbacks=cb,
-        inheritable_tags=tags,
-        inheritable_metadata=metadata,
+        inheritable_callbacks=cb, inheritable_tags=tags, inheritable_metadata=metadata
     )
 
     run_manager = cm.on_chain_start({"name": group_name}, inputs or {}, run_id=run_id)
@@ -174,7 +172,9 @@ async def atrace_as_chain_group(
         .. code-block:: python
 
             llm_input = "Foo"
-            async with atrace_as_chain_group("group_name", inputs={"input": llm_input}) as manager:
+            async with atrace_as_chain_group(
+                "group_name", inputs={"input": llm_input}
+            ) as manager:
                 # Use the async callback manager for the chain group
                 res = await llm.ainvoke(llm_input, {"callbacks": manager})
                 await manager.on_chain_end({"output": res})
@@ -413,11 +413,7 @@ async def ahandle_event(
     await asyncio.gather(
         *(
             _ahandle_event_for_handler(
-                handler,
-                event_name,
-                ignore_condition_name,
-                *args,
-                **kwargs,
+                handler, event_name, ignore_condition_name, *args, **kwargs
             )
             for handler in handlers
             if not handler.run_inline
@@ -487,11 +483,7 @@ class BaseRunManager(RunManagerMixin):
 class RunManager(BaseRunManager):
     """Sync Run Manager."""
 
-    def on_text(
-        self,
-        text: str,
-        **kwargs: Any,
-    ) -> Any:
+    def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run when text is received.
 
         Args:
@@ -511,11 +503,7 @@ class RunManager(BaseRunManager):
             **kwargs,
         )
 
-    def on_retry(
-        self,
-        retry_state: RetryCallState,
-        **kwargs: Any,
-    ) -> None:
+    def on_retry(self, retry_state: RetryCallState, **kwargs: Any) -> None:
         handle_event(
             self.handlers,
             "on_retry",
@@ -561,11 +549,7 @@ class AsyncRunManager(BaseRunManager, ABC):
             RunManager: The sync RunManager.
         """
 
-    async def on_text(
-        self,
-        text: str,
-        **kwargs: Any,
-    ) -> Any:
+    async def on_text(self, text: str, **kwargs: Any) -> Any:
         """Run when text is received.
 
         Args:
@@ -585,11 +569,7 @@ class AsyncRunManager(BaseRunManager, ABC):
             **kwargs,
         )
 
-    async def on_retry(
-        self,
-        retry_state: RetryCallState,
-        **kwargs: Any,
-    ) -> None:
+    async def on_retry(self, retry_state: RetryCallState, **kwargs: Any) -> None:
         await ahandle_event(
             self.handlers,
             "on_retry",
@@ -668,11 +648,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             **kwargs,
         )
 
-    def on_llm_error(
-        self,
-        error: BaseException,
-        **kwargs: Any,
-    ) -> None:
+    def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when LLM errors.
 
         Args:
@@ -757,11 +733,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         )
 
     @shielded
-    async def on_llm_error(
-        self,
-        error: BaseException,
-        **kwargs: Any,
-    ) -> None:
+    async def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when LLM errors.
 
         Args:
@@ -805,11 +777,7 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
             **kwargs,
         )
 
-    def on_chain_error(
-        self,
-        error: BaseException,
-        **kwargs: Any,
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when chain errors.
 
         Args:
@@ -908,11 +876,7 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
         )
 
     @shielded
-    async def on_chain_error(
-        self,
-        error: BaseException,
-        **kwargs: Any,
-    ) -> None:
+    async def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when chain errors.
 
         Args:
@@ -975,11 +939,7 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
 class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
     """Callback manager for tool run."""
 
-    def on_tool_end(
-        self,
-        output: Any,
-        **kwargs: Any,
-    ) -> None:
+    def on_tool_end(self, output: Any, **kwargs: Any) -> None:
         """Run when tool ends running.
 
         Args:
@@ -996,11 +956,7 @@ class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
             **kwargs,
         )
 
-    def on_tool_error(
-        self,
-        error: BaseException,
-        **kwargs: Any,
-    ) -> None:
+    def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when tool errors.
 
         Args:
@@ -1057,11 +1013,7 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
         )
 
     @shielded
-    async def on_tool_error(
-        self,
-        error: BaseException,
-        **kwargs: Any,
-    ) -> None:
+    async def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when tool errors.
 
         Args:
@@ -1082,11 +1034,7 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
 class CallbackManagerForRetrieverRun(ParentRunManager, RetrieverManagerMixin):
     """Callback manager for retriever run."""
 
-    def on_retriever_end(
-        self,
-        documents: Sequence[Document],
-        **kwargs: Any,
-    ) -> None:
+    def on_retriever_end(self, documents: Sequence[Document], **kwargs: Any) -> None:
         """Run when retriever ends running."""
         handle_event(
             self.handlers,
@@ -1099,11 +1047,7 @@ class CallbackManagerForRetrieverRun(ParentRunManager, RetrieverManagerMixin):
             **kwargs,
         )
 
-    def on_retriever_error(
-        self,
-        error: BaseException,
-        **kwargs: Any,
-    ) -> None:
+    def on_retriever_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when retriever errors."""
         handle_event(
             self.handlers,
@@ -1117,10 +1061,7 @@ class CallbackManagerForRetrieverRun(ParentRunManager, RetrieverManagerMixin):
         )
 
 
-class AsyncCallbackManagerForRetrieverRun(
-    AsyncParentRunManager,
-    RetrieverManagerMixin,
-):
+class AsyncCallbackManagerForRetrieverRun(AsyncParentRunManager, RetrieverManagerMixin):
     """Async callback manager for retriever run."""
 
     def get_sync(self) -> CallbackManagerForRetrieverRun:
@@ -1157,11 +1098,7 @@ class AsyncCallbackManagerForRetrieverRun(
         )
 
     @shielded
-    async def on_retriever_error(
-        self,
-        error: BaseException,
-        **kwargs: Any,
-    ) -> None:
+    async def on_retriever_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when retriever errors."""
         await ahandle_event(
             self.handlers,
@@ -1470,12 +1407,7 @@ class CallbackManagerForChainGroup(CallbackManager):
         parent_run_manager: CallbackManagerForChainRun,
         **kwargs: Any,
     ) -> None:
-        super().__init__(
-            handlers,
-            inheritable_handlers,
-            parent_run_id,
-            **kwargs,
-        )
+        super().__init__(handlers, inheritable_handlers, parent_run_id, **kwargs)
         self.parent_run_manager = parent_run_manager
         self.ended = False
 
@@ -1500,11 +1432,7 @@ class CallbackManagerForChainGroup(CallbackManager):
         self.ended = True
         return self.parent_run_manager.on_chain_end(outputs, **kwargs)
 
-    def on_chain_error(
-        self,
-        error: BaseException,
-        **kwargs: Any,
-    ) -> None:
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when chain errors.
 
         Args:
@@ -1828,12 +1756,7 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
         parent_run_manager: AsyncCallbackManagerForChainRun,
         **kwargs: Any,
     ) -> None:
-        super().__init__(
-            handlers,
-            inheritable_handlers,
-            parent_run_id,
-            **kwargs,
-        )
+        super().__init__(handlers, inheritable_handlers, parent_run_id, **kwargs)
         self.parent_run_manager = parent_run_manager
         self.ended = False
 
@@ -1860,11 +1783,7 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
         self.ended = True
         await self.parent_run_manager.on_chain_end(outputs, **kwargs)
 
-    async def on_chain_error(
-        self,
-        error: BaseException,
-        **kwargs: Any,
-    ) -> None:
+    async def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when chain errors.
 
         Args:

@@ -30,9 +30,7 @@ class NewsURLLoader(BaseLoader):
 
             from langchain_community.document_loaders import NewsURLLoader
 
-            loader = NewsURLLoader(
-                urls=["<url-1>", "<url-2>"],
-            )
+            loader = NewsURLLoader(urls=["<url-1>", "<url-2>"])
             docs = loader.load()
 
     Newspaper reference:

@@ -63,11 +63,7 @@ def create_openapi_agent(
         input_variables=input_variables,
         **prompt_params,
     )
-    llm_chain = LLMChain(
-        llm=llm,
-        prompt=prompt,
-        callback_manager=callback_manager,
-    )
+    llm_chain = LLMChain(llm=llm, prompt=prompt, callback_manager=callback_manager)
     tool_names = [tool.name for tool in tools]
     agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
     return AgentExecutor.from_agent_and_tools(

@@ -98,12 +98,7 @@ class APIPropertyBase(BaseModel):
 
 
 if TYPE_CHECKING:
-    from openapi_pydantic import (
-        MediaType,
-        Parameter,
-        RequestBody,
-        Schema,
-    )
+    from openapi_pydantic import MediaType, Parameter, RequestBody, Schema
 
 
 class APIProperty(APIPropertyBase):
@@ -113,9 +108,7 @@ class APIProperty(APIPropertyBase):
     """The path/how it's being passed to the endpoint."""
 
     @staticmethod
-    def _cast_schema_list_type(
-        schema: Schema,
-    ) -> Optional[Union[str, Tuple[str, ...]]]:
+    def _cast_schema_list_type(schema: Schema) -> Optional[Union[str, Tuple[str, ...]]]:
         type_ = schema.type
         if not isinstance(type_, list):
             return type_
@@ -132,10 +125,7 @@ class APIProperty(APIPropertyBase):
     def _get_schema_type_for_array(
         schema: Schema,
     ) -> Optional[Union[str, Tuple[str, ...]]]:
-        from openapi_pydantic import (
-            Reference,
-            Schema,
-        )
+        from openapi_pydantic import Reference, Schema
 
         items = schema.items
         if isinstance(items, Schema):
@@ -190,10 +180,7 @@ class APIProperty(APIPropertyBase):
 
     @staticmethod
     def _get_schema(parameter: Parameter, spec: OpenAPISpec) -> Optional[Schema]:
-        from openapi_pydantic import (
-            Reference,
-            Schema,
-        )
+        from openapi_pydantic import Reference, Schema
 
         schema = parameter.param_schema
         if isinstance(schema, Reference):
@@ -217,10 +204,7 @@ class APIProperty(APIPropertyBase):
     def from_parameter(cls, parameter: Parameter, spec: OpenAPISpec) -> "APIProperty":
         """Instantiate from an OpenAPI Parameter."""
         location = APIPropertyLocation.from_str(parameter.param_in)
-        cls._validate_location(
-            location,
-            parameter.name,
-        )
+        cls._validate_location(location, parameter.name)
         cls._validate_content(parameter.content)
         schema = cls._get_schema(parameter, spec)
         schema_type = cls._get_schema_type(parameter, schema)
@@ -250,9 +234,7 @@ class APIRequestBodyProperty(APIPropertyBase):
     def _process_object_schema(
         cls, schema: Schema, spec: OpenAPISpec, references_used: List[str]
     ) -> Tuple[Union[str, List[str], None], List["APIRequestBodyProperty"]]:
-        from openapi_pydantic import (
-            Reference,
-        )
+        from openapi_pydantic import Reference
 
         properties = []
         required_props = schema.required or []
@@ -282,11 +264,7 @@ class APIRequestBodyProperty(APIPropertyBase):
 
     @classmethod
     def _process_array_schema(
-        cls,
-        schema: Schema,
-        name: str,
-        spec: OpenAPISpec,
-        references_used: List[str],
+        cls, schema: Schema, name: str, spec: OpenAPISpec, references_used: List[str]
     ) -> str:
         from openapi_pydantic import Reference, Schema
 
@@ -371,9 +349,7 @@ class APIRequestBody(BaseModel):
 
     @classmethod
     def _process_supported_media_type(
-        cls,
-        media_type_obj: MediaType,
-        spec: OpenAPISpec,
+        cls, media_type_obj: MediaType, spec: OpenAPISpec
     ) -> List[APIRequestBodyProperty]:
         """Process the media type of the request body."""
         from openapi_pydantic import Reference
@@ -427,8 +403,7 @@ class APIRequestBody(BaseModel):
             if media_type not in _SUPPORTED_MEDIA_TYPES:
                 continue
             api_request_body_properties = cls._process_supported_media_type(
-                media_type_obj,
-                spec,
+                media_type_obj, spec
             )
             properties.extend(api_request_body_properties)
 
@@ -495,22 +470,14 @@ class APIOperation(BaseModel):
         return properties
 
     @classmethod
-    def from_openapi_url(
-        cls,
-        spec_url: str,
-        path: str,
-        method: str,
-    ) -> "APIOperation":
+    def from_openapi_url(cls, spec_url: str, path: str, method: str) -> "APIOperation":
         """Create an APIOperation from an OpenAPI URL."""
         spec = OpenAPISpec.from_url(spec_url)
         return cls.from_openapi_spec(spec, path, method)
 
     @classmethod
     def from_openapi_spec(
-        cls,
-        spec: OpenAPISpec,
-        path: str,
-        method: str,
+        cls, spec: OpenAPISpec, path: str, method: str
     ) -> "APIOperation":
         """Create an APIOperation from an OpenAPI spec."""
         operation = spec.get_operation(path, method)

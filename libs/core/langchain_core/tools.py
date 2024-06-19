@@ -38,9 +38,7 @@ from langchain_core.callbacks import (
     CallbackManager,
     CallbackManagerForToolRun,
 )
-from langchain_core.callbacks.manager import (
-    Callbacks,
-)
+from langchain_core.callbacks.manager import Callbacks
 from langchain_core.load.serializable import Serializable
 from langchain_core.prompts import (
     BasePromptTemplate,
@@ -94,10 +92,7 @@ def _create_subset_model(
     return rtn
 
 
-def _get_filtered_args(
-    inferred_model: Type[BaseModel],
-    func: Callable,
-) -> dict:
+def _get_filtered_args(inferred_model: Type[BaseModel], func: Callable) -> dict:
     """Get the arguments from a function's signature."""
     schema = inferred_model.schema()["properties"]
     valid_keys = signature(func).parameters
@@ -111,10 +106,7 @@ class _SchemaConfig:
     arbitrary_types_allowed: bool = True
 
 
-def create_schema_from_function(
-    model_name: str,
-    func: Callable,
-) -> Type[BaseModel]:
+def create_schema_from_function(model_name: str, func: Callable) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature.
     Args:
         model_name: Name to assign to the generated pydandic schema
@@ -288,10 +280,7 @@ class ChildTool(BaseTool):
 
     # --- Tool ---
 
-    def _parse_input(
-        self,
-        tool_input: Union[str, Dict],
-    ) -> Union[str, Dict[str, Any]]:
+    def _parse_input(self, tool_input: Union[str, Dict]) -> Union[str, Dict[str, Any]]:
         """Convert tool input to pydantic model."""
         input_args = self.args_schema
         if isinstance(tool_input, str):
@@ -321,22 +310,14 @@ class ChildTool(BaseTool):
         return values
 
     @abstractmethod
-    def _run(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def _run(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool.
 
         Add run_manager: Optional[CallbackManagerForToolRun] = None
         to child implementations to enable tracing,
         """
 
-    async def _arun(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool asynchronously.
 
         Add run_manager: Optional[AsyncCallbackManagerForToolRun] = None
@@ -397,10 +378,7 @@ class ChildTool(BaseTool):
             **kwargs,
         )
         try:
-            child_config = patch_config(
-                config,
-                callbacks=run_manager.get_child(),
-            )
+            child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
             context.run(_set_config_context, child_config)
             parsed_input = self._parse_input(tool_input)
@@ -497,10 +475,7 @@ class ChildTool(BaseTool):
             parsed_input = self._parse_input(tool_input)
             # We then call the tool on the tool input to get an observation
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
-            child_config = patch_config(
-                config,
-                callbacks=run_manager.get_child(),
-            )
+            child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
             context.run(_set_config_context, child_config)
             coro = (
@@ -881,6 +856,7 @@ def tool(
             def search_api(query: str) -> str:
                 # Searches the API for the query.
                 return
+
 
             @tool("search", return_direct=True)
             def search_api(query: str) -> str:

@@ -46,8 +46,7 @@ class FlightSearchSchema(BaseModel):
         )
     )
     page_number: int = Field(
-        default=1,
-        description="The specific page number of flight results to retrieve",
+        default=1, description="The specific page number of flight results to retrieve"
     )
 
 

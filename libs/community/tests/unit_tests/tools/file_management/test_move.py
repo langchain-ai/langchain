@@ -4,9 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from langchain_community.tools.file_management.move import MoveFileTool
-from langchain_community.tools.file_management.utils import (
-    INVALID_PATH_TEMPLATE,
-)
+from langchain_community.tools.file_management.utils import INVALID_PATH_TEMPLATE
 
 
 def test_move_file_with_root_dir() -> None:
@@ -27,10 +25,7 @@ def test_move_file_errs_outside_root_dir() -> None:
     with TemporaryDirectory() as temp_dir:
         tool = MoveFileTool(root_dir=temp_dir)
         result = tool.run(
-            {
-                "source_path": "../source.txt",
-                "destination_path": "../destination.txt",
-            }
+            {"source_path": "../source.txt", "destination_path": "../destination.txt"}
         )
         assert result == INVALID_PATH_TEMPLATE.format(
             arg_name="source_path", value="../source.txt"

@@ -20,8 +20,7 @@ package_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 def new(
     name: Annotated[str, typer.Argument(help="The name of the folder to create")],
     with_poetry: Annotated[
-        bool,
-        typer.Option("--with-poetry/--no-poetry", help="Don't run poetry install"),
+        bool, typer.Option("--with-poetry/--no-poetry", help="Don't run poetry install")
     ] = False,
 ):
     """
@@ -40,11 +39,7 @@ def new(
         if len(package_name_split) > 1 and package_name_split[-1] == ""
         else package_name_split[-1]
     )
-    module_name = re.sub(
-        r"[^a-zA-Z0-9_]",
-        "_",
-        package_name,
-    )
+    module_name = re.sub(r"[^a-zA-Z0-9_]", "_", package_name)
 
     # generate app route code
     chain_name = f"{module_name}_chain"

@@ -57,6 +57,5 @@ class FaunaLoader(BaseLoader):
                 yield document
         if page.after is not None:
             yield Document(
-                page_content="Next Page Exists",
-                metadata={"after": page.after},
+                page_content="Next Page Exists", metadata={"after": page.after}
             )

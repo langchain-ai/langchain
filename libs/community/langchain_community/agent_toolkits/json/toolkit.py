@@ -19,7 +19,4 @@ class JsonToolkit(BaseToolkit):
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
-        return [
-            JsonListKeysTool(spec=self.spec),
-            JsonGetValueTool(spec=self.spec),
-        ]
+        return [JsonListKeysTool(spec=self.spec), JsonGetValueTool(spec=self.spec)]

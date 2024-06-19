@@ -205,8 +205,7 @@ class NeptuneOpenCypherQAChain(Chain):
             intermediate_steps.append({"context": context})
 
             result = self.qa_chain(
-                {"question": question, "context": context},
-                callbacks=callbacks,
+                {"question": question, "context": context}, callbacks=callbacks
             )
             final_result = result[self.qa_chain.output_key]
 

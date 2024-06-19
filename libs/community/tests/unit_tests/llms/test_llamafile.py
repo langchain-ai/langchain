@@ -64,15 +64,11 @@ def test_call(monkeypatch: MonkeyPatch) -> None:
     """
     Test basic functionality of the `invoke` method
     """
-    llm = Llamafile(
-        base_url="http://llamafile-host:8080",
-    )
+    llm = Llamafile(base_url="http://llamafile-host:8080")
 
     def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
         assert url == "http://llamafile-host:8080/completion"
-        assert headers == {
-            "Content-Type": "application/json",
-        }
+        assert headers == {"Content-Type": "application/json"}
         # 'unknown' kwarg should be ignored
         assert json == {"prompt": "Test prompt", **default_generation_params()}
         assert stream is False
@@ -90,15 +86,11 @@ def test_call_with_kwargs(monkeypatch: MonkeyPatch) -> None:
     to the endpoint correctly. Also test that any 'unknown' kwargs that are not
     present in the LLM class attrs are ignored.
     """
-    llm = Llamafile(
-        base_url="http://llamafile-host:8080",
-    )
+    llm = Llamafile(base_url="http://llamafile-host:8080")
 
     def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
         assert url == "http://llamafile-host:8080/completion"
-        assert headers == {
-            "Content-Type": "application/json",
-        }
+        assert headers == {"Content-Type": "application/json"}
         # 'unknown' kwarg should be ignored
         expected = {"prompt": "Test prompt", **default_generation_params()}
         expected["seed"] = 0
@@ -123,7 +115,7 @@ def test_call_raises_exception_on_missing_server(monkeypatch: MonkeyPatch) -> No
     """
     llm = Llamafile(
         # invalid url, nothing should actually be running here
-        base_url="http://llamafile-host:8080",
+        base_url="http://llamafile-host:8080"
     )
     with pytest.raises(requests.exceptions.ConnectionError):
         llm.invoke("Test prompt")
@@ -133,16 +125,11 @@ def test_streaming(monkeypatch: MonkeyPatch) -> None:
     """
     Test basic functionality of `invoke` with streaming enabled.
     """
-    llm = Llamafile(
-        base_url="http://llamafile-hostname:8080",
-        streaming=True,
-    )
+    llm = Llamafile(base_url="http://llamafile-hostname:8080", streaming=True)
 
     def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
         assert url == "http://llamafile-hostname:8080/completion"
-        assert headers == {
-            "Content-Type": "application/json",
-        }
+        assert headers == {"Content-Type": "application/json"}
         # 'unknown' kwarg should be ignored
         assert "unknown" not in json
         expected = {"prompt": "Test prompt", **default_generation_params()}

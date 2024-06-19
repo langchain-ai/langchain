@@ -8,22 +8,10 @@ from langchain_community.retrievers.web_research import QuestionListOutputParser
 @pytest.mark.parametrize(
     "text,expected",
     (
-        (
-            "1. Line one.\n",
-            ["1. Line one.\n"],
-        ),
-        (
-            "1. Line one.",
-            ["1. Line one."],
-        ),
-        (
-            "1. Line one.\n2. Line two.\n",
-            ["1. Line one.\n", "2. Line two.\n"],
-        ),
-        (
-            "1. Line one.\n2. Line two.",
-            ["1. Line one.\n", "2. Line two."],
-        ),
+        ("1. Line one.\n", ["1. Line one.\n"]),
+        ("1. Line one.", ["1. Line one."]),
+        ("1. Line one.\n2. Line two.\n", ["1. Line one.\n", "2. Line two.\n"]),
+        ("1. Line one.\n2. Line two.", ["1. Line one.\n", "2. Line two."]),
         (
             "1. Line one.\n2. Line two.\n3. Line three.",
             ["1. Line one.\n", "2. Line two.\n", "3. Line three."],

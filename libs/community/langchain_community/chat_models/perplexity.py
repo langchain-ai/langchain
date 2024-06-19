@@ -3,17 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import (
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple, Type, Union
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import (

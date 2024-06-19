@@ -27,8 +27,7 @@ Once you're done responding return FINISHED.
 """
 
 PROMPT = PromptTemplate(
-    template=PROMPT_TEMPLATE,
-    input_variables=["user_input", "context", "response"],
+    template=PROMPT_TEMPLATE, input_variables=["user_input", "context", "response"]
 )
 
 

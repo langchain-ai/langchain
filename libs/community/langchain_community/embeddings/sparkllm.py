@@ -52,7 +52,7 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
             embeddings = SparkLLMTextEmbeddings(
                 spark_app_id="your-app-id",
                 spark_api_key="your-api-key",
-                spark_api_secret="your-api-secret"
+                spark_api_secret="your-api-secret",
             )
             text = "This is a test query."
             query_result = embeddings.embed_query(text)
@@ -112,10 +112,7 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
         if self.spark_api_secret:
             api_secret = self.spark_api_secret.get_secret_value()
         url = self._assemble_ws_auth_url(
-            request_url=host,
-            method="POST",
-            api_key=api_key,
-            api_secret=api_secret,
+            request_url=host, method="POST", api_key=api_key, api_secret=api_secret
         )
         embed_result: list = []
         for text in texts:
@@ -211,9 +208,7 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
         return body
 
     @staticmethod
-    def _parser_message(
-        message: str,
-    ) -> Optional[ndarray]:
+    def _parser_message(message: str) -> Optional[ndarray]:
         data = json.loads(message)
         code = data["header"]["code"]
         if code != 0:

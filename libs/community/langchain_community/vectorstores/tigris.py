@@ -73,10 +73,7 @@ class Tigris(VectorStore):
         return [doc for doc, _ in docs_with_scores]
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[TigrisFilter] = None,
+        self, query: str, k: int = 4, filter: Optional[TigrisFilter] = None
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with Chroma with distance.
 

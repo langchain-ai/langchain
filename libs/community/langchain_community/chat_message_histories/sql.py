@@ -23,11 +23,7 @@ try:
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.messages import (
-    BaseMessage,
-    message_to_dict,
-    messages_from_dict,
-)
+from langchain_core.messages import BaseMessage, message_to_dict, messages_from_dict
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import (
@@ -36,14 +32,8 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.orm import (
-    Session as SQLSession,
-)
-from sqlalchemy.orm import (
-    declarative_base,
-    scoped_session,
-    sessionmaker,
-)
+from sqlalchemy.orm import Session as SQLSession
+from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
 
 logger = logging.getLogger(__name__)
 

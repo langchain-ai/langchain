@@ -27,6 +27,7 @@ class LLMMathChain(Chain):
 
             from langchain.chains import LLMMathChain
             from langchain_community.llms import OpenAI
+
             llm_math = LLMMathChain.from_llm(OpenAI())
     """
 
@@ -122,9 +123,7 @@ class LLMMathChain(Chain):
         return {self.output_key: answer}
 
     async def _aprocess_llm_result(
-        self,
-        llm_output: str,
-        run_manager: AsyncCallbackManagerForChainRun,
+        self, llm_output: str, run_manager: AsyncCallbackManagerForChainRun
     ) -> Dict[str, str]:
         await run_manager.on_text(llm_output, color="green", verbose=self.verbose)
         llm_output = llm_output.strip()
@@ -177,10 +176,7 @@ class LLMMathChain(Chain):
 
     @classmethod
     def from_llm(
-        cls,
-        llm: BaseLanguageModel,
-        prompt: BasePromptTemplate = PROMPT,
-        **kwargs: Any,
+        cls, llm: BaseLanguageModel, prompt: BasePromptTemplate = PROMPT, **kwargs: Any
     ) -> LLMMathChain:
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(llm_chain=llm_chain, **kwargs)

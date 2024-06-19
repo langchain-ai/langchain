@@ -145,10 +145,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
 
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
-            inputs,
-            run_id,
-            name=run_name,
+            dumpd(self), inputs, run_id, name=run_name
         )
         try:
             self._validate_inputs(inputs)
@@ -197,10 +194,7 @@ class Chain(RunnableSerializable[Dict[str, Any], Dict[str, Any]], ABC):
         )
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
-            inputs,
-            run_id,
-            name=run_name,
+            dumpd(self), inputs, run_id, name=run_name
         )
         try:
             self._validate_inputs(inputs)

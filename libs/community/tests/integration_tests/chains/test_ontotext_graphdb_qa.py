@@ -26,9 +26,7 @@ def test_valid_sparql(max_fix_retries: int) -> None:
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
     chain = OntotextGraphDBQAChain.from_llm(
-        Mock(ChatOpenAI),
-        graph=graph,
-        max_fix_retries=max_fix_retries,
+        Mock(ChatOpenAI), graph=graph, max_fix_retries=max_fix_retries
     )
     chain.sparql_generation_chain = Mock(LLMChain)
     chain.sparql_fix_chain = Mock(LLMChain)
@@ -46,11 +44,7 @@ def test_valid_sparql(max_fix_retries: int) -> None:
     chain.sparql_fix_chain.invoke = MagicMock()
     chain.qa_chain.output_key = "text"
     chain.qa_chain.invoke = MagicMock(
-        return_value={
-            "text": answer,
-            "prompt": question,
-            "context": [],
-        }
+        return_value={"text": answer, "prompt": question, "context": []}
     )
 
     result = chain.invoke({chain.input_key: question})
@@ -63,9 +57,7 @@ def test_valid_sparql(max_fix_retries: int) -> None:
 
 @pytest.mark.requires("langchain_openai", "rdflib")
 @pytest.mark.parametrize("max_fix_retries", [-2, -1, 0])
-def test_invalid_sparql_non_positive_max_fix_retries(
-    max_fix_retries: int,
-) -> None:
+def test_invalid_sparql_non_positive_max_fix_retries(max_fix_retries: int) -> None:
     from langchain_openai import ChatOpenAI
 
     question = "What is Luke Skywalker's home planet?"
@@ -76,9 +68,7 @@ def test_invalid_sparql_non_positive_max_fix_retries(
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
     chain = OntotextGraphDBQAChain.from_llm(
-        Mock(ChatOpenAI),
-        graph=graph,
-        max_fix_retries=max_fix_retries,
+        Mock(ChatOpenAI), graph=graph, max_fix_retries=max_fix_retries
     )
     chain.sparql_generation_chain = Mock(LLMChain)
     chain.sparql_fix_chain = Mock(LLMChain)
@@ -122,9 +112,7 @@ def test_valid_sparql_after_first_retry(max_fix_retries: int) -> None:
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
     chain = OntotextGraphDBQAChain.from_llm(
-        Mock(ChatOpenAI),
-        graph=graph,
-        max_fix_retries=max_fix_retries,
+        Mock(ChatOpenAI), graph=graph, max_fix_retries=max_fix_retries
     )
     chain.sparql_generation_chain = Mock(LLMChain)
     chain.sparql_fix_chain = Mock(LLMChain)
@@ -151,11 +139,7 @@ def test_valid_sparql_after_first_retry(max_fix_retries: int) -> None:
     )
     chain.qa_chain.output_key = "text"
     chain.qa_chain.invoke = MagicMock(
-        return_value={
-            "text": answer,
-            "prompt": question,
-            "context": [],
-        }
+        return_value={"text": answer, "prompt": question, "context": []}
     )
 
     result = chain.invoke({chain.input_key: question})
@@ -194,9 +178,7 @@ def test_invalid_sparql_server_response_400(max_fix_retries: int) -> None:
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
     chain = OntotextGraphDBQAChain.from_llm(
-        Mock(ChatOpenAI),
-        graph=graph,
-        max_fix_retries=max_fix_retries,
+        Mock(ChatOpenAI), graph=graph, max_fix_retries=max_fix_retries
     )
     chain.sparql_generation_chain = Mock(LLMChain)
     chain.sparql_fix_chain = Mock(LLMChain)
@@ -239,9 +221,7 @@ def test_invalid_sparql_after_all_retries(max_fix_retries: int) -> None:
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
     chain = OntotextGraphDBQAChain.from_llm(
-        Mock(ChatOpenAI),
-        graph=graph,
-        max_fix_retries=max_fix_retries,
+        Mock(ChatOpenAI), graph=graph, max_fix_retries=max_fix_retries
     )
     chain.sparql_generation_chain = Mock(LLMChain)
     chain.sparql_fix_chain = Mock(LLMChain)
@@ -281,8 +261,7 @@ def test_invalid_sparql_after_all_retries(max_fix_retries: int) -> None:
 
 @pytest.mark.requires("langchain_openai", "rdflib")
 @pytest.mark.parametrize(
-    "max_fix_retries,number_of_invalid_responses",
-    [(1, 0), (2, 0), (2, 1), (10, 6)],
+    "max_fix_retries,number_of_invalid_responses", [(1, 0), (2, 0), (2, 1), (10, 6)]
 )
 def test_valid_sparql_after_some_retries(
     max_fix_retries: int, number_of_invalid_responses: int
@@ -300,9 +279,7 @@ def test_valid_sparql_after_some_retries(
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
     chain = OntotextGraphDBQAChain.from_llm(
-        Mock(ChatOpenAI),
-        graph=graph,
-        max_fix_retries=max_fix_retries,
+        Mock(ChatOpenAI), graph=graph, max_fix_retries=max_fix_retries
     )
     chain.sparql_generation_chain = Mock(LLMChain)
     chain.sparql_fix_chain = Mock(LLMChain)
@@ -339,11 +316,7 @@ def test_valid_sparql_after_some_retries(
     ]
     chain.qa_chain.output_key = "text"
     chain.qa_chain.invoke = MagicMock(
-        return_value={
-            "text": answer,
-            "prompt": question,
-            "context": [],
-        }
+        return_value={"text": answer, "prompt": question, "context": []}
     )
 
     result = chain.invoke({chain.input_key: question})

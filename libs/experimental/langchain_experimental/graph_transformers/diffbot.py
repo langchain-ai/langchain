@@ -205,10 +205,7 @@ class DiffbotGraphTransformer:
         """
 
         # Relationship extraction only works for English
-        payload = {
-            "content": text,
-            "lang": "en",
-        }
+        payload = {"content": text, "lang": "en"}
 
         FIELDS = ",".join(self.extract_types)
         HOST = "nl.diffbot.com"

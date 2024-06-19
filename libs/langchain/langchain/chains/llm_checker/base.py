@@ -28,24 +28,16 @@ def _load_question_to_checked_assertions_chain(
     revised_answer_prompt: PromptTemplate,
 ) -> SequentialChain:
     create_draft_answer_chain = LLMChain(
-        llm=llm,
-        prompt=create_draft_answer_prompt,
-        output_key="statement",
+        llm=llm, prompt=create_draft_answer_prompt, output_key="statement"
     )
     list_assertions_chain = LLMChain(
-        llm=llm,
-        prompt=list_assertions_prompt,
-        output_key="assertions",
+        llm=llm, prompt=list_assertions_prompt, output_key="assertions"
     )
     check_assertions_chain = LLMChain(
-        llm=llm,
-        prompt=check_assertions_prompt,
-        output_key="checked_assertions",
+        llm=llm, prompt=check_assertions_prompt, output_key="checked_assertions"
     )
     revised_answer_chain = LLMChain(
-        llm=llm,
-        prompt=revised_answer_prompt,
-        output_key="revised_statement",
+        llm=llm, prompt=revised_answer_prompt, output_key="revised_statement"
     )
     chains = [
         create_draft_answer_chain,
@@ -70,6 +62,7 @@ class LLMCheckerChain(Chain):
 
             from langchain_community.llms import OpenAI
             from langchain.chains import LLMCheckerChain
+
             llm = OpenAI(temperature=0.7)
             checker_chain = LLMCheckerChain.from_llm(llm)
     """

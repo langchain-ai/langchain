@@ -60,10 +60,7 @@ class TestElasticsearch:
         es_password = os.environ.get("ES_PASSWORD", "changeme")
 
         if cloud_id:
-            es = Elasticsearch(
-                cloud_id=cloud_id,
-                basic_auth=(es_username, es_password),
-            )
+            es = Elasticsearch(cloud_id=cloud_id, basic_auth=(es_username, es_password))
             yield {
                 "es_cloud_id": cloud_id,
                 "es_user": es_username,
@@ -150,10 +147,7 @@ class TestElasticsearch:
 
         texts = ["foo", "bar", "baz"]
         docsearch = ElasticsearchStore.from_texts(
-            texts,
-            FakeEmbeddings(),
-            **elasticsearch_connection,
-            index_name=index_name,
+            texts, FakeEmbeddings(), **elasticsearch_connection, index_name=index_name
         )
         output = docsearch.similarity_search("foo", k=1, custom_query=assert_query)
         assert output == [Document(page_content="foo")]
@@ -164,10 +158,7 @@ class TestElasticsearch:
         """Test end to end construction and search without metadata."""
         texts = ["foo", "bar", "baz"]
         docsearch = ElasticsearchStore.from_texts(
-            texts,
-            FakeEmbeddings(),
-            **elasticsearch_connection,
-            index_name=index_name,
+            texts, FakeEmbeddings(), **elasticsearch_connection, index_name=index_name
         )
         output = await docsearch.asimilarity_search("foo", k=1)
         assert output == [Document(page_content="foo")]
@@ -192,9 +183,7 @@ class TestElasticsearch:
         embedding_vectors = embeddings.embed_documents(embedding_input)
 
         docsearch = ElasticsearchStore._create_cls_from_kwargs(
-            embeddings,
-            **elasticsearch_connection,
-            index_name=index_name,
+            embeddings, **elasticsearch_connection, index_name=index_name
         )
         docsearch.add_embeddings(list(zip(text_input, embedding_vectors)), metadatas)
         output = docsearch.similarity_search("foo1", k=1)
@@ -270,10 +259,7 @@ class TestElasticsearch:
         def custom_document_builder(_: Dict) -> Document:
             return Document(
                 page_content="Mock content!",
-                metadata={
-                    "page_number": -1,
-                    "original_filename": "Mock filename!",
-                },
+                metadata={"page_number": -1, "original_filename": "Mock filename!"},
             )
 
         output = docsearch.similarity_search(
@@ -539,9 +525,7 @@ class TestElasticsearch:
             )
 
             def assert_query(
-                query_body: dict,
-                query: str,
-                rrf: Optional[Union[dict, bool]] = True,
+                query_body: dict, query: str, rrf: Optional[Union[dict, bool]] = True
             ) -> dict:
                 cmp_query_body = {
                     "knn": {
@@ -588,10 +572,7 @@ class TestElasticsearch:
         es_output = es_client.search(
             index=index_name,
             query={
-                "bool": {
-                    "filter": [],
-                    "must": [{"match": {"text": {"query": "foo"}}}],
-                }
+                "bool": {"filter": [], "must": [{"match": {"text": {"query": "foo"}}}]}
             },
             knn={
                 "field": "vector",
@@ -886,10 +867,7 @@ class TestElasticsearch:
 
         texts = ["foo", "bob", "baz"]
         ElasticsearchStore.from_texts(
-            texts,
-            FakeEmbeddings(),
-            es_connection=es_client,
-            index_name=index_name,
+            texts, FakeEmbeddings(), es_connection=es_client, index_name=index_name
         )
 
         user_agent = es_client.transport.requests[0]["headers"]["User-Agent"]
@@ -907,10 +885,7 @@ class TestElasticsearch:
 
         texts = ["foo"]
         store = ElasticsearchStore.from_texts(
-            texts,
-            FakeEmbeddings(),
-            **elasticsearch_connection,
-            index_name=index_name,
+            texts, FakeEmbeddings(), **elasticsearch_connection, index_name=index_name
         )
 
         user_agent = store.client._headers["User-Agent"]

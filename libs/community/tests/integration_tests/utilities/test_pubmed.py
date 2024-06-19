@@ -156,9 +156,7 @@ def test_load_pupmed_from_universal_entry() -> None:
 
 
 def test_load_pupmed_from_universal_entry_with_params() -> None:
-    params = {
-        "top_k_results": 1,
-    }
+    params = {"top_k_results": 1}
     pubmed_tool = _load_pubmed_from_universal_entry(**params)
     assert isinstance(pubmed_tool, PubmedQueryRun)
     wp = pubmed_tool.api_wrapper

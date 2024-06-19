@@ -157,10 +157,7 @@ def test_serialize_llmchain_with_non_serializable_arg(snapshot: Any) -> None:
     from langchain_community.llms.openai import OpenAI
 
     llm = OpenAI(  # type: ignore[call-arg]
-        model="davinci",
-        temperature=0.5,
-        openai_api_key="hello",
-        client=NotSerializable,
+        model="davinci", temperature=0.5, openai_api_key="hello", client=NotSerializable
     )
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)

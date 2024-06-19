@@ -42,19 +42,13 @@ class OctoAIEmbeddings(OpenAIEmbeddings):
     def validate_environment(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
         values["endpoint_url"] = get_from_dict_or_env(
-            values,
-            "endpoint_url",
-            "ENDPOINT_URL",
-            default=DEFAULT_API_BASE,
+            values, "endpoint_url", "ENDPOINT_URL", default=DEFAULT_API_BASE
         )
         values["octoai_api_token"] = convert_to_secret_str(
             get_from_dict_or_env(values, "octoai_api_token", "OCTOAI_API_TOKEN")
         )
         values["model"] = get_from_dict_or_env(
-            values,
-            "model",
-            "MODEL",
-            default=DEFAULT_MODEL,
+            values, "model", "MODEL", default=DEFAULT_MODEL
         )
 
         try:

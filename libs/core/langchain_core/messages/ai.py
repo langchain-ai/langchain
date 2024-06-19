@@ -3,11 +3,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 from typing_extensions import TypedDict
 
-from langchain_core.messages.base import (
-    BaseMessage,
-    BaseMessageChunk,
-    merge_content,
-)
+from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
 from langchain_core.messages.tool import (
     InvalidToolCall,
     ToolCall,
@@ -17,9 +13,7 @@ from langchain_core.messages.tool import (
 )
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils._merge import merge_dicts, merge_lists
-from langchain_core.utils.json import (
-    parse_partial_json,
-)
+from langchain_core.utils.json import parse_partial_json
 
 
 class UsageMetadata(TypedDict):
@@ -190,11 +184,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 args_ = parse_partial_json(chunk["args"])
                 if isinstance(args_, dict):
                     tool_calls.append(
-                        ToolCall(
-                            name=chunk["name"] or "",
-                            args=args_,
-                            id=chunk["id"],
-                        )
+                        ToolCall(name=chunk["name"] or "", args=args_, id=chunk["id"])
                     )
                 else:
                     raise ValueError("Malformed args.")
@@ -229,8 +219,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             # Merge tool call chunks
             if self.tool_call_chunks or other.tool_call_chunks:
                 raw_tool_calls = merge_lists(
-                    self.tool_call_chunks,
-                    other.tool_call_chunks,
+                    self.tool_call_chunks, other.tool_call_chunks
                 )
                 if raw_tool_calls:
                     tool_call_chunks = [

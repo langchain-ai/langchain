@@ -42,9 +42,7 @@ def _identity(x: str) -> str:
 
 
 def create_lc_store(
-    store: ByteStore,
-    *,
-    key_encoder: Optional[Callable[[str], str]] = None,
+    store: ByteStore, *, key_encoder: Optional[Callable[[str], str]] = None
 ) -> BaseStore[str, Serializable]:
     """Create a store for langchain serializable objects from a bytes store.
 
@@ -56,17 +54,12 @@ def create_lc_store(
         A key-value store for documents.
     """
     return EncoderBackedStore(
-        store,
-        key_encoder or _identity,
-        _dump_as_bytes,
-        _load_from_bytes,
+        store, key_encoder or _identity, _dump_as_bytes, _load_from_bytes
     )
 
 
 def create_kv_docstore(
-    store: ByteStore,
-    *,
-    key_encoder: Optional[Callable[[str], str]] = None,
+    store: ByteStore, *, key_encoder: Optional[Callable[[str], str]] = None
 ) -> BaseStore[str, Document]:
     """Create a store for langchain Document objects from a bytes store.
 

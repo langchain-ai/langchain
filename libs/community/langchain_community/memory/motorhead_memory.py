@@ -26,9 +26,7 @@ try:
         def __get_headers(self) -> Dict[str, str]:
             is_managed = self.url == MANAGED_URL
 
-            headers = {
-                "Content-Type": "application/json",
-            }
+            headers = {"Content-Type": "application/json"}
 
             if is_managed and not (self.api_key and self.client_id):
                 raise ValueError(

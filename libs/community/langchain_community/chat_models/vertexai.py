@@ -233,9 +233,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
             from vertexai.language_models import ChatModel, CodeChatModel
 
             if is_gemini:
-                from vertexai.preview.generative_models import (
-                    GenerativeModel,
-                )
+                from vertexai.preview.generative_models import GenerativeModel
         except ImportError:
             raise_vertex_import_error()
         if is_gemini:

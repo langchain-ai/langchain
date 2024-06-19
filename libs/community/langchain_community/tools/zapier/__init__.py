@@ -5,7 +5,4 @@ from langchain_community.tools.zapier.tool import (
     ZapierNLARunAction,
 )
 
-__all__ = [
-    "ZapierNLARunAction",
-    "ZapierNLAListActions",
-]
+__all__ = ["ZapierNLARunAction", "ZapierNLAListActions"]

@@ -2,12 +2,8 @@
 
 import pytest
 
-from langchain_experimental.llm_symbolic_math.base import (
-    LLMSymbolicMathChain,
-)
-from langchain_experimental.llm_symbolic_math.prompt import (
-    _PROMPT_TEMPLATE,
-)
+from langchain_experimental.llm_symbolic_math.base import LLMSymbolicMathChain
+from langchain_experimental.llm_symbolic_math.prompt import _PROMPT_TEMPLATE
 from tests.unit_tests.fake_llm import FakeLLM
 
 try:

@@ -36,9 +36,7 @@ def test_unstructured_file_loader_multiple_files() -> None:
     ]
 
     loader = UnstructuredFileLoader(
-        file_path=file_paths,
-        strategy="fast",
-        mode="elements",
+        file_path=file_paths, strategy="fast", mode="elements"
     )
     docs = loader.load()
 
@@ -49,10 +47,7 @@ def test_unstructured_api_file_loader() -> None:
     """Test unstructured loader."""
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
     loader = UnstructuredAPIFileLoader(
-        file_path=file_path,
-        api_key="FAKE_API_KEY",
-        strategy="fast",
-        mode="elements",
+        file_path=file_path, api_key="FAKE_API_KEY", strategy="fast", mode="elements"
     )
     docs = loader.load()
 
@@ -67,10 +62,7 @@ def test_unstructured_api_file_loader_multiple_files() -> None:
     ]
 
     loader = UnstructuredAPIFileLoader(
-        file_path=file_paths,
-        api_key="FAKE_API_KEY",
-        strategy="fast",
-        mode="elements",
+        file_path=file_paths, api_key="FAKE_API_KEY", strategy="fast", mode="elements"
     )
     docs = loader.load()
 

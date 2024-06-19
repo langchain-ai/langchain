@@ -66,11 +66,7 @@ class RegexMatchStringEvaluator(StringEvaluator):
         return "regex_match"
 
     def _evaluate_strings(  # type: ignore[arg-type,override]
-        self,
-        *,
-        prediction: str,
-        reference: str,
-        **kwargs: Any,
+        self, *, prediction: str, reference: str, **kwargs: Any
     ) -> dict:
         """
         Evaluate the regex match between the prediction and the reference.

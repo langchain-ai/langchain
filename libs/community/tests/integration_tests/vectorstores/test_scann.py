@@ -153,9 +153,7 @@ def test_similarity_search_with_score_by_vector_with_score_threshold() -> None:
     assert docsearch.docstore.__dict__ == expected_docstore.__dict__
     query_vec = FakeEmbeddings().embed_query(text="foo")
     output = docsearch.similarity_search_with_score_by_vector(
-        query_vec,
-        k=2,
-        score_threshold=0.2,
+        query_vec, k=2, score_threshold=0.2
     )
     assert len(output) == 1
     assert output[0][0] == Document(page_content="foo")

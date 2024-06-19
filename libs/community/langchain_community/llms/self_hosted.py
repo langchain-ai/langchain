@@ -117,8 +117,9 @@ class SelfHostedPipeline(LLM):
             from transformers import pipeline
 
             generator = pipeline(model="gpt2")
-            rh.blob(pickle.dumps(generator), path="models/pipeline.pkl"
-                ).save().to(gpu, path="models")
+            rh.blob(pickle.dumps(generator), path="models/pipeline.pkl").save().to(
+                gpu, path="models"
+            )
             llm = SelfHostedPipeline.from_pipeline(
                 pipeline="models/pipeline.pkl",
                 hardware=gpu,
@@ -217,9 +218,7 @@ class SelfHostedPipeline(LLM):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {
-            **{"hardware": self.hardware},
-        }
+        return {**{"hardware": self.hardware}}
 
     @property
     def _llm_type(self) -> str:

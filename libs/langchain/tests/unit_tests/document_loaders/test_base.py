@@ -13,9 +13,7 @@ def test_base_blob_parser() -> None:
 
         def lazy_parse(self, blob: Blob) -> Iterator[Document]:
             """Lazy parsing interface."""
-            yield Document(
-                page_content="foo",
-            )
+            yield Document(page_content="foo")
 
     parser = MyParser()
 

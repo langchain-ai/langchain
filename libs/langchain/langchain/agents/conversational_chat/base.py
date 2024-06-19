@@ -126,9 +126,7 @@ class ConversationalChatAgent(Agent):
             output_parser=_output_parser,
         )
         llm_chain = LLMChain(  # type: ignore[misc]
-            llm=llm,
-            prompt=prompt,
-            callback_manager=callback_manager,
+            llm=llm, prompt=prompt, callback_manager=callback_manager
         )
         tool_names = [tool.name for tool in tools]
         return cls(

@@ -36,9 +36,9 @@ class PaiEasChatEndpoint(BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models import PaiEasChatEndpoint
+
             eas_chat_endpoint = PaiEasChatEndpoint(
-                eas_service_url="your_service_url",
-                eas_service_token="your_service_token"
+                eas_service_url="your_service_url", eas_service_token="your_service_token"
             )
     """
 
@@ -250,10 +250,7 @@ class PaiEasChatEndpoint(BaseChatModel):
 
         return response
 
-    def _convert_chunk_to_message_message(
-        self,
-        chunk: str,
-    ) -> AIMessageChunk:
+    def _convert_chunk_to_message_message(self, chunk: str) -> AIMessageChunk:
         data = json.loads(chunk.encode("utf-8"))
         return AIMessageChunk(content=data.get("response", ""))
 

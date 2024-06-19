@@ -23,8 +23,7 @@ def gen_vector() -> List[float]:
 
 
 def gen_mock_zep_document(
-    collection_name: str,
-    embedding_dimensions: Optional[int] = None,
+    collection_name: str, embedding_dimensions: Optional[int] = None
 ) -> "ZepDocument":
     from zep_python.document import Document as ZepDocument
 
@@ -54,10 +53,7 @@ def texts_metadatas() -> Dict[str, Any]:
 @pytest.fixture
 def mock_documents() -> List[Document]:
     return [
-        Document(
-            page_content="Test Document",
-            metadata={"key": "value"},
-        )
+        Document(page_content="Test Document", metadata={"key": "value"})
         for _ in range(2)
     ]
 
@@ -67,10 +63,7 @@ def texts_metadatas_as_zep_documents() -> List["ZepDocument"]:
     from zep_python.document import Document as ZepDocument
 
     return [
-        ZepDocument(
-            content="Test Document",
-            metadata={"key": "value"},
-        )
+        ZepDocument(content="Test Document", metadata={"key": "value"})
         for _ in range(2)
     ]
 
@@ -191,9 +184,7 @@ def test_add_documents(
 
 
 @pytest.mark.requires("zep_python")
-async def test_asearch_similarity(
-    zep_vectorstore: ZepVectorStore,
-) -> None:
+async def test_asearch_similarity(zep_vectorstore: ZepVectorStore) -> None:
     r = await zep_vectorstore.asearch(
         query="Test Document", search_type="similarity", k=2
     )
@@ -204,9 +195,7 @@ async def test_asearch_similarity(
 
 
 @pytest.mark.requires("zep_python")
-async def test_asearch_mmr(
-    zep_vectorstore: ZepVectorStore,
-) -> None:
+async def test_asearch_mmr(zep_vectorstore: ZepVectorStore) -> None:
     r = await zep_vectorstore.asearch(query="Test Document", search_type="mmr", k=1)
 
     assert len(r) == 1
@@ -215,9 +204,7 @@ async def test_asearch_mmr(
 
 
 @pytest.mark.requires("zep_python")
-def test_search_similarity(
-    zep_vectorstore: ZepVectorStore,
-) -> None:
+def test_search_similarity(zep_vectorstore: ZepVectorStore) -> None:
     r = zep_vectorstore.search(query="Test Document", search_type="similarity", k=2)
 
     assert len(r) == 2
@@ -226,9 +213,7 @@ def test_search_similarity(
 
 
 @pytest.mark.requires("zep_python")
-def test_search_mmr(
-    zep_vectorstore: ZepVectorStore,
-) -> None:
+def test_search_mmr(zep_vectorstore: ZepVectorStore) -> None:
     r = zep_vectorstore.search(query="Test Document", search_type="mmr", k=1)
 
     assert len(r) == 1

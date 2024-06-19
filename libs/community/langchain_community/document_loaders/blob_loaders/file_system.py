@@ -46,6 +46,7 @@ class FileSystemBlobLoader(BlobLoader):
     .. code-block:: python
 
         from langchain_community.document_loaders.blob_loaders import FileSystemBlobLoader
+
         loader = FileSystemBlobLoader("/path/to/directory")
         for blob in loader.yield_blobs():
             print(blob)  # noqa: T201
@@ -78,7 +79,9 @@ class FileSystemBlobLoader(BlobLoader):
         Examples:
 
             .. code-block:: python
-                from langchain_community.document_loaders.blob_loaders import FileSystemBlobLoader
+                from langchain_community.document_loaders.blob_loaders import (
+                    FileSystemBlobLoader,
+                )
 
                 # Load a single file.
                 loader = FileSystemBlobLoader("/path/to/file.txt")
@@ -94,9 +97,7 @@ class FileSystemBlobLoader(BlobLoader):
 
                 # Recursively load all files in a directory, except for py or pyc files.
                 loader = FileSystemBlobLoader(
-                    "/path/to/directory",
-                    glob="**/*.txt",
-                    exclude=["**/*.py", "**/*.pyc"]
+                    "/path/to/directory", glob="**/*.txt", exclude=["**/*.py", "**/*.pyc"]
                 )
         """  # noqa: E501
         if isinstance(path, Path):
@@ -112,9 +113,7 @@ class FileSystemBlobLoader(BlobLoader):
         self.show_progress = show_progress
         self.exclude = exclude
 
-    def yield_blobs(
-        self,
-    ) -> Iterable[Blob]:
+    def yield_blobs(self) -> Iterable[Blob]:
         """Yield blobs that match the requested pattern."""
         iterator = _make_iterator(
             length_func=self.count_matching_files, show_progress=self.show_progress

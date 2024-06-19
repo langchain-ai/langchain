@@ -24,6 +24,6 @@ cases = [
                 "chain = RunnableMap({})",
             ],
         ),
-    ),
+    )
 ]
 ""

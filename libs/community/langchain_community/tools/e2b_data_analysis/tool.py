@@ -184,10 +184,7 @@ class E2BDataAnalysisTool(BaseTool):
     ) -> str:
         raise NotImplementedError("e2b_data_analysis does not support async")
 
-    def run_command(
-        self,
-        cmd: str,
-    ) -> dict:
+    def run_command(self, cmd: str) -> dict:
         """Run shell command in the sandbox."""
         proc = self.session.process.start(cmd)
         output = proc.wait()

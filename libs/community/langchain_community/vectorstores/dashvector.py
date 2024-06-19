@@ -2,13 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import (
-    Any,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-)
+from typing import Any, Iterable, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -40,12 +34,7 @@ class DashVector(VectorStore):
             vectorstore = DashVector(collection, embeddings.embed_query, "text")
     """
 
-    def __init__(
-        self,
-        collection: Any,
-        embedding: Embeddings,
-        text_field: str,
-    ):
+    def __init__(self, collection: Any, embedding: Embeddings, text_field: str):
         """Initialize with DashVector collection."""
 
         try:

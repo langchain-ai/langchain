@@ -57,8 +57,7 @@ def test_serde_transform_input_fn(monkeypatch: MonkeyPatch) -> None:
 
     request = {"prompt": "What is the meaning of life?"}
     fn = _load_pickled_fn_from_hex_string(
-        data=params["transform_input_fn"],
-        allow_dangerous_deserialization=True,
+        data=params["transform_input_fn"], allow_dangerous_deserialization=True
     )
     assert fn(**request) == transform_input(**request)
 
@@ -71,10 +70,7 @@ def test_saving_loading_llm(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("DATABRICKS_HOST", "my-default-host")
     monkeypatch.setenv("DATABRICKS_TOKEN", "my-default-token")
 
-    llm = Databricks(
-        endpoint_name="chat",
-        temperature=0.1,
-    )
+    llm = Databricks(endpoint_name="chat", temperature=0.1)
     llm.save(file_path=tmp_path / "databricks.yaml")
 
     loaded_llm = load_llm(tmp_path / "databricks.yaml")

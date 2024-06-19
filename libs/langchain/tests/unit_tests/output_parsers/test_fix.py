@@ -34,9 +34,7 @@ class SuccessfulParseAfterRetriesWithGetFormatInstructions(SuccessfulParseAfterR
         ),  # noqa: E501
     ],
 )
-def test_output_fixing_parser_parse(
-    base_parser: SuccessfulParseAfterRetries,
-) -> None:
+def test_output_fixing_parser_parse(base_parser: SuccessfulParseAfterRetries) -> None:
     # preparation
     n: int = (
         base_parser.attemp_count_before_success
@@ -109,13 +107,7 @@ async def test_output_fixing_parser_aparse_fail() -> None:
     assert base_parser.parse_count == n
 
 
-@pytest.mark.parametrize(
-    "base_parser",
-    [
-        BooleanOutputParser(),
-        DatetimeOutputParser(),
-    ],
-)
+@pytest.mark.parametrize("base_parser", [BooleanOutputParser(), DatetimeOutputParser()])
 def test_output_fixing_parser_output_type(base_parser: BaseOutputParser) -> None:  # noqa: E501
     parser = OutputFixingParser(parser=base_parser, retry_chain=RunnablePassthrough())  # noqa: E501
     assert parser.OutputType is base_parser.OutputType

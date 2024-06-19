@@ -45,7 +45,4 @@ solveset(x**2 - x, x)
 Question: {question}
 """
 
-PROMPT = PromptTemplate(
-    input_variables=["question"],
-    template=_PROMPT_TEMPLATE,
-)
+PROMPT = PromptTemplate(input_variables=["question"], template=_PROMPT_TEMPLATE)

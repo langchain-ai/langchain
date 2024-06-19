@@ -24,10 +24,7 @@ class TelegramChatLoader(BaseChatLoader):
     history.
     """
 
-    def __init__(
-        self,
-        path: Union[str, Path],
-    ):
+    def __init__(self, path: Union[str, Path]):
         """Initialize the TelegramChatLoader.
 
         Args:

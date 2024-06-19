@@ -39,10 +39,7 @@ def test_structured_prompt_pydantic() -> None:
         value: int
 
     prompt = StructuredPrompt.from_messages_and_schema(
-        [
-            ("human", "I'm very structured, how about you?"),
-        ],
-        OutputSchema,
+        [("human", "I'm very structured, how about you?")], OutputSchema
     )
 
     model = FakeStructuredChatModel(responses=[])
@@ -54,16 +51,11 @@ def test_structured_prompt_pydantic() -> None:
 
 def test_structured_prompt_dict() -> None:
     prompt = StructuredPrompt.from_messages_and_schema(
-        [
-            ("human", "I'm very structured, how about you?"),
-        ],
+        [("human", "I'm very structured, how about you?")],
         {
             "name": "yo",
             "description": "a structured output",
-            "parameters": {
-                "name": {"type": "string"},
-                "value": {"type": "integer"},
-            },
+            "parameters": {"name": {"type": "string"}, "value": {"type": "integer"}},
         },
     )
 

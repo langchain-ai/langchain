@@ -3,12 +3,7 @@ from typing import Any, cast
 
 import lark
 import pytest
-from langchain_core.structured_query import (
-    Comparator,
-    Comparison,
-    Operation,
-    Operator,
-)
+from langchain_core.structured_query import Comparator, Comparison, Operation, Operator
 
 from langchain.chains.query_constructor.parser import get_parser
 

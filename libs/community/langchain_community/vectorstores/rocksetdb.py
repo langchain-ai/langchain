@@ -41,8 +41,9 @@ class Rockset(VectorStore):
             rs = rockset.RocksetClient(host=rockset.Regions.use1a1, api_key="***")
             collection_name = "langchain_demo"
             embeddings = OpenAIEmbeddings()
-            vectorstore = Rockset(rs, collection_name, embeddings,
-                "description", "description_embedding")
+            vectorstore = Rockset(
+                rs, collection_name, embeddings, "description", "description_embedding"
+            )
 
     """
 
@@ -204,11 +205,7 @@ class Rockset(VectorStore):
             List[Tuple[Document, float]]: List of documents with their relevance score
         """
         return self.similarity_search_by_vector_with_relevance_scores(
-            self._embeddings.embed_query(query),
-            k,
-            distance_func,
-            where_str,
-            **kwargs,
+            self._embeddings.embed_query(query), k, distance_func, where_str, **kwargs
         )
 
     def similarity_search(
@@ -223,11 +220,7 @@ class Rockset(VectorStore):
         doesn't return the scores.
         """
         return self.similarity_search_by_vector(
-            self._embeddings.embed_query(query),
-            k,
-            distance_func,
-            where_str,
-            **kwargs,
+            self._embeddings.embed_query(query), k, distance_func, where_str, **kwargs
         )
 
     def similarity_search_by_vector(
@@ -339,10 +332,7 @@ class Rockset(VectorStore):
         embeddings = [doc.metadata[self._embedding_key] for doc in initial_docs]
 
         selected_indices = maximal_marginal_relevance(
-            np.array(query_embedding),
-            embeddings,
-            lambda_mult=lambda_mult,
-            k=k,
+            np.array(query_embedding), embeddings, lambda_mult=lambda_mult, k=k
         )
 
         # remove embeddings key before returning for cleanup to be consistent with

@@ -25,11 +25,7 @@ def test_load_string() -> None:
     assert len(docs) == 2
     doc = docs[0]
     assert doc.page_content == '"This is text in version 1"'
-    assert doc.metadata.keys() == {
-        "split",
-        "list",
-        "dict",
-    }
+    assert doc.metadata.keys() == {"split", "list", "dict"}
 
 
 @pytest.mark.requires("datasets")
@@ -44,11 +40,7 @@ def test_load_list() -> None:
     )
     doc = loader.load()[0]
     assert doc.page_content == '["List item 1", "List item 2", "List item 3"]'
-    assert doc.metadata.keys() == {
-        "split",
-        "text",
-        "dict",
-    }
+    assert doc.metadata.keys() == {"split", "text", "dict"}
 
 
 @pytest.mark.requires("datasets")
@@ -66,11 +58,7 @@ def test_load_object() -> None:
         doc.page_content
         == '{"dict_text": ["Hello world!", "langchain is cool"], "dict_int": [2, 123]}'
     )
-    assert doc.metadata.keys() == {
-        "split",
-        "text",
-        "list",
-    }
+    assert doc.metadata.keys() == {"split", "text", "list"}
 
 
 @pytest.mark.requires("datasets")

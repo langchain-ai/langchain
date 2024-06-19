@@ -50,12 +50,7 @@ def test_metadata_with_template_vars_in_frontmatter() -> None:
     doc = next(
         doc for doc in docs if doc.metadata["source"] == "template_var_frontmatter.md"
     )
-    FRONTMATTER_FIELDS = {
-        "aString",
-        "anArray",
-        "aDict",
-        "tags",
-    }
+    FRONTMATTER_FIELDS = {"aString", "anArray", "aDict", "tags"}
     assert set(doc.metadata) == FRONTMATTER_FIELDS | STANDARD_METADATA_FIELDS
     assert doc.metadata["aString"] == "{{var}}"
     assert doc.metadata["anArray"] == "['element', '{{varElement}}']"

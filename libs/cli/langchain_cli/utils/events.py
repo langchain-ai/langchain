@@ -27,10 +27,7 @@ def create_events(events: List[EventDict]) -> Optional[Any]:
 
         payload = json.dumps(data)
 
-        headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        }
+        headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
         conn.request("POST", "/events/v1/track/bulk", payload, headers)
 

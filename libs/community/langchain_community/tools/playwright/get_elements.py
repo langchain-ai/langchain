@@ -24,8 +24,7 @@ class GetElementsToolInput(BaseModel):
     """Input for GetElementsTool."""
 
     selector: str = Field(
-        ...,
-        description="CSS selector, such as '*', 'div', 'p', 'a', #id, .classname",
+        ..., description="CSS selector, such as '*', 'div', 'p', 'a', #id, .classname"
     )
     attributes: List[str] = Field(
         default_factory=lambda: ["innerText"],

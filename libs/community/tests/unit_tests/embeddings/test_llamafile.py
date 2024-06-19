@@ -19,15 +19,11 @@ def test_embed_documents(monkeypatch: MonkeyPatch) -> None:
     """
     Test basic functionality of the `embed_documents` method
     """
-    embedder = LlamafileEmbeddings(
-        base_url="http://llamafile-host:8080",
-    )
+    embedder = LlamafileEmbeddings(base_url="http://llamafile-host:8080")
 
     def mock_post(url, headers, json, timeout):  # type: ignore[no-untyped-def]
         assert url == "http://llamafile-host:8080/embedding"
-        assert headers == {
-            "Content-Type": "application/json",
-        }
+        assert headers == {"Content-Type": "application/json"}
         # 'unknown' kwarg should be ignored
         assert json == {"content": "Test text"}
         # assert stream is False
@@ -46,15 +42,11 @@ def test_embed_query(monkeypatch: MonkeyPatch) -> None:
     """
     Test basic functionality of the `embed_query` method
     """
-    embedder = LlamafileEmbeddings(
-        base_url="http://llamafile-host:8080",
-    )
+    embedder = LlamafileEmbeddings(base_url="http://llamafile-host:8080")
 
     def mock_post(url, headers, json, timeout):  # type: ignore[no-untyped-def]
         assert url == "http://llamafile-host:8080/embedding"
-        assert headers == {
-            "Content-Type": "application/json",
-        }
+        assert headers == {"Content-Type": "application/json"}
         # 'unknown' kwarg should be ignored
         assert json == {"content": "Test text"}
         # assert stream is False

@@ -26,9 +26,7 @@ class SummarizerMixin(BaseModel):
         self, messages: List[BaseMessage], existing_summary: str
     ) -> str:
         new_lines = get_buffer_string(
-            messages,
-            human_prefix=self.human_prefix,
-            ai_prefix=self.ai_prefix,
+            messages, human_prefix=self.human_prefix, ai_prefix=self.ai_prefix
         )
 
         chain = LLMChain(llm=self.llm, prompt=self.prompt)

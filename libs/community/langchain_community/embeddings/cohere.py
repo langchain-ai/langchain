@@ -24,9 +24,9 @@ class CohereEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import CohereEmbeddings
+
             cohere = CohereEmbeddings(
-                model="embed-english-light-v3.0",
-                cohere_api_key="my-api-key"
+                model="embed-english-light-v3.0", cohere_api_key="my-api-key"
             )
     """
 
@@ -67,14 +67,10 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
             client_name = values["user_agent"]
             values["client"] = cohere.Client(
-                cohere_api_key,
-                timeout=request_timeout,
-                client_name=client_name,
+                cohere_api_key, timeout=request_timeout, client_name=client_name
             )
             values["async_client"] = cohere.AsyncClient(
-                cohere_api_key,
-                timeout=request_timeout,
-                client_name=client_name,
+                cohere_api_key, timeout=request_timeout, client_name=client_name
             )
         except ImportError:
             raise ImportError(
@@ -107,10 +103,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
         self, texts: List[str], *, input_type: Optional[str] = None
     ) -> List[List[float]]:
         embeddings = self.embed_with_retry(
-            model=self.model,
-            texts=texts,
-            input_type=input_type,
-            truncate=self.truncate,
+            model=self.model, texts=texts, input_type=input_type, truncate=self.truncate
         ).embeddings
         return [list(map(float, e)) for e in embeddings]
 

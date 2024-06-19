@@ -35,7 +35,7 @@ class Replicate(LLM):
                     "stability-ai/stable-diffusion: "
                     "27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
                 ),
-                model_kwargs={"image_dimensions": "512x512"}
+                model_kwargs={"image_dimensions": "512x512"},
             )
     """
 
@@ -109,10 +109,7 @@ class Replicate(LLM):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {
-            "model": self.model,
-            "model_kwargs": self.model_kwargs,
-        }
+        return {"model": self.model, "model_kwargs": self.model_kwargs}
 
     @property
     def _llm_type(self) -> str:
@@ -178,10 +175,7 @@ class Replicate(LLM):
                         break
             if output:
                 if run_manager:
-                    run_manager.on_llm_new_token(
-                        output,
-                        verbose=self.verbose,
-                    )
+                    run_manager.on_llm_new_token(output, verbose=self.verbose)
                 yield GenerationChunk(text=output)
             if stop_condition_reached:
                 break
@@ -216,11 +210,7 @@ class Replicate(LLM):
 
             self.prompt_key = input_properties[0][0]
 
-        input_: Dict = {
-            self.prompt_key: prompt,
-            **self.model_kwargs,
-            **kwargs,
-        }
+        input_: Dict = {self.prompt_key: prompt, **self.model_kwargs, **kwargs}
 
         # if it's an official model
         if ":" not in self.model:

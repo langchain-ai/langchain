@@ -187,10 +187,7 @@ class MatchingEngine(VectorStore):
         blob.upload_from_string(data)
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[List[Namespace]] = None,
+        self, query: str, k: int = 4, filter: Optional[List[Namespace]] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query and their cosine distance from the query.
 
@@ -280,10 +277,7 @@ class MatchingEngine(VectorStore):
             metadata = {}
             if self.document_id_key is not None:
                 metadata[self.document_id_key] = result.id
-            document = Document(
-                page_content=page_content,
-                metadata=metadata,
-            )
+            document = Document(page_content=page_content, metadata=metadata)
             docs.append((document, result.distance))
 
         logger.debug("Downloaded documents for query.")

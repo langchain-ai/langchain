@@ -85,8 +85,7 @@ def test_criteria_eval_chain() -> None:
 def test_criteria_eval_chain_missing_reference() -> None:
     chain = LabeledCriteriaEvalChain.from_llm(
         llm=FakeLLM(
-            queries={"text": "The meaning of life\nY"},
-            sequential_responses=True,
+            queries={"text": "The meaning of life\nY"}, sequential_responses=True
         ),
         criteria={"my criterion": "my criterion description"},
     )

@@ -1,10 +1,5 @@
 import json
-from typing import (
-    Any,
-    Dict,
-    List,
-    Union,
-)
+from typing import Any, Dict, List, Union
 
 from langchain_core._api import deprecated
 from langchain_core.pydantic_v1 import Field
@@ -127,10 +122,7 @@ def _xml_to_function_call(invoke: Any, tools: List[Dict]) -> Dict[str, Any]:
                         arguments[key] = list(value.values())[0]
 
     return {
-        "function": {
-            "name": name,
-            "arguments": json.dumps(arguments),
-        },
+        "function": {"name": name, "arguments": json.dumps(arguments)},
         "type": "function",
     }
 

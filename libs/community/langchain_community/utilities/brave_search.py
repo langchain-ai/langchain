@@ -55,10 +55,7 @@ class BraveSearchWrapper(BaseModel):
         ]
 
     def _search_request(self, query: str) -> List[dict]:
-        headers = {
-            "X-Subscription-Token": self.api_key,
-            "Accept": "application/json",
-        }
+        headers = {"X-Subscription-Token": self.api_key, "Accept": "application/json"}
         req = requests.PreparedRequest()
         params = {**self.search_kwargs, **{"q": query}}
         req.prepare_url(self.base_url, params)

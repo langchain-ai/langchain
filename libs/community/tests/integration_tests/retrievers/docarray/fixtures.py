@@ -23,20 +23,14 @@ from langchain_community.embeddings import FakeEmbeddings
 
 @pytest.fixture
 def init_weaviate() -> (
-    Generator[
-        Tuple[WeaviateDocumentIndex, Dict[str, Any], FakeEmbeddings],
-        None,
-        None,
-    ]
+    Generator[Tuple[WeaviateDocumentIndex, Dict[str, Any], FakeEmbeddings], None, None]
 ):
     """
     cd tests/integration_tests/vectorstores/docker-compose
     docker compose -f weaviate.yml up
     """
     from docarray import BaseDoc
-    from docarray.index import (
-        WeaviateDocumentIndex,
-    )
+    from docarray.index import WeaviateDocumentIndex
 
     class WeaviateDoc(BaseDoc):
         # When initializing the Weaviate index, denote the field
@@ -83,9 +77,7 @@ def init_elastic() -> (
     docker-compose -f elasticsearch.yml up
     """
     from docarray import BaseDoc
-    from docarray.index import (
-        ElasticDocIndex,
-    )
+    from docarray.index import ElasticDocIndex
 
     class MyDoc(BaseDoc):
         title: str
@@ -149,15 +141,7 @@ def init_qdrant() -> Tuple[QdrantDocumentIndex, rest.Filter, FakeEmbeddings]:
     )
     # build a filter query
     filter_query = rest.Filter(
-        must=[
-            rest.FieldCondition(
-                key="year",
-                range=rest.Range(
-                    gte=10,
-                    lt=90,
-                ),
-            )
-        ]
+        must=[rest.FieldCondition(key="year", range=rest.Range(gte=10, lt=90))]
     )
 
     return qdrant_db, filter_query, embeddings
@@ -201,9 +185,7 @@ def init_hnsw(
     tmp_path: Path,
 ) -> Tuple[HnswDocumentIndex, Dict[str, Any], FakeEmbeddings]:
     from docarray import BaseDoc
-    from docarray.index import (
-        HnswDocumentIndex,
-    )
+    from docarray.index import HnswDocumentIndex
 
     class MyDoc(BaseDoc):
         title: str

@@ -176,10 +176,7 @@ class Vearch(VectorStore):
         )
         return response_code
 
-    def _create_space(
-        self,
-        dim: int = 1024,
-    ) -> int:
+    def _create_space(self, dim: int = 1024) -> int:
         """
         Create VectorStore space
         Args:
@@ -195,17 +192,11 @@ class Vearch(VectorStore):
                 "name": "gamma",
                 "index_size": 1,
                 "retrieval_type": "FLAT",
-                "retrieval_param": {
-                    "metric_type": "L2",
-                },
+                "retrieval_param": {"metric_type": "L2"},
             },
             "properties": {
-                "text": {
-                    "type": "string",
-                },
-                "metadata": {
-                    "type": "string",
-                },
+                "text": {"type": "string"},
+                "metadata": {"type": "string"},
                 "text_embedding": {
                     "type": "vector",
                     "index": True,
@@ -334,10 +325,7 @@ class Vearch(VectorStore):
         return vearch_db
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = DEFAULT_TOPN,
-        **kwargs: Any,
+        self, query: str, k: int = DEFAULT_TOPN, **kwargs: Any
     ) -> List[Document]:
         """
         Return docs most similar to query.
@@ -350,10 +338,7 @@ class Vearch(VectorStore):
         return docs
 
     def similarity_search_by_vector(
-        self,
-        embedding: List[float],
-        k: int = DEFAULT_TOPN,
-        **kwargs: Any,
+        self, embedding: List[float], k: int = DEFAULT_TOPN, **kwargs: Any
     ) -> List[Document]:
         """The most k similar documents and scores of the specified query.
         Args:
@@ -373,7 +358,7 @@ class Vearch(VectorStore):
                             "field": "text_embedding",
                             "feature": (embed / np.linalg.norm(embed)).tolist(),
                         }
-                    ],
+                    ]
                 },
                 "size": k,
                 "fields": ["text", "metadata"],
@@ -414,10 +399,7 @@ class Vearch(VectorStore):
         return docs
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = DEFAULT_TOPN,
-        **kwargs: Any,
+        self, query: str, k: int = DEFAULT_TOPN, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """The most k similar documents and scores of the specified query.
         Args:
@@ -440,7 +422,7 @@ class Vearch(VectorStore):
                             "field": "text_embedding",
                             "feature": (embed / np.linalg.norm(embed)).tolist(),
                         }
-                    ],
+                    ]
                 },
                 "size": k,
                 "fields": ["text_embedding", "text", "metadata"],
@@ -486,18 +468,11 @@ class Vearch(VectorStore):
         return results
 
     def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         return self.similarity_search_with_score(query, k, **kwargs)
 
-    def delete(
-        self,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> Optional[bool]:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete the documents which have the specified ids.
 
         Args:
@@ -522,9 +497,7 @@ class Vearch(VectorStore):
         return ret
 
     def get(
-        self,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
+        self, ids: Optional[List[str]] = None, **kwargs: Any
     ) -> Dict[str, Document]:
         """Return docs according ids.
 

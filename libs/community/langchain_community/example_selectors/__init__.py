@@ -11,7 +11,4 @@ from langchain_community.example_selectors.ngram_overlap import (
     ngram_overlap_score,
 )
 
-__all__ = [
-    "NGramOverlapExampleSelector",
-    "ngram_overlap_score",
-]
+__all__ = ["NGramOverlapExampleSelector", "ngram_overlap_score"]

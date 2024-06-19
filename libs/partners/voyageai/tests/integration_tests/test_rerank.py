@@ -14,8 +14,7 @@ def test_voyageai_reranker_init() -> None:
 
 def test_sync() -> None:
     rerank = VoyageAIRerank(
-        voyage_api_key=os.environ["VOYAGE_API_KEY"],
-        model="rerank-lite-1",
+        voyage_api_key=os.environ["VOYAGE_API_KEY"], model="rerank-lite-1"
     )
     doc_list = [
         "The Mediterranean diet emphasizes fish, olive oil, and vegetables"
@@ -42,8 +41,7 @@ def test_sync() -> None:
 
 async def test_async() -> None:
     rerank = VoyageAIRerank(
-        voyage_api_key=os.environ["VOYAGE_API_KEY"],
-        model="rerank-lite-1",
+        voyage_api_key=os.environ["VOYAGE_API_KEY"], model="rerank-lite-1"
     )
     doc_list = [
         "The Mediterranean diet emphasizes fish, olive oil, and vegetables"

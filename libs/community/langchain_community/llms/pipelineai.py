@@ -30,6 +30,7 @@ class PipelineAI(LLM, BaseModel):
         .. code-block:: python
 
             from langchain_community.llms import PipelineAI
+
             pipeline = PipelineAI(pipeline_key="")
     """
 

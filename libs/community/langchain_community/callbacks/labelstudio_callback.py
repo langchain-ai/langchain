@@ -92,13 +92,13 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         >>> from langchain_community.llms import OpenAI
         >>> from langchain_community.callbacks import LabelStudioCallbackHandler
         >>> handler = LabelStudioCallbackHandler(
-        ...             api_key='<your_key_here>',
-        ...             url='http://localhost:8080',
-        ...             project_name='LangChain-%Y-%m-%d',
-        ...             mode='prompt'
+        ...     api_key="<your_key_here>",
+        ...     url="http://localhost:8080",
+        ...     project_name="LangChain-%Y-%m-%d",
+        ...     mode="prompt",
         ... )
         >>> llm = OpenAI(callbacks=[handler])
-        >>> llm.invoke('Tell me a story about a dog.')
+        >>> llm.invoke("Tell me a story about a dog.")
     """
 
     DEFAULT_PROJECT_NAME: str = "LangChain-%Y-%m-%d"
@@ -237,10 +237,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         for prompt, generation in zip(prompts, generations):
             tasks.append(
                 {
-                    "data": {
-                        self.value: prompt,
-                        "run_id": run_id,
-                    },
+                    "data": {self.value: prompt, "run_id": run_id},
                     "predictions": [
                         {
                             "result": [
@@ -259,10 +256,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         self.ls_project.import_tasks(tasks)
 
     def on_llm_start(
-        self,
-        serialized: Dict[str, Any],
-        prompts: List[str],
-        **kwargs: Any,
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
     ) -> None:
         """Save the prompts in memory when an LLM starts."""
         if self.input_type != "Text":
@@ -355,10 +349,7 @@ class LabelStudioCallbackHandler(BaseCallbackHandler):
         pass
 
     def on_tool_start(
-        self,
-        serialized: Dict[str, Any],
-        input_str: str,
-        **kwargs: Any,
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Do nothing when tool starts."""
         pass

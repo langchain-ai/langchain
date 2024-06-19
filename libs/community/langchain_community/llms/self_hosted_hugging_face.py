@@ -139,16 +139,18 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
             from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
             import runhouse as rh
 
+
             def get_pipeline():
                 model_id = "gpt2"
                 tokenizer = AutoTokenizer.from_pretrained(model_id)
                 model = AutoModelForCausalLM.from_pretrained(model_id)
-                pipe = pipeline(
-                    "text-generation", model=model, tokenizer=tokenizer
-                )
+                pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
                 return pipe
+
+
             hf = SelfHostedHuggingFaceLLM(
-                model_load_fn=get_pipeline, model_id="gpt2", hardware=gpu)
+                model_load_fn=get_pipeline, model_id="gpt2", hardware=gpu
+            )
     """
 
     model_id: str = DEFAULT_MODEL_ID
@@ -192,10 +194,7 @@ class SelfHostedHuggingFaceLLM(SelfHostedPipeline):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {
-            **{"model_id": self.model_id},
-            **{"model_kwargs": self.model_kwargs},
-        }
+        return {**{"model_id": self.model_id}, **{"model_kwargs": self.model_kwargs}}
 
     @property
     def _llm_type(self) -> str:

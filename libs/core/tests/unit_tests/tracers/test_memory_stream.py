@@ -23,22 +23,14 @@ async def test_same_event_loop() -> None:
         for i in range(3):
             await asyncio.sleep(0.10)
             toc = time.time()
-            await writer.send(
-                {
-                    "item": i,
-                    "produce_time": toc - tic,
-                }
-            )
+            await writer.send({"item": i, "produce_time": toc - tic})
         await writer.aclose()
 
     async def consumer() -> AsyncIterator[dict]:
         tic = time.time()
         async for item in reader:
             toc = time.time()
-            yield {
-                "receive_time": toc - tic,
-                **item,
-            }
+            yield {"receive_time": toc - tic, **item}
 
     asyncio.create_task(producer())
 
@@ -72,12 +64,7 @@ async def test_queue_for_streaming_via_sync_call() -> None:
         for i in range(3):
             await asyncio.sleep(0.10)
             toc = time.time()
-            await writer.send(
-                {
-                    "item": i,
-                    "produce_time": toc - tic,
-                }
-            )
+            await writer.send({"item": i, "produce_time": toc - tic})
         await writer.aclose()
 
     def sync_call() -> None:
@@ -88,10 +75,7 @@ async def test_queue_for_streaming_via_sync_call() -> None:
         tic = time.time()
         async for item in reader:
             toc = time.time()
-            yield {
-                "receive_time": toc - tic,
-                **item,
-            }
+            yield {"receive_time": toc - tic, **item}
 
     with ThreadPoolExecutor() as executor:
         executor.submit(sync_call)

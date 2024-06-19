@@ -18,8 +18,7 @@ class ResponseGenerationChain(LLMChain):
             "\nPlease summarize the results and generate a response."
         )
         prompt = PromptTemplate(
-            template=execution_template,
-            input_variables=["task_execution"],
+            template=execution_template, input_variables=["task_execution"]
         )
         return cls(prompt=prompt, llm=llm, verbose=verbose)
 
@@ -41,6 +40,4 @@ def load_response_generator(llm: BaseLanguageModel) -> ResponseGenerator:
     """Load the ResponseGenerator."""
 
     llm_chain = ResponseGenerationChain.from_llm(llm)
-    return ResponseGenerator(
-        llm_chain=llm_chain,
-    )
+    return ResponseGenerator(llm_chain=llm_chain)

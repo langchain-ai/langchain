@@ -16,10 +16,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatResult,
-)
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from tenacity import (
@@ -40,10 +37,7 @@ class ChatGooglePalmError(Exception):
     """Error with the `Google PaLM` API."""
 
 
-def _truncate_at_stop_tokens(
-    text: str,
-    stop: Optional[List[str]],
-) -> str:
+def _truncate_at_stop_tokens(text: str, stop: Optional[List[str]]) -> str:
     """Truncates text at the earliest stop token found."""
     if stop is None:
         return text
@@ -56,8 +50,7 @@ def _truncate_at_stop_tokens(
 
 
 def _response_to_result(
-    response: genai.types.ChatResponse,
-    stop: Optional[List[str]],
+    response: genai.types.ChatResponse, stop: Optional[List[str]]
 ) -> ChatResult:
     """Converts a PaLM API response into a LangChain ChatResult."""
     if not response.candidates:
@@ -79,16 +72,12 @@ def _response_to_result(
             )
         elif author == "human":
             generations.append(
-                ChatGeneration(
-                    text=content,
-                    message=HumanMessage(content=content),
-                )
+                ChatGeneration(text=content, message=HumanMessage(content=content))
             )
         else:
             generations.append(
                 ChatGeneration(
-                    text=content,
-                    message=ChatMessage(role=author, content=content),
+                    text=content, message=ChatMessage(role=author, content=content)
                 )
             )
 
@@ -161,9 +150,7 @@ def _messages_to_prompt_dict(
             )
 
     return genai.types.MessagePromptDict(
-        context=context,
-        examples=examples,
-        messages=messages,
+        context=context, examples=examples, messages=messages
     )
 
 
@@ -226,6 +213,7 @@ class ChatGooglePalm(BaseChatModel, BaseModel):
         .. code-block:: python
 
             from langchain_community.chat_models import ChatGooglePalm
+
             chat = ChatGooglePalm()
 
     """

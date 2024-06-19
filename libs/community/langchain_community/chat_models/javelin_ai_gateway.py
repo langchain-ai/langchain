@@ -14,10 +14,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatResult,
-)
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, SecretStr
 
 logger = logging.getLogger(__name__)
@@ -47,9 +44,7 @@ class ChatJavelinAIGateway(BaseChatModel):
             chat = ChatJavelinAIGateway(
                 gateway_uri="<javelin-ai-gateway-uri>",
                 route="<javelin-ai-gateway-chat-route>",
-                params={
-                    "temperature": 0.1
-                }
+                params={"temperature": 0.1},
             )
     """
 
@@ -75,10 +70,7 @@ class ChatJavelinAIGateway(BaseChatModel):
 
     def __init__(self, **kwargs: Any):
         try:
-            from javelin_sdk import (
-                JavelinClient,
-                UnauthorizedError,
-            )
+            from javelin_sdk import JavelinClient, UnauthorizedError
         except ImportError:
             raise ImportError(
                 "Could not import javelin_sdk python package. "
@@ -220,8 +212,7 @@ class ChatJavelinAIGateway(BaseChatModel):
             )
             message_metadata = candidate.get("metadata", {})
             gen = ChatGeneration(
-                message=message,
-                generation_info=dict(message_metadata),
+                message=message, generation_info=dict(message_metadata)
             )
             generations.append(gen)
 

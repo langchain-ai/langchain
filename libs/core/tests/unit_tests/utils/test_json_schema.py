@@ -4,12 +4,7 @@ from langchain_core.utils.json_schema import dereference_refs
 
 
 def test_dereference_refs_no_refs() -> None:
-    schema = {
-        "type": "object",
-        "properties": {
-            "first_name": {"type": "string"},
-        },
-    }
+    schema = {"type": "object", "properties": {"first_name": {"type": "string"}}}
     actual = dereference_refs(schema)
     assert actual == schema
 
@@ -17,16 +12,12 @@ def test_dereference_refs_no_refs() -> None:
 def test_dereference_refs_one_ref() -> None:
     schema = {
         "type": "object",
-        "properties": {
-            "first_name": {"$ref": "#/$defs/name"},
-        },
+        "properties": {"first_name": {"$ref": "#/$defs/name"}},
         "$defs": {"name": {"type": "string"}},
     }
     expected = {
         "type": "object",
-        "properties": {
-            "first_name": {"type": "string"},
-        },
+        "properties": {"first_name": {"type": "string"}},
         "$defs": {"name": {"type": "string"}},
     }
     actual = dereference_refs(schema)
@@ -63,9 +54,7 @@ def test_dereference_refs_multiple_refs() -> None:
 def test_dereference_refs_nested_refs_skip() -> None:
     schema = {
         "type": "object",
-        "properties": {
-            "info": {"$ref": "#/$defs/info"},
-        },
+        "properties": {"info": {"$ref": "#/$defs/info"}},
         "$defs": {
             "name": {"type": "string"},
             "info": {
@@ -80,7 +69,7 @@ def test_dereference_refs_nested_refs_skip() -> None:
             "info": {
                 "type": "object",
                 "properties": {"age": "int", "name": {"type": "string"}},
-            },
+            }
         },
         "$defs": {
             "name": {"type": "string"},
@@ -97,9 +86,7 @@ def test_dereference_refs_nested_refs_skip() -> None:
 def test_dereference_refs_nested_refs_no_skip() -> None:
     schema = {
         "type": "object",
-        "properties": {
-            "info": {"$ref": "#/$defs/info"},
-        },
+        "properties": {"info": {"$ref": "#/$defs/info"}},
         "$defs": {
             "name": {"type": "string"},
             "info": {
@@ -114,7 +101,7 @@ def test_dereference_refs_nested_refs_no_skip() -> None:
             "info": {
                 "type": "object",
                 "properties": {"age": "int", "name": {"type": "string"}},
-            },
+            }
         },
         "$defs": {
             "name": {"type": "string"},
@@ -131,9 +118,7 @@ def test_dereference_refs_nested_refs_no_skip() -> None:
 def test_dereference_refs_missing_ref() -> None:
     schema = {
         "type": "object",
-        "properties": {
-            "first_name": {"$ref": "#/$defs/name"},
-        },
+        "properties": {"first_name": {"$ref": "#/$defs/name"}},
         "$defs": {},
     }
     with pytest.raises(KeyError):
@@ -143,9 +128,7 @@ def test_dereference_refs_missing_ref() -> None:
 def test_dereference_refs_remote_ref() -> None:
     schema = {
         "type": "object",
-        "properties": {
-            "first_name": {"$ref": "https://somewhere/else/name"},
-        },
+        "properties": {"first_name": {"$ref": "https://somewhere/else/name"}},
     }
     with pytest.raises(ValueError):
         dereference_refs(schema)
@@ -154,14 +137,9 @@ def test_dereference_refs_remote_ref() -> None:
 def test_dereference_refs_integer_ref() -> None:
     schema = {
         "type": "object",
-        "properties": {
-            "error_400": {"$ref": "#/$defs/400"},
-        },
+        "properties": {"error_400": {"$ref": "#/$defs/400"}},
         "$defs": {
-            400: {
-                "type": "object",
-                "properties": {"description": "Bad Request"},
-            },
+            400: {"type": "object", "properties": {"description": "Bad Request"}}
         },
     }
     expected = {
@@ -170,13 +148,10 @@ def test_dereference_refs_integer_ref() -> None:
             "error_400": {
                 "type": "object",
                 "properties": {"description": "Bad Request"},
-            },
+            }
         },
         "$defs": {
-            400: {
-                "type": "object",
-                "properties": {"description": "Bad Request"},
-            },
+            400: {"type": "object", "properties": {"description": "Bad Request"}}
         },
     }
     actual = dereference_refs(schema)

@@ -36,9 +36,7 @@ class ToTChecker(Chain, ABC):
 
     @abstractmethod
     def evaluate(
-        self,
-        problem_description: str,
-        thoughts: Tuple[str, ...] = (),
+        self, problem_description: str, thoughts: Tuple[str, ...] = ()
     ) -> ThoughtValidity:
         """
         Evaluate the response to the problem description and return the solution type.

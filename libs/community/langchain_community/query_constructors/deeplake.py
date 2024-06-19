@@ -19,11 +19,7 @@ COMPARATOR_TO_TQL = {
 }
 
 
-OPERATOR_TO_TQL = {
-    Operator.AND: "and",
-    Operator.OR: "or",
-    Operator.NOT: "NOT",
-}
+OPERATOR_TO_TQL = {Operator.AND: "and", Operator.OR: "or", Operator.NOT: "NOT"}
 
 
 def can_cast_to_float(string: str) -> bool:

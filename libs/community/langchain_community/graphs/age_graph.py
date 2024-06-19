@@ -106,10 +106,7 @@ class AGEGraph(GraphStore):
                         self.connection.commit()
                     except psycopg2.Error as e:
                         raise AGEQueryException(
-                            {
-                                "message": "Could not create the graph",
-                                "detail": str(e),
-                            }
+                            {"message": "Could not create the graph", "detail": str(e)}
                         )
 
                 else:
@@ -217,10 +214,7 @@ class AGEGraph(GraphStore):
                         )
                 except psycopg2.Error as e:
                     raise AGEQueryException(
-                        {
-                            "message": "Error fetching triples",
-                            "detail": str(e),
-                        }
+                        {"message": "Error fetching triples", "detail": str(e)}
                     )
 
         return triple_schema
@@ -310,10 +304,7 @@ class AGEGraph(GraphStore):
                     curs.execute(q)
                 except psycopg2.Error as e:
                     raise AGEQueryException(
-                        {
-                            "message": "Error fetching node properties",
-                            "detail": str(e),
-                        }
+                        {"message": "Error fetching node properties", "detail": str(e)}
                     )
                 data = curs.fetchall()
 
@@ -381,10 +372,7 @@ class AGEGraph(GraphStore):
                     curs.execute(q)
                 except psycopg2.Error as e:
                     raise AGEQueryException(
-                        {
-                            "message": "Error fetching edge properties",
-                            "detail": str(e),
-                        }
+                        {"message": "Error fetching edge properties", "detail": str(e)}
                     )
                 data = curs.fetchall()
 
@@ -527,10 +515,7 @@ class AGEGraph(GraphStore):
         select_str = "*"
 
         return template.format(
-            graph_name=graph_name,
-            query=query,
-            fields=fields_str,
-            projection=select_str,
+            graph_name=graph_name, query=query, fields=fields_str, projection=select_str
         )
 
     @staticmethod

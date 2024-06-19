@@ -65,7 +65,7 @@ DEFAULT_RESPONSE_FUNCTION = {
             "response": {
                 "type": "string",
                 "description": "Conversational response to the user.",
-            },
+            }
         },
         "required": ["response"],
     },
@@ -214,15 +214,20 @@ class OllamaFunctions(ChatOllama):
                 from langchain_experimental.llms import OllamaFunctions
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 llm = OllamaFunctions(model="phi3", format="json", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
 
                 # -> AnswerWithJustification(
                 #     answer='They weigh the same',
@@ -235,15 +240,22 @@ class OllamaFunctions(ChatOllama):
                 from langchain_experimental.llms import OllamaFunctions
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
 
-                llm = OllamaFunctions(model="phi3", format="json", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                llm = OllamaFunctions(model="phi3", format="json", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
                 #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
@@ -256,16 +268,21 @@ class OllamaFunctions(ChatOllama):
                 from langchain_experimental.llms import OllamaFunctions, convert_to_ollama_tool
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 dict_schema = convert_to_ollama_tool(AnswerWithJustification)
                 llm = OllamaFunctions(model="phi3", format="json", temperature=0)
                 structured_llm = llm.with_structured_output(dict_schema)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
@@ -345,13 +362,7 @@ class OllamaFunctions(ChatOllama):
                             "with a string 'image_url' field."
                         )
 
-            ollama_messages.append(
-                {
-                    "role": role,
-                    "content": content,
-                    "images": images,
-                }
-            )
+            ollama_messages.append({"role": role, "content": content, "images": images})
 
         return ollama_messages
 
@@ -420,13 +431,7 @@ class OllamaFunctions(ChatOllama):
                     f"{chat_generation_content}"
                 )
             return ChatResult(
-                generations=[
-                    ChatGeneration(
-                        message=AIMessage(
-                            content=response,
-                        )
-                    )
-                ]
+                generations=[ChatGeneration(message=AIMessage(content=response))]
             )
 
         called_tool_arguments = (
@@ -508,9 +513,7 @@ class OllamaFunctions(ChatOllama):
             return ChatResult(
                 generations=[
                     ChatGeneration(
-                        message=AIMessage(
-                            content=called_tool_arguments["response"],
-                        )
+                        message=AIMessage(content=called_tool_arguments["response"])
                     )
                 ]
             )
@@ -523,7 +526,7 @@ class OllamaFunctions(ChatOllama):
                     "arguments": json.dumps(called_tool_arguments)
                     if called_tool_arguments
                     else "",
-                },
+                }
             },
         )
         return ChatResult(

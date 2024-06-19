@@ -1,8 +1,6 @@
 """Test octoai embeddings."""
 
-from langchain_community.embeddings.octoai_embeddings import (
-    OctoAIEmbeddings,
-)
+from langchain_community.embeddings.octoai_embeddings import OctoAIEmbeddings
 
 
 def test_octoai_embedding_documents() -> None:

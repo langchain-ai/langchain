@@ -55,7 +55,7 @@ class HuggingFaceTextGenInference(LLM):
                 temperature=0.01,
                 repetition_penalty=1.03,
                 callbacks=callbacks,
-                streaming=True
+                streaming=True,
             )
             print(llm.invoke("What is Deep Learning?"))  # noqa: T201
 

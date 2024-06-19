@@ -174,10 +174,5 @@ class TavilySearchAPIWrapper(BaseModel):
         """Clean results from Tavily Search API."""
         clean_results = []
         for result in results:
-            clean_results.append(
-                {
-                    "url": result["url"],
-                    "content": result["content"],
-                }
-            )
+            clean_results.append({"url": result["url"], "content": result["content"]})
         return clean_results

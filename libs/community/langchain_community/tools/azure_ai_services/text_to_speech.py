@@ -91,9 +91,7 @@ class AzureAiServicesTextToSpeechTool(BaseTool):
             return f"Speech synthesis failed: {result.reason}"
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         try:

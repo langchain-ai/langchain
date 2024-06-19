@@ -40,6 +40,7 @@ class HuggingFaceHub(LLM):
         .. code-block:: python
 
             from langchain_community.llms import HuggingFaceHub
+
             hf = HuggingFaceHub(repo_id="gpt2", huggingfacehub_api_token="my-api-key")
     """
 
@@ -71,10 +72,7 @@ class HuggingFaceHub(LLM):
             from huggingface_hub import HfApi, InferenceClient
 
             repo_id = values["repo_id"]
-            client = InferenceClient(
-                model=repo_id,
-                token=huggingfacehub_api_token,
-            )
+            client = InferenceClient(model=repo_id, token=huggingfacehub_api_token)
             if not values["task"]:
                 if not repo_id:
                     raise ValueError(

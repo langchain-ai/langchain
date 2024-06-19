@@ -2,9 +2,7 @@ import json
 from pathlib import Path
 from typing import List
 
-from langchain_core.chat_history import (
-    BaseChatMessageHistory,
-)
+from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import BaseMessage, messages_from_dict, messages_to_dict
 
 

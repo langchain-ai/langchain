@@ -27,11 +27,7 @@ class ZepCloudVectorStore(VectorStore):
         api_key (str): The API key for the Zep API.
     """
 
-    def __init__(
-        self,
-        collection_name: str,
-        api_key: str,
-    ) -> None:
+    def __init__(self, collection_name: str, api_key: str) -> None:
         super().__init__()
         if not collection_name:
             raise ValueError(
@@ -247,10 +243,7 @@ class ZepCloudVectorStore(VectorStore):
 
         return [
             (
-                Document(
-                    page_content=str(doc.content),
-                    metadata=doc.metadata,
-                ),
+                Document(page_content=str(doc.content), metadata=doc.metadata),
                 doc.score or 0.0,
             )
             for doc in results.results or []
@@ -275,10 +268,7 @@ class ZepCloudVectorStore(VectorStore):
 
         return [
             (
-                Document(
-                    page_content=str(doc.content),
-                    metadata=doc.metadata,
-                ),
+                Document(page_content=str(doc.content), metadata=doc.metadata),
                 doc.score or 0.0,
             )
             for doc in results.results or []
@@ -449,10 +439,7 @@ class ZepCloudVectorStore(VectorStore):
         """
         if not api_key:
             raise ValueError("api_key must be specified when using ZepVectorStore.")
-        vecstore = cls(
-            collection_name=collection_name,
-            api_key=api_key,
-        )
+        vecstore = cls(collection_name=collection_name, api_key=api_key)
         vecstore.add_texts(texts, metadatas)
         return vecstore
 

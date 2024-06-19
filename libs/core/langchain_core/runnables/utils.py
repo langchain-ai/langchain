@@ -508,10 +508,7 @@ class _SchemaConfig(BaseConfig):
     frozen = True
 
 
-def create_model(
-    __model_name: str,
-    **field_definitions: Any,
-) -> Type[BaseModel]:
+def create_model(__model_name: str, **field_definitions: Any) -> Type[BaseModel]:
     """Create a pydantic model with the given field definitions.
 
     Args:
@@ -532,17 +529,14 @@ def create_model(
 
 @lru_cache(maxsize=256)
 def _create_model_cached(
-    __model_name: str,
-    **field_definitions: Any,
+    __model_name: str, **field_definitions: Any
 ) -> Type[BaseModel]:
     return _create_model_base(
         __model_name, __config__=_SchemaConfig, **field_definitions
     )
 
 
-def is_async_generator(
-    func: Any,
-) -> TypeGuard[Callable[..., AsyncIterator]]:
+def is_async_generator(func: Any) -> TypeGuard[Callable[..., AsyncIterator]]:
     """Check if a function is an async generator."""
     return (
         inspect.isasyncgenfunction(func)
@@ -551,9 +545,7 @@ def is_async_generator(
     )
 
 
-def is_async_callable(
-    func: Any,
-) -> TypeGuard[Callable[..., Awaitable]]:
+def is_async_callable(func: Any) -> TypeGuard[Callable[..., Awaitable]]:
     """Check if a function is async."""
     return (
         asyncio.iscoroutinefunction(func)

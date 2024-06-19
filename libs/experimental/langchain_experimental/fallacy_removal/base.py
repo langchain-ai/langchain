@@ -105,8 +105,7 @@ class FallacyChain(Chain):
     ) -> Dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         response = self.chain.run(
-            **inputs,
-            callbacks=_run_manager.get_child("original"),
+            **inputs, callbacks=_run_manager.get_child("original")
         )
         initial_response = response
         input_prompt = self.chain.prompt.format(**inputs)
@@ -127,7 +126,7 @@ class FallacyChain(Chain):
                 callbacks=_run_manager.get_child("fallacy_critique"),
             )
             fallacy_critique = self._parse_critique(
-                output_string=fallacy_raw_critique,
+                output_string=fallacy_raw_critique
             ).strip()
 
             # if fallacy critique contains "No fallacy critique needed" then done

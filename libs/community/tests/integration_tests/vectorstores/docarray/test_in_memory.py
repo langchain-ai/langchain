@@ -16,10 +16,7 @@ def texts() -> List[str]:
 
 def test_from_texts(texts: List[str]) -> None:
     """Test end to end construction and simple similarity search."""
-    docsearch = DocArrayInMemorySearch.from_texts(
-        texts,
-        FakeEmbeddings(),
-    )
+    docsearch = DocArrayInMemorySearch.from_texts(texts, FakeEmbeddings())
     assert isinstance(docsearch, DocArrayInMemorySearch)
     assert docsearch.doc_index.num_docs() == 3
 
@@ -39,9 +36,7 @@ def test_sim_search(metric: str, texts: List[str]) -> None:
     """Test end to end construction and simple similarity search."""
     texts = ["foo", "bar", "baz"]
     in_memory_vec_store = DocArrayInMemorySearch.from_texts(
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        metric=metric,
+        texts=texts, embedding=FakeEmbeddings(), metric=metric
     )
 
     output = in_memory_vec_store.similarity_search("foo", k=1)
@@ -52,9 +47,7 @@ def test_sim_search(metric: str, texts: List[str]) -> None:
 def test_sim_search_with_score(metric: str, texts: List[str]) -> None:
     """Test end to end construction and similarity search with score."""
     in_memory_vec_store = DocArrayInMemorySearch.from_texts(
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        metric=metric,
+        texts=texts, embedding=FakeEmbeddings(), metric=metric
     )
 
     output = in_memory_vec_store.similarity_search_with_score("foo", k=1)
@@ -70,9 +63,7 @@ def test_sim_search_with_score(metric: str, texts: List[str]) -> None:
 def test_sim_search_by_vector(metric: str, texts: List[str]) -> None:
     """Test end to end construction and similarity search by vector."""
     in_memory_vec_store = DocArrayInMemorySearch.from_texts(
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        metric=metric,
+        texts=texts, embedding=FakeEmbeddings(), metric=metric
     )
 
     embedding = [1.0] * 10

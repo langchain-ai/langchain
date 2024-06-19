@@ -104,10 +104,7 @@ class _HashedDocument(Document):
 
     def to_document(self) -> Document:
         """Return a Document object."""
-        return Document(
-            page_content=self.page_content,
-            metadata=self.metadata,
-        )
+        return Document(page_content=self.page_content, metadata=self.metadata)
 
     @classmethod
     def from_document(

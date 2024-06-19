@@ -17,12 +17,9 @@ class ChatGLM(LLM):
         .. code-block:: python
 
             from langchain_community.llms import ChatGLM
-            endpoint_url = (
-                "http://127.0.0.1:8000"
-            )
-            ChatGLM_llm = ChatGLM(
-                endpoint_url=endpoint_url
-            )
+
+            endpoint_url = "http://127.0.0.1:8000"
+            ChatGLM_llm = ChatGLM(endpoint_url=endpoint_url)
     """
 
     endpoint_url: str = "http://127.0.0.1:8000/"

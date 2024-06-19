@@ -22,14 +22,14 @@ class Vald(VectorStore):
             from langchain_community.embeddings import HuggingFaceEmbeddings
             from langchain_community.vectorstores import Vald
 
-            texts = ['foo', 'bar', 'baz']
+            texts = ["foo", "bar", "baz"]
             vald = Vald.from_texts(
                 texts=texts,
                 embedding=HuggingFaceEmbeddings(),
                 host="localhost",
                 port=8080,
                 skip_strict_exist_check=False,
-             )
+            )
     """
 
     def __init__(
@@ -321,10 +321,7 @@ class Vald(VectorStore):
             docs.append(doc)
 
         mmr = maximal_marginal_relevance(
-            np.array(embedding),
-            embs,
-            lambda_mult=lambda_mult,
-            k=k,
+            np.array(embedding), embs, lambda_mult=lambda_mult, k=k
         )
 
         channel.close()

@@ -2,11 +2,7 @@ import json
 from typing import List
 
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.messages import (
-    BaseMessage,
-    message_to_dict,
-    messages_from_dict,
-)
+from langchain_core.messages import BaseMessage, message_to_dict, messages_from_dict
 
 
 class XataChatMessageHistory(BaseChatMessageHistory):
@@ -87,9 +83,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
         r = self._client.data().query(
             self._table_name,
             payload={
-                "filter": {
-                    "sessionId": self._session_id,
-                },
+                "filter": {"sessionId": self._session_id},
                 "sort": {"xata.createdAt": "asc"},
             },
         )
@@ -116,12 +110,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
         while True:
             r = self._client.data().query(
                 self._table_name,
-                payload={
-                    "columns": ["id"],
-                    "filter": {
-                        "sessionId": self._session_id,
-                    },
-                },
+                payload={"columns": ["id"], "filter": {"sessionId": self._session_id}},
             )
             if r.status_code != 200:
                 raise Exception(f"Error running query: {r.status_code} {r}")

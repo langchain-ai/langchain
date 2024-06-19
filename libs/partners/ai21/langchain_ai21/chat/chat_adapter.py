@@ -21,15 +21,11 @@ class ChatAdapter(ABC):
     """
 
     @abstractmethod
-    def convert_messages(
-        self,
-        messages: List[BaseMessage],
-    ) -> Dict[str, Any]:
+    def convert_messages(self, messages: List[BaseMessage]) -> Dict[str, Any]:
         pass
 
     def _convert_message_to_ai21_message(
-        self,
-        message: BaseMessage,
+        self, message: BaseMessage
     ) -> _ChatMessageTypes:
         content = cast(str, message.content)
         role = self._parse_role(message)
@@ -56,11 +52,7 @@ class ChatAdapter(ABC):
         return message.type
 
     @abstractmethod
-    def _chat_message(
-        self,
-        role: _ROLE_TYPE,
-        content: str,
-    ) -> _ChatMessageTypes:
+    def _chat_message(self, role: _ROLE_TYPE, content: str) -> _ChatMessageTypes:
         pass
 
     @abstractmethod
@@ -95,11 +87,7 @@ class J2ChatAdapter(ChatAdapter):
 
         return {"system": system_message, "messages": converted_messages}
 
-    def _chat_message(
-        self,
-        role: _ROLE_TYPE,
-        content: str,
-    ) -> J2ChatMessage:
+    def _chat_message(self, role: _ROLE_TYPE, content: str) -> J2ChatMessage:
         return J2ChatMessage(role=RoleType(role), text=content)
 
     def call(self, client: Any, **params: Any) -> List[BaseMessage]:
@@ -115,17 +103,12 @@ class JambaChatCompletionsAdapter(ChatAdapter):
         return {
             "messages": [
                 self._convert_message_to_ai21_message(message) for message in messages
-            ],
+            ]
         }
 
-    def _chat_message(
-        self,
-        role: _ROLE_TYPE,
-        content: str,
-    ) -> ChatMessage:
+    def _chat_message(self, role: _ROLE_TYPE, content: str) -> ChatMessage:
         return ChatMessage(
-            role=role.value if isinstance(role, RoleType) else role,
-            content=content,
+            role=role.value if isinstance(role, RoleType) else role, content=content
         )
 
     def call(self, client: Any, **params: Any) -> List[BaseMessage]:

@@ -83,9 +83,6 @@ class ExaSearchRetriever(BaseRetriever):
         results = response.results
 
         return [
-            Document(
-                page_content=(result.text),
-                metadata=_get_metadata(result),
-            )
+            Document(page_content=(result.text), metadata=_get_metadata(result))
             for result in results
         ]

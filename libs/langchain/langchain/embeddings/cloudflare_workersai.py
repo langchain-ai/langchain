@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 DEPRECATED_LOOKUP = {
     "CloudflareWorkersAIEmbeddings": (
         "langchain_community.embeddings.cloudflare_workersai"
-    ),
+    )
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
@@ -24,6 +24,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "CloudflareWorkersAIEmbeddings",
-]
+__all__ = ["CloudflareWorkersAIEmbeddings"]

@@ -15,11 +15,7 @@ class BS4HTMLParser(BaseBlobParser):
     """Parse HTML files using `Beautiful Soup`."""
 
     def __init__(
-        self,
-        *,
-        features: str = "lxml",
-        get_text_separator: str = "",
-        **kwargs: Any,
+        self, *, features: str = "lxml", get_text_separator: str = "", **kwargs: Any
     ) -> None:
         """Initialize a bs4 based HTML parser."""
         try:
@@ -47,8 +43,5 @@ class BS4HTMLParser(BaseBlobParser):
         else:
             title = ""
 
-        metadata: Dict[str, Union[str, None]] = {
-            "source": blob.source,
-            "title": title,
-        }
+        metadata: Dict[str, Union[str, None]] = {"source": blob.source, "title": title}
         yield Document(page_content=text, metadata=metadata)

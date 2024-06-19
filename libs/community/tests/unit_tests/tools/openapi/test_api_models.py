@@ -67,14 +67,7 @@ def http_paths_and_methods() -> List[Tuple[str, OpenAPISpec, str, str]]:
                 spec = yaml.safe_load(f.read())
         parsed_spec = OpenAPISpec.from_file(test_spec)
         for path, method in _get_paths_and_methods_from_spec_dictionary(spec):
-            http_paths_and_methods.append(
-                (
-                    spec_name,
-                    parsed_spec,
-                    path,
-                    method,
-                )
-            )
+            http_paths_and_methods.append((spec_name, parsed_spec, path, method))
     return http_paths_and_methods
 
 
@@ -94,39 +87,24 @@ def raw_spec() -> OpenAPISpec:
     """Return a raw OpenAPI spec."""
     from openapi_pydantic import Info
 
-    return OpenAPISpec(
-        info=Info(title="Test API", version="1.0.0"),
-    )
+    return OpenAPISpec(info=Info(title="Test API", version="1.0.0"))
 
 
 @pytest.mark.requires("openapi_pydantic")
 def test_api_request_body_from_request_body_with_ref(raw_spec: OpenAPISpec) -> None:
     """Test instantiating APIRequestBody from RequestBody with a reference."""
-    from openapi_pydantic import (
-        Components,
-        MediaType,
-        Reference,
-        RequestBody,
-        Schema,
-    )
+    from openapi_pydantic import Components, MediaType, Reference, RequestBody, Schema
 
     raw_spec.components = Components(
         schemas={
             "Foo": Schema(
                 type="object",
-                properties={
-                    "foo": Schema(type="string"),
-                    "bar": Schema(type="number"),
-                },
+                properties={"foo": Schema(type="string"), "bar": Schema(type="number")},
                 required=["foo"],
             )
         }
     )
-    media_type = MediaType(
-        schema=Reference(
-            ref="#/components/schemas/Foo",
-        )
-    )
+    media_type = MediaType(schema=Reference(ref="#/components/schemas/Foo"))
     request_body = RequestBody(content={"application/json": media_type})
     api_request_body = APIRequestBody.from_request_body(request_body, raw_spec)
     assert api_request_body.description is None
@@ -143,11 +121,7 @@ def test_api_request_body_from_request_body_with_ref(raw_spec: OpenAPISpec) -> N
 @pytest.mark.requires("openapi_pydantic")
 def test_api_request_body_from_request_body_with_schema(raw_spec: OpenAPISpec) -> None:
     """Test instantiating APIRequestBody from RequestBody with a schema."""
-    from openapi_pydantic import (
-        MediaType,
-        RequestBody,
-        Schema,
-    )
+    from openapi_pydantic import MediaType, RequestBody, Schema
 
     request_body = RequestBody(
         content={
@@ -173,19 +147,9 @@ def test_api_request_body_from_request_body_with_schema(raw_spec: OpenAPISpec) -
 
 @pytest.mark.requires("openapi_pydantic")
 def test_api_request_body_property_from_schema(raw_spec: OpenAPISpec) -> None:
-    from openapi_pydantic import (
-        Components,
-        Reference,
-        Schema,
-    )
+    from openapi_pydantic import Components, Reference, Schema
 
-    raw_spec.components = Components(
-        schemas={
-            "Bar": Schema(
-                type="number",
-            )
-        }
-    )
+    raw_spec.components = Components(schemas={"Bar": Schema(type="number")})
     schema = Schema(
         type="object",
         properties={

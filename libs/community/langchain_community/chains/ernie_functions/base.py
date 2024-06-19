@@ -118,9 +118,7 @@ def _get_python_function_required_args(function: Callable) -> List[str]:
     return required
 
 
-def convert_python_function_to_ernie_function(
-    function: Callable,
-) -> Dict[str, Any]:
+def convert_python_function_to_ernie_function(function: Callable) -> Dict[str, Any]:
     """Convert a Python function to an Ernie function-calling API compatible dict.
 
     Assumes the Python function has type hints and a docstring with a description. If
@@ -357,11 +355,7 @@ def create_structured_output_runnable(
             pydantic_schema=_OutputFormatter, attr_name="output"
         )
     return create_ernie_fn_runnable(
-        [function],
-        llm,
-        prompt,
-        output_parser=output_parser,
-        **kwargs,
+        [function], llm, prompt, output_parser=output_parser, **kwargs
     )
 
 
@@ -448,9 +442,7 @@ def create_ernie_fn_chain(
         raise ValueError("Need to pass in at least one function. Received zero.")
     ernie_functions = [convert_to_ernie_function(f) for f in functions]
     output_parser = output_parser or get_ernie_output_parser(functions)
-    llm_kwargs: Dict[str, Any] = {
-        "functions": ernie_functions,
-    }
+    llm_kwargs: Dict[str, Any] = {"functions": ernie_functions}
     if len(ernie_functions) == 1:
         llm_kwargs["function_call"] = {"name": ernie_functions[0]["name"]}
     llm_chain = LLMChain(  # type: ignore[misc]

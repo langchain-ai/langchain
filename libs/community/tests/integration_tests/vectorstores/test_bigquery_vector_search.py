@@ -59,21 +59,11 @@ class TestBigQueryVectorStore:
     store: BigQueryVectorSearch
     texts = ["apple", "ice cream", "Saturn", "candy", "banana"]
     metadatas = [
-        {
-            "kind": "fruit",
-        },
-        {
-            "kind": "treat",
-        },
-        {
-            "kind": "planet",
-        },
-        {
-            "kind": "treat",
-        },
-        {
-            "kind": "fruit",
-        },
+        {"kind": "fruit"},
+        {"kind": "treat"},
+        {"kind": "planet"},
+        {"kind": "treat"},
+        {"kind": "fruit"},
     ]
 
     def test_semantic_search(self, store: BigQueryVectorSearch) -> None:

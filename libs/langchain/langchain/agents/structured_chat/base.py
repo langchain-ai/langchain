@@ -131,11 +131,7 @@ class StructuredChatAgent(Agent):
             input_variables=input_variables,
             memory_prompts=memory_prompts,
         )
-        llm_chain = LLMChain(
-            llm=llm,
-            prompt=prompt,
-            callback_manager=callback_manager,
-        )
+        llm_chain = LLMChain(llm=llm, prompt=prompt, callback_manager=callback_manager)
         tool_names = [tool.name for tool in tools]
         _output_parser = output_parser or cls._get_default_output_parser(llm=llm)
         return cls(
@@ -198,6 +194,7 @@ def create_structured_chat_agent(
 
             # Using with chat history
             from langchain_core.messages import AIMessage, HumanMessage
+
             agent_executor.invoke(
                 {
                     "input": "what's my name?",
@@ -279,8 +276,7 @@ def create_structured_chat_agent(
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
     prompt = prompt.partial(
-        tools=tools_renderer(list(tools)),
-        tool_names=", ".join([t.name for t in tools]),
+        tools=tools_renderer(list(tools)), tool_names=", ".join([t.name for t in tools])
     )
     if stop_sequence:
         stop = ["\nObservation"] if stop_sequence is True else stop_sequence
@@ -290,7 +286,7 @@ def create_structured_chat_agent(
 
     agent = (
         RunnablePassthrough.assign(
-            agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
+            agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"])
         )
         | prompt
         | llm_with_stop

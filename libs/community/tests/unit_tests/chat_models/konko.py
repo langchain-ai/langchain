@@ -109,9 +109,7 @@ def test_konko_streaming_info_test() -> None:
     callback_instance = TestCallback()
     callback_mgr = CallbackManager([callback_instance])
     chat_instance = ChatKonko(
-        max_tokens=2,
-        temperature=0,
-        callback_manager=callback_mgr,
+        max_tokens=2, temperature=0, callback_manager=callback_mgr
     )
     list(chat_instance.stream("hey"))
     gen_data = callback_instance.data_store["generation"]
@@ -139,12 +137,7 @@ def test_konko_streaming_model_name_test() -> None:
 def test_konko_streaming_param_validation_test() -> None:
     """Ensure correct token callback during streaming."""
     with pytest.raises(ValueError):
-        ChatKonko(
-            max_tokens=10,
-            streaming=True,
-            temperature=0,
-            n=5,
-        )
+        ChatKonko(max_tokens=10, streaming=True, temperature=0, n=5)
 
 
 def test_konko_additional_args_test() -> None:

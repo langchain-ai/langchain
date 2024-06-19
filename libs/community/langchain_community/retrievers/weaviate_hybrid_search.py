@@ -32,10 +32,7 @@ class WeaviateHybridSearchRetriever(BaseRetriever):
     """Whether to create the schema if it doesn't exist."""
 
     @root_validator(pre=True)
-    def validate_client(
-        cls,
-        values: Dict[str, Any],
-    ) -> Dict[str, Any]:
+    def validate_client(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         try:
             import weaviate
         except ImportError:

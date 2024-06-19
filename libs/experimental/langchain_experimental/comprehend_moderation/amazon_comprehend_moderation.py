@@ -74,10 +74,7 @@ class AmazonComprehendModerationChain(Chain):
         Example:
         .. code-block:: python
 
-            config = {
-                "credentials_profile_name": "my-profile",
-                "region_name": "us-west-2"
-            }
+            config = {"credentials_profile_name": "my-profile", "region_name": "us-west-2"}
             updated_config = create_client(config)
             comprehend_client = updated_config["client"]
         """

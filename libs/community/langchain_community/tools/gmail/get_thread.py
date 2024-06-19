@@ -10,10 +10,7 @@ class GetThreadSchema(BaseModel):
     """Input for GetMessageTool."""
 
     # From https://support.google.com/mail/answer/7190?hl=en
-    thread_id: str = Field(
-        ...,
-        description="The thread ID.",
-    )
+    thread_id: str = Field(..., description="The thread ID.")
 
 
 class GmailGetThread(GmailBaseTool):
@@ -28,9 +25,7 @@ class GmailGetThread(GmailBaseTool):
     args_schema: Type[GetThreadSchema] = GetThreadSchema
 
     def _run(
-        self,
-        thread_id: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, thread_id: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> Dict:
         """Run the tool."""
         query = self.api_resource.users().threads().get(userId="me", id=thread_id)

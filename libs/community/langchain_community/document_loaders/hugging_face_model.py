@@ -33,7 +33,7 @@ class HuggingFaceModelLoader(BaseLoader):
             # Iterate through the fetched documents
             for doc in documents:
                 print(doc.page_content)  # README content of the model
-                print(doc.metadata)      # Metadata of the model
+                print(doc.metadata)  # Metadata of the model
     """
 
     BASE_URL = "https://huggingface.co/api/models"
@@ -102,7 +102,4 @@ class HuggingFaceModelLoader(BaseLoader):
             model_id = model.get("modelId", "")
             readme_content = self.fetch_readme_content(model_id)
 
-            yield Document(
-                page_content=readme_content,
-                metadata=model,
-            )
+            yield Document(page_content=readme_content, metadata=model)

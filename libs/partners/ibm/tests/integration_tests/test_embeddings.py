@@ -30,9 +30,7 @@ def test_01_generate_embed_documents() -> None:
 
 def test_02_generate_embed_query() -> None:
     watsonx_embedding = WatsonxEmbeddings(
-        model_id=MODEL_ID,
-        url=URL,
-        project_id=WX_PROJECT_ID,
+        model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID
     )
     generate_embedding = watsonx_embedding.embed_query(text=DOCUMENTS[0])
     assert isinstance(generate_embedding, list) and isinstance(
@@ -41,9 +39,7 @@ def test_02_generate_embed_query() -> None:
 
 
 def test_03_generate_embed_documents_with_param() -> None:
-    embed_params = {
-        EmbedTextParamsMetaNames.TRUNCATE_INPUT_TOKENS: 3,
-    }
+    embed_params = {EmbedTextParamsMetaNames.TRUNCATE_INPUT_TOKENS: 3}
     watsonx_embedding = WatsonxEmbeddings(
         model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID, params=embed_params
     )
@@ -53,12 +49,7 @@ def test_03_generate_embed_documents_with_param() -> None:
 
 
 def test_10_generate_embed_query_with_client_initialization() -> None:
-    watsonx_client = APIClient(
-        credentials={
-            "url": URL,
-            "apikey": WX_APIKEY,
-        }
-    )
+    watsonx_client = APIClient(credentials={"url": URL, "apikey": WX_APIKEY})
     watsonx_embedding = WatsonxEmbeddings(
         model_id=MODEL_ID, project_id=WX_PROJECT_ID, watsonx_client=watsonx_client
     )

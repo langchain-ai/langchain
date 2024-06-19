@@ -145,7 +145,6 @@ def test_embedding_distance_eval_chain(
     prediction = "Hi"
     reference = "Hello"
     result = embedding_distance_eval_chain.evaluate_strings(
-        prediction=prediction,
-        reference=reference,
+        prediction=prediction, reference=reference
     )
     assert result["score"] < 1.0

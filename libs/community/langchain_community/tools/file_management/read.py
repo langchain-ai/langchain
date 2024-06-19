@@ -25,9 +25,7 @@ class ReadFileTool(BaseFileToolMixin, BaseTool):
     description: str = "Read file from disk"
 
     def _run(
-        self,
-        file_path: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, file_path: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         try:
             read_path = self.get_relative_path(file_path)

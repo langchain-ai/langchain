@@ -83,11 +83,7 @@ def test_code_execution_calls_api(
 
     result = tool.run("print('hello world')")
 
-    assert json.loads(result) == {
-        "result": "",
-        "stdout": "hello world\n",
-        "stderr": "",
-    }
+    assert json.loads(result) == {"result": "", "stdout": "hello world\n", "stderr": ""}
 
     api_url = f"{POOL_MANAGEMENT_ENDPOINT}/code/execute"
     headers = {

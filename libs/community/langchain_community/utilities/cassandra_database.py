@@ -41,10 +41,7 @@ class CassandraDatabase:
         self._include_tables = include_tables or []
 
     def run(
-        self,
-        query: str,
-        fetch: str = "all",
-        **kwargs: Any,
+        self, query: str, fetch: str = "all", **kwargs: Any
     ) -> Union[list, Dict[str, Any], ResultSet]:
         """Execute a CQL query and return the results."""
         if fetch == "all":

@@ -16,8 +16,7 @@ class Document(Serializable):
             from langchain_core.documents import Document
 
             document = Document(
-                page_content="Hello, world!",
-                metadata={"source": "https://example.com"}
+                page_content="Hello, world!", metadata={"source": "https://example.com"}
             )
     """
 

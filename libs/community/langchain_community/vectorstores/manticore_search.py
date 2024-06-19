@@ -323,10 +323,7 @@ CREATE TABLE IF NOT EXISTS {self.config.table}(
         )
 
     def similarity_search_by_vector(
-        self,
-        embedding: List[float],
-        k: int = DEFAULT_K,
-        **kwargs: Any,
+        self, embedding: List[float], k: int = DEFAULT_K, **kwargs: Any
     ) -> List[Document]:
         """Perform a similarity search with ManticoreSearch by vectors
 

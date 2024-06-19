@@ -1,14 +1,5 @@
 from abc import ABC
-from typing import (
-    Any,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    TypedDict,
-    Union,
-    cast,
-)
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, cast
 
 from typing_extensions import NotRequired
 
@@ -153,10 +144,7 @@ class Serializable(BaseModel, ABC):
                 break
 
             if cls:
-                deprecated_attributes = [
-                    "lc_namespace",
-                    "lc_serializable",
-                ]
+                deprecated_attributes = ["lc_namespace", "lc_serializable"]
 
                 for attr in deprecated_attributes:
                     if hasattr(cls, attr):
@@ -230,11 +218,7 @@ def _replace_secrets(
             current[part] = current[part].copy()
             current = current[part]
         if last in current:
-            current[last] = {
-                "lc": 1,
-                "type": "secret",
-                "id": [secret_id],
-            }
+            current[last] = {"lc": 1, "type": "secret", "id": [secret_id]}
     return result
 
 

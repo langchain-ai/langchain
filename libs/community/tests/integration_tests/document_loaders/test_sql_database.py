@@ -121,9 +121,7 @@ def test_sqldatabase_loader_include_rownum_into_metadata(db: SQLDatabase) -> Non
     """Test SQLAlchemy loader with row number in metadata."""
 
     loader = SQLDatabaseLoader(
-        "SELECT 1 AS a, 2 AS b",
-        db=db,
-        include_rownum_into_metadata=True,
+        "SELECT 1 AS a, 2 AS b", db=db, include_rownum_into_metadata=True
     )
     docs = loader.load()
 
@@ -177,9 +175,7 @@ def test_sqldatabase_loader_metadata_columns(db: SQLDatabase) -> None:
     )
 
     loader = SQLDatabaseLoader(
-        "SELECT 1 AS a, 2 AS b",
-        db=db,
-        metadata_mapper=row_to_metadata,
+        "SELECT 1 AS a, 2 AS b", db=db, metadata_mapper=row_to_metadata
     )
     docs = loader.load()
 
@@ -193,8 +189,7 @@ def test_sqldatabase_loader_real_data_with_sql_no_parameters(
     """Test SQLAlchemy loader with real data, querying by SQL statement."""
 
     loader = SQLDatabaseLoader(
-        query='SELECT * FROM mlb_teams_2012 ORDER BY "Team";',
-        db=db,
+        query='SELECT * FROM mlb_teams_2012 ORDER BY "Team";', db=db
     )
     docs = loader.load()
 
@@ -236,11 +231,7 @@ def test_sqldatabase_loader_real_data_with_selectable(
 
     # Query the database table using an SQLAlchemy selectable.
     select = sa.select(mlb_teams_2012).order_by(mlb_teams_2012.c.Team)
-    loader = SQLDatabaseLoader(
-        query=select,
-        db=db,
-        include_query_into_metadata=True,
-    )
+    loader = SQLDatabaseLoader(query=select, db=db, include_query_into_metadata=True)
     docs = loader.load()
 
     assert len(docs) == 30

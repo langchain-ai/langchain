@@ -157,6 +157,7 @@ class JinaChat(BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models import JinaChat
+
             chat = JinaChat()
     """
 

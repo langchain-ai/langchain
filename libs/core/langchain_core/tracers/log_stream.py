@@ -559,10 +559,7 @@ async def _astream_log_implementation(
     import jsonpatch  # type: ignore[import]
 
     from langchain_core.callbacks.base import BaseCallbackManager
-    from langchain_core.tracers.log_stream import (
-        RunLog,
-        RunLogPatch,
-    )
+    from langchain_core.tracers.log_stream import RunLog, RunLogPatch
 
     # Assign the stream handler to the config
     config = ensure_config(config)

@@ -172,10 +172,7 @@ class ChainStringRunMapper(StringRunMapper):
         else:
             input_ = self._get_key(run.inputs, self.input_key, "input")
             prediction = self._get_key(run.outputs, self.prediction_key, "prediction")
-            return {
-                "input": input_,
-                "prediction": prediction,
-            }
+            return {"input": input_, "prediction": prediction}
 
 
 class ToolStringRunMapper(StringRunMapper):
@@ -295,9 +292,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
         chain_output = self.string_evaluator.evaluate_strings(
-            **evaluate_strings_inputs,
-            callbacks=callbacks,
-            include_run_info=True,
+            **evaluate_strings_inputs, callbacks=callbacks, include_run_info=True
         )
         return self._prepare_output(chain_output)
 
@@ -311,9 +306,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
         chain_output = await self.string_evaluator.aevaluate_strings(
-            **evaluate_strings_inputs,
-            callbacks=callbacks,
-            include_run_info=True,
+            **evaluate_strings_inputs, callbacks=callbacks, include_run_info=True
         )
         return self._prepare_output(chain_output)
 

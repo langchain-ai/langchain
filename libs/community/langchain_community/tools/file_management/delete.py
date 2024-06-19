@@ -26,9 +26,7 @@ class DeleteFileTool(BaseFileToolMixin, BaseTool):
     description: str = "Delete a file"
 
     def _run(
-        self,
-        file_path: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, file_path: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         try:
             file_path_ = self.get_relative_path(file_path)

@@ -12,9 +12,7 @@ from typing import Any, Dict, Generator, Iterator, List, Mapping, Optional, Type
 from urllib.parse import urlencode, urlparse, urlunparse
 from wsgiref.handlers import format_date_time
 
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     generate_from_stream,
@@ -30,16 +28,9 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
 )
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatGenerationChunk,
-    ChatResult,
-)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import (
-    get_from_dict_or_env,
-    get_pydantic_field_names,
-)
+from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
 
@@ -198,31 +189,19 @@ class ChatSparkLLM(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         values["spark_app_id"] = get_from_dict_or_env(
-            values,
-            "spark_app_id",
-            "IFLYTEK_SPARK_APP_ID",
+            values, "spark_app_id", "IFLYTEK_SPARK_APP_ID"
         )
         values["spark_api_key"] = get_from_dict_or_env(
-            values,
-            "spark_api_key",
-            "IFLYTEK_SPARK_API_KEY",
+            values, "spark_api_key", "IFLYTEK_SPARK_API_KEY"
         )
         values["spark_api_secret"] = get_from_dict_or_env(
-            values,
-            "spark_api_secret",
-            "IFLYTEK_SPARK_API_SECRET",
+            values, "spark_api_secret", "IFLYTEK_SPARK_API_SECRET"
         )
         values["spark_api_url"] = get_from_dict_or_env(
-            values,
-            "spark_api_url",
-            "IFLYTEK_SPARK_API_URL",
-            SPARK_API_URL,
+            values, "spark_api_url", "IFLYTEK_SPARK_API_URL", SPARK_API_URL
         )
         values["spark_llm_domain"] = get_from_dict_or_env(
-            values,
-            "spark_llm_domain",
-            "IFLYTEK_SPARK_LLM_DOMAIN",
-            SPARK_LLM_DOMAIN,
+            values, "spark_llm_domain", "IFLYTEK_SPARK_LLM_DOMAIN", SPARK_LLM_DOMAIN
         )
         # put extra params into model_kwargs
         values["model_kwargs"]["temperature"] = values["temperature"] or cls.temperature
@@ -387,11 +366,7 @@ class _SparkLLMClient:
     ) -> None:
         self.websocket_client.enableTrace(False)
         ws = self.websocket_client.WebSocketApp(
-            _SparkLLMClient._create_url(
-                self.api_url,
-                self.api_key,
-                self.api_secret,
-            ),
+            _SparkLLMClient._create_url(self.api_url, self.api_key, self.api_secret),
             on_message=self.on_message,
             on_error=self.on_error,
             on_close=self.on_close,
@@ -411,13 +386,7 @@ class _SparkLLMClient:
         streaming: bool = False,
     ) -> threading.Thread:
         ws_thread = threading.Thread(
-            target=self.run,
-            args=(
-                messages,
-                user_id,
-                model_kwargs,
-                streaming,
-            ),
+            target=self.run, args=(messages, user_id, model_kwargs, streaming)
         )
         ws_thread.start()
         return ws_thread

@@ -13,6 +13,7 @@ class ModelScopeEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import ModelScopeEmbeddings
+
             model_id = "damo/nlp_corom_sentence-embedding_english-base"
             embed = ModelScopeEmbeddings(model_id=model_id, model_revision="v1.0.0")
     """

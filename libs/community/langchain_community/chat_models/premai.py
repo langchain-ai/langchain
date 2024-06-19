@@ -17,9 +17,7 @@ from typing import (
     Union,
 )
 
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
@@ -57,10 +55,7 @@ class ChatPremAPIError(Exception):
     """Error with the `PremAI` API."""
 
 
-def _truncate_at_stop_tokens(
-    text: str,
-    stop: Optional[List[str]],
-) -> str:
+def _truncate_at_stop_tokens(text: str, stop: Optional[List[str]]) -> str:
     """Truncates text at the earliest stop token found."""
     if stop is None:
         return text
@@ -73,8 +68,7 @@ def _truncate_at_stop_tokens(
 
 
 def _response_to_result(
-    response: ChatCompletionResponse,
-    stop: Optional[List[str]],
+    response: ChatCompletionResponse, stop: Optional[List[str]]
 ) -> ChatResult:
     """Converts a Prem API response into a LangChain result"""
 
@@ -148,8 +142,7 @@ def _convert_delta_response_to_message_chunk(
 
 
 def _messages_to_prompt_dict(
-    input_messages: List[BaseMessage],
-    template_id: Optional[str] = None,
+    input_messages: List[BaseMessage], template_id: Optional[str] = None
 ) -> Tuple[Optional[str], List[Dict[str, Any]]]:
     """Converts a list of LangChain Messages into a simple dict
     which is the message structure in Prem"""
@@ -445,16 +438,10 @@ def chat_with_retry(
         **kwargs: Any,
     ) -> Any:
         response = llm.client.chat.completions.create(
-            project_id=project_id,
-            messages=messages,
-            stream=stream,
-            **kwargs,
+            project_id=project_id, messages=messages, stream=stream, **kwargs
         )
         return response
 
     return _completion_with_retry(
-        project_id=project_id,
-        messages=messages,
-        stream=stream,
-        **kwargs,
+        project_id=project_id, messages=messages, stream=stream, **kwargs
     )

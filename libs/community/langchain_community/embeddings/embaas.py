@@ -32,16 +32,15 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
 
             # initialize with default model and instruction
             from langchain_community.embeddings import EmbaasEmbeddings
+
             emb = EmbaasEmbeddings()
 
             # initialize with custom model and instruction
             from langchain_community.embeddings import EmbaasEmbeddings
+
             emb_model = "instructor-large"
             emb_inst = "Represent the Wikipedia document for retrieval"
-            emb = EmbaasEmbeddings(
-                model=emb_model,
-                instruction=emb_inst
-            )
+            emb = EmbaasEmbeddings(model=emb_model, instruction=emb_inst)
     """
 
     model: str = "e5-large-v2"
@@ -100,10 +99,7 @@ class EmbaasEmbeddings(BaseModel, Embeddings):
         session.mount("http://", HTTPAdapter(max_retries=retries))
         session.mount("https://", HTTPAdapter(max_retries=retries))
         response = session.post(
-            self.api_url,
-            headers=headers,
-            json=payload,
-            timeout=self.timeout,
+            self.api_url, headers=headers, json=payload, timeout=self.timeout
         )
 
         parsed_response = response.json()

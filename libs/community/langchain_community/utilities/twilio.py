@@ -17,12 +17,11 @@ class TwilioAPIWrapper(BaseModel):
         .. code-block:: python
 
             from langchain_community.utilities.twilio import TwilioAPIWrapper
+
             twilio = TwilioAPIWrapper(
-                account_sid="ACxxx",
-                auth_token="xxx",
-                from_number="+10123456789"
+                account_sid="ACxxx", auth_token="xxx", from_number="+10123456789"
             )
-            twilio.run('test', '+12484345508')
+            twilio.run("test", "+12484345508")
     """
 
     client: Any  #: :meta private:

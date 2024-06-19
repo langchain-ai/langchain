@@ -26,9 +26,7 @@ async def amanager() -> SQLRecordManager:
     """Initialize the test database and yield the TimestampedSet instance."""
     # Initialize and yield the TimestampedSet instance
     record_manager = SQLRecordManager(
-        "kittens",
-        db_url="sqlite+aiosqlite:///:memory:",
-        async_mode=True,
+        "kittens", db_url="sqlite+aiosqlite:///:memory:", async_mode=True
     )
     await record_manager.acreate_schema()
     return record_manager
@@ -389,8 +387,7 @@ def test_list_keys(manager: SQLRecordManager) -> None:
 
     # Retrieve keys in a time range
     assert manager.list_keys(
-        before=datetime(2022, 2, 1).timestamp(),
-        after=datetime(2021, 11, 1).timestamp(),
+        before=datetime(2022, 2, 1).timestamp(), after=datetime(2021, 11, 1).timestamp()
     ) == ["key2"]
 
     assert manager.list_keys(group_ids=["group1", "group2"]) == ["key4"]
@@ -480,8 +477,7 @@ async def test_alist_keys(amanager: SQLRecordManager) -> None:
 
     # Retrieve keys in a time range
     assert await amanager.alist_keys(
-        before=datetime(2022, 2, 1).timestamp(),
-        after=datetime(2021, 11, 1).timestamp(),
+        before=datetime(2022, 2, 1).timestamp(), after=datetime(2021, 11, 1).timestamp()
     ) == ["key2"]
 
     assert await amanager.alist_keys(group_ids=["group1", "group2"]) == ["key4"]

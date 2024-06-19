@@ -38,8 +38,7 @@ class NavigateBackTool(BaseBrowserTool):
             return "Unable to navigate back; no previous page in the history"
 
     async def _arun(
-        self,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         if self.async_browser is None:

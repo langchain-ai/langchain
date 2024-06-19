@@ -5,19 +5,13 @@ from langchain_airbyte import AirbyteLoader
 
 def test_initialization() -> None:
     """Test integration loader initialization."""
-    AirbyteLoader(
-        source="source-faker",
-        stream="users",
-        config={"count": 3},
-    )
+    AirbyteLoader(source="source-faker", stream="users", config={"count": 3})
 
 
 def test_load() -> None:
     """Test loading from source."""
     airbyte_loader = AirbyteLoader(
-        source="source-faker",
-        stream="users",
-        config={"count": 5},
+        source="source-faker", stream="users", config={"count": 5}
     )
     documents = airbyte_loader.load()
     assert len(documents) == 5
@@ -26,9 +20,7 @@ def test_load() -> None:
 def test_lazy_load() -> None:
     """Test lazy loading from source."""
     airbyte_loader = AirbyteLoader(
-        source="source-faker",
-        stream="users",
-        config={"count": 3},
+        source="source-faker", stream="users", config={"count": 3}
     )
     documents = airbyte_loader.lazy_load()
     assert len(list(documents)) == 3
@@ -37,9 +29,7 @@ def test_lazy_load() -> None:
 async def test_alazy_load() -> None:
     """Test async lazy loading from source."""
     airbyte_loader = AirbyteLoader(
-        source="source-faker",
-        stream="users",
-        config={"count": 3},
+        source="source-faker", stream="users", config={"count": 3}
     )
     documents = airbyte_loader.alazy_load()
     lendocs = 0

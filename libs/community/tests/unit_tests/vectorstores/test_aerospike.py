@@ -22,11 +22,7 @@ def client() -> Generator[Any, None, None]:
     except ImportError:
         pytest.skip("aerospike_vector_search not installed")
 
-    client = Client(
-        seeds=[
-            HostPort(host="dummy-host", port=3000),
-        ],
-    )
+    client = Client(seeds=[HostPort(host="dummy-host", port=3000)])
 
     yield client
 
@@ -233,8 +229,7 @@ def test_add_texts_returns_ids(mock_client: MagicMock) -> None:
         ]
     )
     mock_client.wait_for_index_completion.assert_called_once_with(
-        namespace="test",
-        name="dummy_index",
+        namespace="test", name="dummy_index"
     )
 
 
@@ -258,9 +253,7 @@ def test_delete_returns_false(mock_client: MagicMock) -> None:
     )
 
 
-def test_similarity_search_by_vector_with_score_missing_index_name(
-    client: Any,
-) -> None:
+def test_similarity_search_by_vector_with_score_missing_index_name(client: Any) -> None:
     aerospike = Aerospike(
         client=client,
         embedding=FakeEmbeddings(),
@@ -302,10 +295,7 @@ def test_similarity_search_by_vector_with_score_filters_missing_text_key(
         [1.0, 2.0, 3.0], k=10, metadata_keys=["foo"]
     )
 
-    expected = [
-        (Document(page_content="1"), 1.0),
-        (Document(page_content="3"), 3.0),
-    ]
+    expected = [(Document(page_content="1"), 1.0), (Document(page_content="3"), 3.0)]
     mock_client.vector_search.assert_called_once_with(
         index_name="dummy_index",
         namespace="test",

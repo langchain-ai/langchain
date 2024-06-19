@@ -39,8 +39,7 @@ class SearchEmailsInput(BaseModel):
         )
     )
     max_results: int = Field(
-        default=10,
-        description="The maximum number of results to return.",
+        default=10, description="The maximum number of results to return."
     )
     truncate: bool = Field(
         default=True,

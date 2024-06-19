@@ -26,8 +26,7 @@ from tests.unit_tests.conftest import DUMMY_API_KEY
     ],
 )
 def test_invoke__on_bad_input(
-    input: ContextualAnswerInput,
-    mock_client_with_contextual_answers: Mock,
+    input: ContextualAnswerInput, mock_client_with_contextual_answers: Mock
 ) -> None:
     tsm = AI21ContextualAnswers(
         api_key=DUMMY_API_KEY, client=mock_client_with_contextual_answers
@@ -43,20 +42,15 @@ def test_invoke__on_bad_input(
 
 
 @pytest.mark.parametrize(
-    ids=[
-        "when_context_is_not_str_or_list_of_docs_or_str",
-    ],
+    ids=["when_context_is_not_str_or_list_of_docs_or_str"],
     argnames="input",
-    argvalues=[
-        ({"context": 1242, "question": "What is the capital of France?"}),
-    ],
+    argvalues=[({"context": 1242, "question": "What is the capital of France?"})],
 )
 def test_invoke__on_context_bad_input(
     input: ContextualAnswerInput, mock_client_with_contextual_answers: Mock
 ) -> None:
     tsm = AI21ContextualAnswers(
-        api_key=DUMMY_API_KEY,
-        client=mock_client_with_contextual_answers,
+        api_key=DUMMY_API_KEY, client=mock_client_with_contextual_answers
     )
 
     with pytest.raises(ValueError) as error:
@@ -100,8 +94,7 @@ def test_invoke__on_good_input(
     input: ContextualAnswerInput, mock_client_with_contextual_answers: Mock
 ) -> None:
     tsm = AI21ContextualAnswers(
-        api_key=DUMMY_API_KEY,
-        client=mock_client_with_contextual_answers,
+        api_key=DUMMY_API_KEY, client=mock_client_with_contextual_answers
     )
 
     response = tsm.invoke(input)

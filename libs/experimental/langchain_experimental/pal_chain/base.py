@@ -199,10 +199,7 @@ class PALChain(Chain):
 
         # TODO: look into why mypy thinks PythonREPL's type here is `Any`
         #       and therefore not callable
-        repl = PythonREPL(
-            _globals=self.python_globals,
-            _locals=self.python_locals,
-        )  # type: ignore[misc]
+        repl = PythonREPL(_globals=self.python_globals, _locals=self.python_locals)  # type: ignore[misc]
         res = repl.run(code + f"\n{self.get_answer_expr}", timeout=self.timeout)
         output = {self.output_key: res.strip()}
         if self.return_intermediate_steps:

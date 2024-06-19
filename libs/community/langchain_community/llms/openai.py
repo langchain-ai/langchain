@@ -74,15 +74,7 @@ def _update_response(response: Dict[str, Any], stream_response: Dict[str, Any]) 
 
 
 def _streaming_response_template() -> Dict[str, Any]:
-    return {
-        "choices": [
-            {
-                "text": "",
-                "finish_reason": None,
-                "logprobs": None,
-            }
-        ]
-    }
+    return {"choices": [{"text": "", "finish_reason": None, "logprobs": None}]}
 
 
 def _create_retry_decorator(
@@ -286,10 +278,7 @@ class BaseOpenAI(BaseLLM):
             "OPENAI_API_BASE"
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
         values["openai_organization"] = (
             values["openai_organization"]
@@ -470,11 +459,7 @@ class BaseOpenAI(BaseLLM):
                 if not system_fingerprint:
                     system_fingerprint = response.get("system_fingerprint")
         return self.create_llm_result(
-            choices,
-            prompts,
-            params,
-            token_usage,
-            system_fingerprint=system_fingerprint,
+            choices, prompts, params, token_usage, system_fingerprint=system_fingerprint
         )
 
     async def _agenerate(
@@ -528,11 +513,7 @@ class BaseOpenAI(BaseLLM):
                 choices.extend(response["choices"])
                 update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(
-            choices,
-            prompts,
-            params,
-            token_usage,
-            system_fingerprint=system_fingerprint,
+            choices, prompts, params, token_usage, system_fingerprint=system_fingerprint
         )
 
     def get_sub_prompts(
@@ -743,6 +724,7 @@ class OpenAI(BaseOpenAI):
         .. code-block:: python
 
             from langchain_community.llms import OpenAI
+
             openai = OpenAI(model_name="gpt-3.5-turbo-instruct")
     """
 
@@ -847,10 +829,7 @@ class AzureOpenAI(BaseOpenAI):
             "OPENAI_API_BASE"
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
         values["openai_organization"] = (
             values["openai_organization"]
@@ -964,9 +943,7 @@ class AzureOpenAI(BaseOpenAI):
 
 
 @deprecated(
-    since="0.0.1",
-    removal="0.3.0",
-    alternative_import="langchain_openai.ChatOpenAI",
+    since="0.0.1", removal="0.3.0", alternative_import="langchain_openai.ChatOpenAI"
 )
 class OpenAIChat(BaseLLM):
     """OpenAI Chat large language models.
@@ -981,6 +958,7 @@ class OpenAIChat(BaseLLM):
         .. code-block:: python
 
             from langchain_community.llms import OpenAIChat
+
             openaichat = OpenAIChat(model_name="gpt-3.5-turbo")
     """
 
@@ -1032,16 +1010,10 @@ class OpenAIChat(BaseLLM):
             values, "openai_api_key", "OPENAI_API_KEY"
         )
         openai_api_base = get_from_dict_or_env(
-            values,
-            "openai_api_base",
-            "OPENAI_API_BASE",
-            default="",
+            values, "openai_api_base", "OPENAI_API_BASE", default=""
         )
         openai_proxy = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
         openai_organization = get_from_dict_or_env(
             values, "openai_organization", "OPENAI_ORGANIZATION", default=""

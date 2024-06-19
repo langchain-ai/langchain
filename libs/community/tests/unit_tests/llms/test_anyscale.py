@@ -27,9 +27,7 @@ def test_api_key_masked_when_passed_from_env(
 
 
 @pytest.mark.requires("openai")
-def test_api_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
-) -> None:
+def test_api_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> None:
     """Test initialization with an API key provided via the initializer"""
     llm = Anyscale(anyscale_api_key="secret-api-key", anyscale_api_base="test")  # type: ignore[arg-type]
     print(llm.anyscale_api_key, end="")  # noqa: T201

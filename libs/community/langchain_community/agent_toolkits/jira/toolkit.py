@@ -29,11 +29,7 @@ class JiraToolkit(BaseToolkit):
     @classmethod
     def from_jira_api_wrapper(cls, jira_api_wrapper: JiraAPIWrapper) -> "JiraToolkit":
         operations: List[Dict] = [
-            {
-                "mode": "jql",
-                "name": "JQL Query",
-                "description": JIRA_JQL_PROMPT,
-            },
+            {"mode": "jql", "name": "JQL Query", "description": JIRA_JQL_PROMPT},
             {
                 "mode": "get_projects",
                 "name": "Get Projects",

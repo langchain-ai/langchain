@@ -41,12 +41,13 @@ class ArxivAPIWrapper(BaseModel):
         .. code-block:: python
 
             from langchain_community.utilities.arxiv import ArxivAPIWrapper
+
             arxiv = ArxivAPIWrapper(
-                top_k_results = 3,
-                ARXIV_MAX_QUERY_LENGTH = 300,
-                load_max_docs = 3,
-                load_all_available_meta = False,
-                doc_content_chars_max = 40000
+                top_k_results=3,
+                ARXIV_MAX_QUERY_LENGTH=300,
+                load_max_docs=3,
+                load_all_available_meta=False,
+                doc_content_chars_max=40000,
             )
             arxiv.run("tree of thought llm")
     """
@@ -107,8 +108,7 @@ class ArxivAPIWrapper(BaseModel):
         try:
             if self.is_arxiv_identifier(query):
                 results = self.arxiv_search(
-                    id_list=query.split(),
-                    max_results=self.top_k_results,
+                    id_list=query.split(), max_results=self.top_k_results
                 ).results()
             else:
                 results = self.arxiv_search(  # type: ignore
@@ -146,8 +146,7 @@ class ArxivAPIWrapper(BaseModel):
         try:
             if self.is_arxiv_identifier(query):
                 results = self.arxiv_search(
-                    id_list=query.split(),
-                    max_results=self.top_k_results,
+                    id_list=query.split(), max_results=self.top_k_results
                 ).results()
             else:
                 results = self.arxiv_search(  # type: ignore

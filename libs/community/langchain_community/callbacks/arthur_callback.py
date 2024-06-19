@@ -52,10 +52,7 @@ class ArthurCallbackHandler(BaseCallbackHandler):
     https://docs.arthur.ai/
     """
 
-    def __init__(
-        self,
-        arthur_model: ArthurModel,
-    ) -> None:
+    def __init__(self, arthur_model: ArthurModel) -> None:
         """Initialize callback handler."""
         super().__init__()
         arthurai = _lazy_load_arthur()
@@ -267,10 +264,7 @@ class ArthurCallbackHandler(BaseCallbackHandler):
         """Do nothing when LLM chain outputs an error."""
 
     def on_tool_start(
-        self,
-        serialized: Dict[str, Any],
-        input_str: str,
-        **kwargs: Any,
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         """Do nothing when tool starts."""
 

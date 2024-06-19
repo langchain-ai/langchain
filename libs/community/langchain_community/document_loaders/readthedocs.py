@@ -90,10 +90,7 @@ class ReadTheDocsLoader(BaseLoader):
         soup = BeautifulSoup(data, "html.parser", **self.bs_kwargs)
 
         # default tags
-        html_tags = [
-            ("div", {"role": "main"}),
-            ("main", {"id": "main-content"}),
-        ]
+        html_tags = [("div", {"role": "main"}), ("main", {"id": "main-content"})]
 
         if self.custom_html_tag is not None:
             html_tags.append(self.custom_html_tag)

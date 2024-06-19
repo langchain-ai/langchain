@@ -291,10 +291,7 @@ l2_schema: Dict = {"distance_metric": "L2"}
 def test_cosine(texts: List[str]) -> None:
     """Test cosine distance."""
     docsearch = Redis.from_texts(
-        texts,
-        FakeEmbeddings(),
-        redis_url=TEST_REDIS_URL,
-        vector_schema=cosine_schema,
+        texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL, vector_schema=cosine_schema
     )
     output = docsearch.similarity_search_with_score("far", k=2)
     _, score = output[1]
@@ -326,11 +323,7 @@ def test_ip(texts: List[str]) -> None:
 
 def test_similarity_search_limit_distance(texts: List[str]) -> None:
     """Test similarity search limit score."""
-    docsearch = Redis.from_texts(
-        texts,
-        FakeEmbeddings(),
-        redis_url=TEST_REDIS_URL,
-    )
+    docsearch = Redis.from_texts(texts, FakeEmbeddings(), redis_url=TEST_REDIS_URL)
     output = docsearch.similarity_search(texts[0], k=3, distance_threshold=0.1)
 
     # can't check score but length of output should be 2

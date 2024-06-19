@@ -70,10 +70,7 @@ class MongodbLoader(BaseLoader):
         )
 
         async for doc in self.collection.find(self.filter_criteria, projection):
-            metadata = {
-                "database": self.db_name,
-                "collection": self.collection_name,
-            }
+            metadata = {"database": self.db_name, "collection": self.collection_name}
 
             # Extract text content from filtered fields or use the entire document
             if self.field_names is not None:

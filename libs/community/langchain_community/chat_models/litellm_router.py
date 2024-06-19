@@ -1,12 +1,5 @@
 """LiteLLM Router as LangChain Model."""
-from typing import (
-    Any,
-    AsyncIterator,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-)
+from typing import Any, AsyncIterator, Iterator, List, Mapping, Optional
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
@@ -16,15 +9,8 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.messages import (
-    AIMessageChunk,
-    BaseMessage,
-)
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatGenerationChunk,
-    ChatResult,
-)
+from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 from langchain_community.chat_models.litellm import (
     ChatLiteLLM,
@@ -98,10 +84,7 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         self._set_model_for_completion()
         self._prepare_params_for_router(params)
 
-        response = self.router.completion(
-            messages=message_dicts,
-            **params,
-        )
+        response = self.router.completion(messages=message_dicts, **params)
         return self._create_chat_result(response, **params)
 
     def _stream(
@@ -176,10 +159,7 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         self._set_model_for_completion()
         self._prepare_params_for_router(params)
 
-        response = await self.router.acompletion(
-            messages=message_dicts,
-            **params,
-        )
+        response = await self.router.acompletion(messages=message_dicts, **params)
         return self._create_chat_result(response, **params)
 
     # from

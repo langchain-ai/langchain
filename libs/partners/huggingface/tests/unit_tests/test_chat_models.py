@@ -18,22 +18,14 @@ from langchain_huggingface.chat_models import (  # type: ignore[import]
     _convert_message_to_chat_message,
     _convert_TGI_message_to_LC_message,
 )
-from langchain_huggingface.llms.huggingface_endpoint import (
-    HuggingFaceEndpoint,
-)
+from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
 
 
 @pytest.mark.parametrize(
     ("message", "expected"),
     [
-        (
-            SystemMessage(content="Hello"),
-            dict(role="system", content="Hello"),
-        ),
-        (
-            HumanMessage(content="Hello"),
-            dict(role="user", content="Hello"),
-        ),
+        (SystemMessage(content="Hello"), dict(role="system", content="Hello")),
+        (HumanMessage(content="Hello"), dict(role="user", content="Hello")),
         (
             AIMessage(content="Hello"),
             dict(role="assistant", content="Hello", tool_calls=None),
@@ -170,10 +162,7 @@ def test_to_chat_prompt_valid_messages(chat_hugging_face: Any) -> None:
             AIMessage(content="How can I help you?"),
             {"role": "assistant", "content": "How can I help you?"},
         ),
-        (
-            HumanMessage(content="Hello"),
-            {"role": "user", "content": "Hello"},
-        ),
+        (HumanMessage(content="Hello"), {"role": "user", "content": "Hello"}),
     ],
 )
 def test_to_chatml_format(

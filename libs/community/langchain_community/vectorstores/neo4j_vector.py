@@ -4,16 +4,7 @@ import enum
 import logging
 import os
 from hashlib import md5
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-)
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -38,16 +29,9 @@ COMPARISONS_TO_NATIVE = {
     "$gte": ">=",
 }
 
-SPECIAL_CASED_OPERATORS = {
-    "$in",
-    "$nin",
-    "$between",
-}
+SPECIAL_CASED_OPERATORS = {"$in", "$nin", "$between"}
 
-TEXT_OPERATORS = {
-    "$like",
-    "$ilike",
-}
+TEXT_OPERATORS = {"$like", "$ilike"}
 
 LOGICAL_OPERATORS = {"$and", "$or"}
 
@@ -776,11 +760,7 @@ class Neo4jVector(VectorStore):
         if not metadatas:
             metadatas = [{} for _ in texts]
 
-        store = cls(
-            embedding=embedding,
-            search_type=search_type,
-            **kwargs,
-        )
+        store = cls(embedding=embedding, search_type=search_type, **kwargs)
         # Check if the vector index already exists
         embedding_dimension, index_type = store.retrieve_existing_index()
 
@@ -1143,11 +1123,11 @@ class Neo4jVector(VectorStore):
 
                 from langchain_community.vectorstores.neo4j_vector import Neo4jVector
                 from langchain_community.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))
-                vectorstore = Neo4jVector.from_embeddings(
-                    text_embedding_pairs, embeddings)
+                vectorstore = Neo4jVector.from_embeddings(text_embedding_pairs, embeddings)
         """
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
@@ -1259,11 +1239,7 @@ class Neo4jVector(VectorStore):
                 "with relationship vector index"
             )
 
-        store = cls(
-            embedding=embedding,
-            index_name=index_name,
-            **kwargs,
-        )
+        store = cls(embedding=embedding, index_name=index_name, **kwargs)
 
         embedding_dimension, index_type = store.retrieve_existing_index()
 
@@ -1348,7 +1324,7 @@ class Neo4jVector(VectorStore):
         ...     embedding=my_embedding,
         ...     node_label="Document",
         ...     embedding_node_property="embedding",
-        ...     text_node_properties=["title", "content"]
+        ...     text_node_properties=["title", "content"],
         ... )
 
         Note:

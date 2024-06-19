@@ -44,9 +44,7 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
         return template.format(name=name, description=description)
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         from langchain.chains.retrieval_qa.base import RetrievalQA
@@ -60,9 +58,7 @@ class VectorStoreQATool(BaseVectorStoreTool, BaseTool):
         )[chain.output_key]
 
     async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool asynchronously."""
         from langchain.chains.retrieval_qa.base import RetrievalQA
@@ -95,9 +91,7 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
         return template.format(name=name, description=description)
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
 
@@ -117,9 +111,7 @@ class VectorStoreQAWithSourcesTool(BaseVectorStoreTool, BaseTool):
         )
 
     async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool asynchronously."""
         from langchain.chains.qa_with_sources.retrieval import (

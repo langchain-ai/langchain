@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "PGVectorTranslator": "langchain_community.query_constructors.pgvector",
+    "PGVectorTranslator": "langchain_community.query_constructors.pgvector"
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

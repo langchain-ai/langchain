@@ -47,17 +47,13 @@ class TestEverNoteLoader:
         note = documents[0]
         assert note.page_content == ""
 
-    def test_loadnotewithmissingcontenttag_emptylistreturned(
-        self,
-    ) -> None:
+    def test_loadnotewithmissingcontenttag_emptylistreturned(self) -> None:
         documents = EverNoteLoader(
             self.example_notebook_path("sample_notebook_missingcontenttag.enex"), False
         ).load()
         assert len(documents) == 0
 
-    def test_loadnotewithnometadata_documentreturnedwithsourceonly(
-        self,
-    ) -> None:
+    def test_loadnotewithnometadata_documentreturnedwithsourceonly(self) -> None:
         documents = EverNoteLoader(
             self.example_notebook_path("sample_notebook_missingmetadata.enex"), False
         ).load()

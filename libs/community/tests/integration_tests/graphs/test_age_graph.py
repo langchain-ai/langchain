@@ -65,14 +65,8 @@ class TestAGEGraph(unittest.TestCase):
                 "properties": [{"property": "property_a", "type": "STRING"}],
                 "labels": "LabelA",
             },
-            {
-                "properties": [],
-                "labels": "LabelB",
-            },
-            {
-                "properties": [],
-                "labels": "LabelC",
-            },
+            {"properties": [], "labels": "LabelB"},
+            {"properties": [], "labels": "LabelC"},
         ]
 
         self.assertEqual(

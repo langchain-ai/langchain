@@ -24,12 +24,10 @@ class CloudflareWorkersAI(LLM):
 
             my_account_id = "my_account_id"
             my_api_token = "my_secret_api_token"
-            llm_model =  "@cf/meta/llama-2-7b-chat-int8"
+            llm_model = "@cf/meta/llama-2-7b-chat-int8"
 
             cf_ai = CloudflareWorkersAI(
-                account_id=my_account_id,
-                api_token=my_api_token,
-                model=llm_model
+                account_id=my_account_id, api_token=my_api_token, model=llm_model
             )
     """  # noqa: E501
 

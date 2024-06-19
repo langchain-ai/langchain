@@ -22,6 +22,7 @@ class AlephAlpha(LLM):
         .. code-block:: python
 
             from langchain_community.llms import AlephAlpha
+
             aleph_alpha = AlephAlpha(aleph_alpha_api_key="my-api-key")
     """
 

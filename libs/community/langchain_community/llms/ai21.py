@@ -28,6 +28,7 @@ class AI21(LLM):
         .. code-block:: python
 
             from langchain_community.llms import AI21
+
             ai21 = AI21(ai21_api_key="my-api-key", model="j2-jumbo-instruct")
     """
 

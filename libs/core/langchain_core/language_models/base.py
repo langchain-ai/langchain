@@ -126,9 +126,7 @@ class BaseLanguageModel(
         # base class BaseMessage with a union of its subclasses, which makes
         # for a much better schema.
         return Union[
-            str,
-            Union[StringPromptValue, ChatPromptValueConcrete],
-            List[AnyMessage],
+            str, Union[StringPromptValue, ChatPromptValueConcrete], List[AnyMessage]
         ]
 
     @abstractmethod

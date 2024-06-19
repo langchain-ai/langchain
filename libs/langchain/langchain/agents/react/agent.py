@@ -66,6 +66,7 @@ def create_react_agent(
 
             # Use with chat history
             from langchain_core.messages import AIMessage, HumanMessage
+
             agent_executor.invoke(
                 {
                     "input": "what's my name?",
@@ -117,8 +118,7 @@ def create_react_agent(
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
     prompt = prompt.partial(
-        tools=tools_renderer(list(tools)),
-        tool_names=", ".join([t.name for t in tools]),
+        tools=tools_renderer(list(tools)), tool_names=", ".join([t.name for t in tools])
     )
     if stop_sequence:
         stop = ["\nObservation"] if stop_sequence is True else stop_sequence
@@ -128,7 +128,7 @@ def create_react_agent(
     output_parser = output_parser or ReActSingleInputOutputParser()
     agent = (
         RunnablePassthrough.assign(
-            agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
+            agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"])
         )
         | prompt
         | llm_with_stop

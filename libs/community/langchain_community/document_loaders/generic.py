@@ -45,10 +45,7 @@ class GenericLoader(BaseLoader):
             from langchain_community.document_loaders.parsers.pdf import PyPDFParser
 
             # Recursively load all text files in a directory.
-            loader = GenericLoader.from_filesystem(
-                "my_lovely_pdf.pdf",
-                parser=PyPDFParser()
-            )
+            loader = GenericLoader.from_filesystem("my_lovely_pdf.pdf", parser=PyPDFParser())
 
        .. code-block:: python
 
@@ -57,10 +54,7 @@ class GenericLoader(BaseLoader):
 
 
             loader = GenericLoader.from_filesystem(
-                path="path/to/directory",
-                glob="**/[!.]*",
-                suffixes=[".pdf"],
-                show_progress=True,
+                path="path/to/directory", glob="**/[!.]*", suffixes=[".pdf"], show_progress=True
             )
 
             docs = loader.lazy_load()
@@ -87,9 +81,7 @@ class GenericLoader(BaseLoader):
 
         # Recursively load all text files in a directory.
         loader = GenericLoader.from_filesystem(
-            "/path/to/dir",
-            glob="**/*.pdf",
-            parser=PyPDFParser()
+            "/path/to/dir", glob="**/*.pdf", parser=PyPDFParser()
         )
 
     """  # noqa: E501
@@ -108,9 +100,7 @@ class GenericLoader(BaseLoader):
         self.blob_loader = blob_loader
         self.blob_parser = blob_parser
 
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load documents lazily. Use this when working at a large scale."""
         for blob in self.blob_loader.yield_blobs():  # type: ignore[attr-defined]
             yield from self.blob_parser.lazy_parse(blob)

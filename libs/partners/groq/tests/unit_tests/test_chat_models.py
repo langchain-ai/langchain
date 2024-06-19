@@ -33,11 +33,7 @@ def test_function_message_dict_to_function_message() -> None:
     content = json.dumps({"result": "Example #1"})
     name = "test_function"
     result = _convert_dict_to_message(
-        {
-            "role": "function",
-            "name": name,
-            "content": content,
-        }
+        {"role": "function", "name": name, "content": content}
     )
     assert isinstance(result, FunctionMessage)
     assert result.name == name
@@ -86,10 +82,7 @@ def test__convert_dict_to_message_tool_call() -> None:
     raw_tool_calls = [
         {
             "id": "call_wm0JY6CdwOMZ4eTxHWUThDNz",
-            "function": {
-                "arguments": "oops",
-                "name": "GenerateUsername",
-            },
+            "function": {"arguments": "oops", "name": "GenerateUsername"},
             "type": "function",
         },
         {
@@ -112,14 +105,14 @@ def test__convert_dict_to_message_tool_call() -> None:
                 args="oops",
                 id="call_wm0JY6CdwOMZ4eTxHWUThDNz",
                 error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)",  # noqa: E501
-            ),
+            )
         ],
         tool_calls=[
             ToolCall(
                 name="GenerateUsername",
                 args={"name": "Sally", "hair_color": "green"},
                 id="call_abc123",
-            ),
+            )
         ],
     )
     assert result == expected_output
@@ -142,10 +135,7 @@ def mock_completion() -> dict:
         "choices": [
             {
                 "index": 0,
-                "message": {
-                    "role": "assistant",
-                    "content": "Bar Baz",
-                },
+                "message": {"role": "assistant", "content": "Bar Baz"},
                 "finish_reason": "stop",
             }
         ],
@@ -163,11 +153,7 @@ def test_groq_invoke(mock_completion: dict) -> None:
         return mock_completion
 
     mock_client.create = mock_create
-    with patch.object(
-        llm,
-        "client",
-        mock_client,
-    ):
+    with patch.object(llm, "client", mock_client):
         res = llm.invoke("bar")
         assert res.content == "Bar Baz"
         assert type(res) == AIMessage
@@ -185,11 +171,7 @@ async def test_groq_ainvoke(mock_completion: dict) -> None:
         return mock_completion
 
     mock_client.create = mock_create
-    with patch.object(
-        llm,
-        "async_client",
-        mock_client,
-    ):
+    with patch.object(llm, "async_client", mock_client):
         res = await llm.ainvoke("bar")
         assert res.content == "Bar Baz"
         assert type(res) == AIMessage
@@ -231,12 +213,7 @@ def test_chat_groq_extra_kwargs() -> None:
 def test_chat_groq_invalid_streaming_params() -> None:
     """Test that an error is raised if streaming is invoked with n>1."""
     with pytest.raises(ValueError):
-        ChatGroq(
-            max_tokens=10,
-            streaming=True,
-            temperature=0,
-            n=5,
-        )
+        ChatGroq(max_tokens=10, streaming=True, temperature=0, n=5)
 
 
 def test_chat_groq_secret() -> None:

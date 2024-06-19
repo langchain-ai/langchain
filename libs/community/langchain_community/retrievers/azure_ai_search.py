@@ -79,10 +79,7 @@ class AzureAISearchRetriever(BaseRetriever):
 
     @property
     def _headers(self) -> Dict[str, str]:
-        return {
-            "Content-Type": "application/json",
-            "api-key": self.api_key,
-        }
+        return {"Content-Type": "application/json", "api-key": self.api_key}
 
     def _search(self, query: str) -> List[dict]:
         search_url = self._build_search_url(query)

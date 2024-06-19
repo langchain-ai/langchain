@@ -53,23 +53,14 @@ def test_visit_structured_query() -> None:
     from timescale_vector import client
 
     query = "What is the capital of France?"
-    structured_query = StructuredQuery(
-        query=query,
-        filter=None,
-    )
+    structured_query = StructuredQuery(query=query, filter=None)
     expected: Tuple[str, Dict] = (query, {})
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
 
     comp = Comparison(comparator=Comparator.LT, attribute="foo", value=1)
-    expected = (
-        query,
-        {"predicates": client.Predicates(("foo", "<", 1))},
-    )
-    structured_query = StructuredQuery(
-        query=query,
-        filter=comp,
-    )
+    expected = (query, {"predicates": client.Predicates(("foo", "<", 1))})
+    structured_query = StructuredQuery(query=query, filter=comp)
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
 
@@ -81,10 +72,7 @@ def test_visit_structured_query() -> None:
             Comparison(comparator=Comparator.GT, attribute="abc", value=2.0),
         ],
     )
-    structured_query = StructuredQuery(
-        query=query,
-        filter=op,
-    )
+    structured_query = StructuredQuery(query=query, filter=op)
     expected = (
         query,
         {

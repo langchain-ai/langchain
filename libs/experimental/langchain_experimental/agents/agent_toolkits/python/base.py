@@ -31,11 +31,7 @@ def create_python_agent(
 
     if agent_type == AgentType.ZERO_SHOT_REACT_DESCRIPTION:
         prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
-        llm_chain = LLMChain(
-            llm=llm,
-            prompt=prompt,
-            callback_manager=callback_manager,
-        )
+        llm_chain = LLMChain(llm=llm, prompt=prompt, callback_manager=callback_manager)
         tool_names = [tool.name for tool in tools]
         agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
     elif agent_type == AgentType.OPENAI_FUNCTIONS:

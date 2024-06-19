@@ -60,11 +60,7 @@ def _parse_string_eval_output(text: str) -> dict:
         value, score = None, None
     else:
         value, score = parsed_scores
-    return {
-        "reasoning": reasoning,
-        "value": value,
-        "score": score,
-    }
+    return {"reasoning": reasoning, "value": value, "score": score}
 
 
 class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
@@ -177,11 +173,7 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
             dict: The evaluation results containing the score or value.
         """
         result = self(
-            {
-                "query": input,
-                "answer": reference,
-                "result": prediction,
-            },
+            {"query": input, "answer": reference, "result": prediction},
             callbacks=callbacks,
             include_run_info=include_run_info,
         )
@@ -305,11 +297,7 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
         **kwargs: Any,
     ) -> dict:
         result = self(
-            {
-                "query": input,
-                "context": reference,
-                "result": prediction,
-            },
+            {"query": input, "context": reference, "result": prediction},
             callbacks=callbacks,
             include_run_info=include_run_info,
         )

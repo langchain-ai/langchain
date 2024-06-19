@@ -270,11 +270,7 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_partial_emb() -> N
     encoded_ctx_str_2 = rl_chain.stringify_embedding(list(encoded_keyword + ctx_str_2))
 
     named_actions = {
-        "action1": [
-            {"a": str1, "b": rl_chain.Embed(str1)},
-            str2,
-            rl_chain.Embed(str3),
-        ]
+        "action1": [{"a": str1, "b": rl_chain.Embed(str1)}, str2, rl_chain.Embed(str3)]
     }
     context = {"context1": ctx_str_1, "context2": rl_chain.Embed(ctx_str_2)}
     expected = f"""shared |context1 {ctx_str_1} |context2 {encoded_ctx_str_2} \n0:-0.0:1.0 |a {str1} |b {encoded_str1} \n|action1 {str2} \n|action1 {encoded_str3} """  # noqa: E501
@@ -310,10 +306,7 @@ def test_pickbest_textembedder_more_namespaces_w_full_label_w_partial_emakeep() 
             rl_chain.EmbedAndKeep(str3),
         ]
     }
-    context = {
-        "context1": ctx_str_1,
-        "context2": rl_chain.EmbedAndKeep(ctx_str_2),
-    }
+    context = {"context1": ctx_str_1, "context2": rl_chain.EmbedAndKeep(ctx_str_2)}
     expected = f"""shared |context1 {ctx_str_1} |context2 {ctx_str_2 + " " + encoded_ctx_str_2} \n0:-0.0:1.0 |a {str1} |b {str1 + " " + encoded_str1} \n|action1 {str2} \n|action1 {str3 + " " + encoded_str3} """  # noqa: E501
 
     selected = pick_best_chain.PickBestSelected(index=0, probability=1.0, score=0.0)

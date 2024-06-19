@@ -284,9 +284,7 @@ def test_lantern_retriever_search_threshold_custom_normalization_fn() -> None:
         search_kwargs={"k": 3, "score_threshold": 0.9999},
     )
     output = retriever.invoke("foo")
-    assert output == [
-        Document(page_content="foo", metadata={"page": "0"}),
-    ]
+    assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
 
 def test_lantern_max_marginal_relevance_search() -> None:

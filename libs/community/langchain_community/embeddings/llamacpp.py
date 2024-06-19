@@ -15,6 +15,7 @@ class LlamaCppEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import LlamaCppEmbeddings
+
             llama = LlamaCppEmbeddings(model_path="/path/to/model.bin")
     """
 

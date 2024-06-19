@@ -131,7 +131,7 @@ class CaptionModel(BaseModel):
             [
                 f"""{index}
             {_ms_to_srt_time(self._start_time)} --> {_ms_to_srt_time(self._end_time)}
-            {self._closed_caption}""",
+            {self._closed_caption}"""
             ]
         )
 

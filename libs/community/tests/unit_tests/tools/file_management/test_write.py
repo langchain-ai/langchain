@@ -3,9 +3,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from langchain_community.tools.file_management.utils import (
-    INVALID_PATH_TEMPLATE,
-)
+from langchain_community.tools.file_management.utils import INVALID_PATH_TEMPLATE
 from langchain_community.tools.file_management.write import WriteFileTool
 
 

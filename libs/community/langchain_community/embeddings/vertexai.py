@@ -156,12 +156,7 @@ class VertexAIEmbeddings(_VertexAICommon, Embeddings):
             ServiceUnavailable,
         )
 
-        errors = [
-            ResourceExhausted,
-            ServiceUnavailable,
-            Aborted,
-            DeadlineExceeded,
-        ]
+        errors = [ResourceExhausted, ServiceUnavailable, Aborted, DeadlineExceeded]
         retry_decorator = create_base_retry_decorator(
             error_types=errors, max_retries=self.max_retries
         )

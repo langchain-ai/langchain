@@ -160,10 +160,7 @@ class NeptuneRdfGraph:
         """
         return self.client.get_rdf_graph_summary(mode="detailed")
 
-    def query(
-        self,
-        query: str,
-    ) -> Dict[str, Any]:
+    def query(self, query: str) -> Dict[str, Any]:
         """
         Run Neptune query.
         """

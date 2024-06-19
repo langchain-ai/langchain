@@ -88,7 +88,7 @@ DEFAULT_LANGUAGES_CONFIG = {
     # See https://microsoft.github.io/presidio/analyzer/customizing_nlp_models/
     "nlp_engine_name": "spacy",
     "models": [
-        {"lang_code": "en", "model_name": "en_core_web_lg"},
+        {"lang_code": "en", "model_name": "en_core_web_lg"}
         # {"lang_code": "de", "model_name": "de_core_news_md"},
         # {"lang_code": "es", "model_name": "es_core_news_md"},
         # ...
@@ -238,10 +238,7 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
         )
 
         analyzer_results = self._analyzer.analyze(
-            text,
-            entities=entities_to_analyze,
-            language=language,
-            allow_list=allow_list,
+            text, entities=entities_to_analyze, language=language, allow_list=allow_list
         )
 
         filtered_analyzer_results = (
@@ -251,15 +248,11 @@ class PresidioAnonymizer(PresidioAnonymizerBase):
         )
 
         anonymizer_results = self._anonymizer.anonymize(
-            text,
-            analyzer_results=analyzer_results,
-            operators=self.operators,
+            text, analyzer_results=analyzer_results, operators=self.operators
         )
 
         anonymizer_mapping = create_anonymizer_mapping(
-            text,
-            filtered_analyzer_results,
-            anonymizer_results,
+            text, filtered_analyzer_results, anonymizer_results
         )
         return exact_matching_strategy(text, anonymizer_mapping)
 
@@ -354,10 +347,7 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         )
 
         analyzer_results = self._analyzer.analyze(
-            text,
-            entities=entities_to_analyze,
-            language=language,
-            allow_list=allow_list,
+            text, entities=entities_to_analyze, language=language, allow_list=allow_list
         )
 
         filtered_analyzer_results = (
@@ -367,16 +357,11 @@ class PresidioReversibleAnonymizer(PresidioAnonymizerBase, ReversibleAnonymizerB
         )
 
         anonymizer_results = self._anonymizer.anonymize(
-            text,
-            analyzer_results=analyzer_results,
-            operators=self.operators,
+            text, analyzer_results=analyzer_results, operators=self.operators
         )
 
         new_deanonymizer_mapping = create_anonymizer_mapping(
-            text,
-            filtered_analyzer_results,
-            anonymizer_results,
-            is_reversed=True,
+            text, filtered_analyzer_results, anonymizer_results, is_reversed=True
         )
         self._deanonymizer_mapping.update(new_deanonymizer_mapping)
 

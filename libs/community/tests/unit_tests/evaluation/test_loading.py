@@ -50,10 +50,7 @@ def test_eval_chain_requires_references(evaluator_types: List[EvaluatorType]) ->
     fake_llm = FakeLLM(
         queries={"text": "The meaning of life\nCORRECT"}, sequential_responses=True
     )
-    evaluators = load_evaluators(
-        evaluator_types,
-        llm=fake_llm,
-    )
+    evaluators = load_evaluators(evaluator_types, llm=fake_llm)
     for evaluator in evaluators:
         if not isinstance(evaluator, (StringEvaluator, PairwiseStringEvaluator)):
             raise ValueError("Evaluator is not a [pairwise]string evaluator")

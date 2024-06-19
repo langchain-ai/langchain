@@ -4,9 +4,7 @@ file_path = "https://arxiv.org/pdf/2402.14207.pdf"
 
 
 def test_llmsherpa_file_loader_initialization() -> None:
-    loader = LLMSherpaFileLoader(
-        file_path=file_path,
-    )
+    loader = LLMSherpaFileLoader(file_path=file_path)
     docs = loader.load()
     assert isinstance(loader, LLMSherpaFileLoader)
     assert hasattr(docs, "__iter__")
@@ -20,9 +18,7 @@ def test_llmsherpa_file_loader_initialization() -> None:
 
 def test_apply_ocr() -> None:
     loader = LLMSherpaFileLoader(
-        file_path=file_path,
-        apply_ocr=True,
-        new_indent_parser=False,
+        file_path=file_path, apply_ocr=True, new_indent_parser=False
     )
     docs = loader.load()
     assert (
@@ -34,9 +30,7 @@ def test_apply_ocr() -> None:
 
 def test_new_indent_parser() -> None:
     loader = LLMSherpaFileLoader(
-        file_path=file_path,
-        apply_ocr=False,
-        new_indent_parser=True,
+        file_path=file_path, apply_ocr=False, new_indent_parser=True
     )
     docs = loader.load()
     assert (

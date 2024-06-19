@@ -23,9 +23,7 @@ from langchain_robocorp._common import (
     model_to_dict,
     reduce_openapi_spec,
 )
-from langchain_robocorp._prompts import (
-    API_CONTROLLER_PROMPT,
-)
+from langchain_robocorp._prompts import API_CONTROLLER_PROMPT
 
 LLM_TRACE_HEADER = "X-action-trace"
 
@@ -42,10 +40,7 @@ class RunDetailsCallbackHandler(BaseCallbackHandler):
         self.run_details = run_details
 
     def on_tool_start(
-        self,
-        serialized: Dict[str, Any],
-        input_str: str,
-        **kwargs: Any,
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         if "parent_run_id" in kwargs:
             self.run_details["run_id"] = kwargs["parent_run_id"]
@@ -172,19 +167,13 @@ class ActionServerToolkit(BaseModel):
         return toolkit
 
     def _get_unstructured_tool(
-        self,
-        endpoint: str,
-        docs: dict,
-        tool_args: ToolArgs,
-        llm: BaseChatModel,
+        self, endpoint: str, docs: dict, tool_args: ToolArgs, llm: BaseChatModel
     ) -> BaseTool:
         request_tool = ActionServerRequestTool(
             action_request=self._action_request, endpoint=endpoint
         )
 
-        prompt_variables = {
-            "api_url": self.url,
-        }
+        prompt_variables = {"api_url": self.url}
 
         tool_name = tool_args["name"]
         tool_docs = json.dumps(docs, indent=4)
@@ -219,9 +208,7 @@ class ActionServerToolkit(BaseModel):
         dynamic_func.__doc__ = tools_args["description"]
 
         return StructuredTool(
-            func=dynamic_func,
-            args_schema=_DynamicToolInputSchema,
-            **tools_args,
+            func=dynamic_func, args_schema=_DynamicToolInputSchema, **tools_args
         )
 
     def _action_request(self, endpoint: str, **data: dict[str, Any]) -> str:

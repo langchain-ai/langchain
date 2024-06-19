@@ -36,10 +36,7 @@ def test_tracing_sequential() -> None:
 
     for q in questions[:3]:
         llm = OpenAI(temperature=0)
-        tools = load_tools(
-            ["llm-math", "serpapi"],
-            llm=llm,
-        )
+        tools = load_tools(["llm-math", "serpapi"], llm=llm)
         agent = initialize_agent(
             tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
         )
@@ -52,10 +49,7 @@ def test_tracing_session_env_var() -> None:
     os.environ["LANGCHAIN_WANDB_TRACING"] = "true"
 
     llm = OpenAI(temperature=0)
-    tools = load_tools(
-        ["llm-math", "serpapi"],
-        llm=llm,
-    )
+    tools = load_tools(["llm-math", "serpapi"], llm=llm)
     agent = initialize_agent(
         tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
@@ -68,11 +62,7 @@ async def test_tracing_concurrent() -> None:
     os.environ["LANGCHAIN_WANDB_TRACING"] = "true"
     aiosession = ClientSession()
     llm = OpenAI(temperature=0)
-    async_tools = load_tools(
-        ["llm-math", "serpapi"],
-        llm=llm,
-        aiosession=aiosession,
-    )
+    async_tools = load_tools(["llm-math", "serpapi"], llm=llm, aiosession=aiosession)
     agent = initialize_agent(
         async_tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
@@ -85,10 +75,7 @@ def test_tracing_context_manager() -> None:
     from langchain.agents import AgentType, initialize_agent, load_tools
 
     llm = OpenAI(temperature=0)
-    tools = load_tools(
-        ["llm-math", "serpapi"],
-        llm=llm,
-    )
+    tools = load_tools(["llm-math", "serpapi"], llm=llm)
     agent = initialize_agent(
         tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
@@ -104,10 +91,7 @@ async def test_tracing_context_manager_async() -> None:
     from langchain.agents import AgentType, initialize_agent, load_tools
 
     llm = OpenAI(temperature=0)
-    async_tools = load_tools(
-        ["llm-math", "serpapi"],
-        llm=llm,
-    )
+    async_tools = load_tools(["llm-math", "serpapi"], llm=llm)
     agent = initialize_agent(
         async_tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )

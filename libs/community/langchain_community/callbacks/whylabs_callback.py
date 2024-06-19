@@ -13,9 +13,7 @@ diagnostic_logger = logging.getLogger(__name__)
 
 
 def import_langkit(
-    sentiment: bool = False,
-    toxicity: bool = False,
-    themes: bool = False,
+    sentiment: bool = False, toxicity: bool = False, themes: bool = False
 ) -> Any:
     """Import the langkit python package and raise an error if it is not installed.
 

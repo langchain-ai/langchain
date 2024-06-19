@@ -166,8 +166,7 @@ def create_json_chat_agent(
         )
 
     prompt = prompt.partial(
-        tools=tools_renderer(list(tools)),
-        tool_names=", ".join([t.name for t in tools]),
+        tools=tools_renderer(list(tools)), tool_names=", ".join([t.name for t in tools])
     )
     if stop_sequence:
         stop = ["\nObservation"] if stop_sequence is True else stop_sequence

@@ -65,8 +65,7 @@ async def test_qdrant_from_texts_stores_ids(
 @pytest.mark.parametrize("vector_name", ["custom-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_from_texts_stores_embeddings_as_named_vectors(
-    vector_name: str,
-    qdrant_location: str,
+    vector_name: str, qdrant_location: str
 ) -> None:
     """Test end to end Qdrant.afrom_texts stores named vectors if name is provided."""
     collection_name = uuid.uuid4().hex
@@ -149,8 +148,7 @@ async def test_qdrant_from_texts_raises_error_on_different_dimensionality(
 )
 @pytest.mark.skipif(qdrant_is_not_running(), reason="Qdrant is not running")
 async def test_qdrant_from_texts_raises_error_on_different_vector_name(
-    first_vector_name: Optional[str],
-    second_vector_name: Optional[str],
+    first_vector_name: Optional[str], second_vector_name: Optional[str]
 ) -> None:
     """Test if Qdrant.afrom_texts raises an exception if vector name does not match"""
     collection_name = uuid.uuid4().hex

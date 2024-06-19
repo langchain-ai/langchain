@@ -42,8 +42,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
                 "you are. Context: {content}"
             )
             output_parser = RegexParser(
-                regex=r"(.*?)\nScore: (.*)",
-                output_keys=["answer", "score"],
+                regex=r"(.*?)\nScore: (.*)", output_keys=["answer", "score"]
             )
             prompt = PromptTemplate(
                 template=prompt_template,
@@ -83,9 +82,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
-        schema: Dict[str, Any] = {
-            self.output_key: (str, None),
-        }
+        schema: Dict[str, Any] = {self.output_key: (str, None)}
         if self.return_intermediate_steps:
             schema["intermediate_steps"] = (List[str], None)
         if self.metadata_keys:

@@ -3,9 +3,7 @@ import platform
 import warnings
 from typing import Any, List, Optional, Type, Union
 
-from langchain_core.callbacks import (
-    CallbackManagerForToolRun,
-)
+from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.tools import BaseTool
 
@@ -16,8 +14,7 @@ class ShellInput(BaseModel):
     """Commands for the Bash Shell tool."""
 
     commands: Union[str, List[str]] = Field(
-        ...,
-        description="List of shell commands to run. Deserialized using json.loads",
+        ..., description="List of shell commands to run. Deserialized using json.loads"
     )
     """List of shell commands to run."""
 

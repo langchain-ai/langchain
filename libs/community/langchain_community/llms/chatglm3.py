@@ -80,11 +80,7 @@ class ChatGLM3(LLM):
     def _get_payload(self, prompt: str) -> dict:
         params = self._invocation_params
         messages = self.prefix_messages + [HumanMessage(content=prompt)]
-        params.update(
-            {
-                "messages": [_convert_message_to_dict(m) for m in messages],
-            }
-        )
+        params.update({"messages": [_convert_message_to_dict(m) for m in messages]})
         return params
 
     def _call(

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 DEPRECATED_LOOKUP = {
     "TencentVectorDBTranslator": (
         "langchain_community.query_constructors.tencentvectordb"
-    ),
+    )
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

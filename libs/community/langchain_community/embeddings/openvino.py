@@ -22,12 +22,12 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
             from langchain_community.embeddings import OpenVINOEmbeddings
 
             model_name = "sentence-transformers/all-mpnet-base-v2"
-            model_kwargs = {'device': 'CPU'}
-            encode_kwargs = {'normalize_embeddings': True}
+            model_kwargs = {"device": "CPU"}
+            encode_kwargs = {"normalize_embeddings": True}
             ov = OpenVINOEmbeddings(
                 model_name_or_path=model_name,
                 model_kwargs=model_kwargs,
-                encode_kwargs=encode_kwargs
+                encode_kwargs=encode_kwargs,
             )
     """
 
@@ -287,10 +287,7 @@ class OpenVINOEmbeddings(BaseModel, Embeddings):
         """
         return self.embed_documents([text])[0]
 
-    def save_model(
-        self,
-        model_path: str,
-    ) -> bool:
+    def save_model(self, model_path: str) -> bool:
         self.ov_model.half()
         self.ov_model.save_pretrained(model_path)
         self.tokenizer.save_pretrained(model_path)
@@ -306,12 +303,12 @@ class OpenVINOBgeEmbeddings(OpenVINOEmbeddings):
             from langchain_community.embeddings import OpenVINOBgeEmbeddings
 
             model_name = "BAAI/bge-large-en"
-            model_kwargs = {'device': 'CPU'}
-            encode_kwargs = {'normalize_embeddings': True}
+            model_kwargs = {"device": "CPU"}
+            encode_kwargs = {"normalize_embeddings": True}
             ov = OpenVINOBgeEmbeddings(
                 model_name_or_path=model_name,
                 model_kwargs=model_kwargs,
-                encode_kwargs=encode_kwargs
+                encode_kwargs=encode_kwargs,
             )
     """
 

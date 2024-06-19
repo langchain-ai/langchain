@@ -26,11 +26,7 @@ class USearch(VectorStore):
     """
 
     def __init__(
-        self,
-        embedding: Embeddings,
-        index: Any,
-        docstore: Docstore,
-        ids: List[str],
+        self, embedding: Embeddings, index: Any, docstore: Docstore, ids: List[str]
     ):
         """Initialize with necessary components."""
         self.embedding = embedding
@@ -76,9 +72,7 @@ class USearch(VectorStore):
         return ids.tolist()
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
+        self, query: str, k: int = 4
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -102,10 +96,7 @@ class USearch(VectorStore):
         return docs_with_scores
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Return docs most similar to query.
 

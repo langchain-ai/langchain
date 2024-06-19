@@ -1,8 +1,6 @@
 from langchain_couchbase import __all__
 
-EXPECTED_ALL = [
-    "CouchbaseVectorStore",
-]
+EXPECTED_ALL = ["CouchbaseVectorStore"]
 
 
 def test_all_imports() -> None:

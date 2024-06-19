@@ -33,9 +33,7 @@ def test_docusarus_metadata() -> None:
 
     """Test sitemap loader."""
     loader = DocusaurusLoader(
-        DOCS_URL,
-        is_local=True,
-        meta_function=sitemap_metadata_one,
+        DOCS_URL, is_local=True, meta_function=sitemap_metadata_one
     )
     documents = loader.load()
     assert len(documents) > 1

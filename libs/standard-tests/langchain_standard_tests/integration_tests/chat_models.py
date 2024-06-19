@@ -98,10 +98,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = custom_model.invoke("hi")
         assert isinstance(result, AIMessage)
 
-    def test_tool_message_histories_string_content(
-        self,
-        model: BaseChatModel,
-    ) -> None:
+    def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
         """
         Test that message histories are compatible with string tool contents
         (e.g. OpenAI).
@@ -118,26 +115,17 @@ class ChatModelIntegrationTests(ChatModelTests):
             AIMessage(
                 "",
                 tool_calls=[
-                    {
-                        "name": function_name,
-                        "args": function_args,
-                        "id": "abc123",
-                    },
+                    {"name": function_name, "args": function_args, "id": "abc123"}
                 ],
             ),
             ToolMessage(
-                json.dumps({"result": 3}),
-                name=function_name,
-                tool_call_id="abc123",
+                json.dumps({"result": 3}), name=function_name, tool_call_id="abc123"
             ),
         ]
         result_string_content = model_with_tools.invoke(messages_string_content)
         assert isinstance(result_string_content, AIMessage)
 
-    def test_tool_message_histories_list_content(
-        self,
-        model: BaseChatModel,
-    ) -> None:
+    def test_tool_message_histories_list_content(self, model: BaseChatModel) -> None:
         """
         Test that message histories are compatible with list tool contents
         (e.g. Anthropic).
@@ -162,17 +150,11 @@ class ChatModelIntegrationTests(ChatModelTests):
                     },
                 ],
                 tool_calls=[
-                    {
-                        "name": function_name,
-                        "args": function_args,
-                        "id": "abc123",
-                    },
+                    {"name": function_name, "args": function_args, "id": "abc123"}
                 ],
             ),
             ToolMessage(
-                json.dumps({"result": 3}),
-                name=function_name,
-                tool_call_id="abc123",
+                json.dumps({"result": 3}), name=function_name, tool_call_id="abc123"
             ),
         ]
         result_list_content = model_with_tools.invoke(messages_list_content)
@@ -194,18 +176,10 @@ class ChatModelIntegrationTests(ChatModelTests):
             AIMessage(
                 "",
                 tool_calls=[
-                    {
-                        "name": function_name,
-                        "args": function_args,
-                        "id": "abc123",
-                    },
+                    {"name": function_name, "args": function_args, "id": "abc123"}
                 ],
             ),
-            ToolMessage(
-                function_result,
-                name=function_name,
-                tool_call_id="abc123",
-            ),
+            ToolMessage(function_result, name=function_name, tool_call_id="abc123"),
             AIMessage(function_result),
             HumanMessage("What is 3 + 4"),
         ]
@@ -224,6 +198,6 @@ class ChatModelIntegrationTests(ChatModelTests):
                     "type": "image_url",
                     "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
                 },
-            ],
+            ]
         )
         model.invoke([message])

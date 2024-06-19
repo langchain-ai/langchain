@@ -35,6 +35,7 @@ class Baseten(LLM):
         .. code-block:: python
 
             from langchain_community.llms import Baseten
+
             # Production deployment
             mistral = Baseten(model="MODEL_ID", deployment="production")
             mistral("What is the Mistral wind?")
@@ -42,6 +43,7 @@ class Baseten(LLM):
         .. code-block:: python
 
             from langchain_community.llms import Baseten
+
             # Development deployment
             mistral = Baseten(model="MODEL_ID", deployment="development")
             mistral("What is the Mistral wind?")
@@ -49,6 +51,7 @@ class Baseten(LLM):
         .. code-block:: python
 
             from langchain_community.llms import Baseten
+
             # Other published deployment
             mistral = Baseten(model="MODEL_ID", deployment="DEPLOYMENT_ID")
             mistral("What is the Mistral wind?")
@@ -62,9 +65,7 @@ class Baseten(LLM):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {
-            **{"model_kwargs": self.model_kwargs},
-        }
+        return {**{"model_kwargs": self.model_kwargs}}
 
     @property
     def _llm_type(self) -> str:

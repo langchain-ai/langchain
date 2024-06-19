@@ -25,6 +25,7 @@ class Banana(LLM):
         .. code-block:: python
 
             from langchain_community.llms import Banana
+
             banana = Banana(model_key="", model_url_slug="")
     """
 

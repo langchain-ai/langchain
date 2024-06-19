@@ -21,9 +21,7 @@ class OpenAIDALLEImageGenerationTool(BaseTool):
     api_wrapper: DallEAPIWrapper
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the OpenAI DALLE Image Generation tool."""
         return self.api_wrapper.run(query)

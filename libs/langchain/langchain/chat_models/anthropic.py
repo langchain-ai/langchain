@@ -24,7 +24,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "convert_messages_to_prompt_anthropic",
-    "ChatAnthropic",
-]
+__all__ = ["convert_messages_to_prompt_anthropic", "ChatAnthropic"]

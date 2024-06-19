@@ -20,9 +20,7 @@ class Mlflow(LLM):
             from langchain_community.llms import Mlflow
 
             completions = Mlflow(
-                target_uri="http://localhost:5000",
-                endpoint="test",
-                temperature=0.1,
+                target_uri="http://localhost:5000", endpoint="test", temperature=0.1
             )
     """
 

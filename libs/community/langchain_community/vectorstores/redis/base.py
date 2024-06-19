@@ -115,8 +115,8 @@ class Redis(VectorStore):
             from langchain_community.embeddings import OpenAIEmbeddings
 
             rds = Redis.from_documents(
-                documents, # a list of Document objects from loaders or created
-                embeddings, # an Embeddings object
+                documents,  # a list of Document objects from loaders or created
+                embeddings,  # an Embeddings object
                 redis_url="redis://localhost:6379",
             )
 
@@ -125,9 +125,9 @@ class Redis(VectorStore):
 
 
             rds = Redis.from_texts(
-                texts, # a list of strings
-                metadata, # a list of metadata dicts
-                embeddings, # an Embeddings object
+                texts,  # a list of strings
+                metadata,  # a list of metadata dicts
+                embeddings,  # an Embeddings object
                 redis_url="redis://localhost:6379",
             )
 
@@ -136,9 +136,9 @@ class Redis(VectorStore):
         .. code-block:: python
 
             rds, keys = Redis.from_texts_return_keys(
-                texts, # a list of strings
-                metadata, # a list of metadata dicts
-                embeddings, # an Embeddings object
+                texts,  # a list of strings
+                metadata,  # a list of metadata dicts
+                embeddings,  # an Embeddings object
                 redis_url="redis://localhost:6379",
             )
 
@@ -148,9 +148,9 @@ class Redis(VectorStore):
         .. code-block:: python
 
             rds = Redis.from_texts(
-                texts, # a list of strings
-                metadata, # a list of metadata dicts
-                embeddings, # an Embeddings object
+                texts,  # a list of strings
+                metadata,  # a list of metadata dicts
+                embeddings,  # an Embeddings object
                 index_name="my-index",
                 redis_url="redis://localhost:6379",
             )
@@ -161,10 +161,10 @@ class Redis(VectorStore):
 
             # must pass in schema and key_prefix from another index
             existing_rds = Redis.from_existing_index(
-                embeddings, # an Embeddings object
+                embeddings,  # an Embeddings object
                 index_name="my-index",
-                schema=rds.schema, # schema dumped from another index
-                key_prefix=rds.key_prefix, # key prefix from another index
+                schema=rds.schema,  # schema dumped from another index
+                key_prefix=rds.key_prefix,  # key prefix from another index
                 redis_url="redis://localhost:6379",
             )
 
@@ -179,14 +179,12 @@ class Redis(VectorStore):
 
         .. code-block:: python
 
-            vector_schema = {
-                "algorithm": "HNSW"
-            }
+            vector_schema = {"algorithm": "HNSW"}
 
             rds = Redis.from_texts(
-                texts, # a list of strings
-                metadata, # a list of metadata dicts
-                embeddings, # an Embeddings object
+                texts,  # a list of strings
+                metadata,  # a list of metadata dicts
+                embeddings,  # an Embeddings object
                 vector_schema=vector_schema,
                 redis_url="redis://localhost:6379",
             )
@@ -223,10 +221,10 @@ class Redis(VectorStore):
         .. code-block:: python
 
             rds = Redis.from_texts(
-                texts, # a list of strings
-                metadata, # a list of metadata dicts
-                embeddings, # an Embeddings object
-                index_schema="path/to/index_schema.yaml", # can also be a dictionary
+                texts,  # a list of strings
+                metadata,  # a list of metadata dicts
+                embeddings,  # an Embeddings object
+                index_schema="path/to/index_schema.yaml",  # can also be a dictionary
                 redis_url="redis://localhost:6379",
             )
 
@@ -322,11 +320,10 @@ class Redis(VectorStore):
 
                 from langchain_community.vectorstores import Redis
                 from langchain_community.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 redis, keys = Redis.from_texts_return_keys(
-                    texts,
-                    embeddings,
-                    redis_url="redis://localhost:6379"
+                    texts, embeddings, redis_url="redis://localhost:6379"
                 )
 
         Args:
@@ -458,11 +455,10 @@ class Redis(VectorStore):
 
                 from langchain_community.vectorstores import Redis
                 from langchain_community.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 redisearch = RediSearch.from_texts(
-                    texts,
-                    embeddings,
-                    redis_url="redis://username:password@localhost:6379"
+                    texts, embeddings, redis_url="redis://username:password@localhost:6379"
                 )
 
         Args:
@@ -522,8 +518,8 @@ class Redis(VectorStore):
                 existing_rds = Redis.from_existing_index(
                     embeddings,
                     index_name="my-index",
-                    schema=rds.schema, # schema dumped from another index
-                    key_prefix=rds.key_prefix, # key prefix from another index
+                    schema=rds.schema,  # schema dumped from another index
+                    key_prefix=rds.key_prefix,  # key prefix from another index
                     redis_url="redis://username:password@localhost:6379",
                 )
 
@@ -583,10 +579,7 @@ class Redis(VectorStore):
             yaml.dump(self.schema, f)
 
     @staticmethod
-    def delete(
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> bool:
+    def delete(ids: Optional[List[str]] = None, **kwargs: Any) -> bool:
         """
         Delete a Redis entry.
 
@@ -632,11 +625,7 @@ class Redis(VectorStore):
             return False
 
     @staticmethod
-    def drop_index(
-        index_name: str,
-        delete_documents: bool,
-        **kwargs: Any,
-    ) -> bool:
+    def drop_index(index_name: str, delete_documents: bool, **kwargs: Any) -> bool:
         """
         Drop a Redis search index.
 
@@ -815,7 +804,7 @@ class Redis(VectorStore):
                 "score_threshold is deprecated. Use distance_threshold instead."
                 + "score_threshold should only be used in "
                 + "similarity_search_with_relevance_scores."
-                + "score_threshold will be removed in a future release.",
+                + "score_threshold will be removed in a future release."
             )
 
         query_embedding = self._embeddings.embed_query(query)
@@ -932,7 +921,7 @@ class Redis(VectorStore):
                 "score_threshold is deprecated. Use distance_threshold instead."
                 + "score_threshold should only be used in "
                 + "similarity_search_with_relevance_scores."
-                + "score_threshold will be removed in a future release.",
+                + "score_threshold will be removed in a future release."
             )
 
         redis_query, params_dict = self._prepare_query(
@@ -1081,7 +1070,7 @@ class Redis(VectorStore):
     ) -> Tuple["Query", Dict[str, Any]]:
         # Creates Redis query
         params_dict: Dict[str, Union[str, bytes, float]] = {
-            "vector": _array_to_buffer(query_embedding, self._schema.vector_dtype),
+            "vector": _array_to_buffer(query_embedding, self._schema.vector_dtype)
         }
 
         # prepare return fields including score
@@ -1318,11 +1307,7 @@ def _generate_field_schema(data: Dict[str, Any]) -> Dict[str, Any]:
         ValueError: If a metadata field cannot be categorized into any of
             the three known types.
     """
-    result: Dict[str, Any] = {
-        "text": [],
-        "numeric": [],
-        "tag": [],
-    }
+    result: Dict[str, Any] = {"text": [], "numeric": [], "tag": []}
 
     for key, value in data.items():
         # Numeric fields

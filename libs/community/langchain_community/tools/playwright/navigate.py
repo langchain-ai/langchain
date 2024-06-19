@@ -55,9 +55,7 @@ class NavigateTool(BaseBrowserTool):
     args_schema: Type[BaseModel] = NavigateToolInput
 
     def _run(
-        self,
-        url: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, url: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         if self.sync_browser is None:
@@ -68,9 +66,7 @@ class NavigateTool(BaseBrowserTool):
         return f"Navigating to {url} returned status code {status}"
 
     async def _arun(
-        self,
-        url: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self, url: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         if self.async_browser is None:

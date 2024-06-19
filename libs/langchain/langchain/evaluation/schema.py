@@ -105,9 +105,7 @@ class _EvalArgsMixin:
         )
 
     def _check_evaluation_args(
-        self,
-        reference: Optional[str] = None,
-        input: Optional[str] = None,
+        self, reference: Optional[str] = None, input: Optional[str] = None
     ) -> None:
         """Check if the evaluation arguments are valid.
 

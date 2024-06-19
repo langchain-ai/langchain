@@ -20,6 +20,7 @@ class RedditSearchAPIWrapper(BaseModel):
         .. code-block:: python
 
             from langchain_community.utilities import RedditSearchAPIWrapper
+
             reddit_search = RedditSearchAPIWrapper()
     """
 

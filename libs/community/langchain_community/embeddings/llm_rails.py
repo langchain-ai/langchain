@@ -20,9 +20,8 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import LLMRailsEmbeddings
-            cohere = LLMRailsEmbeddings(
-                model="embedding-english-v1", api_key="my-api-key"
-            )
+
+            cohere = LLMRailsEmbeddings(model="embedding-english-v1", api_key="my-api-key")
     """
 
     model: str = "embedding-english-v1"

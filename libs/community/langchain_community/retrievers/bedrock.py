@@ -42,11 +42,7 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
 
             retriever = AmazonKnowledgeBasesRetriever(
                 knowledge_base_id="<knowledge-base-id>",
-                retrieval_config={
-                    "vectorSearchConfiguration": {
-                        "numberOfResults": 4
-                    }
-                },
+                retrieval_config={"vectorSearchConfiguration": {"numberOfResults": 4}},
             )
     """
 
@@ -121,11 +117,6 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
                 result["score"] = 0
             if "metadata" in result:
                 result["source_metadata"] = result.pop("metadata")
-            documents.append(
-                Document(
-                    page_content=content,
-                    metadata=result,
-                )
-            )
+            documents.append(Document(page_content=content, metadata=result))
 
         return documents

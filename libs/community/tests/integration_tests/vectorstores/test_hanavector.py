@@ -23,10 +23,7 @@ from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
 
 TYPE_4B_FILTERING_TEST_CASES = [
     # Test $nin, which is missing in TYPE_4_FILTERING_TEST_CASES
-    (
-        {"name": {"$nin": ["adam", "bob"]}},
-        [3],
-    ),
+    ({"name": {"$nin": ["adam", "bob"]}}, [3])
 ]
 
 
@@ -881,9 +878,7 @@ def test_invalid_metadata_keys(texts: List[str], metadatas: List[dict]) -> None:
     # Delete table if it exists
     drop_table(test_setup.conn, table_name)
 
-    invalid_metadatas = [
-        {"sta rt": 0, "end": 100, "quality": "good", "ready": True},
-    ]
+    invalid_metadatas = [{"sta rt": 0, "end": 100, "quality": "good", "ready": True}]
     exception_occured = False
     try:
         HanaDB.from_texts(
@@ -897,9 +892,7 @@ def test_invalid_metadata_keys(texts: List[str], metadatas: List[dict]) -> None:
         exception_occured = True
     assert exception_occured
 
-    invalid_metadatas = [
-        {"sta/nrt": 0, "end": 100, "quality": "good", "ready": True},
-    ]
+    invalid_metadatas = [{"sta/nrt": 0, "end": 100, "quality": "good", "ready": True}]
     exception_occured = False
     try:
         HanaDB.from_texts(
@@ -955,9 +948,7 @@ def test_hanavector_enhanced_filter_1() -> None:
     drop_table(test_setup.conn, table_name)
 
     vectorDB = HanaDB(
-        connection=test_setup.conn,
-        embedding=embedding,
-        table_name=table_name,
+        connection=test_setup.conn, embedding=embedding, table_name=table_name
     )
 
     vectorDB.add_documents(DOCUMENTS)
@@ -966,16 +957,13 @@ def test_hanavector_enhanced_filter_1() -> None:
 @pytest.mark.parametrize("test_filter, expected_ids", TYPE_1_FILTERING_TEST_CASES)
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_pgvector_with_with_metadata_filters_1(
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
+    test_filter: Dict[str, Any], expected_ids: List[int]
 ) -> None:
     table_name = "TEST_TABLE_ENHANCED_FILTER_1"
     drop_table(test_setup.conn, table_name)
 
     vectorDB = HanaDB(
-        connection=test_setup.conn,
-        embedding=embedding,
-        table_name=table_name,
+        connection=test_setup.conn, embedding=embedding, table_name=table_name
     )
 
     vectorDB.add_documents(DOCUMENTS)
@@ -989,16 +977,13 @@ def test_pgvector_with_with_metadata_filters_1(
 @pytest.mark.parametrize("test_filter, expected_ids", TYPE_2_FILTERING_TEST_CASES)
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_pgvector_with_with_metadata_filters_2(
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
+    test_filter: Dict[str, Any], expected_ids: List[int]
 ) -> None:
     table_name = "TEST_TABLE_ENHANCED_FILTER_2"
     drop_table(test_setup.conn, table_name)
 
     vectorDB = HanaDB(
-        connection=test_setup.conn,
-        embedding=embedding,
-        table_name=table_name,
+        connection=test_setup.conn, embedding=embedding, table_name=table_name
     )
 
     vectorDB.add_documents(DOCUMENTS)
@@ -1012,16 +997,13 @@ def test_pgvector_with_with_metadata_filters_2(
 @pytest.mark.parametrize("test_filter, expected_ids", TYPE_3_FILTERING_TEST_CASES)
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_pgvector_with_with_metadata_filters_3(
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
+    test_filter: Dict[str, Any], expected_ids: List[int]
 ) -> None:
     table_name = "TEST_TABLE_ENHANCED_FILTER_3"
     drop_table(test_setup.conn, table_name)
 
     vectorDB = HanaDB(
-        connection=test_setup.conn,
-        embedding=embedding,
-        table_name=table_name,
+        connection=test_setup.conn, embedding=embedding, table_name=table_name
     )
 
     vectorDB.add_documents(DOCUMENTS)
@@ -1035,16 +1017,13 @@ def test_pgvector_with_with_metadata_filters_3(
 @pytest.mark.parametrize("test_filter, expected_ids", TYPE_4_FILTERING_TEST_CASES)
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_pgvector_with_with_metadata_filters_4(
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
+    test_filter: Dict[str, Any], expected_ids: List[int]
 ) -> None:
     table_name = "TEST_TABLE_ENHANCED_FILTER_4"
     drop_table(test_setup.conn, table_name)
 
     vectorDB = HanaDB(
-        connection=test_setup.conn,
-        embedding=embedding,
-        table_name=table_name,
+        connection=test_setup.conn, embedding=embedding, table_name=table_name
     )
 
     vectorDB.add_documents(DOCUMENTS)
@@ -1058,16 +1037,13 @@ def test_pgvector_with_with_metadata_filters_4(
 @pytest.mark.parametrize("test_filter, expected_ids", TYPE_4B_FILTERING_TEST_CASES)
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_pgvector_with_with_metadata_filters_4b(
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
+    test_filter: Dict[str, Any], expected_ids: List[int]
 ) -> None:
     table_name = "TEST_TABLE_ENHANCED_FILTER_4B"
     drop_table(test_setup.conn, table_name)
 
     vectorDB = HanaDB(
-        connection=test_setup.conn,
-        embedding=embedding,
-        table_name=table_name,
+        connection=test_setup.conn, embedding=embedding, table_name=table_name
     )
 
     vectorDB.add_documents(DOCUMENTS)
@@ -1081,16 +1057,13 @@ def test_pgvector_with_with_metadata_filters_4b(
 @pytest.mark.parametrize("test_filter, expected_ids", TYPE_5_FILTERING_TEST_CASES)
 @pytest.mark.skipif(not hanadb_installed, reason="hanadb not installed")
 def test_pgvector_with_with_metadata_filters_5(
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
+    test_filter: Dict[str, Any], expected_ids: List[int]
 ) -> None:
     table_name = "TEST_TABLE_ENHANCED_FILTER_5"
     drop_table(test_setup.conn, table_name)
 
     vectorDB = HanaDB(
-        connection=test_setup.conn,
-        embedding=embedding,
-        table_name=table_name,
+        connection=test_setup.conn, embedding=embedding, table_name=table_name
     )
 
     vectorDB.add_documents(DOCUMENTS)

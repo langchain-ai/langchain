@@ -5,17 +5,7 @@ import enum
 import json
 import logging
 import uuid
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-)
+from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple, Type
 
 import numpy as np
 import sqlalchemy
@@ -78,16 +68,9 @@ COMPARISONS_TO_NATIVE = {
     "$gte": ">=",
 }
 
-SPECIAL_CASED_OPERATORS = {
-    "$in",
-    "$nin",
-    "$between",
-}
+SPECIAL_CASED_OPERATORS = {"$in", "$nin", "$between"}
 
-TEXT_OPERATORS = {
-    "$like",
-    "$ilike",
-}
+TEXT_OPERATORS = {"$like", "$ilike"}
 
 LOGICAL_OPERATORS = {"$and", "$or"}
 
@@ -117,9 +100,7 @@ def _get_embedding_collection_store(
         cmetadata = sqlalchemy.Column(JSON)
 
         embeddings = relationship(
-            "EmbeddingStore",
-            back_populates="collection",
-            passive_deletes=True,
+            "EmbeddingStore", back_populates="collection", passive_deletes=True
         )
 
         @classmethod
@@ -130,10 +111,7 @@ def _get_embedding_collection_store(
 
         @classmethod
         def get_or_create(
-            cls,
-            session: Session,
-            name: str,
-            cmetadata: Optional[dict] = None,
+            cls, session: Session, name: str, cmetadata: Optional[dict] = None
         ) -> Tuple["CollectionStore", bool]:
             """
             Get or create a collection.
@@ -160,8 +138,7 @@ def _get_embedding_collection_store(
             collection_id = sqlalchemy.Column(
                 UUID(as_uuid=True),
                 sqlalchemy.ForeignKey(
-                    f"{CollectionStore.__tablename__}.uuid",
-                    ondelete="CASCADE",
+                    f"{CollectionStore.__tablename__}.uuid", ondelete="CASCADE"
                 ),
             )
             collection = relationship(CollectionStore, back_populates="embeddings")
@@ -192,8 +169,7 @@ def _get_embedding_collection_store(
             collection_id = sqlalchemy.Column(
                 UUID(as_uuid=True),
                 sqlalchemy.ForeignKey(
-                    f"{CollectionStore.__tablename__}.uuid",
-                    ondelete="CASCADE",
+                    f"{CollectionStore.__tablename__}.uuid", ondelete="CASCADE"
                 ),
             )
             collection = relationship(CollectionStore, back_populates="embeddings")
@@ -346,9 +322,7 @@ class PGVector(VectorStore):
             )
         self.__post_init__()
 
-    def __post_init__(
-        self,
-    ) -> None:
+    def __post_init__(self) -> None:
         """Initialize the store."""
         if self.create_extension:
             self.create_vector_extension()
@@ -564,11 +538,7 @@ class PGVector(VectorStore):
         )
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
-        **kwargs: Any,
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """Run similarity search with PGVector with distance.
 
@@ -581,17 +551,10 @@ class PGVector(VectorStore):
             List of Documents most similar to the query.
         """
         embedding = self.embedding_function.embed_query(text=query)
-        return self.similarity_search_by_vector(
-            embedding=embedding,
-            k=k,
-            filter=filter,
-        )
+        return self.similarity_search_by_vector(embedding=embedding, k=k, filter=filter)
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
+        self, query: str, k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -624,10 +587,7 @@ class PGVector(VectorStore):
             )
 
     def similarity_search_with_score_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        filter: Optional[dict] = None,
+        self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
         results = self._query_collection(embedding=embedding, k=k, filter=filter)
 
@@ -647,11 +607,7 @@ class PGVector(VectorStore):
         ]
         return docs
 
-    def _handle_field_filter(
-        self,
-        field: str,
-        value: Any,
-    ) -> SQLColumnExpression:
+    def _handle_field_filter(self, field: str, value: Any) -> SQLColumnExpression:
         """Create a filter for a specific field.
 
         Args:
@@ -1052,6 +1008,7 @@ class PGVector(VectorStore):
 
                 from langchain_community.vectorstores import PGVector
                 from langchain_community.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))
@@ -1102,9 +1059,7 @@ class PGVector(VectorStore):
     @classmethod
     def get_connection_string(cls, kwargs: Dict[str, Any]) -> str:
         connection_string: str = get_from_dict_or_env(
-            data=kwargs,
-            key="connection_string",
-            env_key="PGVECTOR_CONNECTION_STRING",
+            data=kwargs, key="connection_string", env_key="PGVECTOR_CONNECTION_STRING"
         )
 
         if not connection_string:
@@ -1156,13 +1111,7 @@ class PGVector(VectorStore):
 
     @classmethod
     def connection_string_from_db_params(
-        cls,
-        driver: str,
-        host: str,
-        port: int,
-        database: str,
-        user: str,
-        password: str,
+        cls, driver: str, host: str, port: int, database: str, user: str, password: str
     ) -> str:
         """Return connection string from database parameters."""
         return f"postgresql+{driver}://{user}:{password}@{host}:{port}/{database}"

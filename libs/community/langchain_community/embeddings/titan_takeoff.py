@@ -55,7 +55,7 @@ class TitanTakeoffEmbed(Embeddings):
             reader_1 = {
                 "model_name": "avsolatorio/GIST-large-Embedding-v0",
                 "device": "cpu",
-                "consumer_group": "embed"
+                "consumer_group": "embed",
             }
 
             # For every reader you pass into models arg Takeoff will spin up a reader
@@ -69,16 +69,11 @@ class TitanTakeoffEmbed(Embeddings):
 
             # Returns the embedded query, ie a List[float], sent to `embed` consumer
             # group where we just spun up the embedding reader
-            print(embed.embed_query(
-                "Where can I see football?", consumer_group="embed"
-            ))
+            print(embed.embed_query("Where can I see football?", consumer_group="embed"))
 
             # Returns a List of embeddings, ie a List[List[float]], sent to `embed`
             # consumer group where we just spun up the embedding reader
-            print(embed.embed_document(
-                ["Document1", "Document2"],
-                consumer_group="embed"
-            ))
+            print(embed.embed_document(["Document1", "Document2"], consumer_group="embed"))
     """
 
     base_url: str = "http://localhost"

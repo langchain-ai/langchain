@@ -16,9 +16,7 @@ def test_base_blob_parser() -> None:
 
         def lazy_parse(self, blob: Blob) -> Iterator[Document]:
             """Lazy parsing interface."""
-            yield Document(
-                page_content="foo",
-            )
+            yield Document(page_content="foo")
 
     parser = MyParser()
 
@@ -33,10 +31,7 @@ def test_base_blob_parser() -> None:
 def test_default_lazy_load() -> None:
     class FakeLoader(BaseLoader):
         def load(self) -> List[Document]:
-            return [
-                Document(page_content="foo"),
-                Document(page_content="bar"),
-            ]
+            return [Document(page_content="foo"), Document(page_content="bar")]
 
     loader = FakeLoader()
     docs = list(loader.lazy_load())
@@ -55,10 +50,7 @@ def test_lazy_load_not_implemented() -> None:
 async def test_default_aload() -> None:
     class FakeLoader(BaseLoader):
         def lazy_load(self) -> Iterator[Document]:
-            yield from [
-                Document(page_content="foo"),
-                Document(page_content="bar"),
-            ]
+            yield from [Document(page_content="foo"), Document(page_content="bar")]
 
     loader = FakeLoader()
     docs = loader.load()

@@ -45,9 +45,4 @@ class BrowserbaseLoader(BaseLoader):
         )
 
         for i, page in enumerate(pages):
-            yield Document(
-                page_content=page,
-                metadata={
-                    "url": self.urls[i],
-                },
-            )
+            yield Document(page_content=page, metadata={"url": self.urls[i]})

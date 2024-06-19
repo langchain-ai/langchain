@@ -106,11 +106,7 @@ def test_agent_iterator_with_callbacks() -> None:
     fake_llm = FakeListLLM(cache=False, responses=responses, callbacks=[handler2])
 
     tools = [
-        Tool(
-            name="Search",
-            func=lambda x: x,
-            description="Useful for searching",
-        ),
+        Tool(name="Search", func=lambda x: x, description="Useful for searching"),
         Tool(
             name="Lookup",
             func=lambda x: x,
@@ -119,10 +115,7 @@ def test_agent_iterator_with_callbacks() -> None:
     ]
 
     agent = initialize_agent(
-        tools,
-        fake_llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        verbose=True,
+        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
     agent_iter = agent.iter(
         inputs="when was langchain made", callbacks=[handler1], include_run_info=True
@@ -173,11 +166,7 @@ async def test_agent_async_iterator_with_callbacks() -> None:
     fake_llm = FakeListLLM(cache=False, responses=responses, callbacks=[handler2])
 
     tools = [
-        Tool(
-            name="Search",
-            func=lambda x: x,
-            description="Useful for searching",
-        ),
+        Tool(name="Search", func=lambda x: x, description="Useful for searching"),
         Tool(
             name="Lookup",
             func=lambda x: x,
@@ -189,9 +178,7 @@ async def test_agent_async_iterator_with_callbacks() -> None:
         tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
     )
     agent_async_iter = agent.iter(
-        inputs="when was langchain made",
-        callbacks=[handler1],
-        include_run_info=True,
+        inputs="when was langchain made", callbacks=[handler1], include_run_info=True
     )
     assert isinstance(agent_async_iter, AgentExecutorIterator)
 
@@ -375,7 +362,7 @@ def test_agent_iterator_failing_tool() -> None:
             name="FailingTool",
             func=lambda x: 1 / 0,  # This tool will raise a ZeroDivisionError
             description="A tool that fails",
-        ),
+        )
     ]
 
     agent = initialize_agent(

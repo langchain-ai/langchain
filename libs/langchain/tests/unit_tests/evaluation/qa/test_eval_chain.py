@@ -50,16 +50,12 @@ def test_context_eval_chain(chain_cls: Type[ContextQAEvalChain]) -> None:
 
 
 @pytest.mark.parametrize("chain_cls", [QAEvalChain, ContextQAEvalChain, CotQAEvalChain])
-def test_implements_string_evaluator_protocol(
-    chain_cls: Type[LLMChain],
-) -> None:
+def test_implements_string_evaluator_protocol(chain_cls: Type[LLMChain]) -> None:
     assert issubclass(chain_cls, StringEvaluator)
 
 
 @pytest.mark.parametrize("chain_cls", [QAEvalChain, ContextQAEvalChain, CotQAEvalChain])
-def test_returns_expected_results(
-    chain_cls: Type[LLMChain],
-) -> None:
+def test_returns_expected_results(chain_cls: Type[LLMChain]) -> None:
     fake_llm = FakeLLM(
         queries={"text": "The meaning of life\nCORRECT"}, sequential_responses=True
     )
@@ -80,10 +76,7 @@ QUESTION: according to the passage, what is the main reason that the author wrot
 STUDENT ANSWER: to explain the importance of washing your hands
 TRUE ANSWER: to explain the importance of washing your hands
 GRADE:""",  # noqa: E501
-            {
-                "value": "CORRECT",
-                "score": 1,
-            },
+            {"value": "CORRECT", "score": 1},
         ),
         (
             """ Here is my step-by-step reasoning to grade the student's answer:
@@ -101,10 +94,7 @@ GRADE:""",  # noqa: E501
 6. Therefore, the student's answer contains the same factual information as the true answer, so it should be graded as correct.
 
 GRADE: CORRECT""",  # noqa: E501
-            {
-                "value": "CORRECT",
-                "score": 1,
-            },
+            {"value": "CORRECT", "score": 1},
         ),
         (
             """  CORRECT
@@ -113,17 +103,11 @@ QUESTION: who was the first president of the united states?
 STUDENT ANSWER: George Washington 
 TRUE ANSWER: George Washington was the first president of the United States.
 GRADE:""",
-            {
-                "value": "CORRECT",
-                "score": 1,
-            },
+            {"value": "CORRECT", "score": 1},
         ),
         (
             """The student's answer is "Regent's Park," which matches the correct answer given in the context. Therefore, the student's answer is CORRECT.""",  # noqa: E501
-            {
-                "value": "CORRECT",
-                "score": 1,
-            },
+            {"value": "CORRECT", "score": 1},
         ),
     ],
 )

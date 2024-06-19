@@ -80,6 +80,4 @@ MYSCALE_PROMPT = PromptTemplate(
 )
 
 
-VECTOR_SQL_PROMPTS = {
-    "myscale": MYSCALE_PROMPT,
-}
+VECTOR_SQL_PROMPTS = {"myscale": MYSCALE_PROMPT}

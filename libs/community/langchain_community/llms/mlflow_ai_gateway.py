@@ -34,9 +34,7 @@ class MlflowAIGateway(LLM):
             completions = MlflowAIGateway(
                 gateway_uri="<your-mlflow-ai-gateway-uri>",
                 route="<your-mlflow-ai-gateway-completions-route>",
-                params={
-                    "temperature": 0.1
-                }
+                params={"temperature": 0.1},
             )
     """
 

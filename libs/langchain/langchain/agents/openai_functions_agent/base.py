@@ -5,10 +5,7 @@ from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackManager, Callbacks
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.messages import (
-    BaseMessage,
-    SystemMessage,
-)
+from langchain_core.messages import BaseMessage, SystemMessage
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.chat import (
     BaseMessagePromptTemplate,
@@ -98,15 +95,10 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         messages = prompt.to_messages()
         if with_functions:
             predicted_message = self.llm.predict_messages(
-                messages,
-                functions=self.functions,
-                callbacks=callbacks,
+                messages, functions=self.functions, callbacks=callbacks
             )
         else:
-            predicted_message = self.llm.predict_messages(
-                messages,
-                callbacks=callbacks,
-            )
+            predicted_message = self.llm.predict_messages(messages, callbacks=callbacks)
         agent_decision = self.output_parser._parse_ai_message(predicted_message)
         return agent_decision
 
@@ -217,8 +209,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     ) -> BaseSingleActionAgent:
         """Construct an agent from an LLM and tools."""
         prompt = cls.create_prompt(
-            extra_prompt_messages=extra_prompt_messages,
-            system_message=system_message,
+            extra_prompt_messages=extra_prompt_messages, system_message=system_message
         )
         return cls(  # type: ignore[call-arg]
             llm=llm,
@@ -267,6 +258,7 @@ def create_openai_functions_agent(
 
             # Using with chat history
             from langchain_core.messages import AIMessage, HumanMessage
+
             agent_executor.invoke(
                 {
                     "input": "what's my name?",

@@ -118,10 +118,7 @@ def load(prompt_path: str, configuration: str = "default") -> Prompty:
     return p
 
 
-def prepare(
-    prompt: Prompty,
-    inputs: Dict[str, Any] = {},
-) -> Any:
+def prepare(prompt: Prompty, inputs: Dict[str, Any] = {}) -> Any:
     """Prepare the inputs for the prompty.
 
     Args:
@@ -140,10 +137,7 @@ def prepare(
     else:
         # render
         result = invoker(
-            "renderer",
-            prompt.template.type,
-            prompt,
-            SimpleModel(item=inputs),
+            "renderer", prompt.template.type, prompt, SimpleModel(item=inputs)
         )
         render = result.item
 
@@ -205,10 +199,7 @@ def run(
     if not raw:
         # process
         result = invoker(
-            "processor",
-            prompt.model.configuration["type"],
-            prompt,
-            result,
+            "processor", prompt.model.configuration["type"], prompt, result
         )
 
     if isinstance(result, SimpleModel):

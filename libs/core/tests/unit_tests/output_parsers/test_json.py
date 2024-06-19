@@ -3,9 +3,7 @@ from typing import Any, AsyncIterator, Iterator, Tuple
 
 import pytest
 
-from langchain_core.output_parsers.json import (
-    SimpleJsonOutputParser,
-)
+from langchain_core.output_parsers.json import SimpleJsonOutputParser
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.json import parse_json_markdown, parse_partial_json
@@ -208,9 +206,7 @@ def test_parse_json_with_code_blocks_and_newlines() -> None:
     }
 
 
-TEST_CASES_ESCAPED_QUOTES = [
-    JSON_WITH_ESCAPED_DOUBLE_QUOTES_IN_NESTED_JSON,
-]
+TEST_CASES_ESCAPED_QUOTES = [JSON_WITH_ESCAPED_DOUBLE_QUOTES_IN_NESTED_JSON]
 
 
 @pytest.mark.parametrize("json_string", TEST_CASES_ESCAPED_QUOTES)

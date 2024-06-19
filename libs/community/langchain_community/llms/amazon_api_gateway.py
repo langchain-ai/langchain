@@ -88,11 +88,7 @@ class AmazonAPIGateway(LLM):
         payload = self.content_handler.transform_input(prompt, _model_kwargs)
 
         try:
-            response = requests.post(
-                self.api_url,
-                headers=self.headers,
-                json=payload,
-            )
+            response = requests.post(self.api_url, headers=self.headers, json=payload)
             text = self.content_handler.transform_output(response)
 
         except Exception as error:

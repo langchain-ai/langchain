@@ -36,6 +36,7 @@ class SerpAPIWrapper(BaseModel):
         .. code-block:: python
 
             from langchain_community.utilities import SerpAPIWrapper
+
             serpapi = SerpAPIWrapper()
     """
 
@@ -116,10 +117,7 @@ class SerpAPIWrapper(BaseModel):
 
     def get_params(self, query: str) -> Dict[str, str]:
         """Get parameters for SerpAPI."""
-        _params = {
-            "api_key": self.serpapi_api_key,
-            "q": query,
-        }
+        _params = {"api_key": self.serpapi_api_key, "q": query}
         params = {**self.params, **_params}
         return params
 

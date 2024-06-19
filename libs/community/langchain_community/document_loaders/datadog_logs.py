@@ -121,9 +121,7 @@ class DatadogLogsLoader(BaseLoader):
                 to=f"{self.to_time if self.to_time is not None else now_timestamp}",
             ),
             sort=LogsSort.TIMESTAMP_ASCENDING,
-            page=LogsListRequestPage(
-                limit=self.limit,
-            ),
+            page=LogsListRequestPage(limit=self.limit),
         )
 
         with ApiClient(configuration=self.configuration) as api_client:

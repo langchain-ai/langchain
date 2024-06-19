@@ -86,7 +86,7 @@ class GoogleSpeechToTextLoader(BaseLoader):
             model="chirp",
             features=RecognitionFeatures(
                 # Automatic punctuation could be useful for language applications
-                enable_automatic_punctuation=True,
+                enable_automatic_punctuation=True
             ),
         )
         self.config_mask = config_mask

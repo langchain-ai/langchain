@@ -1138,8 +1138,7 @@ class Qdrant(VectorStore):
         """
 
         result = self.client.delete(
-            collection_name=self.collection_name,
-            points_selector=ids,
+            collection_name=self.collection_name, points_selector=ids
         )
         return result.status == models.UpdateStatus.COMPLETED
 
@@ -1164,8 +1163,7 @@ class Qdrant(VectorStore):
             )
 
         result = await self.async_client.delete(
-            collection_name=self.collection_name,
-            points_selector=ids,
+            collection_name=self.collection_name, points_selector=ids
         )
 
         return result.status == models.UpdateStatus.COMPLETED
@@ -1309,6 +1307,7 @@ class Qdrant(VectorStore):
 
                 from langchain_qdrant import Qdrant
                 from langchain_openai import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
         """
@@ -1543,6 +1542,7 @@ class Qdrant(VectorStore):
 
                 from langchain_qdrant import Qdrant
                 from langchain_openai import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 qdrant = await Qdrant.afrom_texts(texts, embeddings, "localhost")
         """
@@ -1711,7 +1711,7 @@ class Qdrant(VectorStore):
             # with just a single vector.
             if vector_name is not None:
                 vectors_config = {  # type: ignore[assignment]
-                    vector_name: vectors_config,
+                    vector_name: vectors_config
                 }
 
             client.create_collection(
@@ -1873,7 +1873,7 @@ class Qdrant(VectorStore):
             # with just a single vector.
             if vector_name is not None:
                 vectors_config = {  # type: ignore[assignment]
-                    vector_name: vectors_config,
+                    vector_name: vectors_config
                 }
 
             client.create_collection(
@@ -1930,10 +1930,7 @@ class Qdrant(VectorStore):
             )
 
     def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs and relevance scores in the range [0, 1].
 
@@ -1967,12 +1964,7 @@ class Qdrant(VectorStore):
                     "calling .from_texts or .add_texts on Qdrant instance."
                 )
             metadata = metadatas[i] if metadatas is not None else None
-            payloads.append(
-                {
-                    content_payload_key: text,
-                    metadata_payload_key: metadata,
-                }
-            )
+            payloads.append({content_payload_key: text, metadata_payload_key: metadata})
 
         return payloads
 

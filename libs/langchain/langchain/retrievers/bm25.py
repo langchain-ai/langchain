@@ -22,7 +22,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "default_preprocessing_func",
-    "BM25Retriever",
-]
+__all__ = ["default_preprocessing_func", "BM25Retriever"]

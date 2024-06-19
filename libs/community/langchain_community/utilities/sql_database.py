@@ -6,14 +6,7 @@ from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
 import sqlalchemy
 from langchain_core._api import deprecated
 from langchain_core.utils import get_from_env
-from sqlalchemy import (
-    MetaData,
-    Table,
-    create_engine,
-    inspect,
-    select,
-    text,
-)
+from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import URL, Engine, Result
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
@@ -428,9 +421,7 @@ class SQLDatabase:
                     pass
                 elif self.dialect == "trino":
                     connection.exec_driver_sql(
-                        "USE ?",
-                        (self._schema,),
-                        execution_options=execution_options,
+                        "USE ?", (self._schema,), execution_options=execution_options
                     )
                 elif self.dialect == "duckdb":
                     # Unclear which parameterized argument syntax duckdb supports.
@@ -464,9 +455,7 @@ class SQLDatabase:
             else:
                 raise TypeError(f"Query expression has unknown type: {type(command)}")
             cursor = connection.execute(
-                command,
-                parameters,
-                execution_options=execution_options,
+                command, parameters, execution_options=execution_options
             )
 
             if cursor.returns_rows:

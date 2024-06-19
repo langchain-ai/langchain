@@ -222,16 +222,13 @@ class FewShotChatMessagePromptTemplate(
 
             from langchain_core.prompts import (
                 FewShotChatMessagePromptTemplate,
-                ChatPromptTemplate
+                ChatPromptTemplate,
             )
 
-            examples = [
-                {"input": "2+2", "output": "4"},
-                {"input": "2+3", "output": "5"},
-            ]
+            examples = [{"input": "2+2", "output": "4"}, {"input": "2+3", "output": "5"}]
 
             example_prompt = ChatPromptTemplate.from_messages(
-                [('human', '{input}'), ('ai', '{output}')]
+                [("human", "{input}"), ("ai", "{output}")]
             )
 
             few_shot_prompt = FewShotChatMessagePromptTemplate(
@@ -242,9 +239,9 @@ class FewShotChatMessagePromptTemplate(
 
             final_prompt = ChatPromptTemplate.from_messages(
                 [
-                    ('system', 'You are a helpful AI Assistant'),
+                    ("system", "You are a helpful AI Assistant"),
                     few_shot_prompt,
-                    ('human', '{input}'),
+                    ("human", "{input}"),
                 ]
             )
             final_prompt.format(input="What is 4+4?")
@@ -264,17 +261,10 @@ class FewShotChatMessagePromptTemplate(
                 # ...
             ]
 
-            to_vectorize = [
-                " ".join(example.values())
-                for example in examples
-            ]
+            to_vectorize = [" ".join(example.values()) for example in examples]
             embeddings = OpenAIEmbeddings()
-            vectorstore = Chroma.from_texts(
-                to_vectorize, embeddings, metadatas=examples
-            )
-            example_selector = SemanticSimilarityExampleSelector(
-                vectorstore=vectorstore
-            )
+            vectorstore = Chroma.from_texts(to_vectorize, embeddings, metadatas=examples)
+            example_selector = SemanticSimilarityExampleSelector(vectorstore=vectorstore)
 
             from langchain_core import SystemMessage
             from langchain_core.prompts import HumanMessagePromptTemplate
@@ -294,9 +284,7 @@ class FewShotChatMessagePromptTemplate(
             )
             # Define the overall prompt.
             final_prompt = (
-                SystemMessagePromptTemplate.from_template(
-                    "You are a helpful AI Assistant"
-                )
+                SystemMessagePromptTemplate.from_template("You are a helpful AI Assistant")
                 + few_shot_prompt
                 + HumanMessagePromptTemplate.from_template("{input}")
             )
@@ -305,6 +293,7 @@ class FewShotChatMessagePromptTemplate(
 
             # Use within an LLM
             from langchain_core.chat_models import ChatAnthropic
+
             chain = final_prompt | ChatAnthropic(model="claude-3-haiku-20240307")
             chain.invoke({"input": "What's 3+3?"})
     """

@@ -11,12 +11,7 @@ def test_video_captioning_hard() -> None:
     -FXX%20USA%20%C2%ABPromo%20Noon%20-%204A%20Every%20Day%EF%BF%BD%EF
     %BF%BD%C2%BB%20November%202021%EF%BF%BD%EF%BF%BD-%281080p60%29.mp4
     """
-    chain = VideoCaptioningChain(
-        llm=ChatOpenAI(
-            model="gpt-4",
-            max_tokens=4000,
-        )
-    )
+    chain = VideoCaptioningChain(llm=ChatOpenAI(model="gpt-4", max_tokens=4000))
     srt_content = chain.run(video_file_path=URL)
 
     assert (

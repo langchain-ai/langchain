@@ -81,17 +81,13 @@ class DirectoryLoader(BaseLoader):
                 loader = DirectoryLoader("/path/to/directory", glob="*.txt")
 
                 # Recursively load all text files in a directory.
-                loader = DirectoryLoader(
-                    "/path/to/directory", glob="*.txt", recursive=True
-                )
+                loader = DirectoryLoader("/path/to/directory", glob="*.txt", recursive=True)
 
                 # Load all files in a directory, except for py files.
                 loader = DirectoryLoader("/path/to/directory", exclude="*.py")
 
                 # Load all files in a directory, except for py or pyc files.
-                loader = DirectoryLoader(
-                    "/path/to/directory", exclude=["*.py", "*.pyc"]
-                )
+                loader = DirectoryLoader("/path/to/directory", exclude=["*.py", "*.pyc"])
         """
         if loader_kwargs is None:
             loader_kwargs = {}

@@ -150,10 +150,7 @@ class PebbloSafeLoader(BaseLoader):
             loading_end (bool, optional): Flag indicating the halt of data
                                           loading by loader. Defaults to False.
         """
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
         if loading_end is True:
             PebbloSafeLoader.set_loader_sent()
         doc_content = [doc.dict() for doc in loaded_docs]
@@ -293,10 +290,7 @@ class PebbloSafeLoader(BaseLoader):
     def _send_discover(self) -> None:
         """Send app discovery payload to pebblo-server. Internal method."""
         pebblo_resp = None
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
         payload = self.app.dict(exclude_unset=True)
         app_discover_url = f"{self.classifier_url}{APP_DISCOVER_URL}"
         try:

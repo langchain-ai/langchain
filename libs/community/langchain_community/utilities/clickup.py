@@ -352,9 +352,7 @@ class ClickupAPIWrapper(BaseModel):
 
         return parsed_teams
 
-    def get_headers(
-        self,
-    ) -> Mapping[str, Union[str, bytes]]:
+    def get_headers(self) -> Mapping[str, Union[str, bytes]]:
         """Get the headers for the request."""
         if not isinstance(self.access_token, str):
             raise TypeError(f"Access Token: {self.access_token}, must be str.")
@@ -580,9 +578,7 @@ found in task keys {task.keys()}. Please call again with one of the key names.""
 
         space_id = self.space_id
         url = f"{DEFAULT_URL}/space/{space_id}/folder"
-        payload = {
-            "name": query_dict["name"],
-        }
+        payload = {"name": query_dict["name"]}
 
         headers = self.get_headers()
 

@@ -55,6 +55,7 @@ class ChatMaritalk(BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models import ChatMaritalk
+
             chat = ChatMaritalk(api_key="your_api_key_here")
     """
 

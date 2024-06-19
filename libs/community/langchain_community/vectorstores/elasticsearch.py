@@ -181,15 +181,7 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
                 "knn": knn,
                 "query": {
                     "bool": {
-                        "must": [
-                            {
-                                "match": {
-                                    text_field: {
-                                        "query": query,
-                                    }
-                                }
-                            }
-                        ],
+                        "must": [{"match": {text_field: {"query": query}}}],
                         "filter": filter,
                     }
                 },
@@ -231,7 +223,7 @@ class ApproxRetrievalStrategy(BaseRetrievalStrategy):
                         "dims": dims_length,
                         "index": True,
                         "similarity": similarityAlgo,
-                    },
+                    }
                 }
             }
         }
@@ -282,7 +274,7 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
                         "source": similarityAlgo,
                         "params": {"query_vector": query_vector},
                     },
-                },
+                }
             }
         }
 
@@ -301,7 +293,7 @@ class ExactRetrievalStrategy(BaseRetrievalStrategy):
                         "type": "dense_vector",
                         "dims": dims_length,
                         "index": False,
-                    },
+                    }
                 }
             }
         }
@@ -406,7 +398,7 @@ class ElasticsearchStore(VectorStore):
             vectorstore = ElasticsearchStore(
                 embedding=OpenAIEmbeddings(),
                 index_name="langchain-demo",
-                es_url="http://localhost:9200"
+                es_url="http://localhost:9200",
             )
 
     Args:
@@ -462,7 +454,7 @@ class ElasticsearchStore(VectorStore):
             vectorstore = ElasticsearchStore(
                 embedding=OpenAIEmbeddings(),
                 index_name="langchain-demo",
-                es_connection=es_connection
+                es_connection=es_connection,
             )
 
     ElasticsearchStore by default uses the ApproxRetrievalStrategy, which uses the
@@ -482,7 +474,7 @@ class ElasticsearchStore(VectorStore):
                 embedding=OpenAIEmbeddings(),
                 index_name="langchain-demo",
                 es_url="http://localhost:9200",
-                strategy=ElasticsearchStore.ExactRetrievalStrategy()
+                strategy=ElasticsearchStore.ExactRetrievalStrategy(),
             )
 
     Both strategies require that you know the similarity metric you want to use
@@ -500,7 +492,7 @@ class ElasticsearchStore(VectorStore):
                 "langchain-demo",
                 embedding=OpenAIEmbeddings(),
                 es_url="http://localhost:9200",
-                distance_strategy="DOT_PRODUCT"
+                distance_strategy="DOT_PRODUCT",
             )
 
     """
@@ -826,10 +818,7 @@ class ElasticsearchStore(VectorStore):
             logger.debug(f"Calling custom_query, Query body now: {query_body}")
         # Perform the kNN search on the Elasticsearch index and return the results.
         response = self.client.search(
-            index=self.index_name,
-            **query_body,
-            size=k,
-            source=fields,
+            index=self.index_name, **query_body, size=k, source=fields
         )
 
         def default_doc_builder(hit: Dict) -> Document:
@@ -851,12 +840,7 @@ class ElasticsearchStore(VectorStore):
                         hit["_source"]["metadata"] = {}
                     hit["_source"]["metadata"][field] = hit["_source"][field]
 
-            docs_and_scores.append(
-                (
-                    doc_builder(hit),
-                    hit["_score"],
-                )
-            )
+            docs_and_scores.append((doc_builder(hit), hit["_score"]))
         return docs_and_scores
 
     def delete(
@@ -1223,7 +1207,7 @@ class ElasticsearchStore(VectorStore):
                     texts,
                     embeddings,
                     index_name="langchain-demo",
-                    es_url="http://localhost:9200"
+                    es_url="http://localhost:9200",
                 )
 
         Args:

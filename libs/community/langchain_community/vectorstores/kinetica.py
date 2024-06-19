@@ -111,7 +111,7 @@ class Kinetica(VectorStore):
 
             kinetica_settings = KineticaSettings(
                 host="http://127.0.0.1", username="", password=""
-                )
+            )
             COLLECTION_NAME = "kinetica_store"
             embeddings = OpenAIEmbeddings()
             vectorstore = Kinetica.from_documents(
@@ -375,11 +375,7 @@ class Kinetica(VectorStore):
         )
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
-        **kwargs: Any,
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """Run similarity search with Kinetica with distance.
 
@@ -392,17 +388,10 @@ class Kinetica(VectorStore):
             List of Documents most similar to the query.
         """
         embedding = self.embedding_function.embed_query(text=query)
-        return self.similarity_search_by_vector(
-            embedding=embedding,
-            k=k,
-            filter=filter,
-        )
+        return self.similarity_search_by_vector(embedding=embedding, k=k, filter=filter)
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
+        self, query: str, k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -421,10 +410,7 @@ class Kinetica(VectorStore):
         return docs
 
     def similarity_search_with_score_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        filter: Optional[dict] = None,
+        self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
         from gpudb import GPUdbException
 
@@ -464,10 +450,7 @@ class Kinetica(VectorStore):
         """Return docs and scores from results."""
         docs = [
             (
-                Document(
-                    page_content=result[0],
-                    metadata=json.loads(result[1]),
-                ),
+                Document(page_content=result[0], metadata=json.loads(result[1])),
                 result[2] if self.embedding_function is not None else None,
             )
             for result in results

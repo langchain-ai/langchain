@@ -153,9 +153,7 @@ class ZapierNLARunAction(BaseTool):
             ),
         )
         return await self.api_wrapper.arun_as_str(
-            self.action_id,
-            instructions,
-            self.params,
+            self.action_id, instructions, self.params
         )
 
 
@@ -177,9 +175,7 @@ class ZapierNLAListActions(BaseTool):
     api_wrapper: ZapierNLAWrapper = Field(default_factory=ZapierNLAWrapper)  # type: ignore[arg-type]
 
     def _run(
-        self,
-        _: str = "",
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, _: str = "", run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
         warn_deprecated(
@@ -192,9 +188,7 @@ class ZapierNLAListActions(BaseTool):
         return self.api_wrapper.list_as_str()
 
     async def _arun(
-        self,
-        _: str = "",
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self, _: str = "", run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         """Use the Zapier NLA tool to return a list of all exposed user actions."""
         warn_deprecated(

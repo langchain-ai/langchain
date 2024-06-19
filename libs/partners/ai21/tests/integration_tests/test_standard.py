@@ -35,14 +35,10 @@ class BaseTestAI21(ChatModelIntegrationTests):
 class TestAI21J2(BaseTestAI21):
     @property
     def chat_model_params(self) -> dict:
-        return {
-            "model": "j2-ultra",
-        }
+        return {"model": "j2-ultra"}
 
 
 class TestAI21Jamba(BaseTestAI21):
     @property
     def chat_model_params(self) -> dict:
-        return {
-            "model": "jamba-instruct-preview",
-        }
+        return {"model": "jamba-instruct-preview"}

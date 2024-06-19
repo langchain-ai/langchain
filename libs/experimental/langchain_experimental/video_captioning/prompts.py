@@ -1,8 +1,5 @@
 # flake8: noqa
-from langchain_core.prompts import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-)
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.messages import SystemMessage
 
 JOIN_SIMILAR_VIDEO_MODELS_TEMPLATE = """

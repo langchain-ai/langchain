@@ -122,7 +122,7 @@ class AstraDB(VectorStore):
                     embedding=embeddings,
                     collection_name="my_store",
                     token="AstraCS:...",
-                    api_endpoint="https://<DB-ID>-<REGION>.apps.astra.datastax.com"
+                    api_endpoint="https://<DB-ID>-<REGION>.apps.astra.datastax.com",
                 )
 
                 vectorstore.add_texts(["Giraffes", "All good here"])
@@ -308,12 +308,7 @@ class AstraDB(VectorStore):
 
         _max_workers = concurrency or self.bulk_delete_concurrency
         with ThreadPoolExecutor(max_workers=_max_workers) as tpe:
-            _ = list(
-                tpe.map(
-                    self.delete_by_document_id,
-                    ids,
-                )
-            )
+            _ = list(tpe.map(self.delete_by_document_id, ids))
         return True
 
     async def adelete(
@@ -357,9 +352,7 @@ class AstraDB(VectorStore):
         Use with caution.
         """
         self.astra_env.ensure_db_setup()
-        self.astra_db.delete_collection(
-            collection_name=self.collection_name,
-        )
+        self.astra_db.delete_collection(collection_name=self.collection_name)
 
     async def adelete_collection(self) -> None:
         """
@@ -370,7 +363,7 @@ class AstraDB(VectorStore):
         """
         await self.astra_env.aensure_db_setup()
         await self.async_astra_db.delete_collection(
-            collection_name=self.collection_name,
+            collection_name=self.collection_name
         )
 
     @staticmethod
@@ -386,23 +379,14 @@ class AstraDB(VectorStore):
             metadatas = [{} for _ in texts]
         #
         documents_to_insert = [
-            {
-                "content": b_txt,
-                "_id": b_id,
-                "$vector": b_emb,
-                "metadata": b_md,
-            }
+            {"content": b_txt, "_id": b_id, "$vector": b_emb, "metadata": b_md}
             for b_txt, b_emb, b_id, b_md in zip(
-                texts,
-                embedding_vectors,
-                ids,
-                metadatas,
+                texts, embedding_vectors, ids, metadatas
             )
         ]
         # make unique by id, keeping the last
         uniqued_documents_to_insert = _unique_list(
-            documents_to_insert[::-1],
-            lambda document: document["_id"],
+            documents_to_insert[::-1], lambda document: document["_id"]
         )[::-1]
         return uniqued_documents_to_insert
 
@@ -514,10 +498,7 @@ class AstraDB(VectorStore):
             )
             with ThreadPoolExecutor(max_workers=_u_max_workers) as tpe2:
                 batch_replaced = list(
-                    tpe2.map(
-                        _handle_missing_document,
-                        missing_from_batch,
-                    )
+                    tpe2.map(_handle_missing_document, missing_from_batch)
                 )
             return batch_inserted + batch_replaced
 
@@ -525,10 +506,7 @@ class AstraDB(VectorStore):
         with ThreadPoolExecutor(max_workers=_b_max_workers) as tpe:
             all_ids_nested = tpe.map(
                 _handle_batch,
-                batch_iterate(
-                    batch_size or self.batch_size,
-                    documents_to_insert,
-                ),
+                batch_iterate(batch_size or self.batch_size, documents_to_insert),
             )
         return [iid for id_list in all_ids_nested for iid in id_list]
 
@@ -618,8 +596,7 @@ class AstraDB(VectorStore):
             *[
                 _handle_batch(batch)
                 for batch in batch_iterate(
-                    batch_size or self.batch_size,
-                    documents_to_insert,
+                    batch_size or self.batch_size, documents_to_insert
                 )
             ],
         )
@@ -650,20 +627,13 @@ class AstraDB(VectorStore):
                 filter=metadata_parameter,
                 sort={"$vector": embedding},
                 options={"limit": k, "includeSimilarity": True},
-                projection={
-                    "_id": 1,
-                    "content": 1,
-                    "metadata": 1,
-                },
+                projection={"_id": 1, "content": 1, "metadata": 1},
             )
         )
         #
         return [
             (
-                Document(
-                    page_content=hit["content"],
-                    metadata=hit["metadata"],
-                ),
+                Document(page_content=hit["content"], metadata=hit["metadata"]),
                 hit["$similarity"],
                 hit["_id"],
             )
@@ -691,10 +661,7 @@ class AstraDB(VectorStore):
         #
         return [
             (
-                Document(
-                    page_content=hit["content"],
-                    metadata=hit["metadata"],
-                ),
+                Document(page_content=hit["content"], metadata=hit["metadata"]),
                 hit["$similarity"],
                 hit["_id"],
             )
@@ -702,19 +669,12 @@ class AstraDB(VectorStore):
                 filter=metadata_parameter,
                 sort={"$vector": embedding},
                 options={"limit": k, "includeSimilarity": True},
-                projection={
-                    "_id": 1,
-                    "content": 1,
-                    "metadata": 1,
-                },
+                projection={"_id": 1, "content": 1, "metadata": 1},
             )
         ]
 
     def similarity_search_with_score_id(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[Dict[str, Any]] = None,
+        self, query: str, k: int = 4, filter: Optional[Dict[str, Any]] = None
     ) -> List[Tuple[Document, float, str]]:
         """Return docs most similar to the query with score and id.
 
@@ -728,16 +688,11 @@ class AstraDB(VectorStore):
         """
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_id_by_vector(
-            embedding=embedding_vector,
-            k=k,
-            filter=filter,
+            embedding=embedding_vector, k=k, filter=filter
         )
 
     async def asimilarity_search_with_score_id(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[Dict[str, Any]] = None,
+        self, query: str, k: int = 4, filter: Optional[Dict[str, Any]] = None
     ) -> List[Tuple[Document, float, str]]:
         """Return docs most similar to the query with score and id.
 
@@ -751,9 +706,7 @@ class AstraDB(VectorStore):
         """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_with_score_id_by_vector(
-            embedding=embedding_vector,
-            k=k,
-            filter=filter,
+            embedding=embedding_vector, k=k, filter=filter
         )
 
     def similarity_search_with_score_by_vector(
@@ -775,9 +728,7 @@ class AstraDB(VectorStore):
         return [
             (doc, score)
             for (doc, score, doc_id) in self.similarity_search_with_score_id_by_vector(
-                embedding=embedding,
-                k=k,
-                filter=filter,
+                embedding=embedding, k=k, filter=filter
             )
         ]
 
@@ -804,9 +755,7 @@ class AstraDB(VectorStore):
                 score,
                 doc_id,
             ) in await self.asimilarity_search_with_score_id_by_vector(
-                embedding=embedding,
-                k=k,
-                filter=filter,
+                embedding=embedding, k=k, filter=filter
             )
         ]
 
@@ -828,11 +777,7 @@ class AstraDB(VectorStore):
             The list of Documents most similar to the query.
         """
         embedding_vector = self.embedding.embed_query(query)
-        return self.similarity_search_by_vector(
-            embedding_vector,
-            k,
-            filter=filter,
-        )
+        return self.similarity_search_by_vector(embedding_vector, k, filter=filter)
 
     async def asimilarity_search(
         self,
@@ -853,9 +798,7 @@ class AstraDB(VectorStore):
         """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_by_vector(
-            embedding_vector,
-            k,
-            filter=filter,
+            embedding_vector, k, filter=filter
         )
 
     def similarity_search_by_vector(
@@ -878,9 +821,7 @@ class AstraDB(VectorStore):
         return [
             doc
             for doc, _ in self.similarity_search_with_score_by_vector(
-                embedding,
-                k,
-                filter=filter,
+                embedding, k, filter=filter
             )
         ]
 
@@ -904,17 +845,12 @@ class AstraDB(VectorStore):
         return [
             doc
             for doc, _ in await self.asimilarity_search_with_score_by_vector(
-                embedding,
-                k,
-                filter=filter,
+                embedding, k, filter=filter
             )
         ]
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[Dict[str, Any]] = None,
+        self, query: str, k: int = 4, filter: Optional[Dict[str, Any]] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query with score.
 
@@ -928,16 +864,11 @@ class AstraDB(VectorStore):
         """
         embedding_vector = self.embedding.embed_query(query)
         return self.similarity_search_with_score_by_vector(
-            embedding_vector,
-            k,
-            filter=filter,
+            embedding_vector, k, filter=filter
         )
 
     async def asimilarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[Dict[str, Any]] = None,
+        self, query: str, k: int = 4, filter: Optional[Dict[str, Any]] = None
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query with score.
 
@@ -951,9 +882,7 @@ class AstraDB(VectorStore):
         """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.asimilarity_search_with_score_by_vector(
-            embedding_vector,
-            k,
-            filter=filter,
+            embedding_vector, k, filter=filter
         )
 
     @staticmethod
@@ -972,10 +901,7 @@ class AstraDB(VectorStore):
             if prefetch_index in mmr_chosen_indices
         ]
         return [
-            Document(
-                page_content=hit["content"],
-                metadata=hit["metadata"],
-            )
+            Document(page_content=hit["content"], metadata=hit["metadata"])
             for hit in mmr_hits
         ]
 
@@ -1013,12 +939,7 @@ class AstraDB(VectorStore):
                 filter=metadata_parameter,
                 sort={"$vector": embedding},
                 options={"limit": fetch_k, "includeSimilarity": True},
-                projection={
-                    "_id": 1,
-                    "content": 1,
-                    "metadata": 1,
-                    "$vector": 1,
-                },
+                projection={"_id": 1, "content": 1, "metadata": 1, "$vector": 1},
             )
         )
 
@@ -1059,12 +980,7 @@ class AstraDB(VectorStore):
                 filter=metadata_parameter,
                 sort={"$vector": embedding},
                 options={"limit": fetch_k, "includeSimilarity": True},
-                projection={
-                    "_id": 1,
-                    "content": 1,
-                    "metadata": 1,
-                    "$vector": 1,
-                },
+                projection={"_id": 1, "content": 1, "metadata": 1, "$vector": 1},
             )
         ]
 
@@ -1098,11 +1014,7 @@ class AstraDB(VectorStore):
         """
         embedding_vector = self.embedding.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
-            embedding_vector,
-            k,
-            fetch_k,
-            lambda_mult=lambda_mult,
-            filter=filter,
+            embedding_vector, k, fetch_k, lambda_mult=lambda_mult, filter=filter
         )
 
     async def amax_marginal_relevance_search(
@@ -1133,19 +1045,11 @@ class AstraDB(VectorStore):
         """
         embedding_vector = await self.embedding.aembed_query(query)
         return await self.amax_marginal_relevance_search_by_vector(
-            embedding_vector,
-            k,
-            fetch_k,
-            lambda_mult=lambda_mult,
-            filter=filter,
+            embedding_vector, k, fetch_k, lambda_mult=lambda_mult, filter=filter
         )
 
     @classmethod
-    def _from_kwargs(
-        cls: Type[ADBVST],
-        embedding: Embeddings,
-        **kwargs: Any,
-    ) -> ADBVST:
+    def _from_kwargs(cls: Type[ADBVST], embedding: Embeddings, **kwargs: Any) -> ADBVST:
         known_kwargs = {
             "collection_name",
             "token",

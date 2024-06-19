@@ -8,18 +8,14 @@ if TYPE_CHECKING:
     from langchain_community.document_compressors.flashrank_rerank import (
         FlashrankRerank,
     )
-    from langchain_community.document_compressors.jina_rerank import (
-        JinaRerank,
-    )
+    from langchain_community.document_compressors.jina_rerank import JinaRerank
     from langchain_community.document_compressors.llmlingua_filter import (
         LLMLinguaCompressor,
     )
     from langchain_community.document_compressors.openvino_rerank import (
         OpenVINOReranker,
     )
-    from langchain_community.document_compressors.rankllm_rerank import (
-        RankLLMRerank,
-    )
+    from langchain_community.document_compressors.rankllm_rerank import RankLLMRerank
     from langchain_community.document_compressors.volcengine_rerank import (
         VolcengineRerank,
     )

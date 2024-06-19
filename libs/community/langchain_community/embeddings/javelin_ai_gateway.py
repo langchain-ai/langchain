@@ -24,7 +24,7 @@ class JavelinAIGatewayEmbeddings(Embeddings, BaseModel):
 
             embeddings = JavelinAIGatewayEmbeddings(
                 gateway_uri="<javelin-ai-gateway-uri>",
-                route="<your-javelin-gateway-embeddings-route>"
+                route="<your-javelin-gateway-embeddings-route>",
             )
     """
 
@@ -42,10 +42,7 @@ class JavelinAIGatewayEmbeddings(Embeddings, BaseModel):
 
     def __init__(self, **kwargs: Any):
         try:
-            from javelin_sdk import (
-                JavelinClient,
-                UnauthorizedError,
-            )
+            from javelin_sdk import JavelinClient, UnauthorizedError
         except ImportError:
             raise ImportError(
                 "Could not import javelin_sdk python package. "

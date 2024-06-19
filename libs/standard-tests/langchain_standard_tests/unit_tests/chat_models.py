@@ -84,9 +84,7 @@ class ChatModelUnitTests(ChatModelTests):
         )
         assert model is not None
 
-    def test_init_streaming(
-        self,
-    ) -> None:
+    def test_init_streaming(self) -> None:
         model = self.chat_model_class(
             **{
                 **self.standard_chat_model_params,
@@ -96,10 +94,7 @@ class ChatModelUnitTests(ChatModelTests):
         )
         assert model is not None
 
-    def test_bind_tool_pydantic(
-        self,
-        model: BaseChatModel,
-    ) -> None:
+    def test_bind_tool_pydantic(self, model: BaseChatModel) -> None:
         if not self.has_tool_calling:
             return
 
@@ -109,11 +104,7 @@ class ChatModelUnitTests(ChatModelTests):
         assert isinstance(tool_model, RunnableBinding)
 
     @pytest.mark.parametrize("schema", [Person, Person.schema()])
-    def test_with_structured_output(
-        self,
-        model: BaseChatModel,
-        schema: Any,
-    ) -> None:
+    def test_with_structured_output(self, model: BaseChatModel, schema: Any) -> None:
         if not self.has_structured_output:
             return
 

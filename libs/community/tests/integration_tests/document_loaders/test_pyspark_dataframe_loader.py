@@ -19,18 +19,9 @@ def test_pyspark_loader_load_valid_data() -> None:
     df = spark.createDataFrame(data, ["text", "label"])
 
     expected_docs = [
-        Document(
-            page_content=data[0][0],
-            metadata={"label": data[0][1]},
-        ),
-        Document(
-            page_content=data[1][0],
-            metadata={"label": data[1][1]},
-        ),
-        Document(
-            page_content=data[2][0],
-            metadata={"label": data[2][1]},
-        ),
+        Document(page_content=data[0][0], metadata={"label": data[0][1]}),
+        Document(page_content=data[1][0], metadata={"label": data[1][1]}),
+        Document(page_content=data[2][0], metadata={"label": data[2][1]}),
     ]
 
     loader = PySparkDataFrameLoader(

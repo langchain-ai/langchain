@@ -7,15 +7,8 @@ def test_initialization() -> None:
     """Test chat model initialization."""
 
     for model in [
-        ChatSparkLLM(
-            api_key="secret",
-            temperature=0.5,
-            timeout=30,
-        ),
-        ChatSparkLLM(
-            spark_api_key="secret",
-            request_timeout=30,
-        ),  # type: ignore[call-arg]
+        ChatSparkLLM(api_key="secret", temperature=0.5, timeout=30),
+        ChatSparkLLM(spark_api_key="secret", request_timeout=30),  # type: ignore[call-arg]
     ]:
         assert model.request_timeout == 30
         assert model.spark_api_key == "secret"

@@ -56,22 +56,10 @@ def test_serialization_of_wellknown_objects() -> None:
         AIMessageChunk(content="ai"),
         SystemMessage(content="sys"),
         SystemMessageChunk(content="sys"),
-        FunctionMessage(
-            name="func",
-            content="func",
-        ),
-        FunctionMessageChunk(
-            name="func",
-            content="func",
-        ),
-        ChatMessage(
-            role="human",
-            content="human",
-        ),
-        ChatMessageChunk(
-            role="human",
-            content="human",
-        ),
+        FunctionMessage(name="func", content="func"),
+        FunctionMessageChunk(name="func", content="func"),
+        ChatMessage(role="human", content="human"),
+        ChatMessageChunk(role="human", content="human"),
         StringPromptValue(text="hello"),
         ChatPromptValueConcrete(messages=[HumanMessage(content="human")]),
         Document(page_content="hello"),
@@ -83,16 +71,9 @@ def test_serialization_of_wellknown_objects() -> None:
             log="",
             message_log=[HumanMessage(content="human")],
         ),
-        Generation(
-            text="hello",
-            generation_info={"info": "info"},
-        ),
-        ChatGeneration(
-            message=HumanMessage(content="human"),
-        ),
-        ChatGenerationChunk(
-            message=HumanMessageChunk(content="cat"),
-        ),
+        Generation(text="hello", generation_info={"info": "info"}),
+        ChatGeneration(message=HumanMessage(content="human")),
+        ChatGenerationChunk(message=HumanMessageChunk(content="cat")),
     ]
 
     for lc_object in lc_objects:

@@ -192,8 +192,7 @@ class NeptuneSparqlQAChain(Chain):
             intermediate_steps.append({"context": context})
 
             result = self.qa_chain(
-                {"prompt": prompt, "context": context},
-                callbacks=callbacks,
+                {"prompt": prompt, "context": context}, callbacks=callbacks
             )
             final_result = result[self.qa_chain.output_key]
 

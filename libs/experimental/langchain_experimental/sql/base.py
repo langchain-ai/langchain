@@ -29,6 +29,7 @@ class SQLDatabaseChain(Chain):
 
             from langchain_experimental.sql import SQLDatabaseChain
             from langchain_community.llms import OpenAI, SQLDatabase
+
             db = SQLDatabase(...)
             db_chain = SQLDatabaseChain.from_llm(OpenAI(), db)
 
@@ -131,8 +132,7 @@ class SQLDatabaseChain(Chain):
         try:
             intermediate_steps.append(llm_inputs.copy())  # input: sql generation
             sql_cmd = self.llm_chain.predict(
-                callbacks=_run_manager.get_child(),
-                **llm_inputs,
+                callbacks=_run_manager.get_child(), **llm_inputs
             ).strip()
             if self.return_sql:
                 return {self.output_key: sql_cmd}
@@ -188,8 +188,7 @@ class SQLDatabaseChain(Chain):
                 llm_inputs["input"] = input_text
                 intermediate_steps.append(llm_inputs.copy())  # input: final answer
                 final_result = self.llm_chain.predict(
-                    callbacks=_run_manager.get_child(),
-                    **llm_inputs,
+                    callbacks=_run_manager.get_child(), **llm_inputs
                 ).strip()
                 intermediate_steps.append(final_result)  # output: final answer
                 _run_manager.on_text(final_result, color="green", verbose=self.verbose)
@@ -290,10 +289,7 @@ class SQLDatabaseSequentialChain(Chain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         _table_names = self.sql_chain.database.get_usable_table_names()
         table_names = ", ".join(_table_names)
-        llm_inputs = {
-            "query": inputs[self.input_key],
-            "table_names": table_names,
-        }
+        llm_inputs = {"query": inputs[self.input_key], "table_names": table_names}
         _lowercased_table_names = [name.lower() for name in _table_names]
         table_names_from_chain = self.decider_chain.predict_and_parse(**llm_inputs)
         table_names_to_use = [

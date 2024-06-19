@@ -16,18 +16,12 @@ class TrainableLLM(Protocol):
     """Protocol for trainable language models."""
 
     @abstractmethod
-    def train_unsupervised(
-        self,
-        inputs: Sequence[str],
-        **kwargs: Any,
-    ) -> TrainResult:
+    def train_unsupervised(self, inputs: Sequence[str], **kwargs: Any) -> TrainResult:
         ...
 
     @abstractmethod
     async def atrain_unsupervised(
-        self,
-        inputs: Sequence[str],
-        **kwargs: Any,
+        self, inputs: Sequence[str], **kwargs: Any
     ) -> TrainResult:
         ...
 

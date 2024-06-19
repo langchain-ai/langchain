@@ -176,8 +176,7 @@ def _get_search_client(
                 ],
                 profiles=[
                     VectorSearchProfile(
-                        name="myHnswProfile",
-                        algorithm_configuration_name="default",
+                        name="myHnswProfile", algorithm_configuration_name="default"
                     ),
                     VectorSearchProfile(
                         name="myExhaustiveKnnProfile",
@@ -199,7 +198,7 @@ def _get_search_client(
             semantic_configuration = SemanticConfiguration(
                 name=semantic_configuration_name,
                 prioritized_fields=SemanticPrioritizedFields(
-                    content_fields=[SemanticField(field_name=FIELDS_CONTENT)],
+                    content_fields=[SemanticField(field_name=FIELDS_CONTENT)]
                 ),
             )
             semantic_search = SemanticSearch(configurations=[semantic_configuration])
@@ -287,10 +286,7 @@ class AzureSearch(VectorStore):
                 key=True,
                 filterable=True,
             ),
-            SearchableField(
-                name=FIELDS_CONTENT,
-                type=SearchFieldDataType.String,
-            ),
+            SearchableField(name=FIELDS_CONTENT, type=SearchFieldDataType.String),
             SearchField(
                 name=FIELDS_CONTENT_VECTOR,
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
@@ -299,10 +295,7 @@ class AzureSearch(VectorStore):
                 or len(self.embed_query("Text")),
                 vector_search_profile_name="myHnswProfile",
             ),
-            SearchableField(
-                name=FIELDS_METADATA,
-                type=SearchFieldDataType.String,
-            ),
+            SearchableField(name=FIELDS_METADATA, type=SearchFieldDataType.String),
         ]
         user_agent = "langchain"
         if "user_agent" in kwargs and kwargs["user_agent"]:
@@ -698,11 +691,7 @@ class AzureSearch(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def vector_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filters: Optional[str] = None,
-        **kwargs: Any,
+        self, query: str, k: int = 4, filters: Optional[str] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -721,11 +710,7 @@ class AzureSearch(VectorStore):
         return _results_to_documents(results)
 
     async def avector_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filters: Optional[str] = None,
-        **kwargs: Any,
+        self, query: str, k: int = 4, filters: Optional[str] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query.
 
@@ -851,11 +836,7 @@ class AzureSearch(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def hybrid_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filters: Optional[str] = None,
-        **kwargs: Any,
+        self, query: str, k: int = 4, filters: Optional[str] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query with a hybrid query.
 
@@ -873,11 +854,7 @@ class AzureSearch(VectorStore):
         return _results_to_documents(results)
 
     async def ahybrid_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filters: Optional[str] = None,
-        **kwargs: Any,
+        self, query: str, k: int = 4, filters: Optional[str] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query with a hybrid query.
 
@@ -1271,8 +1248,7 @@ class AzureSearch(VectorStore):
                             if result.get("@search.captions")
                             else {},
                             "answers": semantic_answers_dict.get(
-                                result.get(FIELDS_ID, ""),
-                                "",
+                                result.get(FIELDS_ID, ""), ""
                             ),
                         },
                     },
@@ -1353,8 +1329,7 @@ class AzureSearch(VectorStore):
                                 if result.get("@search.captions")
                                 else {},
                                 "answers": semantic_answers_dict.get(
-                                    result.get(FIELDS_ID, ""),
-                                    "",
+                                    result.get(FIELDS_ID, ""), ""
                                 ),
                             },
                         },
@@ -1572,10 +1547,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
         return values
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> List[Document]:
         params = {**self.search_kwargs, **kwargs}
 
@@ -1657,10 +1629,7 @@ def _results_to_documents(
     results: SearchItemPaged[Dict],
 ) -> List[Tuple[Document, float]]:
     docs = [
-        (
-            _result_to_document(result),
-            float(result["@search.score"]),
-        )
+        (_result_to_document(result), float(result["@search.score"]))
         for result in results
     ]
     return docs

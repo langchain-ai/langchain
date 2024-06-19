@@ -45,10 +45,7 @@ class OBSFileLoader(BaseLoader):
         Example:
             To create a new OBSFileLoader with a new client:
             ```
-            config = {
-                "ak": "your-access-key",
-                "sk": "your-secret-key"
-            }
+            config = {"ak": "your-access-key", "sk": "your-secret-key"}
             obs_loader = OBSFileLoader("your-bucket-name", "your-object-key", config=config)
             ```
 
@@ -57,12 +54,16 @@ class OBSFileLoader(BaseLoader):
             from obs import ObsClient
 
             # Assuming you have an existing ObsClient object 'obs_client'
-            obs_loader = OBSFileLoader("your-bucket-name", "your-object-key", client=obs_client)
+            obs_loader = OBSFileLoader(
+                "your-bucket-name", "your-object-key", client=obs_client
+            )
             ```
 
             To create a new OBSFileLoader without an existing client:
             ```
-            obs_loader = OBSFileLoader("your-bucket-name", "your-object-key", endpoint="your-endpoint-url")
+            obs_loader = OBSFileLoader(
+                "your-bucket-name", "your-object-key", endpoint="your-endpoint-url"
+            )
             ```
         """  # noqa: E501
         try:

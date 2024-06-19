@@ -67,12 +67,7 @@ class Tair(VectorStore):
             logger.info("Index already exists")
             return False
         self.client.tvs_create_index(
-            self.index_name,
-            dim,
-            distance_type,
-            index_type,
-            data_type,
-            **kwargs,
+            self.index_name, dim, distance_type, index_type, data_type, **kwargs
         )
         return True
 
@@ -115,10 +110,7 @@ class Tair(VectorStore):
                     key,
                     embeddings[i],
                     False,
-                    **{
-                        self.content_key: text,
-                        self.metadata_key: json.dumps(metadata),
-                    },
+                    **{self.content_key: text, self.metadata_key: json.dumps(metadata)},
                 )
             ids.append(key)
         pipeline.execute()
@@ -151,13 +143,7 @@ class Tair(VectorStore):
             )
         docs = pipeline.execute()
 
-        return [
-            Document(
-                page_content=d[1],
-                metadata=json.loads(d[0]),
-            )
-            for d in docs
-        ]
+        return [Document(page_content=d[1], metadata=json.loads(d[0])) for d in docs]
 
     @classmethod
     def from_texts(
@@ -217,11 +203,7 @@ class Tair(VectorStore):
         embeddings = embedding.embed_documents(texts)
 
         tair_vector_store.create_index_if_not_exist(
-            len(embeddings[0]),
-            distance_type,
-            index_type,
-            data_type,
-            **index_params,
+            len(embeddings[0]), distance_type, index_type, data_type, **index_params
         )
 
         tair_vector_store.add_texts(texts, metadatas, keys=keys)
@@ -246,10 +228,7 @@ class Tair(VectorStore):
         )
 
     @staticmethod
-    def drop_index(
-        index_name: str = "langchain",
-        **kwargs: Any,
-    ) -> bool:
+    def drop_index(index_name: str = "langchain", **kwargs: Any) -> bool:
         """
         Drop an existing index.
 

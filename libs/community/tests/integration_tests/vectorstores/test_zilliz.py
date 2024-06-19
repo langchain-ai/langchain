@@ -17,12 +17,7 @@ def _zilliz_from_texts(
         fake_texts,
         FakeEmbeddings(),
         metadatas=metadatas,
-        connection_args={
-            "uri": "",
-            "user": "",
-            "password": "",
-            "secure": True,
-        },
+        connection_args={"uri": "", "user": "", "password": "", "secure": True},
         drop_old=drop,
     )
 

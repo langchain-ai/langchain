@@ -51,12 +51,7 @@ def test_serdes_message_chunk() -> None:
             "content": [{"text": "blah", "type": "text"}],
             "tool_calls": [{"name": "foo", "args": {"bar": 1}, "id": "baz"}],
             "invalid_tool_calls": [
-                {
-                    "name": "foobad",
-                    "args": "blah",
-                    "id": "booz",
-                    "error": None,
-                }
+                {"name": "foobad", "args": "blah", "id": "booz", "error": None}
             ],
             "tool_call_chunks": [
                 {"name": "foo", "args": '{"bar": 1}', "id": "baz", "index": 0},

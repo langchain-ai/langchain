@@ -37,13 +37,11 @@ class MosaicML(LLM):
         .. code-block:: python
 
             from langchain_community.llms import MosaicML
+
             endpoint_url = (
                 "https://models.hosted-on.mosaicml.hosting/mpt-7b-instruct/v1/predict"
             )
-            mosaic_llm = MosaicML(
-                endpoint_url=endpoint_url,
-                mosaicml_api_token="my-api-key"
-            )
+            mosaic_llm = MosaicML(endpoint_url=endpoint_url, mosaicml_api_token="my-api-key")
     """
 
     endpoint_url: str = (
@@ -90,9 +88,7 @@ class MosaicML(LLM):
     def _transform_prompt(self, prompt: str) -> str:
         """Transform prompt."""
         if self.inject_instruction_format:
-            prompt = PROMPT_FOR_GENERATION_FORMAT.format(
-                instruction=prompt,
-            )
+            prompt = PROMPT_FOR_GENERATION_FORMAT.format(instruction=prompt)
         return prompt
 
     def _call(

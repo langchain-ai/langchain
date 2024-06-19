@@ -114,10 +114,7 @@ MODEL_COST_PER_1K_TOKENS = {
 }
 
 
-def standardize_model_name(
-    model_name: str,
-    is_completion: bool = False,
-) -> str:
+def standardize_model_name(model_name: str, is_completion: bool = False) -> str:
     """
     Standardize the model name to a format that can be used in the OpenAI API.
 

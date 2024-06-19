@@ -2,24 +2,14 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from langchain_community.document_loaders.parsers.audio import (
-        OpenAIWhisperParser,
-    )
+    from langchain_community.document_loaders.parsers.audio import OpenAIWhisperParser
     from langchain_community.document_loaders.parsers.doc_intelligence import (
         AzureAIDocumentIntelligenceParser,
     )
-    from langchain_community.document_loaders.parsers.docai import (
-        DocAIParser,
-    )
-    from langchain_community.document_loaders.parsers.grobid import (
-        GrobidParser,
-    )
-    from langchain_community.document_loaders.parsers.html import (
-        BS4HTMLParser,
-    )
-    from langchain_community.document_loaders.parsers.language import (
-        LanguageParser,
-    )
+    from langchain_community.document_loaders.parsers.docai import DocAIParser
+    from langchain_community.document_loaders.parsers.grobid import GrobidParser
+    from langchain_community.document_loaders.parsers.html import BS4HTMLParser
+    from langchain_community.document_loaders.parsers.language import LanguageParser
     from langchain_community.document_loaders.parsers.pdf import (
         PDFMinerParser,
         PDFPlumberParser,
@@ -27,9 +17,7 @@ if TYPE_CHECKING:
         PyPDFium2Parser,
         PyPDFParser,
     )
-    from langchain_community.document_loaders.parsers.vsdx import (
-        VsdxParser,
-    )
+    from langchain_community.document_loaders.parsers.vsdx import VsdxParser
 
 
 _module_lookup = {

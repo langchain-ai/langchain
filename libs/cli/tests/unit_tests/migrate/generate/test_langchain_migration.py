@@ -51,5 +51,5 @@ def test_create_single_store_retriever_db() -> None:
                 (
                     "langchain.vectorstores.singlestoredb.SingleStoreDBRetriever",
                     "langchain_core.vectorstores.VectorStoreRetriever",
-                ),
+                )
             ]

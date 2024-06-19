@@ -168,6 +168,7 @@ class Tongyi(BaseLLM):
         .. code-block:: python
 
             from langchain_community.llms import Tongyi
+
             tongyi = tongyi()
     """
 
@@ -264,10 +265,7 @@ class Tongyi(BaseLLM):
                     [Generation(**self._generation_from_qwen_resp(completion))]
                 )
         return LLMResult(
-            generations=generations,
-            llm_output={
-                "model_name": self.model_name,
-            },
+            generations=generations, llm_output={"model_name": self.model_name}
         )
 
     async def _agenerate(
@@ -302,10 +300,7 @@ class Tongyi(BaseLLM):
                     [Generation(**self._generation_from_qwen_resp(completion))]
                 )
         return LLMResult(
-            generations=generations,
-            llm_output={
-                "model_name": self.model_name,
-            },
+            generations=generations, llm_output={"model_name": self.model_name}
         )
 
     def _stream(
@@ -326,9 +321,7 @@ class Tongyi(BaseLLM):
             )
             if run_manager:
                 run_manager.on_llm_new_token(
-                    chunk.text,
-                    chunk=chunk,
-                    verbose=self.verbose,
+                    chunk.text, chunk=chunk, verbose=self.verbose
                 )
             yield chunk
 
@@ -350,17 +343,12 @@ class Tongyi(BaseLLM):
             )
             if run_manager:
                 await run_manager.on_llm_new_token(
-                    chunk.text,
-                    chunk=chunk,
-                    verbose=self.verbose,
+                    chunk.text, chunk=chunk, verbose=self.verbose
                 )
             yield chunk
 
     def _invocation_params(self, stop: Any, **kwargs: Any) -> Dict[str, Any]:
-        params = {
-            **self._default_params,
-            **kwargs,
-        }
+        params = {**self._default_params, **kwargs}
         if stop is not None:
             params["stop"] = stop
         if params.get("stream"):
@@ -392,7 +380,4 @@ class Tongyi(BaseLLM):
 
     @staticmethod
     def _chunk_to_generation(chunk: GenerationChunk) -> Generation:
-        return Generation(
-            text=chunk.text,
-            generation_info=chunk.generation_info,
-        )
+        return Generation(text=chunk.text, generation_info=chunk.generation_info)

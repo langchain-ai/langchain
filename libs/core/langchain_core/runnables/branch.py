@@ -61,8 +61,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                 lambda x: "goodbye",
             )
 
-            branch.invoke("hello") # "HELLO"
-            branch.invoke(None) # "goodbye"
+            branch.invoke("hello")  # "HELLO"
+            branch.invoke(None)  # "goodbye"
     """
 
     branches: Sequence[Tuple[Runnable[Input, bool], Runnable[Input, Output]]]
@@ -325,8 +325,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                 for chunk in self.default.stream(
                     input,
                     config=patch_config(
-                        config,
-                        callbacks=run_manager.get_child(tag="branch:default"),
+                        config, callbacks=run_manager.get_child(tag="branch:default")
                     ),
                     **kwargs,
                 ):
@@ -400,8 +399,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                 async for chunk in self.default.astream(
                     input,
                     config=patch_config(
-                        config,
-                        callbacks=run_manager.get_child(tag="branch:default"),
+                        config, callbacks=run_manager.get_child(tag="branch:default")
                     ),
                     **kwargs,
                 ):

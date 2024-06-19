@@ -24,9 +24,7 @@ class MojeekSearchAPIWrapper(BaseModel):
         return json.dumps(results)
 
     def _search(self, query: str) -> List[dict]:
-        headers = {
-            "Accept": "application/json",
-        }
+        headers = {"Accept": "application/json"}
 
         req = requests.PreparedRequest()
         request = {

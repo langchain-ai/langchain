@@ -75,13 +75,7 @@ class ChatGPTPluginRetriever(BaseRetriever):
     def _create_request(self, query: str) -> tuple[str, dict, dict]:
         url = f"{self.url}/query"
         json = {
-            "queries": [
-                {
-                    "query": query,
-                    "filter": self.filter,
-                    "top_k": self.top_k,
-                }
-            ]
+            "queries": [{"query": query, "filter": self.filter, "top_k": self.top_k}]
         }
         headers = {
             "Content-Type": "application/json",

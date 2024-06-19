@@ -15,15 +15,7 @@ if TYPE_CHECKING:
     import riva.client
     import riva.client.proto.riva_asr_pb2 as rasr
 
-AUDIO_DATA_MOCK = [
-    b"This",
-    b"is",
-    b"a",
-    b"test.",
-    b"_",
-    b"Hello.",
-    b"World",
-]
+AUDIO_DATA_MOCK = [b"This", b"is", b"a", b"test.", b"_", b"Hello.", b"World"]
 AUDIO_TEXT_MOCK = b" ".join(AUDIO_DATA_MOCK).decode().strip().split("_")
 
 SVC_URI = "not-a-url.asdf:9999"
@@ -55,12 +47,7 @@ def response_generator(
 
     if not alternatives:
         return rasr.StreamingRecognizeResponse(
-            results=[
-                rasr.StreamingRecognitionResult(
-                    is_final=final,
-                    alternatives=[],
-                )
-            ]
+            results=[rasr.StreamingRecognitionResult(is_final=final, alternatives=[])]
         )
 
     return rasr.StreamingRecognizeResponse(

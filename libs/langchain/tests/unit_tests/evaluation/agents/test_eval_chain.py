@@ -27,7 +27,7 @@ def intermediate_steps() -> List[Tuple[AgentAction, str]]:
                 log="Star date 2021-06-13: Foo received input: Bar",
             ),
             "Baz",
-        ),
+        )
     ]
 
 

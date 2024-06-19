@@ -301,9 +301,7 @@ def test_singlestoredb_add_texts_to_existing(texts: List[str]) -> None:
         host=TEST_SINGLESTOREDB_URL,
     )
     docsearch = SingleStoreDB(
-        NormilizedFakeEmbeddings(),
-        table_name=table_name,
-        host=TEST_SINGLESTOREDB_URL,
+        NormilizedFakeEmbeddings(), table_name=table_name, host=TEST_SINGLESTOREDB_URL
     )
     docsearch.add_texts(["foo"])
     output = docsearch.similarity_search("foo", k=2)
@@ -514,14 +512,7 @@ def test_singlestoredb_as_retriever(texts: List[str]) -> None:
     )
     retriever = docsearch.as_retriever(search_kwargs={"k": 2})
     output = retriever.invoke("foo")
-    assert output == [
-        Document(
-            page_content="foo",
-        ),
-        Document(
-            page_content="bar",
-        ),
-    ]
+    assert output == [Document(page_content="foo"), Document(page_content="bar")]
     drop(table_name)
 
 
@@ -531,9 +522,7 @@ def test_singlestoredb_add_image(texts: List[str]) -> None:
     table_name = "test_singlestoredb_add_image"
     drop(table_name)
     docsearch = SingleStoreDB(
-        RandomEmbeddings(),
-        table_name=table_name,
-        host=TEST_SINGLESTOREDB_URL,
+        RandomEmbeddings(), table_name=table_name, host=TEST_SINGLESTOREDB_URL
     )
     temp_files = []
     for _ in range(3):
@@ -556,9 +545,7 @@ def test_singestoredb_add_image2() -> None:
     table_name = "test_singlestoredb_add_images"
     drop(table_name)
     docsearch = SingleStoreDB(
-        OpenCLIPEmbeddings(),
-        table_name=table_name,
-        host=TEST_SINGLESTOREDB_URL,
+        OpenCLIPEmbeddings(), table_name=table_name, host=TEST_SINGLESTOREDB_URL
     )
     image_uris = sorted(
         [

@@ -89,8 +89,7 @@ def test_invoke(pebblo_retrieval_qa: PebbloRetrievalQA) -> None:
     """
     # Create a fake auth context and semantic context
     auth_context = AuthContext(
-        user_id="fake_user@email.com",
-        user_auth=["fake-group", "fake-group2"],
+        user_id="fake_user@email.com", user_auth=["fake-group", "fake-group2"]
     )
     semantic_context_dict = {
         "pebblo_semantic_topics": {"deny": ["harmful-advice"]},

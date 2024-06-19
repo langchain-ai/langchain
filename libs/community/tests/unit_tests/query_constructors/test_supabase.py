@@ -42,10 +42,7 @@ def test_visit_operation() -> None:
 
 def test_visit_structured_query() -> None:
     query = "What is the capital of France?"
-    structured_query = StructuredQuery(
-        query=query,
-        filter=None,
-    )
+    structured_query = StructuredQuery(query=query, filter=None)
     expected: Tuple[str, Dict] = (query, {})
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
@@ -55,10 +52,7 @@ def test_visit_structured_query() -> None:
         query,
         {"postgrest_filter": "and(metadata->>foo.lt.1,metadata->>foo.lt.2)"},
     )
-    structured_query = StructuredQuery(
-        query=query,
-        filter=comp,
-    )
+    structured_query = StructuredQuery(query=query, filter=comp)
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
 
@@ -70,10 +64,7 @@ def test_visit_structured_query() -> None:
             Comparison(comparator=Comparator.LT, attribute="abc", value=["1", "2"]),
         ],
     )
-    structured_query = StructuredQuery(
-        query=query,
-        filter=op,
-    )
+    structured_query = StructuredQuery(query=query, filter=op)
     expected = (
         query,
         {

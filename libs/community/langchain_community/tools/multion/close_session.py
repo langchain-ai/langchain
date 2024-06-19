@@ -1,8 +1,6 @@
 from typing import TYPE_CHECKING, Optional, Type
 
-from langchain_core.callbacks import (
-    CallbackManagerForToolRun,
-)
+from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
 
@@ -44,9 +42,7 @@ Note: SessionId must be received from previous Browser window creation."""
     sessionId: str = ""
 
     def _run(
-        self,
-        sessionId: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, sessionId: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> None:
         try:
             try:

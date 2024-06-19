@@ -121,9 +121,7 @@ class WebResearchRetriever(BaseRetriever):
 
         # Use chat model prompt
         llm_chain = LLMChain(
-            llm=llm,
-            prompt=prompt,
-            output_parser=QuestionListOutputParser(),
+            llm=llm, prompt=prompt, output_parser=QuestionListOutputParser()
         )
 
         return cls(
@@ -158,10 +156,7 @@ class WebResearchRetriever(BaseRetriever):
         return result
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Search Google for documents related to the query input.
 
@@ -226,9 +221,6 @@ class WebResearchRetriever(BaseRetriever):
         return unique_documents
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError

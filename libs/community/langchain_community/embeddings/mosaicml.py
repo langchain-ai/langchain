@@ -17,12 +17,12 @@ class MosaicMLInstructorEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.llms import MosaicMLInstructorEmbeddings
+
             endpoint_url = (
                 "https://models.hosted-on.mosaicml.hosting/instructor-large/v1/predict"
             )
             mosaic_llm = MosaicMLInstructorEmbeddings(
-                endpoint_url=endpoint_url,
-                mosaicml_api_token="my-api-key"
+                endpoint_url=endpoint_url, mosaicml_api_token="my-api-key"
             )
     """
 

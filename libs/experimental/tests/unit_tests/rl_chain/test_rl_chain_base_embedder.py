@@ -90,10 +90,7 @@ def test_context_w_namespace_w_some_emb() -> None:
         == expected
     )
     expected_embed_and_keep = [
-        {
-            "test_namespace": str1,
-            "test_namespace2": str2 + " " + encoded_str2,
-        }
+        {"test_namespace": str1, "test_namespace2": str2 + " " + encoded_str2}
     ]
     assert (
         base.embed(
@@ -352,18 +349,9 @@ def test_action_w_namespace_w_emb_w_more_than_one_item_in_first_dict() -> None:
         == expected
     )
     expected_embed_and_keep = [
-        {
-            "test_namespace": str1 + " " + encoded_str1,
-            "test_namespace2": str1,
-        },
-        {
-            "test_namespace": str2 + " " + encoded_str2,
-            "test_namespace2": str2,
-        },
-        {
-            "test_namespace": str3 + " " + encoded_str3,
-            "test_namespace2": str3,
-        },
+        {"test_namespace": str1 + " " + encoded_str1, "test_namespace2": str1},
+        {"test_namespace": str2 + " " + encoded_str2, "test_namespace2": str2},
+        {"test_namespace": str3 + " " + encoded_str3, "test_namespace2": str3},
     ]
     assert (
         base.embed(

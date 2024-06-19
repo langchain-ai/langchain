@@ -60,14 +60,8 @@ class TwitterTweetLoader(BaseLoader):
     ) -> Iterable[Document]:
         """Format tweets into a string."""
         for tweet in tweets:
-            metadata = {
-                "created_at": tweet["created_at"],
-                "user_info": user_info,
-            }
-            yield Document(
-                page_content=tweet["text"],
-                metadata=metadata,
-            )
+            metadata = {"created_at": tweet["created_at"], "user_info": user_info}
+            yield Document(page_content=tweet["text"], metadata=metadata)
 
     @classmethod
     def from_bearer_token(
@@ -80,9 +74,7 @@ class TwitterTweetLoader(BaseLoader):
         tweepy = _dependable_tweepy_import()
         auth = tweepy.OAuth2BearerHandler(oauth2_bearer_token)
         return cls(
-            auth_handler=auth,
-            twitter_users=twitter_users,
-            number_tweets=number_tweets,
+            auth_handler=auth, twitter_users=twitter_users, number_tweets=number_tweets
         )
 
     @classmethod
@@ -104,7 +96,5 @@ class TwitterTweetLoader(BaseLoader):
             consumer_secret=consumer_secret,
         )
         return cls(
-            auth_handler=auth,
-            twitter_users=twitter_users,
-            number_tweets=number_tweets,
+            auth_handler=auth, twitter_users=twitter_users, number_tweets=number_tweets
         )

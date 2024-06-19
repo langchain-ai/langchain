@@ -47,11 +47,7 @@ def test_provider_not_available(mock_post: MagicMock) -> None:
 def test_unexpected_response(mock_post: MagicMock) -> None:
     mock_response = MagicMock()
     mock_response.status_code = 200
-    mock_response.json.return_value = [
-        {
-            "status": "success",
-        }
-    ]
+    mock_response.json.return_value = [{"status": "success"}]
     mock_post.return_value = mock_response
     with pytest.raises(RuntimeError):
         tool._run("some query")

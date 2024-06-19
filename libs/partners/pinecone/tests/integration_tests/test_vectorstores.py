@@ -224,10 +224,7 @@ class TestPinecone:
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
         docsearch = PineconeVectorStore.from_texts(
-            texts,
-            embedding_openai,
-            index_name=INDEX_NAME,
-            metadatas=metadatas,
+            texts, embedding_openai, index_name=INDEX_NAME, metadatas=metadatas
         )
         # wait for the index to be ready
         time.sleep(DEFAULT_SLEEP)

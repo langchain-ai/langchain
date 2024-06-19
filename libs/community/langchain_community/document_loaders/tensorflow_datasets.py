@@ -21,6 +21,7 @@ class TensorflowDatasetLoader(BaseLoader):
 
             from langchain_community.document_loaders import TensorflowDatasetLoader
 
+
             def mlqaen_example_to_document(example: dict) -> Document:
                 return Document(
                     page_content=decode_to_str(example["context"]),
@@ -32,12 +33,13 @@ class TensorflowDatasetLoader(BaseLoader):
                     },
                 )
 
+
             tsds_client = TensorflowDatasetLoader(
-                    dataset_name="mlqa/en",
-                    split_name="test",
-                    load_max_docs=100,
-                    sample_to_document_function=mlqaen_example_to_document,
-                )
+                dataset_name="mlqa/en",
+                split_name="test",
+                load_max_docs=100,
+                sample_to_document_function=mlqaen_example_to_document,
+            )
 
     """
 

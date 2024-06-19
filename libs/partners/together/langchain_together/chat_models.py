@@ -1,20 +1,12 @@
 """Wrapper around Together AI's Chat Completions API."""
 
 import os
-from typing import (
-    Any,
-    Dict,
-    List,
-    Optional,
-)
+from typing import Any, Dict, List, Optional
 
 import openai
 from langchain_core.language_models.chat_models import LangSmithParams
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
-)
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 
 

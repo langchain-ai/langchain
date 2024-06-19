@@ -46,10 +46,7 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import Runnable
-from langchain_core.utils import (
-    get_from_dict_or_env,
-    get_pydantic_field_names,
-)
+from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 
 from langchain_community.adapters.openai import (
     convert_dict_to_message,
@@ -161,6 +158,7 @@ class ChatOpenAI(BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models import ChatOpenAI
+
             openai = ChatOpenAI(model="gpt-3.5-turbo")
     """
 
@@ -295,10 +293,7 @@ class ChatOpenAI(BaseChatModel):
             "OPENAI_API_BASE"
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
         try:
             import openai
@@ -464,10 +459,7 @@ class ChatOpenAI(BaseChatModel):
             generation_info = dict(finish_reason=res.get("finish_reason"))
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
-            gen = ChatGeneration(
-                message=message,
-                generation_info=generation_info,
-            )
+            gen = ChatGeneration(message=message, generation_info=generation_info)
             generations.append(gen)
         token_usage = response.get("usage", {})
         llm_output = {
@@ -545,9 +537,7 @@ class ChatOpenAI(BaseChatModel):
     @property
     def _client_params(self) -> Dict[str, Any]:
         """Get the parameters used for the openai client."""
-        openai_creds: Dict[str, Any] = {
-            "model": self.model_name,
-        }
+        openai_creds: Dict[str, Any] = {"model": self.model_name}
         if not is_openai_v1():
             openai_creds.update(
                 {
@@ -682,7 +672,4 @@ class ChatOpenAI(BaseChatModel):
                 )
             function_call_ = {"name": function_call}
             kwargs = {**kwargs, "function_call": function_call_}
-        return super().bind(
-            functions=formatted_functions,
-            **kwargs,
-        )
+        return super().bind(functions=formatted_functions, **kwargs)

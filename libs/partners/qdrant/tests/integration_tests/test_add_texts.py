@@ -121,10 +121,7 @@ def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str) -
     )
 
     vec_store = Qdrant(
-        client,
-        collection_name,
-        ConsistentFakeEmbeddings(),
-        vector_name=vector_name,
+        client, collection_name, ConsistentFakeEmbeddings(), vector_name=vector_name
     )
     vec_store.add_texts(["lorem", "ipsum", "dolor", "sit", "amet"])
 

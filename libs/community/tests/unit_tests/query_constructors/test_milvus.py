@@ -53,9 +53,7 @@ def test_visit_operation() -> None:
     # Unary operator: normal execution
     op = Operation(
         operator=Operator.NOT,
-        arguments=[
-            Comparison(comparator=Comparator.LT, attribute="foo", value=2),
-        ],
+        arguments=[Comparison(comparator=Comparator.LT, attribute="foo", value=2)],
     )
 
     expected = "not(( foo < 2 ))"
@@ -83,25 +81,16 @@ def test_visit_operation() -> None:
 
 def test_visit_structured_query() -> None:
     query = "What is the capital of France?"
-    structured_query = StructuredQuery(
-        query=query,
-        filter=None,
-    )
+    structured_query = StructuredQuery(query=query, filter=None)
     expected: Tuple[str, Dict] = (query, {})
 
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
 
     comp = Comparison(comparator=Comparator.LT, attribute="foo", value=454)
-    structured_query = StructuredQuery(
-        query=query,
-        filter=comp,
-    )
+    structured_query = StructuredQuery(query=query, filter=comp)
 
-    expected = (
-        query,
-        {"expr": "( foo < 454 )"},
-    )
+    expected = (query, {"expr": "( foo < 454 )"})
 
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
@@ -115,10 +104,7 @@ def test_visit_structured_query() -> None:
         ],
     )
 
-    structured_query = StructuredQuery(
-        query=query,
-        filter=op,
-    )
+    structured_query = StructuredQuery(query=query, filter=op)
 
     expected = (
         query,

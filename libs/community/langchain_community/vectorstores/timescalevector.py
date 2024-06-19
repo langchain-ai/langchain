@@ -116,9 +116,7 @@ class TimescaleVector(VectorStore):
         )
         self.__post_init__()
 
-    def __post_init__(
-        self,
-    ) -> None:
+    def __post_init__(self) -> None:
         """
         Initialize the store.
         """
@@ -340,11 +338,7 @@ class TimescaleVector(VectorStore):
         """
         embedding = self._embed_query(query)
         return self.similarity_search_by_vector(
-            embedding=embedding,
-            k=k,
-            filter=filter,
-            predicates=predicates,
-            **kwargs,
+            embedding=embedding, k=k, filter=filter, predicates=predicates, **kwargs
         )
 
     async def asimilarity_search(
@@ -367,11 +361,7 @@ class TimescaleVector(VectorStore):
         """
         embedding = self._embed_query(query)
         return await self.asimilarity_search_by_vector(
-            embedding=embedding,
-            k=k,
-            filter=filter,
-            predicates=predicates,
-            **kwargs,
+            embedding=embedding, k=k, filter=filter, predicates=predicates, **kwargs
         )
 
     def similarity_search_with_score(
@@ -394,11 +384,7 @@ class TimescaleVector(VectorStore):
         """
         embedding = self._embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
-            embedding=embedding,
-            k=k,
-            filter=filter,
-            predicates=predicates,
-            **kwargs,
+            embedding=embedding, k=k, filter=filter, predicates=predicates, **kwargs
         )
         return docs
 
@@ -423,11 +409,7 @@ class TimescaleVector(VectorStore):
 
         embedding = self._embed_query(query)
         return await self.asimilarity_search_with_score_by_vector(
-            embedding=embedding,
-            k=k,
-            filter=filter,
-            predicates=predicates,
-            **kwargs,
+            embedding=embedding, k=k, filter=filter, predicates=predicates, **kwargs
         )
 
     def date_to_range_filter(self, **kwargs: Any) -> Any:
@@ -661,6 +643,7 @@ class TimescaleVector(VectorStore):
 
                 from langchain_community.vectorstores import TimescaleVector
                 from langchain_community.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))
@@ -706,6 +689,7 @@ class TimescaleVector(VectorStore):
 
                 from langchain_community.vectorstores import TimescaleVector
                 from langchain_community.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))
@@ -756,9 +740,7 @@ class TimescaleVector(VectorStore):
     @classmethod
     def get_service_url(cls, kwargs: Dict[str, Any]) -> str:
         service_url: str = get_from_dict_or_env(
-            data=kwargs,
-            key="service_url",
-            env_key="TIMESCALE_SERVICE_URL",
+            data=kwargs, key="service_url", env_key="TIMESCALE_SERVICE_URL"
         )
 
         if not service_url:
@@ -772,12 +754,7 @@ class TimescaleVector(VectorStore):
 
     @classmethod
     def service_url_from_db_params(
-        cls,
-        host: str,
-        port: int,
-        database: str,
-        user: str,
-        password: str,
+        cls, host: str, port: int, database: str, user: str, password: str
     ) -> str:
         """Return connection string from database parameters."""
         return f"postgresql://{user}:{password}@{host}:{port}/{database}"

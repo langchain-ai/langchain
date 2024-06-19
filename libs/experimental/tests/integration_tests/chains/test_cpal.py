@@ -244,7 +244,7 @@ class TestUnitCPALChain_MathWordProblems(unittest.TestCase):
             "chain_answer": None,
             "chain_data": InterventionModel(
                 entity_settings=[
-                    EntitySettingModel(name="cindy", attribute="pet_count", value=10),
+                    EntitySettingModel(name="cindy", attribute="pet_count", value=10)
                 ]
             ),
             "narrative_input": "if cindy has ten pets",

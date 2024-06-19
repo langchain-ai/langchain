@@ -18,6 +18,7 @@ class SearchApiAPIWrapper(BaseModel):
         .. code-block:: python
 
             from langchain_community.utilities import SearchApiAPIWrapper
+
             searchapi = SearchApiAPIWrapper()
     """
 
@@ -60,9 +61,7 @@ class SearchApiAPIWrapper(BaseModel):
     def _prepare_request(self, query: str, **kwargs: Any) -> dict:
         return {
             "url": "https://www.searchapi.io/api/v1/search",
-            "headers": {
-                "Authorization": f"Bearer {self.searchapi_api_key}",
-            },
+            "headers": {"Authorization": f"Bearer {self.searchapi_api_key}"},
             "params": {
                 "engine": self.engine,
                 "q": query,

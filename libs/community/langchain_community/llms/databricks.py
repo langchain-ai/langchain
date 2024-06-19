@@ -278,8 +278,7 @@ class Databricks(LLM):
 
       * inputs::
 
-          [{"name": "prompt", "type": "string"},
-           {"name": "stop", "type": "list[string]"}]
+          [{"name": "prompt", "type": "string"}, {"name": "stop", "type": "list[string]"}]
 
       * outputs: ``[{"type": "string"}]``
 
@@ -403,10 +402,7 @@ class Databricks(LLM):
 
     @property
     def _llm_params(self) -> Dict[str, Any]:
-        params: Dict[str, Any] = {
-            "temperature": self.temperature,
-            "n": self.n,
-        }
+        params: Dict[str, Any] = {"temperature": self.temperature, "n": self.n}
         if self.stop:
             params["stop"] = self.stop
         if self.max_tokens is not None:

@@ -53,10 +53,7 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
-from langchain_core.output_parsers import (
-    JsonOutputParser,
-    PydanticOutputParser,
-)
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -141,7 +138,7 @@ class ChatGroq(BaseChatModel):
                 temperature=0.0,
                 max_retries=2,
                 # other params...
-                )
+            )
 
     Invoke:
         .. code-block:: python
@@ -246,9 +243,7 @@ class ChatGroq(BaseChatModel):
 
         .. code-block:: python
 
-            [{'name': 'GetPopulation',
-            'args': {'location': 'NY'},
-            'id': 'call_bb8d'}]
+            [{"name": "GetPopulation", "args": {"location": "NY"}, "id": "call_bb8d"}]
 
         See ``ChatGroq.bind_tools()`` method for more.
 
@@ -272,8 +267,11 @@ class ChatGroq(BaseChatModel):
 
         .. code-block:: python
 
-            Joke(setup="Why don't cats play poker in the jungle?",
-            punchline='Too many cheetahs!', rating=None)
+            Joke(
+                setup="Why don't cats play poker in the jungle?",
+                punchline="Too many cheetahs!",
+                rating=None,
+            )
 
         See ``ChatGroq.with_structured_output()`` for more.
 
@@ -285,17 +283,21 @@ class ChatGroq(BaseChatModel):
 
         .. code-block:: python
 
-            {'token_usage': {'completion_tokens': 70,
-            'prompt_tokens': 28,
-            'total_tokens': 98,
-            'completion_time': 0.111956391,
-            'prompt_time': 0.007518279,
-            'queue_time': None,
-            'total_time': 0.11947467},
-            'model_name': 'mixtral-8x7b-32768',
-            'system_fingerprint': 'fp_c5f20b5bb1',
-            'finish_reason': 'stop',
-            'logprobs': None}
+            {
+                "token_usage": {
+                    "completion_tokens": 70,
+                    "prompt_tokens": 28,
+                    "total_tokens": 98,
+                    "completion_time": 0.111956391,
+                    "prompt_time": 0.007518279,
+                    "queue_time": None,
+                    "total_time": 0.11947467,
+                },
+                "model_name": "mixtral-8x7b-32768",
+                "system_fingerprint": "fp_c5f20b5bb1",
+                "finish_reason": "stop",
+                "logprobs": None,
+            }
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -465,10 +467,7 @@ class ChatGroq(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {
-            **params,
-            **kwargs,
-        }
+        params = {**params, **kwargs}
         response = self.client.create(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
@@ -486,10 +485,7 @@ class ChatGroq(BaseChatModel):
             return await agenerate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {
-            **params,
-            **kwargs,
-        }
+        params = {**params, **kwargs}
         response = await self.async_client.create(messages=message_dicts, **params)
         return self._create_chat_result(response)
 
@@ -531,9 +527,7 @@ class ChatGroq(BaseChatModel):
             if run_manager:
                 geninfo = chunk_.generation_info or {}
                 run_manager.on_llm_new_token(
-                    chunk_.text,
-                    chunk=chunk_,
-                    logprobs=geninfo.get("logprobs"),
+                    chunk_.text, chunk=chunk_, logprobs=geninfo.get("logprobs")
                 )
             yield chunk_
             return
@@ -603,9 +597,7 @@ class ChatGroq(BaseChatModel):
             if run_manager:
                 geninfo = chunk_.generation_info or {}
                 await run_manager.on_llm_new_token(
-                    chunk_.text,
-                    chunk=chunk_,
-                    logprobs=geninfo.get("logprobs"),
+                    chunk_.text, chunk=chunk_, logprobs=geninfo.get("logprobs")
                 )
             yield chunk_
             return
@@ -679,10 +671,7 @@ class ChatGroq(BaseChatModel):
             generation_info = dict(finish_reason=res.get("finish_reason"))
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
-            gen = ChatGeneration(
-                message=message,
-                generation_info=generation_info,
-            )
+            gen = ChatGeneration(message=message, generation_info=generation_info)
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
@@ -771,10 +760,7 @@ class ChatGroq(BaseChatModel):
                     f"provided function was {formatted_functions[0]['name']}."
                 )
             kwargs = {**kwargs, "function_call": function_call}
-        return super().bind(
-            functions=formatted_functions,
-            **kwargs,
-        )
+        return super().bind(functions=formatted_functions, **kwargs)
 
     def bind_tools(
         self,
@@ -837,10 +823,7 @@ class ChatGroq(BaseChatModel):
                         f"{len(tools)} tools."
                     )
                 tool_name = formatted_tools[0]["function"]["name"]
-                tool_choice = {
-                    "type": "function",
-                    "function": {"name": tool_name},
-                }
+                tool_choice = {"type": "function", "function": {"name": tool_name}}
 
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
@@ -897,15 +880,20 @@ class ChatGroq(BaseChatModel):
                 from langchain_groq import ChatGroq
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 llm = ChatGroq(temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> AnswerWithJustification(
                 #     answer='A pound of bricks and a pound of feathers weigh the same.'
                 #     justification="Both a pound of bricks and a pound of feathers have been defined to have the same weight. The 'pound' is a unit of weight, so any two things that are described as weighing a pound will weigh the same."
@@ -917,15 +905,22 @@ class ChatGroq(BaseChatModel):
                 from langchain_groq import ChatGroq
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
 
-                llm = ChatGroq(temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                llm = ChatGroq(temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_01htjn3cspevxbqc1d7nkk8wab', 'function': {'arguments': '{"answer": "A pound of bricks and a pound of feathers weigh the same.", "justification": "Both a pound of bricks and a pound of feathers have been defined to have the same weight. The \'pound\' is a unit of weight, so any two things that are described as weighing a pound will weigh the same.", "unit": "pounds"}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}, id='run-456beee6-65f6-4e80-88af-a6065480822c-0'),
                 #     'parsed': AnswerWithJustification(answer='A pound of bricks and a pound of feathers weigh the same.', justification="Both a pound of bricks and a pound of feathers have been defined to have the same weight. The 'pound' is a unit of weight, so any two things that are described as weighing a pound will weigh the same."),
@@ -939,16 +934,21 @@ class ChatGroq(BaseChatModel):
                 from langchain_core.pydantic_v1 import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 dict_schema = convert_to_openai_tool(AnswerWithJustification)
                 llm = ChatGroq(temperature=0)
                 structured_llm = llm.with_structured_output(dict_schema)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'answer': 'A pound of bricks and a pound of feathers weigh the same.',
                 #     'justification': "Both a pound of bricks and a pound of feathers have been defined to have the same weight. The 'pound' is a unit of weight, so any two things that are described as weighing a pound will weigh the same.", 'unit': 'pounds'}
@@ -1225,9 +1225,7 @@ def _lc_tool_call_to_groq_tool_call(tool_call: ToolCall) -> dict:
     }
 
 
-def _lc_invalid_tool_call_to_groq_tool_call(
-    invalid_tool_call: InvalidToolCall,
-) -> dict:
+def _lc_invalid_tool_call_to_groq_tool_call(invalid_tool_call: InvalidToolCall) -> dict:
     return {
         "type": "function",
         "id": invalid_tool_call["id"],

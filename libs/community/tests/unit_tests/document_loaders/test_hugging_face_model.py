@@ -33,7 +33,7 @@ MOCKED_MODELS_RESPONSE = [
         "library_name": "transformers",
         "createdAt": "2023-12-13T21:19:59.000Z",
         "modelId": "microsoft/phi-2",
-    },
+    }
     # Add additional models as needed
 ]
 

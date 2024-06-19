@@ -51,15 +51,7 @@ Docs: https://docs.uptrain.ai/getting-started/introduction
 import logging
 import sys
 from collections import defaultdict
-from typing import (
-    Any,
-    DefaultDict,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Set,
-)
+from typing import Any, DefaultDict, Dict, List, Optional, Sequence, Set
 from uuid import UUID
 
 from langchain_core.callbacks.base import BaseCallbackHandler
@@ -173,10 +165,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
             raise ValueError("Invalid key type: Must be 'uptrain' or 'openai'")
 
     def uptrain_evaluate(
-        self,
-        evaluation_name: str,
-        data: List[Dict[str, Any]],
-        checks: List[str],
+        self, evaluation_name: str, data: List[Dict[str, Any]], checks: List[str]
     ) -> None:
         """Run an evaluation on the UpTrain server using UpTrain client."""
         if self.uptrain_client.__class__.__name__ == "APIClient":
@@ -336,10 +325,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         uptrain = import_uptrain()
         if run_id == self.schema.multi_query_run_id:
             data = [
-                {
-                    "question": self.schema.query,
-                    "variants": self.schema.multi_queries,
-                }
+                {"question": self.schema.query, "variants": self.schema.multi_queries}
             ]
 
             self.uptrain_evaluate(

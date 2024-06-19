@@ -220,11 +220,7 @@ class Epsilla(VectorStore):
         ids = [hash(uuid.uuid4()) for _ in texts]
         records = []
         for index, id in enumerate(ids):
-            record = {
-                "id": id,
-                "text": texts[index],
-                "embeddings": embeddings[index],
-            }
+            record = {"id": id, "text": texts[index], "embeddings": embeddings[index]}
             if metadatas is not None:
                 metadata = metadatas[index].items()
                 for key, value in metadata:

@@ -41,7 +41,7 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
             embeddings = OCIGenAIEmbeddings(
                 model_id="MY_EMBEDDING_MODEL",
                 service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
-                compartment_id="MY_OCID"
+                compartment_id="MY_OCID",
             )
     """
 
@@ -166,9 +166,7 @@ class OCIGenAIEmbeddings(BaseModel, Embeddings):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
-        return {
-            **{"model_kwargs": _model_kwargs},
-        }
+        return {**{"model_kwargs": _model_kwargs}}
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to OCIGenAI's embedding endpoint.

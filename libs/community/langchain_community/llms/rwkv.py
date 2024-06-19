@@ -22,6 +22,7 @@ class RWKV(LLM, BaseModel):
         .. code-block:: python
 
             from langchain_community.llms import RWKV
+
             model = RWKV(model="./models/rwkv-3b-fp16.bin", strategy="cpu fp32")
 
             # Simplest invocation
@@ -93,9 +94,7 @@ class RWKV(LLM, BaseModel):
     @staticmethod
     def _rwkv_param_names() -> Set[str]:
         """Get the identifying parameters."""
-        return {
-            "verbose",
-        }
+        return {"verbose"}
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:

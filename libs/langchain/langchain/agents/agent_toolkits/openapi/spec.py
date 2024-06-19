@@ -24,7 +24,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "ReducedOpenAPISpec",
-    "reduce_openapi_spec",
-]
+__all__ = ["ReducedOpenAPISpec", "reduce_openapi_spec"]

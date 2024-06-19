@@ -207,9 +207,7 @@ class MomentoVectorIndex(VectorStore):
             items = [
                 Item(id=id, vector=vector, metadata=metadata)
                 for id, vector, metadata in zip(
-                    ids[start:end],
-                    embeddings[start:end],
-                    metadatas[start:end],
+                    ids[start:end], embeddings[start:end], metadatas[start:end]
                 )
             ]
 
@@ -257,10 +255,7 @@ class MomentoVectorIndex(VectorStore):
         return [doc for doc, _ in res]
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Search for similar documents to the query string.
 
@@ -283,10 +278,7 @@ class MomentoVectorIndex(VectorStore):
         return results
 
     def similarity_search_with_score_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        **kwargs: Any,
+        self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Search for similar documents to the query vector.
 

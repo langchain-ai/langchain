@@ -149,10 +149,7 @@ class BasePromptTemplate(
         if self.tags:
             config["tags"] = config["tags"] + self.tags
         return self._call_with_config(
-            self._format_prompt_with_error_handling,
-            input,
-            config,
-            run_type="prompt",
+            self._format_prompt_with_error_handling, input, config, run_type="prompt"
         )
 
     async def ainvoke(
@@ -164,10 +161,7 @@ class BasePromptTemplate(
         if self.tags:
             config["tags"].extend(self.tags)
         return await self._acall_with_config(
-            self._aformat_prompt_with_error_handling,
-            input,
-            config,
-            run_type="prompt",
+            self._aformat_prompt_with_error_handling, input, config, run_type="prompt"
         )
 
     @abstractmethod

@@ -21,7 +21,7 @@ def test_importable_all() -> None:
         # Note: ImportErrors due to circular imports can be raised
         # for one sequence of imports but not another.
         result = subprocess.run(
-            ["python", "-c", f"import langchain_core.{module_name}"],
+            ["python", "-c", f"import langchain_core.{module_name}"]
         )
         if result.returncode != 0:
             pytest.fail(f"Failed to import {module_name}.")

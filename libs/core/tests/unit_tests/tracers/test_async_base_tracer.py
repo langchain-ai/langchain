@@ -228,10 +228,7 @@ async def test_tracer_nested_run() -> None:
             parent_run_id=chain_uuid,
         )
         await tracer.on_llm_start(
-            serialized=SERIALIZED,
-            prompts=[],
-            run_id=llm_uuid1,
-            parent_run_id=tool_uuid,
+            serialized=SERIALIZED, prompts=[], run_id=llm_uuid1, parent_run_id=tool_uuid
         )
         await tracer.on_llm_end(response=LLMResult(generations=[[]]), run_id=llm_uuid1)
         await tracer.on_tool_end("test", run_id=tool_uuid)
@@ -490,10 +487,7 @@ async def test_tracer_nested_runs_on_error() -> None:
             parent_run_id=chain_uuid,
         )
         await tracer.on_llm_start(
-            serialized=SERIALIZED,
-            prompts=[],
-            run_id=llm_uuid3,
-            parent_run_id=tool_uuid,
+            serialized=SERIALIZED, prompts=[], run_id=llm_uuid3, parent_run_id=tool_uuid
         )
         await tracer.on_llm_error(exception, run_id=llm_uuid3)
         await tracer.on_tool_error(exception, run_id=tool_uuid)

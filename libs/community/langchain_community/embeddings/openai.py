@@ -154,6 +154,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import OpenAIEmbeddings
+
             openai = OpenAIEmbeddings(openai_api_key="my-api-key")
 
     In order to use the library with Microsoft Azure endpoints, you need to set
@@ -174,6 +175,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             os.environ["OPENAI_PROXY"] = "http://your-corporate-proxy:8080"
 
             from langchain_community.embeddings.openai import OpenAIEmbeddings
+
             embeddings = OpenAIEmbeddings(
                 deployment="your-embeddings-deployment-name",
                 model="your-embeddings-model-name",
@@ -292,16 +294,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_API_BASE"
         )
         values["openai_api_type"] = get_from_dict_or_env(
-            values,
-            "openai_api_type",
-            "OPENAI_API_TYPE",
-            default="",
+            values, "openai_api_type", "OPENAI_API_TYPE", default=""
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
         if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
             default_api_version = "2023-05-15"
@@ -387,10 +383,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         "Please install it with `pip install openai`."
                     )
 
-                openai.proxy = {
-                    "http": self.openai_proxy,
-                    "https": self.openai_proxy,
-                }  # type: ignore[assignment]
+                openai.proxy = {"http": self.openai_proxy, "https": self.openai_proxy}  # type: ignore[assignment]
         return openai_args
 
     # please refer to
@@ -492,9 +485,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         batched_embeddings: List[List[float]] = []
         for i in _iter:
             response = embed_with_retry(
-                self,
-                input=tokens[i : i + _chunk_size],
-                **self._invocation_params,
+                self, input=tokens[i : i + _chunk_size], **self._invocation_params
             )
             if not isinstance(response, dict):
                 response = response.dict()
@@ -513,9 +504,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             _result = results[i]
             if len(_result) == 0:
                 average_embedded = embed_with_retry(
-                    self,
-                    input="",
-                    **self._invocation_params,
+                    self, input="", **self._invocation_params
                 )
                 if not isinstance(average_embedded, dict):
                     average_embedded = average_embedded.dict()
@@ -616,9 +605,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         _chunk_size = chunk_size or self.chunk_size
         for i in range(0, len(tokens), _chunk_size):
             response = await async_embed_with_retry(
-                self,
-                input=tokens[i : i + _chunk_size],
-                **self._invocation_params,
+                self, input=tokens[i : i + _chunk_size], **self._invocation_params
             )
 
             if not isinstance(response, dict):
@@ -636,9 +623,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             _result = results[i]
             if len(_result) == 0:
                 average_embedded = await async_embed_with_retry(
-                    self,
-                    input="",
-                    **self._invocation_params,
+                    self, input="", **self._invocation_params
                 )
                 if not isinstance(average_embedded, dict):
                     average_embedded = average_embedded.dict()

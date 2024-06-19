@@ -25,9 +25,7 @@ def test_api_key_masked_when_passed_from_env(
     assert captured.out == "**********"
 
 
-def test_api_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
-) -> None:
+def test_api_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> None:
     """Test initialization with an API key provided via the initializer"""
     llm = AI21(ai21_api_key="secret-api-key")  # type: ignore[arg-type]
     print(llm.ai21_api_key, end="")  # noqa: T201

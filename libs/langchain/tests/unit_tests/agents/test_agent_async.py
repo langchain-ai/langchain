@@ -59,11 +59,7 @@ def _get_agent(**kwargs: Any) -> AgentExecutor:
     fake_llm = FakeListLLM(cache=False, responses=responses)
 
     tools = [
-        Tool(
-            name="Search",
-            func=lambda x: x,
-            description="Useful for searching",
-        ),
+        Tool(name="Search", func=lambda x: x, description="Useful for searching"),
         Tool(
             name="Lookup",
             func=lambda x: x,
@@ -113,17 +109,9 @@ async def test_agent_with_callbacks() -> None:
     ]
     # Only fake LLM gets callbacks for handler2
     fake_llm = FakeListLLM(responses=responses, callbacks=[handler2])
-    tools = [
-        Tool(
-            name="Search",
-            func=lambda x: x,
-            description="Useful for searching",
-        ),
-    ]
+    tools = [Tool(name="Search", func=lambda x: x, description="Useful for searching")]
     agent = initialize_agent(
-        tools,
-        fake_llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION
     )
 
     output = await agent.arun("when was langchain made", callbacks=[handler1])
@@ -168,12 +156,10 @@ async def test_agent_stream() -> None:
             name="Search",
             func=lambda x: f"Results for: {x}",
             description="Useful for searching",
-        ),
+        )
     ]
     agent = initialize_agent(
-        tools,
-        fake_llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION
     )
 
     output = [a async for a in agent.astream("when was langchain made")]
@@ -297,12 +283,10 @@ async def test_agent_tool_return_direct() -> None:
             func=lambda x: x,
             description="Useful for searching",
             return_direct=True,
-        ),
+        )
     ]
     agent = initialize_agent(
-        tools,
-        fake_llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION
     )
 
     output = await agent.arun("when was langchain made")
@@ -323,7 +307,7 @@ async def test_agent_tool_return_direct_in_intermediate_steps() -> None:
             func=lambda x: x,
             description="Useful for searching",
             return_direct=True,
-        ),
+        )
     ]
     agent = initialize_agent(
         tools,
@@ -349,7 +333,7 @@ async def test_agent_invalid_tool() -> None:
             func=lambda x: x,
             description="Useful for searching",
             return_direct=True,
-        ),
+        )
     ]
     agent = initialize_agent(
         tools=tools,

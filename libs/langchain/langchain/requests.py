@@ -27,8 +27,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "Requests",
-    "RequestsWrapper",
-    "TextRequestsWrapper",
-]
+__all__ = ["Requests", "RequestsWrapper", "TextRequestsWrapper"]

@@ -43,9 +43,7 @@ class NeuralDBRetriever(BaseRetriever):
 
     @classmethod
     def from_scratch(
-        cls,
-        thirdai_key: Optional[str] = None,
-        **model_kwargs: dict,
+        cls, thirdai_key: Optional[str] = None, **model_kwargs: dict
     ) -> NeuralDBRetriever:
         """
         Create a NeuralDBRetriever from scratch.
@@ -58,15 +56,9 @@ class NeuralDBRetriever(BaseRetriever):
 
                 from langchain_community.retrievers import NeuralDBRetriever
 
-                retriever = NeuralDBRetriever.from_scratch(
-                    thirdai_key="your-thirdai-key",
-                )
+                retriever = NeuralDBRetriever.from_scratch(thirdai_key="your-thirdai-key")
 
-                retriever.insert([
-                    "/path/to/doc.pdf",
-                    "/path/to/doc.docx",
-                    "/path/to/doc.csv",
-                ])
+                retriever.insert(["/path/to/doc.pdf", "/path/to/doc.docx", "/path/to/doc.csv"])
 
                 documents = retriever.invoke("AI-driven music therapy")
         """
@@ -77,9 +69,7 @@ class NeuralDBRetriever(BaseRetriever):
 
     @classmethod
     def from_checkpoint(
-        cls,
-        checkpoint: Union[str, Path],
-        thirdai_key: Optional[str] = None,
+        cls, checkpoint: Union[str, Path], thirdai_key: Optional[str] = None
     ) -> NeuralDBRetriever:
         """
         Create a NeuralDBRetriever with a base model from a saved checkpoint
@@ -93,15 +83,10 @@ class NeuralDBRetriever(BaseRetriever):
                 from langchain_community.retrievers import NeuralDBRetriever
 
                 retriever = NeuralDBRetriever.from_checkpoint(
-                    checkpoint="/path/to/checkpoint.ndb",
-                    thirdai_key="your-thirdai-key",
+                    checkpoint="/path/to/checkpoint.ndb", thirdai_key="your-thirdai-key"
                 )
 
-                retriever.insert([
-                    "/path/to/doc.pdf",
-                    "/path/to/doc.docx",
-                    "/path/to/doc.csv",
-                ])
+                retriever.insert(["/path/to/doc.pdf", "/path/to/doc.docx", "/path/to/doc.csv"])
 
                 documents = retriever.invoke("AI-driven music therapy")
         """
@@ -114,11 +99,7 @@ class NeuralDBRetriever(BaseRetriever):
     def validate_environments(cls, values: Dict) -> Dict:
         """Validate ThirdAI environment variables."""
         values["thirdai_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "thirdai_key",
-                "THIRDAI_KEY",
-            )
+            get_from_dict_or_env(values, "thirdai_key", "THIRDAI_KEY")
         )
         return values
 
@@ -140,10 +121,7 @@ class NeuralDBRetriever(BaseRetriever):
         """
         sources = self._preprocess_sources(sources)
         self.db.insert(
-            sources=sources,
-            train=train,
-            fast_approximation=fast_mode,
-            **kwargs,
+            sources=sources, train=train, fast_approximation=fast_mode, **kwargs
         )
 
     def _preprocess_sources(self, sources: list) -> list:

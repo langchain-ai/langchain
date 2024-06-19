@@ -99,7 +99,7 @@ class JsonEqualityEvaluator(StringEvaluator):
         >>> evaluator.evaluate_strings('{"a": 1}', reference='{"a": 2}')
         {'score': False}
 
-        >>> evaluator = JsonEqualityEvaluator(operator=lambda x, y: x['a'] == y['a'])
+        >>> evaluator = JsonEqualityEvaluator(operator=lambda x, y: x["a"] == y["a"])
         >>> evaluator.evaluate_strings('{"a": 1}', reference='{"a": 1}')
         {'score': True}
         >>> evaluator.evaluate_strings('{"a": 1}', reference='{"a": 2}')
@@ -124,8 +124,7 @@ class JsonEqualityEvaluator(StringEvaluator):
         return "json_equality"
 
     def _parse_json(
-        self,
-        string: Any,
+        self, string: Any
     ) -> Union[dict, list, None, float, bool, int, str]:
         if isinstance(string, str):
             return parse_json_markdown(string)

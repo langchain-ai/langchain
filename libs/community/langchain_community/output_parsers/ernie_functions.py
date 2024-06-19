@@ -9,10 +9,7 @@ from langchain_core.output_parsers import (
     BaseGenerationOutputParser,
 )
 from langchain_core.output_parsers.json import parse_partial_json
-from langchain_core.outputs.chat_generation import (
-    ChatGeneration,
-    Generation,
-)
+from langchain_core.outputs.chat_generation import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 

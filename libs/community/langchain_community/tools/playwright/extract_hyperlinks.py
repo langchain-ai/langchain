@@ -23,8 +23,7 @@ class ExtractHyperlinksToolInput(BaseModel):
     """Input for ExtractHyperlinksTool."""
 
     absolute_urls: bool = Field(
-        default=False,
-        description="Return absolute URLs instead of relative URLs",
+        default=False, description="Return absolute URLs instead of relative URLs"
     )
 
 

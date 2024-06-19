@@ -26,10 +26,7 @@ MAX_FLOAT = sys.float_info.max
 
 def dependable_tiledb_import() -> Any:
     """Import tiledb-vector-search if available, otherwise raise error."""
-    return (
-        guard_import("tiledb.vector_search"),
-        guard_import("tiledb"),
-    )
+    return (guard_import("tiledb.vector_search"), guard_import("tiledb"))
 
 
 def get_vector_index_uri_from_group(group: Any) -> str:
@@ -68,6 +65,7 @@ class TileDB(VectorStore):
         .. code-block:: python
 
             from langchain_community import TileDB
+
             embeddings = OpenAIEmbeddings()
             db = TileDB(embeddings, index_uri, metric)
 
@@ -271,11 +269,7 @@ class TileDB(VectorStore):
         """
         embedding = self.embedding_function(query)
         docs = self.similarity_search_with_score_by_vector(
-            embedding,
-            k=k,
-            filter=filter,
-            fetch_k=fetch_k,
-            **kwargs,
+            embedding, k=k, filter=filter, fetch_k=fetch_k, **kwargs
         )
         return docs
 
@@ -300,11 +294,7 @@ class TileDB(VectorStore):
             List of Documents most similar to the embedding.
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding,
-            k=k,
-            filter=filter,
-            fetch_k=fetch_k,
-            **kwargs,
+            embedding, k=k, filter=filter, fetch_k=fetch_k, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -508,9 +498,7 @@ class TileDB(VectorStore):
             # TODO add a Document store API to tiledb-vector-search to allow storing
             #  different types of objects and metadata in a more generic way.
             dim = tiledb.Dim(
-                name="id",
-                domain=(0, MAX_UINT64 - 1),
-                dtype=np.dtype(np.uint64),
+                name="id", domain=(0, MAX_UINT64 - 1), dtype=np.dtype(np.uint64)
             )
             dom = tiledb.Domain(dim)
 
@@ -520,10 +508,7 @@ class TileDB(VectorStore):
                 metadata_attr = tiledb.Attr(name="metadata", dtype=np.uint8, var=True)
                 attrs.append(metadata_attr)
             schema = tiledb.ArraySchema(
-                domain=dom,
-                sparse=True,
-                allows_duplicates=False,
-                attrs=attrs,
+                domain=dom, sparse=True, allows_duplicates=False, attrs=attrs
             )
             tiledb.Array.create(docs_uri, schema)
             group.add(docs_uri, name=DOCUMENTS_ARRAY_NAME)
@@ -718,6 +703,7 @@ class TileDB(VectorStore):
 
                 from langchain_community import TileDB
                 from langchain_community.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 index = TileDB.from_texts(texts, embeddings)
         """
@@ -769,6 +755,7 @@ class TileDB(VectorStore):
 
                 from langchain_community import TileDB
                 from langchain_community.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 text_embeddings = embeddings.embed_documents(texts)
                 text_embedding_pairs = list(zip(texts, text_embeddings))

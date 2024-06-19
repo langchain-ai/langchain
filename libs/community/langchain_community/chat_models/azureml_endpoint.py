@@ -141,10 +141,7 @@ class CustomOpenAIChatContentFormatter(ContentFormatterBase):
             except (KeyError, IndexError, TypeError) as e:
                 raise ValueError(self.format_error_msg.format(api_type=api_type)) from e
             return ChatGeneration(
-                message=BaseMessage(
-                    content=choice.strip(),
-                    type="assistant",
-                ),
+                message=BaseMessage(content=choice.strip(), type="assistant"),
                 generation_info=None,
             )
         if api_type == AzureMLEndpointApiType.serverless:
@@ -239,9 +236,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
-        return {
-            **{"model_kwargs": _model_kwargs},
-        }
+        return {**{"model_kwargs": _model_kwargs}}
 
     @property
     def _llm_type(self) -> str:

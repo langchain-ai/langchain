@@ -11,11 +11,7 @@ class KonlpyTextSplitter(TextSplitter):
     It is good for splitting Korean text.
     """
 
-    def __init__(
-        self,
-        separator: str = "\n\n",
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, separator: str = "\n\n", **kwargs: Any) -> None:
         """Initialize the Konlpy text splitter."""
         super().__init__(**kwargs)
         self._separator = separator

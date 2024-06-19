@@ -3,15 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-)
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -31,6 +23,7 @@ class SQLiteVSS(VectorStore):
         .. code-block:: python
             from langchain_community.vectorstores import SQLiteVSS
             from langchain_community.embeddings.openai import OpenAIEmbeddings
+
             ...
     """
 

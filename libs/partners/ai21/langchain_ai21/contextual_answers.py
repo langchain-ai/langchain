@@ -1,12 +1,4 @@
-from typing import (
-    Any,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypedDict,
-    Union,
-)
+from typing import Any, List, Optional, Tuple, Type, TypedDict, Union
 
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensure_config
@@ -61,9 +53,7 @@ class AI21ContextualAnswers(RunnableSerializable[ContextualAnswerInput, str], AI
         )
 
     def _call_contextual_answers(
-        self,
-        input: ContextualAnswerInput,
-        response_if_no_answer_found: str,
+        self, input: ContextualAnswerInput, response_if_no_answer_found: str
     ) -> str:
         context, question = self._convert_input(input)
         response = self.client.answer.create(context=context, question=question)
@@ -81,8 +71,7 @@ class AI21ContextualAnswers(RunnableSerializable[ContextualAnswerInput, str], AI
         return context, question
 
     def _extract_context_and_question(
-        self,
-        input: ContextualAnswerInput,
+        self, input: ContextualAnswerInput
     ) -> Tuple[ContextType, str]:
         context = input.get("context")
         question = input.get("question")

@@ -4,9 +4,7 @@ from io import StringIO
 from typing import Any, Callable, Dict, List, Mapping, Optional
 
 import yaml
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     BaseMessage,

@@ -1,19 +1,9 @@
 """Methods for creating chains that use OpenAI function-calling APIs."""
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Optional,
-    Sequence,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Dict, Optional, Sequence, Type, Union
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.output_parsers import (
-    BaseLLMOutputParser,
-)
+from langchain_core.output_parsers import BaseLLMOutputParser
 from langchain_core.output_parsers.openai_functions import (
     PydanticAttrOutputFunctionsParser,
 )
@@ -127,9 +117,7 @@ def create_openai_fn_chain(
         raise ValueError("Need to pass in at least one function. Received zero.")
     openai_functions = [convert_to_openai_function(f) for f in functions]
     output_parser = output_parser or get_openai_output_parser(functions)
-    llm_kwargs: Dict[str, Any] = {
-        "functions": openai_functions,
-    }
+    llm_kwargs: Dict[str, Any] = {"functions": openai_functions}
     if len(openai_functions) == 1 and enforce_single_function_usage:
         llm_kwargs["function_call"] = {"name": openai_functions[0]["name"]}
     llm_chain = LLMChain(  # type: ignore[misc]

@@ -18,13 +18,13 @@ class Text2vecEmbeddings(Embeddings, BaseModel):
             from langchain_community.embeddings.text2vec import Text2vecEmbeddings
 
             embedding = Text2vecEmbeddings()
-            embedding.embed_documents([
-                "This is a CoSENT(Cosine Sentence) model.",
-                "It maps sentences to a 768 dimensional dense vector space.",
-            ])
-            embedding.embed_query(
-                "It can be used for text matching or semantic search."
+            embedding.embed_documents(
+                [
+                    "This is a CoSENT(Cosine Sentence) model.",
+                    "It maps sentences to a 768 dimensional dense vector space.",
+                ]
             )
+            embedding.embed_query("It can be used for text matching or semantic search.")
     """
 
     model_name_or_path: Optional[str] = None

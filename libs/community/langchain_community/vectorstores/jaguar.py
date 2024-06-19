@@ -23,13 +23,13 @@ class Jaguar(VectorStore):
            from langchain_community.vectorstores.jaguar import Jaguar
 
            vectorstore = Jaguar(
-               pod = 'vdb',
-               store = 'mystore',
-               vector_index = 'v',
-               vector_type = 'cosine_fraction_float',
-               vector_dimension = 1536,
-               url='http://192.168.8.88:8080/fwww/',
-               embedding=openai_model
+               pod="vdb",
+               store="mystore",
+               vector_index="v",
+               vector_type="cosine_fraction_float",
+               vector_dimension=1536,
+               url="http://192.168.8.88:8080/fwww/",
+               embedding=openai_model,
            )
     """
 
@@ -61,10 +61,7 @@ class Jaguar(VectorStore):
         self._jag = JaguarHttpClient(url)
         self._token = ""
 
-    def login(
-        self,
-        jaguar_api_key: Optional[str] = "",
-    ) -> bool:
+    def login(self, jaguar_api_key: Optional[str] = "") -> bool:
         """
         login to jaguardb server with a jaguar_api_key or let self._jag find a key
         Args:
@@ -84,11 +81,7 @@ class Jaguar(VectorStore):
             return False
         return True
 
-    def create(
-        self,
-        metadata_str: str,
-        text_size: int,
-    ) -> None:
+    def create(self, metadata_str: str, text_size: int) -> None:
         """
         create the vector store on the backend database
         Args:
@@ -136,10 +129,7 @@ class Jaguar(VectorStore):
         return self._embedding
 
     def add_texts(  # type: ignore[override]
-        self,
-        texts: List[str],
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
+        self, texts: List[str], metadatas: Optional[List[dict]] = None, **kwargs: Any
     ) -> List[str]:
         """
         Add  texts through the embeddings and add to the vectorstore.
@@ -321,11 +311,7 @@ class Jaguar(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
-    def is_anomalous(
-        self,
-        query: str,
-        **kwargs: Any,
-    ) -> bool:
+    def is_anomalous(self, query: str, **kwargs: Any) -> bool:
         """
         Detect if given text is anomalous from the dataset
         Args:

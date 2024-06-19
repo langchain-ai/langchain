@@ -16,12 +16,7 @@ if TYPE_CHECKING:
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.output_parsers.transform import BaseOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult, Generation
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
@@ -324,6 +319,7 @@ class ChatKinetica(BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models.kinetica import KineticaChatLLM
+
             kinetica_llm = KineticaChatLLM()
 
     If you prefer to pass connection information directly then you can create a
@@ -332,8 +328,8 @@ class ChatKinetica(BaseChatModel):
     Example:
         .. code-block:: python
 
-            from langchain_community.chat_models.kinetica import (
-                KineticaChatLLM, KineticaUtil)
+            from langchain_community.chat_models.kinetica import KineticaChatLLM, KineticaUtil
+
             kdbc = KineticaUtil._create_kdbc(url=url, user=user, passwd=passwd)
             kinetica_llm = KineticaChatLLM(kdbc=kdbc)
     """
@@ -558,7 +554,10 @@ class KineticaSqlOutputParser(BaseOutputParser[KineticaSqlResponse]):
         .. code-block:: python
 
             from langchain_community.chat_models.kinetica import (
-                KineticaChatLLM, KineticaSqlOutputParser)
+                KineticaChatLLM,
+                KineticaSqlOutputParser,
+            )
+
             kinetica_llm = KineticaChatLLM()
 
             # create chain
@@ -566,9 +565,7 @@ class KineticaSqlOutputParser(BaseOutputParser[KineticaSqlResponse]):
             ctx_messages.append(("human", "{input}"))
             prompt_template = ChatPromptTemplate.from_messages(ctx_messages)
             chain = (
-                prompt_template
-                | kinetica_llm
-                | KineticaSqlOutputParser(kdbc=kinetica_llm.kdbc)
+                prompt_template | kinetica_llm | KineticaSqlOutputParser(kdbc=kinetica_llm.kdbc)
             )
             sql_response: KineticaSqlResponse = chain.invoke(
                 {"input": "What are the female users ordered by username?"}

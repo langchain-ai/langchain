@@ -110,9 +110,7 @@ class ZeroShotAgent(Agent):
             input_variables=input_variables,
         )
         llm_chain = LLMChain(  # type: ignore[misc]
-            llm=llm,
-            prompt=prompt,
-            callback_manager=callback_manager,
+            llm=llm, prompt=prompt, callback_manager=callback_manager
         )
         tool_names = [tool.name for tool in tools]
         _output_parser = output_parser or cls._get_default_output_parser()
@@ -161,11 +159,7 @@ class MRKLChain(AgentExecutor):
             An initialized MRKL chain.
         """
         tools = [
-            Tool(
-                name=c.action_name,
-                func=c.action,
-                description=c.action_description,
-            )
+            Tool(name=c.action_name, func=c.action, description=c.action_description)
             for c in chains
         ]
         agent = ZeroShotAgent.from_llm_and_tools(llm, tools)

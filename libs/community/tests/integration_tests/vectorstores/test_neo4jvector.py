@@ -243,9 +243,7 @@ def test_neo4jvector_retriever_search_threshold() -> None:
         search_kwargs={"k": 3, "score_threshold": 0.9999},
     )
     output = retriever.invoke("foo")
-    assert output == [
-        Document(page_content="foo", metadata={"page": "0"}),
-    ]
+    assert output == [Document(page_content="foo", metadata={"page": "0"})]
 
     drop_vector_indexes(docsearch)
 
@@ -786,9 +784,7 @@ def test_retrieval_dictionary() -> None:
 def test_metadata_filters_type1() -> None:
     """Test metadata filters"""
     docsearch = Neo4jVector.from_documents(
-        DOCUMENTS,
-        embedding=FakeEmbeddings(),
-        pre_delete_collection=True,
+        DOCUMENTS, embedding=FakeEmbeddings(), pre_delete_collection=True
     )
     # We don't test type 5, because LIKE has very SQL specific examples
     for example in (

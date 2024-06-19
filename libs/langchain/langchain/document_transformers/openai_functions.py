@@ -26,7 +26,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "OpenAIMetadataTagger",
-    "create_metadata_tagger",
-]
+__all__ = ["OpenAIMetadataTagger", "create_metadata_tagger"]

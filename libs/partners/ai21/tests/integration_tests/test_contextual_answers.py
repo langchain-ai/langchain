@@ -54,8 +54,6 @@ def test_invoke_when_used_in_a_simple_chain_with_no_vectorstore() -> None:
 
     chain: Runnable = tsm | StrOutputParser()
 
-    response = chain.invoke(
-        {"context": context, "question": _GOOD_QUESTION},
-    )
+    response = chain.invoke({"context": context, "question": _GOOD_QUESTION})
 
     assert response != ANSWER_NOT_IN_CONTEXT_RESPONSE

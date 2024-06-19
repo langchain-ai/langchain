@@ -5,11 +5,7 @@ from typing import TYPE_CHECKING, Generator
 
 import pandas as pd
 import pytest
-from langchain_core.messages import (
-    AIMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 
 from langchain_community.chat_models.kinetica import (
@@ -30,7 +26,7 @@ LOG = logging.getLogger(__name__)
 def vcr_config() -> dict:
     return {
         # Replace the Authorization request header with "DUMMY" in cassettes
-        "filter_headers": [("authorization", "DUMMY")],
+        "filter_headers": [("authorization", "DUMMY")]
     }
 
 

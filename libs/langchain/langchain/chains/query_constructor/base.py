@@ -154,10 +154,7 @@ def fix_filter_directive(
         elif len(args) == 1 and filter.operator in (Operator.AND, Operator.OR):
             return args[0]
         else:
-            return Operation(
-                operator=filter.operator,
-                arguments=args,
-            )
+            return Operation(operator=filter.operator, arguments=args)
     else:
         return filter
 

@@ -10,10 +10,7 @@ from langchain_community.llms.arcee import Arcee
 def test_arcee_api_key_is_secret_string(mock_get: MagicMock) -> None:
     mock_response = mock_get.return_value
     mock_response.status_code = 200
-    mock_response.json.return_value = {
-        "model_id": "",
-        "status": "training_complete",
-    }
+    mock_response.json.return_value = {"model_id": "", "status": "training_complete"}
 
     arcee_without_env_var = Arcee(
         model="DALM-PubMed",
@@ -30,10 +27,7 @@ def test_api_key_masked_when_passed_via_constructor(
 ) -> None:
     mock_response = mock_get.return_value
     mock_response.status_code = 200
-    mock_response.json.return_value = {
-        "model_id": "",
-        "status": "training_complete",
-    }
+    mock_response.json.return_value = {"model_id": "", "status": "training_complete"}
 
     arcee_without_env_var = Arcee(
         model="DALM-PubMed",
@@ -53,10 +47,7 @@ def test_api_key_masked_when_passed_from_env(
 ) -> None:
     mock_response = mock_get.return_value
     mock_response.status_code = 200
-    mock_response.json.return_value = {
-        "model_id": "",
-        "status": "training_complete",
-    }
+    mock_response.json.return_value = {"model_id": "", "status": "training_complete"}
 
     monkeypatch.setenv("ARCEE_API_KEY", "secret_api_key")
     arcee_with_env_var = Arcee(

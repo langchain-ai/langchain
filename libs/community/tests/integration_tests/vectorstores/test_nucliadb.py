@@ -38,22 +38,13 @@ def FakeFind(**args: Any) -> Any:
                                     {
                                         "paragraphs": {
                                             "123/t/text/0-14": attrdict(
-                                                {
-                                                    "text": "This is a test",
-                                                    "order": 0,
-                                                }
-                                            ),
+                                                {"text": "This is a test", "order": 0}
+                                            )
                                         }
                                     }
                                 )
                             },
-                            "data": {
-                                "texts": {
-                                    "text": {
-                                        "body": "This is a test",
-                                    }
-                                }
-                            },
+                            "data": {"texts": {"text": {"body": "This is a test"}}},
                             "extra": attrdict({"metadata": {"some": "metadata"}}),
                         }
                     )
@@ -66,8 +57,7 @@ def FakeFind(**args: Any) -> Any:
 
 def test_add_texts() -> None:
     with mock.patch(
-        "nuclia.sdk.resource.NucliaResource.create",
-        new_callable=FakeCreate,
+        "nuclia.sdk.resource.NucliaResource.create", new_callable=FakeCreate
     ):
         ndb = NucliaDB(knowledge_box="YOUR_KB_ID", local=False, api_key="YOUR_API_KEY")
         assert ndb.is_local is False
@@ -77,8 +67,7 @@ def test_add_texts() -> None:
 
 def test_delete() -> None:
     with mock.patch(
-        "nuclia.sdk.resource.NucliaResource.delete",
-        new_callable=FakeDelete,
+        "nuclia.sdk.resource.NucliaResource.delete", new_callable=FakeDelete
     ):
         ndb = NucliaDB(knowledge_box="YOUR_KB_ID", local=False, api_key="YOUR_API_KEY")
         success = ndb.delete(["123", "456"])
@@ -86,10 +75,7 @@ def test_delete() -> None:
 
 
 def test_search() -> None:
-    with mock.patch(
-        "nuclia.sdk.search.NucliaSearch.find",
-        new_callable=FakeFind,
-    ):
+    with mock.patch("nuclia.sdk.search.NucliaSearch.find", new_callable=FakeFind):
         ndb = NucliaDB(knowledge_box="YOUR_KB_ID", local=False, api_key="YOUR_API_KEY")
         results = ndb.similarity_search("Who was inspired by Ada Lovelace?")
         assert len(results) == 1

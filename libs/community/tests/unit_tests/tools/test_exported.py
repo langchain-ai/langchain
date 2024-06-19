@@ -6,10 +6,7 @@ import langchain_community.tools
 from langchain_community.tools import _DEPRECATED_TOOLS
 from langchain_community.tools import __all__ as tools_all
 
-_EXCLUDE = {
-    BaseTool,
-    StructuredTool,
-}
+_EXCLUDE = {BaseTool, StructuredTool}
 
 
 def _get_tool_classes(skip_tools_without_default_names: bool) -> List[Type[BaseTool]]:

@@ -27,9 +27,7 @@ class CogniswitchKnowledgeRequest(BaseTool):
     api_url: str = "https://api.cogniswitch.ai:8243/cs-api/0.0.1/cs/knowledgeRequest"
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> Dict[str, Any]:
         """
         Use the tool to answer a query.
@@ -140,10 +138,7 @@ class CogniswitchKnowledgeStatus(BaseTool):
             "platformToken": self.cs_token,
         }
         response = requests.get(
-            self.knowledge_status_url,
-            headers=headers,
-            params=params,
-            verify=False,
+            self.knowledge_status_url, headers=headers, params=params, verify=False
         )
         if response.status_code == 200:
             source_info = response.json()
@@ -175,9 +170,7 @@ class CogniswitchKnowledgeStatus(BaseTool):
             return source_data
         else:
             # error_message = response.json()["message"]
-            return {
-                "message": response.status_code,
-            }
+            return {"message": response.status_code}
 
 
 class CogniswitchKnowledgeSourceFile(BaseTool):
@@ -229,9 +222,7 @@ class CogniswitchKnowledgeSourceFile(BaseTool):
             the 'response' from the service.
         """
         if not file:
-            return {
-                "message": "No input provided",
-            }
+            return {"message": "No input provided"}
         else:
             response = self.store_data(
                 file=file,
@@ -341,9 +332,7 @@ class CogniswitchKnowledgeSourceURL(BaseTool):
             the 'response' from the service.
         """
         if not url:
-            return {
-                "message": "No input provided",
-            }
+            return {"message": "No input provided"}
         response = self.store_data(
             url=url,
             document_name=document_name,
@@ -382,16 +371,11 @@ class CogniswitchKnowledgeSourceURL(BaseTool):
         if not document_description:
             document_description = ""
         if not url:
-            return {
-                "message": "No input provided",
-            }
+            return {"message": "No input provided"}
         else:
             data = {"url": url}
             response = requests.post(
-                self.knowledgesource_url,
-                headers=headers,
-                verify=False,
-                data=data,
+                self.knowledgesource_url, headers=headers, verify=False, data=data
             )
         if response.status_code == 200:
             return response.json()

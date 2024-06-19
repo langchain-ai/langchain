@@ -59,9 +59,7 @@ class EdenAiParsingInvoiceTool(EdenaiTool):
         return "\n".join(formatted_list)
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         query_params = {

@@ -59,8 +59,7 @@ class LLMRouterChain(RouterChain):
 
         prediction = self.llm_chain.predict(callbacks=callbacks, **inputs)
         output = cast(
-            Dict[str, Any],
-            self.llm_chain.prompt.output_parser.parse(prediction),
+            Dict[str, Any], self.llm_chain.prompt.output_parser.parse(prediction)
         )
         return output
 

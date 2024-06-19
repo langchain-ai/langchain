@@ -42,9 +42,7 @@ class CollectionStore(BaseModel):
     cmetadata = sqlalchemy.Column(JSON)
 
     embeddings = relationship(
-        "EmbeddingStore",
-        back_populates="collection",
-        passive_deletes=True,
+        "EmbeddingStore", back_populates="collection", passive_deletes=True
     )
 
     @classmethod
@@ -53,10 +51,7 @@ class CollectionStore(BaseModel):
 
     @classmethod
     def get_or_create(
-        cls,
-        session: Session,
-        name: str,
-        cmetadata: Optional[dict] = None,
+        cls, session: Session, name: str, cmetadata: Optional[dict] = None
     ) -> Tuple["CollectionStore", bool]:
         """
         Get or create a collection.
@@ -82,8 +77,7 @@ class EmbeddingStore(BaseModel):
     collection_id = sqlalchemy.Column(
         UUID(as_uuid=True),
         sqlalchemy.ForeignKey(
-            f"{CollectionStore.__tablename__}.uuid",
-            ondelete="CASCADE",
+            f"{CollectionStore.__tablename__}.uuid", ondelete="CASCADE"
         ),
     )
     collection = relationship(CollectionStore, back_populates="embeddings")
@@ -139,9 +133,7 @@ class PGEmbedding(VectorStore):
         self.logger = logger or logging.getLogger(__name__)
         self.__post_init__()
 
-    def __post_init__(
-        self,
-    ) -> None:
+    def __post_init__(self) -> None:
         self._conn = self.connect()
         self.create_hnsw_extension()
         self.create_tables_if_not_exists()
@@ -271,10 +263,7 @@ class PGEmbedding(VectorStore):
                 raise ValueError("Collection not found")
             for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
                 embedding_store = EmbeddingStore(
-                    embedding=embedding,
-                    document=text,
-                    cmetadata=metadata,
-                    custom_id=id,
+                    embedding=embedding, document=text, cmetadata=metadata, custom_id=id
                 )
                 collection.embeddings.append(embedding_store)
                 session.add(embedding_store)
@@ -301,10 +290,7 @@ class PGEmbedding(VectorStore):
                 raise ValueError("Collection not found")
             for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
                 embedding_store = EmbeddingStore(
-                    embedding=embedding,
-                    document=text,
-                    cmetadata=metadata,
-                    custom_id=id,
+                    embedding=embedding, document=text, cmetadata=metadata, custom_id=id
                 )
                 collection.embeddings.append(embedding_store)
                 session.add(embedding_store)
@@ -313,24 +299,13 @@ class PGEmbedding(VectorStore):
         return ids
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
-        **kwargs: Any,
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         embedding = self.embedding_function.embed_query(text=query)
-        return self.similarity_search_by_vector(
-            embedding=embedding,
-            k=k,
-            filter=filter,
-        )
+        return self.similarity_search_by_vector(embedding=embedding, k=k, filter=filter)
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
+        self, query: str, k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
         embedding = self.embedding_function.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
@@ -339,10 +314,7 @@ class PGEmbedding(VectorStore):
         return docs
 
     def similarity_search_with_score_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        filter: Optional[dict] = None,
+        self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
         with Session(self._conn) as session:
             collection = self.get_collection(session)
@@ -490,9 +462,7 @@ class PGEmbedding(VectorStore):
     @classmethod
     def get_connection_string(cls, kwargs: Dict[str, Any]) -> str:
         connection_string: str = get_from_dict_or_env(
-            data=kwargs,
-            key="connection_string",
-            env_key="POSTGRES_CONNECTION_STRING",
+            data=kwargs, key="connection_string", env_key="POSTGRES_CONNECTION_STRING"
         )
 
         if not connection_string:

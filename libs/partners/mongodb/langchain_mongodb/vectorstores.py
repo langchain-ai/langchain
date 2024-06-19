@@ -204,10 +204,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             params["filter"] = pre_filter
         query = {"$vectorSearch": params}
 
-        pipeline = [
-            query,
-            {"$set": {"score": {"$meta": "vectorSearchScore"}}},
-        ]
+        pipeline = [query, {"$set": {"score": {"$meta": "vectorSearchScore"}}}]
 
         # Exclude the embedding key from the return payload
         if not include_embedding:
@@ -380,10 +377,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 collection = mongo_client["<db_name>"]["<collection_name>"]
                 embeddings = OpenAIEmbeddings()
                 vectorstore = MongoDBAtlasVectorSearch.from_texts(
-                    texts,
-                    embeddings,
-                    metadatas=metadatas,
-                    collection=collection
+                    texts, embeddings, metadatas=metadatas, collection=collection
                 )
         """
         if collection is None:

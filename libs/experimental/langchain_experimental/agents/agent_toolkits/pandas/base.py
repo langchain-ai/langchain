@@ -237,10 +237,7 @@ def create_pandas_dataframe_agent(
             df = pd.read_csv("titanic.csv")
             llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
             agent_executor = create_pandas_dataframe_agent(
-                llm,
-                df,
-                agent_type="tool-calling",
-                verbose=True
+                llm, df, agent_type="tool-calling", verbose=True
             )
 
     """
@@ -321,9 +318,7 @@ def create_pandas_dataframe_agent(
                 cast(BaseLanguageModel, llm), tools, prompt
             )
             agent = RunnableAgent(
-                runnable=runnable,
-                input_keys_arg=["input"],
-                return_keys_arg=["output"],
+                runnable=runnable, input_keys_arg=["input"], return_keys_arg=["output"]
             )
         else:
             if agent_type == "openai-tools":
@@ -335,9 +330,7 @@ def create_pandas_dataframe_agent(
                     cast(BaseLanguageModel, llm), tools, prompt
                 )
             agent = RunnableMultiActionAgent(
-                runnable=runnable,
-                input_keys_arg=["input"],
-                return_keys_arg=["output"],
+                runnable=runnable, input_keys_arg=["input"], return_keys_arg=["output"]
             )
     else:
         raise ValueError(

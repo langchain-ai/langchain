@@ -28,9 +28,7 @@ class BaseGraphQLTool(BaseTool):
         arbitrary_types_allowed = True
 
     def _run(
-        self,
-        tool_input: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, tool_input: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         result = self.graphql_wrapper.run(tool_input)
         return json.dumps(result, indent=2)

@@ -71,8 +71,12 @@ def init_chat_model(
             from langchain.chat_models import init_chat_model
 
             gpt_4o = init_chat_model("gpt-4o", model_provider="openai", temperature=0)
-            claude_opus = init_chat_model("claude-3-opus-20240229", model_provider="anthropic", temperature=0)
-            gemini_15 = init_chat_model("gemini-1.5-pro", model_provider="google_vertexai", temperature=0)
+            claude_opus = init_chat_model(
+                "claude-3-opus-20240229", model_provider="anthropic", temperature=0
+            )
+            gemini_15 = init_chat_model(
+                "gemini-1.5-pro", model_provider="google_vertexai", temperature=0
+            )
 
             gpt_4o.invoke("what's your name")
             claude_opus.invoke("what's your name")

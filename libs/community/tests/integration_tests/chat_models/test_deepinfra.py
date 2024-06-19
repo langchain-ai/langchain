@@ -20,9 +20,7 @@ class GenerateMovieName(BaseModel):
 
 def test_chat_deepinfra() -> None:
     """Test valid call to DeepInfra."""
-    chat = ChatDeepInfra(
-        max_tokens=10,
-    )
+    chat = ChatDeepInfra(max_tokens=10)
     response = chat.invoke([HumanMessage(content="Hello")])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
@@ -30,11 +28,7 @@ def test_chat_deepinfra() -> None:
 
 def test_chat_deepinfra_streaming() -> None:
     callback_handler = FakeCallbackHandler()
-    chat = ChatDeepInfra(
-        callbacks=[callback_handler],
-        streaming=True,
-        max_tokens=10,
-    )
+    chat = ChatDeepInfra(callbacks=[callback_handler], streaming=True, max_tokens=10)
     response = chat.invoke([HumanMessage(content="Hello")])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
@@ -42,9 +36,7 @@ def test_chat_deepinfra_streaming() -> None:
 
 async def test_async_chat_deepinfra() -> None:
     """Test async generation."""
-    chat = ChatDeepInfra(
-        max_tokens=10,
-    )
+    chat = ChatDeepInfra(max_tokens=10)
     message = HumanMessage(content="Hello")
     response = await chat.agenerate([[message]])
     assert isinstance(response, LLMResult)
@@ -81,9 +73,7 @@ def test_chat_deepinfra_bind_tools() -> None:
     class Foo(BaseModel):
         pass
 
-    chat = ChatDeepInfra(
-        max_tokens=10,
-    )
+    chat = ChatDeepInfra(max_tokens=10)
     tools = [Foo]
     chat_with_tools = chat.bind_tools(tools)
     assert isinstance(chat_with_tools, RunnableBinding)

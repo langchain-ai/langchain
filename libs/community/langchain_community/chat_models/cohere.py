@@ -131,9 +131,7 @@ class ChatCohere(BaseChatModel, BaseCohere):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling Cohere API."""
-        return {
-            "temperature": self.temperature,
-        }
+        return {"temperature": self.temperature}
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

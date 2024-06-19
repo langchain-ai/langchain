@@ -23,12 +23,9 @@ class JSONLoader(BaseLoader):
             import json
             from pathlib import Path
 
-            file_path='./sample_quiz.json'
+            file_path = "./sample_quiz.json"
             data = json.loads(Path(file_path).read_text())
-            loader = JSONLoader(
-                     file_path=file_path,
-                     jq_schema='.quiz',
-                     text_content=False)
+            loader = JSONLoader(file_path=file_path, jq_schema=".quiz", text_content=False)
 
     Load:
         .. code-block:: python

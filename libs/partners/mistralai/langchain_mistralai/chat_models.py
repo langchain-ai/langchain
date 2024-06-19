@@ -50,10 +50,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
-from langchain_core.output_parsers import (
-    JsonOutputParser,
-    PydanticOutputParser,
-)
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -85,9 +82,7 @@ def _create_retry_decorator(
     )
 
 
-def _convert_mistral_chat_message_to_message(
-    _message: Dict,
-) -> BaseMessage:
+def _convert_mistral_chat_message_to_message(_message: Dict) -> BaseMessage:
     role = _message["role"]
     assert role == "assistant", f"Expected role to be 'assistant', got {role}"
     content = cast(str, _message["content"])
@@ -104,12 +99,7 @@ def _convert_mistral_chat_message_to_message(
                 )
                 if not parsed["id"]:
                     tool_call_id = uuid.uuid4().hex[:]
-                    tool_calls.append(
-                        {
-                            **parsed,
-                            **{"id": tool_call_id},
-                        },
-                    )
+                    tool_calls.append({**parsed, **{"id": tool_call_id}})
                 else:
                     tool_calls.append(parsed)
             except Exception as e:
@@ -267,9 +257,7 @@ def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) ->
     return result
 
 
-def _convert_message_to_mistral_chat_message(
-    message: BaseMessage,
-) -> Dict:
+def _convert_message_to_mistral_chat_message(message: BaseMessage) -> Dict:
     if isinstance(message, ChatMessage):
         return dict(role=message.role, content=message.content)
     elif isinstance(message, HumanMessage):
@@ -310,11 +298,7 @@ def _convert_message_to_mistral_chat_message(
     elif isinstance(message, SystemMessage):
         return dict(role="system", content=message.content)
     elif isinstance(message, ToolMessage):
-        return {
-            "role": "tool",
-            "content": message.content,
-            "name": message.name,
-        }
+        return {"role": "tool", "content": message.content, "name": message.name}
     else:
         raise ValueError(f"Got unknown type {message}")
 
@@ -505,8 +489,7 @@ class ChatMistralAI(BaseChatModel):
                     "total_tokens": token_usage.get("total_tokens", 0),
                 }
             gen = ChatGeneration(
-                message=message,
-                generation_info={"finish_reason": finish_reason},
+                message=message, generation_info={"finish_reason": finish_reason}
             )
             generations.append(gen)
 
@@ -678,15 +661,20 @@ class ChatMistralAI(BaseChatModel):
                 from langchain_mistralai import ChatMistralAI
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
 
                 # -> AnswerWithJustification(
                 #     answer='They weigh the same',
@@ -699,15 +687,22 @@ class ChatMistralAI(BaseChatModel):
                 from langchain_mistralai import ChatMistralAI
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
 
-                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
                 #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
@@ -721,16 +716,21 @@ class ChatMistralAI(BaseChatModel):
                 from langchain_core.pydantic_v1 import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 dict_schema = convert_to_openai_tool(AnswerWithJustification)
                 llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
                 structured_llm = llm.with_structured_output(dict_schema)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'

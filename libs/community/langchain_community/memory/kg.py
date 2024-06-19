@@ -92,10 +92,7 @@ try:
                 human_prefix=self.human_prefix,
                 ai_prefix=self.ai_prefix,
             )
-            output = chain.predict(
-                history=buffer_string,
-                input=input_string,
-            )
+            output = chain.predict(history=buffer_string, input=input_string)
             return get_entities(output)
 
         def _get_current_entities(self, inputs: Dict[str, Any]) -> List[str]:
@@ -111,9 +108,7 @@ try:
                 ai_prefix=self.ai_prefix,
             )
             output = chain.predict(
-                history=buffer_string,
-                input=input_string,
-                verbose=True,
+                history=buffer_string, input=input_string, verbose=True
             )
             knowledge = parse_triples(output)
             return knowledge

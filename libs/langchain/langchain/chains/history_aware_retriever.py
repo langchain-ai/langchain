@@ -8,9 +8,7 @@ from langchain_core.runnables import RunnableBranch
 
 
 def create_history_aware_retriever(
-    llm: LanguageModelLike,
-    retriever: RetrieverLike,
-    prompt: BasePromptTemplate,
+    llm: LanguageModelLike, retriever: RetrieverLike, prompt: BasePromptTemplate
 ) -> RetrieverOutputLike:
     """Create a chain that takes conversation history and returns documents.
 

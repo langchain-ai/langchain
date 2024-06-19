@@ -410,10 +410,7 @@ class RunnableAgent(BaseSingleActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[
-        AgentAction,
-        AgentFinish,
-    ]:
+    ) -> Union[AgentAction, AgentFinish]:
         """Based on past history and current inputs, decide what to do.
 
         Args:
@@ -488,10 +485,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[
-        List[AgentAction],
-        AgentFinish,
-    ]:
+    ) -> Union[List[AgentAction], AgentFinish]:
         """Based on past history and current inputs, decide what to do.
 
         Args:
@@ -527,10 +521,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         intermediate_steps: List[Tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[
-        List[AgentAction],
-        AgentFinish,
-    ]:
+    ) -> Union[List[AgentAction], AgentFinish]:
         """Based on past history and current inputs, decide what to do.
 
         Args:
@@ -825,9 +816,7 @@ class Agent(BaseSingleActionAgent):
         """Construct an agent from an LLM and tools."""
         cls._validate_tools(tools)
         llm_chain = LLMChain(
-            llm=llm,
-            prompt=cls.create_prompt(tools),
-            callback_manager=callback_manager,
+            llm=llm, prompt=cls.create_prompt(tools), callback_manager=callback_manager
         )
         tool_names = [tool.name for tool in tools]
         _output_parser = output_parser or cls._get_default_output_parser()
@@ -896,16 +885,12 @@ class ExceptionTool(BaseTool):
     """Description of the tool."""
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         return query
 
     async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         return query
 
@@ -967,12 +952,7 @@ class AgentExecutor(Chain):
         **kwargs: Any,
     ) -> AgentExecutor:
         """Create from agent and tools."""
-        return cls(
-            agent=agent,
-            tools=tools,
-            callbacks=callbacks,
-            **kwargs,
-        )
+        return cls(agent=agent, tools=tools, callbacks=callbacks, **kwargs)
 
     @root_validator()
     def validate_tools(cls, values: Dict) -> Dict:
@@ -1047,11 +1027,7 @@ class AgentExecutor(Chain):
     ) -> AgentExecutorIterator:
         """Enables iteration over steps taken to reach final output."""
         return AgentExecutorIterator(
-            self,
-            inputs,
-            callbacks,
-            tags=self.tags,
-            include_run_info=include_run_info,
+            self, inputs, callbacks, tags=self.tags, include_run_info=include_run_info
         )
 
     @property
@@ -1363,7 +1339,7 @@ class AgentExecutor(Chain):
                     name_to_tool_map, color_mapping, agent_action, run_manager
                 )
                 for agent_action in actions
-            ],
+            ]
         )
 
         # TODO This could yield each result as it becomes available
@@ -1532,10 +1508,7 @@ class AgentExecutor(Chain):
         # Invalid tools won't be in the map, so we return False.
         if agent_action.tool in name_to_tool_map:
             if name_to_tool_map[agent_action.tool].return_direct:
-                return AgentFinish(
-                    {return_value_key: observation},
-                    "",
-                )
+                return AgentFinish({return_value_key: observation}, "")
         return None
 
     def _prepare_intermediate_steps(

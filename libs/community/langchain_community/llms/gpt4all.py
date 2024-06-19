@@ -18,6 +18,7 @@ class GPT4All(LLM):
         .. code-block:: python
 
             from langchain_community.llms import GPT4All
+
             model = GPT4All(model="./models/gpt4all-model.bin", n_threads=8)
 
             # Simplest invocation

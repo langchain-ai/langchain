@@ -54,16 +54,18 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
 
             import time
 
+
             def foo(input) -> None:
                 '''Fake function that raises an exception.'''
                 raise ValueError(f"Invoking foo failed. At time {time.time()}")
 
+
             runnable = RunnableLambda(foo)
 
             runnable_with_retries = runnable.with_retry(
-                retry_if_exception_type=(ValueError,), # Retry only on ValueError
-                wait_exponential_jitter=True, # Add jitter to the exponential backoff
-                stop_after_attempt=2, # Try twice
+                retry_if_exception_type=(ValueError,),  # Retry only on ValueError
+                wait_exponential_jitter=True,  # Add jitter to the exponential backoff
+                stop_after_attempt=2,  # Try twice
             )
 
             # The method invocation above is equivalent to the longer form below:
@@ -72,7 +74,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
                 bound=runnable,
                 retry_exception_types=(ValueError,),
                 max_attempt_number=2,
-                wait_exponential_jitter=True
+                wait_exponential_jitter=True,
             )
 
     This logic can be used to retry any Runnable, including a chain of Runnables,
@@ -141,10 +143,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
         return AsyncRetrying(**self._kwargs_retrying, **kwargs)
 
     def _patch_config(
-        self,
-        config: RunnableConfig,
-        run_manager: "T",
-        retry_state: RetryCallState,
+        self, config: RunnableConfig, run_manager: "T", retry_state: RetryCallState
     ) -> RunnableConfig:
         attempt = retry_state.attempt_number
         tag = "retry:attempt:{}".format(attempt) if attempt > 1 else None

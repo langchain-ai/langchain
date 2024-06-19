@@ -15,10 +15,7 @@ class DocusaurusLoader(SitemapLoader):
     """
 
     def __init__(
-        self,
-        url: str,
-        custom_html_tags: Optional[List[str]] = None,
-        **kwargs: Any,
+        self, url: str, custom_html_tags: Optional[List[str]] = None, **kwargs: Any
     ):
         """Initialize DocusaurusLoader
 

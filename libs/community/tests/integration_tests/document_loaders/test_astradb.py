@@ -22,10 +22,7 @@ import pytest
 from langchain_community.document_loaders.astradb import AstraDBLoader
 
 if TYPE_CHECKING:
-    from astrapy.db import (
-        AstraDBCollection,
-        AsyncAstraDBCollection,
-    )
+    from astrapy.db import AstraDBCollection, AsyncAstraDBCollection
 
 ASTRA_DB_APPLICATION_TOKEN = os.getenv("ASTRA_DB_APPLICATION_TOKEN")
 ASTRA_DB_API_ENDPOINT = os.getenv("ASTRA_DB_API_ENDPOINT")

@@ -8,10 +8,7 @@ from langchain_core.documents import Document
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 
-from langchain_community.vectorstores.pgvector import (
-    SUPPORTED_OPERATORS,
-    PGVector,
-)
+from langchain_community.vectorstores.pgvector import SUPPORTED_OPERATORS, PGVector
 from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 from tests.integration_tests.vectorstores.fixtures.filtering_test_cases import (
     DOCUMENTS,
@@ -452,9 +449,7 @@ def pgvector() -> Generator[PGVector, None, None]:
 
 @pytest.mark.parametrize("test_filter, expected_ids", TYPE_1_FILTERING_TEST_CASES)
 def test_pgvector_with_with_metadata_filters_1(
-    pgvector: PGVector,
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
+    pgvector: PGVector, test_filter: Dict[str, Any], expected_ids: List[int]
 ) -> None:
     """Test end to end construction and search."""
     docs = pgvector.similarity_search("meow", k=5, filter=test_filter)
@@ -463,9 +458,7 @@ def test_pgvector_with_with_metadata_filters_1(
 
 @pytest.mark.parametrize("test_filter, expected_ids", TYPE_2_FILTERING_TEST_CASES)
 def test_pgvector_with_with_metadata_filters_2(
-    pgvector: PGVector,
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
+    pgvector: PGVector, test_filter: Dict[str, Any], expected_ids: List[int]
 ) -> None:
     """Test end to end construction and search."""
     docs = pgvector.similarity_search("meow", k=5, filter=test_filter)
@@ -474,9 +467,7 @@ def test_pgvector_with_with_metadata_filters_2(
 
 @pytest.mark.parametrize("test_filter, expected_ids", TYPE_3_FILTERING_TEST_CASES)
 def test_pgvector_with_with_metadata_filters_3(
-    pgvector: PGVector,
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
+    pgvector: PGVector, test_filter: Dict[str, Any], expected_ids: List[int]
 ) -> None:
     """Test end to end construction and search."""
     docs = pgvector.similarity_search("meow", k=5, filter=test_filter)
@@ -485,9 +476,7 @@ def test_pgvector_with_with_metadata_filters_3(
 
 @pytest.mark.parametrize("test_filter, expected_ids", TYPE_4_FILTERING_TEST_CASES)
 def test_pgvector_with_with_metadata_filters_4(
-    pgvector: PGVector,
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
+    pgvector: PGVector, test_filter: Dict[str, Any], expected_ids: List[int]
 ) -> None:
     """Test end to end construction and search."""
     docs = pgvector.similarity_search("meow", k=5, filter=test_filter)
@@ -496,9 +485,7 @@ def test_pgvector_with_with_metadata_filters_4(
 
 @pytest.mark.parametrize("test_filter, expected_ids", TYPE_5_FILTERING_TEST_CASES)
 def test_pgvector_with_with_metadata_filters_5(
-    pgvector: PGVector,
-    test_filter: Dict[str, Any],
-    expected_ids: List[int],
+    pgvector: PGVector, test_filter: Dict[str, Any], expected_ids: List[int]
 ) -> None:
     """Test end to end construction and search."""
     docs = pgvector.similarity_search("meow", k=5, filter=test_filter)
@@ -509,10 +496,7 @@ def test_pgvector_with_with_metadata_filters_5(
     "invalid_filter",
     [
         ["hello"],
-        {
-            "id": 2,
-            "$name": "foo",
-        },
+        {"id": 2, "$name": "foo"},
         {"$or": {}},
         {"$and": {}},
         {"$between": {}},

@@ -14,9 +14,7 @@ from langchain_core.utils import convert_to_secret_str
 from langchain_core.utils.env import get_from_dict_or_env
 
 
-def _stream_response_to_generation_chunk(
-    stream_response: Any,
-) -> GenerationChunk:
+def _stream_response_to_generation_chunk(stream_response: Any) -> GenerationChunk:
     """Convert a stream response to a generation chunk."""
     return GenerationChunk(
         text=stream_response.choices[0].text,
@@ -28,9 +26,7 @@ def _stream_response_to_generation_chunk(
 
 
 @deprecated(
-    since="0.0.26",
-    removal="0.3",
-    alternative_import="langchain_fireworks.Fireworks",
+    since="0.0.26", removal="0.3", alternative_import="langchain_fireworks.Fireworks"
 )
 class Fireworks(BaseLLM):
     """Fireworks models."""
@@ -96,10 +92,7 @@ class Fireworks(BaseLLM):
         Returns:
             The full LLM output.
         """
-        params = {
-            "model": self.model,
-            **self.model_kwargs,
-        }
+        params = {"model": self.model, **self.model_kwargs}
         sub_prompts = self.get_batch_prompts(prompts)
         choices = []
         for _prompts in sub_prompts:
@@ -123,10 +116,7 @@ class Fireworks(BaseLLM):
         **kwargs: Any,
     ) -> LLMResult:
         """Call out to Fireworks endpoint async with k unique prompts."""
-        params = {
-            "model": self.model,
-            **self.model_kwargs,
-        }
+        params = {"model": self.model, **self.model_kwargs}
         sub_prompts = self.get_batch_prompts(prompts)
         choices = []
         for _prompts in sub_prompts:
@@ -142,10 +132,7 @@ class Fireworks(BaseLLM):
 
         return self.create_llm_result(choices, prompts)
 
-    def get_batch_prompts(
-        self,
-        prompts: List[str],
-    ) -> List[List[str]]:
+    def get_batch_prompts(self, prompts: List[str]) -> List[List[str]]:
         """Get the sub prompts for llm call."""
         sub_prompts = [
             prompts[i : i + self.batch_size]
@@ -160,9 +147,7 @@ class Fireworks(BaseLLM):
             sub_choices = choices[i : (i + 1)]
             generations.append(
                 [
-                    Generation(
-                        text=choice.__dict__["choices"][0].text,
-                    )
+                    Generation(text=choice.__dict__["choices"][0].text)
                     for choice in sub_choices
                 ]
             )
@@ -247,9 +232,7 @@ def completion_with_retry(
 
     @conditional_decorator(use_retry, retry_decorator)
     def _completion_with_retry(**kwargs: Any) -> Any:
-        return fireworks.client.Completion.create(
-            **kwargs,
-        )
+        return fireworks.client.Completion.create(**kwargs)
 
     return _completion_with_retry(**kwargs)
 
@@ -268,9 +251,7 @@ async def acompletion_with_retry(
 
     @conditional_decorator(use_retry, retry_decorator)
     async def _completion_with_retry(**kwargs: Any) -> Any:
-        return await fireworks.client.Completion.acreate(
-            **kwargs,
-        )
+        return await fireworks.client.Completion.acreate(**kwargs)
 
     return await _completion_with_retry(**kwargs)
 
@@ -359,9 +340,7 @@ async def acompletion_with_retry_streaming(
 
     @conditional_decorator(use_retry, retry_decorator)
     async def _completion_with_retry(**kwargs: Any) -> Any:
-        return fireworks.client.Completion.acreate(
-            **kwargs,
-        )
+        return fireworks.client.Completion.acreate(**kwargs)
 
     return await _completion_with_retry(**kwargs)
 

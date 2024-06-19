@@ -16,10 +16,7 @@ class LakeFSClient:
     """Client for lakeFS."""
 
     def __init__(
-        self,
-        lakefs_access_key: str,
-        lakefs_secret_key: str,
-        lakefs_endpoint: str,
+        self, lakefs_access_key: str, lakefs_secret_key: str, lakefs_endpoint: str
     ):
         self.__endpoint = "/".join([lakefs_endpoint, "api", "v1/"])
         self.__auth = HTTPBasicAuth(lakefs_access_key, lakefs_secret_key)

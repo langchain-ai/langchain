@@ -228,15 +228,12 @@ async def _abulk_ingest_embeddings(
 
 
 def _default_scripting_text_mapping(
-    dim: int,
-    vector_field: str = "vector_field",
+    dim: int, vector_field: str = "vector_field"
 ) -> Dict:
     """For Painless Scripting or Script Scoring,the default mapping to create index."""
     return {
         "mappings": {
-            "properties": {
-                vector_field: {"type": "knn_vector", "dimension": dim},
-            }
+            "properties": {vector_field: {"type": "knn_vector", "dimension": dim}}
         }
     }
 
@@ -391,10 +388,7 @@ def _default_painless_scripting_query(
                 "query": pre_filter,
                 "script": {
                     "source": source,
-                    "params": {
-                        "field": vector_field,
-                        "query_value": query_vector,
-                    },
+                    "params": {"field": vector_field, "query_value": query_vector},
                 },
             }
         },
@@ -408,10 +402,9 @@ class OpenSearchVectorSearch(VectorStore):
         .. code-block:: python
 
             from langchain_community.vectorstores import OpenSearchVectorSearch
+
             opensearch_vector_search = OpenSearchVectorSearch(
-                "http://localhost:9200",
-                "embeddings",
-                embedding_function
+                "http://localhost:9200", "embeddings", embedding_function
             )
 
     """
@@ -1103,11 +1096,10 @@ class OpenSearchVectorSearch(VectorStore):
 
                 from langchain_community.vectorstores import OpenSearchVectorSearch
                 from langchain_community.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 opensearch_vector_search = OpenSearchVectorSearch.from_texts(
-                    texts,
-                    embeddings,
-                    opensearch_url="http://localhost:9200"
+                    texts, embeddings, opensearch_url="http://localhost:9200"
                 )
 
         OpenSearch by default supports Approximate Search powered by nmslib, faiss
@@ -1168,11 +1160,10 @@ class OpenSearchVectorSearch(VectorStore):
 
                 from langchain_community.vectorstores import OpenSearchVectorSearch
                 from langchain_community.embeddings import OpenAIEmbeddings
+
                 embeddings = OpenAIEmbeddings()
                 opensearch_vector_search = await OpenSearchVectorSearch.afrom_texts(
-                    texts,
-                    embeddings,
-                    opensearch_url="http://localhost:9200"
+                    texts, embeddings, opensearch_url="http://localhost:9200"
                 )
 
         OpenSearch by default supports Approximate Search powered by nmslib, faiss
@@ -1234,13 +1225,11 @@ class OpenSearchVectorSearch(VectorStore):
 
                 from langchain_community.vectorstores import OpenSearchVectorSearch
                 from langchain_community.embeddings import OpenAIEmbeddings
+
                 embedder = OpenAIEmbeddings()
                 embeddings = embedder.embed_documents(["foo", "bar"])
                 opensearch_vector_search = OpenSearchVectorSearch.from_embeddings(
-                    embeddings,
-                    texts,
-                    embedder,
-                    opensearch_url="http://localhost:9200"
+                    embeddings, texts, embedder, opensearch_url="http://localhost:9200"
                 )
 
         OpenSearch by default supports Approximate Search powered by nmslib, faiss

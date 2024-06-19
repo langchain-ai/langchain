@@ -4,11 +4,7 @@ from typing import Any, Optional
 import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatResult,
-    LLMResult,
-)
+from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 
@@ -111,21 +107,13 @@ def test_chat_openai_streaming_generation_info() -> None:
     class _FakeCallback(FakeCallbackHandler):
         saved_things: dict = {}
 
-        def on_llm_end(
-            self,
-            *args: Any,
-            **kwargs: Any,
-        ) -> Any:
+        def on_llm_end(self, *args: Any, **kwargs: Any) -> Any:
             # Save the generation
             self.saved_things["generation"] = args[0]
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
-    chat = ChatOpenAI(
-        max_tokens=2,
-        temperature=0,
-        callback_manager=callback_manager,
-    )
+    chat = ChatOpenAI(max_tokens=2, temperature=0, callback_manager=callback_manager)
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned
@@ -153,12 +141,7 @@ def test_chat_openai_streaming_llm_output_contains_model_name() -> None:
 def test_chat_openai_invalid_streaming_params() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     with pytest.raises(ValueError):
-        ChatOpenAI(
-            max_tokens=10,
-            streaming=True,
-            temperature=0,
-            n=5,
-        )
+        ChatOpenAI(max_tokens=10, streaming=True, temperature=0, n=5)
 
 
 @pytest.mark.scheduled
@@ -216,17 +199,12 @@ async def test_async_chat_openai_bind_functions() -> None:
             default=None, title="Fav Food", description="The person's favorite food"
         )
 
-    chat = ChatOpenAI(
-        max_tokens=30,
-        n=1,
-        streaming=True,
-    ).bind_functions(functions=[Person], function_call="Person")
+    chat = ChatOpenAI(max_tokens=30, n=1, streaming=True).bind_functions(
+        functions=[Person], function_call="Person"
+    )
 
     prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", "Use the provided Person function"),
-            ("user", "{input}"),
-        ]
+        [("system", "Use the provided Person function"), ("user", "{input}")]
     )
 
     chain = prompt | chat

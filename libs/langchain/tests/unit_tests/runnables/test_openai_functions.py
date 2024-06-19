@@ -48,10 +48,7 @@ def test_openai_functions_router(
     accept = mocker.Mock(side_effect=lambda kw: f'Accepted draft: {kw["draft"]}!')
 
     router = OpenAIFunctionsRouter(
-        {
-            "revise": revise,
-            "accept": accept,
-        },
+        {"revise": revise, "accept": accept},
         functions=[
             {
                 "name": "revise",
@@ -62,7 +59,7 @@ def test_openai_functions_router(
                         "notes": {
                             "type": "string",
                             "description": "The editor's notes to guide the revision.",
-                        },
+                        }
                     },
                 },
             },
@@ -75,7 +72,7 @@ def test_openai_functions_router(
                         "draft": {
                             "type": "string",
                             "description": "The draft to accept.",
-                        },
+                        }
                     },
                 },
             },

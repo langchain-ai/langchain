@@ -31,9 +31,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
             kwargs["api_version"] = api_version
 
         if analysis_features is not None:
-            _SUPPORTED_FEATURES = [
-                DocumentAnalysisFeature.OCR_HIGH_RESOLUTION,
-            ]
+            _SUPPORTED_FEATURES = [DocumentAnalysisFeature.OCR_HIGH_RESOLUTION]
 
             analysis_features = [
                 DocumentAnalysisFeature(feature) for feature in analysis_features
@@ -62,12 +60,7 @@ class AzureAIDocumentIntelligenceParser(BaseBlobParser):
         for p in result.pages:
             content = " ".join([line.content for line in p.lines])
 
-            d = Document(
-                page_content=content,
-                metadata={
-                    "page": p.page_number,
-                },
-            )
+            d = Document(page_content=content, metadata={"page": p.page_number})
             yield d
 
     def _generate_docs_single(self, result: Any) -> Iterator[Document]:

@@ -29,13 +29,7 @@ class BreebsRetriever(BaseRetriever):
     ) -> List[Document]:
         """Retrieve context for given query.
         Note that for time being there is no score."""
-        r = requests.post(
-            self.url,
-            json={
-                "breeb_key": self.breeb_key,
-                "query": query,
-            },
-        )
+        r = requests.post(self.url, json={"breeb_key": self.breeb_key, "query": query})
         if r.status_code != 200:
             return []
         else:

@@ -65,7 +65,7 @@ def create_stuff_documents_chain(
 
             docs = [
                 Document(page_content="Jesse loves red but not yellow"),
-                Document(page_content = "Jamal loves green but not as much as he loves orange")
+                Document(page_content="Jamal loves green but not as much as he loves orange"),
             ]
 
             chain.invoke({"context": docs})
@@ -110,21 +110,18 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
             # it will be passed to `format_document` - see that function for more
             # details.
             document_prompt = PromptTemplate(
-                input_variables=["page_content"],
-                template="{page_content}"
+                input_variables=["page_content"], template="{page_content}"
             )
             document_variable_name = "context"
             llm = OpenAI()
             # The prompt here should take as an input variable the
             # `document_variable_name`
-            prompt = PromptTemplate.from_template(
-                "Summarize this content: {context}"
-            )
+            prompt = PromptTemplate.from_template("Summarize this content: {context}")
             llm_chain = LLMChain(llm=llm, prompt=prompt)
             chain = StuffDocumentsChain(
                 llm_chain=llm_chain,
                 document_prompt=document_prompt,
-                document_variable_name=document_variable_name
+                document_variable_name=document_variable_name,
             )
     """
 

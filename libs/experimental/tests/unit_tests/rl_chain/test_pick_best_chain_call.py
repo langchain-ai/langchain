@@ -67,8 +67,7 @@ def test_ToSelectFrom_not_a_list_throws() -> None:
     actions = {"actions": ["0", "1", "2"]}
     with pytest.raises(ValueError):
         chain.run(
-            User=rl_chain.BasedOn("Context"),
-            action=rl_chain.ToSelectFrom(actions),
+            User=rl_chain.BasedOn("Context"), action=rl_chain.ToSelectFrom(actions)
         )
 
 
@@ -87,8 +86,7 @@ def test_update_with_delayed_score_with_auto_validator_throws() -> None:
     )
     actions = ["0", "1", "2"]
     response = chain.run(
-        User=rl_chain.BasedOn("Context"),
-        action=rl_chain.ToSelectFrom(actions),
+        User=rl_chain.BasedOn("Context"), action=rl_chain.ToSelectFrom(actions)
     )
     assert response["response"] == "hey"  # type: ignore
     selection_metadata = response["selection_metadata"]  # type: ignore
@@ -115,8 +113,7 @@ def test_update_with_delayed_score_force() -> None:
     )
     actions = ["0", "1", "2"]
     response = chain.run(
-        User=rl_chain.BasedOn("Context"),
-        action=rl_chain.ToSelectFrom(actions),
+        User=rl_chain.BasedOn("Context"), action=rl_chain.ToSelectFrom(actions)
     )
     assert response["response"] == "hey"  # type: ignore
     selection_metadata = response["selection_metadata"]  # type: ignore
@@ -142,8 +139,7 @@ def test_update_with_delayed_score() -> None:
     )
     actions = ["0", "1", "2"]
     response = chain.run(
-        User=rl_chain.BasedOn("Context"),
-        action=rl_chain.ToSelectFrom(actions),
+        User=rl_chain.BasedOn("Context"), action=rl_chain.ToSelectFrom(actions)
     )
     assert response["response"] == "hey"  # type: ignore
     selection_metadata = response["selection_metadata"]  # type: ignore
@@ -176,8 +172,7 @@ def test_user_defined_scorer() -> None:
     )
     actions = ["0", "1", "2"]
     response = chain.run(
-        User=rl_chain.BasedOn("Context"),
-        action=rl_chain.ToSelectFrom(actions),
+        User=rl_chain.BasedOn("Context"), action=rl_chain.ToSelectFrom(actions)
     )
     assert response["response"] == "hey"  # type: ignore
     selection_metadata = response["selection_metadata"]  # type: ignore
@@ -266,8 +261,7 @@ def test_default_w_embeddings_off() -> None:
     actions = [str1, str2, str3]
 
     response = chain.run(
-        User=rl_chain.BasedOn(ctx_str_1),
-        action=rl_chain.ToSelectFrom(actions),
+        User=rl_chain.BasedOn(ctx_str_1), action=rl_chain.ToSelectFrom(actions)
     )
     selection_metadata = response["selection_metadata"]  # type: ignore
     vw_str = feature_embedder.format(selection_metadata)  # type: ignore
@@ -294,8 +288,7 @@ def test_default_w_embeddings_on() -> None:
     actions = [str1, str2]
 
     response = chain.run(
-        User=rl_chain.BasedOn(ctx_str_1),
-        action=rl_chain.ToSelectFrom(actions),
+        User=rl_chain.BasedOn(ctx_str_1), action=rl_chain.ToSelectFrom(actions)
     )
     selection_metadata = response["selection_metadata"]  # type: ignore
     vw_str = feature_embedder.format(selection_metadata)  # type: ignore
@@ -346,8 +339,7 @@ def test_default_no_scorer_specified() -> None:
         ),
     )
     response = chain.run(
-        User=rl_chain.BasedOn("Context"),
-        action=rl_chain.ToSelectFrom(["0", "1", "2"]),
+        User=rl_chain.BasedOn("Context"), action=rl_chain.ToSelectFrom(["0", "1", "2"])
     )
     # chain llm used for both basic prompt and for scoring
     assert response["response"] == "hey"  # type: ignore
@@ -367,8 +359,7 @@ def test_explicitly_no_scorer() -> None:
         ),
     )
     response = chain.run(
-        User=rl_chain.BasedOn("Context"),
-        action=rl_chain.ToSelectFrom(["0", "1", "2"]),
+        User=rl_chain.BasedOn("Context"), action=rl_chain.ToSelectFrom(["0", "1", "2"])
     )
     # chain llm used for both basic prompt and for scoring
     assert response["response"] == "hey"  # type: ignore
@@ -389,8 +380,7 @@ def test_auto_scorer_with_user_defined_llm() -> None:
         ),
     )
     response = chain.run(
-        User=rl_chain.BasedOn("Context"),
-        action=rl_chain.ToSelectFrom(["0", "1", "2"]),
+        User=rl_chain.BasedOn("Context"), action=rl_chain.ToSelectFrom(["0", "1", "2"])
     )
     # chain llm used for both basic prompt and for scoring
     assert response["response"] == "hey"  # type: ignore

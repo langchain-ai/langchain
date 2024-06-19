@@ -25,10 +25,7 @@ class TestMimeBasedParser:
                 yield Document(page_content=blob.as_string()[1])
 
         parser = MimeTypeBasedParser(
-            handlers={
-                "text/plain": FirstCharParser(),
-                "text/html": SecondCharParser(),
-            },
+            handlers={"text/plain": FirstCharParser(), "text/html": SecondCharParser()}
         )
 
         blob = Blob(data=b"Hello World", mimetype="text/plain")
@@ -67,10 +64,7 @@ class TestMimeBasedParser:
                 yield Document(page_content=blob.as_string()[2])
 
         parser = MimeTypeBasedParser(
-            handlers={
-                "text/plain": FirstCharParser(),
-                "text/html": SecondCharParser(),
-            },
+            handlers={"text/plain": FirstCharParser(), "text/html": SecondCharParser()},
             fallback_parser=ThirdCharParser(),
         )
 

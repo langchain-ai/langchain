@@ -34,10 +34,7 @@ class DiffbotLoader(BaseLoader):
         """Get Diffbot file from Diffbot REST API."""
         # TODO: Add support for other Diffbot APIs
         diffbot_url = self._diffbot_api_url("article")
-        params = {
-            "token": self.api_token,
-            "url": url,
-        }
+        params = {"token": self.api_token, "url": url}
         response = requests.get(diffbot_url, params=params, timeout=10)
 
         # TODO: handle non-ok errors

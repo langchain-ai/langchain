@@ -11,10 +11,7 @@ from langchain_community.document_loaders.oracleai import (
     OracleTextSplitter,
 )
 from langchain_community.utilities.oracleai import OracleSummary
-from langchain_community.vectorstores.oraclevs import (
-    _table_exists,
-    drop_table_purge,
-)
+from langchain_community.vectorstores.oraclevs import _table_exists, drop_table_purge
 
 uname = "hr"
 passwd = "hr"

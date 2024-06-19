@@ -229,10 +229,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             an `AzureCosmosDBNoSqlVectorSearch` vectorstore.
         """
         vectorstore = AzureCosmosDBNoSqlVectorSearch._from_kwargs(embedding, **kwargs)
-        vectorstore.add_texts(
-            texts=texts,
-            metadatas=metadatas,
-        )
+        vectorstore.add_texts(texts=texts, metadatas=metadatas)
         return vectorstore
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
@@ -254,9 +251,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self._container.delete_item(document_id, partition_key=document_id)
 
     def _similarity_search_with_score(
-        self,
-        embeddings: List[float],
-        k: int = 4,
+        self, embeddings: List[float], k: int = 4
     ) -> List[Tuple[Document, float]]:
         query = (
             "SELECT TOP {} c.id, c.{}, c.text, VectorDistance(c.{}, {}) AS "
@@ -280,9 +275,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         return docs_and_scores
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
+        self, query: str, k: int = 4
     ) -> List[Tuple[Document, float]]:
         embeddings = self._embedding.embed_query(query)
         docs_and_scores = self._similarity_search_with_score(embeddings=embeddings, k=k)
@@ -329,9 +322,6 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         embeddings = self._embedding.embed_query(query)
 
         docs = self.max_marginal_relevance_search_by_vector(
-            embeddings,
-            k=k,
-            fetch_k=fetch_k,
-            lambda_mult=lambda_mult,
+            embeddings, k=k, fetch_k=fetch_k, lambda_mult=lambda_mult
         )
         return docs

@@ -122,15 +122,14 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models import GigaChat
+
             giga = GigaChat(credentials=..., scope=..., verify_ssl_certs=False)
     """
 
     def _build_payload(self, messages: List[BaseMessage], **kwargs: Any) -> gm.Chat:
         from gigachat.models import Chat
 
-        payload = Chat(
-            messages=[_convert_message_to_dict(m) for m in messages],
-        )
+        payload = Chat(messages=[_convert_message_to_dict(m) for m in messages])
 
         payload.functions = kwargs.get("functions", None)
         payload.model = self.model
@@ -159,15 +158,11 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             message = _convert_dict_to_message(res.message)
             finish_reason = res.finish_reason
             gen = ChatGeneration(
-                message=message,
-                generation_info={"finish_reason": finish_reason},
+                message=message, generation_info={"finish_reason": finish_reason}
             )
             generations.append(gen)
             if finish_reason != "stop":
-                logger.warning(
-                    "Giga generation stopped with reason: %s",
-                    finish_reason,
-                )
+                logger.warning("Giga generation stopped with reason: %s", finish_reason)
             if self.verbose:
                 logger.warning("Giga response: %s", message.content)
         llm_output = {"token_usage": response.usage, "model_name": response.model}

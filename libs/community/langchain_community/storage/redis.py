@@ -17,7 +17,7 @@ class RedisStore(ByteStore):
             from langchain_community.storage import RedisStore
             from langchain_community.utilities.redis import get_client
 
-            client = get_client('redis://localhost:6379')
+            client = get_client("redis://localhost:6379")
             redis_store = RedisStore(client=client)
 
             # Set values for keys

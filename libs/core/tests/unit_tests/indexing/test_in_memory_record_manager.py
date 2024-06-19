@@ -171,12 +171,7 @@ async def test_list_keys(manager: InMemoryRecordManager) -> None:
     ]
     assert sorted(
         await manager.alist_keys(before=datetime(2021, 1, 3).timestamp())
-    ) == [
-        "key1",
-        "key2",
-        "key3",
-        "key4",
-    ]
+    ) == ["key1", "key2", "key3", "key4"]
 
     # After
     assert sorted(manager.list_keys(after=datetime(2021, 1, 3).timestamp())) == ["key5"]

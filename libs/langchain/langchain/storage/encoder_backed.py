@@ -26,14 +26,18 @@ class EncoderBackedStore(BaseStore[K, V]):
 
         import json
 
+
         def key_encoder(key: int) -> str:
             return json.dumps(key)
+
 
         def value_serializer(value: float) -> str:
             return json.dumps(value)
 
+
         def value_deserializer(serialized_value: str) -> float:
             return json.loads(serialized_value)
+
 
         # Create an instance of the abstract store
         abstract_store = MyCustomStore()
@@ -43,7 +47,7 @@ class EncoderBackedStore(BaseStore[K, V]):
             store=abstract_store,
             key_encoder=key_encoder,
             value_serializer=value_serializer,
-            value_deserializer=value_deserializer
+            value_deserializer=value_deserializer,
         )
 
         # Use the encoder-backed store methods

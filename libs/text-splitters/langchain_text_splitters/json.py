@@ -79,9 +79,7 @@ class RecursiveJsonSplitter:
         return chunks
 
     def split_json(
-        self,
-        json_data: Dict[str, Any],
-        convert_lists: bool = False,
+        self, json_data: Dict[str, Any], convert_lists: bool = False
     ) -> List[Dict]:
         """Splits JSON into a list of JSON chunks"""
 

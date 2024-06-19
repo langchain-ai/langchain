@@ -19,9 +19,7 @@ def _generate_llm() -> AI21LLM:
 
 def test_stream() -> None:
     """Test streaming tokens from AI21."""
-    llm = AI21LLM(
-        model=_MODEL_NAME,
-    )
+    llm = AI21LLM(model=_MODEL_NAME)
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token, str)
@@ -29,9 +27,7 @@ def test_stream() -> None:
 
 async def test_abatch() -> None:
     """Test streaming tokens from AI21LLM."""
-    llm = AI21LLM(
-        model=_MODEL_NAME,
-    )
+    llm = AI21LLM(model=_MODEL_NAME)
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -40,9 +36,7 @@ async def test_abatch() -> None:
 
 async def test_abatch_tags() -> None:
     """Test batch tokens from AI21LLM."""
-    llm = AI21LLM(
-        model=_MODEL_NAME,
-    )
+    llm = AI21LLM(model=_MODEL_NAME)
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -53,9 +47,7 @@ async def test_abatch_tags() -> None:
 
 def test_batch() -> None:
     """Test batch tokens from AI21LLM."""
-    llm = AI21LLM(
-        model=_MODEL_NAME,
-    )
+    llm = AI21LLM(model=_MODEL_NAME)
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -64,9 +56,7 @@ def test_batch() -> None:
 
 async def test_ainvoke() -> None:
     """Test invoke tokens from AI21LLM."""
-    llm = AI21LLM(
-        model=_MODEL_NAME,
-    )
+    llm = AI21LLM(model=_MODEL_NAME)
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result, str)
@@ -74,9 +64,7 @@ async def test_ainvoke() -> None:
 
 def test_invoke() -> None:
     """Test invoke tokens from AI21LLM."""
-    llm = AI21LLM(
-        model=_MODEL_NAME,
-    )
+    llm = AI21LLM(model=_MODEL_NAME)
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result, str)
@@ -85,8 +73,7 @@ def test_invoke() -> None:
 def test__generate() -> None:
     llm = _generate_llm()
     llm_result = llm.generate(
-        prompts=["Hey there, my name is Pickle Rick. What is your name?"],
-        stop=["##"],
+        prompts=["Hey there, my name is Pickle Rick. What is your name?"], stop=["##"]
     )
 
     assert len(llm_result.generations) > 0
@@ -96,8 +83,7 @@ def test__generate() -> None:
 async def test__agenerate() -> None:
     llm = _generate_llm()
     llm_result = await llm.agenerate(
-        prompts=["Hey there, my name is Pickle Rick. What is your name?"],
-        stop=["##"],
+        prompts=["Hey there, my name is Pickle Rick. What is your name?"], stop=["##"]
     )
 
     assert len(llm_result.generations) > 0

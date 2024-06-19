@@ -105,17 +105,10 @@ class InMemoryVectorStore(VectorStore):
         ]
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         embedding = self.embedding.embed_query(query)
-        docs = self.similarity_search_with_score_by_vector(
-            embedding,
-            k,
-            **kwargs,
-        )
+        docs = self.similarity_search_with_score_by_vector(embedding, k, **kwargs)
         return docs
 
     async def asimilarity_search_with_score(
@@ -124,15 +117,10 @@ class InMemoryVectorStore(VectorStore):
         return self.similarity_search_with_score(query, k, **kwargs)
 
     def similarity_search_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        **kwargs: Any,
+        self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Document]:
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding,
-            k,
-            **kwargs,
+            embedding, k, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -160,9 +148,7 @@ class InMemoryVectorStore(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         prefetch_hits = self._similarity_search_with_score_by_vector(
-            embedding=embedding,
-            k=fetch_k,
-            **kwargs,
+            embedding=embedding, k=fetch_k, **kwargs
         )
 
         mmr_chosen_indices = maximal_marginal_relevance(
@@ -183,11 +169,7 @@ class InMemoryVectorStore(VectorStore):
     ) -> List[Document]:
         embedding_vector = self.embedding.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
-            embedding_vector,
-            k,
-            fetch_k,
-            lambda_mult=lambda_mult,
-            **kwargs,
+            embedding_vector, k, fetch_k, lambda_mult=lambda_mult, **kwargs
         )
 
     @classmethod
@@ -198,9 +180,7 @@ class InMemoryVectorStore(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> "InMemoryVectorStore":
-        store = cls(
-            embedding=embedding,
-        )
+        store = cls(embedding=embedding)
         store.add_texts(texts=texts, metadatas=metadatas, **kwargs)
         return store
 

@@ -23,17 +23,13 @@ OUTLINE_SUCCESS_RESPONSE = {
                 "collectionId": "93f182a4-a591-4d47-83f0-752e7bb2065c",
                 "parentDocumentId": None,
             },
-        },
+        }
     ],
     "status": 200,
     "ok": True,
 }
 
-OUTLINE_EMPTY_RESPONSE = {
-    "data": [],
-    "status": 200,
-    "ok": True,
-}
+OUTLINE_EMPTY_RESPONSE = {"data": [], "status": 200, "ok": True}
 
 OUTLINE_ERROR_RESPONSE = {
     "ok": False,

@@ -238,11 +238,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
             for generations in response_res.generations
             for generation in generations
         ]
-        self._run.track(
-            generated,
-            name="on_llm_end",
-            context=resp,
-        )
+        self._run.track(generated, name="on_llm_end", context=resp)
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run when LLM generates a new token."""
@@ -356,10 +352,7 @@ class AimCallbackHandler(BaseMetadataCallbackHandler, BaseCallbackHandler):
         self.tool_starts += 1
         self.starts += 1
 
-        resp = {
-            "action": "on_agent_action",
-            "tool": action.tool,
-        }
+        resp = {"action": "on_agent_action", "tool": action.tool}
         resp.update(self.get_custom_callback_meta())
 
         action_res = deepcopy(action)

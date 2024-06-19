@@ -21,6 +21,7 @@ class NIBittensorLLM(LLM):
         .. code-block:: python
 
             from langchain_community.llms import NIBittensorLLM
+
             llm = NIBittensorLLM()
     """
 

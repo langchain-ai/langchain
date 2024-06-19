@@ -96,7 +96,7 @@ For more information, please visit:
 """
             )
         self.transformer_tokenizer = AutoTokenizer.from_pretrained(
-            pretrained_model_name_or_path=self.model_name_or_path,
+            pretrained_model_name_or_path=self.model_name_or_path
         )
         self.transformer_model.eval()
 

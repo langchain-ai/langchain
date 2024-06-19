@@ -51,9 +51,7 @@ class HuggingFaceDatasetLoader(BaseLoader):
         self.use_auth_token = use_auth_token
         self.num_proc = num_proc
 
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load documents lazily."""
         try:
             from datasets import load_dataset

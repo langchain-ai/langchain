@@ -132,9 +132,7 @@ class AzureCogsImageAnalysisTool(BaseTool):
         return "\n".join(formatted_result)
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         try:

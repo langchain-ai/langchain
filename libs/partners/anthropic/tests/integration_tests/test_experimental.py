@@ -149,7 +149,7 @@ def test_anthropic_complex_structured_output() -> None:
             (
                 "human",
                 "What can you tell me about the following email? Make sure to answer in the correct format: {email}",  # noqa: E501
-            ),
+            )
         ]
     )
 

@@ -19,11 +19,8 @@ os.environ["OPENAI_API_KEY"] = "sk-xxxx"
 context_value = [
     {
         "context": "this document is about John",
-        "metadata": {
-            "source": "source#1",
-            "doc_id": 123,
-        },
-    },
+        "metadata": {"source": "source#1", "doc_id": 123},
+    }
 ]
 
 
@@ -32,9 +29,7 @@ context_value = [
 @patch.object(Pipeline, "add", return_value=123)
 def test_embedchain_retriever(mock_add: Any, mock_search: Any) -> None:
     retriever = EmbedchainRetriever.create()
-    texts = [
-        "This document is about John",
-    ]
+    texts = ["This document is about John"]
     for text in texts:
         retriever.add_texts(text)
     docs = retriever.invoke("doc about john")

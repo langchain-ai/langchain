@@ -179,10 +179,7 @@ class AtlasDB(VectorStore):
             return self.project.create_index(**kwargs)
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Run similarity search with AtlasDB
 

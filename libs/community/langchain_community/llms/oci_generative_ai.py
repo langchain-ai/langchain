@@ -147,9 +147,7 @@ class OCIGenAIBase(BaseModel, ABC):
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
         _model_kwargs = self.model_kwargs or {}
-        return {
-            **{"model_kwargs": _model_kwargs},
-        }
+        return {**{"model_kwargs": _model_kwargs}}
 
     def _get_provider(self) -> str:
         if self.provider is not None:
@@ -190,10 +188,10 @@ class OCIGenAI(LLM, OCIGenAIBase):
             from langchain_community.llms import OCIGenAI
 
             llm = OCIGenAI(
-                    model_id="MY_MODEL_ID",
-                    service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
-                    compartment_id="MY_OCID"
-                )
+                model_id="MY_MODEL_ID",
+                service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
+                compartment_id="MY_OCID",
+            )
     """
 
     class Config:

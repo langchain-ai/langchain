@@ -17,7 +17,4 @@ These questions should be detailed and be based explicitly on information in the
 <Begin Document>
 {doc}
 <End Document>"""
-PROMPT = PromptTemplate(
-    input_variables=["doc"],
-    template=template,
-)
+PROMPT = PromptTemplate(input_variables=["doc"], template=template)

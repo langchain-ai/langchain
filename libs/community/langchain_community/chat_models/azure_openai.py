@@ -42,10 +42,7 @@ class AzureChatOpenAI(ChatOpenAI):
 
     .. code-block:: python
 
-        AzureChatOpenAI(
-            azure_deployment="35-turbo-dev",
-            openai_api_version="2023-05-15",
-        )
+        AzureChatOpenAI(azure_deployment="35-turbo-dev", openai_api_version="2023-05-15")
 
     Be aware the API version may change.
 
@@ -220,10 +217,7 @@ class AzureChatOpenAI(ChatOpenAI):
         if is_openai_v1():
             return super()._default_params
         else:
-            return {
-                **super()._default_params,
-                "engine": self.deployment_name,
-            }
+            return {**super()._default_params, "engine": self.deployment_name}
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

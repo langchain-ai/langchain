@@ -277,12 +277,7 @@ class MongoDBAtlasSemanticCache(BaseCache, MongoDBAtlasVectorSearch):
         """Update cache based on prompt and llm_string."""
         self.add_texts(
             [prompt],
-            [
-                {
-                    self.LLM: llm_string,
-                    self.RETURN_VAL: _dumps_generations(return_val),
-                }
-            ],
+            [{self.LLM: llm_string, self.RETURN_VAL: _dumps_generations(return_val)}],
         )
         wait = self._wait_until_ready if wait_until_ready is None else wait_until_ready
 

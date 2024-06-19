@@ -37,10 +37,14 @@ class ParentDocumentRetriever(MultiVectorRetriever):
             from langchain.storage import InMemoryStore
 
             # This text splitter is used to create the parent documents
-            parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, add_start_index=True)
+            parent_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=2000, add_start_index=True
+            )
             # This text splitter is used to create the child documents
             # It should create documents smaller than the parent
-            child_splitter = RecursiveCharacterTextSplitter(chunk_size=400, add_start_index=True)
+            child_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=400, add_start_index=True
+            )
             # The vectorstore to use to index the child chunks
             vectorstore = Chroma(embedding_function=OpenAIEmbeddings())
             # The storage layer for the parent documents

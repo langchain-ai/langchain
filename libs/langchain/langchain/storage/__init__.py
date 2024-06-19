@@ -7,11 +7,7 @@ The primary goal of these storages is to support implementation of caching.
 """
 from typing import TYPE_CHECKING, Any
 
-from langchain_core.stores import (
-    InMemoryByteStore,
-    InMemoryStore,
-    InvalidKeyException,
-)
+from langchain_core.stores import InMemoryByteStore, InMemoryStore, InvalidKeyException
 
 from langchain._api import create_importer
 from langchain.storage._lc_store import create_kv_docstore, create_lc_store

@@ -24,9 +24,7 @@ class ConversationBufferWindowMemory(BaseChatMemory):
         """Exposes the buffer as a string in case return_messages is False."""
         messages = self.chat_memory.messages[-self.k * 2 :] if self.k > 0 else []
         return get_buffer_string(
-            messages,
-            human_prefix=self.human_prefix,
-            ai_prefix=self.ai_prefix,
+            messages, human_prefix=self.human_prefix, ai_prefix=self.ai_prefix
         )
 
     @property

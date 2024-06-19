@@ -81,8 +81,7 @@ class DeepLake(VectorStore):
             >>>
             >>> # Create a vector store in the Deep Lake Managed Tensor Database
             >>> data = DeepLake(
-            ...        path = "hub://org_id/dataset_name",
-            ...        runtime = {"tensor_db": True},
+            ...     path="hub://org_id/dataset_name", runtime={"tensor_db": True}
             ... )
 
         Args:
@@ -277,10 +276,7 @@ class DeepLake(VectorStore):
                 raise e
 
     def _search_tql(
-        self,
-        tql: Optional[str],
-        exec_option: Optional[str] = None,
-        **kwargs: Any,
+        self, tql: Optional[str], exec_option: Optional[str] = None, **kwargs: Any
     ) -> List[Document]:
         """Function for performing tql_search.
 
@@ -307,18 +303,12 @@ class DeepLake(VectorStore):
         Raises:
             ValueError: If return_score is True but some condition is not met.
         """
-        result = self.vectorstore.search(
-            query=tql,
-            exec_option=exec_option,
-        )
+        result = self.vectorstore.search(query=tql, exec_option=exec_option)
         metadatas = result["metadata"]
         texts = result["text"]
 
         docs = [
-            Document(
-                page_content=text,
-                metadata=metadata,
-            )
+            Document(page_content=text, metadata=metadata)
             for text, metadata in zip(texts, metadatas)
         ]
 
@@ -464,10 +454,7 @@ class DeepLake(VectorStore):
             metadatas = [metadatas[i] for i in indices]
 
         docs = [
-            Document(
-                page_content=text,
-                metadata=metadata,
-            )
+            Document(page_content=text, metadata=metadata)
             for text, metadata in zip(texts, metadatas)
         ]
 
@@ -480,10 +467,7 @@ class DeepLake(VectorStore):
         return docs
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """
         Return docs most similar to query.
@@ -547,10 +531,7 @@ class DeepLake(VectorStore):
         )
 
     def similarity_search_by_vector(
-        self,
-        embedding: Union[List[float], np.ndarray],
-        k: int = 4,
-        **kwargs: Any,
+        self, embedding: Union[List[float], np.ndarray], k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """
         Return docs most similar to embedding vector.
@@ -617,10 +598,7 @@ class DeepLake(VectorStore):
         )
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """
         Run similarity search with Deep Lake with distance returned.
@@ -671,12 +649,7 @@ class DeepLake(VectorStore):
             List[Tuple[Document, float]]: List of documents most similar to the query
                 text with distance in float."""
 
-        return self._search(
-            query=query,
-            k=k,
-            return_score=True,
-            **kwargs,
-        )
+        return self._search(query=query, k=k, return_score=True, **kwargs)
 
     def max_marginal_relevance_search_by_vector(
         self,
@@ -872,11 +845,7 @@ class DeepLake(VectorStore):
             DeepLake: Deep Lake dataset.
         """
         deeplake_dataset = cls(dataset_path=dataset_path, embedding=embedding, **kwargs)
-        deeplake_dataset.add_texts(
-            texts=texts,
-            metadatas=metadatas,
-            ids=ids,
-        )
+        deeplake_dataset.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return deeplake_dataset
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> bool:

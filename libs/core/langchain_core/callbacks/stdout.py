@@ -52,11 +52,7 @@ class StdOutCallbackHandler(BaseCallbackHandler):
             print_text(f"\n{llm_prefix}")
 
     def on_text(
-        self,
-        text: str,
-        color: Optional[str] = None,
-        end: str = "",
-        **kwargs: Any,
+        self, text: str, color: Optional[str] = None, end: str = "", **kwargs: Any
     ) -> None:
         """Run when agent ends."""
         print_text(text, color=color or self.color, end=end)

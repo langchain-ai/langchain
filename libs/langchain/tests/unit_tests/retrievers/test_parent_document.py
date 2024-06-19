@@ -30,9 +30,7 @@ def test_parent_document_retriever_initialization() -> None:
     child_splitter = CharacterTextSplitter(chunk_size=400)
     documents = [Document(page_content="test document")]
     retriever = ParentDocumentRetriever(
-        vectorstore=vectorstore,
-        docstore=store,
-        child_splitter=child_splitter,
+        vectorstore=vectorstore, docstore=store, child_splitter=child_splitter
     )
     retriever.add_documents(documents)
     results = retriever.invoke("0")

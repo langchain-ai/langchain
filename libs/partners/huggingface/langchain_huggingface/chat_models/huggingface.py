@@ -53,9 +53,7 @@ class TGI_MESSAGE:
     tool_calls: List[Dict]
 
 
-def _convert_message_to_chat_message(
-    message: BaseMessage,
-) -> Dict:
+def _convert_message_to_chat_message(message: BaseMessage) -> Dict:
     if isinstance(message, ChatMessage):
         return dict(role=message.role, content=message.content)
     elif isinstance(message, HumanMessage):
@@ -81,18 +79,12 @@ def _convert_message_to_chat_message(
     elif isinstance(message, SystemMessage):
         return dict(role="system", content=message.content)
     elif isinstance(message, ToolMessage):
-        return {
-            "role": "tool",
-            "content": message.content,
-            "name": message.name,
-        }
+        return {"role": "tool", "content": message.content, "name": message.name}
     else:
         raise ValueError(f"Got unknown type {message}")
 
 
-def _convert_TGI_message_to_LC_message(
-    _message: TGI_MESSAGE,
-) -> BaseMessage:
+def _convert_TGI_message_to_LC_message(_message: TGI_MESSAGE) -> BaseMessage:
     role = _message.role
     assert role == "assistant", f"Expected role to be 'assistant', got {role}"
     content = cast(str, _message.content)
@@ -162,7 +154,8 @@ class ChatHuggingFace(BaseChatModel):
         .. code-block:: python
 
             from huggingface_hub import login
-            login() # You will be prompted for your HF key, which will then be saved locally
+
+            login()  # You will be prompted for your HF key, which will then be saved locally
 
     Key init args — completion params:
         llm: `HuggingFaceTextGenInference`, `HuggingFaceEndpoint`, `HuggingFaceHub`, or
@@ -283,9 +276,7 @@ class ChatHuggingFace(BaseChatModel):
 
         .. code-block:: python
 
-            [{'name': 'GetPopulation',
-              'args': {'location': 'Los Angeles, CA'},
-              'id': '0'}]
+            [{"name": "GetPopulation", "args": {"location": "Los Angeles, CA"}, "id": "0"}]
 
     Response metadata
         .. code-block:: python
@@ -294,10 +285,13 @@ class ChatHuggingFace(BaseChatModel):
             ai_msg.response_metadata
 
         .. code-block:: python
-            {'token_usage': ChatCompletionOutputUsage(completion_tokens=100,
-            prompt_tokens=8, total_tokens=108),
-             'model': '',
-             'finish_reason': 'length'}
+            {
+                "token_usage": ChatCompletionOutputUsage(
+                    completion_tokens=100, prompt_tokens=8, total_tokens=108
+                ),
+                "model": "",
+                "finish_reason": "length",
+            }
 
     """  # noqa: E501
 
@@ -390,10 +384,7 @@ class ChatHuggingFace(BaseChatModel):
             )
             return self._to_chat_result(llm_result)
 
-    def _to_chat_prompt(
-        self,
-        messages: List[BaseMessage],
-    ) -> str:
+    def _to_chat_prompt(self, messages: List[BaseMessage]) -> str:
         """Convert a list of messages into a prompt format expected by wrapped LLM."""
         if not messages:
             raise ValueError("At least one HumanMessage must be provided!")

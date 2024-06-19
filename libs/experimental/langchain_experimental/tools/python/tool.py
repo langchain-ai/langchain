@@ -55,9 +55,7 @@ class PythonREPLTool(BaseTool):
     sanitize_input: bool = True
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> Any:
         """Use the tool."""
         if self.sanitize_input:
@@ -65,9 +63,7 @@ class PythonREPLTool(BaseTool):
         return self.python_repl.run(query)
 
     async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> Any:
         """Use the tool asynchronously."""
         if self.sanitize_input:
@@ -109,9 +105,7 @@ class PythonAstREPLTool(BaseTool):
         return values
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         try:
@@ -138,9 +132,7 @@ class PythonAstREPLTool(BaseTool):
             return "{}: {}".format(type(e).__name__, str(e))
 
     async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> Any:
         """Use the tool asynchronously."""
 

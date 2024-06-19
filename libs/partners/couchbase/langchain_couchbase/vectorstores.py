@@ -3,15 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-)
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import couchbase.search as search
 from couchbase.cluster import Cluster
@@ -405,11 +397,7 @@ class CouchbaseVectorStore(VectorStore):
 
         search_req = search.SearchRequest.create(
             VectorSearch.from_vector_query(
-                VectorQuery(
-                    self._embedding_key,
-                    embedding,
-                    k,
-                )
+                VectorQuery(self._embedding_key, embedding, k)
             )
         )
         try:
@@ -417,11 +405,7 @@ class CouchbaseVectorStore(VectorStore):
                 search_iter = self._scope.search(
                     self._index_name,
                     search_req,
-                    SearchOptions(
-                        limit=k,
-                        fields=fields,
-                        raw=search_options,
-                    ),
+                    SearchOptions(limit=k, fields=fields, raw=search_options),
                 )
 
             else:
@@ -508,9 +492,7 @@ class CouchbaseVectorStore(VectorStore):
 
     @classmethod
     def _from_kwargs(
-        cls: Type[CouchbaseVectorStore],
-        embedding: Embeddings,
-        **kwargs: Any,
+        cls: Type[CouchbaseVectorStore], embedding: Embeddings, **kwargs: Any
     ) -> CouchbaseVectorStore:
         """Initialize the Couchbase vector store from keyword arguments for the
         vector store.

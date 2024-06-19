@@ -88,9 +88,7 @@ class OpenAPIToolkit(BaseToolkit):
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
         json_agent_tool = Tool(
-            name="json_explorer",
-            func=self.json_agent.run,
-            description=DESCRIPTION,
+            name="json_explorer", func=self.json_agent.run, description=DESCRIPTION
         )
         request_toolkit = RequestsToolkit(
             requests_wrapper=self.requests_wrapper,

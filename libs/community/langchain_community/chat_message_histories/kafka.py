@@ -98,8 +98,7 @@ class KafkaChatMessageHistory(BaseChatMessageHistory):
             from langchain_community.chat_message_histories import KafkaChatMessageHistory
 
             history = KafkaChatMessageHistory(
-                session_id="your_session_id",
-                bootstrap_servers="host:port",
+                session_id="your_session_id", bootstrap_servers="host:port"
             )
 
     Add and retrieve messages:
@@ -180,16 +179,13 @@ class KafkaChatMessageHistory(BaseChatMessageHistory):
         self.producer = Producer({BOOTSTRAP_SERVERS_CONFIG: bootstrap_servers})
 
     def add_messages(
-        self,
-        messages: Sequence[BaseMessage],
-        flush_timeout_seconds: float = 5.0,
+        self, messages: Sequence[BaseMessage], flush_timeout_seconds: float = 5.0
     ) -> None:
         """Add messages to the chat history by producing to the Kafka topic."""
         try:
             for message in messages:
                 self.producer.produce(
-                    topic=self.session_id,
-                    value=json.dumps(message_to_dict(message)),
+                    topic=self.session_id, value=json.dumps(message_to_dict(message))
                 )
             message_remaining = self.producer.flush(flush_timeout_seconds)
             if message_remaining > 0:

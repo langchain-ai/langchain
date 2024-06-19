@@ -135,10 +135,7 @@ def test_visit_structured_query_filter() -> None:
     query = "What is the capital of France?"
     comp = Comparison(comparator=Comparator.EQ, attribute="foo", value="1")
     structured_query = StructuredQuery(query=query, filter=comp, limit=None)
-    expected = (
-        query,
-        {"filter": [{"term": {"metadata.foo.keyword": "1"}}]},
-    )
+    expected = (query, {"filter": [{"term": {"metadata.foo.keyword": "1"}}]})
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
 

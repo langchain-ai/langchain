@@ -272,10 +272,7 @@ class Sambaverse(LLM):
         return tuning_params
 
     def _handle_nlp_predict(
-        self,
-        sdk: SVEndpointHandler,
-        prompt: Union[List[str], str],
-        tuning_params: str,
+        self, sdk: SVEndpointHandler, prompt: Union[List[str], str], tuning_params: str
     ) -> str:
         """
         Perform an NLP prediction using the Sambaverse endpoint handler.
@@ -512,8 +509,7 @@ class SSEndpointHandler:
         return result
 
     def _process_streaming_response(
-        self,
-        response: requests.Response,
+        self, response: requests.Response
     ) -> Generator[Dict, None, None]:
         """Process the streaming response"""
         if "nlp" in self.api_base_uri:
@@ -600,9 +596,7 @@ class SSEndpointHandler:
                 f"handling of endpoint uri: {self.api_base_uri} not implemented"
             )
         response = self.http_session.post(
-            self._get_full_url(f"{project}/{endpoint}"),
-            headers={"key": key},
-            json=data,
+            self._get_full_url(f"{project}/{endpoint}"), headers={"key": key}, json=data
         )
         return self._process_response(response)
 

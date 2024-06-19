@@ -24,7 +24,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "get_num_tokens_anthropic",
-    "get_token_ids_anthropic",
-]
+__all__ = ["get_num_tokens_anthropic", "get_token_ids_anthropic"]

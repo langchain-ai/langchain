@@ -4,16 +4,7 @@
 import pytest
 import sqlalchemy as sa
 from packaging import version
-from sqlalchemy import (
-    Column,
-    Integer,
-    MetaData,
-    String,
-    Table,
-    Text,
-    insert,
-    select,
-)
+from sqlalchemy import Column, Integer, MetaData, String, Table, Text, insert, select
 from sqlalchemy.engine import Engine, Result
 
 from langchain_community.utilities.sql_database import SQLDatabase, truncate_word

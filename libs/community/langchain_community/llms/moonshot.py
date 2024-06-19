@@ -21,9 +21,7 @@ class _MoonshotClient(BaseModel):
     def completion(self, request: Any) -> Any:
         headers = {"Authorization": f"Bearer {self.api_key.get_secret_value()}"}
         response = requests.post(
-            f"{self.base_url}/chat/completions",
-            headers=headers,
-            json=request,
+            f"{self.base_url}/chat/completions", headers=headers, json=request
         )
         if not response.ok:
             raise ValueError(f"HTTP {response.status_code} error: {response.text}")

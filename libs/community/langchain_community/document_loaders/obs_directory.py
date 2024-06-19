@@ -34,10 +34,7 @@ class OBSDirectoryLoader(BaseLoader):
         Example:
             To create a new OBSDirectoryLoader:
             ```
-            config = {
-                "ak": "your-access-key",
-                "sk": "your-secret-key"
-            }
+            config = {"ak": "your-access-key", "sk": "your-secret-key"}
             ```
             directory_loader = OBSDirectoryLoader("your-bucket-name", "your-end-endpoint", config, "your-prefix")
         """  # noqa: E501

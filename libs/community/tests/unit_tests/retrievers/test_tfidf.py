@@ -46,10 +46,7 @@ def test_save_local_load_local() -> None:
     file_name = "tfidf_vectorizer"
     temp_timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     with TemporaryDirectory(suffix="_" + temp_timestamp + "/") as temp_folder:
-        tfidf_retriever.save_local(
-            folder_path=temp_folder,
-            file_name=file_name,
-        )
+        tfidf_retriever.save_local(folder_path=temp_folder, file_name=file_name)
         assert os.path.exists(os.path.join(temp_folder, f"{file_name}.joblib"))
         assert os.path.exists(os.path.join(temp_folder, f"{file_name}.pkl"))
 

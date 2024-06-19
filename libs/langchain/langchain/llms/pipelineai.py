@@ -18,6 +18,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "PipelineAI",
-]
+__all__ = ["PipelineAI"]

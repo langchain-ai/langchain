@@ -72,29 +72,16 @@ class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
             qianfan`
         """
         values["qianfan_ak"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "qianfan_ak",
-                "QIANFAN_AK",
-                default="",
-            )
+            get_from_dict_or_env(values, "qianfan_ak", "QIANFAN_AK", default="")
         )
         values["qianfan_sk"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "qianfan_sk",
-                "QIANFAN_SK",
-                default="",
-            )
+            get_from_dict_or_env(values, "qianfan_sk", "QIANFAN_SK", default="")
         )
 
         try:
             import qianfan
 
-            params = {
-                **values.get("init_kwargs", {}),
-                "model": values["model"],
-            }
+            params = {**values.get("init_kwargs", {}), "model": values["model"]}
             if values["qianfan_ak"].get_secret_value() != "":
                 params["ak"] = values["qianfan_ak"].get_secret_value()
             if values["qianfan_sk"].get_secret_value() != "":

@@ -18,9 +18,7 @@ def test_api_key_is_string() -> None:
 
 
 @pytest.mark.requires("premai")
-def test_api_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
-) -> None:
+def test_api_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> None:
     llm = PremAIEmbeddings(  # type: ignore[call-arg]
         premai_api_key="secret-api-key",  # type: ignore[arg-type]
         project_id=8,

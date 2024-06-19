@@ -39,19 +39,13 @@ def test_visit_operation() -> None:
 
 def test_visit_structured_query() -> None:
     query = "What is the capital of France?"
-    structured_query = StructuredQuery(
-        query=query,
-        filter=None,
-    )
+    structured_query = StructuredQuery(query=query, filter=None)
     expected: Tuple[str, Dict] = (query, {})
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
 
     comp = Comparison(comparator=Comparator.LT, attribute="foo", value=["1", "2"])
-    structured_query = StructuredQuery(
-        query=query,
-        filter=comp,
-    )
+    structured_query = StructuredQuery(query=query, filter=comp)
     expected = (
         query,
         {"tql": "SELECT * WHERE (metadata['foo'] < 1 or metadata['foo'] < 2)"},
@@ -67,10 +61,7 @@ def test_visit_structured_query() -> None:
             Comparison(comparator=Comparator.LT, attribute="abc", value=["1", "2"]),
         ],
     )
-    structured_query = StructuredQuery(
-        query=query,
-        filter=op,
-    )
+    structured_query = StructuredQuery(query=query, filter=op)
     expected = (
         query,
         {

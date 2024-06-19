@@ -21,10 +21,7 @@ def selector() -> NGramOverlapExampleSelector:
     prompts = PromptTemplate(
         input_variables=["input", "output"], template="Input: {input}\nOutput: {output}"
     )
-    selector = NGramOverlapExampleSelector(
-        examples=EXAMPLES,
-        example_prompt=prompts,
-    )
+    selector = NGramOverlapExampleSelector(examples=EXAMPLES, example_prompt=prompts)
     return selector
 
 

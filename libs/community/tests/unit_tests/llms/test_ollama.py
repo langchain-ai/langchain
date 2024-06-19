@@ -54,9 +54,7 @@ def test_handle_if_headers_not_provided(monkeypatch: MonkeyPatch) -> None:
 
     def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
         assert url == "https://ollama-hostname:8000/api/generate"
-        assert headers == {
-            "Content-Type": "application/json",
-        }
+        assert headers == {"Content-Type": "application/json"}
         assert json is not None
         assert stream is True
         assert timeout == 300
@@ -74,9 +72,7 @@ def test_handle_kwargs_top_level_parameters(monkeypatch: MonkeyPatch) -> None:
 
     def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
         assert url == "https://ollama-hostname:8000/api/generate"
-        assert headers == {
-            "Content-Type": "application/json",
-        }
+        assert headers == {"Content-Type": "application/json"}
         assert json == {
             "format": None,
             "images": None,
@@ -122,9 +118,7 @@ def test_handle_kwargs_with_unknown_param(monkeypatch: MonkeyPatch) -> None:
 
     def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
         assert url == "https://ollama-hostname:8000/api/generate"
-        assert headers == {
-            "Content-Type": "application/json",
-        }
+        assert headers == {"Content-Type": "application/json"}
         assert json == {
             "format": None,
             "images": None,
@@ -171,9 +165,7 @@ def test_handle_kwargs_with_options(monkeypatch: MonkeyPatch) -> None:
 
     def mock_post(url, headers, json, stream, timeout):  # type: ignore[no-untyped-def]
         assert url == "https://ollama-hostname:8000/api/generate"
-        assert headers == {
-            "Content-Type": "application/json",
-        }
+        assert headers == {"Content-Type": "application/json"}
         assert json == {
             "format": None,
             "images": None,

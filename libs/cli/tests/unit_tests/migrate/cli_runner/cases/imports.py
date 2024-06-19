@@ -28,5 +28,5 @@ cases = [
                 "chain = ChatOpenAI()",
             ],
         ),
-    ),
+    )
 ]

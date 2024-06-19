@@ -89,9 +89,7 @@ class LLMSherpaFileLoader(BaseLoader):
 
         return valid_url
 
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load file."""
         from llmsherpa.readers import LayoutPDFReader
 
@@ -125,18 +123,12 @@ class LLMSherpaFileLoader(BaseLoader):
         if self.strategy == "html":
             yield from [
                 Document(
-                    page_content=doc.to_html(),
-                    metadata={
-                        "source": self.file_path,
-                    },
+                    page_content=doc.to_html(), metadata={"source": self.file_path}
                 )
             ]
         if self.strategy == "text":
             yield from [
                 Document(
-                    page_content=doc.to_text(),
-                    metadata={
-                        "source": self.file_path,
-                    },
+                    page_content=doc.to_text(), metadata={"source": self.file_path}
                 )
             ]

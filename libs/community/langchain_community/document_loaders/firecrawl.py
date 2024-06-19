@@ -61,6 +61,5 @@ class FireCrawlLoader(BaseLoader):
             )
         for doc in firecrawl_docs:
             yield Document(
-                page_content=doc.get("markdown", ""),
-                metadata=doc.get("metadata", {}),
+                page_content=doc.get("markdown", ""), metadata=doc.get("metadata", {})
             )

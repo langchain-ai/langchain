@@ -47,23 +47,14 @@ def test_visit_operation() -> None:
 
 def test_visit_structured_query() -> None:
     query = "What is the capital of France?"
-    structured_query = StructuredQuery(
-        query=query,
-        filter=None,
-    )
+    structured_query = StructuredQuery(query=query, filter=None)
     expected: Tuple[str, Dict] = (query, {})
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
 
     comp = Comparison(comparator=Comparator.LT, attribute="foo", value=["1", "2"])
-    structured_query = StructuredQuery(
-        query=query,
-        filter=comp,
-    )
-    expected = (
-        query,
-        {"where_str": "metadata.foo < ['1', '2']"},
-    )
+    structured_query = StructuredQuery(query=query, filter=comp)
+    expected = (query, {"where_str": "metadata.foo < ['1', '2']"})
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual
 
@@ -74,13 +65,7 @@ def test_visit_structured_query() -> None:
             Comparison(comparator=Comparator.EQ, attribute="bar", value="baz"),
         ],
     )
-    structured_query = StructuredQuery(
-        query=query,
-        filter=op,
-    )
-    expected = (
-        query,
-        {"where_str": "metadata.foo < 2 AND metadata.bar = 'baz'"},
-    )
+    structured_query = StructuredQuery(query=query, filter=op)
+    expected = (query, {"where_str": "metadata.foo < 2 AND metadata.bar = 'baz'"})
     actual = DEFAULT_TRANSLATOR.visit_structured_query(structured_query)
     assert expected == actual

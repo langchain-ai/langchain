@@ -14,13 +14,9 @@ logger = logging.getLogger(__name__)
 class ScheduleMessageSchema(BaseModel):
     """Input for ScheduleMessageTool."""
 
-    message: str = Field(
-        ...,
-        description="The message to be sent.",
-    )
+    message: str = Field(..., description="The message to be sent.")
     channel: str = Field(
-        ...,
-        description="The channel, private group, or IM channel to send message to.",
+        ..., description="The channel, private group, or IM channel to send message to."
     )
     timestamp: str = Field(
         ...,

@@ -60,10 +60,7 @@ def test_embeddings_clustering_filter() -> None:
     docs = [Document(page_content=t) for t in texts]
     embeddings = OpenAIEmbeddings()
     redundant_filter = EmbeddingsClusteringFilter(
-        embeddings=embeddings,
-        num_clusters=3,
-        num_closest=1,
-        sorted=True,
+        embeddings=embeddings, num_clusters=3, num_closest=1, sorted=True
     )
     actual = redundant_filter.transform_documents(docs)
     assert len(actual) == 3

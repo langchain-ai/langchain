@@ -35,11 +35,7 @@ def _check_docarray_import() -> None:
 class DocArrayIndex(VectorStore, ABC):
     """Base class for `DocArray` based vector stores."""
 
-    def __init__(
-        self,
-        doc_index: "BaseDocIndex",
-        embedding: Embeddings,
-    ):
+    def __init__(self, doc_index: "BaseDocIndex", embedding: Embeddings):
         """Initialize a vector store from DocArray's DocIndex."""
         self.doc_index = doc_index
         self.embedding = embedding
@@ -128,10 +124,7 @@ class DocArrayIndex(VectorStore, ABC):
         return [doc for doc, _ in results]
 
     def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs and relevance scores, normalized on a scale from 0 to 1.
 

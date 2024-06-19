@@ -43,10 +43,7 @@ class Portkey:
 
         os.environ["OPENAI_API_BASE"] = Portkey.base
 
-        headers = {
-            "x-portkey-api-key": api_key,
-            "x-portkey-mode": "proxy openai",
-        }
+        headers = {"x-portkey-api-key": api_key, "x-portkey-mode": "proxy openai"}
 
         if trace_id:
             headers["x-portkey-trace-id"] = trace_id

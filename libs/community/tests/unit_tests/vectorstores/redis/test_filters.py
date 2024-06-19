@@ -2,15 +2,9 @@ from typing import Any
 
 import pytest
 
-from langchain_community.vectorstores.redis import (
-    RedisNum as Num,
-)
-from langchain_community.vectorstores.redis import (
-    RedisTag as Tag,
-)
-from langchain_community.vectorstores.redis import (
-    RedisText as Text,
-)
+from langchain_community.vectorstores.redis import RedisNum as Num
+from langchain_community.vectorstores.redis import RedisTag as Tag
+from langchain_community.vectorstores.redis import RedisText as Text
 
 
 # Test cases for various tag scenarios

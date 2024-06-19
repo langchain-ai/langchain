@@ -4,10 +4,7 @@ from typing import List
 import pytest
 from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain_core.outputs import (
-    ChatGeneration,
-    LLMResult,
-)
+from langchain_core.outputs import ChatGeneration, LLMResult
 
 from langchain_community.chat_models.yuan2 import ChatYuan2
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -24,9 +21,7 @@ def test_chat_yuan2() -> None:
         max_retries=3,
         streaming=False,
     )
-    messages = [
-        HumanMessage(content="Hello"),
-    ]
+    messages = [HumanMessage(content="Hello")]
     response = chat.invoke(messages)
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
@@ -62,9 +57,7 @@ def test_chat_yuan2_generate() -> None:
         max_retries=3,
         streaming=False,
     )
-    messages: List = [
-        HumanMessage(content="Hello"),
-    ]
+    messages: List = [HumanMessage(content="Hello")]
     response = chat.generate([messages])
     assert isinstance(response, LLMResult)
     assert len(response.generations) == 1
@@ -91,9 +84,7 @@ def test_chat_yuan2_streaming() -> None:
         streaming=True,
         callbacks=callback_manager,
     )
-    messages = [
-        HumanMessage(content="Hello"),
-    ]
+    messages = [HumanMessage(content="Hello")]
     response = chat.invoke(messages)
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
@@ -110,9 +101,7 @@ async def test_async_chat_yuan2() -> None:
         max_retries=3,
         streaming=False,
     )
-    messages: List = [
-        HumanMessage(content="Hello"),
-    ]
+    messages: List = [HumanMessage(content="Hello")]
     response = await chat.agenerate([messages])
     assert isinstance(response, LLMResult)
     assert len(response.generations) == 1
@@ -138,9 +127,7 @@ async def test_async_chat_yuan2_streaming() -> None:
         streaming=True,
         callbacks=callback_manager,
     )
-    messages: List = [
-        HumanMessage(content="Hello"),
-    ]
+    messages: List = [HumanMessage(content="Hello")]
     response = await chat.agenerate([messages])
     assert callback_handler.llm_streams > 0
     assert isinstance(response, LLMResult)

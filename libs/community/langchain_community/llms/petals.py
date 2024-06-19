@@ -24,6 +24,7 @@ class Petals(LLM):
         .. code-block:: python
 
             from langchain_community.llms import petals
+
             petals = Petals()
 
     """

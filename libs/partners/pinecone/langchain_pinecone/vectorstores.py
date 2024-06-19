@@ -47,9 +47,7 @@ class PineconeVectorStore(VectorStore):
             index_name = "my-index"
             namespace = "my-namespace"
             vectorstore = Pinecone(
-                index_name=index_name,
-                embedding=embedding,
-                namespace=namespace,
+                index_name=index_name, embedding=embedding, namespace=namespace
             )
     """
 
@@ -157,10 +155,7 @@ class PineconeVectorStore(VectorStore):
             embeddings = self._embedding.embed_documents(chunk_texts)
             async_res = [
                 self._index.upsert(
-                    vectors=batch,
-                    namespace=namespace,
-                    async_req=async_req,
-                    **kwargs,
+                    vectors=batch, namespace=namespace, async_req=async_req, **kwargs
                 )
                 for batch in batch_iterate(
                     batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
@@ -429,10 +424,7 @@ class PineconeVectorStore(VectorStore):
                 embeddings = OpenAIEmbeddings()
                 index_name = "my-index"
                 vectorstore = PineconeVectorStore.from_texts(
-                    texts,
-                    index_name=index_name,
-                    embedding=embedding,
-                    namespace=namespace,
+                    texts, index_name=index_name, embedding=embedding, namespace=namespace
                 )
         """
         pinecone_index = cls.get_pinecone_index(index_name, pool_threads)

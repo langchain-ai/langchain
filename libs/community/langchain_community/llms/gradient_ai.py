@@ -36,6 +36,7 @@ class GradientLLM(BaseLLM):
         .. code-block:: python
 
             from langchain_community.llms import GradientLLM
+
             GradientLLM(
                 model="99148c6d-c2a0-4fbe-a4a7-e7c05bdb8a09_base_ml_model",
                 model_kwargs={
@@ -172,22 +173,15 @@ class GradientLLM(BaseLLM):
                 "content-type": "application/json",
             },
             json=dict(
-                samples=tuple(
-                    {
-                        "inputs": input,
-                    }
-                    for input in inputs
-                )
+                samples=tuple({"inputs": input} for input in inputs)
                 if multipliers is None
                 else tuple(
                     {
                         "inputs": input,
-                        "fineTuningParameters": {
-                            "multiplier": multiplier,
-                        },
+                        "fineTuningParameters": {"multiplier": multiplier},
                     }
                     for input, multiplier in zip(inputs, multipliers)
-                ),
+                )
             ),
         )
 
@@ -344,11 +338,7 @@ class GradientLLM(BaseLLM):
             generations.append([Generation(text=generation)])
         return LLMResult(generations=generations)
 
-    def train_unsupervised(
-        self,
-        inputs: Sequence[str],
-        **kwargs: Any,
-    ) -> TrainResult:
+    def train_unsupervised(self, inputs: Sequence[str], **kwargs: Any) -> TrainResult:
         try:
             response = requests.post(
                 **self._kwargs_post_fine_tune_request(inputs, kwargs)
@@ -366,9 +356,7 @@ class GradientLLM(BaseLLM):
         return TrainResult(loss=loss)
 
     async def atrain_unsupervised(
-        self,
-        inputs: Sequence[str],
-        **kwargs: Any,
+        self, inputs: Sequence[str], **kwargs: Any
     ) -> TrainResult:
         if not self.aiosession:
             async with aiohttp.ClientSession() as session:

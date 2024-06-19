@@ -31,14 +31,10 @@ class ToyLoader(BaseLoader):
         """Initialize with the documents to return."""
         self.documents = documents
 
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         yield from self.documents
 
-    async def alazy_load(
-        self,
-    ) -> AsyncIterator[Document]:
+    async def alazy_load(self) -> AsyncIterator[Document]:
         for document in self.documents:
             yield document
 
@@ -172,12 +168,8 @@ def test_indexing_same_content(
     """Indexing some content to confirm it gets added only once."""
     loader = ToyLoader(
         documents=[
-            Document(
-                page_content="This is a test document.",
-            ),
-            Document(
-                page_content="This is another document.",
-            ),
+            Document(page_content="This is a test document."),
+            Document(page_content="This is another document."),
         ]
     )
 
@@ -206,12 +198,8 @@ async def test_aindexing_same_content(
     """Indexing some content to confirm it gets added only once."""
     loader = ToyLoader(
         documents=[
-            Document(
-                page_content="This is a test document.",
-            ),
-            Document(
-                page_content="This is another document.",
-            ),
+            Document(page_content="This is a test document."),
+            Document(page_content="This is another document."),
         ]
     )
 
@@ -240,12 +228,8 @@ def test_index_simple_delete_full(
     """Indexing some content to confirm it gets added only once."""
     loader = ToyLoader(
         documents=[
-            Document(
-                page_content="This is a test document.",
-            ),
-            Document(
-                page_content="This is another document.",
-            ),
+            Document(page_content="This is a test document."),
+            Document(page_content="This is another document."),
         ]
     )
 
@@ -271,11 +255,9 @@ def test_index_simple_delete_full(
 
     loader = ToyLoader(
         documents=[
+            Document(page_content="mutated document 1"),
             Document(
-                page_content="mutated document 1",
-            ),
-            Document(
-                page_content="This is another document.",  # <-- Same as original
+                page_content="This is another document."  # <-- Same as original
             ),
         ]
     )
@@ -317,12 +299,8 @@ async def test_aindex_simple_delete_full(
     """Indexing some content to confirm it gets added only once."""
     loader = ToyLoader(
         documents=[
-            Document(
-                page_content="This is a test document.",
-            ),
-            Document(
-                page_content="This is another document.",
-            ),
+            Document(page_content="This is a test document."),
+            Document(page_content="This is another document."),
         ]
     )
 
@@ -348,11 +326,9 @@ async def test_aindex_simple_delete_full(
 
     loader = ToyLoader(
         documents=[
+            Document(page_content="mutated document 1"),
             Document(
-                page_content="mutated document 1",
-            ),
-            Document(
-                page_content="This is another document.",  # <-- Same as original
+                page_content="This is another document."  # <-- Same as original
             ),
         ]
     )
@@ -392,17 +368,12 @@ def test_incremental_fails_with_bad_source_ids(
     """Test indexing with incremental deletion strategy."""
     loader = ToyLoader(
         documents=[
+            Document(page_content="This is a test document.", metadata={"source": "1"}),
             Document(
-                page_content="This is a test document.",
-                metadata={"source": "1"},
+                page_content="This is another document.", metadata={"source": "2"}
             ),
             Document(
-                page_content="This is another document.",
-                metadata={"source": "2"},
-            ),
-            Document(
-                page_content="This is yet another document.",
-                metadata={"source": None},
+                page_content="This is yet another document.", metadata={"source": None}
             ),
         ]
     )
@@ -428,29 +399,19 @@ async def test_aincremental_fails_with_bad_source_ids(
     """Test indexing with incremental deletion strategy."""
     loader = ToyLoader(
         documents=[
+            Document(page_content="This is a test document.", metadata={"source": "1"}),
             Document(
-                page_content="This is a test document.",
-                metadata={"source": "1"},
+                page_content="This is another document.", metadata={"source": "2"}
             ),
             Document(
-                page_content="This is another document.",
-                metadata={"source": "2"},
-            ),
-            Document(
-                page_content="This is yet another document.",
-                metadata={"source": None},
+                page_content="This is yet another document.", metadata={"source": None}
             ),
         ]
     )
 
     with pytest.raises(ValueError):
         # Should raise an error because no source id function was specified
-        await aindex(
-            loader,
-            arecord_manager,
-            vector_store,
-            cleanup="incremental",
-        )
+        await aindex(loader, arecord_manager, vector_store, cleanup="incremental")
 
     with pytest.raises(ValueError):
         # Should raise an error because no source id function was specified
@@ -469,13 +430,9 @@ def test_no_delete(
     """Test indexing without a deletion strategy."""
     loader = ToyLoader(
         documents=[
+            Document(page_content="This is a test document.", metadata={"source": "1"}),
             Document(
-                page_content="This is a test document.",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="This is another document.",
-                metadata={"source": "2"},
+                page_content="This is another document.", metadata={"source": "2"}
             ),
         ]
     )
@@ -484,44 +441,22 @@ def test_no_delete(
         record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert index(
-            loader,
-            record_manager,
-            vector_store,
-            cleanup=None,
-            source_id_key="source",
-        ) == {
-            "num_added": 2,
-            "num_deleted": 0,
-            "num_skipped": 0,
-            "num_updated": 0,
-        }
+            loader, record_manager, vector_store, cleanup=None, source_id_key="source"
+        ) == {"num_added": 2, "num_deleted": 0, "num_skipped": 0, "num_updated": 0}
 
     # If we add the same content twice it should be skipped
     with patch.object(
         record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert index(
-            loader,
-            record_manager,
-            vector_store,
-            cleanup=None,
-            source_id_key="source",
-        ) == {
-            "num_added": 0,
-            "num_deleted": 0,
-            "num_skipped": 2,
-            "num_updated": 0,
-        }
+            loader, record_manager, vector_store, cleanup=None, source_id_key="source"
+        ) == {"num_added": 0, "num_deleted": 0, "num_skipped": 2, "num_updated": 0}
 
     loader = ToyLoader(
         documents=[
+            Document(page_content="mutated content", metadata={"source": "1"}),
             Document(
-                page_content="mutated content",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="This is another document.",
-                metadata={"source": "2"},
+                page_content="This is another document.", metadata={"source": "2"}
             ),
         ]
     )
@@ -531,17 +466,8 @@ def test_no_delete(
         record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert index(
-            loader,
-            record_manager,
-            vector_store,
-            cleanup=None,
-            source_id_key="source",
-        ) == {
-            "num_added": 1,
-            "num_deleted": 0,
-            "num_skipped": 1,
-            "num_updated": 0,
-        }
+            loader, record_manager, vector_store, cleanup=None, source_id_key="source"
+        ) == {"num_added": 1, "num_deleted": 0, "num_skipped": 1, "num_updated": 0}
 
 
 async def test_ano_delete(
@@ -550,13 +476,9 @@ async def test_ano_delete(
     """Test indexing without a deletion strategy."""
     loader = ToyLoader(
         documents=[
+            Document(page_content="This is a test document.", metadata={"source": "1"}),
             Document(
-                page_content="This is a test document.",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="This is another document.",
-                metadata={"source": "2"},
+                page_content="This is another document.", metadata={"source": "2"}
             ),
         ]
     )
@@ -565,44 +487,22 @@ async def test_ano_delete(
         arecord_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            loader,
-            arecord_manager,
-            vector_store,
-            cleanup=None,
-            source_id_key="source",
-        ) == {
-            "num_added": 2,
-            "num_deleted": 0,
-            "num_skipped": 0,
-            "num_updated": 0,
-        }
+            loader, arecord_manager, vector_store, cleanup=None, source_id_key="source"
+        ) == {"num_added": 2, "num_deleted": 0, "num_skipped": 0, "num_updated": 0}
 
     # If we add the same content twice it should be skipped
     with patch.object(
         arecord_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            loader,
-            arecord_manager,
-            vector_store,
-            cleanup=None,
-            source_id_key="source",
-        ) == {
-            "num_added": 0,
-            "num_deleted": 0,
-            "num_skipped": 2,
-            "num_updated": 0,
-        }
+            loader, arecord_manager, vector_store, cleanup=None, source_id_key="source"
+        ) == {"num_added": 0, "num_deleted": 0, "num_skipped": 2, "num_updated": 0}
 
     loader = ToyLoader(
         documents=[
+            Document(page_content="mutated content", metadata={"source": "1"}),
             Document(
-                page_content="mutated content",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="This is another document.",
-                metadata={"source": "2"},
+                page_content="This is another document.", metadata={"source": "2"}
             ),
         ]
     )
@@ -612,17 +512,8 @@ async def test_ano_delete(
         arecord_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
     ):
         assert await aindex(
-            loader,
-            arecord_manager,
-            vector_store,
-            cleanup=None,
-            source_id_key="source",
-        ) == {
-            "num_added": 1,
-            "num_deleted": 0,
-            "num_skipped": 1,
-            "num_updated": 0,
-        }
+            loader, arecord_manager, vector_store, cleanup=None, source_id_key="source"
+        ) == {"num_added": 1, "num_deleted": 0, "num_skipped": 1, "num_updated": 0}
 
 
 def test_incremental_delete(
@@ -631,13 +522,9 @@ def test_incremental_delete(
     """Test indexing with incremental deletion strategy."""
     loader = ToyLoader(
         documents=[
+            Document(page_content="This is a test document.", metadata={"source": "1"}),
             Document(
-                page_content="This is a test document.",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="This is another document.",
-                metadata={"source": "2"},
+                page_content="This is another document.", metadata={"source": "2"}
             ),
         ]
     )
@@ -651,12 +538,7 @@ def test_incremental_delete(
             vector_store,
             cleanup="incremental",
             source_id_key="source",
-        ) == {
-            "num_added": 2,
-            "num_deleted": 0,
-            "num_skipped": 0,
-            "num_updated": 0,
-        }
+        ) == {"num_added": 2, "num_deleted": 0, "num_skipped": 0, "num_updated": 0}
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
@@ -675,24 +557,13 @@ def test_incremental_delete(
             vector_store,
             cleanup="incremental",
             source_id_key="source",
-        ) == {
-            "num_added": 0,
-            "num_deleted": 0,
-            "num_skipped": 2,
-            "num_updated": 0,
-        }
+        ) == {"num_added": 0, "num_deleted": 0, "num_skipped": 2, "num_updated": 0}
 
     # Create 2 documents from the same source all with mutated content
     loader = ToyLoader(
         documents=[
-            Document(
-                page_content="mutated document 1",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="mutated document 2",
-                metadata={"source": "1"},
-            ),
+            Document(page_content="mutated document 1", metadata={"source": "1"}),
+            Document(page_content="mutated document 2", metadata={"source": "1"}),
             Document(
                 page_content="This is another document.",  # <-- Same as original
                 metadata={"source": "2"},
@@ -710,12 +581,7 @@ def test_incremental_delete(
             vector_store,
             cleanup="incremental",
             source_id_key="source",
-        ) == {
-            "num_added": 2,
-            "num_deleted": 1,
-            "num_skipped": 1,
-            "num_updated": 0,
-        }
+        ) == {"num_added": 2, "num_deleted": 1, "num_skipped": 1, "num_updated": 0}
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
@@ -735,22 +601,10 @@ def test_incremental_indexing_with_batch_size(
     """Test indexing with incremental indexing"""
     loader = ToyLoader(
         documents=[
-            Document(
-                page_content="1",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="2",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="3",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="4",
-                metadata={"source": "1"},
-            ),
+            Document(page_content="1", metadata={"source": "1"}),
+            Document(page_content="2", metadata={"source": "1"}),
+            Document(page_content="3", metadata={"source": "1"}),
+            Document(page_content="4", metadata={"source": "1"}),
         ]
     )
 
@@ -764,12 +618,7 @@ def test_incremental_indexing_with_batch_size(
             cleanup="incremental",
             source_id_key="source",
             batch_size=2,
-        ) == {
-            "num_added": 4,
-            "num_deleted": 0,
-            "num_skipped": 0,
-            "num_updated": 0,
-        }
+        ) == {"num_added": 4, "num_deleted": 0, "num_skipped": 0, "num_updated": 0}
 
         assert index(
             loader,
@@ -778,12 +627,7 @@ def test_incremental_indexing_with_batch_size(
             cleanup="incremental",
             source_id_key="source",
             batch_size=2,
-        ) == {
-            "num_added": 0,
-            "num_deleted": 0,
-            "num_skipped": 4,
-            "num_updated": 0,
-        }
+        ) == {"num_added": 0, "num_deleted": 0, "num_skipped": 4, "num_updated": 0}
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
@@ -799,22 +643,10 @@ def test_incremental_delete_with_batch_size(
     """Test indexing with incremental deletion strategy and batch size."""
     loader = ToyLoader(
         documents=[
-            Document(
-                page_content="1",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="2",
-                metadata={"source": "2"},
-            ),
-            Document(
-                page_content="3",
-                metadata={"source": "3"},
-            ),
-            Document(
-                page_content="4",
-                metadata={"source": "4"},
-            ),
+            Document(page_content="1", metadata={"source": "1"}),
+            Document(page_content="2", metadata={"source": "2"}),
+            Document(page_content="3", metadata={"source": "3"}),
+            Document(page_content="4", metadata={"source": "4"}),
         ]
     )
 
@@ -828,12 +660,7 @@ def test_incremental_delete_with_batch_size(
             cleanup="incremental",
             source_id_key="source",
             batch_size=3,
-        ) == {
-            "num_added": 4,
-            "num_deleted": 0,
-            "num_skipped": 0,
-            "num_updated": 0,
-        }
+        ) == {"num_added": 4, "num_deleted": 0, "num_skipped": 0, "num_updated": 0}
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
@@ -853,12 +680,7 @@ def test_incremental_delete_with_batch_size(
             cleanup="incremental",
             source_id_key="source",
             batch_size=3,
-        ) == {
-            "num_added": 0,
-            "num_deleted": 0,
-            "num_skipped": 4,
-            "num_updated": 0,
-        }
+        ) == {"num_added": 0, "num_deleted": 0, "num_skipped": 4, "num_updated": 0}
 
     # Attempt to index again verify that nothing changes
     with patch.object(
@@ -866,14 +688,8 @@ def test_incremental_delete_with_batch_size(
     ):
         # Docs with same content
         docs = [
-            Document(
-                page_content="1",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="2",
-                metadata={"source": "2"},
-            ),
+            Document(page_content="1", metadata={"source": "1"}),
+            Document(page_content="2", metadata={"source": "2"}),
         ]
         assert index(
             docs,
@@ -882,12 +698,7 @@ def test_incremental_delete_with_batch_size(
             cleanup="incremental",
             source_id_key="source",
             batch_size=1,
-        ) == {
-            "num_added": 0,
-            "num_deleted": 0,
-            "num_skipped": 2,
-            "num_updated": 0,
-        }
+        ) == {"num_added": 0, "num_deleted": 0, "num_skipped": 2, "num_updated": 0}
 
     # Attempt to index again verify that nothing changes
     with patch.object(
@@ -895,14 +706,8 @@ def test_incremental_delete_with_batch_size(
     ):
         # Docs with same content
         docs = [
-            Document(
-                page_content="1",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="2",
-                metadata={"source": "2"},
-            ),
+            Document(page_content="1", metadata={"source": "1"}),
+            Document(page_content="2", metadata={"source": "2"}),
         ]
         assert index(
             docs,
@@ -911,12 +716,7 @@ def test_incremental_delete_with_batch_size(
             cleanup="incremental",
             source_id_key="source",
             batch_size=1,
-        ) == {
-            "num_added": 0,
-            "num_deleted": 0,
-            "num_skipped": 2,
-            "num_updated": 0,
-        }
+        ) == {"num_added": 0, "num_deleted": 0, "num_skipped": 2, "num_updated": 0}
 
     # Try to index with changed docs now
     with patch.object(
@@ -924,14 +724,8 @@ def test_incremental_delete_with_batch_size(
     ):
         # Docs with same content
         docs = [
-            Document(
-                page_content="changed 1",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="changed 2",
-                metadata={"source": "2"},
-            ),
+            Document(page_content="changed 1", metadata={"source": "1"}),
+            Document(page_content="changed 2", metadata={"source": "2"}),
         ]
         assert index(
             docs,
@@ -939,12 +733,7 @@ def test_incremental_delete_with_batch_size(
             vector_store,
             cleanup="incremental",
             source_id_key="source",
-        ) == {
-            "num_added": 2,
-            "num_deleted": 2,
-            "num_skipped": 0,
-            "num_updated": 0,
-        }
+        ) == {"num_added": 2, "num_deleted": 2, "num_skipped": 0, "num_updated": 0}
 
 
 async def test_aincremental_delete(
@@ -953,13 +742,9 @@ async def test_aincremental_delete(
     """Test indexing with incremental deletion strategy."""
     loader = ToyLoader(
         documents=[
+            Document(page_content="This is a test document.", metadata={"source": "1"}),
             Document(
-                page_content="This is a test document.",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="This is another document.",
-                metadata={"source": "2"},
+                page_content="This is another document.", metadata={"source": "2"}
             ),
         ]
     )
@@ -973,12 +758,7 @@ async def test_aincremental_delete(
             vector_store,
             cleanup="incremental",
             source_id_key="source",
-        ) == {
-            "num_added": 2,
-            "num_deleted": 0,
-            "num_skipped": 0,
-            "num_updated": 0,
-        }
+        ) == {"num_added": 2, "num_deleted": 0, "num_skipped": 0, "num_updated": 0}
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
@@ -997,24 +777,13 @@ async def test_aincremental_delete(
             vector_store,
             cleanup="incremental",
             source_id_key="source",
-        ) == {
-            "num_added": 0,
-            "num_deleted": 0,
-            "num_skipped": 2,
-            "num_updated": 0,
-        }
+        ) == {"num_added": 0, "num_deleted": 0, "num_skipped": 2, "num_updated": 0}
 
     # Create 2 documents from the same source all with mutated content
     loader = ToyLoader(
         documents=[
-            Document(
-                page_content="mutated document 1",
-                metadata={"source": "1"},
-            ),
-            Document(
-                page_content="mutated document 2",
-                metadata={"source": "1"},
-            ),
+            Document(page_content="mutated document 1", metadata={"source": "1"}),
+            Document(page_content="mutated document 2", metadata={"source": "1"}),
             Document(
                 page_content="This is another document.",  # <-- Same as original
                 metadata={"source": "2"},
@@ -1032,12 +801,7 @@ async def test_aincremental_delete(
             vector_store,
             cleanup="incremental",
             source_id_key="source",
-        ) == {
-            "num_added": 2,
-            "num_deleted": 1,
-            "num_skipped": 1,
-            "num_updated": 0,
-        }
+        ) == {"num_added": 2, "num_deleted": 1, "num_skipped": 1, "num_updated": 0}
 
     doc_texts = set(
         # Ignoring type since doc should be in the store and not a None
@@ -1084,14 +848,8 @@ def test_deduplication(
 ) -> None:
     """Check edge case when loader returns no new docs."""
     docs = [
-        Document(
-            page_content="This is a test document.",
-            metadata={"source": "1"},
-        ),
-        Document(
-            page_content="This is a test document.",
-            metadata={"source": "1"},
-        ),
+        Document(page_content="This is a test document.", metadata={"source": "1"}),
+        Document(page_content="This is a test document.", metadata={"source": "1"}),
     ]
 
     # Should result in only a single document being added
@@ -1108,14 +866,8 @@ async def test_adeduplication(
 ) -> None:
     """Check edge case when loader returns no new docs."""
     docs = [
-        Document(
-            page_content="This is a test document.",
-            metadata={"source": "1"},
-        ),
-        Document(
-            page_content="This is a test document.",
-            metadata={"source": "1"},
-        ),
+        Document(page_content="This is a test document.", metadata={"source": "1"}),
+        Document(page_content="This is a test document.", metadata={"source": "1"}),
     ]
 
     # Should result in only a single document being added
@@ -1132,10 +884,7 @@ def test_cleanup_with_different_batchsize(
 ) -> None:
     """Check that we can clean up with different batch size."""
     docs = [
-        Document(
-            page_content="This is a test document.",
-            metadata={"source": str(d)},
-        )
+        Document(page_content="This is a test document.", metadata={"source": str(d)})
         for d in range(1000)
     ]
 
@@ -1147,21 +896,13 @@ def test_cleanup_with_different_batchsize(
     }
 
     docs = [
-        Document(
-            page_content="Different doc",
-            metadata={"source": str(d)},
-        )
+        Document(page_content="Different doc", metadata={"source": str(d)})
         for d in range(1001)
     ]
 
     assert index(
         docs, record_manager, vector_store, cleanup="full", cleanup_batch_size=17
-    ) == {
-        "num_added": 1001,
-        "num_deleted": 1000,
-        "num_skipped": 0,
-        "num_updated": 0,
-    }
+    ) == {"num_added": 1001, "num_deleted": 1000, "num_skipped": 0, "num_updated": 0}
 
 
 async def test_async_cleanup_with_different_batchsize(
@@ -1169,10 +910,7 @@ async def test_async_cleanup_with_different_batchsize(
 ) -> None:
     """Check that we can clean up with different batch size."""
     docs = [
-        Document(
-            page_content="This is a test document.",
-            metadata={"source": str(d)},
-        )
+        Document(page_content="This is a test document.", metadata={"source": str(d)})
         for d in range(1000)
     ]
 
@@ -1184,21 +922,13 @@ async def test_async_cleanup_with_different_batchsize(
     }
 
     docs = [
-        Document(
-            page_content="Different doc",
-            metadata={"source": str(d)},
-        )
+        Document(page_content="Different doc", metadata={"source": str(d)})
         for d in range(1001)
     ]
 
     assert await aindex(
         docs, arecord_manager, vector_store, cleanup="full", cleanup_batch_size=17
-    ) == {
-        "num_added": 1001,
-        "num_deleted": 1000,
-        "num_skipped": 0,
-        "num_updated": 0,
-    }
+    ) == {"num_added": 1001, "num_deleted": 1000, "num_skipped": 0, "num_updated": 0}
 
 
 def test_deduplication_v2(
@@ -1206,22 +936,10 @@ def test_deduplication_v2(
 ) -> None:
     """Check edge case when loader returns no new docs."""
     docs = [
-        Document(
-            page_content="1",
-            metadata={"source": "1"},
-        ),
-        Document(
-            page_content="1",
-            metadata={"source": "1"},
-        ),
-        Document(
-            page_content="2",
-            metadata={"source": "2"},
-        ),
-        Document(
-            page_content="3",
-            metadata={"source": "3"},
-        ),
+        Document(page_content="1", metadata={"source": "1"}),
+        Document(page_content="1", metadata={"source": "1"}),
+        Document(page_content="2", metadata={"source": "2"}),
+        Document(page_content="3", metadata={"source": "3"}),
     ]
 
     assert index(docs, record_manager, vector_store, cleanup="full") == {
@@ -1269,18 +987,9 @@ def test_indexing_force_update(
 ) -> None:
     """Test indexing with force update."""
     docs = [
-        Document(
-            page_content="This is a test document.",
-            metadata={"source": "1"},
-        ),
-        Document(
-            page_content="This is another document.",
-            metadata={"source": "2"},
-        ),
-        Document(
-            page_content="This is a test document.",
-            metadata={"source": "1"},
-        ),
+        Document(page_content="This is a test document.", metadata={"source": "1"}),
+        Document(page_content="This is another document.", metadata={"source": "2"}),
+        Document(page_content="This is a test document.", metadata={"source": "1"}),
     ]
 
     assert index(docs, record_manager, upserting_vector_store, cleanup="full") == {
@@ -1299,12 +1008,7 @@ def test_indexing_force_update(
 
     assert index(
         docs, record_manager, upserting_vector_store, cleanup="full", force_update=True
-    ) == {
-        "num_added": 0,
-        "num_deleted": 0,
-        "num_skipped": 0,
-        "num_updated": 2,
-    }
+    ) == {"num_added": 0, "num_deleted": 0, "num_skipped": 0, "num_updated": 2}
 
 
 async def test_aindexing_force_update(
@@ -1312,62 +1016,29 @@ async def test_aindexing_force_update(
 ) -> None:
     """Test indexing with force update."""
     docs = [
-        Document(
-            page_content="This is a test document.",
-            metadata={"source": "1"},
-        ),
-        Document(
-            page_content="This is another document.",
-            metadata={"source": "2"},
-        ),
-        Document(
-            page_content="This is a test document.",
-            metadata={"source": "1"},
-        ),
+        Document(page_content="This is a test document.", metadata={"source": "1"}),
+        Document(page_content="This is another document.", metadata={"source": "2"}),
+        Document(page_content="This is a test document.", metadata={"source": "1"}),
     ]
 
     assert await aindex(
         docs, arecord_manager, upserting_vector_store, cleanup="full"
-    ) == {
-        "num_added": 2,
-        "num_deleted": 0,
-        "num_skipped": 0,
-        "num_updated": 0,
-    }
+    ) == {"num_added": 2, "num_deleted": 0, "num_skipped": 0, "num_updated": 0}
 
     assert await aindex(
         docs, arecord_manager, upserting_vector_store, cleanup="full"
-    ) == {
-        "num_added": 0,
-        "num_deleted": 0,
-        "num_skipped": 2,
-        "num_updated": 0,
-    }
+    ) == {"num_added": 0, "num_deleted": 0, "num_skipped": 2, "num_updated": 0}
 
     assert await aindex(
-        docs,
-        arecord_manager,
-        upserting_vector_store,
-        cleanup="full",
-        force_update=True,
-    ) == {
-        "num_added": 0,
-        "num_deleted": 0,
-        "num_skipped": 0,
-        "num_updated": 2,
-    }
+        docs, arecord_manager, upserting_vector_store, cleanup="full", force_update=True
+    ) == {"num_added": 0, "num_deleted": 0, "num_skipped": 0, "num_updated": 2}
 
 
 def test_indexing_custom_batch_size(
     record_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
     """Test indexing with a custom batch size."""
-    docs = [
-        Document(
-            page_content="This is a test document.",
-            metadata={"source": "1"},
-        ),
-    ]
+    docs = [Document(page_content="This is a test document.", metadata={"source": "1"})]
     ids = [_HashedDocument.from_document(doc).uid for doc in docs]
 
     batch_size = 1
@@ -1382,12 +1053,7 @@ async def test_aindexing_custom_batch_size(
     arecord_manager: InMemoryRecordManager, vector_store: InMemoryVectorStore
 ) -> None:
     """Test indexing with a custom batch size."""
-    docs = [
-        Document(
-            page_content="This is a test document.",
-            metadata={"source": "1"},
-        ),
-    ]
+    docs = [Document(page_content="This is a test document.", metadata={"source": "1"})]
     ids = [_HashedDocument.from_document(doc).uid for doc in docs]
 
     batch_size = 1

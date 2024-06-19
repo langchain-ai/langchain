@@ -92,7 +92,7 @@ def test_vearch_add_texts() -> None:
         metadatas=[
             {
                 "source": "/data/zhx/zhx/langchain-ChatGLM_new/knowledge_base/santi/three_body.txt"
-            },
+            }
         ],
     )
     result = vearch_db.similarity_search(

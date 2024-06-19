@@ -189,10 +189,7 @@ class QuipLoader(BaseLoader):
             if include_messages:
                 text = text + "/n" + self.process_thread_messages(thread_id)
 
-            return Document(
-                page_content=thread["html"] + text,
-                metadata=metadata,
-            )
+            return Document(page_content=thread["html"] + text, metadata=metadata)
         return None
 
     def process_thread_images(self, tree: ElementTree) -> str:

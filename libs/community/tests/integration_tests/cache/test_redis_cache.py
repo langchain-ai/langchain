@@ -90,8 +90,7 @@ def test_sync_redis_cache() -> None:
         llm_cache.update("prompt", llm_string, [Generation(text="fizz0")])
         output = llm.generate(["prompt"])
         expected_output = LLMResult(
-            generations=[[Generation(text="fizz0")]],
-            llm_output={},
+            generations=[[Generation(text="fizz0")]], llm_output={}
         )
         assert output == expected_output
 
@@ -108,8 +107,7 @@ async def test_sync_in_async_redis_cache() -> None:
         await llm_cache.aupdate("prompt", llm_string, [Generation(text="fizz1")])
         output = await llm.agenerate(["prompt"])
         expected_output = LLMResult(
-            generations=[[Generation(text="fizz1")]],
-            llm_output={},
+            generations=[[Generation(text="fizz1")]], llm_output={}
         )
         assert output == expected_output
 
@@ -125,8 +123,7 @@ async def test_async_redis_cache() -> None:
         await llm_cache.aupdate("prompt", llm_string, [Generation(text="fizz2")])
         output = await llm.agenerate(["prompt"])
         expected_output = LLMResult(
-            generations=[[Generation(text="fizz2")]],
-            llm_output={},
+            generations=[[Generation(text="fizz2")]], llm_output={}
         )
         assert output == expected_output
 
@@ -203,10 +200,7 @@ def test_redis_semantic_cache() -> None:
     output = llm.generate(
         ["bar"]
     )  # foo and bar will have the same embedding produced by FakeEmbeddings
-    expected_output = LLMResult(
-        generations=[[Generation(text="fizz")]],
-        llm_output={},
-    )
+    expected_output = LLMResult(generations=[[Generation(text="fizz")]], llm_output={})
     assert output == expected_output
     # clear the cache
     llm_cache.clear(llm_string=llm_string)
@@ -236,8 +230,7 @@ def test_redis_semantic_cache_multi() -> None:
         ["bar"]
     )  # foo and bar will have the same embedding produced by FakeEmbeddings
     expected_output = LLMResult(
-        generations=[[Generation(text="fizz"), Generation(text="Buzz")]],
-        llm_output={},
+        generations=[[Generation(text="fizz"), Generation(text="Buzz")]], llm_output={}
     )
     assert output == expected_output
     # clear the cache
@@ -261,8 +254,7 @@ def test_redis_semantic_cache_chat() -> None:
     )
     output = llm.generate([prompt])
     expected_output = LLMResult(
-        generations=[[ChatGeneration(message=AIMessage(content="fizz"))]],
-        llm_output={},
+        generations=[[ChatGeneration(message=AIMessage(content="fizz"))]], llm_output={}
     )
     assert output == expected_output
     llm_cache.clear(llm_string=llm_string)

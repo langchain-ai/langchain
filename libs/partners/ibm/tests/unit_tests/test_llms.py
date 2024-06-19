@@ -10,9 +10,7 @@ os.environ.pop("WATSONX_PROJECT_ID", None)
 
 def test_initialize_watsonxllm_bad_path_without_url() -> None:
     try:
-        WatsonxLLM(
-            model_id="google/flan-ul2",
-        )
+        WatsonxLLM(model_id="google/flan-ul2")
     except ValueError as e:
         assert "WATSONX_URL" in e.__str__()
 
@@ -27,8 +25,7 @@ def test_initialize_watsonxllm_cloud_bad_path() -> None:
 def test_initialize_watsonxllm_cpd_bad_path_without_all() -> None:
     try:
         WatsonxLLM(
-            model_id="google/flan-ul2",
-            url="https://cpd-zen.apps.cpd48.cp.fyre.ibm.com",
+            model_id="google/flan-ul2", url="https://cpd-zen.apps.cpd48.cp.fyre.ibm.com"
         )
     except ValueError as e:
         assert (

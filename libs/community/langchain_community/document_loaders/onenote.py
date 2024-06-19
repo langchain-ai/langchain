@@ -119,9 +119,7 @@ class OneNoteLoader(BaseLoader, BaseModel):
     @property
     def _headers(self) -> Dict[str, str]:
         """Return headers for requests to OneNote API"""
-        return {
-            "Authorization": f"Bearer {self.access_token}",
-        }
+        return {"Authorization": f"Bearer {self.access_token}"}
 
     @property
     def _scopes(self) -> List[str]:

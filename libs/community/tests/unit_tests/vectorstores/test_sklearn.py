@@ -23,9 +23,7 @@ def test_sklearn_with_metadatas() -> None:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = SKLearnVectorStore.from_texts(
-        texts,
-        FakeEmbeddings(),
-        metadatas=metadatas,
+        texts, FakeEmbeddings(), metadatas=metadatas
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output[0].metadata["page"] == "0"
@@ -37,9 +35,7 @@ def test_sklearn_with_metadatas_with_scores() -> None:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     docsearch = SKLearnVectorStore.from_texts(
-        texts,
-        FakeEmbeddings(),
-        metadatas=metadatas,
+        texts, FakeEmbeddings(), metadatas=metadatas
     )
     output = docsearch.similarity_search_with_relevance_scores("foo", k=1)
     assert len(output) == 1
@@ -55,10 +51,7 @@ def test_sklearn_with_persistence(tmpdir: Path) -> None:
     persist_path = tmpdir / "foo.parquet"
     texts = ["foo", "bar", "baz"]
     docsearch = SKLearnVectorStore.from_texts(
-        texts,
-        FakeEmbeddings(),
-        persist_path=str(persist_path),
-        serializer="json",
+        texts, FakeEmbeddings(), persist_path=str(persist_path), serializer="json"
     )
 
     output = docsearch.similarity_search("foo", k=1)

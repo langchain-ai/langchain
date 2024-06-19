@@ -182,9 +182,7 @@ class PyPDFLoader(BasePDFLoader):
         super().__init__(file_path, headers=headers)
         self.parser = PyPDFParser(password=password, extract_images=extract_images)
 
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Lazy load given path as pages."""
         if self.web_path:
             blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)  # type: ignore[attr-defined]
@@ -207,9 +205,7 @@ class PyPDFium2Loader(BasePDFLoader):
         super().__init__(file_path, headers=headers)
         self.parser = PyPDFium2Parser(extract_images=extract_images)
 
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Lazy load given path as pages."""
         if self.web_path:
             blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)  # type: ignore[attr-defined]
@@ -296,9 +292,7 @@ class PDFMinerLoader(BasePDFLoader):
             extract_images=extract_images, concatenate_pages=concatenate_pages
         )
 
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Lazily load documents."""
         if self.web_path:
             blob = Blob.from_data(open(self.file_path, "rb").read(), path=self.web_path)  # type: ignore[attr-defined]
@@ -331,11 +325,7 @@ class PDFMinerPDFasHTMLLoader(BasePDFLoader):
         output_string = StringIO()
         with open_filename(self.file_path, "rb") as fp:
             extract_text_to_fp(
-                fp,
-                output_string,
-                codec="",
-                laparams=LAParams(),
-                output_type="html",
+                fp, output_string, codec="", laparams=LAParams(), output_type="html"
             )
         metadata = {
             "source": self.file_path if self.web_path is None else self.web_path
@@ -596,9 +586,8 @@ class AmazonTextractPDFLoader(BasePDFLoader):
     Example:
         .. code-block:: python
             from langchain_community.document_loaders import AmazonTextractPDFLoader
-            loader = AmazonTextractPDFLoader(
-                file_path="s3://pdfs/myfile.pdf"
-            )
+
+            loader = AmazonTextractPDFLoader(file_path="s3://pdfs/myfile.pdf")
             document = loader.load()
     """
 
@@ -682,9 +671,7 @@ class AmazonTextractPDFLoader(BasePDFLoader):
         """Load given path as pages."""
         return list(self.lazy_load())
 
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Lazy load documents"""
         # the self.file_path is local, but the blob has to include
         # the S3 location if the file originated from S3 for multi-page documents
@@ -761,9 +748,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         Examples:
         ---------
         >>> obj = DocumentIntelligenceLoader(
-        ...     file_path="path/to/file",
-        ...     client=client,
-        ...     model="prebuilt-document"
+        ...     file_path="path/to/file", client=client, model="prebuilt-document"
         ... )
         """
 
@@ -774,9 +759,7 @@ class DocumentIntelligenceLoader(BasePDFLoader):
         """Load given path as pages."""
         return list(self.lazy_load())
 
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Lazy load given path as pages."""
         blob = Blob.from_path(self.file_path)  # type: ignore[attr-defined]
         yield from self.parser.parse(blob)

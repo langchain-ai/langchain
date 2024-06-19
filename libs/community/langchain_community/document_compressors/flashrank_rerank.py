@@ -68,9 +68,6 @@ class FlashrankRerank(BaseDocumentCompressor):
         for r in rerank_response:
             metadata = r["meta"]
             metadata["relevance_score"] = r["score"]
-            doc = Document(
-                page_content=r["text"],
-                metadata=metadata,
-            )
+            doc = Document(page_content=r["text"], metadata=metadata)
             final_results.append(doc)
         return final_results

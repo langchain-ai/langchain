@@ -33,7 +33,8 @@ class Beam(LLM):
     Example:
         .. code-block:: python
 
-            llm = Beam(model_name="gpt2",
+            llm = Beam(
+                model_name="gpt2",
                 name="langchain-gpt2",
                 cpu=8,
                 memory="32Gi",
@@ -46,8 +47,10 @@ class Beam(LLM):
                     "pillow",
                     "accelerate",
                     "safetensors",
-                    "xformers",],
-                max_length=50)
+                    "xformers",
+                ],
+                max_length=50,
+            )
             llm._deploy()
             call_result = llm._call(input)
 

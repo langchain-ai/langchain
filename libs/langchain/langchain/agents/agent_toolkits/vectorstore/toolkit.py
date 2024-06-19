@@ -78,9 +78,7 @@ class VectorStoreRouterToolkit(BaseToolkit):
         """Get the tools in the toolkit."""
         tools: List[BaseTool] = []
         try:
-            from langchain_community.tools.vectorstore.tool import (
-                VectorStoreQATool,
-            )
+            from langchain_community.tools.vectorstore.tool import VectorStoreQATool
         except ImportError:
             raise ImportError(
                 "You need to install langchain-community to use this toolkit."

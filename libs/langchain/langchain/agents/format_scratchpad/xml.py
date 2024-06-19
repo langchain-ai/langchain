@@ -3,9 +3,7 @@ from typing import List, Tuple
 from langchain_core.agents import AgentAction
 
 
-def format_xml(
-    intermediate_steps: List[Tuple[AgentAction, str]],
-) -> str:
+def format_xml(intermediate_steps: List[Tuple[AgentAction, str]]) -> str:
     """Format the intermediate steps as XML.
 
     Args:

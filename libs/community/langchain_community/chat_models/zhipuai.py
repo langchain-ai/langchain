@@ -213,7 +213,19 @@ class ChatZhipuAI(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessage(content='I enjoy programming.', response_metadata={'token_usage': {'completion_tokens': 6, 'prompt_tokens': 23, 'total_tokens': 29}, 'model_name': 'glm-4', 'finish_reason': 'stop'}, id='run-c5d9af91-55c6-470e-9545-02b2fa0d7f9d-0')
+            AIMessage(
+                content="I enjoy programming.",
+                response_metadata={
+                    "token_usage": {
+                        "completion_tokens": 6,
+                        "prompt_tokens": 23,
+                        "total_tokens": 29,
+                    },
+                    "model_name": "glm-4",
+                    "finish_reason": "stop",
+                },
+                id="run-c5d9af91-55c6-470e-9545-02b2fa0d7f9d-0",
+            )
 
     Stream:
         .. code-block:: python
@@ -255,7 +267,21 @@ class ChatZhipuAI(BaseChatModel):
 
         .. code-block:: python
 
-            [AIMessage(content='I enjoy programming.', response_metadata={'token_usage': {'completion_tokens': 6, 'prompt_tokens': 23, 'total_tokens': 29}, 'model_name': 'glm-4', 'finish_reason': 'stop'}, id='run-ba06af9d-4baa-40b2-9298-be9c62aa0849-0')]
+            [
+                AIMessage(
+                    content="I enjoy programming.",
+                    response_metadata={
+                        "token_usage": {
+                            "completion_tokens": 6,
+                            "prompt_tokens": 23,
+                            "total_tokens": 29,
+                        },
+                        "model_name": "glm-4",
+                        "finish_reason": "stop",
+                    },
+                    id="run-ba06af9d-4baa-40b2-9298-be9c62aa0849-0",
+                )
+            ]
 
     Response metadata
         .. code-block:: python
@@ -265,11 +291,15 @@ class ChatZhipuAI(BaseChatModel):
 
         .. code-block:: python
 
-            {'token_usage': {'completion_tokens': 6,
-              'prompt_tokens': 23,
-              'total_tokens': 29},
-              'model_name': 'glm-4',
-              'finish_reason': 'stop'}
+            {
+                "token_usage": {
+                    "completion_tokens": 6,
+                    "prompt_tokens": 23,
+                    "total_tokens": 29,
+                },
+                "model_name": "glm-4",
+                "finish_reason": "stop",
+            }
 
     """  # noqa: E501
 
@@ -384,10 +414,7 @@ class ChatZhipuAI(BaseChatModel):
                 ChatGeneration(message=message, generation_info=generation_info)
             )
         token_usage = response.get("usage", {})
-        llm_output = {
-            "token_usage": token_usage,
-            "model_name": self.model_name,
-        }
+        llm_output = {"token_usage": token_usage, "model_name": self.model_name}
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _generate(
@@ -409,12 +436,7 @@ class ChatZhipuAI(BaseChatModel):
         if self.zhipuai_api_key is None:
             raise ValueError("Did not find zhipuai_api_key.")
         message_dicts, params = self._create_message_dicts(messages, stop)
-        payload = {
-            **params,
-            **kwargs,
-            "messages": message_dicts,
-            "stream": False,
-        }
+        payload = {**params, **kwargs, "messages": message_dicts, "stream": False}
         _truncate_params(payload)
         headers = {
             "Authorization": _get_jwt_token(self.zhipuai_api_key),
@@ -496,12 +518,7 @@ class ChatZhipuAI(BaseChatModel):
         if self.zhipuai_api_key is None:
             raise ValueError("Did not find zhipuai_api_key.")
         message_dicts, params = self._create_message_dicts(messages, stop)
-        payload = {
-            **params,
-            **kwargs,
-            "messages": message_dicts,
-            "stream": False,
-        }
+        payload = {**params, **kwargs, "messages": message_dicts, "stream": False}
         _truncate_params(payload)
         headers = {
             "Authorization": _get_jwt_token(self.zhipuai_api_key),

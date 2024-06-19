@@ -2,9 +2,7 @@
 
 from typing import Any, List, Optional
 
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatResult
@@ -64,7 +62,10 @@ class Chat__ModuleName__(BaseChatModel):
         .. code-block:: python
 
             messages = [
-                ("system", "You are a helpful translator. Translate the user sentence to French."),
+                (
+                    "system",
+                    "You are a helpful translator. Translate the user sentence to French.",
+                ),
                 ("human", "I love programming."),
             ]
             llm.invoke(messages)
@@ -118,18 +119,27 @@ class Chat__ModuleName__(BaseChatModel):
 
             from langchain_core.pydantic_v1 import BaseModel, Field
 
+
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
 
             class GetPopulation(BaseModel):
                 '''Get the current population in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
 
             llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-            ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
+            ai_msg = llm_with_tools.invoke(
+                "Which city is hotter today and which is bigger: LA or NY?"
+            )
             ai_msg.tool_calls
 
         .. code-block:: python
@@ -146,12 +156,14 @@ class Chat__ModuleName__(BaseChatModel):
 
             from langchain_core.pydantic_v1 import BaseModel, Field
 
+
             class Joke(BaseModel):
                 '''Joke to tell user.'''
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
                 rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
 
             structured_llm = llm.with_structured_output(Joke)
             structured_llm.invoke("Tell me a joke about cats")
@@ -168,7 +180,9 @@ class Chat__ModuleName__(BaseChatModel):
 
             # TODO: Replace with appropriate bind arg.
             json_llm = llm.bind(response_format={"type": "json_object"})
-            ai_msg = json_llm.invoke("Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]")
+            ai_msg = json_llm.invoke(
+                "Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]"
+            )
             ai_msg.content
 
         .. code-block:: python
@@ -193,7 +207,7 @@ class Chat__ModuleName__(BaseChatModel):
                         "type": "image_url",
                         "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
                     },
-                ],
+                ]
             )
             ai_msg = llm.invoke([message])
             ai_msg.content
@@ -231,7 +245,7 @@ class Chat__ModuleName__(BaseChatModel):
 
         .. code-block:: python
 
-            {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
+            {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
 
     # TODO: Delete if logprobs aren't supported.
     Logprobs:

@@ -5,12 +5,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Union
 
 import requests
 from langchain_core.documents import Document
-from tenacity import (
-    before_sleep_log,
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-)
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_exponential
 
 from langchain_community.document_loaders.base import BaseLoader
 
@@ -552,15 +547,10 @@ class ConfluenceLoader(BaseLoader):
         if "version" in page and "when" in page["version"]:
             metadata["when"] = page["version"]["when"]
 
-        return Document(
-            page_content=text,
-            metadata=metadata,
-        )
+        return Document(page_content=text, metadata=metadata)
 
     def process_attachment(
-        self,
-        page_id: str,
-        ocr_languages: Optional[str] = None,
+        self, page_id: str, ocr_languages: Optional[str] = None
     ) -> List[str]:
         try:
             from PIL import Image  # noqa: F401
@@ -607,11 +597,7 @@ class ConfluenceLoader(BaseLoader):
 
         return texts
 
-    def process_pdf(
-        self,
-        link: str,
-        ocr_languages: Optional[str] = None,
-    ) -> str:
+    def process_pdf(self, link: str, ocr_languages: Optional[str] = None) -> str:
         try:
             import pytesseract
             from pdf2image import convert_from_bytes
@@ -641,11 +627,7 @@ class ConfluenceLoader(BaseLoader):
 
         return text
 
-    def process_image(
-        self,
-        link: str,
-        ocr_languages: Optional[str] = None,
-    ) -> str:
+    def process_image(self, link: str, ocr_languages: Optional[str] = None) -> str:
         try:
             import pytesseract
             from PIL import Image
@@ -743,11 +725,7 @@ class ConfluenceLoader(BaseLoader):
 
         return text
 
-    def process_svg(
-        self,
-        link: str,
-        ocr_languages: Optional[str] = None,
-    ) -> str:
+    def process_svg(self, link: str, ocr_languages: Optional[str] = None) -> str:
         try:
             import pytesseract
             from PIL import Image

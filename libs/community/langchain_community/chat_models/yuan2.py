@@ -40,10 +40,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.utils import (
-    get_from_dict_or_env,
-    get_pydantic_field_names,
-)
+from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 from tenacity import (
     before_sleep_log,
     retry,
@@ -266,8 +263,7 @@ class ChatYuan2(BaseChatModel):
             )
             default_chunk_class = chunk.__class__
             cg_chunk = ChatGenerationChunk(
-                message=chunk,
-                generation_info=generation_info,
+                message=chunk, generation_info=generation_info
             )
             if run_manager:
                 run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk)
@@ -312,10 +308,7 @@ class ChatYuan2(BaseChatModel):
             generation_info = dict(finish_reason=res["finish_reason"])
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
-            gen = ChatGeneration(
-                message=message,
-                generation_info=generation_info,
-            )
+            gen = ChatGeneration(message=message, generation_info=generation_info)
             generations.append(gen)
         llm_output = {
             "token_usage": response.get("usage", {}),
@@ -351,8 +344,7 @@ class ChatYuan2(BaseChatModel):
             )
             default_chunk_class = chunk.__class__
             cg_chunk = ChatGenerationChunk(
-                message=chunk,
-                generation_info=generation_info,
+                message=chunk, generation_info=generation_info
             )
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.content, chunk=cg_chunk)
@@ -379,9 +371,7 @@ class ChatYuan2(BaseChatModel):
     @property
     def _invocation_params(self) -> Mapping[str, Any]:
         """Get the parameters used to invoke the model."""
-        yuan2_creds: Dict[str, Any] = {
-            "model": self.model_name,
-        }
+        yuan2_creds: Dict[str, Any] = {"model": self.model_name}
         return {**yuan2_creds, **self._default_params}
 
     @property

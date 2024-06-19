@@ -59,10 +59,8 @@ class OpenLLM(LLM):
         .. code-block:: python
 
             from langchain_community.llms import OpenLLM
-            llm = OpenLLM(
-                model_name='flan-t5',
-                model_id='google/flan-t5-large',
-            )
+
+            llm = OpenLLM(model_name="flan-t5", model_id="google/flan-t5-large")
             llm.invoke("What is the difference between a duck and a goose?")
 
     For all available supported models, you can run 'openllm models'.
@@ -71,7 +69,8 @@ class OpenLLM(LLM):
         .. code-block:: python
 
             from langchain_community.llms import OpenLLM
-            llm = OpenLLM(server_url='http://localhost:3000')
+
+            llm = OpenLLM(server_url="http://localhost:3000")
             llm.invoke("What is the difference between a duck and a goose?")
     """
 
@@ -199,15 +198,14 @@ class OpenLLM(LLM):
         .. code-block:: python
 
             llm = OpenLLM(
-                model_name='flan-t5',
-                model_id='google/flan-t5-large',
-                embedded=False,
+                model_name="flan-t5", model_id="google/flan-t5-large", embedded=False
             )
             tools = load_tools(["serpapi", "llm-math"], llm=llm)
             agent = initialize_agent(
                 tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION
             )
             svc = bentoml.Service("langchain-openllm", runners=[llm.runner])
+
 
             @svc.api(input=Text(), output=Text())
             def chat(input_text: str):

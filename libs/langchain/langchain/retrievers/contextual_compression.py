@@ -7,9 +7,7 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 
-from langchain.retrievers.document_compressors.base import (
-    BaseDocumentCompressor,
-)
+from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 
 
 class ContextualCompressionRetriever(BaseRetriever):
@@ -27,11 +25,7 @@ class ContextualCompressionRetriever(BaseRetriever):
         arbitrary_types_allowed = True
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> List[Document]:
         """Get documents relevant for a query.
 

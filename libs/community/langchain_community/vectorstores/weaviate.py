@@ -2,16 +2,7 @@ from __future__ import annotations
 
 import datetime
 import os
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple
 from uuid import uuid4
 
 import numpy as np
@@ -28,19 +19,12 @@ if TYPE_CHECKING:
 def _default_schema(index_name: str, text_key: str) -> Dict:
     return {
         "class": index_name,
-        "properties": [
-            {
-                "name": text_key,
-                "dataType": ["text"],
-            }
-        ],
+        "properties": [{"name": text_key, "dataType": ["text"]}],
     }
 
 
 def _create_weaviate_client(
-    url: Optional[str] = None,
-    api_key: Optional[str] = None,
-    **kwargs: Any,
+    url: Optional[str] = None, api_key: Optional[str] = None, **kwargs: Any
 ) -> weaviate.Client:
     try:
         import weaviate
@@ -438,9 +422,7 @@ class Weaviate(VectorStore):
 
                 embeddings = OpenAIEmbeddings()
                 weaviate = Weaviate.from_texts(
-                    texts,
-                    embeddings,
-                    weaviate_url="http://localhost:8080"
+                    texts, embeddings, weaviate_url="http://localhost:8080"
                 )
         """
 
@@ -453,8 +435,7 @@ class Weaviate(VectorStore):
             ) from e
 
         client = client or _create_weaviate_client(
-            url=weaviate_url,
-            api_key=weaviate_api_key,
+            url=weaviate_url, api_key=weaviate_api_key
         )
         if batch_size:
             client.batch.configure(batch_size=batch_size)
@@ -477,9 +458,7 @@ class Weaviate(VectorStore):
 
         with client.batch as batch:
             for i, text in enumerate(texts):
-                data_properties = {
-                    text_key: text,
-                }
+                data_properties = {text_key: text}
                 if metadatas is not None:
                     for key in metadatas[i].keys():
                         data_properties[key] = metadatas[i][key]

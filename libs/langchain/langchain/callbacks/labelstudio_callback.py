@@ -26,8 +26,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "LabelStudioMode",
-    "get_default_label_configs",
-    "LabelStudioCallbackHandler",
-]
+__all__ = ["LabelStudioMode", "get_default_label_configs", "LabelStudioCallbackHandler"]

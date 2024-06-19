@@ -43,11 +43,7 @@ class GitLabToolkit(BaseToolkit):
                 "name": "Get Issues",
                 "description": GET_ISSUES_PROMPT,
             },
-            {
-                "mode": "get_issue",
-                "name": "Get Issue",
-                "description": GET_ISSUE_PROMPT,
-            },
+            {"mode": "get_issue", "name": "Get Issue", "description": GET_ISSUE_PROMPT},
             {
                 "mode": "comment_on_issue",
                 "name": "Comment on Issue",
@@ -63,11 +59,7 @@ class GitLabToolkit(BaseToolkit):
                 "name": "Create File",
                 "description": CREATE_FILE_PROMPT,
             },
-            {
-                "mode": "read_file",
-                "name": "Read File",
-                "description": READ_FILE_PROMPT,
-            },
+            {"mode": "read_file", "name": "Read File", "description": READ_FILE_PROMPT},
             {
                 "mode": "update_file",
                 "name": "Update File",

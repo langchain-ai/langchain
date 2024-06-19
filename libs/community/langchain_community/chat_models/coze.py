@@ -20,10 +20,7 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
-)
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +77,7 @@ class ChatCoze(BaseChatModel):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
-        return {
-            "coze_api_key": "COZE_API_KEY",
-        }
+        return {"coze_api_key": "COZE_API_KEY"}
 
     @property
     def lc_serializable(self) -> bool:
@@ -119,17 +114,10 @@ class ChatCoze(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         values["coze_api_base"] = get_from_dict_or_env(
-            values,
-            "coze_api_base",
-            "COZE_API_BASE",
-            DEFAULT_API_BASE,
+            values, "coze_api_base", "COZE_API_BASE", DEFAULT_API_BASE
         )
         values["coze_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "coze_api_key",
-                "COZE_API_KEY",
-            )
+            get_from_dict_or_env(values, "coze_api_key", "COZE_API_KEY")
         )
 
         return values

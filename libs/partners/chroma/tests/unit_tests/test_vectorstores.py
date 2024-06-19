@@ -1,6 +1,4 @@
-from langchain_core.embeddings.fake import (
-    FakeEmbeddings,
-)
+from langchain_core.embeddings.fake import FakeEmbeddings
 
 from langchain_chroma.vectorstores import Chroma
 

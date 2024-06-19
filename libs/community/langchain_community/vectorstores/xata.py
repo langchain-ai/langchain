@@ -19,11 +19,7 @@ class XataVectorStore(VectorStore):
     """
 
     def __init__(
-        self,
-        api_key: str,
-        db_url: str,
-        embedding: Embeddings,
-        table_name: str,
+        self, api_key: str, db_url: str, embedding: Embeddings, table_name: str
     ) -> None:
         """Initialize with Xata client."""
         try:
@@ -72,10 +68,7 @@ class XataVectorStore(VectorStore):
 
         rows: List[Dict[str, Any]] = []
         for idx, embedding in enumerate(vectors):
-            row = {
-                "content": documents[idx].page_content,
-                "embedding": embedding,
-            }
+            row = {"content": documents[idx].page_content, "embedding": embedding}
             if ids:
                 row["id"] = ids[idx]
             for key, val in documents[idx].metadata.items():
@@ -98,8 +91,7 @@ class XataVectorStore(VectorStore):
 
     @staticmethod
     def _texts_to_documents(
-        texts: Iterable[str],
-        metadatas: Optional[Iterable[Dict[Any, Any]]] = None,
+        texts: Iterable[str], metadatas: Optional[Iterable[Dict[Any, Any]]] = None
     ) -> List[Document]:
         """Return list of Documents from list of texts and metadatas."""
         if metadatas is None:
@@ -134,10 +126,7 @@ class XataVectorStore(VectorStore):
         docs = cls._texts_to_documents(texts, metadatas)
 
         vector_db = cls(
-            api_key=api_key,
-            db_url=db_url,
-            embedding=embedding,
-            table_name=table_name,
+            api_key=api_key, db_url=db_url, embedding=embedding, table_name=table_name
         )
 
         vector_db._add_vectors(embeddings, docs, ids)
@@ -174,11 +163,7 @@ class XataVectorStore(VectorStore):
                 text with distance in float.
         """
         embedding = self._embedding.embed_query(query)
-        payload = {
-            "queryVector": embedding,
-            "column": "embedding",
-            "size": k,
-        }
+        payload = {"queryVector": embedding, "column": "embedding", "size": k}
         if filter:
             payload["filter"] = filter
         r = self._client.data().vector_search(self._table_name, payload=payload)
@@ -188,8 +173,7 @@ class XataVectorStore(VectorStore):
         docs_and_scores = [
             (
                 Document(
-                    page_content=hit["content"],
-                    metadata=self._extractMetadata(hit),
+                    page_content=hit["content"], metadata=self._extractMetadata(hit)
                 ),
                 hit["xata"]["score"],
             )

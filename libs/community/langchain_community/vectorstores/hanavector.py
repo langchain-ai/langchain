@@ -45,10 +45,7 @@ COMPARISONS_TO_SQL = {
     "$gte": ">=",
 }
 
-IN_OPERATORS_TO_SQL = {
-    "$in": "IN",
-    "$nin": "NOT IN",
-}
+IN_OPERATORS_TO_SQL = {"$in": "IN", "$nin": "NOT IN"}
 
 BETWEEN_OPERATOR = "$between"
 

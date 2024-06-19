@@ -14,10 +14,7 @@ class DocstoreFn(Docstore):
      * you just want to reuse existing objects
     """
 
-    def __init__(
-        self,
-        lookup_fn: Callable[[str], Union[Document, str]],
-    ):
+    def __init__(self, lookup_fn: Callable[[str], Union[Document, str]]):
         self._lookup_fn = lookup_fn
 
     def search(self, search: str) -> Document:

@@ -63,11 +63,7 @@ def test_ainetwork_toolkit() -> None:
     def get(path: str, type: str = "value", default: Any = None) -> Any:
         ref = ain.db.ref(path)
         value = asyncio.run(
-            {
-                "value": ref.getValue,
-                "rule": ref.getRule,
-                "owner": ref.getOwner,
-            }[type]()
+            {"value": ref.getValue, "rule": ref.getRule, "owner": ref.getOwner}[type]()
         )
         return default if value is None else value
 

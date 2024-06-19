@@ -6,11 +6,7 @@ from langchain_core.embeddings import FakeEmbeddings
 
 @pytest.mark.requires("rank_bm25")
 def test_ensemble_retriever_get_relevant_docs() -> None:
-    doc_list = [
-        "I like apples",
-        "I like oranges",
-        "Apples and oranges are fruits",
-    ]
+    doc_list = ["I like apples", "I like oranges", "Apples and oranges are fruits"]
 
     from langchain_community.retrievers import BM25Retriever
 
@@ -47,11 +43,7 @@ def test_weighted_reciprocal_rank() -> None:
 
 @pytest.mark.requires("rank_bm25", "sklearn")
 def test_ensemble_retriever_get_relevant_docs_with_multiple_retrievers() -> None:
-    doc_list_a = [
-        "I like apples",
-        "I like oranges",
-        "Apples and oranges are fruits",
-    ]
+    doc_list_a = ["I like apples", "I like oranges", "Apples and oranges are fruits"]
     doc_list_b = [
         "I like melons",
         "I like pineapples",

@@ -171,12 +171,7 @@ class _VertexAICommon(_VertexAIBase):
             "candidate_count": self.n,
         }
         if not self.is_codey_model:
-            params.update(
-                {
-                    "top_k": self.top_k,
-                    "top_p": self.top_p,
-                }
-            )
+            params.update({"top_k": self.top_k, "top_p": self.top_p})
         return params
 
     @classmethod
@@ -187,10 +182,7 @@ class _VertexAICommon(_VertexAIBase):
         return None
 
     def _prepare_params(
-        self,
-        stop: Optional[List[str]] = None,
-        stream: bool = False,
-        **kwargs: Any,
+        self, stop: Optional[List[str]] = None, stream: bool = False, **kwargs: Any
     ) -> dict:
         stop_sequences = stop or self.stop
         params_mapping = {"n": "candidate_count"}
@@ -243,9 +235,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
             )
 
             if is_gemini:
-                from vertexai.preview.generative_models import (
-                    GenerativeModel,
-                )
+                from vertexai.preview.generative_models import GenerativeModel
 
             if is_codey_model(model_name):
                 model_cls = CodeGenerationModel
@@ -384,9 +374,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
             chunk = self._response_to_generation(stream_resp)
             if run_manager:
                 run_manager.on_llm_new_token(
-                    chunk.text,
-                    chunk=chunk,
-                    verbose=self.verbose,
+                    chunk.text, chunk=chunk, verbose=self.verbose
                 )
             yield chunk
 
@@ -442,9 +430,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
     @property
     def endpoint_path(self) -> str:
         return self.client.endpoint_path(
-            project=self.project,
-            location=self.location,
-            endpoint=self.endpoint_id,
+            project=self.project, location=self.location, endpoint=self.endpoint_id
         )
 
     @property

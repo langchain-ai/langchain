@@ -3,10 +3,7 @@ from langchain_community.llms.openai import OpenAI
 from langchain_community.utilities.sql_database import SQLDatabase
 from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine, insert
 
-from langchain_experimental.sql.base import (
-    SQLDatabaseChain,
-    SQLDatabaseSequentialChain,
-)
+from langchain_experimental.sql.base import SQLDatabaseChain, SQLDatabaseSequentialChain
 
 metadata_obj = MetaData()
 

@@ -36,11 +36,7 @@ def import_flytekit() -> Tuple[flytekit, renderer]:
     )
 
 
-def analyze_text(
-    text: str,
-    nlp: Any = None,
-    textstat: Any = None,
-) -> dict:
+def analyze_text(text: str, nlp: Any = None, textstat: Any = None) -> dict:
     """Analyze text using textstat and spacy.
 
     Parameters:
@@ -78,10 +74,7 @@ def analyze_text(
         doc = nlp(text)
         dep_out = spacy.displacy.render(doc, style="dep", jupyter=False, page=True)
         ent_out = spacy.displacy.render(doc, style="ent", jupyter=False, page=True)
-        text_visualizations = {
-            "dependency_tree": dep_out,
-            "entities": ent_out,
-        }
+        text_visualizations = {"dependency_tree": dep_out, "entities": ent_out}
         resp.update(text_visualizations)
 
     return resp

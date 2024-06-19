@@ -193,9 +193,7 @@ def test_prompt_from_template_with_partial_variables() -> None:
     prompt = PromptTemplate.from_template(template, partial_variables=partial_variables)
     # then
     expected_prompt = PromptTemplate(
-        template=template,
-        input_variables=["foo"],
-        partial_variables=partial_variables,
+        template=template, input_variables=["foo"], partial_variables=partial_variables
     )
     assert prompt == expected_prompt
 
@@ -299,9 +297,7 @@ def test_prompt_from_file_with_partial_variables() -> None:
         )
     # then
     expected_prompt = PromptTemplate(
-        template=template,
-        input_variables=["foo"],
-        partial_variables=partial_variables,
+        template=template, input_variables=["foo"], partial_variables=partial_variables
     )
     assert prompt == expected_prompt
 
@@ -526,27 +522,9 @@ async def test_prompt_ainvoke_with_metadata() -> None:
         (0.0, "0.0"),
         (False, "False"),
         ("", ""),
-        (
-            None,
-            {
-                "mustache": "",
-                "f-string": "None",
-            },
-        ),
-        (
-            [],
-            {
-                "mustache": "",
-                "f-string": "[]",
-            },
-        ),
-        (
-            {},
-            {
-                "mustache": "",
-                "f-string": "{}",
-            },
-        ),
+        (None, {"mustache": "", "f-string": "None"}),
+        ([], {"mustache": "", "f-string": "[]"}),
+        ({}, {"mustache": "", "f-string": "{}"}),
     ],
 )
 @pytest.mark.parametrize("template_format", ["f-string", "mustache"])

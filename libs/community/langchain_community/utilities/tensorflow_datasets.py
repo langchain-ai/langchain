@@ -34,6 +34,7 @@ class TensorflowDatasets(BaseModel):
 
             from langchain_community.utilities import TensorflowDatasets
 
+
             def mlqaen_example_to_document(example: dict) -> Document:
                 return Document(
                     page_content=decode_to_str(example["context"]),
@@ -45,12 +46,13 @@ class TensorflowDatasets(BaseModel):
                     },
                 )
 
+
             tsds_client = TensorflowDatasets(
-                    dataset_name="mlqa/en",
-                    split_name="train",
-                    load_max_docs=MAX_DOCS,
-                    sample_to_document_function=mlqaen_example_to_document,
-                )
+                dataset_name="mlqa/en",
+                split_name="train",
+                load_max_docs=MAX_DOCS,
+                sample_to_document_function=mlqaen_example_to_document,
+            )
 
     """
 

@@ -69,8 +69,7 @@ def test_all_steps() -> None:
     critique_llm = FakeListLLM(responses=["Critique response" for _ in range(20)])
     resolver_llm = FakeListLLM(responses=[response for _ in range(20)])
     prompt = PromptTemplate(
-        input_variables=["joke"],
-        template="Explain this joke to me: {joke}?",
+        input_variables=["joke"], template="Explain this joke to me: {joke}?"
     )
     chain = SmartLLMChain(
         ideation_llm=ideation_llm,
@@ -87,8 +86,7 @@ def test_intermediate_output() -> None:
     joke = "Why did the chicken cross the Mobius strip?"
     llm = FakeListLLM(responses=[f"Response {i+1}" for i in range(5)])
     prompt = PromptTemplate(
-        input_variables=["joke"],
-        template="Explain this joke to me: {joke}?",
+        input_variables=["joke"], template="Explain this joke to me: {joke}?"
     )
     chain = SmartLLMChain(llm=llm, prompt=prompt, return_intermediate_steps=True)
     result = chain(joke)
@@ -106,8 +104,7 @@ def test_all_steps_with_chat_model() -> None:
     critique_llm = FakeListChatModel(responses=["Critique response" for _ in range(20)])
     resolver_llm = FakeListChatModel(responses=[response for _ in range(20)])
     prompt = PromptTemplate(
-        input_variables=["joke"],
-        template="Explain this joke to me: {joke}?",
+        input_variables=["joke"], template="Explain this joke to me: {joke}?"
     )
     chain = SmartLLMChain(
         ideation_llm=ideation_llm,

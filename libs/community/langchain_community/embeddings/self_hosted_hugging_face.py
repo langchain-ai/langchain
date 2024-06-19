@@ -71,6 +71,7 @@ class SelfHostedHuggingFaceEmbeddings(SelfHostedEmbeddings):
 
             from langchain_community.embeddings import SelfHostedHuggingFaceEmbeddings
             import runhouse as rh
+
             model_id = "sentence-transformers/all-mpnet-base-v2"
             gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
             hf = SelfHostedHuggingFaceEmbeddings(model_id=model_id, hardware=gpu)
@@ -114,10 +115,10 @@ class SelfHostedHuggingFaceInstructEmbeddings(SelfHostedHuggingFaceEmbeddings):
 
             from langchain_community.embeddings import SelfHostedHuggingFaceInstructEmbeddings
             import runhouse as rh
+
             model_name = "hkunlp/instructor-large"
-            gpu = rh.cluster(name='rh-a10x', instance_type='A100:1')
-            hf = SelfHostedHuggingFaceInstructEmbeddings(
-                model_name=model_name, hardware=gpu)
+            gpu = rh.cluster(name="rh-a10x", instance_type="A100:1")
+            hf = SelfHostedHuggingFaceInstructEmbeddings(model_name=model_name, hardware=gpu)
     """  # noqa: E501
 
     model_id: str = DEFAULT_INSTRUCT_MODEL

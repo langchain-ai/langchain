@@ -142,9 +142,7 @@ class Lantern(VectorStore):
         )
         self.__post_init__()
 
-    def __post_init__(
-        self,
-    ) -> None:
+    def __post_init__(self) -> None:
         self._conn = self.connect()
         self.create_hnsw_extension()
         self.create_collection()
@@ -172,13 +170,7 @@ class Lantern(VectorStore):
 
     @classmethod
     def connection_string_from_db_params(
-        cls,
-        driver: str,
-        host: str,
-        port: int,
-        database: str,
-        user: str,
-        password: str,
+        cls, driver: str, host: str, port: int, database: str, user: str, password: str
     ) -> str:
         """Return connection string from database parameters."""
         return f"postgresql+{driver}://{user}:{password}@{host}:{port}/{database}"
@@ -378,11 +370,7 @@ class Lantern(VectorStore):
         """Create a context manager for the session, bind to _conn string."""
         yield Session(self._conn)
 
-    def delete(
-        self,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> None:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         """Delete vectors by ids or uuids.
 
         Args:
@@ -475,10 +463,7 @@ class Lantern(VectorStore):
         with Session(self._conn) as session:
             for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
                 embedding_store = self.EmbeddingStore(
-                    embedding=embedding,
-                    document=text,
-                    cmetadata=metadata,
-                    custom_id=id,
+                    embedding=embedding, document=text, cmetadata=metadata, custom_id=id
                 )
                 session.add(embedding_store)
             session.commit()
@@ -501,10 +486,7 @@ class Lantern(VectorStore):
         with Session(self._conn) as session:
             for text, metadata, embedding, id in zip(texts, metadatas, embeddings, ids):
                 embedding_store = self.EmbeddingStore(
-                    embedding=embedding,
-                    document=text,
-                    cmetadata=metadata,
-                    custom_id=id,
+                    embedding=embedding, document=text, cmetadata=metadata, custom_id=id
                 )
                 session.add(embedding_store)
             session.commit()
@@ -526,24 +508,13 @@ class Lantern(VectorStore):
         return docs
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
-        **kwargs: Any,
+        self, query: str, k: int = 4, filter: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         embedding = self.embedding_function.embed_query(text=query)
-        return self.similarity_search_by_vector(
-            embedding=embedding,
-            k=k,
-            filter=filter,
-        )
+        return self.similarity_search_by_vector(embedding=embedding, k=k, filter=filter)
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        filter: Optional[dict] = None,
+        self, query: str, k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
         embedding = self.embedding_function.embed_query(query)
         docs = self.similarity_search_with_score_by_vector(
@@ -552,20 +523,14 @@ class Lantern(VectorStore):
         return docs
 
     def similarity_search_with_score_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        filter: Optional[dict] = None,
+        self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
     ) -> List[Tuple[Document, float]]:
         results = self.__query_collection(embedding=embedding, k=k, filter=filter)
 
         return self._results_to_docs_and_scores(results)
 
     def __query_collection(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        filter: Optional[dict] = None,
+        self, embedding: List[float], k: int = 4, filter: Optional[dict] = None
     ) -> List[Any]:
         with Session(self._conn) as session:
             set_enable_seqscan_stmt = sqlalchemy.text("SET enable_seqscan = off")
@@ -790,9 +755,7 @@ class Lantern(VectorStore):
     @classmethod
     def __get_connection_string(cls, kwargs: Dict[str, Any]) -> str:
         connection_string: str = get_from_dict_or_env(
-            data=kwargs,
-            key="connection_string",
-            env_key="LANTERN_CONNECTION_STRING",
+            data=kwargs, key="connection_string", env_key="LANTERN_CONNECTION_STRING"
         )
 
         if not connection_string:

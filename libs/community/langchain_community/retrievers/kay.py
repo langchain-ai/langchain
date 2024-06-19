@@ -20,10 +20,7 @@ class KayAiRetriever(BaseRetriever):
 
     @classmethod
     def create(
-        cls,
-        dataset_id: str,
-        data_types: List[str],
-        num_contexts: int = 6,
+        cls, dataset_id: str, data_types: List[str], num_contexts: int = 6
     ) -> KayAiRetriever:
         """
         Create a KayRetriever given a Kay dataset id and a list of datasources.
@@ -41,7 +38,7 @@ class KayAiRetriever(BaseRetriever):
         except ImportError:
             raise ImportError(
                 "Could not import kay python package. Please install it with "
-                "`pip install kay`.",
+                "`pip install kay`."
             )
 
         client = KayRetriever(dataset_id, data_types)

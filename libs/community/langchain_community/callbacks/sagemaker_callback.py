@@ -9,9 +9,7 @@ from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
 
-from langchain_community.callbacks.utils import (
-    flatten_dict,
-)
+from langchain_community.callbacks.utils import flatten_dict
 
 
 def save_json(data: dict, file_path: str) -> None:
@@ -80,9 +78,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
             prompt_resp = deepcopy(resp)
             prompt_resp["prompt"] = prompt
             self.jsonf(
-                prompt_resp,
-                self.temp_dir,
-                f"llm_start_{llm_starts}_prompt_{idx}",
+                prompt_resp, self.temp_dir, f"llm_start_{llm_starts}_prompt_{idx}"
             )
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
@@ -117,11 +113,7 @@ class SageMakerCallbackHandler(BaseCallbackHandler):
                 generation_resp = deepcopy(resp)
                 generation_resp.update(flatten_dict(generation.dict()))
 
-                self.jsonf(
-                    resp,
-                    self.temp_dir,
-                    f"llm_end_{llm_ends}_generation_{idx}",
-                )
+                self.jsonf(resp, self.temp_dir, f"llm_end_{llm_ends}_generation_{idx}")
 
     def on_llm_error(self, error: BaseException, **kwargs: Any) -> None:
         """Run when LLM errors."""

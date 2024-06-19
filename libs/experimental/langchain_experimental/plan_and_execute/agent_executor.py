@@ -41,8 +41,7 @@ class PlanAndExecute(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         plan = self.planner.plan(
-            inputs,
-            callbacks=run_manager.get_child() if run_manager else None,
+            inputs, callbacks=run_manager.get_child() if run_manager else None
         )
         if run_manager:
             run_manager.on_text(str(plan), verbose=self.verbose)
@@ -54,8 +53,7 @@ class PlanAndExecute(Chain):
             }
             new_inputs = {**_new_inputs, **inputs}
             response = self.executor.step(
-                new_inputs,
-                callbacks=run_manager.get_child() if run_manager else None,
+                new_inputs, callbacks=run_manager.get_child() if run_manager else None
             )
             if run_manager:
                 run_manager.on_text(
@@ -73,8 +71,7 @@ class PlanAndExecute(Chain):
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> Dict[str, Any]:
         plan = await self.planner.aplan(
-            inputs,
-            callbacks=run_manager.get_child() if run_manager else None,
+            inputs, callbacks=run_manager.get_child() if run_manager else None
         )
         if run_manager:
             await run_manager.on_text(str(plan), verbose=self.verbose)
@@ -86,8 +83,7 @@ class PlanAndExecute(Chain):
             }
             new_inputs = {**_new_inputs, **inputs}
             response = await self.executor.astep(
-                new_inputs,
-                callbacks=run_manager.get_child() if run_manager else None,
+                new_inputs, callbacks=run_manager.get_child() if run_manager else None
             )
             if run_manager:
                 await run_manager.on_text(

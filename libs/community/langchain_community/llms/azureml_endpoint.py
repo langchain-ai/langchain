@@ -400,10 +400,7 @@ class AzureMLBaseEndpoint(BaseModel):
             AzureMLEndpointApiType.dedicated,
         )
         values["timeout"] = get_from_dict_or_env(
-            values,
-            "timeout",
-            "AZUREML_TIMEOUT",
-            str(DEFAULT_TIMEOUT),
+            values, "timeout", "AZUREML_TIMEOUT", str(DEFAULT_TIMEOUT)
         )
 
         return values

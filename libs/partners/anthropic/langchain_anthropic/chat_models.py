@@ -45,11 +45,7 @@ from langchain_core.messages import (
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.runnables import (
-    Runnable,
-    RunnableMap,
-    RunnablePassthrough,
-)
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     build_extra_kwargs,
@@ -302,14 +298,28 @@ class ChatAnthropic(BaseChatModel):
         .. code-block:: python
 
             messages = [
-                ("system", "You are a helpful translator. Translate the user sentence to French."),
+                (
+                    "system",
+                    "You are a helpful translator. Translate the user sentence to French.",
+                ),
                 ("human", "I love programming."),
             ]
             llm.invoke(messages)
 
         .. code-block:: python
 
-            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-sonnet-20240229', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
+            AIMessage(
+                content="J'aime la programmation.",
+                response_metadata={
+                    "id": "msg_01Trik66aiQ9Z1higrD5XFx3",
+                    "model": "claude-3-sonnet-20240229",
+                    "stop_reason": "end_turn",
+                    "stop_sequence": None,
+                    "usage": {"input_tokens": 25, "output_tokens": 11},
+                },
+                id="run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0",
+                usage_metadata={"input_tokens": 25, "output_tokens": 11, "total_tokens": 36},
+            )
 
     Stream:
         .. code-block:: python
@@ -319,14 +329,14 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessageChunk(content='J', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content="'", id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content='a', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content='ime', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content=' la', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content=' programm', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content='ation', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content='.', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content="J", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+            AIMessageChunk(content="'", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+            AIMessageChunk(content="a", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+            AIMessageChunk(content="ime", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+            AIMessageChunk(content=" la", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+            AIMessageChunk(content=" programm", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+            AIMessageChunk(content="ation", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+            AIMessageChunk(content=".", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
 
         .. code-block:: python
 
@@ -338,7 +348,10 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessageChunk(content="J'aime la programmation.", id='run-b34faef0-882f-4869-a19c-ed2b856e6361')
+            AIMessageChunk(
+                content="J'aime la programmation.",
+                id="run-b34faef0-882f-4869-a19c-ed2b856e6361",
+            )
 
     Async:
         .. code-block:: python
@@ -353,41 +366,71 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-sonnet-20240229', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
+            AIMessage(
+                content="J'aime la programmation.",
+                response_metadata={
+                    "id": "msg_01Trik66aiQ9Z1higrD5XFx3",
+                    "model": "claude-3-sonnet-20240229",
+                    "stop_reason": "end_turn",
+                    "stop_sequence": None,
+                    "usage": {"input_tokens": 25, "output_tokens": 11},
+                },
+                id="run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0",
+                usage_metadata={"input_tokens": 25, "output_tokens": 11, "total_tokens": 36},
+            )
 
     Tool calling:
         .. code-block:: python
 
             from langchain_core.pydantic_v1 import BaseModel, Field
 
+
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
 
             class GetPopulation(BaseModel):
                 '''Get the current population in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
 
             llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-            ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
+            ai_msg = llm_with_tools.invoke(
+                "Which city is hotter today and which is bigger: LA or NY?"
+            )
             ai_msg.tool_calls
 
         .. code-block:: python
 
-            [{'name': 'GetWeather',
-              'args': {'location': 'Los Angeles, CA'},
-              'id': 'toolu_01KzpPEAgzura7hpBqwHbWdo'},
-             {'name': 'GetWeather',
-              'args': {'location': 'New York, NY'},
-              'id': 'toolu_01JtgbVGVJbiSwtZk3Uycezx'},
-             {'name': 'GetPopulation',
-              'args': {'location': 'Los Angeles, CA'},
-              'id': 'toolu_01429aygngesudV9nTbCKGuw'},
-             {'name': 'GetPopulation',
-              'args': {'location': 'New York, NY'},
-              'id': 'toolu_01JPktyd44tVMeBcPPnFSEJG'}]
+            [
+                {
+                    "name": "GetWeather",
+                    "args": {"location": "Los Angeles, CA"},
+                    "id": "toolu_01KzpPEAgzura7hpBqwHbWdo",
+                },
+                {
+                    "name": "GetWeather",
+                    "args": {"location": "New York, NY"},
+                    "id": "toolu_01JtgbVGVJbiSwtZk3Uycezx",
+                },
+                {
+                    "name": "GetPopulation",
+                    "args": {"location": "Los Angeles, CA"},
+                    "id": "toolu_01429aygngesudV9nTbCKGuw",
+                },
+                {
+                    "name": "GetPopulation",
+                    "args": {"location": "New York, NY"},
+                    "id": "toolu_01JPktyd44tVMeBcPPnFSEJG",
+                },
+            ]
 
         See ``ChatAnthropic.bind_tools()`` method for more.
 
@@ -398,6 +441,7 @@ class ChatAnthropic(BaseChatModel):
 
             from langchain_core.pydantic_v1 import BaseModel, Field
 
+
             class Joke(BaseModel):
                 '''Joke to tell user.'''
 
@@ -405,12 +449,17 @@ class ChatAnthropic(BaseChatModel):
                 punchline: str = Field(description="The punchline to the joke")
                 rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
 
+
             structured_llm = llm.with_structured_output(Joke)
             structured_llm.invoke("Tell me a joke about cats")
 
         .. code-block:: python
 
-            Joke(setup='Why was the cat sitting on the computer?', punchline='To keep an eye on the mouse!', rating=None)
+            Joke(
+                setup="Why was the cat sitting on the computer?",
+                punchline="To keep an eye on the mouse!",
+                rating=None,
+            )
 
         See ``ChatAnthropic.with_structured_output()`` for more.
 
@@ -430,7 +479,7 @@ class ChatAnthropic(BaseChatModel):
                         "type": "image_url",
                         "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
                     },
-                ],
+                ]
             )
             ai_msg = llm.invoke([message])
             ai_msg.content
@@ -447,7 +496,7 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            {'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36}
+            {"input_tokens": 25, "output_tokens": 11, "total_tokens": 36}
 
         Message chunks containing token usage will be included during streaming by
         default:
@@ -462,7 +511,7 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            {'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36}
+            {"input_tokens": 25, "output_tokens": 11, "total_tokens": 36}
 
         These can be disabled by setting ``stream_usage=False`` in the stream method,
         or by setting ``stream_usage=False`` when initializing ChatAnthropic.
@@ -475,11 +524,13 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            {'id': 'msg_013xU6FHEGEq76aP4RgFerVT',
-             'model': 'claude-3-sonnet-20240229',
-             'stop_reason': 'end_turn',
-             'stop_sequence': None,
-             'usage': {'input_tokens': 25, 'output_tokens': 11}}
+            {
+                "id": "msg_013xU6FHEGEq76aP4RgFerVT",
+                "model": "claude-3-sonnet-20240229",
+                "stop_reason": "end_turn",
+                "stop_sequence": None,
+                "usage": {"input_tokens": 25, "output_tokens": 11},
+            }
 
     """  # noqa: E501
 
@@ -719,10 +770,7 @@ class ChatAnthropic(BaseChatModel):
             msg = AIMessage(content=content[0]["text"])
         elif any(block["type"] == "tool_use" for block in content):
             tool_calls = extract_tool_calls(content)
-            msg = AIMessage(
-                content=content,
-                tool_calls=tool_calls,
-            )
+            msg = AIMessage(content=content, tool_calls=tool_calls)
         else:
             msg = AIMessage(content=content)
         # Collect token usage
@@ -732,8 +780,7 @@ class ChatAnthropic(BaseChatModel):
             "total_tokens": data.usage.input_tokens + data.usage.output_tokens,
         }
         return ChatResult(
-            generations=[ChatGeneration(message=msg)],
-            llm_output=llm_output,
+            generations=[ChatGeneration(message=msg)], llm_output=llm_output
         )
 
     def _generate(
@@ -801,10 +848,14 @@ class ChatAnthropic(BaseChatModel):
                 from langchain_anthropic import ChatAnthropic
                 from langchain_core.pydantic_v1 import BaseModel, Field
 
+
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
 
-                    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+                    location: str = Field(
+                        ..., description="The city and state, e.g. San Francisco, CA"
+                    )
+
 
                 class GetPrice(BaseModel):
                     '''Get the price of a specific product.'''
@@ -814,7 +865,7 @@ class ChatAnthropic(BaseChatModel):
 
                 llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice])
-                llm_with_tools.invoke("what is the weather like in San Francisco",)
+                llm_with_tools.invoke("what is the weather like in San Francisco")
                 # -> AIMessage(
                 #     content=[
                 #         {'text': '<thinking>\nBased on the user\'s question, the relevant function to call is GetWeather, which requires the "location" parameter.\n\nThe user has directly specified the location as "San Francisco". Since San Francisco is a well known city, I can reasonably infer they mean San Francisco, CA without needing the state specified.\n\nAll the required parameters are provided, so I can proceed with the API call.\n</thinking>', 'type': 'text'},
@@ -830,10 +881,14 @@ class ChatAnthropic(BaseChatModel):
                 from langchain_anthropic import ChatAnthropic
                 from langchain_core.pydantic_v1 import BaseModel, Field
 
+
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
 
-                    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+                    location: str = Field(
+                        ..., description="The city and state, e.g. San Francisco, CA"
+                    )
+
 
                 class GetPrice(BaseModel):
                     '''Get the price of a specific product.'''
@@ -843,7 +898,7 @@ class ChatAnthropic(BaseChatModel):
 
                 llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="any")
-                llm_with_tools.invoke("what is the weather like in San Francisco",)
+                llm_with_tools.invoke("what is the weather like in San Francisco")
 
 
         Example — force specific tool call with tool_choice '<name_of_tool>':
@@ -852,10 +907,14 @@ class ChatAnthropic(BaseChatModel):
                 from langchain_anthropic import ChatAnthropic
                 from langchain_core.pydantic_v1 import BaseModel, Field
 
+
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
 
-                    location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+                    location: str = Field(
+                        ..., description="The city and state, e.g. San Francisco, CA"
+                    )
+
 
                 class GetPrice(BaseModel):
                     '''Get the price of a specific product.'''
@@ -864,8 +923,10 @@ class ChatAnthropic(BaseChatModel):
 
 
                 llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
-                llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
-                llm_with_tools.invoke("what is the weather like in San Francisco",)
+                llm_with_tools = llm.bind_tools(
+                    [GetWeather, GetPrice], tool_choice="GetWeather"
+                )
+                llm_with_tools.invoke("what is the weather like in San Francisco")
         """  # noqa: E501
         formatted_tools = [convert_to_anthropic_tool(tool) for tool in tools]
         if not tool_choice:
@@ -923,15 +984,20 @@ class ChatAnthropic(BaseChatModel):
                 from langchain_anthropic import ChatAnthropic
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
 
                 # -> AnswerWithJustification(
                 #     answer='They weigh the same',
@@ -944,15 +1010,22 @@ class ChatAnthropic(BaseChatModel):
                 from langchain_anthropic import ChatAnthropic
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
 
-                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
                 #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
@@ -973,13 +1046,15 @@ class ChatAnthropic(BaseChatModel):
                             "answer": {"type": "string"},
                             "justification": {"type": "string"},
                         },
-                        "required": ["answer", "justification"]
-                    }
+                        "required": ["answer", "justification"],
+                    },
                 }
                 llm = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
                 structured_llm = llm.with_structured_output(schema)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
@@ -1080,9 +1155,7 @@ def _make_message_chunk_from_anthropic_event(
         message_chunk = AIMessageChunk(
             content="" if coerce_content_to_string else [],
             usage_metadata=UsageMetadata(
-                input_tokens=input_tokens,
-                output_tokens=0,
-                total_tokens=input_tokens,
+                input_tokens=input_tokens, output_tokens=0, total_tokens=input_tokens
             ),
         )
     elif (
@@ -1133,9 +1206,7 @@ def _make_message_chunk_from_anthropic_event(
         message_chunk = AIMessageChunk(
             content="",
             usage_metadata=UsageMetadata(
-                input_tokens=0,
-                output_tokens=output_tokens,
-                total_tokens=output_tokens,
+                input_tokens=0, output_tokens=output_tokens, total_tokens=output_tokens
             ),
         )
     else:

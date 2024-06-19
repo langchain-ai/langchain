@@ -16,11 +16,7 @@ from typing import (
 )
 from uuid import UUID
 
-from langchain_core.agents import (
-    AgentAction,
-    AgentFinish,
-    AgentStep,
-)
+from langchain_core.agents import AgentAction, AgentFinish, AgentStep
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainRun,
@@ -164,10 +160,7 @@ class AgentExecutorIterator:
             self.agent_executor.metadata,
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self.agent_executor),
-            self.inputs,
-            self.run_id,
-            name=self.run_name,
+            dumpd(self.agent_executor), self.inputs, self.run_id, name=self.run_name
         )
         try:
             while self.agent_executor._should_continue(
@@ -230,10 +223,7 @@ class AgentExecutorIterator:
             self.agent_executor.metadata,
         )
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self.agent_executor),
-            self.inputs,
-            self.run_id,
-            name=self.run_name,
+            dumpd(self.agent_executor), self.inputs, self.run_id, name=self.run_name
         )
         try:
             async with asyncio_timeout(self.agent_executor.max_execution_time):

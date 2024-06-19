@@ -43,10 +43,7 @@ def _create_function_message(
             content = str(observation)
     else:
         content = observation
-    return FunctionMessage(
-        name=agent_action.tool,
-        content=content,
-    )
+    return FunctionMessage(name=agent_action.tool, content=content)
 
 
 def format_to_openai_function_messages(

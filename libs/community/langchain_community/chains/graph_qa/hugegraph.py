@@ -100,7 +100,6 @@ class HugeGraphQAChain(Chain):
         )
 
         result = self.qa_chain(
-            {"question": question, "context": context},
-            callbacks=callbacks,
+            {"question": question, "context": context}, callbacks=callbacks
         )
         return {self.output_key: result[self.qa_chain.output_key]}

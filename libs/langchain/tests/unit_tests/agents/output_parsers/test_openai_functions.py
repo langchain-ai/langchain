@@ -1,8 +1,5 @@
 import pytest
-from langchain_core.agents import (
-    AgentActionMessageLog,
-    AgentFinish,
-)
+from langchain_core.agents import AgentActionMessageLog, AgentFinish
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, SystemMessage
 

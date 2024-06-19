@@ -34,9 +34,7 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     return [
         (Document(page_content=result[0], metadata=result[1] or {}), result[2])
         for result in zip(
-            results["documents"][0],
-            results["metadatas"][0],
-            results["distances"][0],
+            results["documents"][0], results["metadatas"][0], results["distances"][0]
         )
     ]
 
@@ -50,6 +48,7 @@ class Bagel(VectorStore):
         .. code-block:: python
 
                 from langchain_community.vectorstores import Bagel
+
                 vectorstore = Bagel(cluster_name="langchain_store")
     """
 
@@ -78,15 +77,13 @@ class Bagel(VectorStore):
                 _client_settings = client_settings
             else:
                 _client_settings = bagel.config.Settings(
-                    bagel_api_impl="rest",
-                    bagel_server_host="api.bageldb.ai",
+                    bagel_api_impl="rest", bagel_server_host="api.bageldb.ai"
                 )
             self._client_settings = _client_settings
             self._client = bagel.Client(_client_settings)
 
         self._cluster = self._client.get_or_create_cluster(
-            name=cluster_name,
-            metadata=cluster_metadata,
+            name=cluster_name, metadata=cluster_metadata
         )
         self.override_relevance_score_fn = relevance_score_fn
         self._embedding_function = embedding_function
@@ -189,10 +186,7 @@ class Bagel(VectorStore):
         else:
             metadatas = [{}] * len(texts)
             self._cluster.upsert(
-                embeddings=embeddings,
-                documents=texts,
-                metadatas=metadatas,
-                ids=ids,
+                embeddings=embeddings, documents=texts, metadatas=metadatas, ids=ids
             )
         return ids
 
@@ -398,11 +392,7 @@ class Bagel(VectorStore):
         """
         text = document.page_content
         metadata = document.metadata
-        self._cluster.update(
-            ids=[document_id],
-            documents=[text],
-            metadatas=[metadata],
-        )
+        self._cluster.update(ids=[document_id], documents=[text], metadatas=[metadata])
 
     def get(
         self,

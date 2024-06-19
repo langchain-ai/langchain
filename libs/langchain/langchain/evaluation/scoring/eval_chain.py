@@ -13,10 +13,7 @@ from langchain_core.pydantic_v1 import Extra, Field
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
-from langchain.evaluation.criteria.eval_chain import (
-    CRITERIA_TYPE,
-    Criteria,
-)
+from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE, Criteria
 from langchain.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain.evaluation.scoring.prompt import (
     CRITERIA_INSTRUCTIONS,
@@ -137,10 +134,7 @@ class ScoreStringResultOutputParser(BaseOutputParser[dict]):
                  with the verdict between 1 and 10."
             )
 
-        return {
-            "reasoning": text,
-            "score": int(verdict),
-        }
+        return {"reasoning": text, "score": int(verdict)}
 
 
 class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
@@ -155,9 +149,9 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         >>> llm = ChatOpenAI(temperature=0, model_name="gpt-4")
         >>> chain = ScoreStringEvalChain.from_llm(llm=llm)
         >>> result = chain.evaluate_strings(
-        ...     input = "What is the chemical formula for water?",
-        ...     prediction = "H2O",
-        ...     reference = "The chemical formula for water is H2O.",
+        ...     input="What is the chemical formula for water?",
+        ...     prediction="H2O",
+        ...     reference="The chemical formula for water is H2O.",
         ... )
         >>> print(result)
         # {
@@ -287,10 +281,7 @@ Performance may be significantly worse with other models."
         )
 
     def _prepare_input(
-        self,
-        prediction: str,
-        input: Optional[str],
-        reference: Optional[str],
+        self, prediction: str, input: Optional[str], reference: Optional[str]
     ) -> dict:
         """Prepare the input for the chain.
 
@@ -304,10 +295,7 @@ Performance may be significantly worse with other models."
             dict: The prepared input for the chain.
 
         """
-        input_ = {
-            "prediction": prediction,
-            "input": input,
-        }
+        input_ = {"prediction": prediction, "input": input}
         if self.requires_reference:
             input_["reference"] = reference
         return input_
@@ -440,12 +428,7 @@ class LabeledScoreStringEvalChain(ScoreStringEvalChain):
             ValueError: If the input variables are not as expected.
 
         """
-        expected_input_vars = {
-            "prediction",
-            "input",
-            "reference",
-            "criteria",
-        }
+        expected_input_vars = {"prediction", "input", "reference", "criteria"}
         prompt_ = prompt or SCORING_TEMPLATE_WITH_REFERENCE
         if expected_input_vars != set(prompt_.input_variables):
             raise ValueError(

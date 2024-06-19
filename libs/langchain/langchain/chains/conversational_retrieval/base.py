@@ -251,10 +251,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
 
         .. code-block:: python
 
-            from langchain.chains import (
-                create_history_aware_retriever,
-                create_retrieval_chain,
-            )
+            from langchain.chains import create_history_aware_retriever, create_retrieval_chain
             from langchain.chains.combine_documents import create_stuff_documents_chain
             from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
             from langchain_openai import ChatOpenAI
@@ -304,9 +301,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             # into the LLM. Note that we can also use StuffDocumentsChain and other
             # instances of BaseCombineDocumentsChain.
             question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
-            rag_chain = create_retrieval_chain(
-                history_aware_retriever, question_answer_chain
-            )
+            rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
             # Usage:
             chat_history = []  # Collect chat history here (a sequence of messages)
@@ -333,7 +328,9 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         .. code-block:: python
 
             from langchain.chains import (
-                StuffDocumentsChain, LLMChain, ConversationalRetrievalChain
+                StuffDocumentsChain,
+                LLMChain,
+                ConversationalRetrievalChain,
             )
             from langchain_core.prompts import PromptTemplate
             from langchain_community.llms import OpenAI
@@ -526,10 +523,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         """Load chain from LLM."""
         combine_docs_chain_kwargs = combine_docs_chain_kwargs or {}
         doc_chain = load_qa_chain(
-            llm,
-            chain_type=chain_type,
-            callbacks=callbacks,
-            **combine_docs_chain_kwargs,
+            llm, chain_type=chain_type, callbacks=callbacks, **combine_docs_chain_kwargs
         )
         condense_question_chain = LLMChain(
             llm=llm, prompt=condense_question_prompt, callbacks=callbacks

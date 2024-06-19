@@ -232,9 +232,7 @@ class InfoPowerBITool(BaseTool):
         arbitrary_types_allowed = True
 
     def _run(
-        self,
-        tool_input: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, tool_input: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Get the schema for tables in a comma-separated list."""
         return self.powerbi.get_table_info(tool_input.split(", "))

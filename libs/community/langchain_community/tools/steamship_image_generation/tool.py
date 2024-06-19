@@ -81,9 +81,7 @@ class SteamshipImageGenerationTool(BaseTool):
                 "Please install it with `pip install steamship`"
             )
 
-        steamship = Steamship(
-            api_key=steamship_api_key,
-        )
+        steamship = Steamship(api_key=steamship_api_key)
         values["steamship"] = steamship
         if "steamship_api_key" in values:
             del values["steamship_api_key"]
@@ -91,9 +89,7 @@ class SteamshipImageGenerationTool(BaseTool):
         return values
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
 

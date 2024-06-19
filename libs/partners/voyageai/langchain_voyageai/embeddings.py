@@ -121,9 +121,6 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
 
     async def aembed_query(self, text: str) -> List[float]:
         r = await self._aclient.embed(
-            [text],
-            model=self.model,
-            input_type="query",
-            truncation=self.truncation,
+            [text], model=self.model, input_type="query", truncation=self.truncation
         )
         return r.embeddings[0]

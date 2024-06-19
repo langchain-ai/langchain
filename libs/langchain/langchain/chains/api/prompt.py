@@ -10,11 +10,7 @@ Question:{question}
 API url:"""
 
 API_URL_PROMPT = PromptTemplate(
-    input_variables=[
-        "api_docs",
-        "question",
-    ],
-    template=API_URL_PROMPT_TEMPLATE,
+    input_variables=["api_docs", "question"], template=API_URL_PROMPT_TEMPLATE
 )
 
 API_RESPONSE_PROMPT_TEMPLATE = (

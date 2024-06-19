@@ -4,16 +4,7 @@ import asyncio
 import inspect
 import logging
 import re
-from typing import (
-    Callable,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-    cast,
-)
+from typing import Callable, Iterator, List, Optional, Sequence, Set, Union, cast
 
 import aiohttp
 import requests
@@ -96,7 +87,7 @@ class RecursiveUrlLoader(BaseLoader):
             from langchain_community.document_loaders import RecursiveUrlLoader
 
             loader = RecursiveUrlLoader(
-                "https://docs.python.org/3.9/",
+                "https://docs.python.org/3.9/"
                 # max_depth=2,
                 # use_async=False,
                 # extractor=None,
@@ -160,14 +151,13 @@ class RecursiveUrlLoader(BaseLoader):
                 import re
                 from bs4 import BeautifulSoup
 
+
                 def bs4_extractor(html: str) -> str:
                     soup = BeautifulSoup(html, "lxml")
                     return re.sub(r"\n\n+", "\n\n", soup.text).strip()
 
-                loader = RecursiveUrlLoader(
-                    "https://docs.python.org/3.9/",
-                    extractor=bs4_extractor,
-                )
+
+                loader = RecursiveUrlLoader("https://docs.python.org/3.9/", extractor=bs4_extractor)
                 print(loader.load()[0].page_content[:200])
 
 
@@ -195,21 +185,24 @@ class RecursiveUrlLoader(BaseLoader):
             import requests
             from typing import Union
 
+
             def simple_metadata_extractor(
-                raw_html: str, url: str, response: Union[requests.Response, aiohttp.ClientResponse]
+                raw_html: str,
+                url: str,
+                response: Union[requests.Response, aiohttp.ClientResponse],
             ) -> dict:
                 content_type = getattr(response, "headers").get("Content-Type", "")
                 return {"source": url, "content_type": content_type}
 
+
             loader = RecursiveUrlLoader(
-                "https://docs.python.org/3.9/",
-                metadata_extractor=simple_metadata_extractor,
+                "https://docs.python.org/3.9/", metadata_extractor=simple_metadata_extractor
             )
             loader.load()[0].metadata
 
         .. code-block:: python
 
-            {'source': 'https://docs.python.org/3.9/', 'content_type': 'text/html'}
+            {"source": "https://docs.python.org/3.9/", "content_type": "text/html"}
 
     Filtering URLs:
         You may not always want to pull every URL from a website. There are four parameters
@@ -228,25 +221,27 @@ class RecursiveUrlLoader(BaseLoader):
                 prevent_outside=True,
                 base_url="https://docs.python.org",
                 link_regex=r'<a\s+(?:[^>]*?\s+)?href="([^"]*(?=index)[^"]*)"',
-                exclude_dirs=['https://docs.python.org/3.9/faq']
+                exclude_dirs=["https://docs.python.org/3.9/faq"],
             )
             docs = loader.load()
 
         .. code-block:: python
 
-            ['https://docs.python.org/3.9/',
-            'https://docs.python.org/3.9/py-modindex.html',
-            'https://docs.python.org/3.9/genindex.html',
-            'https://docs.python.org/3.9/tutorial/index.html',
-            'https://docs.python.org/3.9/using/index.html',
-            'https://docs.python.org/3.9/extending/index.html',
-            'https://docs.python.org/3.9/installing/index.html',
-            'https://docs.python.org/3.9/library/index.html',
-            'https://docs.python.org/3.9/c-api/index.html',
-            'https://docs.python.org/3.9/howto/index.html',
-            'https://docs.python.org/3.9/distributing/index.html',
-            'https://docs.python.org/3.9/reference/index.html',
-            'https://docs.python.org/3.9/whatsnew/index.html']
+            [
+                "https://docs.python.org/3.9/",
+                "https://docs.python.org/3.9/py-modindex.html",
+                "https://docs.python.org/3.9/genindex.html",
+                "https://docs.python.org/3.9/tutorial/index.html",
+                "https://docs.python.org/3.9/using/index.html",
+                "https://docs.python.org/3.9/extending/index.html",
+                "https://docs.python.org/3.9/installing/index.html",
+                "https://docs.python.org/3.9/library/index.html",
+                "https://docs.python.org/3.9/c-api/index.html",
+                "https://docs.python.org/3.9/howto/index.html",
+                "https://docs.python.org/3.9/distributing/index.html",
+                "https://docs.python.org/3.9/reference/index.html",
+                "https://docs.python.org/3.9/whatsnew/index.html",
+            ]
 
     """  # noqa: E501
 

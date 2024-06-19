@@ -13,8 +13,7 @@ class SearchArgsSchema(BaseModel):
     """Input for GetMessageTool."""
 
     message_id: str = Field(
-        ...,
-        description="The unique ID of the email message, retrieved from a search.",
+        ..., description="The unique ID of the email message, retrieved from a search."
     )
 
 
@@ -29,9 +28,7 @@ class GmailGetMessage(GmailBaseTool):
     args_schema: Type[SearchArgsSchema] = SearchArgsSchema
 
     def _run(
-        self,
-        message_id: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, message_id: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> Dict:
         """Run the tool."""
         query = (

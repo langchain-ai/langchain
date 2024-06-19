@@ -19,10 +19,7 @@ from langchain_core.messages import (
     SystemMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import (
-    Field,
-    PrivateAttr,
-)
+from langchain_core.pydantic_v1 import Field, PrivateAttr
 from langchain_core.runnables import RunnableConfig
 
 logger = logging.getLogger(__name__)
@@ -133,11 +130,7 @@ class ChatMlflow(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        data = self._prepare_inputs(
-            messages,
-            stop,
-            **kwargs,
-        )
+        data = self._prepare_inputs(messages, stop, **kwargs)
         resp = self._client.predict(endpoint=self.endpoint, inputs=data)
         return ChatMlflow._create_chat_result(resp)
 
@@ -167,11 +160,7 @@ class ChatMlflow(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        data = self._prepare_inputs(
-            messages,
-            stop,
-            **kwargs,
-        )
+        data = self._prepare_inputs(messages, stop, **kwargs)
         # TODO: check if `_client.predict_stream` is available.
         chunk_iter = self._client.predict_stream(endpoint=self.endpoint, inputs=data)
         first_chunk_role = None
@@ -287,10 +276,7 @@ class ChatMlflow(BaseChatModel):
         for choice in response["choices"]:
             message = ChatMlflow._convert_dict_to_message(choice["message"])
             usage = choice.get("usage", {})
-            gen = ChatGeneration(
-                message=message,
-                generation_info=usage,
-            )
+            gen = ChatGeneration(message=message, generation_info=usage)
             generations.append(gen)
 
         usage = response.get("usage", {})

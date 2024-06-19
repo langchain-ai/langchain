@@ -67,11 +67,7 @@ class GraphQAChain(Chain):
         qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
         entity_chain = LLMChain(llm=llm, prompt=entity_prompt)
 
-        return cls(
-            qa_chain=qa_chain,
-            entity_extraction_chain=entity_chain,
-            **kwargs,
-        )
+        return cls(qa_chain=qa_chain, entity_extraction_chain=entity_chain, **kwargs)
 
     def _call(
         self,

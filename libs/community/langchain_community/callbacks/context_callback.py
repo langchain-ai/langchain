@@ -43,9 +43,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
     Chat Example:
         >>> from langchain_community.llms import ChatOpenAI
         >>> from langchain_community.callbacks import ContextCallbackHandler
-        >>> context_callback = ContextCallbackHandler(
-        ...     token="<CONTEXT_TOKEN_HERE>",
-        ... )
+        >>> context_callback = ContextCallbackHandler(token="<CONTEXT_TOKEN_HERE>")
         >>> chat = ChatOpenAI(
         ...     temperature=0,
         ...     headers={"user_id": "123"},
@@ -62,27 +60,19 @@ class ContextCallbackHandler(BaseCallbackHandler):
         >>> from langchain.chains import LLMChain
         >>> from langchain_community.chat_models import ChatOpenAI
         >>> from langchain_community.callbacks import ContextCallbackHandler
-        >>> context_callback = ContextCallbackHandler(
-        ...     token="<CONTEXT_TOKEN_HERE>",
-        ... )
+        >>> context_callback = ContextCallbackHandler(token="<CONTEXT_TOKEN_HERE>")
         >>> human_message_prompt = HumanMessagePromptTemplate(
         ...     prompt=PromptTemplate(
         ...         template="What is a good name for a company that makes {product}?",
         ...         input_variables=["product"],
-        ...    ),
+        ...     )
         ... )
-        >>> chat_prompt_template = ChatPromptTemplate.from_messages(
-        ...   [human_message_prompt]
-        ... )
+        >>> chat_prompt_template = ChatPromptTemplate.from_messages([human_message_prompt])
         >>> callback = ContextCallbackHandler(token)
         >>> # Note: the same callback object must be shared between the
         ...   LLM and the chain.
         >>> chat = ChatOpenAI(temperature=0.9, callbacks=[callback])
-        >>> chain = LLMChain(
-        ...   llm=chat,
-        ...   prompt=chat_prompt_template,
-        ...   callbacks=[callback]
-        ... )
+        >>> chain = LLMChain(llm=chat, prompt=chat_prompt_template, callbacks=[callback])
         >>> chain.run("colorful socks")
     """
 
@@ -132,12 +122,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
             elif message.type == "ai":
                 role = self.message_role_model.ASSISTANT
 
-            self.messages.append(
-                self.message_model(
-                    message=message.content,
-                    role=role,
-                )
-            )
+            self.messages.append(self.message_model(message=message.content, role=role))
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         """Run when LLM ends."""
@@ -148,8 +133,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
             generation = response.generations[0][0]
             self.messages.append(
                 self.message_model(
-                    message=generation.text,
-                    role=self.message_role_model.ASSISTANT,
+                    message=generation.text, role=self.message_role_model.ASSISTANT
                 )
             )
 
@@ -165,8 +149,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
         """Run when chain ends."""
         self.messages.append(
             self.message_model(
-                message=outputs["text"],
-                role=self.message_role_model.ASSISTANT,
+                message=outputs["text"], role=self.message_role_model.ASSISTANT
             )
         )
 
@@ -182,8 +165,7 @@ class ContextCallbackHandler(BaseCallbackHandler):
         self.client.log.conversation_upsert(
             body={
                 "conversation": self.conversation_model(
-                    messages=self.messages,
-                    metadata=self.metadata,
+                    messages=self.messages, metadata=self.metadata
                 )
             }
         )

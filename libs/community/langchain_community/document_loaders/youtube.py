@@ -33,6 +33,7 @@ class GoogleApiClient:
         .. code-block:: python
 
             from langchain_community.document_loaders import GoogleApiClient
+
             google_api_client = GoogleApiClient(
                 service_account_path=Path("path_to_your_sec_file.json")
             )
@@ -350,12 +351,12 @@ class GoogleApiYoutubeLoader(BaseLoader):
 
             from langchain_community.document_loaders import GoogleApiClient
             from langchain_community.document_loaders import GoogleApiYoutubeLoader
+
             google_api_client = GoogleApiClient(
                 service_account_path=Path("path_to_your_sec_file.json")
             )
             loader = GoogleApiYoutubeLoader(
-                google_api_client=google_api_client,
-                channel_name = "CodeAesthetic"
+                google_api_client=google_api_client, channel_name="CodeAesthetic"
             )
             load.load()
 
@@ -413,17 +414,9 @@ class GoogleApiYoutubeLoader(BaseLoader):
     def _get_document_for_video_id(self, video_id: str, **kwargs: Any) -> Document:
         captions = self._get_transcripe_for_video_id(video_id)
         video_response = (
-            self.youtube_client.videos()
-            .list(
-                part="id,snippet",
-                id=video_id,
-            )
-            .execute()
+            self.youtube_client.videos().list(part="id,snippet", id=video_id).execute()
         )
-        return Document(
-            page_content=captions,
-            metadata=video_response.get("items")[0],
-        )
+        return Document(page_content=captions, metadata=video_response.get("items")[0])
 
     def _get_channel_id(self, channel_name: str) -> str:
         request = self.youtube_client.search().list(
@@ -438,10 +431,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
 
     def _get_document_for_channel(self, channel: str, **kwargs: Any) -> List[Document]:
         try:
-            from youtube_transcript_api import (
-                NoTranscriptFound,
-                TranscriptsDisabled,
-            )
+            from youtube_transcript_api import NoTranscriptFound, TranscriptsDisabled
         except ImportError:
             raise ImportError(
                 "You must run"
@@ -473,10 +463,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
                         item["id"]["videoId"]
                     )
                     video_ids.append(
-                        Document(
-                            page_content=page_content,
-                            metadata=meta_data,
-                        )
+                        Document(page_content=page_content, metadata=meta_data)
                     )
                 except (TranscriptsDisabled, NoTranscriptFound) as e:
                     if self.continue_on_failure:

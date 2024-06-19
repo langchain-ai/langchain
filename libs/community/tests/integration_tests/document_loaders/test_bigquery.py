@@ -39,9 +39,7 @@ def test_bigquery_loader_page_content_columns() -> None:
 @pytest.mark.skipif(not bigquery_installed, reason="bigquery not installed")
 def test_bigquery_loader_metadata_columns() -> None:
     loader = BigQueryLoader(
-        "SELECT 1 AS a, 2 AS b",
-        page_content_columns=["a"],
-        metadata_columns=["b"],
+        "SELECT 1 AS a, 2 AS b", page_content_columns=["a"], metadata_columns=["b"]
     )
     docs = loader.load()
 

@@ -4,11 +4,7 @@ from typing import Any, Callable, List, Union
 from uuid import uuid4
 
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.messages import (
-    BaseMessage,
-    message_to_dict,
-    messages_from_dict,
-)
+from langchain_core.messages import BaseMessage, message_to_dict, messages_from_dict
 
 
 class RocksetChatMessageHistory(BaseChatMessageHistory):
@@ -19,16 +15,14 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
     Example:
         .. code-block:: python
 
-            from langchain_community.chat_message_histories import (
-                RocksetChatMessageHistory
-            )
+            from langchain_community.chat_message_histories import RocksetChatMessageHistory
             from rockset import RocksetClient
 
             history = RocksetChatMessageHistory(
                 session_id="MySession",
                 client=RocksetClient(),
                 collection="langchain_demo",
-                sync=True
+                sync=True,
             )
 
             history.add_user_message("hi!")
@@ -129,7 +123,7 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
                     """,
                     session_id=self.session_id,
                     message_id=message_id,
-                ),
+                )
             )
             != 0,
             RocksetChatMessageHistory.ADD_TIMEOUT_MS,
@@ -263,6 +257,5 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
         self._create_empty_doc()
         if self.sync:
             self._wait_until(
-                lambda: not self.messages,
-                RocksetChatMessageHistory.ADD_TIMEOUT_MS,
+                lambda: not self.messages, RocksetChatMessageHistory.ADD_TIMEOUT_MS
             )

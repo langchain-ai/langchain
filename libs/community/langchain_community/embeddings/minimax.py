@@ -7,12 +7,7 @@ import requests
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from tenacity import (
-    before_sleep_log,
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-)
+from tenacity import before_sleep_log, retry, stop_after_attempt, wait_exponential
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +50,7 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import MiniMaxEmbeddings
+
             embeddings = MiniMaxEmbeddings()
 
             query_text = "This is a test query."
@@ -97,16 +93,8 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
         values["minimax_api_key"] = minimax_api_key
         return values
 
-    def embed(
-        self,
-        texts: List[str],
-        embed_type: str,
-    ) -> List[List[float]]:
-        payload = {
-            "model": self.model,
-            "type": embed_type,
-            "texts": texts,
-        }
+    def embed(self, texts: List[str], embed_type: str) -> List[List[float]]:
+        payload = {"model": self.model, "type": embed_type, "texts": texts}
 
         # HTTP headers for authorization
         headers = {
@@ -114,9 +102,7 @@ class MiniMaxEmbeddings(BaseModel, Embeddings):
             "Content-Type": "application/json",
         }
 
-        params = {
-            "GroupId": self.minimax_group_id,
-        }
+        params = {"GroupId": self.minimax_group_id}
 
         # send request
         response = requests.post(

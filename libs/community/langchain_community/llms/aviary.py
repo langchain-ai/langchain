@@ -59,10 +59,7 @@ def get_models() -> List[str]:
 
 
 def get_completions(
-    model: str,
-    prompt: str,
-    use_prompt_format: bool = True,
-    version: str = "",
+    model: str, prompt: str, use_prompt_format: bool = True, version: str = ""
 ) -> Dict[str, Union[str, float, int]]:
     """Get completions from Aviary models."""
 
@@ -108,10 +105,11 @@ class Aviary(LLM):
         .. code-block:: python
 
             from langchain_community.llms import Aviary
+
             os.environ["AVIARY_URL"] = "<URL>"
             os.environ["AVIARY_TOKEN"] = "<TOKEN>"
-            light = Aviary(model='amazon/LightGPT')
-            output = light('How do you make fried rice?')
+            light = Aviary(model="amazon/LightGPT")
+            output = light("How do you make fried rice?")
     """
 
     model: str = "amazon/LightGPT"
@@ -151,10 +149,7 @@ class Aviary(LLM):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {
-            "model_name": self.model,
-            "aviary_url": self.aviary_url,
-        }
+        return {"model_name": self.model, "aviary_url": self.aviary_url}
 
     @property
     def _llm_type(self) -> str:
@@ -184,11 +179,7 @@ class Aviary(LLM):
         if self.version:
             kwargs["version"] = self.version
 
-        output = get_completions(
-            model=self.model,
-            prompt=prompt,
-            **kwargs,
-        )
+        output = get_completions(model=self.model, prompt=prompt, **kwargs)
 
         text = cast(str, output["generated_text"])
         if stop:

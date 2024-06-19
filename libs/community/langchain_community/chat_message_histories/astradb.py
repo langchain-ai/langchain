@@ -15,11 +15,7 @@ if TYPE_CHECKING:
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.messages import (
-    BaseMessage,
-    message_to_dict,
-    messages_from_dict,
-)
+from langchain_core.messages import BaseMessage, message_to_dict, messages_from_dict
 
 DEFAULT_COLLECTION_NAME = "langchain_message_store"
 
@@ -89,13 +85,8 @@ class AstraDBChatMessageHistory(BaseChatMessageHistory):
             doc["body_blob"]
             for doc in sorted(
                 self.collection.paginated_find(
-                    filter={
-                        "session_id": self.session_id,
-                    },
-                    projection={
-                        "timestamp": 1,
-                        "body_blob": 1,
-                    },
+                    filter={"session_id": self.session_id},
+                    projection={"timestamp": 1, "body_blob": 1},
                 ),
                 key=lambda _doc: _doc["timestamp"],
             )
@@ -111,17 +102,11 @@ class AstraDBChatMessageHistory(BaseChatMessageHistory):
     async def aget_messages(self) -> List[BaseMessage]:
         await self.astra_env.aensure_db_setup()
         docs = self.async_collection.paginated_find(
-            filter={
-                "session_id": self.session_id,
-            },
-            projection={
-                "timestamp": 1,
-                "body_blob": 1,
-            },
+            filter={"session_id": self.session_id},
+            projection={"timestamp": 1, "body_blob": 1},
         )
         sorted_docs = sorted(
-            [doc async for doc in docs],
-            key=lambda _doc: _doc["timestamp"],
+            [doc async for doc in docs], key=lambda _doc: _doc["timestamp"]
         )
         message_blobs = [doc["body_blob"] for doc in sorted_docs]
         items = [json.loads(message_blob) for message_blob in message_blobs]

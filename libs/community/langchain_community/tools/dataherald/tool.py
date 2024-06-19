@@ -28,9 +28,7 @@ class DataheraldTextToSQL(BaseTool):
     args_schema: Type[BaseModel] = DataheraldTextToSQLInput
 
     def _run(
-        self,
-        prompt: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, prompt: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the Dataherald tool."""
         return self.api_wrapper.run(prompt)

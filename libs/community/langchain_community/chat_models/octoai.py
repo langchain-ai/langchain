@@ -27,6 +27,7 @@ class ChatOctoAI(ChatOpenAI):
         .. code-block:: python
 
             from langchain_community.chat_models import ChatOctoAI
+
             chat = ChatOctoAI(model_name="mixtral-8x7b-instruct")
     """
 
@@ -51,19 +52,13 @@ class ChatOctoAI(ChatOpenAI):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["octoai_api_base"] = get_from_dict_or_env(
-            values,
-            "octoai_api_base",
-            "OCTOAI_API_BASE",
-            default=DEFAULT_API_BASE,
+            values, "octoai_api_base", "OCTOAI_API_BASE", default=DEFAULT_API_BASE
         )
         values["octoai_api_token"] = convert_to_secret_str(
             get_from_dict_or_env(values, "octoai_api_token", "OCTOAI_API_TOKEN")
         )
         values["model_name"] = get_from_dict_or_env(
-            values,
-            "model_name",
-            "MODEL_NAME",
-            default=DEFAULT_MODEL,
+            values, "model_name", "MODEL_NAME", default=DEFAULT_MODEL
         )
 
         try:

@@ -5,11 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.messages import (
-    BaseMessage,
-    message_to_dict,
-    messages_from_dict,
-)
+from langchain_core.messages import BaseMessage, message_to_dict, messages_from_dict
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch
@@ -185,8 +181,7 @@ class ElasticsearchChatMessageHistory(BaseChatMessageHistory):
                     "session_id": self.session_id,
                     "created_at": round(time() * 1000),
                     "history": json.dumps(
-                        message_to_dict(message),
-                        ensure_ascii=bool(self.ensure_ascii),
+                        message_to_dict(message), ensure_ascii=bool(self.ensure_ascii)
                     ),
                 },
                 refresh=True,

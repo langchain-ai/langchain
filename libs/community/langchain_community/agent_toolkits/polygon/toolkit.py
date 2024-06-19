@@ -22,18 +22,10 @@ class PolygonToolkit(BaseToolkit):
         cls, polygon_api_wrapper: PolygonAPIWrapper
     ) -> "PolygonToolkit":
         tools = [
-            PolygonAggregates(
-                api_wrapper=polygon_api_wrapper,
-            ),
-            PolygonLastQuote(
-                api_wrapper=polygon_api_wrapper,
-            ),
-            PolygonTickerNews(
-                api_wrapper=polygon_api_wrapper,
-            ),
-            PolygonFinancials(
-                api_wrapper=polygon_api_wrapper,
-            ),
+            PolygonAggregates(api_wrapper=polygon_api_wrapper),
+            PolygonLastQuote(api_wrapper=polygon_api_wrapper),
+            PolygonTickerNews(api_wrapper=polygon_api_wrapper),
+            PolygonFinancials(api_wrapper=polygon_api_wrapper),
         ]
         return cls(tools=tools)
 

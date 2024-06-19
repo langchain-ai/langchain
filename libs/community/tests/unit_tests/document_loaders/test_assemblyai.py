@@ -76,9 +76,7 @@ def test_load_by_id() -> None:
 @responses.activate
 def test_transcription_error_by_id() -> None:
     responses.add(
-        responses.GET,
-        "https://api.assemblyai.com/v2/transcript/1234",
-        status=404,
+        responses.GET, "https://api.assemblyai.com/v2/transcript/1234", status=404
     )
     loader = AssemblyAIAudioLoaderById(
         transcript_id="1234", api_key="api_key", transcript_format=TranscriptFormat.TEXT

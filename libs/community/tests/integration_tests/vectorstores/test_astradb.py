@@ -142,9 +142,7 @@ class TestAstraDB:
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         v_store_2 = AstraDB(
-            embedding=emb,
-            collection_name="lc_test_2",
-            astra_db_client=astra_db_client,
+            embedding=emb, collection_name="lc_test_2", astra_db_client=astra_db_client
         )
         v_store_2.delete_collection()
 
@@ -188,13 +186,7 @@ class TestAstraDB:
             namespace=os.environ.get("ASTRA_DB_KEYSPACE"),
         )
         try:
-            v_store.add_texts(
-                texts=["aa"],
-                metadatas=[
-                    {"k": "a", "ord": 0},
-                ],
-                ids=["a"],
-            )
+            v_store.add_texts(texts=["aa"], metadatas=[{"k": "a", "ord": 0}], ids=["a"])
             res1 = v_store.similarity_search("aa", k=5)
             assert len(res1) == 1
             v_store = AstraDB(
@@ -224,11 +216,7 @@ class TestAstraDB:
         )
         try:
             await v_store.aadd_texts(
-                texts=["aa"],
-                metadatas=[
-                    {"k": "a", "ord": 0},
-                ],
-                ids=["a"],
+                texts=["aa"], metadatas=[{"k": "a", "ord": 0}], ids=["a"]
             )
             res1 = await v_store.asimilarity_search("aa", k=5)
             assert len(res1) == 1
@@ -264,10 +252,7 @@ class TestAstraDB:
 
         # from_documents
         v_store_2 = AstraDB.from_documents(
-            [
-                Document(page_content="Hee"),
-                Document(page_content="Hoi"),
-            ],
+            [Document(page_content="Hee"), Document(page_content="Hoi")],
             embedding=emb,
             collection_name="lc_test_fd",
             token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
@@ -298,10 +283,7 @@ class TestAstraDB:
 
         # from_documents
         v_store_2 = await AstraDB.afrom_documents(
-            [
-                Document(page_content="Hee"),
-                Document(page_content="Hoi"),
-            ],
+            [Document(page_content="Hee"), Document(page_content="Hoi")],
             embedding=emb,
             collection_name="lc_test_fd_async",
             token=os.environ["ASTRA_DB_APPLICATION_TOKEN"],
@@ -334,10 +316,7 @@ class TestAstraDB:
         # partial overwrite and count total entries
         store_someemb.add_texts(
             texts=["cc", "dd"],
-            metadatas=[
-                {"k": "c_new", "ord": 102},
-                {"k": "d_new", "ord": 103},
-            ],
+            metadatas=[{"k": "c_new", "ord": 102}, {"k": "d_new", "ord": 103}],
             ids=["c", "d"],
         )
         res2 = store_someemb.similarity_search("Abc", k=10)
@@ -392,10 +371,7 @@ class TestAstraDB:
         # partial overwrite and count total entries
         await store_someemb.aadd_texts(
             texts=["cc", "dd"],
-            metadatas=[
-                {"k": "c_new", "ord": 102},
-                {"k": "d_new", "ord": 103},
-            ],
+            metadatas=[{"k": "c_new", "ord": 102}, {"k": "d_new", "ord": 103}],
             ids=["c", "d"],
         )
         res2 = await store_someemb.asimilarity_search("Abc", k=10)
@@ -450,9 +426,7 @@ class TestAstraDB:
             metadatas=[{"i": i} for i in i_vals],
         )
         res1 = store_parseremb.max_marginal_relevance_search(
-            self._v_from_i(3, N_val),
-            k=2,
-            fetch_k=3,
+            self._v_from_i(3, N_val), k=2, fetch_k=3
         )
         res_i_vals = {doc.metadata["i"] for doc in res1}
         assert res_i_vals == {0, 4}
@@ -472,9 +446,7 @@ class TestAstraDB:
             metadatas=[{"i": i} for i in i_vals],
         )
         res1 = await store_parseremb.amax_marginal_relevance_search(
-            self._v_from_i(3, N_val),
-            k=2,
-            fetch_k=3,
+            self._v_from_i(3, N_val), k=2, fetch_k=3
         )
         res_i_vals = {doc.metadata["i"] for doc in res1}
         assert res_i_vals == {0, 4}
@@ -484,28 +456,22 @@ class TestAstraDB:
         store_someemb.add_documents(
             [
                 Document(
-                    page_content="q",
-                    metadata={"ord": ord("q"), "group": "consonant"},
+                    page_content="q", metadata={"ord": ord("q"), "group": "consonant"}
                 ),
                 Document(
-                    page_content="w",
-                    metadata={"ord": ord("w"), "group": "consonant"},
+                    page_content="w", metadata={"ord": ord("w"), "group": "consonant"}
                 ),
                 Document(
-                    page_content="r",
-                    metadata={"ord": ord("r"), "group": "consonant"},
+                    page_content="r", metadata={"ord": ord("r"), "group": "consonant"}
                 ),
                 Document(
-                    page_content="e",
-                    metadata={"ord": ord("e"), "group": "vowel"},
+                    page_content="e", metadata={"ord": ord("e"), "group": "vowel"}
                 ),
                 Document(
-                    page_content="i",
-                    metadata={"ord": ord("i"), "group": "vowel"},
+                    page_content="i", metadata={"ord": ord("i"), "group": "vowel"}
                 ),
                 Document(
-                    page_content="o",
-                    metadata={"ord": ord("o"), "group": "vowel"},
+                    page_content="o", metadata={"ord": ord("o"), "group": "vowel"}
                 ),
             ]
         )
@@ -513,31 +479,21 @@ class TestAstraDB:
         res0 = store_someemb.similarity_search("x", k=10)
         assert {doc.page_content for doc in res0} == set("qwreio")
         # single filter
-        res1 = store_someemb.similarity_search(
-            "x",
-            k=10,
-            filter={"group": "vowel"},
-        )
+        res1 = store_someemb.similarity_search("x", k=10, filter={"group": "vowel"})
         assert {doc.page_content for doc in res1} == set("eio")
         # multiple filters
         res2 = store_someemb.similarity_search(
-            "x",
-            k=10,
-            filter={"group": "consonant", "ord": ord("q")},
+            "x", k=10, filter={"group": "consonant", "ord": ord("q")}
         )
         assert {doc.page_content for doc in res2} == set("q")
         # excessive filters
         res3 = store_someemb.similarity_search(
-            "x",
-            k=10,
-            filter={"group": "consonant", "ord": ord("q"), "case": "upper"},
+            "x", k=10, filter={"group": "consonant", "ord": ord("q"), "case": "upper"}
         )
         assert res3 == []
         # filter with logical operator
         res4 = store_someemb.similarity_search(
-            "x",
-            k=10,
-            filter={"$or": [{"ord": ord("q")}, {"ord": ord("r")}]},
+            "x", k=10, filter={"$or": [{"ord": ord("q")}, {"ord": ord("r")}]}
         )
         assert {doc.page_content for doc in res4} == {"q", "r"}
 
@@ -546,16 +502,9 @@ class TestAstraDB:
     ) -> None:
         """Scale of the similarity scores."""
         store_parseremb.add_texts(
-            texts=[
-                json.dumps([1, 1]),
-                json.dumps([-1, -1]),
-            ],
-            ids=["near", "far"],
+            texts=[json.dumps([1, 1]), json.dumps([-1, -1])], ids=["near", "far"]
         )
-        res1 = store_parseremb.similarity_search_with_score(
-            json.dumps([0.5, 0.5]),
-            k=2,
-        )
+        res1 = store_parseremb.similarity_search_with_score(json.dumps([0.5, 0.5]), k=2)
         scores = [sco for _, sco in res1]
         sco_near, sco_far = scores
         assert abs(1 - sco_near) < 0.001 and abs(sco_far) < 0.001
@@ -565,15 +514,10 @@ class TestAstraDB:
     ) -> None:
         """Scale of the similarity scores."""
         await store_parseremb.aadd_texts(
-            texts=[
-                json.dumps([1, 1]),
-                json.dumps([-1, -1]),
-            ],
-            ids=["near", "far"],
+            texts=[json.dumps([1, 1]), json.dumps([-1, -1])], ids=["near", "far"]
         )
         res1 = await store_parseremb.asimilarity_search_with_score(
-            json.dumps([0.5, 0.5]),
-            k=2,
+            json.dumps([0.5, 0.5]), k=2
         )
         scores = [sco for _, sco in res1]
         sco_near, sco_far = scores
@@ -702,14 +646,8 @@ class TestAstraDB:
         isq2 = 0.5**0.5
         isa = 0.7
         isb = (1.0 - isa * isa) ** 0.5
-        texts = [
-            json.dumps([isa, isb]),
-            json.dumps([10 * isq2, 10 * isq2]),
-        ]
-        ids = [
-            "rotated",
-            "scaled",
-        ]
+        texts = [json.dumps([isa, isb]), json.dumps([10 * isq2, 10 * isq2])]
+        ids = ["rotated", "scaled"]
         query_text = json.dumps([isq2, isq2])
         # creation, population, query - cosine
         vstore_cos = AstraDB(
@@ -721,13 +659,9 @@ class TestAstraDB:
             metric="cosine",
         )
         try:
-            vstore_cos.add_texts(
-                texts=texts,
-                ids=ids,
-            )
+            vstore_cos.add_texts(texts=texts, ids=ids)
             _, _, id_from_cos = vstore_cos.similarity_search_with_score_id(
-                query_text,
-                k=1,
+                query_text, k=1
             )[0]
             assert id_from_cos == "scaled"
         finally:
@@ -743,13 +677,9 @@ class TestAstraDB:
             metric="euclidean",
         )
         try:
-            vstore_euc.add_texts(
-                texts=texts,
-                ids=ids,
-            )
+            vstore_euc.add_texts(texts=texts, ids=ids)
             _, _, id_from_euc = vstore_euc.similarity_search_with_score_id(
-                query_text,
-                k=1,
+                query_text, k=1
             )[0]
             assert id_from_euc == "rotated"
         finally:

@@ -72,11 +72,7 @@ class _BaseStoryElementChain(Chain):
         return _output_keys
 
     @classmethod
-    def from_univariate_prompt(
-        cls,
-        llm: BaseLanguageModel,
-        **kwargs: Any,
-    ) -> Any:
+    def from_univariate_prompt(cls, llm: BaseLanguageModel, **kwargs: Any) -> Any:
         return cls(
             chain=LLMChain(
                 llm=llm,
@@ -167,11 +163,7 @@ class CPALChain(_BaseStoryElementChain):
     _story: StoryModel = pydantic.PrivateAttr(default=None)  # TODO: change name ?
 
     @classmethod
-    def from_univariate_prompt(
-        cls,
-        llm: BaseLanguageModel,
-        **kwargs: Any,
-    ) -> CPALChain:
+    def from_univariate_prompt(cls, llm: BaseLanguageModel, **kwargs: Any) -> CPALChain:
         """instantiation depends on component chains
 
         *Security note*: The building blocks of this class include the implementation
@@ -297,6 +289,6 @@ class CPALChain(_BaseStoryElementChain):
 
             >>> from IPython.display import SVG
             >>> cpal_chain.draw(path="graph.svg")
-            >>> SVG('graph.svg')
+            >>> SVG("graph.svg")
         """
         self._story._networkx_wrapper.draw_graphviz(**kwargs)

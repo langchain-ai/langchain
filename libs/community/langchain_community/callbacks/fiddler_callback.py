@@ -61,12 +61,7 @@ def import_fiddler() -> Any:
 # First, define custom callback handler implementations
 class FiddlerCallbackHandler(BaseCallbackHandler):
     def __init__(
-        self,
-        url: str,
-        org: str,
-        project: str,
-        model: str,
-        api_key: str,
+        self, url: str, org: str, project: str, model: str, api_key: str
     ) -> None:
         """
         Initialize Fiddler callback handler.
@@ -201,24 +196,16 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
 
         return [
             self.fdl.Enrichment(
-                name="Prompt Embedding",
-                enrichment="embedding",
-                columns=[PROMPT],
+                name="Prompt Embedding", enrichment="embedding", columns=[PROMPT]
             ),
             self.fdl.TextEmbedding(
-                name="Prompt CF",
-                source_column=PROMPT,
-                column="Prompt Embedding",
+                name="Prompt CF", source_column=PROMPT, column="Prompt Embedding"
             ),
             self.fdl.Enrichment(
-                name="Response Embedding",
-                enrichment="embedding",
-                columns=[RESPONSE],
+                name="Response Embedding", enrichment="embedding", columns=[RESPONSE]
             ),
             self.fdl.TextEmbedding(
-                name="Response CF",
-                source_column=RESPONSE,
-                column="Response Embedding",
+                name="Response CF", source_column=RESPONSE, column="Response Embedding"
             ),
             self.fdl.Enrichment(
                 name="Text Statistics",
@@ -238,14 +225,10 @@ class FiddlerCallbackHandler(BaseCallbackHandler):
                 },
             ),
             self.fdl.Enrichment(
-                name="PII",
-                enrichment="pii",
-                columns=[PROMPT, RESPONSE],
+                name="PII", enrichment="pii", columns=[PROMPT, RESPONSE]
             ),
             self.fdl.Enrichment(
-                name="Sentiment",
-                enrichment="sentiment",
-                columns=[PROMPT, RESPONSE],
+                name="Sentiment", enrichment="sentiment", columns=[PROMPT, RESPONSE]
             ),
         ]
 

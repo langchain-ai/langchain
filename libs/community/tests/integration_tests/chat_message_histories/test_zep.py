@@ -29,9 +29,7 @@ def test_messages(mocker: MockerFixture, zep_chat: ZepChatMessageHistory) -> Non
     from zep_python import Memory, Message, Summary
 
     mock_memory: Memory = Memory(
-        summary=Summary(
-            content="summary",
-        ),
+        summary=Summary(content="summary"),
         messages=[
             Message(content="message", role="ai", metadata={"key": "value"}),
             Message(content="message2", role="human", metadata={"key2": "value2"}),

@@ -31,9 +31,7 @@ class ConcurrentLoader(GenericLoader):
         super().__init__(blob_loader, blob_parser)
         self.num_workers = num_workers
 
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Load documents lazily with concurrent parsing."""
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=self.num_workers

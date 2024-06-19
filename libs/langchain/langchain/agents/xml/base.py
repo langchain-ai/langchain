@@ -157,6 +157,7 @@ def create_xml_agent(
 
             # Use with chat history
             from langchain_core.messages import AIMessage, HumanMessage
+
             agent_executor.invoke(
                 {
                     "input": "what's my name?",
@@ -209,9 +210,7 @@ def create_xml_agent(
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
 
-    prompt = prompt.partial(
-        tools=tools_renderer(list(tools)),
-    )
+    prompt = prompt.partial(tools=tools_renderer(list(tools)))
 
     if stop_sequence:
         stop = ["</tool_input>"] if stop_sequence is True else stop_sequence
@@ -221,7 +220,7 @@ def create_xml_agent(
 
     agent = (
         RunnablePassthrough.assign(
-            agent_scratchpad=lambda x: format_xml(x["intermediate_steps"]),
+            agent_scratchpad=lambda x: format_xml(x["intermediate_steps"])
         )
         | prompt
         | llm_with_stop

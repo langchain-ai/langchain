@@ -39,9 +39,7 @@ if TYPE_CHECKING:
     from langchain_community.document_transformers.google_translate import (
         GoogleTranslateTransformer,
     )
-    from langchain_community.document_transformers.html2text import (
-        Html2TextTransformer,
-    )
+    from langchain_community.document_transformers.html2text import Html2TextTransformer
     from langchain_community.document_transformers.long_context_reorder import (
         LongContextReorder,
     )

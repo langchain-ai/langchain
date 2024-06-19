@@ -4,10 +4,7 @@ from typing import List, Optional
 
 from langchain.chains.llm import LLMChain
 from langchain.memory import ChatMessageHistory
-from langchain.schema import (
-    BaseChatMessageHistory,
-    Document,
-)
+from langchain.schema import BaseChatMessageHistory, Document
 from langchain.tools.base import BaseTool
 from langchain_community.tools.human.tool import HumanInputRun
 from langchain_core.language_models import BaseChatModel

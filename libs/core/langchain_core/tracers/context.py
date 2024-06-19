@@ -84,10 +84,7 @@ def tracing_v2_enabled(
     if isinstance(example_id, str):
         example_id = UUID(example_id)
     cb = LangChainTracer(
-        example_id=example_id,
-        project_name=project_name,
-        tags=tags,
-        client=client,
+        example_id=example_id, project_name=project_name, tags=tags, client=client
     )
     try:
         tracing_v2_callback_var.set(cb)
@@ -122,8 +119,7 @@ def _get_trace_callbacks(
     if _tracing_v2_is_enabled():
         project_name_ = project_name or _get_tracer_project()
         tracer = tracing_v2_callback_var.get() or LangChainTracer(
-            project_name=project_name_,
-            example_id=example_id,
+            project_name=project_name_, example_id=example_id
         )
         if callback_manager is None:
             from langchain_core.callbacks.base import Callbacks

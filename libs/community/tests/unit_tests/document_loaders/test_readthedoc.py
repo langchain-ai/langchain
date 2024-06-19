@@ -24,8 +24,7 @@ def test_div_role_main() -> None:
 @pytest.mark.requires("bs4")
 def test_custom() -> None:
     loader = ReadTheDocsLoader(
-        PARENT_DIR / "custom",
-        custom_html_tag=("article", {"role": "main"}),
+        PARENT_DIR / "custom", custom_html_tag=("article", {"role": "main"})
     )
     documents = loader.load()
     assert len(documents[0].page_content) != 0
@@ -47,8 +46,6 @@ def test_index_page() -> None:
 
 @pytest.mark.requires("bs4")
 def test_empty() -> None:
-    loader = ReadTheDocsLoader(
-        PARENT_DIR / "custom",
-    )
+    loader = ReadTheDocsLoader(PARENT_DIR / "custom")
     documents = loader.load()
     assert len(documents[0].page_content) == 0

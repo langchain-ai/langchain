@@ -18,6 +18,7 @@ class IpexLLM(LLM):
         .. code-block:: python
 
             from langchain_community.llms import IpexLLM
+
             llm = IpexLLM.from_model_id(model_id="THUDM/chatglm-6b")
     """
 
@@ -125,10 +126,7 @@ class IpexLLM(LLM):
         kwargs: Optional[dict] = None,
     ) -> Any:
         try:
-            from ipex_llm.transformers import (
-                AutoModel,
-                AutoModelForCausalLM,
-            )
+            from ipex_llm.transformers import AutoModel, AutoModelForCausalLM
             from transformers import AutoTokenizer, LlamaTokenizer
 
         except ImportError:
@@ -155,10 +153,7 @@ class IpexLLM(LLM):
             }
 
         # load model with AutoModelForCausalLM and falls back to AutoModel on failure.
-        load_kwargs = {
-            "use_cache": True,
-            "trust_remote_code": True,
-        }
+        load_kwargs = {"use_cache": True, "trust_remote_code": True}
 
         if not low_bit_model:
             if load_in_low_bit is not None:
@@ -218,10 +213,7 @@ class IpexLLM(LLM):
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
         """Get the identifying parameters."""
-        return {
-            "model_id": self.model_id,
-            "model_kwargs": self.model_kwargs,
-        }
+        return {"model_id": self.model_id, "model_kwargs": self.model_kwargs}
 
     @property
     def _llm_type(self) -> str:

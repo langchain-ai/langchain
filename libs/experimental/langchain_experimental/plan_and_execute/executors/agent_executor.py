@@ -44,10 +44,7 @@ def load_agent_executor(
         template = TASK_PREFIX + template
 
     agent = StructuredChatAgent.from_llm_and_tools(
-        llm,
-        tools,
-        human_message_template=template,
-        input_variables=input_variables,
+        llm, tools, human_message_template=template, input_variables=input_variables
     )
     agent_executor = AgentExecutor.from_agent_and_tools(
         agent=agent, tools=tools, verbose=verbose

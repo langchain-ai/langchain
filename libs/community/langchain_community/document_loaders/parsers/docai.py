@@ -165,8 +165,7 @@ class DocAIParser(BaseBlobParser):
             documentai.ProcessRequest(
                 name=self._processor_name,
                 gcs_document=documentai.GcsDocument(
-                    gcs_uri=blob.path,
-                    mime_type=blob.mimetype or "application/pdf",
+                    gcs_uri=blob.path, mime_type=blob.mimetype or "application/pdf"
                 ),
                 process_options=ProcessOptions(
                     ocr_config=ocr_config,
@@ -179,10 +178,7 @@ class DocAIParser(BaseBlobParser):
         yield from (
             Document(
                 page_content=_text_from_layout(page.layout, response.document.text),
-                metadata={
-                    "page": page.page_number,
-                    "source": blob.path,
-                },
+                metadata={"page": page.page_number, "source": blob.path},
             )
             for page in response.document.pages
         )

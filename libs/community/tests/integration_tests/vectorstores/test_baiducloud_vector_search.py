@@ -14,10 +14,7 @@ def _bes_vector_db_from_texts(
     metadatas: Optional[List[dict]] = None, drop: bool = True
 ) -> BESVectorStore:
     return BESVectorStore.from_texts(
-        fake_texts,
-        FakeEmbeddings(),
-        metadatas=metadatas,
-        bes_url="http://10.0.X.X",
+        fake_texts, FakeEmbeddings(), metadatas=metadatas, bes_url="http://10.0.X.X"
     )
 
 

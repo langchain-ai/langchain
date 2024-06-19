@@ -108,12 +108,7 @@ class _BaseYandexGPT(Serializable):
                 "model_uri"
             ] = f"gpt://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
         if values["disable_request_logging"]:
-            values["_grpc_metadata"].append(
-                (
-                    "x-data-logging-enabled",
-                    "false",
-                )
-            )
+            values["_grpc_metadata"].append(("x-data-logging-enabled", "false"))
         return values
 
 
@@ -138,6 +133,7 @@ class YandexGPT(_BaseYandexGPT, LLM):
         .. code-block:: python
 
             from langchain_community.llms import YandexGPT
+
             yandex_gpt = YandexGPT(iam_token="t1.9eu...", folder_id="b1g...")
     """
 
@@ -189,10 +185,7 @@ class YandexGPT(_BaseYandexGPT, LLM):
         return text
 
 
-def _make_request(
-    self: YandexGPT,
-    prompt: str,
-) -> str:
+def _make_request(self: YandexGPT, prompt: str) -> str:
     try:
         import grpc
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value

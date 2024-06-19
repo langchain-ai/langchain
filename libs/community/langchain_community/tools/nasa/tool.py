@@ -21,9 +21,7 @@ class NasaAction(BaseTool):
     description: str = ""
 
     def _run(
-        self,
-        instructions: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, instructions: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the NASA API to run an operation."""
         return self.api_wrapper.run(self.mode, instructions)

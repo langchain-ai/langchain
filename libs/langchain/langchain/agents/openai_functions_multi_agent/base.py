@@ -8,11 +8,7 @@ from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinis
 from langchain_core.callbacks import BaseCallbackManager, Callbacks
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.chat import (
     BaseMessagePromptTemplate,
@@ -295,8 +291,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     ) -> BaseMultiActionAgent:
         """Construct an agent from an LLM and tools."""
         prompt = cls.create_prompt(
-            extra_prompt_messages=extra_prompt_messages,
-            system_message=system_message,
+            extra_prompt_messages=extra_prompt_messages, system_message=system_message
         )
         return cls(  # type: ignore[call-arg]
             llm=llm,

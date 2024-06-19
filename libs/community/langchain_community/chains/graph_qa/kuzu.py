@@ -124,9 +124,7 @@ class KuzuQAChain(Chain):
         )
 
         return cls(
-            qa_chain=qa_chain,
-            cypher_generation_chain=cypher_generation_chain,
-            **kwargs,
+            qa_chain=qa_chain, cypher_generation_chain=cypher_generation_chain, **kwargs
         )
 
     def _call(
@@ -158,7 +156,6 @@ class KuzuQAChain(Chain):
         )
 
         result = self.qa_chain(
-            {"question": question, "context": context},
-            callbacks=callbacks,
+            {"question": question, "context": context}, callbacks=callbacks
         )
         return {self.output_key: result[self.qa_chain.output_key]}

@@ -74,9 +74,7 @@ async def test_fireworks_abatch(llm: Fireworks) -> None:
 
 
 @pytest.mark.scheduled
-def test_fireworks_multiple_prompts(
-    llm: Fireworks,
-) -> None:
+def test_fireworks_multiple_prompts(llm: Fireworks) -> None:
     """Test completion with multiple prompts."""
     output = llm.generate(["How is the weather in New York today?", "I'm pickle rick"])
     assert isinstance(output, LLMResult)

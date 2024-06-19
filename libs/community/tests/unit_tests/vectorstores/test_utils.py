@@ -69,45 +69,23 @@ def test_filter_list_metadata() -> None:
         ),
         Document(
             page_content="",
-            metadata={
-                "key1": "this is another string!",
-                "key2": {"foo"},
-            },
+            metadata={"key1": "this is another string!", "key2": {"foo"}},
         ),
         Document(
             page_content="",
-            metadata={
-                "key1": "this is another string!",
-                "key2": {"foo": "bar"},
-            },
+            metadata={"key1": "this is another string!", "key2": {"foo": "bar"}},
         ),
         Document(
-            page_content="",
-            metadata={
-                "key1": "this is another string!",
-                "key2": True,
-            },
+            page_content="", metadata={"key1": "this is another string!", "key2": True}
         ),
         Document(
-            page_content="",
-            metadata={
-                "key1": "this is another string!",
-                "key2": 1,
-            },
+            page_content="", metadata={"key1": "this is another string!", "key2": 1}
         ),
         Document(
-            page_content="",
-            metadata={
-                "key1": "this is another string!",
-                "key2": 1.0,
-            },
+            page_content="", metadata={"key1": "this is another string!", "key2": 1.0}
         ),
         Document(
-            page_content="",
-            metadata={
-                "key1": "this is another string!",
-                "key2": "foo",
-            },
+            page_content="", metadata={"key1": "this is another string!", "key2": "foo"}
         ),
     ]
 

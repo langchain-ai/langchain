@@ -57,9 +57,7 @@ def test_default_system_message(model: Llama2Chat) -> None:
     assert actual == expected
 
 
-def test_configured_system_message(
-    model_cfg_sys_msg: Llama2Chat,
-) -> None:
+def test_configured_system_message(model_cfg_sys_msg: Llama2Chat) -> None:
     messages = [HumanMessage(content="usr-msg-1")]
 
     actual = model_cfg_sys_msg.invoke(messages).content  # type: ignore
@@ -68,9 +66,7 @@ def test_configured_system_message(
     assert actual == expected
 
 
-async def test_configured_system_message_async(
-    model_cfg_sys_msg: Llama2Chat,
-) -> None:
+async def test_configured_system_message_async(model_cfg_sys_msg: Llama2Chat) -> None:
     messages = [HumanMessage(content="usr-msg-1")]
 
     actual = await model_cfg_sys_msg.ainvoke(messages)  # type: ignore
@@ -79,9 +75,7 @@ async def test_configured_system_message_async(
     assert actual.content == expected
 
 
-def test_provided_system_message(
-    model_cfg_sys_msg: Llama2Chat,
-) -> None:
+def test_provided_system_message(model_cfg_sys_msg: Llama2Chat) -> None:
     messages = [
         SystemMessage(content="custom-sys-msg"),
         HumanMessage(content="usr-msg-1"),
@@ -145,10 +139,7 @@ def test_human_ai_messages_not_alternating(model: Llama2Chat) -> None:
 
 
 def test_last_message_not_human_message(model: Llama2Chat) -> None:
-    messages = [
-        HumanMessage(content="usr-msg-1"),
-        AIMessage(content="ai-msg-1"),
-    ]
+    messages = [HumanMessage(content="usr-msg-1"), AIMessage(content="ai-msg-1")]
 
     with pytest.raises(ValueError) as info:
         model.invoke(messages)

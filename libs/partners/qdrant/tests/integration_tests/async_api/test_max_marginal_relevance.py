@@ -8,9 +8,7 @@ from tests.integration_tests.common import (
     ConsistentFakeEmbeddings,
     assert_documents_equals,
 )
-from tests.integration_tests.fixtures import (
-    qdrant_locations,
-)
+from tests.integration_tests.fixtures import qdrant_locations
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])

@@ -37,11 +37,7 @@ async def test_generic_fake_chat_model_ainvoke() -> None:
 
 async def test_generic_fake_chat_model_stream() -> None:
     """Test streaming."""
-    infinite_cycle = cycle(
-        [
-            AIMessage(content="hello goodbye"),
-        ]
-    )
+    infinite_cycle = cycle([AIMessage(content="hello goodbye")])
     model = GenericFakeChatModel(messages=infinite_cycle)
     chunks = [chunk async for chunk in model.astream("meow")]
     assert chunks == [
@@ -92,7 +88,7 @@ async def test_generic_fake_chat_model_stream() -> None:
         AIMessageChunk(
             content="",
             additional_kwargs={
-                "function_call": {"arguments": '{\n  "source_path": "foo"'},
+                "function_call": {"arguments": '{\n  "source_path": "foo"'}
             },
             id=AnyStr(),
         ),
@@ -104,7 +100,7 @@ async def test_generic_fake_chat_model_stream() -> None:
         AIMessageChunk(
             content="",
             additional_kwargs={
-                "function_call": {"arguments": '\n  "destination_path": "bar"\n}'},
+                "function_call": {"arguments": '\n  "destination_path": "bar"\n}'}
             },
             id=AnyStr(),
         ),
@@ -181,11 +177,7 @@ async def test_callback_handlers() -> None:
         ) -> None:
             self.store.append(token)
 
-    infinite_cycle = cycle(
-        [
-            AIMessage(content="hello goodbye"),
-        ]
-    )
+    infinite_cycle = cycle([AIMessage(content="hello goodbye")])
     model = GenericFakeChatModel(messages=infinite_cycle)
     tokens: List[str] = []
     # New model

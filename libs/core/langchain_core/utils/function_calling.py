@@ -22,12 +22,7 @@ from typing import (
 from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    ToolMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.json_schema import dereference_refs
 
@@ -215,9 +210,7 @@ def _get_python_function_required_args(function: Callable) -> List[str]:
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
     removal="0.3.0",
 )
-def convert_python_function_to_openai_function(
-    function: Callable,
-) -> Dict[str, Any]:
+def convert_python_function_to_openai_function(function: Callable) -> Dict[str, Any]:
     """Convert a Python function to an OpenAI function-calling API compatible dict.
 
     Assumes the Python function has type hints and a docstring with a description. If
@@ -257,9 +250,7 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
                 # which is a string.
                 # And Open AI does not support an array type for the
                 # parameters.
-                "properties": {
-                    "__arg1": {"title": "__arg1", "type": "string"},
-                },
+                "properties": {"__arg1": {"title": "__arg1", "type": "string"}},
                 "required": ["__arg1"],
                 "type": "object",
             },
@@ -382,15 +373,16 @@ def tool_example_to_messages(
             from langchain_core.pydantic_v1 import BaseModel, Field
             from langchain_openai import ChatOpenAI
 
+
             class Person(BaseModel):
                 '''Information about a person.'''
+
                 name: Optional[str] = Field(..., description="The name of the person")
                 hair_color: Optional[str] = Field(
                     ..., description="The color of the person's hair if known"
                 )
-                height_in_meters: Optional[str] = Field(
-                    ..., description="Height in METERs"
-                )
+                height_in_meters: Optional[str] = Field(..., description="Height in METERs")
+
 
             examples = [
                 (
@@ -407,9 +399,7 @@ def tool_example_to_messages(
             messages = []
 
             for txt, tool_call in examples:
-                messages.extend(
-                    tool_example_to_messages(txt, [tool_call])
-                )
+                messages.extend(tool_example_to_messages(txt, [tool_call]))
     """
     messages: List[BaseMessage] = [HumanMessage(content=input)]
     openai_tool_calls = []

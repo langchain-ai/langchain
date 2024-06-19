@@ -19,15 +19,9 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from langchain_community.docstore.arbitrary_fn import (
-        DocstoreFn,
-    )
-    from langchain_community.docstore.in_memory import (
-        InMemoryDocstore,
-    )
-    from langchain_community.docstore.wikipedia import (
-        Wikipedia,
-    )
+    from langchain_community.docstore.arbitrary_fn import DocstoreFn
+    from langchain_community.docstore.in_memory import InMemoryDocstore
+    from langchain_community.docstore.wikipedia import Wikipedia
 
 _module_lookup = {
     "DocstoreFn": "langchain_community.docstore.arbitrary_fn",

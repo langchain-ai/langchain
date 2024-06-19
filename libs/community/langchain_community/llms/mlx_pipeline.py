@@ -31,7 +31,8 @@ class MLXPipeline(LLM):
 
             from langchain_community.llms import MLXPipeline
             from mlx_lm import load
-            model_id="mlx-community/quantized-gemma-2b"
+
+            model_id = "mlx-community/quantized-gemma-2b"
             model, tokenizer = load(model_id)
             pipe = MLXPipeline(model=model, tokenizer=tokenizer)
     """

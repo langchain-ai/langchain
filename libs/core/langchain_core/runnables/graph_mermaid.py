@@ -117,10 +117,7 @@ def _escape_node_label(node_label: str) -> str:
     return re.sub(r"[^a-zA-Z-_]", "_", node_label)
 
 
-def _adjust_mermaid_edge(
-    edge: Edge,
-    nodes: Dict[str, str],
-) -> Tuple[str, str]:
+def _adjust_mermaid_edge(edge: Edge, nodes: Dict[str, str]) -> Tuple[str, str]:
     """Adjusts Mermaid edge to map conditional nodes to pure nodes."""
     source_node_label = nodes.get(edge.source, edge.source)
     target_node_label = nodes.get(edge.target, edge.target)

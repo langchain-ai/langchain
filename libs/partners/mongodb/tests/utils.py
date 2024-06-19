@@ -11,10 +11,7 @@ from langchain_core.callbacks.manager import (
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.chat_models import SimpleChatModel
 from langchain_core.language_models.llms import LLM
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import validator
 from pymongo.collection import Collection

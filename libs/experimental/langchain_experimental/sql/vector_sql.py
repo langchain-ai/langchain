@@ -95,6 +95,7 @@ class VectorSQLDatabaseChain(SQLDatabaseChain):
 
             from langchain_experimental.sql import SQLDatabaseChain
             from langchain_community.llms import OpenAI, SQLDatabase, OpenAIEmbeddings
+
             db = SQLDatabase(...)
             db_chain = VectorSQLDatabaseChain.from_llm(OpenAI(), db, OpenAIEmbeddings())
 
@@ -135,8 +136,7 @@ class VectorSQLDatabaseChain(SQLDatabaseChain):
         try:
             intermediate_steps.append(llm_inputs)  # input: sql generation
             llm_out = self.llm_chain.predict(
-                callbacks=_run_manager.get_child(),
-                **llm_inputs,
+                callbacks=_run_manager.get_child(), **llm_inputs
             )
             sql_cmd = self.sql_cmd_parser.parse(llm_out)
             if self.return_sql:
@@ -194,8 +194,7 @@ class VectorSQLDatabaseChain(SQLDatabaseChain):
                 llm_inputs["input"] = input_text
                 intermediate_steps.append(llm_inputs)  # input: final answer
                 final_result = self.llm_chain.predict(
-                    callbacks=_run_manager.get_child(),
-                    **llm_inputs,
+                    callbacks=_run_manager.get_child(), **llm_inputs
                 ).strip()
                 intermediate_steps.append(final_result)  # output: final answer
                 _run_manager.on_text(final_result, color="green", verbose=self.verbose)

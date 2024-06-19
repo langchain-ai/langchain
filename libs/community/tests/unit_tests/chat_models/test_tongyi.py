@@ -1,11 +1,5 @@
-from langchain_core.messages import (
-    AIMessage,
-    HumanMessage,
-    SystemMessage,
-)
-from langchain_core.output_parsers.openai_tools import (
-    parse_tool_call,
-)
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.output_parsers.openai_tools import parse_tool_call
 
 from langchain_community.chat_models.tongyi import (
     convert_dict_to_message,

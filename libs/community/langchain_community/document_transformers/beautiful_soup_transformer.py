@@ -170,9 +170,7 @@ class BeautifulSoupTransformer(BaseDocumentTransformer):
         return cleaned_content
 
     async def atransform_documents(
-        self,
-        documents: Sequence[Document],
-        **kwargs: Any,
+        self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
         raise NotImplementedError
 

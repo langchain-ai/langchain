@@ -21,7 +21,7 @@ class SemaDB(VectorStore):
 
             from langchain_community.vectorstores import SemaDB
 
-            db = SemaDB('mycollection', 768, embeddings, DistanceStrategy.COSINE)
+            db = SemaDB("mycollection", 768, embeddings, DistanceStrategy.COSINE)
 
     """
 
@@ -75,9 +75,7 @@ class SemaDB(VectorStore):
             "distanceMetric": self._get_internal_distance_strategy(),
         }
         response = requests.post(
-            SemaDB.BASE_URL + "/collections",
-            json=payload,
-            headers=self.headers,
+            SemaDB.BASE_URL + "/collections", json=payload, headers=self.headers
         )
         return response.status_code == 200
 
@@ -131,11 +129,7 @@ class SemaDB(VectorStore):
                 new_id = str(uuid4())
                 ids.append(new_id)
                 points.append(
-                    {
-                        "id": new_id,
-                        "vector": embedding,
-                        "metadata": {"text": text},
-                    }
+                    {"id": new_id, "vector": embedding, "metadata": {"text": text}}
                 )
         # Insert points in batches
         for i in range(0, len(points), batch_size):
@@ -170,9 +164,7 @@ class SemaDB(VectorStore):
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
-        payload = {
-            "ids": ids,
-        }
+        payload = {"ids": ids}
         response = requests.delete(
             SemaDB.BASE_URL + f"/collections/{self.collection_name}/points",
             json=payload,
@@ -188,10 +180,7 @@ class SemaDB(VectorStore):
             vec = vec / np.linalg.norm(vec)
             embedding = vec.tolist()
         # Perform search request
-        payload = {
-            "vector": embedding,
-            "limit": k,
-        }
+        payload = {"vector": embedding, "limit": k}
         response = requests.post(
             SemaDB.BASE_URL + f"/collections/{self.collection_name}/points/search",
             json=payload,

@@ -21,6 +21,7 @@ class GradientEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import GradientEmbeddings
+
             GradientEmbeddings(
                 model="bge-large",
                 gradient_workspace_id="12345614fc0_workspace",

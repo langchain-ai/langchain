@@ -45,18 +45,9 @@ def test_mistralai_initialization() -> None:
 @pytest.mark.parametrize(
     ("message", "expected"),
     [
-        (
-            SystemMessage(content="Hello"),
-            dict(role="system", content="Hello"),
-        ),
-        (
-            HumanMessage(content="Hello"),
-            dict(role="user", content="Hello"),
-        ),
-        (
-            AIMessage(content="Hello"),
-            dict(role="assistant", content="Hello"),
-        ),
+        (SystemMessage(content="Hello"), dict(role="system", content="Hello")),
+        (HumanMessage(content="Hello"), dict(role="user", content="Hello")),
+        (AIMessage(content="Hello"), dict(role="assistant", content="Hello")),
         (
             ChatMessage(role="assistant", content="Hello"),
             dict(role="assistant", content="Hello"),
@@ -74,13 +65,7 @@ def _make_completion_response_from_token(token: str) -> Dict:
     return dict(
         id="abc123",
         model="fake_model",
-        choices=[
-            dict(
-                index=0,
-                delta=dict(content=token),
-                finish_reason=None,
-            )
-        ],
+        choices=[dict(index=0, delta=dict(content=token), finish_reason=None)],
     )
 
 
@@ -159,13 +144,7 @@ def test__convert_dict_to_message_tool_call() -> None:
                 "name": "GenerateUsername",
             },
         },
-        {
-            "id": "abc123",
-            "function": {
-                "arguments": "oops",
-                "name": "GenerateUsername",
-            },
-        },
+        {"id": "abc123", "function": {"arguments": "oops", "name": "GenerateUsername"}},
     ]
     message = {"role": "assistant", "content": "", "tool_calls": raw_tool_calls}
     result = _convert_mistral_chat_message_to_message(message)
@@ -178,14 +157,14 @@ def test__convert_dict_to_message_tool_call() -> None:
                 args="oops",
                 error="Function GenerateUsername arguments:\n\noops\n\nare not valid JSON. Received JSONDecodeError Expecting value: line 1 column 1 (char 0)",  # noqa: E501
                 id="abc123",
-            ),
+            )
         ],
         tool_calls=[
             ToolCall(
                 name="GenerateUsername",
                 args={"name": "Sally", "hair_color": "green"},
                 id="def456",
-            ),
+            )
         ],
     )
     assert result == expected_output

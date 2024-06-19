@@ -79,9 +79,7 @@ class ChatBaichuan(BaseChatModel):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
-        return {
-            "baichuan_api_key": "BAICHUAN_API_KEY",
-        }
+        return {"baichuan_api_key": "BAICHUAN_API_KEY"}
 
     @property
     def lc_serializable(self) -> bool:
@@ -145,17 +143,10 @@ class ChatBaichuan(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         values["baichuan_api_base"] = get_from_dict_or_env(
-            values,
-            "baichuan_api_base",
-            "BAICHUAN_API_BASE",
-            DEFAULT_API_BASE,
+            values, "baichuan_api_base", "BAICHUAN_API_BASE", DEFAULT_API_BASE
         )
         values["baichuan_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "baichuan_api_key",
-                "BAICHUAN_API_KEY",
-            )
+            get_from_dict_or_env(values, "baichuan_api_key", "BAICHUAN_API_KEY")
         )
 
         return values

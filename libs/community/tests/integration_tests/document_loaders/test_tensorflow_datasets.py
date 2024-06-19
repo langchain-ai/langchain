@@ -98,8 +98,6 @@ def test_load_fail_no_func() -> None:
     """Test that fails to load"""
     with pytest.raises(ValidationError) as exc_info:
         TensorflowDatasetLoader(
-            dataset_name="mlqa/en",
-            split_name="test",
-            load_max_docs=MAX_DOCS,
+            dataset_name="mlqa/en", split_name="test", load_max_docs=MAX_DOCS
         )
     assert "Please provide a function" in str(exc_info.value)

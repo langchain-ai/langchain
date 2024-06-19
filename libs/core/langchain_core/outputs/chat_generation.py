@@ -72,8 +72,7 @@ class ChatGenerationChunk(ChatGeneration):
     def __add__(self, other: ChatGenerationChunk) -> ChatGenerationChunk:
         if isinstance(other, ChatGenerationChunk):
             generation_info = merge_dicts(
-                self.generation_info or {},
-                other.generation_info or {},
+                self.generation_info or {}, other.generation_info or {}
             )
             return ChatGenerationChunk(
                 message=self.message + other.message,

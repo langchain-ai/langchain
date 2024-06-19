@@ -226,8 +226,7 @@ class Aerospike(VectorStore):
 
         if wait_for_index:
             self._client.wait_for_index_completion(
-                namespace=self._namespace,
-                name=index_name,
+                namespace=self._namespace, name=index_name
             )
 
         return ids
@@ -254,10 +253,7 @@ class Aerospike(VectorStore):
             for id in ids:
                 try:
                     self._client.delete(
-                        namespace=self._namespace,
-                        key=id,
-                        set_name=set_name,
-                        **kwargs,
+                        namespace=self._namespace, key=id, set_name=set_name, **kwargs
                     )
                 except AVSServerError:
                     return False
@@ -580,12 +576,7 @@ class Aerospike(VectorStore):
                     distance_strategy=MODEL_DISTANCE_CALC,
                 )
         """
-        aerospike = cls(
-            client,
-            embedding,
-            namespace,
-            **kwargs,
-        )
+        aerospike = cls(client, embedding, namespace, **kwargs)
 
         aerospike.add_texts(
             texts,

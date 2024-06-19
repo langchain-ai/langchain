@@ -98,12 +98,7 @@ _TEST_CASES = [
             "some_dir/other_dir/more_nested.txt",
         ],
     },
-    {
-        "glob": "meeeeeeow",
-        "suffixes": None,
-        "exclude": (),
-        "relative_filenames": [],
-    },
+    {"glob": "meeeeeeow", "suffixes": None, "exclude": (), "relative_filenames": []},
     {
         "glob": "*",
         "suffixes": [".html", ".txt"],

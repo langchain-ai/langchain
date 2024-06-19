@@ -7,9 +7,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
-from langchain_core.messages import (
-    BaseMessage,
-)
+from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import root_validator
 
@@ -144,12 +142,7 @@ class ChatAI21(BaseChatModel, AI21Base):
                 raise ValueError("stop is defined in both stop and kwargs")
             params["stop_sequences"] = stop
 
-        return {
-            **converted_messages,
-            **self._default_params,
-            **params,
-            **kwargs,
-        }
+        return {**converted_messages, **self._default_params, **params, **kwargs}
 
     def _generate(
         self,

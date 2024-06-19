@@ -77,14 +77,8 @@ class SampleHuggingface(datasets.GeneratorBasedBuilder):
                     "text": "This is text in version 1",
                     "list": ["List item 1", "List item 2", "List item 3"],
                     "dict": [
-                        {
-                            "dict_text": "Object text 1",
-                            "dict_int": "1",
-                        },
-                        {
-                            "dict_text": "Object text 2",
-                            "dict_int": str(000),
-                        },
+                        {"dict_text": "Object text 1", "dict_int": "1"},
+                        {"dict_text": "Object text 2", "dict_int": str(000)},
                     ],
                 },
             )
@@ -96,14 +90,8 @@ class SampleHuggingface(datasets.GeneratorBasedBuilder):
                     "text": "This is text in version 2",
                     "list": ["Hello", "Bonjour", "Hola"],
                     "dict": [
-                        {
-                            "dict_text": "Hello world!",
-                            "dict_int": "2",
-                        },
-                        {
-                            "dict_text": "langchain is cool",
-                            "dict_int": str(123),
-                        },
+                        {"dict_text": "Hello world!", "dict_int": "2"},
+                        {"dict_text": "langchain is cool", "dict_int": str(123)},
                     ],
                 },
             )

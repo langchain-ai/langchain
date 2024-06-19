@@ -100,9 +100,7 @@ class FalkorDBQAChain(Chain):
         cypher_generation_chain = LLMChain(llm=llm, prompt=cypher_prompt)
 
         return cls(
-            qa_chain=qa_chain,
-            cypher_generation_chain=cypher_generation_chain,
-            **kwargs,
+            qa_chain=qa_chain, cypher_generation_chain=cypher_generation_chain, **kwargs
         )
 
     def _call(
@@ -145,8 +143,7 @@ class FalkorDBQAChain(Chain):
             intermediate_steps.append({"context": context})
 
             result = self.qa_chain(
-                {"question": question, "context": context},
-                callbacks=callbacks,
+                {"question": question, "context": context}, callbacks=callbacks
             )
             final_result = result[self.qa_chain.output_key]
 

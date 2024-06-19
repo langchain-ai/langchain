@@ -53,16 +53,10 @@ class RePhraseQueryRetriever(BaseRetriever):
         """
 
         llm_chain = LLMChain(llm=llm, prompt=prompt)
-        return cls(
-            retriever=retriever,
-            llm_chain=llm_chain,
-        )
+        return cls(retriever=retriever, llm_chain=llm_chain)
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get relevated documents given a user question.
 
@@ -81,9 +75,6 @@ class RePhraseQueryRetriever(BaseRetriever):
         return docs
 
     async def _aget_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: AsyncCallbackManagerForRetrieverRun,
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         raise NotImplementedError

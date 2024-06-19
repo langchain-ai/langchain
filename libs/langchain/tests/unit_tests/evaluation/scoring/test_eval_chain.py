@@ -16,10 +16,7 @@ def test_PairwiseStringResultOutputParser_parse() -> None:
     text = """This answer is really good. 
 Rating: [[10]]"""
     got = output_parser.parse(text)
-    want = {
-        "reasoning": text,
-        "score": 10,
-    }
+    want = {"reasoning": text, "score": 10}
     assert got.get("reasoning") == want["reasoning"]
     assert got.get("score") == want["score"]
 
@@ -45,8 +42,7 @@ def test_pairwise_string_comparison_chain() -> None:
     )
     chain = ScoreStringEvalChain.from_llm(llm=llm)
     res = chain.evaluate_strings(
-        prediction="I like pie.",
-        input="What is your favorite food?",
+        prediction="I like pie.", input="What is your favorite food?"
     )
     assert res["score"] == 9
     assert res["reasoning"] == "This is a rather good answer. Rating: [[9]]"
@@ -62,14 +58,11 @@ def test_pairwise_string_comparison_chain() -> None:
 
 def test_labeled_pairwise_string_comparison_chain_missing_ref() -> None:
     llm = FakeLLM(
-        queries={
-            "a": "This is a rather good answer. Rating: [[9]]",
-        },
+        queries={"a": "This is a rather good answer. Rating: [[9]]"},
         sequential_responses=True,
     )
     chain = LabeledScoreStringEvalChain.from_llm(llm=llm)
     with pytest.raises(ValueError):
         chain.evaluate_strings(
-            prediction="I like pie.",
-            input="What is your favorite food?",
+            prediction="I like pie.", input="What is your favorite food?"
         )

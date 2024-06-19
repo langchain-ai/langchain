@@ -207,9 +207,7 @@ def modify_serialized_iterative(
         if not name:
             name = _kind
 
-        output_dict = {
-            f"{name}": transformed_dict,
-        }
+        output_dict = {f"{name}": transformed_dict}
         return output_dict
 
     return list(map(transform_run, runs))
@@ -365,20 +363,11 @@ class WandbTracer(BaseTracer):
         try:
             data = json.loads(run.json())
             processed = flatten_run(data)
-            keep_keys = (
-                "id",
-                "name",
-                "serialized",
-                "parent_run_id",
-            )
+            keep_keys = ("id", "name", "serialized", "parent_run_id")
             processed = truncate_run_iterative(processed, keep_keys=keep_keys)
             exact_keys, partial_keys = (
                 ("lc", "type", "graph"),
-                (
-                    "api_key",
-                    "input",
-                    "output",
-                ),
+                ("api_key", "input", "output"),
             )
             processed = modify_serialized_iterative(
                 processed, exact_keys=exact_keys, partial_keys=partial_keys

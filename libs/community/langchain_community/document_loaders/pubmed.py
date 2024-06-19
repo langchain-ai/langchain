@@ -14,11 +14,7 @@ class PubMedLoader(BaseLoader):
         load_max_docs: The maximum number of documents to load.
     """
 
-    def __init__(
-        self,
-        query: str,
-        load_max_docs: Optional[int] = 3,
-    ):
+    def __init__(self, query: str, load_max_docs: Optional[int] = 3):
         """Initialize the PubMedLoader.
 
         Args:
@@ -29,7 +25,7 @@ class PubMedLoader(BaseLoader):
         self.query = query
         self.load_max_docs = load_max_docs
         self._client = PubMedAPIWrapper(  # type: ignore[call-arg]
-            top_k_results=load_max_docs,  # type: ignore[arg-type]
+            top_k_results=load_max_docs  # type: ignore[arg-type]
         )
 
     def lazy_load(self) -> Iterator[Document]:

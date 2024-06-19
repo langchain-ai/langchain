@@ -98,10 +98,7 @@ class TestDocumentDBVectorSearch:
         ]
 
         vectorstore = DocumentDBVectorSearch.from_documents(
-            documents,
-            embedding_openai,
-            collection=collection,
-            index_name=INDEX_NAME,
+            documents, embedding_openai, collection=collection, index_name=INDEX_NAME
         )
         sleep(1)  # waits for DocumentDB to save contents to the collection
 
@@ -128,10 +125,7 @@ class TestDocumentDBVectorSearch:
         ]
 
         vectorstore = DocumentDBVectorSearch.from_documents(
-            documents,
-            embedding_openai,
-            collection=collection,
-            index_name=INDEX_NAME,
+            documents, embedding_openai, collection=collection, index_name=INDEX_NAME
         )
         sleep(1)  # waits for DocumentDB to save contents to the collection
 
@@ -156,10 +150,7 @@ class TestDocumentDBVectorSearch:
             "That fence is purple.",
         ]
         vectorstore = DocumentDBVectorSearch.from_texts(
-            texts,
-            embedding_openai,
-            collection=collection,
-            index_name=INDEX_NAME,
+            texts, embedding_openai, collection=collection, index_name=INDEX_NAME
         )
 
         # Create the HNSW index that will be leveraged later for vector search
@@ -352,10 +343,7 @@ class TestDocumentDBVectorSearch:
     ) -> Optional[bool]:
         vectorstore: DocumentDBVectorSearch = (
             DocumentDBVectorSearch.from_connection_string(
-                CONNECTION_STRING,
-                NAMESPACE,
-                embedding_openai,
-                index_name=INDEX_NAME,
+                CONNECTION_STRING, NAMESPACE, embedding_openai, index_name=INDEX_NAME
             )
         )
 
@@ -366,10 +354,7 @@ class TestDocumentDBVectorSearch:
     ) -> None:
         vectorstore: DocumentDBVectorSearch = (
             DocumentDBVectorSearch.from_connection_string(
-                CONNECTION_STRING,
-                NAMESPACE,
-                embedding_openai,
-                index_name=INDEX_NAME,
+                CONNECTION_STRING, NAMESPACE, embedding_openai, index_name=INDEX_NAME
             )
         )
 

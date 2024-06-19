@@ -32,9 +32,7 @@ class YahooFinanceNewsTool(BaseTool):
     args_schema: Type[BaseModel] = YahooFinanceNewsInput
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the Yahoo Finance News tool."""
         try:

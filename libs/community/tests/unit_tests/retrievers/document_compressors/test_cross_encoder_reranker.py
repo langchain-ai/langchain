@@ -12,14 +12,7 @@ from langchain.retrievers.document_compressors import CrossEncoderReranker  # no
 
 
 def test_rerank() -> None:
-    texts = [
-        "aaa1",
-        "bbb1",
-        "aaa2",
-        "bbb2",
-        "aaa3",
-        "bbb3",
-    ]
+    texts = ["aaa1", "bbb1", "aaa2", "bbb2", "aaa3", "bbb3"]
     docs = list(map(lambda text: Document(page_content=text), texts))
     compressor = CrossEncoderReranker(model=FakeCrossEncoder())
     actual_docs = compressor.compress_documents(docs, "bbb2")

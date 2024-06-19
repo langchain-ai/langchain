@@ -1,15 +1,6 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Optional,
-    Sequence,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence, Type, Union
 
 from langchain.agents.openai_assistant.base import OpenAIAssistantRunnable, OutputType
 from langchain_core._api import beta
@@ -132,9 +123,11 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
                 name="langchain assistant",
                 instructions="You are a personal math tutor. Write and run code to answer math questions.",
                 tools=[{"type": "code_interpreter"}],
-                model="gpt-4-1106-preview"
+                model="gpt-4-1106-preview",
             )
-            output = interpreter_assistant.invoke({"content": "What's 10 - 4 raised to the 2.7"})
+            output = interpreter_assistant.invoke(
+                {"content": "What's 10 - 4 raised to the 2.7"}
+            )
 
     Example using custom tools and AgentExecutor:
         .. code-block:: python
@@ -150,7 +143,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
                 instructions="You are a personal math tutor. Write and run code to answer math questions.",
                 tools=tools,
                 model="gpt-4-1106-preview",
-                as_agent=True
+                as_agent=True,
             )
 
             agent_executor = AgentExecutor(agent=agent, tools=tools)
@@ -172,8 +165,9 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
                 instructions="You are a personal math tutor. Write and run code to answer math questions.",
                 tools=tools,
                 model="gpt-4-1106-preview",
-                as_agent=True
+                as_agent=True,
             )
+
 
             def execute_agent(agent, tools, input):
                 tool_map = {tool.name: tool for tool in tools}
@@ -182,19 +176,26 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
                     tool_outputs = []
                     for action in response:
                         tool_output = tool_map[action.tool].invoke(action.tool_input)
-                        tool_outputs.append({"output": tool_output, "tool_call_id": action.tool_call_id})
+                        tool_outputs.append(
+                            {"output": tool_output, "tool_call_id": action.tool_call_id}
+                        )
                     response = agent.invoke(
                         {
                             "tool_outputs": tool_outputs,
                             "run_id": action.run_id,
-                            "thread_id": action.thread_id
+                            "thread_id": action.thread_id,
                         }
                     )
 
                 return response
 
-            response = execute_agent(agent, tools, {"content": "What's 10 - 4 raised to the 2.7"})
-            next_response = execute_agent(agent, tools, {"content": "now add 17.241", "thread_id": response.thread_id})
+
+            response = execute_agent(
+                agent, tools, {"content": "What's 10 - 4 raised to the 2.7"}
+            )
+            next_response = execute_agent(
+                agent, tools, {"content": "now add 17.241", "thread_id": response.thread_id}
+            )
 
     """  # noqa: E501
 
@@ -498,9 +499,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             if k in ("instructions", "model", "tools", "tool_resources", "run_metadata")
         }
         return self.client.beta.threads.runs.create(
-            input["thread_id"],
-            assistant_id=self.assistant_id,
-            **params,
+            input["thread_id"], assistant_id=self.assistant_id, **params
         )
 
     def _create_thread_and_run(self, input: dict, thread: dict) -> Any:
@@ -512,9 +511,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         if tool_resources := input.get("tool_resources"):
             thread["tool_resources"] = tool_resources
         run = self.client.beta.threads.create_and_run(
-            assistant_id=self.assistant_id,
-            thread=thread,
-            **params,
+            assistant_id=self.assistant_id, thread=thread, **params
         )
         return run
 
@@ -525,9 +522,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             if k in ("instructions", "model", "tools", "tool_resources" "run_metadata")
         }
         return await self.async_client.beta.threads.runs.create(
-            input["thread_id"],
-            assistant_id=self.assistant_id,
-            **params,
+            input["thread_id"], assistant_id=self.assistant_id, **params
         )
 
     async def _acreate_thread_and_run(self, input: dict, thread: dict) -> Any:
@@ -539,8 +534,6 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
         if tool_resources := input.get("tool_resources"):
             thread["tool_resources"] = tool_resources
         run = await self.async_client.beta.threads.create_and_run(
-            assistant_id=self.assistant_id,
-            thread=thread,
-            **params,
+            assistant_id=self.assistant_id, thread=thread, **params
         )
         return run

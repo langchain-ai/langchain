@@ -6,9 +6,7 @@ from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
-from langchain_community.chat_models.anthropic import (
-    ChatAnthropic,
-)
+from langchain_community.chat_models.anthropic import ChatAnthropic
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 
 
@@ -55,10 +53,7 @@ def test_anthropic_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatAnthropic(  # type: ignore[call-arg]
-        model="test",
-        streaming=True,
-        callback_manager=callback_manager,
-        verbose=True,
+        model="test", streaming=True, callback_manager=callback_manager, verbose=True
     )
     message = HumanMessage(content="Write me a sentence with 10 words.")
     chat.invoke([message])
@@ -71,10 +66,7 @@ async def test_anthropic_async_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatAnthropic(  # type: ignore[call-arg]
-        model="test",
-        streaming=True,
-        callback_manager=callback_manager,
-        verbose=True,
+        model="test", streaming=True, callback_manager=callback_manager, verbose=True
     )
     chat_messages: List[BaseMessage] = [
         HumanMessage(content="How many toes do dogs have?")

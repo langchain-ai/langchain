@@ -29,17 +29,13 @@ class YouSearchTool(BaseTool):
     api_wrapper: YouSearchAPIWrapper = Field(default_factory=YouSearchAPIWrapper)
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> List[Document]:
         """Use the you.com tool."""
         return self.api_wrapper.results(query)
 
     async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> List[Document]:
         """Use the you.com tool asynchronously."""
         return await self.api_wrapper.results_async(query)

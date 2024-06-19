@@ -22,10 +22,7 @@ class YuqueLoader(BaseLoader):
 
     @property
     def headers(self) -> Dict[str, str]:
-        return {
-            "Content-Type": "application/json",
-            "X-Auth-Token": self.access_token,
-        }
+        return {"Content-Type": "application/json", "X-Auth-Token": self.access_token}
 
     def get_user_id(self) -> int:
         url = f"{self.api_url}/api/v2/user"

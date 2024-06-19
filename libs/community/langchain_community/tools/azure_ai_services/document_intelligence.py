@@ -8,9 +8,7 @@ from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 
-from langchain_community.tools.azure_ai_services.utils import (
-    detect_file_src_type,
-)
+from langchain_community.tools.azure_ai_services.utils import detect_file_src_type
 
 logger = logging.getLogger(__name__)
 
@@ -128,9 +126,7 @@ class AzureAiServicesDocumentIntelligenceTool(BaseTool):
         return "\n".join(formatted_result)
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         try:

@@ -81,16 +81,11 @@ def test_namespace(redis_client: Redis) -> None:
     key_value_pairs = [("key1", b"value1"), ("key2", b"value2")]
     store.mset(key_value_pairs)
 
-    assert sorted(redis_client.scan_iter("*")) == [
-        b"meow/key1",
-        b"meow/key2",
-    ]
+    assert sorted(redis_client.scan_iter("*")) == [b"meow/key1", b"meow/key2"]
 
     store.mdelete(["key1"])
 
-    assert sorted(redis_client.scan_iter("*")) == [
-        b"meow/key2",
-    ]
+    assert sorted(redis_client.scan_iter("*")) == [b"meow/key2"]
 
     assert list(store.yield_keys()) == ["key2"]
     assert list(store.yield_keys(prefix="key*")) == ["key2"]

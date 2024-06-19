@@ -11,9 +11,7 @@ import pytest
 from langchain_core.documents import Document
 
 from langchain_community.vectorstores.upstash import UpstashVectorStore
-from tests.integration_tests.vectorstores.fake_embeddings import (
-    FakeEmbeddings,
-)
+from tests.integration_tests.vectorstores.fake_embeddings import FakeEmbeddings
 
 
 @pytest.fixture(scope="module")
@@ -44,8 +42,7 @@ def wait_for_indexing(store: UpstashVectorStore) -> None:
 
 
 def check_response_with_score(
-    result: List[Tuple[Document, float]],
-    expected: List[Tuple[Document, float]],
+    result: List[Tuple[Document, float]], expected: List[Tuple[Document, float]]
 ) -> None:
     """
     check the result of a search with scores with an expected value
@@ -84,9 +81,7 @@ def test_upstash_with_metadatas() -> None:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     store = UpstashVectorStore.from_texts(
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        metadatas=metadatas,
+        texts=texts, embedding=FakeEmbeddings(), metadatas=metadatas
     )
     wait_for_indexing(store)
     output = store.similarity_search("foo", k=1)
@@ -100,9 +95,7 @@ async def test_upstash_with_metadatas_async() -> None:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     store = UpstashVectorStore.from_texts(
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        metadatas=metadatas,
+        texts=texts, embedding=FakeEmbeddings(), metadatas=metadatas
     )
     wait_for_indexing(store)
     output = await store.asimilarity_search("foo", k=1)
@@ -115,9 +108,7 @@ def test_upstash_with_metadatas_with_scores() -> None:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     store = UpstashVectorStore.from_texts(
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        metadatas=metadatas,
+        texts=texts, embedding=FakeEmbeddings(), metadatas=metadatas
     )
     wait_for_indexing(store)
     output = store.similarity_search_with_score("foo", k=1)
@@ -131,9 +122,7 @@ async def test_upstash_with_metadatas_with_scores_async() -> None:
     texts = ["foo", "bar", "baz"]
     metadatas = [{"page": str(i)} for i in range(len(texts))]
     store = UpstashVectorStore.from_texts(
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        metadatas=metadatas,
+        texts=texts, embedding=FakeEmbeddings(), metadatas=metadatas
     )
     wait_for_indexing(store)
     output = await store.asimilarity_search_with_score("foo", k=1)
@@ -148,9 +137,7 @@ def test_upstash_with_metadatas_with_scores_using_vector() -> None:
     embeddings = FakeEmbeddings()
 
     store = UpstashVectorStore.from_texts(
-        texts=texts,
-        embedding=embeddings,
-        metadatas=metadatas,
+        texts=texts, embedding=embeddings, metadatas=metadatas
     )
     wait_for_indexing(store)
     embedded_query = embeddings.embed_query("foo")
@@ -167,9 +154,7 @@ async def test_upstash_with_metadatas_with_scores_using_vector_async() -> None:
     embeddings = FakeEmbeddings()
 
     store = UpstashVectorStore.from_texts(
-        texts=texts,
-        embedding=embeddings,
-        metadatas=metadatas,
+        texts=texts, embedding=embeddings, metadatas=metadatas
     )
     wait_for_indexing(store)
     embedded_query = embeddings.embed_query("foo")

@@ -149,11 +149,7 @@ class ChatFireworks(BaseChatModel):
             **kwargs,
         }
         response = completion_with_retry(
-            self,
-            self.use_retry,
-            run_manager=run_manager,
-            stop=stop,
-            **params,
+            self, self.use_retry, run_manager=run_manager, stop=stop, **params
         )
         return self._create_chat_result(response)
 
@@ -186,8 +182,7 @@ class ChatFireworks(BaseChatModel):
         for res in response.choices:
             message = convert_dict_to_message(res.message)
             gen = ChatGeneration(
-                message=message,
-                generation_info=dict(finish_reason=res.finish_reason),
+                message=message, generation_info=dict(finish_reason=res.finish_reason)
             )
             generations.append(gen)
         llm_output = {"model": self.model}
@@ -302,9 +297,7 @@ def completion_with_retry(
     @conditional_decorator(use_retry, retry_decorator)
     def _completion_with_retry(**kwargs: Any) -> Any:
         """Use tenacity to retry the completion call."""
-        return fireworks.client.ChatCompletion.create(
-            **kwargs,
-        )
+        return fireworks.client.ChatCompletion.create(**kwargs)
 
     return _completion_with_retry(**kwargs)
 
@@ -323,9 +316,7 @@ async def acompletion_with_retry(
 
     @conditional_decorator(use_retry, retry_decorator)
     async def _completion_with_retry(**kwargs: Any) -> Any:
-        return await fireworks.client.ChatCompletion.acreate(
-            **kwargs,
-        )
+        return await fireworks.client.ChatCompletion.acreate(**kwargs)
 
     return await _completion_with_retry(**kwargs)
 
@@ -344,9 +335,7 @@ async def acompletion_with_retry_streaming(
 
     @conditional_decorator(use_retry, retry_decorator)
     async def _completion_with_retry(**kwargs: Any) -> Any:
-        return fireworks.client.ChatCompletion.acreate(
-            **kwargs,
-        )
+        return fireworks.client.ChatCompletion.acreate(**kwargs)
 
     return await _completion_with_retry(**kwargs)
 

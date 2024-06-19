@@ -478,7 +478,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
                         "path": self._embedding_key,
                         "k": k,
                         "efSearch": ef_search,
-                    },
+                    }
                 }
             },
             {
@@ -518,11 +518,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         docs_and_scores = self.similarity_search_with_score(
-            query,
-            k=k,
-            kind=kind,
-            ef_search=ef_search,
-            score_threshold=score_threshold,
+            query, k=k, kind=kind, ef_search=ef_search, score_threshold=score_threshold
         )
         return [doc for doc, _ in docs_and_scores]
 

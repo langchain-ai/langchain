@@ -18,10 +18,7 @@ from langchain.evaluation.comparison.prompt import (
     COMPARISON_TEMPLATE_WITH_REFERENCE,
     CRITERIA_INSTRUCTIONS,
 )
-from langchain.evaluation.criteria.eval_chain import (
-    CRITERIA_TYPE,
-    Criteria,
-)
+from langchain.evaluation.criteria.eval_chain import CRITERIA_TYPE, Criteria
 from langchain.evaluation.schema import LLMEvalChain, PairwiseStringEvaluator
 from langchain.schema import RUN_KEY
 
@@ -138,16 +135,8 @@ class PairwiseStringResultOutputParser(BaseOutputParser[dict]):
             )
         # C means the models are tied. Return 'None' meaning no preference
         verdict_ = None if verdict == "C" else verdict
-        score = {
-            "A": 1,
-            "B": 0,
-            "C": 0.5,
-        }[verdict]
-        return {
-            "reasoning": text,
-            "value": verdict_,
-            "score": score,
-        }
+        score = {"A": 1, "B": 0, "C": 0.5}[verdict]
+        return {"reasoning": text, "value": verdict_, "score": score}
 
 
 class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
@@ -160,7 +149,9 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
     Example:
         >>> from langchain_community.chat_models import ChatOpenAI
         >>> from langchain.evaluation.comparison import PairwiseStringEvalChain
-        >>> llm = ChatOpenAI(temperature=0, model_name="gpt-4", model_kwargs={"random_seed": 42})
+        >>> llm = ChatOpenAI(
+        ...     temperature=0, model_name="gpt-4", model_kwargs={"random_seed": 42}
+        ... )
         >>> chain = PairwiseStringEvalChain.from_llm(llm=llm)
         >>> result = chain.evaluate_string_pairs(
         ...     input = "What is the chemical formula for water?",

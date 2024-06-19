@@ -10,9 +10,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
 from langchain_core.vectorstores import VectorStore
 
-from langchain_community.vectorstores.utils import (
-    maximal_marginal_relevance,
-)
+from langchain_community.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
     from upstash_vector import AsyncIndex, Index
@@ -39,9 +37,7 @@ class UpstashVectorStore(VectorStore):
 
             embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
             vectorstore = UpstashVectorStore(
-                embedding=embeddings,
-                index_url="...",
-                index_token="..."
+                embedding=embeddings, index_url="...", index_token="..."
             )
 
             # or
@@ -51,9 +47,7 @@ class UpstashVectorStore(VectorStore):
             os.environ["UPSTASH_VECTOR_REST_URL"] = "..."
             os.environ["UPSTASH_VECTOR_REST_TOKEN"] = "..."
 
-            vectorstore = UpstashVectorStore(
-                embedding=embeddings
-            )
+            vectorstore = UpstashVectorStore(embedding=embeddings)
     """
 
     def __init__(
@@ -95,10 +89,7 @@ class UpstashVectorStore(VectorStore):
 
                 embeddings = OpenAIEmbeddings()
                 vectorstore = UpstashVectorStore(
-                    embedding=embeddings,
-                    index_url="...",
-                    index_token="...",
-                    namespace="..."
+                    embedding=embeddings, index_url="...", index_token="...", namespace="..."
                 )
 
                 # With an existing index
@@ -106,9 +97,7 @@ class UpstashVectorStore(VectorStore):
 
                 index = Index(url="...", token="...")
                 vectorstore = UpstashVectorStore(
-                    embedding=embeddings,
-                    index=index,
-                    namespace="..."
+                    embedding=embeddings, index=index, namespace="..."
                 )
         """
 
@@ -910,10 +899,7 @@ class UpstashVectorStore(VectorStore):
                 from langchain_community.embeddings import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
-                vector_store = UpstashVectorStore.from_texts(
-                    texts,
-                    embeddings,
-                )
+                vector_store = UpstashVectorStore.from_texts(texts, embeddings)
         """
         vector_store = cls(
             embedding=embedding,
@@ -962,10 +948,7 @@ class UpstashVectorStore(VectorStore):
                 from langchain_community.embeddings import OpenAIEmbeddings
 
                 embeddings = OpenAIEmbeddings()
-                vector_store = UpstashVectorStore.from_texts(
-                    texts,
-                    embeddings,
-                )
+                vector_store = UpstashVectorStore.from_texts(texts, embeddings)
         """
         vector_store = cls(
             embedding=embedding,

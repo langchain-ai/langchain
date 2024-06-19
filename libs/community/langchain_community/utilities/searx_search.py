@@ -190,16 +190,17 @@ class SearxSearchWrapper(BaseModel):
         .. code-block:: python
 
             from langchain_community.utilities import SearxSearchWrapper
+
             searx = SearxSearchWrapper(searx_host="http://localhost:8888")
 
     Example with SSL disabled:
         .. code-block:: python
 
             from langchain_community.utilities import SearxSearchWrapper
+
             # note the unsecure parameter is not needed if you pass the url scheme as
             # http
-            searx = SearxSearchWrapper(searx_host="http://localhost:8888",
-                                                    unsecure=True)
+            searx = SearxSearchWrapper(searx_host="http://localhost:8888", unsecure=True)
 
 
     """
@@ -337,6 +338,7 @@ class SearxSearchWrapper(BaseModel):
             .. code-block:: python
 
                 from langchain_community.utilities import SearxSearchWrapper
+
                 searx = SearxSearchWrapper(searx_host="http://my.searx.host")
                 searx.run("what is the weather in France ?", engine="qwant")
 
@@ -344,9 +346,7 @@ class SearxSearchWrapper(BaseModel):
                 # to select the engine using `query_suffix`
                 searx.run("what is the weather in France ?", query_suffix="!qwant")
         """
-        _params = {
-            "q": query,
-        }
+        _params = {"q": query}
         params = {**self.params, **_params, **kwargs}
 
         if self.query_suffix and len(self.query_suffix) > 0:
@@ -382,9 +382,7 @@ class SearxSearchWrapper(BaseModel):
         **kwargs: Any,
     ) -> str:
         """Asynchronously version of `run`."""
-        _params = {
-            "q": query,
-        }
+        _params = {"q": query}
         params = {**self.params, **_params, **kwargs}
 
         if self.query_suffix and len(self.query_suffix) > 0:
@@ -439,9 +437,7 @@ class SearxSearchWrapper(BaseModel):
             }
 
         """
-        _params = {
-            "q": query,
-        }
+        _params = {"q": query}
         params = {**self.params, **_params, **kwargs}
         if self.query_suffix and len(self.query_suffix) > 0:
             params["q"] += " " + self.query_suffix
@@ -478,9 +474,7 @@ class SearxSearchWrapper(BaseModel):
 
         Uses aiohttp. See `results` for more info.
         """
-        _params = {
-            "q": query,
-        }
+        _params = {"q": query}
         params = {**self.params, **_params, **kwargs}
 
         if self.query_suffix and len(self.query_suffix) > 0:

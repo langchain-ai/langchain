@@ -15,10 +15,7 @@ class TestAI21J2(ChatModelUnitTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {
-            "model": "j2-ultra",
-            "api_key": "test_api_key",
-        }
+        return {"model": "j2-ultra", "api_key": "test_api_key"}
 
 
 class TestAI21Jamba(ChatModelUnitTests):
@@ -28,7 +25,4 @@ class TestAI21Jamba(ChatModelUnitTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {
-            "model": "jamba-instruct",
-            "api_key": "test_api_key",
-        }
+        return {"model": "jamba-instruct", "api_key": "test_api_key"}

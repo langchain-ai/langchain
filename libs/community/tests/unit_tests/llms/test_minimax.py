@@ -26,9 +26,7 @@ def test_api_key_masked_when_passed_from_env(
     assert captured.out == "**********"
 
 
-def test_api_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
-) -> None:
+def test_api_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> None:
     """Test initialization with an API key provided via the initializer"""
     llm = Minimax(minimax_api_key="secret-api-key", minimax_group_id="group_id")  # type: ignore[arg-type, call-arg]
     print(llm.minimax_api_key, end="")  # noqa: T201

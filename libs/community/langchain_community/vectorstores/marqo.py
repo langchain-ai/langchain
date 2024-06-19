@@ -147,10 +147,7 @@ class Marqo(VectorStore):
         return ids
 
     def similarity_search(
-        self,
-        query: Union[str, Dict[str, float]],
-        k: int = 4,
-        **kwargs: Any,
+        self, query: Union[str, Dict[str, float]], k: int = 4, **kwargs: Any
     ) -> List[Document]:
         """Search the marqo index for the most similar documents.
 
@@ -168,9 +165,7 @@ class Marqo(VectorStore):
         return documents
 
     def similarity_search_with_score(
-        self,
-        query: Union[str, Dict[str, float]],
-        k: int = 4,
+        self, query: Union[str, Dict[str, float]], k: int = 4
     ) -> List[Tuple[Document, float]]:
         """Return documents from Marqo that are similar to the query as well
         as their scores.
@@ -190,10 +185,7 @@ class Marqo(VectorStore):
         return scored_documents
 
     def bulk_similarity_search(
-        self,
-        queries: Iterable[Union[str, Dict[str, float]]],
-        k: int = 4,
-        **kwargs: Any,
+        self, queries: Iterable[Union[str, Dict[str, float]]], k: int = 4, **kwargs: Any
     ) -> List[List[Document]]:
         """Search the marqo index for the most similar documents in bulk with multiple
         queries.
@@ -217,10 +209,7 @@ class Marqo(VectorStore):
         return bulk_documents
 
     def bulk_similarity_search_with_score(
-        self,
-        queries: Iterable[Union[str, Dict[str, float]]],
-        k: int = 4,
-        **kwargs: Any,
+        self, queries: Iterable[Union[str, Dict[str, float]]], k: int = 4, **kwargs: Any
     ) -> List[List[Tuple[Document, float]]]:
         """Return documents from Marqo that are similar to the query as well as
         their scores using a batch of queries.
@@ -296,9 +285,7 @@ class Marqo(VectorStore):
         return documents
 
     def marqo_similarity_search(
-        self,
-        query: Union[str, Dict[str, float]],
-        k: int = 4,
+        self, query: Union[str, Dict[str, float]], k: int = 4
     ) -> Dict[str, List[Dict[str, str]]]:
         """Return documents from Marqo exposing Marqo's output directly
 
@@ -395,8 +382,9 @@ class Marqo(VectorStore):
 
                 from langchain_community.vectorstores import Marqo
 
-                datastore = Marqo(texts=['text'], index_name='my-first-index',
-                url='http://localhost:8882')
+                datastore = Marqo(
+                    texts=["text"], index_name="my-first-index", url="http://localhost:8882"
+                )
 
         Args:
             texts (List[str]): A list of texts to index into marqo upon creation.

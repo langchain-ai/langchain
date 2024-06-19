@@ -103,7 +103,7 @@ class ArcGISLoader(BaseLoader):
         try:
             item_id = props["serviceItemId"]
             item = self.gis.content.get(item_id) or arcgis.features.FeatureLayer(
-                re.sub(layer_number_pattern, "", self.url),
+                re.sub(layer_number_pattern, "", self.url)
             )
             try:
                 raw_desc = item.description

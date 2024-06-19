@@ -181,10 +181,7 @@ def make_request(
     api_key = None
     if self.nebula_api_key is not None:
         api_key = self.nebula_api_key.get_secret_value()
-    headers = {
-        "Content-Type": "application/json",
-        "ApiKey": f"{api_key}",
-    }
+    headers = {"Content-Type": "application/json", "ApiKey": f"{api_key}"}
 
     body = {"prompt": prompt}
 

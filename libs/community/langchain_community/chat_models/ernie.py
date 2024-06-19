@@ -6,12 +6,7 @@ import requests
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    ChatMessage,
-    HumanMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage, ChatMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import get_from_dict_or_env
@@ -32,8 +27,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 @deprecated(
-    since="0.0.13",
-    alternative="langchain_community.chat_models.QianfanChatEndpoint",
+    since="0.0.13", alternative="langchain_community.chat_models.QianfanChatEndpoint"
 )
 class ErnieBotChat(BaseChatModel):
     """`ERNIE-Bot` large language model.
@@ -56,7 +50,8 @@ class ErnieBotChat(BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models import ErnieBotChat
-            chat = ErnieBotChat(model_name='ERNIE-Bot')
+
+            chat = ErnieBotChat(model_name="ERNIE-Bot")
 
 
     Deprecated Note:
@@ -69,8 +64,13 @@ class ErnieBotChat(BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models import QianfanChatEndpoint
-            qianfan_chat = QianfanChatEndpoint(model="ERNIE-Bot",
-                endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
+
+            qianfan_chat = QianfanChatEndpoint(
+                model="ERNIE-Bot",
+                endpoint="your_endpoint",
+                qianfan_ak="your_ak",
+                qianfan_sk="your_sk",
+            )
 
     """
 
@@ -114,14 +114,10 @@ class ErnieBotChat(BaseChatModel):
             values, "ernie_api_base", "ERNIE_API_BASE", "https://aip.baidubce.com"
         )
         values["ernie_client_id"] = get_from_dict_or_env(
-            values,
-            "ernie_client_id",
-            "ERNIE_CLIENT_ID",
+            values, "ernie_client_id", "ERNIE_CLIENT_ID"
         )
         values["ernie_client_secret"] = get_from_dict_or_env(
-            values,
-            "ernie_client_secret",
-            "ERNIE_CLIENT_SECRET",
+            values, "ernie_client_secret", "ERNIE_CLIENT_SECRET"
         )
         return values
 
@@ -146,9 +142,7 @@ class ErnieBotChat(BaseChatModel):
         resp = requests.post(
             url,
             timeout=self.request_timeout,
-            headers={
-                "Content-Type": "application/json",
-            },
+            headers={"Content-Type": "application/json"},
             params={"access_token": self.access_token},
             json=payload,
         )

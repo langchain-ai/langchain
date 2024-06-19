@@ -80,11 +80,7 @@ class TFIDFRetriever(BaseRetriever):
         return_docs = [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
         return return_docs
 
-    def save_local(
-        self,
-        folder_path: str,
-        file_name: str = "tfidf_vectorizer",
-    ) -> None:
+    def save_local(self, folder_path: str, file_name: str = "tfidf_vectorizer") -> None:
         try:
             import joblib
         except ImportError:

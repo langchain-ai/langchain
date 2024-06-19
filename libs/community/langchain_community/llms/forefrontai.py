@@ -19,6 +19,7 @@ class ForefrontAI(LLM):
         .. code-block:: python
 
             from langchain_community.llms import ForefrontAI
+
             forefrontai = ForefrontAI(endpoint_url="")
     """
 
@@ -104,10 +105,7 @@ class ForefrontAI(LLM):
         auth_value = f"Bearer {self.forefrontai_api_key.get_secret_value()}"
         response = requests.post(
             url=self.endpoint_url,
-            headers={
-                "Authorization": auth_value,
-                "Content-Type": "application/json",
-            },
+            headers={"Authorization": auth_value, "Content-Type": "application/json"},
             json={"text": prompt, **self._default_params, **kwargs},
         )
         response_json = response.json()

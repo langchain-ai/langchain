@@ -249,15 +249,9 @@ def test_structured_tool_types_parsed() -> None:
         foo: str
 
     @tool
-    def structured_tool(
-        some_enum: SomeEnum,
-        some_base_model: SomeBaseModel,
-    ) -> dict:
+    def structured_tool(some_enum: SomeEnum, some_base_model: SomeBaseModel) -> dict:
         """Return the arguments directly."""
-        return {
-            "some_enum": some_enum,
-            "some_base_model": some_base_model,
-        }
+        return {"some_enum": some_enum, "some_base_model": some_base_model}
 
     assert isinstance(structured_tool, StructuredTool)
     args = {
@@ -265,10 +259,7 @@ def test_structured_tool_types_parsed() -> None:
         "some_base_model": SomeBaseModel(foo="bar").dict(),
     }
     result = structured_tool.run(json.loads(json.dumps(args)))
-    expected = {
-        "some_enum": SomeEnum.A,
-        "some_base_model": SomeBaseModel(foo="bar"),
-    }
+    expected = {"some_enum": SomeEnum.A, "some_base_model": SomeBaseModel(foo="bar")}
     assert result == expected
 
 
@@ -294,11 +285,7 @@ def test_base_tool_inheritance_base_schema() -> None:
 def test_tool_lambda_args_schema() -> None:
     """Test args schema inference when the tool argument is a lambda function."""
 
-    tool = Tool(
-        name="tool",
-        description="A tool",
-        func=lambda tool_input: tool_input,
-    )
+    tool = Tool(name="tool", description="A tool", func=lambda tool_input: tool_input)
     assert tool.args_schema is None
     expected_args = {"tool_input": {"type": "string"}}
     assert tool.args == expected_args
@@ -391,11 +378,7 @@ def test_tool_partial_function_args_schema() -> None:
         assert isinstance(other_arg, str)
         return tool_input + other_arg
 
-    tool = Tool(
-        name="tool",
-        description="A tool",
-        func=partial(func, other_arg="foo"),
-    )
+    tool = Tool(name="tool", description="A tool", func=partial(func, other_arg="foo"))
     assert tool.run("bar") == "barfoo"
 
 
@@ -519,29 +502,15 @@ def test_tool_with_kwargs() -> None:
     """Test functionality when only return direct is provided."""
 
     @tool(return_direct=True)
-    def search_api(
-        arg_0: str,
-        arg_1: float = 4.3,
-        ping: str = "hi",
-    ) -> str:
+    def search_api(arg_0: str, arg_1: float = 4.3, ping: str = "hi") -> str:
         """Search the API for the query."""
         return f"arg_0={arg_0}, arg_1={arg_1}, ping={ping}"
 
     assert isinstance(search_api, BaseTool)
-    result = search_api.run(
-        tool_input={
-            "arg_0": "foo",
-            "arg_1": 3.2,
-            "ping": "pong",
-        }
-    )
+    result = search_api.run(tool_input={"arg_0": "foo", "arg_1": 3.2, "ping": "pong"})
     assert result == "arg_0=foo, arg_1=3.2, ping=pong"
 
-    result = search_api.run(
-        tool_input={
-            "arg_0": "foo",
-        }
-    )
+    result = search_api.run(tool_input={"arg_0": "foo"})
     assert result == "arg_0=foo, arg_1=4.3, ping=hi"
     # For backwards compatibility, we still accept a single str arg
     result = search_api.run("foobar")
@@ -730,14 +699,7 @@ def test_validation_error_handling_callable() -> None:
     assert expected == actual
 
 
-@pytest.mark.parametrize(
-    "handler",
-    [
-        True,
-        "foo bar",
-        lambda _: "foo bar",
-    ],
-)
+@pytest.mark.parametrize("handler", [True, "foo bar", lambda _: "foo bar"])
 def test_validation_error_handling_non_validation_error(
     handler: Union[bool, str, Callable[[ValidationError], str]],
 ) -> None:
@@ -748,8 +710,7 @@ def test_validation_error_handling_non_validation_error(
         description: str = "A tool that raises a non-validation error"
 
         def _parse_input(
-            self,
-            tool_input: Union[str, Dict],
+            self, tool_input: Union[str, Dict]
         ) -> Union[str, Dict[str, Any]]:
             raise NotImplementedError()
 
@@ -792,14 +753,7 @@ async def test_async_validation_error_handling_callable() -> None:
     assert expected == actual
 
 
-@pytest.mark.parametrize(
-    "handler",
-    [
-        True,
-        "foo bar",
-        lambda _: "foo bar",
-    ],
-)
+@pytest.mark.parametrize("handler", [True, "foo bar", lambda _: "foo bar"])
 async def test_async_validation_error_handling_non_validation_error(
     handler: Union[bool, str, Callable[[ValidationError], str]],
 ) -> None:
@@ -810,8 +764,7 @@ async def test_async_validation_error_handling_non_validation_error(
         description: str = "A tool that raises a non-validation error"
 
         def _parse_input(
-            self,
-            tool_input: Union[str, Dict],
+            self, tool_input: Union[str, Dict]
         ) -> Union[str, Dict[str, Any]]:
             raise NotImplementedError()
 
@@ -861,11 +814,7 @@ def test_tool_invoke_optional_args(inputs: dict, expected: Optional[dict]) -> No
     @tool
     def foo(bar: str, baz: Optional[int] = 3, buzz: Optional[str] = "buzz") -> dict:
         """The foo."""
-        return {
-            "bar": bar,
-            "baz": baz,
-            "buzz": buzz,
-        }
+        return {"bar": bar, "baz": baz, "buzz": buzz}
 
     if expected is not None:
         assert foo.invoke(inputs) == expected  # type: ignore
@@ -886,10 +835,7 @@ def test_tool_pass_context() -> None:
     assert foo.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="requires python3.11 or higher",
-)
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="requires python3.11 or higher")
 async def test_async_tool_pass_context() -> None:
     @tool
     async def foo(bar: str) -> str:

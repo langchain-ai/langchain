@@ -83,9 +83,7 @@ class TestJaguar:
         Here k is 1
         """
         output = self.vectorstore.similarity_search(
-            query="foo",
-            k=1,
-            metadatas=["author", "category"],
+            query="foo", k=1, metadatas=["author", "category"]
         )
         assert output[0].page_content == "foo"
         assert output[0].metadata["author"] == "Adam"
@@ -98,11 +96,7 @@ class TestJaguar:
         """
         where = "author='Eve'"
         output = self.vectorstore.similarity_search(
-            query="foo",
-            k=3,
-            fetch_k=9,
-            where=where,
-            metadatas=["author", "category"],
+            query="foo", k=3, fetch_k=9, where=where, metadatas=["author", "category"]
         )
         assert output[0].page_content == "bar"
         assert output[0].metadata["author"] == "Eve"
@@ -113,9 +107,7 @@ class TestJaguar:
         """
         Test detection of anomalousness
         """
-        result = self.vectorstore.is_anomalous(
-            query="dogs can jump high",
-        )
+        result = self.vectorstore.is_anomalous(query="dogs can jump high")
         assert result is False
 
     def test_clear(self) -> None:

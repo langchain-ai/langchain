@@ -64,7 +64,7 @@ class TitanTakeoff(LLM):
                 "model_name": "TheBloke/Llama-2-7b-Chat-AWQ",
                 "device": "cuda",
                 "tensor_parallel": 1,
-                "consumer_group": "llama"
+                "consumer_group": "llama",
             }
 
             # For every reader you pass into models arg Takeoff will spin
@@ -79,17 +79,17 @@ class TitanTakeoff(LLM):
 
             # Returns the query, ie a List[float], sent to `llama` consumer group
             # where we just spun up the Llama 7B model
-            print(embed.invoke(
-                "Where can I see football?", consumer_group="llama"
-            ))
+            print(embed.invoke("Where can I see football?", consumer_group="llama"))
 
             # You can also send generation parameters to the model, any of the
             # following can be passed in as kwargs:
             # https://docs.titanml.co/docs/next/apis/Takeoff%20inference_REST_API/generate#request
             # for instance:
-            print(embed.invoke(
-                "Where can I see football?", consumer_group="llama", max_new_tokens=100
-            ))
+            print(
+                embed.invoke(
+                    "Where can I see football?", consumer_group="llama", max_new_tokens=100
+                )
+            )
     """
 
     base_url: str = "http://localhost"
@@ -190,9 +190,7 @@ class TitanTakeoff(LLM):
         if self.streaming:
             text_output = ""
             for chunk in self._stream(
-                prompt=prompt,
-                stop=stop,
-                run_manager=run_manager,
+                prompt=prompt, stop=stop, run_manager=run_manager
             ):
                 text_output += chunk.text
             return text_output

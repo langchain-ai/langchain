@@ -13,9 +13,7 @@ from langchain_community.utilities.metaphor_search import MetaphorSearchAPIWrapp
 
 
 @deprecated(
-    since="0.0.15",
-    removal="0.3.0",
-    alternative="langchain_exa.ExaSearchResults",
+    since="0.0.15", removal="0.3.0", alternative="langchain_exa.ExaSearchResults"
 )
 class MetaphorSearchResults(BaseTool):
     """Tool that queries the Metaphor Search API and gets back json."""

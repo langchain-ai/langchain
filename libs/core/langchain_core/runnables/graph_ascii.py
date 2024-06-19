@@ -296,10 +296,7 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
         y = vertex.view.xy[1]
 
         canvas.box(
-            int(round(x - minx)),
-            int(round(y - miny)),
-            vertex.view.w,
-            vertex.view.h,
+            int(round(x - minx)), int(round(y - miny)), vertex.view.w, vertex.view.h
         )
 
         canvas.text(int(round(x - minx)) + 1, int(round(y - miny)) + 1, vertex.data)

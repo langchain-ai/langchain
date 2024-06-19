@@ -23,6 +23,7 @@ class Modal(LLM):
         .. code-block:: python
 
             from langchain_community.llms import Modal
+
             modal = Modal(endpoint_url="")
 
     """
@@ -82,9 +83,7 @@ class Modal(LLM):
         params = {**params, **kwargs}
         response = requests.post(
             url=self.endpoint_url,
-            headers={
-                "Content-Type": "application/json",
-            },
+            headers={"Content-Type": "application/json"},
             json={"prompt": prompt, **params},
         )
         try:

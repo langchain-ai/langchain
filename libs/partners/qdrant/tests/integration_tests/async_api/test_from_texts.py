@@ -11,9 +11,7 @@ from tests.integration_tests.common import (
     ConsistentFakeEmbeddings,
     assert_documents_equals,
 )
-from tests.integration_tests.fixtures import (
-    qdrant_locations,
-)
+from tests.integration_tests.fixtures import qdrant_locations
 
 
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
@@ -63,8 +61,7 @@ async def test_qdrant_from_texts_stores_ids(
 @pytest.mark.parametrize("vector_name", ["custom-vector"])
 @pytest.mark.parametrize("qdrant_location", qdrant_locations())
 async def test_qdrant_from_texts_stores_embeddings_as_named_vectors(
-    vector_name: str,
-    qdrant_location: str,
+    vector_name: str, qdrant_location: str
 ) -> None:
     """Test end to end Qdrant.afrom_texts stores named vectors if name is provided."""
     collection_name = uuid.uuid4().hex
@@ -117,8 +114,7 @@ async def test_qdrant_from_texts_reuses_same_collection(
 @pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
 async def test_qdrant_from_texts_raises_error_on_different_dimensionality(
-    location: str,
-    vector_name: Optional[str],
+    location: str, vector_name: Optional[str]
 ) -> None:
     """Test if Qdrant.afrom_texts raises an exception if dimensionality does not
     match"""
@@ -152,9 +148,7 @@ async def test_qdrant_from_texts_raises_error_on_different_dimensionality(
     ],
 )
 async def test_qdrant_from_texts_raises_error_on_different_vector_name(
-    location: str,
-    first_vector_name: Optional[str],
-    second_vector_name: Optional[str],
+    location: str, first_vector_name: Optional[str], second_vector_name: Optional[str]
 ) -> None:
     """Test if Qdrant.afrom_texts raises an exception if vector name does not match"""
     collection_name = uuid.uuid4().hex
@@ -205,8 +199,7 @@ async def test_qdrant_from_texts_raises_error_on_different_distance(
 @pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
 async def test_qdrant_from_texts_recreates_collection_on_force_recreate(
-    location: str,
-    vector_name: Optional[str],
+    location: str, vector_name: Optional[str]
 ) -> None:
     """Test if Qdrant.afrom_texts recreates the collection even if config mismatches"""
     from qdrant_client import QdrantClient

@@ -137,8 +137,7 @@ class ElasticsearchDatabaseChain(Chain):
         try:
             intermediate_steps.append(query_inputs)  # input: es generation
             es_cmd = self.query_chain.run(
-                callbacks=_run_manager.get_child(),
-                **query_inputs,
+                callbacks=_run_manager.get_child(), **query_inputs
             )
 
             _run_manager.on_text(es_cmd, color="green", verbose=self.verbose)
@@ -156,8 +155,7 @@ class ElasticsearchDatabaseChain(Chain):
             answer_inputs: dict = {"data": result, "input": input_text}
             intermediate_steps.append(answer_inputs)  # input: final answer
             final_result = self.answer_chain.run(
-                callbacks=_run_manager.get_child(),
-                **answer_inputs,
+                callbacks=_run_manager.get_child(), **answer_inputs
             )
 
             intermediate_steps.append(final_result)  # output: final answer

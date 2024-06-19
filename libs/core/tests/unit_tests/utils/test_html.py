@@ -28,10 +28,7 @@ def test_find_all_links_multiple() -> None:
         '<div><a class="bleh" href="/baz/cool">buhbye</a></div>'
     )
     actual = find_all_links(html)
-    assert sorted(actual) == [
-        "/baz/cool",
-        "https://foobar.com",
-    ]
+    assert sorted(actual) == ["/baz/cool", "https://foobar.com"]
 
 
 def test_find_all_links_ignore_suffix() -> None:
@@ -169,11 +166,7 @@ def test_prevent_outside() -> None:
         '<a href="http://foobar.com/BAD">BAD</a>'  # Change in scheme is not OK here
     )
 
-    expected = sorted(
-        [
-            "https://foobar.com/OK",
-        ]
-    )
+    expected = sorted(["https://foobar.com/OK"])
     actual = sorted(
         extract_sub_links(
             html,

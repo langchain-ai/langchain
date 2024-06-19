@@ -3,9 +3,7 @@
 from typing import List
 
 import pytest
-from langchain_core.callbacks import (
-    CallbackManager,
-)
+from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.pydantic_v1 import SecretStr
@@ -23,9 +21,7 @@ def test_api_key_is_string() -> None:
     assert isinstance(gpt_router.gpt_router_api_key, SecretStr)
 
 
-def test_api_key_masked_when_passed_via_constructor(
-    capsys: CaptureFixture,
-) -> None:
+def test_api_key_masked_when_passed_via_constructor(capsys: CaptureFixture) -> None:
     gpt_router = GPTRouter(  # type: ignore[call-arg]
         gpt_router_api_base="https://example.com",
         gpt_router_api_key="secret-api-key",  # type: ignore[arg-type]

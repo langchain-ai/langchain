@@ -16,8 +16,9 @@ class MongoDBStore(BaseStore[str, Document]):
             from langchain.storage import MongoDBStore
 
             mongo_conn_str = "mongodb://localhost:27017/"
-            mongodb_store = MongoDBStore(mongo_conn_str, db_name="test-db",
-                                         collection_name="test-collection")
+            mongodb_store = MongoDBStore(
+                mongo_conn_str, db_name="test-db", collection_name="test-collection"
+            )
 
             # Set values for keys
             doc1 = Document(...)

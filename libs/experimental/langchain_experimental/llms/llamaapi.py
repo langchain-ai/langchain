@@ -1,18 +1,8 @@
 import json
 import logging
-from typing import (
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Tuple,
-)
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
-from langchain.schema import (
-    ChatGeneration,
-    ChatResult,
-)
+from langchain.schema import ChatGeneration, ChatResult
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (

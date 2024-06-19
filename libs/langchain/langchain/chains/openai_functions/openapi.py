@@ -156,10 +156,7 @@ def openapi_spec_to_openai_fn(
             fn = {
                 "name": api_op.operation_id,
                 "description": api_op.description,
-                "parameters": {
-                    "type": "object",
-                    "properties": request_args,
-                },
+                "parameters": {"type": "object", "properties": request_args},
             }
             functions.append(fn)
             _name_to_call_map[fn["name"]] = {

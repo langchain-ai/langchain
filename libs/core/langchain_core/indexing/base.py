@@ -39,10 +39,7 @@ class RecordManager(ABC):
        record manager succeeds but corresponding writing to vectorstore fails.
     """
 
-    def __init__(
-        self,
-        namespace: str,
-    ) -> None:
+    def __init__(self, namespace: str) -> None:
         """Initialize the record manager.
 
         Args:

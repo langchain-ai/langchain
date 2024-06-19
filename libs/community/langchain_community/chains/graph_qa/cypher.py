@@ -8,12 +8,7 @@ from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    SystemMessage,
-    ToolMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage, SystemMessage, ToolMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import (
     BasePromptTemplate,
@@ -350,12 +345,11 @@ class GraphCypherQAChain(Chain):
             if self.use_function_response:
                 function_response = get_function_response(question, context)
                 final_result = self.qa_chain.invoke(  # type: ignore
-                    {"question": question, "function_response": function_response},
+                    {"question": question, "function_response": function_response}
                 )
             else:
                 result = self.qa_chain.invoke(  # type: ignore
-                    {"question": question, "context": context},
-                    callbacks=callbacks,
+                    {"question": question, "context": context}, callbacks=callbacks
                 )
                 final_result = result[self.qa_chain.output_key]  # type: ignore
 

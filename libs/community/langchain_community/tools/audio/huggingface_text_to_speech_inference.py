@@ -82,9 +82,7 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
         )
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         response = requests.post(
             self.api_url,
@@ -102,8 +100,7 @@ class HuggingFaceTextToSpeechModelInference(BaseTool):
             raise
 
         output_file = os.path.join(
-            self.destination_dir,
-            f"{str(self.file_namer())}.{self.file_extension}",
+            self.destination_dir, f"{str(self.file_namer())}.{self.file_extension}"
         )
 
         try:

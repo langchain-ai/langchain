@@ -18,14 +18,9 @@ class MWDumpLoader(BaseLoader):
             from langchain_text_splitters import RecursiveCharacterTextSplitter
             from langchain_community.document_loaders import MWDumpLoader
 
-            loader = MWDumpLoader(
-                file_path="myWiki.xml",
-                encoding="utf8"
-            )
+            loader = MWDumpLoader(file_path="myWiki.xml", encoding="utf8")
             docs = loader.load()
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1000, chunk_overlap=0
-            )
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
             texts = text_splitter.split_documents(docs)
 
 
@@ -87,9 +82,7 @@ class MWDumpLoader(BaseLoader):
             metadata = {"source": page.title}
             return Document(page_content=text, metadata=metadata)
 
-    def lazy_load(
-        self,
-    ) -> Iterator[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         """Lazy load from a file path."""
 
         dump = self._load_dump_file()

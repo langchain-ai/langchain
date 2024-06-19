@@ -8,9 +8,7 @@ from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 
-from langchain_community.tools.azure_ai_services.utils import (
-    detect_file_src_type,
-)
+from langchain_community.tools.azure_ai_services.utils import detect_file_src_type
 
 logger = logging.getLogger(__name__)
 
@@ -89,13 +87,11 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
             with open(image_path, "rb") as image_file:
                 image_data = image_file.read()
             result = self.image_analysis_client.analyze(
-                image_data=image_data,
-                visual_features=self.visual_features,
+                image_data=image_data, visual_features=self.visual_features
             )
         elif image_src_type == "remote":
             result = self.image_analysis_client.analyze_from_url(
-                image_url=image_path,
-                visual_features=self.visual_features,
+                image_url=image_path, visual_features=self.visual_features
             )
         else:
             raise ValueError(f"Invalid image path: {image_path}")
@@ -138,9 +134,7 @@ class AzureAiServicesImageAnalysisTool(BaseTool):
         return "\n".join(formatted_result)
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         try:

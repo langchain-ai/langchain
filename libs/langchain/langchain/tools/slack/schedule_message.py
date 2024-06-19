@@ -22,7 +22,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "ScheduleMessageSchema",
-    "SlackScheduleMessage",
-]
+__all__ = ["ScheduleMessageSchema", "SlackScheduleMessage"]

@@ -28,11 +28,7 @@ class ChaindeskRetriever(BaseRetriever):
         self.top_k = top_k
 
     def _get_relevant_documents(
-        self,
-        query: str,
-        *,
-        run_manager: CallbackManagerForRetrieverRun,
-        **kwargs: Any,
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun, **kwargs: Any
     ) -> List[Document]:
         response = requests.post(
             self.datastore_url,

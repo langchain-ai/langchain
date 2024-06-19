@@ -22,32 +22,20 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from langchain_community.chat_loaders.base import (
-        BaseChatLoader,
-    )
+    from langchain_community.chat_loaders.base import BaseChatLoader
     from langchain_community.chat_loaders.facebook_messenger import (
         FolderFacebookMessengerChatLoader,
         SingleFileFacebookMessengerChatLoader,
     )
-    from langchain_community.chat_loaders.gmail import (
-        GMailLoader,
-    )
-    from langchain_community.chat_loaders.imessage import (
-        IMessageChatLoader,
-    )
+    from langchain_community.chat_loaders.gmail import GMailLoader
+    from langchain_community.chat_loaders.imessage import IMessageChatLoader
     from langchain_community.chat_loaders.langsmith import (
         LangSmithDatasetChatLoader,
         LangSmithRunChatLoader,
     )
-    from langchain_community.chat_loaders.slack import (
-        SlackChatLoader,
-    )
-    from langchain_community.chat_loaders.telegram import (
-        TelegramChatLoader,
-    )
-    from langchain_community.chat_loaders.whatsapp import (
-        WhatsAppChatLoader,
-    )
+    from langchain_community.chat_loaders.slack import SlackChatLoader
+    from langchain_community.chat_loaders.telegram import TelegramChatLoader
+    from langchain_community.chat_loaders.whatsapp import WhatsAppChatLoader
 
 __all__ = [
     "BaseChatLoader",

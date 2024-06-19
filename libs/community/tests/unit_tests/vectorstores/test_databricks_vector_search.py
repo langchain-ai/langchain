@@ -198,9 +198,7 @@ def test_init_delta_sync_with_managed_embeddings() -> None:
 def test_init_delta_sync_with_self_managed_embeddings() -> None:
     index = mock_index(DELTA_SYNC_INDEX_SELF_MANAGED_EMBEDDINGS)
     vectorsearch = DatabricksVectorSearch(
-        index,
-        embedding=DEFAULT_EMBEDDING_MODEL,
-        text_column=DEFAULT_TEXT_COLUMN,
+        index, embedding=DEFAULT_EMBEDDING_MODEL, text_column=DEFAULT_TEXT_COLUMN
     )
     assert vectorsearch.index == index
 
@@ -209,9 +207,7 @@ def test_init_delta_sync_with_self_managed_embeddings() -> None:
 def test_init_direct_access_index() -> None:
     index = mock_index(DIRECT_ACCESS_INDEX)
     vectorsearch = DatabricksVectorSearch(
-        index,
-        embedding=DEFAULT_EMBEDDING_MODEL,
-        text_column=DEFAULT_TEXT_COLUMN,
+        index, embedding=DEFAULT_EMBEDDING_MODEL, text_column=DEFAULT_TEXT_COLUMN
     )
     assert vectorsearch.index == index
 
@@ -233,10 +229,7 @@ def test_init_fail_index_none() -> None:
 def test_init_fail_text_column_mismatch() -> None:
     index = mock_index(DELTA_SYNC_INDEX_MANAGED_EMBEDDINGS)
     with pytest.raises(ValueError) as ex:
-        DatabricksVectorSearch(
-            index,
-            text_column="some_other_column",
-        )
+        DatabricksVectorSearch(index, text_column="some_other_column")
     assert (
         f"text_column 'some_other_column' does not match with the source column of the "
         f"index: '{DEFAULT_TEXT_COLUMN}'." in str(ex.value)
@@ -250,10 +243,7 @@ def test_init_fail_text_column_mismatch() -> None:
 def test_init_fail_no_text_column(index_details: dict) -> None:
     index = mock_index(index_details)
     with pytest.raises(ValueError) as ex:
-        DatabricksVectorSearch(
-            index,
-            embedding=DEFAULT_EMBEDDING_MODEL,
-        )
+        DatabricksVectorSearch(index, embedding=DEFAULT_EMBEDDING_MODEL)
     assert "`text_column` is required for this index." in str(ex.value)
 
 
@@ -278,10 +268,7 @@ def test_init_fail_columns_not_in_schema(index_details: dict) -> None:
 def test_init_fail_no_embedding(index_details: dict) -> None:
     index = mock_index(index_details)
     with pytest.raises(ValueError) as ex:
-        DatabricksVectorSearch(
-            index,
-            text_column=DEFAULT_TEXT_COLUMN,
-        )
+        DatabricksVectorSearch(index, text_column=DEFAULT_TEXT_COLUMN)
     assert "`embedding` is required for this index." in str(ex.value)
 
 
@@ -338,9 +325,7 @@ def is_valid_uuid(val: str) -> bool:
 def test_add_texts() -> None:
     index = mock_index(DIRECT_ACCESS_INDEX)
     vectorsearch = DatabricksVectorSearch(
-        index,
-        embedding=DEFAULT_EMBEDDING_MODEL,
-        text_column=DEFAULT_TEXT_COLUMN,
+        index, embedding=DEFAULT_EMBEDDING_MODEL, text_column=DEFAULT_TEXT_COLUMN
     )
     ids = [idx for idx, i in enumerate(fake_texts)]
     vectors = DEFAULT_EMBEDDING_MODEL.embed_documents(fake_texts)
@@ -364,9 +349,7 @@ def test_add_texts() -> None:
 def test_add_texts_handle_single_text() -> None:
     index = mock_index(DIRECT_ACCESS_INDEX)
     vectorsearch = DatabricksVectorSearch(
-        index,
-        embedding=DEFAULT_EMBEDDING_MODEL,
-        text_column=DEFAULT_TEXT_COLUMN,
+        index, embedding=DEFAULT_EMBEDDING_MODEL, text_column=DEFAULT_TEXT_COLUMN
     )
     vectors = DEFAULT_EMBEDDING_MODEL.embed_documents(fake_texts)
 
@@ -433,8 +416,7 @@ def test_add_texts_with_metadata() -> None:
 
 @pytest.mark.requires("databricks", "databricks.vector_search")
 @pytest.mark.parametrize(
-    "index_details",
-    [DELTA_SYNC_INDEX_SELF_MANAGED_EMBEDDINGS, DIRECT_ACCESS_INDEX],
+    "index_details", [DELTA_SYNC_INDEX_SELF_MANAGED_EMBEDDINGS, DIRECT_ACCESS_INDEX]
 )
 def test_embeddings_property(index_details: dict) -> None:
     index = mock_index(index_details)
@@ -639,10 +621,7 @@ def test_similarity_search_empty_result(index_details: dict) -> None:
                 {"name": "score"},
             ],
         },
-        "result": {
-            "row_count": 0,
-            "data_array": [],
-        },
+        "result": {"row_count": 0, "data_array": []},
         "next_page_token": "",
     }
     vectorsearch = default_databricks_vector_search(index)

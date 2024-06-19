@@ -39,9 +39,7 @@ class ChatMLX(BaseChatModel):
             from langchain_community.chat_models import chatMLX
             from langchain_community.llms import MLXPipeline
 
-            llm = MLXPipeline.from_model_id(
-                model_id="mlx-community/quantized-gemma-2b-it",
-            )
+            llm = MLXPipeline.from_model_id(model_id="mlx-community/quantized-gemma-2b-it")
             chat = chatMLX(llm=llm)
 
     """

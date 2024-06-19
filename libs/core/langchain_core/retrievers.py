@@ -94,6 +94,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
             from sklearn.metrics.pairwise import cosine_similarity
 
+
             class TFIDFRetriever(BaseRetriever, BaseModel):
                 vectorizer: Any
                 docs: List[Document]
@@ -220,16 +221,11 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             run_manager.on_retriever_error(e)
             raise e
         else:
-            run_manager.on_retriever_end(
-                result,
-            )
+            run_manager.on_retriever_end(result)
             return result
 
     async def ainvoke(
-        self,
-        input: str,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
+        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> List[Document]:
         """Asynchronously invoke the retriever to get relevant documents.
 
@@ -279,9 +275,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             await run_manager.on_retriever_error(e)
             raise e
         else:
-            await run_manager.on_retriever_end(
-                result,
-            )
+            await run_manager.on_retriever_end(result)
             return result
 
     @abstractmethod

@@ -66,9 +66,7 @@ async def test_inmemory_dump_load(tmp_path: Path) -> None:
 async def test_inmemory_filter() -> None:
     """Test end to end construction and search."""
     store = await InMemoryVectorStore.afrom_texts(
-        ["foo", "bar"],
-        ConsistentFakeEmbeddings(),
-        [{"id": 1}, {"id": 2}],
+        ["foo", "bar"], ConsistentFakeEmbeddings(), [{"id": 1}, {"id": 2}]
     )
     output = await store.asimilarity_search(
         "baz", filter=lambda doc: doc.metadata["id"] == 1

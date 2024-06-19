@@ -267,8 +267,7 @@ class SmartLLMChain(Chain):
         if llm:
             ideas = [
                 self._get_text_from_llm_result(
-                    llm.generate_prompt([prompt], stop, callbacks),
-                    step="ideate",
+                    llm.generate_prompt([prompt], stop, callbacks), step="ideate"
                 )
                 for _ in range(self.n_ideas)
             ]

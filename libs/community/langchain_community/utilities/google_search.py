@@ -133,10 +133,7 @@ class GoogleSearchAPIWrapper(BaseModel):
         if len(results) == 0:
             return [{"Result": "No good Google Search Result was found"}]
         for result in results:
-            metadata_result = {
-                "title": result["title"],
-                "link": result["link"],
-            }
+            metadata_result = {"title": result["title"], "link": result["link"]}
             if "snippet" in result:
                 metadata_result["snippet"] = result["snippet"]
             metadata_results.append(metadata_result)

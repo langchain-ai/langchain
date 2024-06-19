@@ -24,16 +24,11 @@ class LLMRails(VectorStore):
 
             from langchain_community.vectorstores import LLMRails
 
-            vectorstore = LLMRails(
-                api_key=llm_rails_api_key,
-                datastore_id=datastore_id
-            )
+            vectorstore = LLMRails(api_key=llm_rails_api_key, datastore_id=datastore_id)
     """
 
     def __init__(
-        self,
-        datastore_id: Optional[str] = None,
-        api_key: Optional[str] = None,
+        self, datastore_id: Optional[str] = None, api_key: Optional[str] = None
     ):
         """Initialize with LLMRails API."""
         self._datastore_id = datastore_id or os.environ.get("LLM_RAILS_DATASTORE_ID")
@@ -209,10 +204,9 @@ class LLMRails(VectorStore):
             .. code-block:: python
 
                 from langchain_community.vectorstores import LLMRails
+
                 llm_rails = LLMRails.from_texts(
-                    texts,
-                    datastore_id=datastore_id,
-                    api_key=llm_rails_api_key
+                    texts, datastore_id=datastore_id, api_key=llm_rails_api_key
                 )
         """
         # Note: LLMRails generates its own embeddings, so we ignore the provided

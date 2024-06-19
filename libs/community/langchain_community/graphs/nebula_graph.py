@@ -84,10 +84,7 @@ class NebulaGraph:
 
         try:
             session_pool = SessionPool(
-                self.username,
-                self.password,
-                self.space,
-                [(self.address, self.port)],
+                self.username, self.password, self.space, [(self.address, self.port)]
             )
         except InValidHostname:
             raise ValueError(

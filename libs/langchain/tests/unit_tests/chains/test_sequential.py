@@ -70,11 +70,7 @@ def test_sequential_usage_multiple_inputs() -> None:
     chain_2 = FakeChain(input_variables=["bar", "foo"], output_variables=["baz"])
     chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo", "test"])  # type: ignore[call-arg]
     output = chain({"foo": "123", "test": "456"})
-    expected_output = {
-        "baz": "123 456foo 123foo",
-        "foo": "123",
-        "test": "456",
-    }
+    expected_output = {"baz": "123 456foo 123foo", "foo": "123", "test": "456"}
     assert output == expected_output
 
 
@@ -119,10 +115,7 @@ def test_sequential_usage_multiple_outputs() -> None:
     chain_2 = FakeChain(input_variables=["bar", "foo"], output_variables=["baz"])
     chain = SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])  # type: ignore[call-arg]
     output = chain({"foo": "123"})
-    expected_output = {
-        "baz": "123foo 123foo",
-        "foo": "123",
-    }
+    expected_output = {"baz": "123foo 123foo", "foo": "123"}
     assert output == expected_output
 
 

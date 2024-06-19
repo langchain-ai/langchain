@@ -70,10 +70,6 @@ class AcreomLoader(BaseLoader):
 
             text = self._process_acreom_content(text)
 
-            metadata = {
-                "source": str(p.name),
-                "path": str(p),
-                **front_matter,
-            }
+            metadata = {"source": str(p.name), "path": str(p), **front_matter}
 
             yield Document(page_content=text, metadata=metadata)

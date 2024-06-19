@@ -15,10 +15,7 @@
 
 """  # noqa: E501
 
-from langchain_core.messages.ai import (
-    AIMessage,
-    AIMessageChunk,
-)
+from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,

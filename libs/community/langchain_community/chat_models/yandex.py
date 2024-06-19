@@ -9,12 +9,7 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from tenacity import (
     before_sleep_log,
@@ -66,6 +61,7 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models import ChatYandexGPT
+
             chat_model = ChatYandexGPT(iam_token="t1.9eu...")
 
     """
@@ -120,10 +116,7 @@ class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
         return ChatResult(generations=[ChatGeneration(message=message)])
 
 
-def _make_request(
-    self: ChatYandexGPT,
-    messages: List[BaseMessage],
-) -> str:
+def _make_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> str:
     try:
         import grpc
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
@@ -237,8 +230,7 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
                 await asyncio.sleep(1)
                 operation_request = GetOperationRequest(operation_id=operation.id)
                 operation = await operation_stub.Get(
-                    operation_request,
-                    metadata=self._grpc_metadata,
+                    operation_request, metadata=self._grpc_metadata
                 )
 
         completion_response = CompletionResponse()

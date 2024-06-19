@@ -26,10 +26,9 @@ class InfinityEmbeddingsLocal(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import InfinityEmbeddingsLocal
+
             async with InfinityEmbeddingsLocal(
-                model="BAAI/bge-small-en-v1.5",
-                revision=None,
-                device="cpu",
+                model="BAAI/bge-small-en-v1.5", revision=None, device="cpu"
             ) as embedder:
                 embeddings = await engine.aembed_documents(["text1", "text2"])
     """

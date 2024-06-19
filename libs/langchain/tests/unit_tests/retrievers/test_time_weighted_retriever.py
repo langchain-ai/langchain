@@ -54,18 +54,12 @@ class MockVectorStore(VectorStore):
         return cls()
 
     def _similarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         return [(doc, 0.5) for doc in _get_example_memories()]
 
     async def _asimilarity_search_with_relevance_scores(
-        self,
-        query: str,
-        k: int = 4,
-        **kwargs: Any,
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         return self._similarity_search_with_relevance_scores(query, k, **kwargs)
 
@@ -129,9 +123,7 @@ async def test_aget_salient_docs(
         assert doc in want
 
 
-def test_invoke(
-    time_weighted_retriever: TimeWeightedVectorStoreRetriever,
-) -> None:
+def test_invoke(time_weighted_retriever: TimeWeightedVectorStoreRetriever) -> None:
     query = "Test query"
     relevant_documents = time_weighted_retriever.invoke(query)
     want = [(doc, 0.5) for doc in _get_example_memories()]

@@ -21,152 +21,58 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from langchain_community.chat_models.anthropic import (
-        ChatAnthropic,
-    )
-    from langchain_community.chat_models.anyscale import (
-        ChatAnyscale,
-    )
-    from langchain_community.chat_models.azure_openai import (
-        AzureChatOpenAI,
-    )
-    from langchain_community.chat_models.baichuan import (
-        ChatBaichuan,
-    )
+    from langchain_community.chat_models.anthropic import ChatAnthropic
+    from langchain_community.chat_models.anyscale import ChatAnyscale
+    from langchain_community.chat_models.azure_openai import AzureChatOpenAI
+    from langchain_community.chat_models.baichuan import ChatBaichuan
     from langchain_community.chat_models.baidu_qianfan_endpoint import (
         QianfanChatEndpoint,
     )
-    from langchain_community.chat_models.bedrock import (
-        BedrockChat,
-    )
-    from langchain_community.chat_models.cohere import (
-        ChatCohere,
-    )
-    from langchain_community.chat_models.coze import (
-        ChatCoze,
-    )
-    from langchain_community.chat_models.databricks import (
-        ChatDatabricks,
-    )
-    from langchain_community.chat_models.deepinfra import (
-        ChatDeepInfra,
-    )
-    from langchain_community.chat_models.ernie import (
-        ErnieBotChat,
-    )
-    from langchain_community.chat_models.everlyai import (
-        ChatEverlyAI,
-    )
-    from langchain_community.chat_models.fake import (
-        FakeListChatModel,
-    )
-    from langchain_community.chat_models.fireworks import (
-        ChatFireworks,
-    )
-    from langchain_community.chat_models.friendli import (
-        ChatFriendli,
-    )
-    from langchain_community.chat_models.gigachat import (
-        GigaChat,
-    )
-    from langchain_community.chat_models.google_palm import (
-        ChatGooglePalm,
-    )
-    from langchain_community.chat_models.gpt_router import (
-        GPTRouter,
-    )
-    from langchain_community.chat_models.huggingface import (
-        ChatHuggingFace,
-    )
-    from langchain_community.chat_models.human import (
-        HumanInputChatModel,
-    )
-    from langchain_community.chat_models.hunyuan import (
-        ChatHunyuan,
-    )
-    from langchain_community.chat_models.javelin_ai_gateway import (
-        ChatJavelinAIGateway,
-    )
-    from langchain_community.chat_models.jinachat import (
-        JinaChat,
-    )
-    from langchain_community.chat_models.kinetica import (
-        ChatKinetica,
-    )
-    from langchain_community.chat_models.konko import (
-        ChatKonko,
-    )
-    from langchain_community.chat_models.litellm import (
-        ChatLiteLLM,
-    )
-    from langchain_community.chat_models.litellm_router import (
-        ChatLiteLLMRouter,
-    )
-    from langchain_community.chat_models.llama_edge import (
-        LlamaEdgeChatService,
-    )
+    from langchain_community.chat_models.bedrock import BedrockChat
+    from langchain_community.chat_models.cohere import ChatCohere
+    from langchain_community.chat_models.coze import ChatCoze
+    from langchain_community.chat_models.databricks import ChatDatabricks
+    from langchain_community.chat_models.deepinfra import ChatDeepInfra
+    from langchain_community.chat_models.ernie import ErnieBotChat
+    from langchain_community.chat_models.everlyai import ChatEverlyAI
+    from langchain_community.chat_models.fake import FakeListChatModel
+    from langchain_community.chat_models.fireworks import ChatFireworks
+    from langchain_community.chat_models.friendli import ChatFriendli
+    from langchain_community.chat_models.gigachat import GigaChat
+    from langchain_community.chat_models.google_palm import ChatGooglePalm
+    from langchain_community.chat_models.gpt_router import GPTRouter
+    from langchain_community.chat_models.huggingface import ChatHuggingFace
+    from langchain_community.chat_models.human import HumanInputChatModel
+    from langchain_community.chat_models.hunyuan import ChatHunyuan
+    from langchain_community.chat_models.javelin_ai_gateway import ChatJavelinAIGateway
+    from langchain_community.chat_models.jinachat import JinaChat
+    from langchain_community.chat_models.kinetica import ChatKinetica
+    from langchain_community.chat_models.konko import ChatKonko
+    from langchain_community.chat_models.litellm import ChatLiteLLM
+    from langchain_community.chat_models.litellm_router import ChatLiteLLMRouter
+    from langchain_community.chat_models.llama_edge import LlamaEdgeChatService
     from langchain_community.chat_models.llamacpp import ChatLlamaCpp
-    from langchain_community.chat_models.maritalk import (
-        ChatMaritalk,
-    )
-    from langchain_community.chat_models.minimax import (
-        MiniMaxChat,
-    )
-    from langchain_community.chat_models.mlflow import (
-        ChatMlflow,
-    )
-    from langchain_community.chat_models.mlflow_ai_gateway import (
-        ChatMLflowAIGateway,
-    )
-    from langchain_community.chat_models.mlx import (
-        ChatMLX,
-    )
+    from langchain_community.chat_models.maritalk import ChatMaritalk
+    from langchain_community.chat_models.minimax import MiniMaxChat
+    from langchain_community.chat_models.mlflow import ChatMlflow
+    from langchain_community.chat_models.mlflow_ai_gateway import ChatMLflowAIGateway
+    from langchain_community.chat_models.mlx import ChatMLX
     from langchain_community.chat_models.octoai import ChatOctoAI
-    from langchain_community.chat_models.ollama import (
-        ChatOllama,
-    )
-    from langchain_community.chat_models.openai import (
-        ChatOpenAI,
-    )
-    from langchain_community.chat_models.pai_eas_endpoint import (
-        PaiEasChatEndpoint,
-    )
-    from langchain_community.chat_models.perplexity import (
-        ChatPerplexity,
-    )
-    from langchain_community.chat_models.premai import (
-        ChatPremAI,
-    )
-    from langchain_community.chat_models.promptlayer_openai import (
-        PromptLayerChatOpenAI,
-    )
-    from langchain_community.chat_models.snowflake import (
-        ChatSnowflakeCortex,
-    )
-    from langchain_community.chat_models.solar import (
-        SolarChat,
-    )
-    from langchain_community.chat_models.sparkllm import (
-        ChatSparkLLM,
-    )
-    from langchain_community.chat_models.tongyi import (
-        ChatTongyi,
-    )
-    from langchain_community.chat_models.vertexai import (
-        ChatVertexAI,
-    )
-    from langchain_community.chat_models.volcengine_maas import (
-        VolcEngineMaasChat,
-    )
-    from langchain_community.chat_models.yandex import (
-        ChatYandexGPT,
-    )
-    from langchain_community.chat_models.yuan2 import (
-        ChatYuan2,
-    )
-    from langchain_community.chat_models.zhipuai import (
-        ChatZhipuAI,
-    )
+    from langchain_community.chat_models.ollama import ChatOllama
+    from langchain_community.chat_models.openai import ChatOpenAI
+    from langchain_community.chat_models.pai_eas_endpoint import PaiEasChatEndpoint
+    from langchain_community.chat_models.perplexity import ChatPerplexity
+    from langchain_community.chat_models.premai import ChatPremAI
+    from langchain_community.chat_models.promptlayer_openai import PromptLayerChatOpenAI
+    from langchain_community.chat_models.snowflake import ChatSnowflakeCortex
+    from langchain_community.chat_models.solar import SolarChat
+    from langchain_community.chat_models.sparkllm import ChatSparkLLM
+    from langchain_community.chat_models.tongyi import ChatTongyi
+    from langchain_community.chat_models.vertexai import ChatVertexAI
+    from langchain_community.chat_models.volcengine_maas import VolcEngineMaasChat
+    from langchain_community.chat_models.yandex import ChatYandexGPT
+    from langchain_community.chat_models.yuan2 import ChatYuan2
+    from langchain_community.chat_models.zhipuai import ChatZhipuAI
 
 __all__ = [
     "AzureChatOpenAI",

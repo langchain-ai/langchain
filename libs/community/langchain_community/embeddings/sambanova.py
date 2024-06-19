@@ -152,26 +152,21 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
             for batch in self._iterate_over_batches(texts, batch_size):
                 data = {"inputs": batch, "params": params}
                 response = http_session.post(
-                    url,
-                    headers={"key": self.sambastudio_embeddings_api_key},
-                    json=data,
+                    url, headers={"key": self.sambastudio_embeddings_api_key}, json=data
                 )
                 try:
                     embedding = response.json()["data"]
                     embeddings.extend(embedding)
                 except KeyError:
                     raise KeyError(
-                        "'data' not found in endpoint response",
-                        response.json(),
+                        "'data' not found in endpoint response", response.json()
                     )
 
         elif "generic" in self.sambastudio_embeddings_base_uri:
             for batch in self._iterate_over_batches(texts, batch_size):
                 data = {"instances": batch, "params": params}
                 response = http_session.post(
-                    url,
-                    headers={"key": self.sambastudio_embeddings_api_key},
-                    json=data,
+                    url, headers={"key": self.sambastudio_embeddings_api_key}, json=data
                 )
                 try:
                     if params.get("select_expert"):
@@ -181,8 +176,7 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
                     embeddings.extend(embedding)
                 except KeyError:
                     raise KeyError(
-                        "'predictions' not found in endpoint response",
-                        response.json(),
+                        "'predictions' not found in endpoint response", response.json()
                     )
 
         else:
@@ -210,24 +204,17 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
         if "nlp" in self.sambastudio_embeddings_base_uri:
             data = {"inputs": [text], "params": params}
             response = http_session.post(
-                url,
-                headers={"key": self.sambastudio_embeddings_api_key},
-                json=data,
+                url, headers={"key": self.sambastudio_embeddings_api_key}, json=data
             )
             try:
                 embedding = response.json()["data"][0]
             except KeyError:
-                raise KeyError(
-                    "'data' not found in endpoint response",
-                    response.json(),
-                )
+                raise KeyError("'data' not found in endpoint response", response.json())
 
         elif "generic" in self.sambastudio_embeddings_base_uri:
             data = {"instances": [text], "params": params}
             response = http_session.post(
-                url,
-                headers={"key": self.sambastudio_embeddings_api_key},
-                json=data,
+                url, headers={"key": self.sambastudio_embeddings_api_key}, json=data
             )
             try:
                 if params.get("select_expert"):
@@ -236,8 +223,7 @@ class SambaStudioEmbeddings(BaseModel, Embeddings):
                     embedding = response.json()["predictions"][0]
             except KeyError:
                 raise KeyError(
-                    "'predictions' not found in endpoint response",
-                    response.json(),
+                    "'predictions' not found in endpoint response", response.json()
                 )
 
         else:

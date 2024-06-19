@@ -88,10 +88,7 @@ class VolcEngineMaasBase(BaseModel):
     @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling VolcEngineMaas API."""
-        normal_params = {
-            "top_p": self.top_p,
-            "temperature": self.temperature,
-        }
+        normal_params = {"top_p": self.top_p, "temperature": self.temperature}
 
         return {**normal_params, **self.model_kwargs}
 
@@ -116,9 +113,12 @@ class VolcEngineMaasLLM(LLM, VolcEngineMaasBase):
         .. code-block:: python
 
             from langchain_community.llms import VolcEngineMaasLLM
-            model = VolcEngineMaasLLM(model="skylark-lite-public",
-                                          volc_engine_maas_ak="your_ak",
-                                          volc_engine_maas_sk="your_sk")
+
+            model = VolcEngineMaasLLM(
+                model="skylark-lite-public",
+                volc_engine_maas_ak="your_ak",
+                volc_engine_maas_sk="your_sk",
+            )
     """
 
     @property
@@ -126,16 +126,8 @@ class VolcEngineMaasLLM(LLM, VolcEngineMaasBase):
         """Return type of llm."""
         return "volc-engine-maas-llm"
 
-    def _convert_prompt_msg_params(
-        self,
-        prompt: str,
-        **kwargs: Any,
-    ) -> dict:
-        model_req = {
-            "model": {
-                "name": self.model,
-            }
-        }
+    def _convert_prompt_msg_params(self, prompt: str, **kwargs: Any) -> dict:
+        model_req = {"model": {"name": self.model}}
         if self.model_version is not None:
             model_req["model"]["version"] = self.model_version
 

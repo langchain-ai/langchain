@@ -89,15 +89,7 @@ def fake_llm() -> FakeLLM:
 def fake_vectorstore() -> InMemoryVectorstoreWithSearch:
     vectorstore = InMemoryVectorstoreWithSearch()
     vectorstore.add_documents(
-        [
-            Document(
-                page_content="test",
-                metadata={
-                    "foo": "bar",
-                },
-            ),
-        ],
-        ids=["test"],
+        [Document(page_content="test", metadata={"foo": "bar"})], ids=["test"]
     )
     return vectorstore
 
@@ -111,11 +103,7 @@ def fake_self_query_retriever(
         vectorstore=fake_vectorstore,
         document_contents="test",
         metadata_field_info=[
-            AttributeInfo(
-                name="foo",
-                type="string",
-                description="test",
-            ),
+            AttributeInfo(name="foo", type="string", description="test")
         ],
         structured_query_translator=FakeTranslator(),
     )
@@ -123,8 +111,7 @@ def fake_self_query_retriever(
 
 def test__get_relevant_documents(fake_self_query_retriever: SelfQueryRetriever) -> None:
     relevant_documents = fake_self_query_retriever._get_relevant_documents(
-        "foo",
-        run_manager=CallbackManagerForRetrieverRun.get_noop_manager(),
+        "foo", run_manager=CallbackManagerForRetrieverRun.get_noop_manager()
     )
     assert len(relevant_documents) == 1
     assert relevant_documents[0].metadata["foo"] == "bar"
@@ -134,8 +121,7 @@ async def test__aget_relevant_documents(
     fake_self_query_retriever: SelfQueryRetriever,
 ) -> None:
     relevant_documents = await fake_self_query_retriever._aget_relevant_documents(
-        "foo",
-        run_manager=AsyncCallbackManagerForRetrieverRun.get_noop_manager(),
+        "foo", run_manager=AsyncCallbackManagerForRetrieverRun.get_noop_manager()
     )
     assert len(relevant_documents) == 1
     assert relevant_documents[0].metadata["foo"] == "bar"

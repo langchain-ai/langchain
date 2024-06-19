@@ -267,10 +267,7 @@ class OpenAIWhisperParserLocal(BaseBlobParser):
 
         prediction = self.pipe(y.copy(), batch_size=self.batch_size)["text"]
 
-        yield Document(
-            page_content=prediction,
-            metadata={"source": blob.source},
-        )
+        yield Document(page_content=prediction, metadata={"source": blob.source})
 
 
 class YandexSTTParser(BaseBlobParser):
@@ -346,8 +343,7 @@ class YandexSTTParser(BaseBlobParser):
 
         for res in result:
             yield Document(
-                page_content=res.normalized_text,
-                metadata={"source": blob.source},
+                page_content=res.normalized_text, metadata={"source": blob.source}
             )
 
 
@@ -387,10 +383,7 @@ class FasterWhisperParser(BaseBlobParser):
     """
 
     def __init__(
-        self,
-        *,
-        device: Optional[str] = "cuda",
-        model_size: Optional[str] = None,
+        self, *, device: Optional[str] = "cuda", model_size: Optional[str] = None
     ):
         """Initialize the parser.
 

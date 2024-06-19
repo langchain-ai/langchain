@@ -5,11 +5,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
 
-FIELD_TYPES = {
-    "f": "files",
-    "t": "texts",
-    "l": "links",
-}
+FIELD_TYPES = {"f": "files", "t": "texts", "l": "links"}
 
 
 class NucliaDB(VectorStore):

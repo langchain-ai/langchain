@@ -36,10 +36,7 @@ def test_clickhouse_with_metadatas() -> None:
     config = ClickhouseSettings()
     config.table = "test_clickhouse_with_metadatas"
     docsearch = Clickhouse.from_texts(
-        texts=texts,
-        embedding=FakeEmbeddings(),
-        config=config,
-        metadatas=metadatas,
+        texts=texts, embedding=FakeEmbeddings(), config=config, metadatas=metadatas
     )
     output = docsearch.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo", metadata={"page": "0"})]
@@ -84,11 +81,7 @@ def test_clickhouse_with_persistence() -> None:
     """Test end to end construction and search, with persistence."""
     config = ClickhouseSettings()
     config.table = "test_clickhouse_with_persistence"
-    texts = [
-        "foo",
-        "bar",
-        "baz",
-    ]
+    texts = ["foo", "bar", "baz"]
     docsearch = Clickhouse.from_texts(
         texts=texts, embedding=FakeEmbeddings(), config=config
     )

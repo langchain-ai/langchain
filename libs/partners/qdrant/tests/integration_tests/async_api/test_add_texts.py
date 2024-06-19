@@ -109,10 +109,7 @@ async def test_qdrant_aadd_texts_stores_embeddings_as_named_vectors(
     )
 
     vec_store = Qdrant(
-        client,
-        collection_name,
-        ConsistentFakeEmbeddings(),
-        vector_name=vector_name,
+        client, collection_name, ConsistentFakeEmbeddings(), vector_name=vector_name
     )
     await vec_store.aadd_texts(["lorem", "ipsum", "dolor", "sit", "amet"])
 

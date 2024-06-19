@@ -26,6 +26,7 @@ class CerebriumAI(LLM):
         .. code-block:: python
 
             from langchain_community.llms import CerebriumAI
+
             cerebrium = CerebriumAI(endpoint_url="", cerebriumai_api_key="my-api-key")
 
     """

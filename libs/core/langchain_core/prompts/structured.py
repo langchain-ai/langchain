@@ -65,6 +65,7 @@ class StructuredPrompt(ChatPromptTemplate):
                     name: str
                     value: int
 
+
                 template = ChatPromptTemplate.from_messages(
                     [
                         ("human", "Hello, how are you?"),

@@ -39,12 +39,14 @@ class CSVLoader(BaseLoader):
 
             from langchain_community.document_loaders import CSVLoader
 
-            loader = CSVLoader(file_path='./hw_200.csv',
+            loader = CSVLoader(
+                file_path="./hw_200.csv",
                 csv_args={
-                'delimiter': ',',
-                'quotechar': '"',
-                'fieldnames': ['Index', 'Height', 'Weight']
-            })
+                    "delimiter": ",",
+                    "quotechar": '"',
+                    "fieldnames": ["Index", "Height", "Weight"],
+                },
+            )
 
     Load:
         .. code-block:: python

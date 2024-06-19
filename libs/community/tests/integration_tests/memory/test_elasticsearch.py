@@ -35,8 +35,7 @@ class TestElasticsearch:
 
         if es_cloud_id:
             es = Elasticsearch(
-                cloud_id=es_cloud_id,
-                basic_auth=(es_username, es_password),
+                cloud_id=es_cloud_id, basic_auth=(es_username, es_password)
             )
             yield {
                 "es_cloud_id": es_cloud_id,

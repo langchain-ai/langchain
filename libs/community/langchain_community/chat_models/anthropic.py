@@ -25,9 +25,7 @@ from langchain_community.llms.anthropic import _AnthropicCommon
 
 
 def _convert_one_message_to_text(
-    message: BaseMessage,
-    human_prompt: str,
-    ai_prompt: str,
+    message: BaseMessage, human_prompt: str, ai_prompt: str
 ) -> str:
     content = cast(str, message.content)
     if isinstance(message, ChatMessage):
@@ -88,6 +86,7 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
 
             import anthropic
             from langchain_community.chat_models import ChatAnthropic
+
             model = ChatAnthropic(model="<model_name>", anthropic_api_key="my-api-key")
     """
 
@@ -185,14 +184,8 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return generate_from_stream(stream_iter)
-        prompt = self._convert_messages_to_prompt(
-            messages,
-        )
-        params: Dict[str, Any] = {
-            "prompt": prompt,
-            **self._default_params,
-            **kwargs,
-        }
+        prompt = self._convert_messages_to_prompt(messages)
+        params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
             params["stop_sequences"] = stop
         response = self.client.completions.create(**params)
@@ -212,14 +205,8 @@ class ChatAnthropic(BaseChatModel, _AnthropicCommon):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return await agenerate_from_stream(stream_iter)
-        prompt = self._convert_messages_to_prompt(
-            messages,
-        )
-        params: Dict[str, Any] = {
-            "prompt": prompt,
-            **self._default_params,
-            **kwargs,
-        }
+        prompt = self._convert_messages_to_prompt(messages)
+        params: Dict[str, Any] = {"prompt": prompt, **self._default_params, **kwargs}
         if stop:
             params["stop_sequences"] = stop
         response = await self.async_client.completions.create(**params)

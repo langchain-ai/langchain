@@ -3,21 +3,12 @@ from collections import defaultdict
 from html.parser import HTMLParser
 from typing import Any, DefaultDict, Dict, List, Optional, cast
 
-from langchain.schema import (
-    ChatGeneration,
-    ChatResult,
-)
+from langchain.schema import ChatGeneration, ChatResult
 from langchain_community.chat_models.anthropic import ChatAnthropic
 from langchain_core._api.deprecation import deprecated
-from langchain_core.callbacks.manager import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
 
 from langchain_experimental.pydantic_v1 import root_validator
 
@@ -199,10 +190,7 @@ class AnthropicFunctions(BaseChatModel):
                 arguments = ""
 
             kwargs = {
-                "function_call": {
-                    "name": function_call_name,
-                    "arguments": arguments,
-                }
+                "function_call": {"name": function_call_name, "arguments": arguments}
             }
             message = AIMessage(content="", additional_kwargs=kwargs)
             return ChatResult(generations=[ChatGeneration(message=message)])

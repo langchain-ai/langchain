@@ -25,9 +25,7 @@ class SleepTool(BaseTool):
     description: str = "Make agent sleep for a specified number of seconds."
 
     def _run(
-        self,
-        sleep_time: int,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, sleep_time: int, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the Sleep tool."""
         sleep(sleep_time)

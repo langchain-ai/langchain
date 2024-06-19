@@ -58,9 +58,7 @@ def split_list_of_docs(
 
 
 def collapse_docs(
-    docs: List[Document],
-    combine_document_func: CombineDocsProtocol,
-    **kwargs: Any,
+    docs: List[Document], combine_document_func: CombineDocsProtocol, **kwargs: Any
 ) -> Document:
     """Execute a collapse function on a set of documents and merge their metadatas.
 
@@ -90,9 +88,7 @@ def collapse_docs(
 
 
 async def acollapse_docs(
-    docs: List[Document],
-    combine_document_func: AsyncCombineDocsProtocol,
-    **kwargs: Any,
+    docs: List[Document], combine_document_func: AsyncCombineDocsProtocol, **kwargs: Any
 ) -> Document:
     """Execute a collapse function on a set of documents and merge their metadatas.
 
@@ -142,9 +138,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     Example:
         .. code-block:: python
 
-            from langchain.chains import (
-                StuffDocumentsChain, LLMChain, ReduceDocumentsChain
-            )
+            from langchain.chains import StuffDocumentsChain, LLMChain, ReduceDocumentsChain
             from langchain_core.prompts import PromptTemplate
             from langchain_community.llms import OpenAI
 
@@ -152,36 +146,29 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             # it will be passed to `format_document` - see that function for more
             # details.
             document_prompt = PromptTemplate(
-                input_variables=["page_content"],
-                 template="{page_content}"
+                input_variables=["page_content"], template="{page_content}"
             )
             document_variable_name = "context"
             llm = OpenAI()
             # The prompt here should take as an input variable the
             # `document_variable_name`
-            prompt = PromptTemplate.from_template(
-                "Summarize this content: {context}"
-            )
+            prompt = PromptTemplate.from_template("Summarize this content: {context}")
             llm_chain = LLMChain(llm=llm, prompt=prompt)
             combine_documents_chain = StuffDocumentsChain(
                 llm_chain=llm_chain,
                 document_prompt=document_prompt,
-                document_variable_name=document_variable_name
+                document_variable_name=document_variable_name,
             )
-            chain = ReduceDocumentsChain(
-                combine_documents_chain=combine_documents_chain,
-            )
+            chain = ReduceDocumentsChain(combine_documents_chain=combine_documents_chain)
             # If we wanted to, we could also pass in collapse_documents_chain
             # which is specifically aimed at collapsing documents BEFORE
             # the final call.
-            prompt = PromptTemplate.from_template(
-                "Collapse this content: {context}"
-            )
+            prompt = PromptTemplate.from_template("Collapse this content: {context}")
             llm_chain = LLMChain(llm=llm, prompt=prompt)
             collapse_documents_chain = StuffDocumentsChain(
                 llm_chain=llm_chain,
                 document_prompt=document_prompt,
-                document_variable_name=document_variable_name
+                document_variable_name=document_variable_name,
             )
             chain = ReduceDocumentsChain(
                 combine_documents_chain=combine_documents_chain,

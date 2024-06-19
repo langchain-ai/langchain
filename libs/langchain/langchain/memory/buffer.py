@@ -29,9 +29,7 @@ class ConversationBufferMemory(BaseChatMemory):
 
     def _buffer_as_str(self, messages: List[BaseMessage]) -> str:
         return get_buffer_string(
-            messages,
-            human_prefix=self.human_prefix,
-            ai_prefix=self.ai_prefix,
+            messages, human_prefix=self.human_prefix, ai_prefix=self.ai_prefix
         )
 
     @property

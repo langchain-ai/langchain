@@ -301,10 +301,7 @@ class BigQueryVectorSearch(VectorStore):
         return self._full_table_id
 
     def add_texts(  # type: ignore[override]
-        self,
-        texts: List[str],
-        metadatas: Optional[List[dict]] = None,
-        **kwargs: Any,
+        self, texts: List[str], metadatas: Optional[List[dict]] = None, **kwargs: Any
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
@@ -369,9 +366,7 @@ class BigQueryVectorSearch(VectorStore):
             from google.cloud import bigquery
 
             job_config = bigquery.QueryJobConfig(
-                query_parameters=[
-                    bigquery.ArrayQueryParameter("ids", "STRING", ids),
-                ]
+                query_parameters=[bigquery.ArrayQueryParameter("ids", "STRING", ids)]
             )
             id_expr = f"{self.doc_id_field} IN UNNEST(@ids)"
         else:
@@ -436,9 +431,7 @@ class BigQueryVectorSearch(VectorStore):
         from google.cloud import bigquery
 
         job_config = bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ArrayQueryParameter("ids", "STRING", ids),
-            ]
+            query_parameters=[bigquery.ArrayQueryParameter("ids", "STRING", ids)]
         )
         self.bq_client.query(
             f"""
@@ -502,9 +495,7 @@ class BigQueryVectorSearch(VectorStore):
             filter_expr += f" AND ({filter_expression_str})"
         # Configure and run a query job.
         job_config = bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ArrayQueryParameter("v", "FLOAT64", embedding),
-            ],
+            query_parameters=[bigquery.ArrayQueryParameter("v", "FLOAT64", embedding)],
             use_query_cache=False,
             priority=bigquery.QueryPriority.BATCH,
         )

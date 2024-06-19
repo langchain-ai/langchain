@@ -92,9 +92,7 @@ def mustache_formatter(template: str, **kwargs: Any) -> str:
     return mustache.render(template, kwargs)
 
 
-def mustache_template_vars(
-    template: str,
-) -> Set[str]:
+def mustache_template_vars(template: str) -> Set[str]:
     """Get the variables from a mustache template."""
     vars: Set[str] = set()
     in_section = False
@@ -116,9 +114,7 @@ def mustache_template_vars(
 Defs = Dict[str, "Defs"]
 
 
-def mustache_schema(
-    template: str,
-) -> Type[BaseModel]:
+def mustache_schema(template: str) -> Type[BaseModel]:
     """Get the variables from a mustache template."""
     fields = {}
     prefix: Tuple[str, ...] = ()

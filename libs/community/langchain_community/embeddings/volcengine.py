@@ -67,14 +67,10 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
             `pip install volcengine`
         """
         values["volcano_ak"] = get_from_dict_or_env(
-            values,
-            "volcano_ak",
-            "VOLC_ACCESSKEY",
+            values, "volcano_ak", "VOLC_ACCESSKEY"
         )
         values["volcano_sk"] = get_from_dict_or_env(
-            values,
-            "volcano_sk",
-            "VOLC_SECRETKEY",
+            values, "volcano_sk", "VOLC_SECRETKEY"
         )
 
         try:
@@ -112,10 +108,7 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
         lst = []
         for chunk in text_in_chunks:
             req = {
-                "model": {
-                    "name": self.model,
-                    "version": self.version,
-                },
+                "model": {"name": self.model, "version": self.version},
                 "input": chunk,
             }
             try:

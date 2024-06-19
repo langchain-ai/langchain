@@ -17,11 +17,7 @@ def test_connect_neo4j() -> None:
     assert username is not None
     assert password is not None
 
-    graph = Neo4jGraph(
-        url=url,
-        username=username,
-        password=password,
-    )
+    graph = Neo4jGraph(url=url, username=username, password=password)
 
     output = graph.query(
         """
@@ -54,11 +50,7 @@ def test_cypher_generating_run() -> None:
     assert username is not None
     assert password is not None
 
-    graph = Neo4jGraph(
-        url=url,
-        username=username,
-        password=password,
-    )
+    graph = Neo4jGraph(url=url, username=username, password=password)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create two nodes and a relationship
@@ -86,11 +78,7 @@ def test_cypher_top_k() -> None:
 
     TOP_K = 1
 
-    graph = Neo4jGraph(
-        url=url,
-        username=username,
-        password=password,
-    )
+    graph = Neo4jGraph(url=url, username=username, password=password)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create two nodes and a relationship
@@ -118,11 +106,7 @@ def test_cypher_intermediate_steps() -> None:
     assert username is not None
     assert password is not None
 
-    graph = Neo4jGraph(
-        url=url,
-        username=username,
-        password=password,
-    )
+    graph = Neo4jGraph(url=url, username=username, password=password)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create two nodes and a relationship
@@ -174,11 +158,7 @@ def test_cypher_return_direct() -> None:
     assert username is not None
     assert password is not None
 
-    graph = Neo4jGraph(
-        url=url,
-        username=username,
-        password=password,
-    )
+    graph = Neo4jGraph(url=url, username=username, password=password)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create two nodes and a relationship
@@ -208,11 +188,7 @@ def test_cypher_save_load() -> None:
     assert username is not None
     assert password is not None
 
-    graph = Neo4jGraph(
-        url=url,
-        username=username,
-        password=password,
-    )
+    graph = Neo4jGraph(url=url, username=username, password=password)
     chain = GraphCypherQAChain.from_llm(
         OpenAI(temperature=0), graph=graph, return_direct=True
     )
@@ -232,11 +208,7 @@ def test_exclude_types() -> None:
     assert username is not None
     assert password is not None
 
-    graph = Neo4jGraph(
-        url=url,
-        username=username,
-        password=password,
-    )
+    graph = Neo4jGraph(url=url, username=username, password=password)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create two nodes and a relationship
@@ -270,11 +242,7 @@ def test_include_types() -> None:
     assert username is not None
     assert password is not None
 
-    graph = Neo4jGraph(
-        url=url,
-        username=username,
-        password=password,
-    )
+    graph = Neo4jGraph(url=url, username=username, password=password)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create two nodes and a relationship
@@ -309,11 +277,7 @@ def test_include_types2() -> None:
     assert username is not None
     assert password is not None
 
-    graph = Neo4jGraph(
-        url=url,
-        username=username,
-        password=password,
-    )
+    graph = Neo4jGraph(url=url, username=username, password=password)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create two nodes and a relationship

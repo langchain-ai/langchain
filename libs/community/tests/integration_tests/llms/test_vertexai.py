@@ -17,10 +17,7 @@ model_names_to_test = ["text-bison@001", "gemini-pro"]
 model_names_to_test_with_default = [None] + model_names_to_test
 
 
-@pytest.mark.parametrize(
-    "model_name",
-    model_names_to_test_with_default,
-)
+@pytest.mark.parametrize("model_name", model_names_to_test_with_default)
 def test_vertex_initialization(model_name: str) -> None:
     llm = VertexAI(model_name=model_name) if model_name else VertexAI()
     assert llm._llm_type == "vertexai"
@@ -30,10 +27,7 @@ def test_vertex_initialization(model_name: str) -> None:
         assert llm.model_name == llm.client._model_name.split("/")[-1]
 
 
-@pytest.mark.parametrize(
-    "model_name",
-    model_names_to_test_with_default,
-)
+@pytest.mark.parametrize("model_name", model_names_to_test_with_default)
 def test_vertex_call(model_name: str) -> None:
     llm = (
         VertexAI(model_name=model_name, temperature=0)
@@ -70,10 +64,7 @@ async def test_vertex_agenerate() -> None:
 
 
 @pytest.mark.scheduled
-@pytest.mark.parametrize(
-    "model_name",
-    model_names_to_test_with_default,
-)
+@pytest.mark.parametrize("model_name", model_names_to_test_with_default)
 def test_vertex_stream(model_name: str) -> None:
     llm = (
         VertexAI(temperature=0, model_name=model_name)
@@ -171,10 +162,7 @@ async def test_model_garden_agenerate(
     assert len(output.generations) == 2
 
 
-@pytest.mark.parametrize(
-    "model_name",
-    model_names_to_test,
-)
+@pytest.mark.parametrize("model_name", model_names_to_test)
 def test_vertex_call_count_tokens(model_name: str) -> None:
     llm = VertexAI(model_name=model_name)
     output = llm.get_num_tokens("How are you?")

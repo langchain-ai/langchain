@@ -13,8 +13,7 @@ def test_memory_with_message_store() -> None:
     """Test the memory with a message store."""
     # setup SingleStoreDB as a message store
     message_history = SingleStoreDBChatMessageHistory(
-        session_id="test-session",
-        host=TEST_SINGLESTOREDB_URL,
+        session_id="test-session", host=TEST_SINGLESTOREDB_URL
     )
     memory = ConversationBufferMemory(
         memory_key="baz", chat_memory=message_history, return_messages=True

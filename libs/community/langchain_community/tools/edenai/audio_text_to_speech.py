@@ -92,9 +92,7 @@ class EdenAiTextToSpeechTool(EdenaiTool):
             return "audio.wav"
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         all_params = {

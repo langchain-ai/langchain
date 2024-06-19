@@ -34,10 +34,7 @@ T = TypeVar("T", bound=Union[Type, Callable[..., Any]])
 
 
 def _validate_deprecation_params(
-    pending: bool,
-    removal: str,
-    alternative: str,
-    alternative_import: str,
+    pending: bool, removal: str, alternative: str, alternative_import: str
 ) -> None:
     """Validate the deprecation parameters."""
     if pending and removal:
@@ -114,7 +111,7 @@ def deprecated(
 
         .. code-block:: python
 
-            @deprecated('1.4.0')
+            @deprecated("1.4.0")
             def the_function_to_deprecate():
                 pass
     """
@@ -415,12 +412,6 @@ def warn_deprecated(
 
 def surface_langchain_deprecation_warnings() -> None:
     """Unmute LangChain deprecation warnings."""
-    warnings.filterwarnings(
-        "default",
-        category=LangChainPendingDeprecationWarning,
-    )
+    warnings.filterwarnings("default", category=LangChainPendingDeprecationWarning)
 
-    warnings.filterwarnings(
-        "default",
-        category=LangChainDeprecationWarning,
-    )
+    warnings.filterwarnings("default", category=LangChainDeprecationWarning)

@@ -31,12 +31,7 @@ class YoutubeAudioLoader(BlobLoader):
             "format": "m4a/bestaudio/best",
             "noplaylist": True,
             "outtmpl": self.save_dir + "/%(title)s.%(ext)s",
-            "postprocessors": [
-                {
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "m4a",
-                }
-            ],
+            "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "m4a"}],
         }
 
         for url in self.urls:

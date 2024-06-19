@@ -30,6 +30,7 @@ class Llamafile(LLM):
         .. code-block:: python
 
             from langchain_community.llms import Llamafile
+
             llm = Llamafile()
             llm.invoke("Tell me a joke.")
     """
@@ -213,9 +214,7 @@ class Llamafile(LLM):
             try:
                 response = requests.post(
                     url=f"{self.base_url}/completion",
-                    headers={
-                        "Content-Type": "application/json",
-                    },
+                    headers={"Content-Type": "application/json"},
                     json=payload,
                     stream=False,
                     timeout=self.request_timeout,
@@ -262,13 +261,13 @@ class Llamafile(LLM):
         .. code-block:: python
 
             from langchain_community.llms import Llamafile
-            llm = Llamafile(
-                temperature = 0.0
-            )
-            for chunk in llm.stream("Ask 'Hi, how are you?' like a pirate:'",
-                    stop=["'","\n"]):
+
+            llm = Llamafile(temperature=0.0)
+            for chunk in llm.stream(
+                "Ask 'Hi, how are you?' like a pirate:'", stop=["'", "\n"]
+            ):
                 result = chunk["choices"][0]
-                print(result["text"], end='', flush=True)
+                print(result["text"], end="", flush=True)
 
         """
         params = self._get_parameters(stop=stop, **kwargs)
@@ -280,9 +279,7 @@ class Llamafile(LLM):
         try:
             response = requests.post(
                 url=f"{self.base_url}/completion",
-                headers={
-                    "Content-Type": "application/json",
-                },
+                headers={"Content-Type": "application/json"},
                 json=payload,
                 stream=True,
                 timeout=self.request_timeout,

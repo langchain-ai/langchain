@@ -227,20 +227,14 @@ class VikingDB(VectorStore):
         return pks
 
     def similarity_search(  # type: ignore[override]
-        self,
-        query: str,
-        params: Optional[dict] = None,
-        **kwargs: Any,
+        self, query: str, params: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """Perform a similarity search against the query string."""
         res = self.similarity_search_with_score(query=query, params=params, **kwargs)
         return [doc for doc, _ in res]
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        params: Optional[dict] = None,
-        **kwargs: Any,
+        self, query: str, params: Optional[dict] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Perform a search on a query string and return results with score."""
         embedding = self.embedding_func.embed_query(query)
@@ -251,10 +245,7 @@ class VikingDB(VectorStore):
         return res
 
     def similarity_search_by_vector(  # type: ignore[override]
-        self,
-        embedding: List[float],
-        params: Optional[dict] = None,
-        **kwargs: Any,
+        self, embedding: List[float], params: Optional[dict] = None, **kwargs: Any
     ) -> List[Document]:
         """Perform a similarity search against the query string."""
         res = self.similarity_search_with_score_by_vector(
@@ -263,10 +254,7 @@ class VikingDB(VectorStore):
         return [doc for doc, _ in res]
 
     def similarity_search_with_score_by_vector(
-        self,
-        embedding: List[float],
-        params: Optional[dict] = None,
-        **kwargs: Any,
+        self, embedding: List[float], params: Optional[dict] = None, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Perform a search on a query string and return results with score."""
         if self.collection is None:
@@ -320,11 +308,7 @@ class VikingDB(VectorStore):
         """Perform a search and return results that are reordered by MMR."""
         embedding = self.embedding_func.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
-            embedding=embedding,
-            k=k,
-            lambda_mult=lambda_mult,
-            params=params,
-            **kwargs,
+            embedding=embedding, k=k, lambda_mult=lambda_mult, params=params, **kwargs
         )
 
     def max_marginal_relevance_search_by_vector(  # type: ignore[override]
@@ -388,11 +372,7 @@ class VikingDB(VectorStore):
                 ret.append(documents[x])
         return ret
 
-    def delete(
-        self,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
-    ) -> None:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         if self.collection is None:
             logger.debug("No existing collection to search.")
         self.collection.delete_data(ids)  # type: ignore[union-attr]

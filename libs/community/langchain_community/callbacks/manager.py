@@ -3,10 +3,7 @@ from __future__ import annotations
 import logging
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import (
-    Generator,
-    Optional,
-)
+from typing import Generator, Optional
 
 from langchain_core.tracers.context import register_configure_hook
 
@@ -82,9 +79,7 @@ def get_bedrock_anthropic_callback() -> (
 
 
 @contextmanager
-def wandb_tracing_enabled(
-    session_name: str = "default",
-) -> Generator[None, None, None]:
+def wandb_tracing_enabled(session_name: str = "default") -> Generator[None, None, None]:
     """Get the WandbTracer in a context manager.
 
     Args:

@@ -193,6 +193,7 @@ class GigaChat(_BaseGigaChat, BaseLLM):
         .. code-block:: python
 
             from langchain_community.llms import GigaChat
+
             giga = GigaChat(credentials=..., scope=..., verify_ssl_certs=False)
     """
 
@@ -200,7 +201,7 @@ class GigaChat(_BaseGigaChat, BaseLLM):
 
     def _build_payload(self, messages: List[str]) -> Dict[str, Any]:
         payload: Dict[str, Any] = {
-            "messages": [{"role": self.payload_role, "content": m} for m in messages],
+            "messages": [{"role": self.payload_role, "content": m} for m in messages]
         }
         if self.model:
             payload["model"] = self.model
@@ -232,10 +233,7 @@ class GigaChat(_BaseGigaChat, BaseLLM):
             )
             generations.append([gen])
             if finish_reason != "stop":
-                logger.warning(
-                    "Giga generation stopped with reason: %s",
-                    finish_reason,
-                )
+                logger.warning("Giga generation stopped with reason: %s", finish_reason)
             if self.verbose:
                 logger.info("Giga response: %s", res.message.content)
 

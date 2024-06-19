@@ -1,8 +1,6 @@
 from langchain_azure_dynamic_sessions import __all__
 
-EXPECTED_ALL = [
-    "SessionsPythonREPLTool",
-]
+EXPECTED_ALL = ["SessionsPythonREPLTool"]
 
 
 def test_all_imports() -> None:

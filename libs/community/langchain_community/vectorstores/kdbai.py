@@ -66,10 +66,7 @@ class KDBAI(VectorStore):
         return self._embedding(text)
 
     def _insert(
-        self,
-        texts: List[str],
-        ids: Optional[List[str]],
-        metadata: Optional[Any] = None,
+        self, texts: List[str], ids: Optional[List[str]], metadata: Optional[Any] = None
     ) -> None:
         try:
             import numpy as np
@@ -177,11 +174,7 @@ class KDBAI(VectorStore):
         return self.add_texts(texts, metadata=metadata, batch_size=batch_size)
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 1,
-        filter: Optional[List] = [],
-        **kwargs: Any,
+        self, query: str, k: int = 1, filter: Optional[List] = [], **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Run similarity search with distance from a query string.
 
@@ -238,11 +231,7 @@ class KDBAI(VectorStore):
         return docs
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 1,
-        filter: Optional[List] = [],
-        **kwargs: Any,
+        self, query: str, k: int = 1, filter: Optional[List] = [], **kwargs: Any
     ) -> List[Document]:
         """Run similarity search from a query string.
 

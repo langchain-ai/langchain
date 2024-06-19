@@ -1,17 +1,10 @@
 import json
 import logging
 import re
-from typing import (
-    Any,
-    List,
-)
+from typing import Any, List
 
 from langchain_core.chat_history import BaseChatMessageHistory
-from langchain_core.messages import (
-    BaseMessage,
-    message_to_dict,
-    messages_from_dict,
-)
+from langchain_core.messages import BaseMessage, message_to_dict, messages_from_dict
 
 logger = logging.getLogger(__name__)
 
@@ -99,12 +92,12 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
             .. code-block:: python
 
                 from langchain_community.chat_message_histories import (
-                    SingleStoreDBChatMessageHistory
+                    SingleStoreDBChatMessageHistory,
                 )
 
                 message_history = SingleStoreDBChatMessageHistory(
                     session_id="my-session",
-                    host="https://user:password@127.0.0.1:3306/database"
+                    host="https://user:password@127.0.0.1:3306/database",
                 )
 
             Advanced Usage:
@@ -112,7 +105,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
             .. code-block:: python
 
                 from langchain_community.chat_message_histories import (
-                    SingleStoreDBChatMessageHistory
+                    SingleStoreDBChatMessageHistory,
                 )
 
                 message_history = SingleStoreDBChatMessageHistory(
@@ -132,10 +125,10 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
             .. code-block:: python
 
                 from langchain_community.chat_message_histories import (
-                    SingleStoreDBChatMessageHistory
+                    SingleStoreDBChatMessageHistory,
                 )
 
-                os.environ['SINGLESTOREDB_URL'] = 'me:p455w0rd@s2-host.com/my_db'
+                os.environ["SINGLESTOREDB_URL"] = "me:p455w0rd@s2-host.com/my_db"
                 message_history = SingleStoreDBChatMessageHistory("my-session")
         """
 
@@ -203,7 +196,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
                         self.id_field,
                         self.session_id_field,
                         self.message_field,
-                    ),
+                    )
                 )
                 self.table_created = True
             finally:
@@ -222,9 +215,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
             try:
                 cur.execute(
                     """SELECT {} FROM {} WHERE {} = %s""".format(
-                        self.message_field,
-                        self.table_name,
-                        self.session_id_field,
+                        self.message_field, self.table_name, self.session_id_field
                     ),
                     (self.session_id),
                 )
@@ -246,9 +237,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
             try:
                 cur.execute(
                     """INSERT INTO {} ({}, {}) VALUES (%s, %s)""".format(
-                        self.table_name,
-                        self.session_id_field,
-                        self.message_field,
+                        self.table_name, self.session_id_field, self.message_field
                     ),
                     (self.session_id, json.dumps(message_to_dict(message))),
                 )
@@ -266,8 +255,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
             try:
                 cur.execute(
                     """DELETE FROM {} WHERE {} = %s""".format(
-                        self.table_name,
-                        self.session_id_field,
+                        self.table_name, self.session_id_field
                     ),
                     (self.session_id),
                 )

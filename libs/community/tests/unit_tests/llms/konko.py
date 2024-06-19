@@ -10,11 +10,7 @@ from langchain_community.llms import Konko
 
 def test_konko_call() -> None:
     """Test simple call to konko."""
-    llm = Konko(
-        model="mistralai/mistral-7b-v0.1",
-        temperature=0.2,
-        max_tokens=250,
-    )
+    llm = Konko(model="mistralai/mistral-7b-v0.1", temperature=0.2, max_tokens=250)
     output = llm.invoke("Say foo:")
 
     assert llm._llm_type == "konko"
@@ -23,11 +19,7 @@ def test_konko_call() -> None:
 
 async def test_konko_acall() -> None:
     """Test simple call to konko."""
-    llm = Konko(
-        model="mistralai/mistral-7b-v0.1",
-        temperature=0.2,
-        max_tokens=250,
-    )
+    llm = Konko(model="mistralai/mistral-7b-v0.1", temperature=0.2, max_tokens=250)
     output = await llm.agenerate(["Say foo:"], stop=["bar"])
 
     assert llm._llm_type == "konko"

@@ -70,10 +70,7 @@ class KNNRetriever(BaseRetriever):
 
     @classmethod
     def from_documents(
-        cls,
-        documents: Iterable[Document],
-        embeddings: Embeddings,
-        **kwargs: Any,
+        cls, documents: Iterable[Document], embeddings: Embeddings, **kwargs: Any
     ) -> KNNRetriever:
         texts, metadatas = zip(*((d.page_content, d.metadata) for d in documents))
         return cls.from_texts(

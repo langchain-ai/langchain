@@ -34,9 +34,7 @@ class JavelinAIGateway(LLM):
             completions = JavelinAIGateway(
                 gateway_uri="<your-javelin-ai-gateway-uri>",
                 route="<your-javelin-ai-gateway-completions-route>",
-                params={
-                    "temperature": 0.1
-                }
+                params={"temperature": 0.1},
             )
     """
 
@@ -57,10 +55,7 @@ class JavelinAIGateway(LLM):
 
     def __init__(self, **kwargs: Any):
         try:
-            from javelin_sdk import (
-                JavelinClient,
-                UnauthorizedError,
-            )
+            from javelin_sdk import JavelinClient, UnauthorizedError
         except ImportError:
             raise ImportError(
                 "Could not import javelin_sdk python package. "

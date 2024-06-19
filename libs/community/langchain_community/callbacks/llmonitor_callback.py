@@ -135,9 +135,7 @@ def _parse_output(raw_output: dict) -> Any:
     return _serialize(raw_output)
 
 
-def _parse_lc_role(
-    role: str,
-) -> str:
+def _parse_lc_role(role: str) -> str:
     if role == "human":
         return "user"
     else:
@@ -202,8 +200,7 @@ class LLMonitorCallbackHandler(BaseCallbackHandler):
     from langchain_community.callbacks import LLMonitorCallbackHandler
 
     llmonitor_callback = LLMonitorCallbackHandler()
-    llm = OpenAI(callbacks=[llmonitor_callback],
-                 metadata={"userId": "user-123"})
+    llm = OpenAI(callbacks=[llmonitor_callback], metadata={"userId": "user-123"})
     llm.invoke("Hello, how are you?")
     ```
     """

@@ -24,17 +24,13 @@ class DataForSeoAPISearchRun(BaseTool):
     api_wrapper: DataForSeoAPIWrapper
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         return str(self.api_wrapper.run(query))
 
     async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool asynchronously."""
         return (await self.api_wrapper.arun(query)).__str__()
@@ -55,17 +51,13 @@ class DataForSeoAPISearchResults(BaseTool):
     api_wrapper: DataForSeoAPIWrapper = Field(default_factory=DataForSeoAPIWrapper)
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
         return str(self.api_wrapper.results(query))
 
     async def _arun(
-        self,
-        query: str,
-        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool asynchronously."""
         return (await self.api_wrapper.aresults(query)).__str__()

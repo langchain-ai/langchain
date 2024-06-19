@@ -19,19 +19,9 @@ def cli():
 
 
 @cli.command()
-@click.option(
-    "--pkg1",
-    default="langchain",
-)
-@click.option(
-    "--pkg2",
-    default="langchain_community",
-)
-@click.option(
-    "--output",
-    default=None,
-    help="Output file for the migration script.",
-)
+@click.option("--pkg1", default="langchain")
+@click.option("--pkg2", default="langchain_community")
+@click.option("--output", default=None, help="Output file for the migration script.")
 @click.option(
     "--filter-by-all/--no-filter-by-all",
     default=True,

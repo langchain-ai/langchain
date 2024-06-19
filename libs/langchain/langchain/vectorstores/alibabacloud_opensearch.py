@@ -24,7 +24,4 @@ def __getattr__(name: str) -> Any:
     return _import_attribute(name)
 
 
-__all__ = [
-    "AlibabaCloudOpenSearchSettings",
-    "AlibabaCloudOpenSearch",
-]
+__all__ = ["AlibabaCloudOpenSearchSettings", "AlibabaCloudOpenSearch"]

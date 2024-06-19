@@ -11,9 +11,7 @@ from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
 
 def create_demo_server(
-    *,
-    config_keys: Sequence[str] = (),
-    playground_type: str = "default",
+    *, config_keys: Sequence[str] = (), playground_type: str = "default"
 ):
     """
     Creates a demo server for the current template.
@@ -27,12 +25,7 @@ def create_demo_server(
         mod = __import__(package["module"], fromlist=[package["attr"]])
 
         chain = getattr(mod, package["attr"])
-        add_routes(
-            app,
-            chain,
-            config_keys=config_keys,
-            playground_type=playground_type,
-        )
+        add_routes(app, chain, config_keys=config_keys, playground_type=playground_type)
     except KeyError as e:
         raise KeyError("Missing fields from pyproject.toml") from e
     except ImportError as e:

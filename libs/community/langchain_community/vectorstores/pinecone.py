@@ -145,10 +145,7 @@ class Pinecone(VectorStore):
             embeddings = self._embed_documents(chunk_texts)
             async_res = [
                 self._index.upsert(
-                    vectors=batch,
-                    namespace=namespace,
-                    async_req=True,
-                    **kwargs,
+                    vectors=batch, namespace=namespace, async_req=True, **kwargs
                 )
                 for batch in batch_iterate(
                     batch_size, zip(chunk_ids, embeddings, chunk_metadatas)
@@ -344,9 +341,7 @@ class Pinecone(VectorStore):
 
     @classmethod
     def get_pinecone_index(
-        cls,
-        index_name: Optional[str],
-        pool_threads: int = 4,
+        cls, index_name: Optional[str], pool_threads: int = 4
     ) -> Index:
         """Return a Pinecone Index instance.
 
@@ -424,9 +419,7 @@ class Pinecone(VectorStore):
                 index_name = "my-index"
                 namespace = "my-namespace"
                 vectorstore = Pinecone(
-                    index_name=index_name,
-                    embedding=embedding,
-                    namespace=namespace,
+                    index_name=index_name, embedding=embedding, namespace=namespace
                 )
         """
         pinecone_index = cls.get_pinecone_index(index_name, pool_threads)

@@ -230,17 +230,12 @@ def test_qdrant_similarity_search_filters_with_qdrant_filters(
 
     qdrant_filter = rest.Filter(
         must=[
+            rest.FieldCondition(key="metadata.page", match=rest.MatchValue(value=1)),
             rest.FieldCondition(
-                key="metadata.page",
-                match=rest.MatchValue(value=1),
+                key="metadata.details.page", match=rest.MatchValue(value=2)
             ),
             rest.FieldCondition(
-                key="metadata.details.page",
-                match=rest.MatchValue(value=2),
-            ),
-            rest.FieldCondition(
-                key="metadata.details.pages",
-                match=rest.MatchAny(any=[3]),
+                key="metadata.details.pages", match=rest.MatchAny(any=[3])
             ),
         ]
     )

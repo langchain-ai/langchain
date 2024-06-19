@@ -25,6 +25,7 @@ class OpenAIModerationChain(Chain):
         .. code-block:: python
 
             from langchain.chains import OpenAIModerationChain
+
             moderation = OpenAIModerationChain()
     """
 
@@ -47,10 +48,7 @@ class OpenAIModerationChain(Chain):
             values, "openai_api_key", "OPENAI_API_KEY"
         )
         openai_organization = get_from_dict_or_env(
-            values,
-            "openai_organization",
-            "OPENAI_ORGANIZATION",
-            default="",
+            values, "openai_organization", "OPENAI_ORGANIZATION", default=""
         )
         try:
             import openai

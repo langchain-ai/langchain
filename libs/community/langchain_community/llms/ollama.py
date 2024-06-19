@@ -13,9 +13,7 @@ from langchain_core.outputs import GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Extra
 
 
-def _stream_response_to_generation_chunk(
-    stream_response: str,
-) -> GenerationChunk:
+def _stream_response_to_generation_chunk(stream_response: str) -> GenerationChunk:
     """Convert a stream response to a generation chunk."""
     parsed_response = json.loads(stream_response)
     generation_info = parsed_response if parsed_response.get("done") is True else None
@@ -332,10 +330,7 @@ class _OllamaCommon(BaseLanguageModel):
                 else:
                     final_chunk += chunk
                 if run_manager:
-                    run_manager.on_llm_new_token(
-                        chunk.text,
-                        verbose=verbose,
-                    )
+                    run_manager.on_llm_new_token(chunk.text, verbose=verbose)
         if final_chunk is None:
             raise ValueError("No data received from Ollama stream.")
 
@@ -358,10 +353,7 @@ class _OllamaCommon(BaseLanguageModel):
                 else:
                     final_chunk += chunk
                 if run_manager:
-                    await run_manager.on_llm_new_token(
-                        chunk.text,
-                        verbose=verbose,
-                    )
+                    await run_manager.on_llm_new_token(chunk.text, verbose=verbose)
         if final_chunk is None:
             raise ValueError("No data received from Ollama stream.")
 
@@ -374,6 +366,7 @@ class Ollama(BaseLLM, _OllamaCommon):
     Example:
         .. code-block:: python
             from langchain_community.llms import Ollama
+
             ollama = Ollama(model="llama2")
     """
 
@@ -462,10 +455,7 @@ class Ollama(BaseLLM, _OllamaCommon):
             if stream_resp:
                 chunk = _stream_response_to_generation_chunk(stream_resp)
                 if run_manager:
-                    run_manager.on_llm_new_token(
-                        chunk.text,
-                        verbose=self.verbose,
-                    )
+                    run_manager.on_llm_new_token(chunk.text, verbose=self.verbose)
                 yield chunk
 
     async def _astream(
@@ -479,8 +469,5 @@ class Ollama(BaseLLM, _OllamaCommon):
             if stream_resp:
                 chunk = _stream_response_to_generation_chunk(stream_resp)
                 if run_manager:
-                    await run_manager.on_llm_new_token(
-                        chunk.text,
-                        verbose=self.verbose,
-                    )
+                    await run_manager.on_llm_new_token(chunk.text, verbose=self.verbose)
                 yield chunk

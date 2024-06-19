@@ -43,9 +43,7 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
         # we shouldn't hard code to the 1st result
         (Document(page_content=result[0], metadata=result[1] or {}), result[2])
         for result in zip(
-            results["documents"][0],
-            results["metadatas"][0],
-            results["distances"][0],
+            results["documents"][0], results["metadatas"][0], results["distances"][0]
         )
     ]
 
@@ -110,7 +108,7 @@ class Chroma(VectorStore):
                 major, minor, _ = chromadb.__version__.split(".")
                 if int(major) == 0 and int(minor) < 4:
                     _client_settings = chromadb.config.Settings(
-                        chroma_db_impl="duckdb+parquet",
+                        chroma_db_impl="duckdb+parquet"
                     )
                 else:
                     _client_settings = chromadb.config.Settings(is_persistent=True)
@@ -125,9 +123,7 @@ class Chroma(VectorStore):
 
         self._embedding_function = embedding_function
         self._collection = self._client.get_or_create_collection(
-            name=collection_name,
-            embedding_function=None,
-            metadata=collection_metadata,
+            name=collection_name, embedding_function=None, metadata=collection_metadata
         )
         self.override_relevance_score_fn = relevance_score_fn
 
@@ -243,11 +239,7 @@ class Chroma(VectorStore):
                     ids=ids_without_metadatas,
                 )
         else:
-            self._collection.upsert(
-                embeddings=embeddings,
-                documents=b64_texts,
-                ids=ids,
-            )
+            self._collection.upsert(embeddings=embeddings, documents=b64_texts, ids=ids)
         return ids
 
     def add_texts(
@@ -322,11 +314,7 @@ class Chroma(VectorStore):
                     ids=ids_without_metadatas,
                 )
         else:
-            self._collection.upsert(
-                embeddings=embeddings,
-                documents=texts,
-                ids=ids,
-            )
+            self._collection.upsert(embeddings=embeddings, documents=texts, ids=ids)
         return ids
 
     def similarity_search(
@@ -684,10 +672,7 @@ class Chroma(VectorStore):
                 )
         else:
             self._collection.update(
-                ids=ids,
-                embeddings=embeddings,
-                documents=text,
-                metadatas=metadata,
+                ids=ids, embeddings=embeddings, documents=text, metadatas=metadata
             )
 
     @classmethod

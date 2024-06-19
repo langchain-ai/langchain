@@ -12,11 +12,7 @@ def test_cypher_return_correct_schema() -> None:
     assert username is not None
     assert password is not None
 
-    graph = MemgraphGraph(
-        url=url,
-        username=username,
-        password=password,
-    )
+    graph = MemgraphGraph(url=url, username=username, password=password)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create two nodes and a relationship

@@ -26,10 +26,11 @@ class ClovaEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             from langchain_community.embeddings import ClovaEmbeddings
+
             embeddings = ClovaEmbeddings(
-                clova_emb_api_key='your_clova_emb_api_key',
-                clova_emb_apigw_api_key='your_clova_emb_apigw_api_key',
-                app_id='your_app_id'
+                clova_emb_api_key="your_clova_emb_api_key",
+                clova_emb_apigw_api_key="your_clova_emb_apigw_api_key",
+                app_id="your_app_id",
             )
 
             query_text = "This is a test query."
@@ -119,9 +120,7 @@ class ClovaEmbeddings(BaseModel, Embeddings):
         # send request
         app_id = cast(SecretStr, self.app_id).get_secret_value()
         response = requests.post(
-            f"{self.endpoint_url}/{self.model}/{app_id}",
-            headers=headers,
-            json=payload,
+            f"{self.endpoint_url}/{self.model}/{app_id}", headers=headers, json=payload
         )
 
         # check for errors

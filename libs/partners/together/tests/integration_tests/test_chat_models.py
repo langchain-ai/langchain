@@ -43,12 +43,7 @@ def test_chat_together_streaming_llm_output_contains_model_name() -> None:
 def test_chat_together_invalid_streaming_params() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     with pytest.raises(ValueError):
-        ChatTogether(
-            max_tokens=10,
-            streaming=True,
-            temperature=0,
-            n=5,
-        )
+        ChatTogether(max_tokens=10, streaming=True, temperature=0, n=5)
 
 
 def test_chat_together_extra_kwargs() -> None:

@@ -30,6 +30,7 @@ class TextGen(LLM):
         .. code-block:: python
 
             from langchain_community.llms import TextGen
+
             llm = TextGen(model_url="http://localhost:8500")
     """
 
@@ -198,6 +199,7 @@ class TextGen(LLM):
             .. code-block:: python
 
                 from langchain_community.llms import TextGen
+
                 llm = TextGen(model_url="http://localhost:5000")
                 llm.invoke("Write a story about llamas.")
         """
@@ -244,6 +246,7 @@ class TextGen(LLM):
             .. code-block:: python
 
                 from langchain_community.llms import TextGen
+
                 llm = TextGen(model_url="http://localhost:5000")
                 llm.invoke("Write a story about llamas.")
         """

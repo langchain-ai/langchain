@@ -1,11 +1,6 @@
 import asyncio
 from functools import partial
-from typing import (
-    Any,
-    List,
-    Mapping,
-    Optional,
-)
+from typing import Any, List, Mapping, Optional
 
 from ai21.models import CompletionsResponse
 from langchain_core.callbacks import (
@@ -113,11 +108,7 @@ class AI21LLM(BaseLLM, AI21Base):
                 raise ValueError("stop is defined in both stop and kwargs")
             params["stop_sequences"] = stop
 
-        return {
-            **self._default_params,
-            **params,
-            **kwargs,
-        }
+        return {**self._default_params, **params, **kwargs}
 
     def _generate(
         self,
@@ -152,23 +143,13 @@ class AI21LLM(BaseLLM, AI21Base):
             None, partial(self._generate, **kwargs), prompts, stop, run_manager
         )
 
-    def _invoke_completion(
-        self,
-        prompt: str,
-        **kwargs: Any,
-    ) -> CompletionsResponse:
-        return self.client.completion.create(
-            prompt=prompt,
-            **kwargs,
-        )
+    def _invoke_completion(self, prompt: str, **kwargs: Any) -> CompletionsResponse:
+        return self.client.completion.create(prompt=prompt, **kwargs)
 
     def _response_to_generation(
         self, response: CompletionsResponse
     ) -> List[Generation]:
         return [
-            Generation(
-                text=completion.data.text,
-                generation_info=completion.to_dict(),
-            )
+            Generation(text=completion.data.text, generation_info=completion.to_dict())
             for completion in response.completions
         ]

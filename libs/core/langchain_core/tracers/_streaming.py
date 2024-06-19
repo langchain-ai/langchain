@@ -27,6 +27,4 @@ class _StreamingCallbackHandler(abc.ABC):
         """Used for internal astream_log and astream events implementations."""
 
 
-__all__ = [
-    "_StreamingCallbackHandler",
-]
+__all__ = ["_StreamingCallbackHandler"]

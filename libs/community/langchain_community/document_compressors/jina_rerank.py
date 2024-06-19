@@ -76,17 +76,9 @@ class JinaRerank(BaseDocumentCompressor):
         ]
         model = model or self.model
         top_n = top_n if (top_n is None or top_n > 0) else self.top_n
-        data = {
-            "query": query,
-            "documents": docs,
-            "model": model,
-            "top_n": top_n,
-        }
+        data = {"query": query, "documents": docs, "model": model, "top_n": top_n}
 
-        resp = self.session.post(
-            JINA_API_URL,
-            json=data,
-        ).json()
+        resp = self.session.post(JINA_API_URL, json=data).json()
 
         if "results" not in resp:
             raise RuntimeError(resp["detail"])

@@ -43,30 +43,12 @@ class MockBoard:
 
 
 TRELLO_LISTS = [
-    {
-        "id": "5555cacbc4daa90564b34cf2",
-        "name": "Publishing Considerations",
-    },
-    {
-        "id": "5555059b74c03b3a9e362cd0",
-        "name": "Backlog",
-    },
-    {
-        "id": "555505a3427fd688c1ca5ebd",
-        "name": "Selected for Milestone",
-    },
-    {
-        "id": "555505ba95ff925f9fb1b370",
-        "name": "Blocked",
-    },
-    {
-        "id": "555505a695ff925f9fb1b13d",
-        "name": "In Progress",
-    },
-    {
-        "id": "555505bdfe380c7edc8ca1a3",
-        "name": "Done",
-    },
+    {"id": "5555cacbc4daa90564b34cf2", "name": "Publishing Considerations"},
+    {"id": "5555059b74c03b3a9e362cd0", "name": "Backlog"},
+    {"id": "555505a3427fd688c1ca5ebd", "name": "Selected for Milestone"},
+    {"id": "555505ba95ff925f9fb1b370", "name": "Blocked"},
+    {"id": "555505a695ff925f9fb1b13d", "name": "In Progress"},
+    {"id": "555505bdfe380c7edc8ca1a3", "name": "Done"},
 ]
 # Create a mock list of cards.
 TRELLO_CARDS_QA = [
@@ -83,24 +65,12 @@ TRELLO_CARDS_QA = [
             {
                 "name": "Checklist 1",
                 "items": [
-                    {
-                        "name": "Item 1",
-                        "state": "pending",
-                    },
-                    {
-                        "name": "Item 2",
-                        "state": "completed",
-                    },
+                    {"name": "Item 1", "state": "pending"},
+                    {"name": "Item 2", "state": "completed"},
                 ],
-            },
+            }
         ],
-        "comments": [
-            {
-                "data": {
-                    "text": "This is a comment on a <s>Closed</s> Card.",
-                },
-            },
-        ],
+        "comments": [{"data": {"text": "This is a comment on a <s>Closed</s> Card."}}],
     },
     {
         "id": "45650aca6952888df7975903",
@@ -129,17 +99,14 @@ TRELLO_CARDS_QA = [
                 "items": [
                     {"name": "Zoom", "state": "complete"},
                     {"name": "Follow players", "state": "complete"},
-                    {
-                        "name": "camera limit to stage size",
-                        "state": "complete",
-                    },
+                    {"name": "camera limit to stage size", "state": "complete"},
                     {"name": "Post Processing effects", "state": "complete"},
                     {
                         "name": "Shitch to universal render pipeline",
                         "state": "complete",
                     },
                 ],
-            },
+            }
         ],
         "comments": [
             {
@@ -190,9 +157,7 @@ class TestTrelloLoader(unittest.TestCase):
         Test loading a board with no cards.
         """
         trello_loader = TrelloLoader.from_credentials(
-            "Research",
-            api_key="API_KEY",
-            token="API_TOKEN",
+            "Research", api_key="API_KEY", token="API_TOKEN"
         )
         documents = trello_loader.load()
         self.assertEqual(len(documents), 0, "Empty board returns an empty list.")
@@ -204,9 +169,7 @@ class TestTrelloLoader(unittest.TestCase):
         from bs4 import BeautifulSoup
 
         trello_loader = TrelloLoader.from_credentials(
-            "QA",
-            api_key="API_KEY",
-            token="API_TOKEN",
+            "QA", api_key="API_KEY", token="API_TOKEN"
         )
         documents = trello_loader.load()
         self.assertEqual(len(documents), len(TRELLO_CARDS_QA), "Card count matches.")
@@ -245,15 +208,11 @@ class TestTrelloLoader(unittest.TestCase):
 
         soup = BeautifulSoup(documents[1].page_content, "html.parser")
         self.assertTrue(
-            len(soup.find_all()) == 0,
-            "There is not markup in Card 2 document content.",
+            len(soup.find_all()) == 0, "There is not markup in Card 2 document content."
         )
 
         # Check samples of every field type is present in page content.
-        texts = [
-            "Card 2",
-            "This is the description of Card 2.",
-        ]
+        texts = ["Card 2", "This is the description of Card 2."]
         for text in texts:
             self.assertTrue(text in documents[1].page_content)
 
@@ -274,8 +233,7 @@ class TestTrelloLoader(unittest.TestCase):
 
         soup = BeautifulSoup(documents[2].page_content, "html.parser")
         self.assertTrue(
-            len(soup.find_all()) == 0,
-            "There is not markup in Card 2 document content.",
+            len(soup.find_all()) == 0, "There is not markup in Card 2 document content."
         )
 
         # Check samples of every field type is present in page content.

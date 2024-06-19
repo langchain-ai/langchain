@@ -82,11 +82,7 @@ class DataForSeoAPIWrapper(BaseModel):
             f"https://api.dataforseo.com/v3/serp/{obj['se_name']}"
             f"/{obj['se_type']}/live/advanced"
         )
-        return {
-            "url": _url,
-            "headers": headers,
-            "data": data,
-        }
+        return {"url": _url, "headers": headers, "data": data}
 
     def _check_response(self, response: dict) -> dict:
         """Check the response from the DataForSEO SERP API for errors."""

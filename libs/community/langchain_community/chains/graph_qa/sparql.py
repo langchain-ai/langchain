@@ -136,8 +136,7 @@ class GraphSparqlQAChain(Chain):
                 str(context), color="green", end="\n", verbose=self.verbose
             )
             result = self.qa_chain(
-                {"prompt": prompt, "context": context},
-                callbacks=callbacks,
+                {"prompt": prompt, "context": context}, callbacks=callbacks
             )
             res = result[self.qa_chain.output_key]
         elif intent == "UPDATE":

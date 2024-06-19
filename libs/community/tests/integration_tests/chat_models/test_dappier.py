@@ -4,9 +4,7 @@ import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
-from langchain_community.chat_models.dappier import (
-    ChatDappierAI,
-)
+from langchain_community.chat_models.dappier import ChatDappierAI
 
 
 @pytest.mark.scheduled
@@ -30,7 +28,7 @@ def test_dappier_generate() -> None:
         dappier_model="dm_01hpsxyfm2fwdt2zet9cg6fdxt",
     )
     chat_messages: List[List[BaseMessage]] = [
-        [HumanMessage(content="Who won the last super bowl?")],
+        [HumanMessage(content="Who won the last super bowl?")]
     ]
     messages_copy = [messages.copy() for messages in chat_messages]
     result: LLMResult = chat.generate(chat_messages)

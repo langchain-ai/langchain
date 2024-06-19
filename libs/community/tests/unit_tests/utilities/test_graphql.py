@@ -37,10 +37,7 @@ MOCK_RESPONSE = {
                     "enumValues": None,
                     "possibleTypes": None,
                 },
-                {
-                    "kind": "SCALAR",
-                    "name": "String",
-                },
+                {"kind": "SCALAR", "name": "String"},
                 {
                     "kind": "OBJECT",
                     "name": "allUsers",
@@ -59,17 +56,14 @@ MOCK_RESPONSE = {
                                     "ofType": None,
                                 },
                             },
-                        },
+                        }
                     ],
                     "inputFields": None,
                     "interfaces": [],
                     "enumValues": None,
                     "possibleTypes": None,
                 },
-                {
-                    "kind": "SCALAR",
-                    "name": "Boolean",
-                },
+                {"kind": "SCALAR", "name": "Boolean"},
             ],
         },
     }

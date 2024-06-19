@@ -168,15 +168,10 @@ def test_search_with_filter() -> None:
         "bar", k=1, filter={"$or": [{"page": 1}, {"page_str": "2"}]}
     )
     assert output == [
-        Document(page_content="bar", metadata={"page": 2, "page_str": "2"}),
+        Document(page_content="bar", metadata={"page": 2, "page_str": "2"})
     ]
     output = docsearch.similarity_search(
-        "foo",
-        k=1,
-        filter={
-            "$or": [{"page": 1}, {"page": 2}],
-            "$and": [{"page": 2}],
-        },
+        "foo", k=1, filter={"$or": [{"page": 1}, {"page": 2}], "$and": [{"page": 2}]}
     )
     assert output == [
         Document(page_content="bar", metadata={"page": 2, "page_str": "2"})

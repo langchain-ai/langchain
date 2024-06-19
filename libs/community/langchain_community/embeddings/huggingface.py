@@ -35,12 +35,10 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             from langchain_community.embeddings import HuggingFaceEmbeddings
 
             model_name = "sentence-transformers/all-mpnet-base-v2"
-            model_kwargs = {'device': 'cpu'}
-            encode_kwargs = {'normalize_embeddings': False}
+            model_kwargs = {"device": "cpu"}
+            encode_kwargs = {"normalize_embeddings": False}
             hf = HuggingFaceEmbeddings(
-                model_name=model_name,
-                model_kwargs=model_kwargs,
-                encode_kwargs=encode_kwargs
+                model_name=model_name, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs
             )
     """
 
@@ -132,12 +130,10 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
             from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 
             model_name = "hkunlp/instructor-large"
-            model_kwargs = {'device': 'cpu'}
-            encode_kwargs = {'normalize_embeddings': True}
+            model_kwargs = {"device": "cpu"}
+            encode_kwargs = {"normalize_embeddings": True}
             hf = HuggingFaceInstructEmbeddings(
-                model_name=model_name,
-                model_kwargs=model_kwargs,
-                encode_kwargs=encode_kwargs
+                model_name=model_name, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs
             )
     """
 
@@ -249,17 +245,14 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
             from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 
             model_name = "nomic-ai/nomic-embed-text-v1"
-            model_kwargs = {
-                'device': 'cpu',
-                'trust_remote_code':True
-                }
-            encode_kwargs = {'normalize_embeddings': True}
+            model_kwargs = {"device": "cpu", "trust_remote_code": True}
+            encode_kwargs = {"normalize_embeddings": True}
             hf = HuggingFaceBgeEmbeddings(
                 model_name=model_name,
                 model_kwargs=model_kwargs,
                 encode_kwargs=encode_kwargs,
-                query_instruction = "search_query:",
-                embed_instruction = "search_document:"
+                query_instruction="search_query:",
+                embed_instruction="search_document:",
             )
     """
 
@@ -399,13 +392,10 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
         Example:
             .. code-block:: python
 
-                from langchain_community.embeddings import (
-                    HuggingFaceInferenceAPIEmbeddings,
-                )
+                from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 
                 hf_embeddings = HuggingFaceInferenceAPIEmbeddings(
-                    api_key="your_api_key",
-                    model_name="sentence-transformers/all-MiniLM-l6-v2"
+                    api_key="your_api_key", model_name="sentence-transformers/all-MiniLM-l6-v2"
                 )
                 texts = ["Hello, world!", "How are you?"]
                 hf_embeddings.embed_documents(texts)

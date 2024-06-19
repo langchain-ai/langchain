@@ -162,10 +162,7 @@ class VLLMOpenAI(BaseOpenAI):
         }
         if not is_openai_v1():
             params.update(
-                {
-                    "api_key": self.openai_api_key,
-                    "api_base": self.openai_api_base,
-                }
+                {"api_key": self.openai_api_key, "api_base": self.openai_api_base}
             )
 
         return params

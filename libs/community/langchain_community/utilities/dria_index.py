@@ -41,11 +41,7 @@ class DriaAPIWrapper:
             self.dria_client.set_contract(self.contract_id)
 
     def create_knowledge_base(
-        self,
-        name: str,
-        description: str,
-        category: str,
-        embedding: str,
+        self, name: str, description: str, category: str, embedding: str
     ) -> str:
         """Create a new knowledge base."""
         contract_id = self.dria_client.create(

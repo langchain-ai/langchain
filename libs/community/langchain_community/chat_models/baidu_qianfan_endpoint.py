@@ -102,10 +102,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
             }
         ]
 
-    return AIMessage(
-        content=content,
-        additional_kwargs=msg_additional_kwargs,
-    )
+    return AIMessage(content=content, additional_kwargs=msg_additional_kwargs)
 
 
 class QianfanChatEndpoint(BaseChatModel):
@@ -122,8 +119,13 @@ class QianfanChatEndpoint(BaseChatModel):
         .. code-block:: python
 
             from langchain_community.chat_models import QianfanChatEndpoint
-            qianfan_chat = QianfanChatEndpoint(model="ERNIE-Bot",
-                endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
+
+            qianfan_chat = QianfanChatEndpoint(
+                model="ERNIE-Bot",
+                endpoint="your_endpoint",
+                qianfan_ak="your_ak",
+                qianfan_sk="your_sk",
+            )
     """
 
     init_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -174,20 +176,10 @@ class QianfanChatEndpoint(BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "qianfan_ak",
-                "QIANFAN_AK",
-                default="",
-            )
+            get_from_dict_or_env(values, "qianfan_ak", "QIANFAN_AK", default="")
         )
         values["qianfan_sk"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "qianfan_sk",
-                "QIANFAN_SK",
-                default="",
-            )
+            get_from_dict_or_env(values, "qianfan_sk", "QIANFAN_SK", default="")
         )
         params = {
             **values.get("init_kwargs", {}),
@@ -239,9 +231,7 @@ class QianfanChatEndpoint(BaseChatModel):
         return {**normal_params, **self.model_kwargs}
 
     def _convert_prompt_msg_params(
-        self,
-        messages: List[BaseMessage],
-        **kwargs: Any,
+        self, messages: List[BaseMessage], **kwargs: Any
     ) -> Dict[str, Any]:
         """
         Converts a list of messages into a dictionary containing the message content
@@ -269,11 +259,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 messages_dict["system"] = ""
             messages_dict["system"] += cast(str, messages[i].content) + "\n"
 
-        return {
-            **messages_dict,
-            **self._default_params,
-            **kwargs,
-        }
+        return {**messages_dict, **self._default_params, **kwargs}
 
     def _generate(
         self,
@@ -305,8 +291,7 @@ class QianfanChatEndpoint(BaseChatModel):
                 completion += chunk.text
             lc_msg = AIMessage(content=completion, additional_kwargs={})
             gen = ChatGeneration(
-                message=lc_msg,
-                generation_info=dict(finish_reason="stop"),
+                message=lc_msg, generation_info=dict(finish_reason="stop")
             )
             return ChatResult(
                 generations=[gen],
@@ -350,8 +335,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
             lc_msg = AIMessage(content=completion, additional_kwargs={})
             gen = ChatGeneration(
-                message=lc_msg,
-                generation_info=dict(finish_reason="stop"),
+                message=lc_msg, generation_info=dict(finish_reason="stop")
             )
             return ChatResult(
                 generations=[gen],
@@ -497,15 +481,20 @@ class QianfanChatEndpoint(BaseChatModel):
                 from langchain_mistralai import QianfanChatEndpoint
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 llm = QianfanChatEndpoint(endpoint="ernie-3.5-8k-0329")
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
 
                 # -> AnswerWithJustification(
                 #     answer='They weigh the same',
@@ -518,15 +507,22 @@ class QianfanChatEndpoint(BaseChatModel):
                 from langchain_mistralai import QianfanChatEndpoint
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
 
-                llm = QianfanChatEndpoint(endpoint="ernie-3.5-8k-0329")
-                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                llm = QianfanChatEndpoint(endpoint="ernie-3.5-8k-0329")
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
                 #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
@@ -540,16 +536,21 @@ class QianfanChatEndpoint(BaseChatModel):
                 from langchain_core.pydantic_v1 import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 dict_schema = convert_to_openai_tool(AnswerWithJustification)
                 llm = QianfanChatEndpoint(endpoint="ernie-3.5-8k-0329")
                 structured_llm = llm.with_structured_output(dict_schema)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'

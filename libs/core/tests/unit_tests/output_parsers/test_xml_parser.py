@@ -36,10 +36,7 @@ More random text
 
 
 DEF_RESULT_EXPECTED = {
-    "foo": [
-        {"bar": [{"baz": None}, {"baz": "slim.shady"}]},
-        {"baz": "tag"},
-    ],
+    "foo": [{"bar": [{"baz": None}, {"baz": "slim.shady"}]}, {"baz": "tag"}]
 }
 
 
@@ -103,8 +100,7 @@ async def test_xml_output_parser(content: str) -> None:
 
 
 @pytest.mark.skipif(
-    importlib.util.find_spec("defusedxml") is None,
-    reason="defusedxml is not installed",
+    importlib.util.find_spec("defusedxml") is None, reason="defusedxml is not installed"
 )
 @pytest.mark.parametrize(
     "content",

@@ -80,10 +80,7 @@ class TestMongoDBAtlasVectorSearch:
             Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
         ]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
-            documents,
-            embedding_openai,
-            collection=collection,
-            index_name=INDEX_NAME,
+            documents, embedding_openai, collection=collection, index_name=INDEX_NAME
         )
         # sleep(5)  # waits for mongot to update Lucene's index
         output = vectorstore.similarity_search("Sandwich", k=1)
@@ -102,10 +99,7 @@ class TestMongoDBAtlasVectorSearch:
             Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
         ]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
-            documents,
-            embedding_openai,
-            collection=collection,
-            index_name=INDEX_NAME,
+            documents, embedding_openai, collection=collection, index_name=INDEX_NAME
         )
         output = vectorstore.similarity_search("Sandwich", k=1)
         assert len(output) == 1
@@ -125,10 +119,7 @@ class TestMongoDBAtlasVectorSearch:
             Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
         ]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
-            documents,
-            embedding_openai,
-            collection=collection,
-            index_name=INDEX_NAME,
+            documents, embedding_openai, collection=collection, index_name=INDEX_NAME
         )
         output = vectorstore.similarity_search("Sandwich", k=1, include_embedding=True)
         assert len(output) == 1
@@ -145,10 +136,7 @@ class TestMongoDBAtlasVectorSearch:
             "That fence is purple.",
         ]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
-            texts,
-            embedding_openai,
-            collection=collection,
-            index_name=INDEX_NAME,
+            texts, embedding_openai, collection=collection, index_name=INDEX_NAME
         )
         # sleep(5)  # waits for mongot to update Lucene's index
         output = vectorstore.similarity_search("Sandwich", k=1)
@@ -204,10 +192,7 @@ class TestMongoDBAtlasVectorSearch:
     def test_mmr(self, embedding_openai: Embeddings, collection: Any) -> None:
         texts = ["foo", "foo", "fou", "foy"]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
-            texts,
-            embedding_openai,
-            collection=collection,
-            index_name=INDEX_NAME,
+            texts, embedding_openai, collection=collection, index_name=INDEX_NAME
         )
         # sleep(5)  # waits for mongot to update Lucene's index
         query = "foo"

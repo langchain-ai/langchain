@@ -22,9 +22,7 @@ class WikidataQueryRun(BaseTool):
     api_wrapper: WikidataAPIWrapper
 
     def _run(
-        self,
-        query: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
+        self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the Wikidata tool."""
         return self.api_wrapper.run(query)

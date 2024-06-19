@@ -155,8 +155,7 @@ def test_qdrant_from_texts_raises_error_on_different_dimensionality(
     ],
 )
 def test_qdrant_from_texts_raises_error_on_different_vector_name(
-    first_vector_name: Optional[str],
-    second_vector_name: Optional[str],
+    first_vector_name: Optional[str], second_vector_name: Optional[str]
 ) -> None:
     """Test if Qdrant.from_texts raises an exception if vector name does not match"""
     collection_name = uuid.uuid4().hex

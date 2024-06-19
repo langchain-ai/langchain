@@ -24,8 +24,7 @@ class MlflowEmbeddings(Embeddings, BaseModel):
             from langchain_community.embeddings import MlflowEmbeddings
 
             embeddings = MlflowEmbeddings(
-                target_uri="http://localhost:5000",
-                endpoint="embeddings",
+                target_uri="http://localhost:5000", endpoint="embeddings"
             )
     """
 

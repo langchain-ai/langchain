@@ -21,9 +21,7 @@ def test_deepinfra_call() -> None:
 
 def test_deepinfra_call_with_large_batch_size() -> None:
     deepinfra_emb = DeepInfraEmbeddings(model_id="BAAI/bge-base-en-v1.5")
-    texts = 2000 * [
-        "Alpha is the first letter of Greek alphabet",
-    ]
+    texts = 2000 * ["Alpha is the first letter of Greek alphabet"]
     r1 = deepinfra_emb.embed_documents(texts)
     assert len(r1) == 2000
     assert len(r1[0]) == 768

@@ -1,9 +1,7 @@
 """Test Anthropic API wrapper."""
 from typing import List
 
-from langchain_core.callbacks import (
-    CallbackManager,
-)
+from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
@@ -14,7 +12,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 def test_litellm_call() -> None:
     """Test valid call to litellm."""
     chat = ChatLiteLLM(  # type: ignore[call-arg]
-        model="test",
+        model="test"
     )
     message = HumanMessage(content="Hello")
     response = chat.invoke([message])
@@ -52,10 +50,7 @@ def test_litellm_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatLiteLLM(  # type: ignore[call-arg]
-        model="test",
-        streaming=True,
-        callback_manager=callback_manager,
-        verbose=True,
+        model="test", streaming=True, callback_manager=callback_manager, verbose=True
     )
     message = HumanMessage(content="Write me a sentence with 10 words.")
     chat.invoke([message])

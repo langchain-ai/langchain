@@ -12,11 +12,7 @@ from langchain_core.outputs import ChatGeneration
         "foo",
         ["foo"],
         [{"text": "foo", "type": "text"}],
-        [
-            {"tool_use": {}, "type": "tool_use"},
-            {"text": "foo", "type": "text"},
-            "bar",
-        ],
+        [{"tool_use": {}, "type": "tool_use"}, {"text": "foo", "type": "text"}, "bar"],
     ],
 )
 def test_msg_with_text(content: Union[str, list]) -> None:

@@ -19,18 +19,15 @@ class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):
 
                 schema = {
                     "properties": {
-                        "movie_title": { "type": "string" },
-                        "critic": { "type": "string" },
-                        "tone": {
-                            "type": "string",
-                            "enum": ["positive", "negative"]
-                        },
+                        "movie_title": {"type": "string"},
+                        "critic": {"type": "string"},
+                        "tone": {"type": "string", "enum": ["positive", "negative"]},
                         "rating": {
                             "type": "integer",
-                            "description": "The number of stars the critic rated the movie"
-                        }
+                            "description": "The number of stars the critic rated the movie",
+                        },
                     },
-                    "required": ["movie_title", "critic", "tone"]
+                    "required": ["movie_title", "critic", "tone"],
                 }
 
                 # Must be an OpenAI model that supports functions
@@ -38,8 +35,13 @@ class OpenAIMetadataTagger(BaseDocumentTransformer, BaseModel):
                 tagging_chain = create_tagging_chain(schema, llm)
                 document_transformer = OpenAIMetadataTagger(tagging_chain=tagging_chain)
                 original_documents = [
-                    Document(page_content="Review of The Bee Movie\nBy Roger Ebert\n\nThis is the greatest movie ever made. 4 out of 5 stars."),
-                    Document(page_content="Review of The Godfather\nBy Anonymous\n\nThis movie was super boring. 1 out of 5 stars.", metadata={"reliable": False}),
+                    Document(
+                        page_content="Review of The Bee Movie\nBy Roger Ebert\n\nThis is the greatest movie ever made. 4 out of 5 stars."
+                    ),
+                    Document(
+                        page_content="Review of The Godfather\nBy Anonymous\n\nThis movie was super boring. 1 out of 5 stars.",
+                        metadata={"reliable": False},
+                    ),
                 ]
 
                 enhanced_documents = document_transformer.transform_documents(original_documents)
@@ -102,18 +104,15 @@ def create_metadata_tagger(
 
                 schema = {
                     "properties": {
-                        "movie_title": { "type": "string" },
-                        "critic": { "type": "string" },
-                        "tone": {
-                            "type": "string",
-                            "enum": ["positive", "negative"]
-                        },
+                        "movie_title": {"type": "string"},
+                        "critic": {"type": "string"},
+                        "tone": {"type": "string", "enum": ["positive", "negative"]},
                         "rating": {
                             "type": "integer",
-                            "description": "The number of stars the critic rated the movie"
-                        }
+                            "description": "The number of stars the critic rated the movie",
+                        },
                     },
-                    "required": ["movie_title", "critic", "tone"]
+                    "required": ["movie_title", "critic", "tone"],
                 }
 
                 # Must be an OpenAI model that supports functions
@@ -121,8 +120,13 @@ def create_metadata_tagger(
 
                 document_transformer = create_metadata_tagger(schema, llm)
                 original_documents = [
-                    Document(page_content="Review of The Bee Movie\nBy Roger Ebert\n\nThis is the greatest movie ever made. 4 out of 5 stars."),
-                    Document(page_content="Review of The Godfather\nBy Anonymous\n\nThis movie was super boring. 1 out of 5 stars.", metadata={"reliable": False}),
+                    Document(
+                        page_content="Review of The Bee Movie\nBy Roger Ebert\n\nThis is the greatest movie ever made. 4 out of 5 stars."
+                    ),
+                    Document(
+                        page_content="Review of The Godfather\nBy Anonymous\n\nThis movie was super boring. 1 out of 5 stars.",
+                        metadata={"reliable": False},
+                    ),
                 ]
 
                 enhanced_documents = document_transformer.transform_documents(original_documents)

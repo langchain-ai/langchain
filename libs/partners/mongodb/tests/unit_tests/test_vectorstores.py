@@ -94,10 +94,7 @@ class TestMongoDBAtlasVectorSearch:
             Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
         ]
         vectorstore = MongoDBAtlasVectorSearch.from_documents(
-            documents,
-            embedding_openai,
-            collection=collection,
-            index_name=INDEX_NAME,
+            documents, embedding_openai, collection=collection, index_name=INDEX_NAME
         )
         self._validate_search(
             vectorstore, collection, metadata=documents[2].metadata["c"]
@@ -113,10 +110,7 @@ class TestMongoDBAtlasVectorSearch:
             "That fence is purple.",
         ]
         vectorstore = MongoDBAtlasVectorSearch.from_texts(
-            texts,
-            embedding_openai,
-            collection=collection,
-            index_name=INDEX_NAME,
+            texts, embedding_openai, collection=collection, index_name=INDEX_NAME
         )
         self._validate_search(vectorstore, collection, metadata=None)
 
@@ -173,10 +167,7 @@ class TestMongoDBAtlasVectorSearch:
     ) -> None:
         texts = ["foo", "foo", "fou", "foy"]
         vectorstore = MongoDBAtlasVectorSearch.from_texts(
-            texts,
-            embedding_openai,
-            collection=collection,
-            index_name=INDEX_NAME,
+            texts, embedding_openai, collection=collection, index_name=INDEX_NAME
         )
         query = "foo"
         self._validate_search(

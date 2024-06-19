@@ -20,10 +20,7 @@ class ArceeRetriever(BaseRetriever):
 
             from langchain_community.retrievers import ArceeRetriever
 
-            retriever = ArceeRetriever(
-                model="DALM-PubMed",
-                arcee_api_key="ARCEE-API-KEY"
-            )
+            retriever = ArceeRetriever(model="DALM-PubMed", arcee_api_key="ARCEE-API-KEY")
 
             documents = retriever.invoke("AI-driven music therapy")
     """
@@ -76,29 +73,19 @@ class ArceeRetriever(BaseRetriever):
 
         # validate env vars
         values["arcee_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
-                values,
-                "arcee_api_key",
-                "ARCEE_API_KEY",
-            )
+            get_from_dict_or_env(values, "arcee_api_key", "ARCEE_API_KEY")
         )
 
         values["arcee_api_url"] = get_from_dict_or_env(
-            values,
-            "arcee_api_url",
-            "ARCEE_API_URL",
+            values, "arcee_api_url", "ARCEE_API_URL"
         )
 
         values["arcee_app_url"] = get_from_dict_or_env(
-            values,
-            "arcee_app_url",
-            "ARCEE_APP_URL",
+            values, "arcee_app_url", "ARCEE_APP_URL"
         )
 
         values["arcee_api_version"] = get_from_dict_or_env(
-            values,
-            "arcee_api_version",
-            "ARCEE_API_VERSION",
+            values, "arcee_api_version", "ARCEE_API_VERSION"
         )
 
         # validate model kwargs

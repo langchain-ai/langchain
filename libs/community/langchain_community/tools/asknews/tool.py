@@ -56,9 +56,7 @@ class AskNewsSearch(BaseTool):
         """Use the tool."""
         try:
             return self.api_wrapper.search_news(
-                query,
-                hours_back=hours_back,
-                max_results=self.max_results,
+                query, hours_back=hours_back, max_results=self.max_results
             )
         except Exception as e:
             return repr(e)
@@ -72,9 +70,7 @@ class AskNewsSearch(BaseTool):
         """Use the tool asynchronously."""
         try:
             return await self.api_wrapper.asearch_news(
-                query,
-                hours_back=hours_back,
-                max_results=self.max_results,
+                query, hours_back=hours_back, max_results=self.max_results
             )
         except Exception as e:
             return repr(e)
