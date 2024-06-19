@@ -112,14 +112,16 @@ class _AllReturnType(TypedDict):
     parsing_error: Optional[BaseException]
 
 
-def parse_json_garbage(s):
+def parse_json_garbage(s: str) -> Any:
     s = s[next(idx for idx, c in enumerate(s) if c in "{[") :]
     try:
         response = json.loads(s)
         return response
     except (json.JSONDecodeError, ValueError) as e:
-        response = json.loads(s[: e.pos])
-        return response
+        if isinstance(e, json.JSONDecodeError):
+            response = json.loads(s[: e.pos])
+            return response
+        raise e
 
 
 def parse_response(message: BaseMessage) -> str:
@@ -336,7 +338,7 @@ class ToolCallingLLM(BaseChatModel, ABC):
         system_message = system_message_prompt_template.format(
             tools=json.dumps(functions, indent=2)
         )
-        response_message = super()._generate(
+        response_message = super()._generate(  # type: ignore[safe-super]
             [system_message] + messages, stop=stop, run_manager=run_manager, **kwargs
         )
         chat_generation_content = response_message.generations[0].text
@@ -349,9 +351,9 @@ class ToolCallingLLM(BaseChatModel, ABC):
                 parsed_chat_result = parse_json_garbage(chat_generation_content)
             except json.JSONDecodeError:
                 raise ValueError(
-                    f"""'{self.model}' did not respond with valid JSON. 
-                    Please try again. 
-                    Response: {chat_generation_content}"""
+                    f"'{self.model}' did not respond with valid JSON.\n"  # type: ignore[attr-defined]
+                    "Please try again.\n"
+                    f"Response: {chat_generation_content}"
                 )
         called_tool_name = (
             parsed_chat_result["tool"] if "tool" in parsed_chat_result else None
@@ -372,7 +374,7 @@ class ToolCallingLLM(BaseChatModel, ABC):
                 response = parsed_chat_result["response"]
             else:
                 raise ValueError(
-                    f"Failed to parse a response from {self.model} output: "
+                    f"Failed to parse a response from {self.model} output: "  # type: ignore[attr-defined]
                     f"{chat_generation_content}"
                 )
             return ChatResult(
@@ -446,9 +448,9 @@ class ToolCallingLLM(BaseChatModel, ABC):
             parsed_chat_result = json.loads(chat_generation_content)
         except json.JSONDecodeError:
             raise ValueError(
-                f"""'{self.model}' did not respond with valid JSON. 
-                Please try again. 
-                Response: {chat_generation_content}"""
+                f"'{self.model}' did not respond with valid JSON.\n"  # type: ignore[attr-defined]
+                "Please try again.\n"
+                f"Response: {chat_generation_content}"
             )
         called_tool_name = parsed_chat_result["tool"]
         called_tool_arguments = parsed_chat_result["tool_input"]
@@ -457,7 +459,7 @@ class ToolCallingLLM(BaseChatModel, ABC):
         )
         if called_tool is None:
             raise ValueError(
-                f"Failed to parse a function call from {self.model} output: "
+                f"Failed to parse a function call from {self.model} output: "  # type: ignore[attr-defined]
                 f"{chat_generation_content}"
             )
         if called_tool["name"] == DEFAULT_RESPONSE_FUNCTION["name"]:

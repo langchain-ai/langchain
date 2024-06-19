@@ -17,7 +17,7 @@ class Joke(BaseModel):
     punchline: str = Field(description="The punchline to the joke")
 
 
-class LiteLLMFunctions(ToolCallingLLM, ChatLiteLLM):
+class LiteLLMFunctions(ToolCallingLLM, ChatLiteLLM):  # type: ignore[misc]
     """Function chat model that uses ChatLiteLLM."""
 
     def __init__(self, **kwargs: Any) -> None:
