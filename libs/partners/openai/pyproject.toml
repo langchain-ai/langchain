@@ -76,7 +76,7 @@ select = [
   "F",    # pyflakes
   "I",    # isort
   "T201", # print
-  "D",    # docstrings
+  "D",    # pydocstyle
 ]
 
 [tool.ruff.lint.pydocstyle]
