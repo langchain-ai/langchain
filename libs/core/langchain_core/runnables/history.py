@@ -13,6 +13,7 @@ from typing import (
     Union,
 )
 
+from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
@@ -24,7 +25,6 @@ from langchain_core.runnables.utils import (
 )
 
 if TYPE_CHECKING:
-    from langchain_core.chat_history import BaseChatMessageHistory
     from langchain_core.language_models.base import LanguageModelLike
     from langchain_core.messages.base import BaseMessage
     from langchain_core.runnables.config import RunnableConfig
