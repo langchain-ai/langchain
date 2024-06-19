@@ -220,7 +220,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
                 f"got {value}"
             )
         value = convert_to_messages(value)
-        if self.k:
+        if self.n_messages:
             value = value[-self.n_messages :]
         return value
 
