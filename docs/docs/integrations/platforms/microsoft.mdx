@@ -312,7 +312,7 @@ from langchain.retrievers import AzureAISearchRetriever
 ### Azure Container Apps dynamic sessions
 
 We need to get the `POOL_MANAGEMENT_ENDPOINT` environment variable from the Azure Container Apps service.
-See the instructions [here](https://python.langchain.com/v0.2/docs/integrations/tools/azure_dynamic_sessions/#setup).
+See the instructions [here](/docs/integrations/tools/azure_dynamic_sessions/#setup).
 
 We need to install a python package.
 
@@ -326,6 +326,19 @@ See a [usage example](/docs/integrations/tools/azure_dynamic_sessions).
 from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
 ```
 
+### Bing Search
+
+Follow the documentation [here](/docs/integrations/tools/bing_search) to get a detail explanations and instructions of this tool.
+
+The environment variable `BING_SUBSCRIPTION_KEY` and `BING_SEARCH_URL` are required from Bing Search resource.
+
+```bash
+from langchain_community.tools.bing_search import BingSearchResults
+from langchain_community.utilities import BingSearchAPIWrapper
+
+api_wrapper = BingSearchAPIWrapper()
+tool = BingSearchResults(api_wrapper=api_wrapper)
+```
 
 ## Toolkits
 
