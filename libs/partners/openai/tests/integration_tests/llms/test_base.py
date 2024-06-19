@@ -6,9 +6,7 @@ from langchain_core.callbacks import CallbackManager
 from langchain_core.outputs import LLMResult
 
 from langchain_openai import OpenAI
-from tests.unit_tests.fake.callbacks import (
-    FakeCallbackHandler,
-)
+from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
 
 def test_stream() -> None:

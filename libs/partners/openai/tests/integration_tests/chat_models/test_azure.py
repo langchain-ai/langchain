@@ -39,9 +39,7 @@ def _get_llm(**kwargs: Any) -> AzureChatOpenAI:
 @pytest.mark.scheduled
 @pytest.fixture
 def llm() -> AzureChatOpenAI:
-    return _get_llm(
-        max_tokens=10,
-    )
+    return _get_llm(max_tokens=10)
 
 
 def test_chat_openai(llm: AzureChatOpenAI) -> None:
@@ -106,21 +104,13 @@ def test_chat_openai_streaming_generation_info() -> None:
     class _FakeCallback(FakeCallbackHandler):
         saved_things: dict = {}
 
-        def on_llm_end(
-            self,
-            *args: Any,
-            **kwargs: Any,
-        ) -> Any:
+        def on_llm_end(self, *args: Any, **kwargs: Any) -> Any:
             # Save the generation
             self.saved_things["generation"] = args[0]
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
-    chat = _get_llm(
-        max_tokens=2,
-        temperature=0,
-        callback_manager=callback_manager,
-    )
+    chat = _get_llm(max_tokens=2, temperature=0, callback_manager=callback_manager)
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned
