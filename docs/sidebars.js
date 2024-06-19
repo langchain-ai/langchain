@@ -169,8 +169,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/text_embedding",
+            type: "doc",
+            id: "integrations/text_embedding/index",
           },
         },
         {
