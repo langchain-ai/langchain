@@ -75,6 +75,20 @@ def _get_embeddings_from_stateful_docs(
     return embedded_documents
 
 
+async def _aget_embeddings_from_stateful_docs(
+    embeddings: Embeddings, documents: Sequence[_DocumentWithState]
+) -> List[List[float]]:
+    if len(documents) and "embedded_doc" in documents[0].state:
+        embedded_documents = [doc.state["embedded_doc"] for doc in documents]
+    else:
+        embedded_documents = await embeddings.aembed_documents(
+            [d.page_content for d in documents]
+        )
+        for doc, embedding in zip(documents, embedded_documents):
+            doc.state["embedded_doc"] = embedding
+    return embedded_documents
+
+
 def _filter_cluster_embeddings(
     embedded_documents: List[List[float]],
     num_clusters: int,

@@ -1,94 +1,49 @@
-from abc import ABC, abstractmethod
-from typing import Type
+import base64
+import json
 
+import httpx
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, AIMessageChunk
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.tools import tool
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
+
+from langchain_standard_tests.unit_tests.chat_models import (
+    ChatModelTests,
+    my_adder_tool,
+)
 
 
-class Person(BaseModel):
-    name: str = Field(..., description="The name of the person.")
-    age: int = Field(..., description="The age of the person.")
-
-
-@tool
-def my_adder_tool(a: int, b: int) -> int:
-    """Takes two integers, a and b, and returns their sum."""
-    return a + b
-
-
-class ChatModelIntegrationTests(ABC):
-    @abstractmethod
-    @pytest.fixture
-    def chat_model_class(self) -> Type[BaseChatModel]:
-        ...
-
-    @pytest.fixture
-    def chat_model_params(self) -> dict:
-        return {}
-
-    @pytest.fixture
-    def chat_model_has_tool_calling(
-        self, chat_model_class: Type[BaseChatModel]
-    ) -> bool:
-        return hasattr(chat_model_class, "bind_tools")
-
-    @pytest.fixture
-    def chat_model_has_structured_output(
-        self, chat_model_class: Type[BaseChatModel]
-    ) -> bool:
-        return hasattr(chat_model_class, "with_structured_output")
-
-    def test_invoke(
-        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
-    ) -> None:
-        model = chat_model_class(**chat_model_params)
+class ChatModelIntegrationTests(ChatModelTests):
+    def test_invoke(self, model: BaseChatModel) -> None:
         result = model.invoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
         assert isinstance(result.content, str)
         assert len(result.content) > 0
 
-    async def test_ainvoke(
-        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
-    ) -> None:
-        model = chat_model_class(**chat_model_params)
+    async def test_ainvoke(self, model: BaseChatModel) -> None:
         result = await model.ainvoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
         assert isinstance(result.content, str)
         assert len(result.content) > 0
 
-    def test_stream(
-        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
-    ) -> None:
-        model = chat_model_class(**chat_model_params)
+    def test_stream(self, model: BaseChatModel) -> None:
         num_tokens = 0
         for token in model.stream("Hello"):
             assert token is not None
             assert isinstance(token, AIMessageChunk)
-            assert isinstance(token.content, str)
             num_tokens += len(token.content)
         assert num_tokens > 0
 
-    async def test_astream(
-        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
-    ) -> None:
-        model = chat_model_class(**chat_model_params)
+    async def test_astream(self, model: BaseChatModel) -> None:
         num_tokens = 0
         async for token in model.astream("Hello"):
             assert token is not None
             assert isinstance(token, AIMessageChunk)
-            assert isinstance(token.content, str)
             num_tokens += len(token.content)
         assert num_tokens > 0
 
-    def test_batch(
-        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
-    ) -> None:
-        model = chat_model_class(**chat_model_params)
+    def test_batch(self, model: BaseChatModel) -> None:
         batch_results = model.batch(["Hello", "Hey"])
         assert batch_results is not None
         assert isinstance(batch_results, list)
@@ -99,10 +54,7 @@ class ChatModelIntegrationTests(ABC):
             assert isinstance(result.content, str)
             assert len(result.content) > 0
 
-    async def test_abatch(
-        self, chat_model_class: Type[BaseChatModel], chat_model_params: dict
-    ) -> None:
-        model = chat_model_class(**chat_model_params)
+    async def test_abatch(self, model: BaseChatModel) -> None:
         batch_results = await model.abatch(["Hello", "Hey"])
         assert batch_results is not None
         assert isinstance(batch_results, list)
@@ -112,3 +64,166 @@ class ChatModelIntegrationTests(ABC):
             assert isinstance(result, AIMessage)
             assert isinstance(result.content, str)
             assert len(result.content) > 0
+
+    def test_conversation(self, model: BaseChatModel) -> None:
+        messages = [
+            HumanMessage("hello"),
+            AIMessage("hello"),
+            HumanMessage("how are you"),
+        ]
+        result = model.invoke(messages)
+        assert result is not None
+        assert isinstance(result, AIMessage)
+        assert isinstance(result.content, str)
+        assert len(result.content) > 0
+
+    def test_usage_metadata(self, model: BaseChatModel) -> None:
+        if not self.returns_usage_metadata:
+            pytest.skip("Not implemented.")
+        result = model.invoke("Hello")
+        assert result is not None
+        assert isinstance(result, AIMessage)
+        assert result.usage_metadata is not None
+        assert isinstance(result.usage_metadata["input_tokens"], int)
+        assert isinstance(result.usage_metadata["output_tokens"], int)
+        assert isinstance(result.usage_metadata["total_tokens"], int)
+
+    def test_stop_sequence(self, model: BaseChatModel) -> None:
+        result = model.invoke("hi", stop=["you"])
+        assert isinstance(result, AIMessage)
+
+        custom_model = self.chat_model_class(
+            **{**self.chat_model_params, "stop": ["you"]}
+        )
+        result = custom_model.invoke("hi")
+        assert isinstance(result, AIMessage)
+
+    def test_tool_message_histories_string_content(
+        self,
+        model: BaseChatModel,
+    ) -> None:
+        """
+        Test that message histories are compatible with string tool contents
+        (e.g. OpenAI).
+        """
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+        model_with_tools = model.bind_tools([my_adder_tool])
+        function_name = "my_adder_tool"
+        function_args = {"a": "1", "b": "2"}
+
+        messages_string_content = [
+            HumanMessage("What is 1 + 2"),
+            # string content (e.g. OpenAI)
+            AIMessage(
+                "",
+                tool_calls=[
+                    {
+                        "name": function_name,
+                        "args": function_args,
+                        "id": "abc123",
+                    },
+                ],
+            ),
+            ToolMessage(
+                json.dumps({"result": 3}),
+                name=function_name,
+                tool_call_id="abc123",
+            ),
+        ]
+        result_string_content = model_with_tools.invoke(messages_string_content)
+        assert isinstance(result_string_content, AIMessage)
+
+    def test_tool_message_histories_list_content(
+        self,
+        model: BaseChatModel,
+    ) -> None:
+        """
+        Test that message histories are compatible with list tool contents
+        (e.g. Anthropic).
+        """
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+        model_with_tools = model.bind_tools([my_adder_tool])
+        function_name = "my_adder_tool"
+        function_args = {"a": 1, "b": 2}
+
+        messages_list_content = [
+            HumanMessage("What is 1 + 2"),
+            # List content (e.g., Anthropic)
+            AIMessage(
+                [
+                    {"type": "text", "text": "some text"},
+                    {
+                        "type": "tool_use",
+                        "id": "abc123",
+                        "name": function_name,
+                        "input": function_args,
+                    },
+                ],
+                tool_calls=[
+                    {
+                        "name": function_name,
+                        "args": function_args,
+                        "id": "abc123",
+                    },
+                ],
+            ),
+            ToolMessage(
+                json.dumps({"result": 3}),
+                name=function_name,
+                tool_call_id="abc123",
+            ),
+        ]
+        result_list_content = model_with_tools.invoke(messages_list_content)
+        assert isinstance(result_list_content, AIMessage)
+
+    def test_structured_few_shot_examples(self, model: BaseChatModel) -> None:
+        """
+        Test that model can process few-shot examples with tool calls.
+        """
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+        model_with_tools = model.bind_tools([my_adder_tool], tool_choice="any")
+        function_name = "my_adder_tool"
+        function_args = {"a": 1, "b": 2}
+        function_result = json.dumps({"result": 3})
+
+        messages_string_content = [
+            HumanMessage("What is 1 + 2"),
+            AIMessage(
+                "",
+                tool_calls=[
+                    {
+                        "name": function_name,
+                        "args": function_args,
+                        "id": "abc123",
+                    },
+                ],
+            ),
+            ToolMessage(
+                function_result,
+                name=function_name,
+                tool_call_id="abc123",
+            ),
+            AIMessage(function_result),
+            HumanMessage("What is 3 + 4"),
+        ]
+        result_string_content = model_with_tools.invoke(messages_string_content)
+        assert isinstance(result_string_content, AIMessage)
+
+    def test_image_inputs(self, model: BaseChatModel) -> None:
+        if not self.supports_image_inputs:
+            return
+        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "describe the weather in this image"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ],
+        )
+        model.invoke([message])

@@ -45,7 +45,6 @@ class VoyageAIEmbeddings(BaseModel, Embeddings):
         model = values.get("model")
         batch_size = values.get("batch_size")
         if batch_size is None:
-            print("batch size", batch_size)
             values["batch_size"] = 72 if model in ["voyage-2", "voyage-02"] else 7
         return values
 

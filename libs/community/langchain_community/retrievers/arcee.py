@@ -25,7 +25,7 @@ class ArceeRetriever(BaseRetriever):
                 arcee_api_key="ARCEE-API-KEY"
             )
 
-            documents = retriever.get_relevant_documents("AI-driven music therapy")
+            documents = retriever.invoke("AI-driven music therapy")
     """
 
     _client: Optional[ArceeWrapper] = None  #: :meta private:

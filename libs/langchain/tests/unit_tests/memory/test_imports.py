@@ -1,5 +1,4 @@
 from langchain import memory
-from tests.unit_tests import assert_all_importable
 
 EXPECTED_ALL = [
     "AstraDBChatMessageHistory",
@@ -42,4 +41,3 @@ EXPECTED_ALL = [
 
 def test_all_imports() -> None:
     assert set(memory.__all__) == set(EXPECTED_ALL)
-    assert_all_importable(memory)

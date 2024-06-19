@@ -1,15 +1,47 @@
 import json
 import sys
 import os
-from typing import Dict
+from typing import Dict, List, Set
+
+import tomllib
+from collections import defaultdict
+import glob
 
 LANGCHAIN_DIRS = [
     "libs/core",
     "libs/text-splitters",
-    "libs/community",
     "libs/langchain",
+    "libs/community",
     "libs/experimental",
 ]
+
+def dependents_graph() -> dict:
+    dependents = defaultdict(set)
+
+    for path in glob.glob("./libs/**/pyproject.toml", recursive=True):
+        if "template" in path:
+            continue
+        with open(path, "rb") as f:
+            pyproject = tomllib.load(f)['tool']['poetry']
+        pkg_dir = "libs" + "/".join(path.split("libs")[1].split("/")[:-1])
+        for dep in pyproject['dependencies']:
+            if "langchain" in dep:
+                dependents[dep].add(pkg_dir)
+    return dependents
+
+
+def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
+    updated = set()
+    for dir_ in dirs_to_eval:
+        # handle core manually because it has so many dependents
+        if "core" in dir_:
+            updated.add(dir_)
+            continue
+        pkg = "langchain-" + dir_.split("/")[-1]
+        updated.update(dependents[pkg])
+        updated.add(dir_)
+    return list(updated)
+
 
 if __name__ == "__main__":
     files = sys.argv[1:]
@@ -19,6 +51,7 @@ if __name__ == "__main__":
         "test": set(),
         "extended-test": set(),
     }
+    docs_edited = False
 
     if len(files) == 300:
         # max diff length is 300 files - there are likely files missing
@@ -53,6 +86,10 @@ if __name__ == "__main__":
             dirs_to_run["lint"].add("libs/standard-tests")
             dirs_to_run["test"].add("libs/partners/mistralai")
             dirs_to_run["test"].add("libs/partners/openai")
+            dirs_to_run["test"].add("libs/partners/anthropic")
+            dirs_to_run["test"].add("libs/partners/ai21")
+            dirs_to_run["test"].add("libs/partners/fireworks")
+            dirs_to_run["test"].add("libs/partners/groq")
 
         elif file.startswith("libs/cli"):
             # todo: add cli makefile
@@ -72,15 +109,20 @@ if __name__ == "__main__":
                 "an update for this new library!"
             )
         elif any(file.startswith(p) for p in ["docs/", "templates/", "cookbook/"]):
+            if file.startswith("docs/"):
+                docs_edited = True
             dirs_to_run["lint"].add(".")
 
+    dependents = dependents_graph()
+
     outputs = {
-        "dirs-to-lint": list(
-            dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"]
+        "dirs-to-lint": add_dependents(
+            dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
         ),
-        "dirs-to-test": list(dirs_to_run["test"] | dirs_to_run["extended-test"]),
+        "dirs-to-test": add_dependents(dirs_to_run["test"] | dirs_to_run["extended-test"], dependents),
         "dirs-to-extended-test": list(dirs_to_run["extended-test"]),
+        "docs-edited": "true" if docs_edited else "",
     }
     for key, value in outputs.items():
         json_output = json.dumps(value)
-        print(f"{key}={json_output}")  # noqa: T201
+        print(f"{key}={json_output}")

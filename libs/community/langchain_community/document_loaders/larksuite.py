@@ -46,3 +46,33 @@ class LarkSuiteDocLoader(BaseLoader):
             "title": metadata_json["data"]["document"]["title"],
         }
         yield Document(page_content=text, metadata=metadata)
+
+
+class LarkSuiteWikiLoader(LarkSuiteDocLoader):
+    """Load from `LarkSuite` (`FeiShu`) wiki."""
+
+    def __init__(self, domain: str, access_token: str, wiki_id: str):
+        """Initialize with domain, access_token (tenant / user), and wiki_id.
+
+        Args:
+            domain: The domain to load the LarkSuite.
+            access_token: The access_token to use.
+            wiki_id: The wiki_id to load.
+        """
+        self.domain = domain
+        self.access_token = access_token
+        self.wiki_id = wiki_id
+        self.document_id = ""
+
+    def lazy_load(self) -> Iterator[Document]:
+        """Lazy load LarkSuite (FeiShu) wiki document."""
+
+        # convert Feishu wiki id to document id
+        if not self.document_id:
+            wiki_url_prefix = f"{self.domain}/open-apis/wiki/v2/spaces/get_node"
+            wiki_node_info_json = self._get_larksuite_api_json_data(
+                f"{wiki_url_prefix}?token={self.wiki_id}"
+            )
+            self.document_id = wiki_node_info_json["data"]["node"]["obj_token"]
+
+        yield from super().lazy_load()

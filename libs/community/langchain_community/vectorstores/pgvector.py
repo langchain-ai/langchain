@@ -218,7 +218,7 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
         "Please read the guidelines in the doc-string of this class "
         "to follow prior to migrating as there are some differences "
         "between the implementations. "
-        "See https://github.com/langchain-ai/langchain-postgres for details about"
+        "See <https://github.com/langchain-ai/langchain-postgres> for details about"
         "the new implementation."
     ),
     alternative="from langchain_postgres import PGVector;",
@@ -455,7 +455,7 @@ class PGVector(VectorStore):
         return self.CollectionStore.get_by_name(session, self.collection_name)
 
     @classmethod
-    def __from(
+    def _from(
         cls,
         texts: List[str],
         embeddings: List[List[float]],
@@ -471,7 +471,7 @@ class PGVector(VectorStore):
         **kwargs: Any,
     ) -> PGVector:
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -511,7 +511,7 @@ class PGVector(VectorStore):
             kwargs: vectorstore specific parameters
         """
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -623,7 +623,7 @@ class PGVector(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
     ) -> List[Tuple[Document, float]]:
-        results = self.__query_collection(embedding=embedding, k=k, filter=filter)
+        results = self._query_collection(embedding=embedding, k=k, filter=filter)
 
         return self._results_to_docs_and_scores(results)
 
@@ -733,7 +733,7 @@ class PGVector(VectorStore):
             if operator in {"$in"}:
                 return queried_field.in_([str(val) for val in filter_value])
             elif operator in {"$nin"}:
-                return queried_field.nin_([str(val) for val in filter_value])
+                return queried_field.not_in([str(val) for val in filter_value])
             elif operator in {"$like"}:
                 return queried_field.like(filter_value)
             elif operator in {"$ilike"}:
@@ -795,13 +795,13 @@ class PGVector(VectorStore):
             )
         elif OR in map(str.lower, value):
             or_clauses = [
-                self._create_filter_clause(key, sub_value)
+                self._create_filter_clause_deprecated(key, sub_value)
                 for sub_value in value_case_insensitive[OR]
             ]
             filter_by_metadata = sqlalchemy.or_(*or_clauses)
         elif AND in map(str.lower, value):
             and_clauses = [
-                self._create_filter_clause(key, sub_value)
+                self._create_filter_clause_deprecated(key, sub_value)
                 for sub_value in value_case_insensitive[AND]
             ]
             filter_by_metadata = sqlalchemy.and_(*and_clauses)
@@ -922,7 +922,7 @@ class PGVector(VectorStore):
                 f"Invalid type: Expected a dictionary but got type: {type(filters)}"
             )
 
-    def __query_collection(
+    def _query_collection(
         self,
         embedding: List[float],
         k: int = 4,
@@ -1008,7 +1008,7 @@ class PGVector(VectorStore):
         """
         embeddings = embedding.embed_documents(list(texts))
 
-        return cls.__from(
+        return cls._from(
             texts,
             embeddings,
             embedding,
@@ -1054,7 +1054,7 @@ class PGVector(VectorStore):
         texts = [t[0] for t in text_embeddings]
         embeddings = [t[1] for t in text_embeddings]
 
-        return cls.__from(
+        return cls._from(
             texts,
             embeddings,
             embedding,
@@ -1218,7 +1218,7 @@ class PGVector(VectorStore):
             List[Tuple[Document, float]]: List of Documents selected by maximal marginal
                 relevance to the query and score for each.
         """
-        results = self.__query_collection(embedding=embedding, k=fetch_k, filter=filter)
+        results = self._query_collection(embedding=embedding, k=fetch_k, filter=filter)
 
         embedding_list = [result.EmbeddingStore.embedding for result in results]
 

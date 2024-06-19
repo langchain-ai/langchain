@@ -567,7 +567,7 @@ def test_mmr_parameters(index_details: dict) -> None:
                 "filters": filters,
             },
         )
-        search_result = retriever.get_relevant_documents(query)
+        search_result = retriever.invoke(query)
 
     mock_mmr.assert_called_once()
     assert mock_mmr.call_args[1]["lambda_mult"] == lambda_mult
@@ -593,7 +593,7 @@ def test_similarity_score_threshold(index_details: dict, threshold: float) -> No
         search_type="similarity_score_threshold",
         search_kwargs={"k": limit, "score_threshold": threshold},
     )
-    search_result = retriever.get_relevant_documents(query)
+    search_result = retriever.invoke(query)
     if uniform_response_score >= threshold:
         assert len(search_result) == len(fake_texts)
     else:

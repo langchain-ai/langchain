@@ -6,8 +6,7 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-
-from langchain.chains.query_constructor.ir import (
+from langchain_core.structured_query import (
     Comparator,
     Comparison,
     Operation,
@@ -15,6 +14,7 @@ from langchain.chains.query_constructor.ir import (
     StructuredQuery,
     Visitor,
 )
+
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers import SelfQueryRetriever
 from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore

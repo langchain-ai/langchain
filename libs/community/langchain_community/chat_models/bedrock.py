@@ -11,6 +11,7 @@ from typing import (
     Union,
 )
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -202,9 +203,18 @@ class ChatPromptAdapter:
         )
 
 
-_message_type_lookups = {"human": "user", "ai": "assistant"}
+_message_type_lookups = {
+    "human": "user",
+    "ai": "assistant",
+    "AIMessageChunk": "assistant",
+    "HumanMessageChunk": "user",
+    "function": "user",
+}
 
 
+@deprecated(
+    since="0.0.34", removal="0.3", alternative_import="langchain_aws.ChatBedrock"
+)
 class BedrockChat(BaseChatModel, BedrockBase):
     """Chat model that uses the Bedrock API."""
 

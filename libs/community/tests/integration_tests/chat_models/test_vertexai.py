@@ -50,7 +50,7 @@ def test_vertexai_single_call(model_name: str) -> None:
     else:
         model = ChatVertexAI()
     message = HumanMessage(content="Hello")
-    response = model([message])
+    response = model.invoke([message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -104,7 +104,7 @@ def test_vertexai_single_call_with_context() -> None:
     )
     context = SystemMessage(content=raw_context)
     message = HumanMessage(content=question)
-    response = model([context, message])
+    response = model.invoke([context, message])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -124,7 +124,7 @@ def test_multimodal() -> None:
         "text": "What is shown in this image?",
     }
     message = HumanMessage(content=[text_message, image_message])
-    output = llm([message])
+    output = llm.invoke([message])
     assert isinstance(output.content, str)
 
 
@@ -151,7 +151,7 @@ def test_multimodal_history() -> None:
         )
     )
     message3 = HumanMessage(content="What time of day is it?")
-    response = llm([message1, message2, message3])
+    response = llm.invoke([message1, message2, message3])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -166,7 +166,7 @@ def test_vertexai_single_call_with_examples() -> None:
     output = AIMessage(content=text_answer)
     context = SystemMessage(content=raw_context)
     message = HumanMessage(content=question)
-    response = model([context, message], examples=[inp, output])
+    response = model.invoke([context, message], examples=[inp, output])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -183,7 +183,7 @@ def test_vertexai_single_call_with_history(model_name: str) -> None:
     message1 = HumanMessage(content=text_question1)
     message2 = AIMessage(content=text_answer1)
     message3 = HumanMessage(content=text_question2)
-    response = model([message1, message2, message3])
+    response = model.invoke([message1, message2, message3])
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
@@ -219,7 +219,7 @@ def test_parse_chat_history_correct() -> None:
 def test_vertexai_single_call_fails_no_message() -> None:
     chat = ChatVertexAI()
     with pytest.raises(ValueError) as exc_info:
-        _ = chat([])
+        _ = chat.invoke([])
     assert (
         str(exc_info.value)
         == "You should provide at least one message to start the chat!"
@@ -248,12 +248,12 @@ def test_vertexai_args_passed(stop: Optional[str]) -> None:
         mock_send_message = MagicMock(return_value=mock_response)
         mock_chat.send_message = mock_send_message
 
-        model = ChatVertexAI(**prompt_params)
+        model = ChatVertexAI(**prompt_params)  # type: ignore[arg-type]
         message = HumanMessage(content=user_prompt)
         if stop:
-            response = model([message], stop=[stop])
+            response = model.invoke([message], stop=[stop])
         else:
-            response = model([message])
+            response = model.invoke([message])
 
         assert response.content == response_text
         mock_send_message.assert_called_once_with(user_prompt, candidate_count=1)

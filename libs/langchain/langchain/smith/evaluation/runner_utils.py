@@ -225,7 +225,7 @@ def _wrap_in_chain_factory(
             return lambda: RunnableLambda(constructor)
         else:
             # Typical correct case
-            return constructor  # noqa
+            return constructor
     return llm_or_chain_factory
 
 
@@ -281,6 +281,12 @@ def _get_prompt(inputs: Dict[str, Any]) -> str:
 
 
 class ChatModelInput(TypedDict):
+    """Input for a chat model.
+
+    Parameters:
+        messages: List of chat messages.
+    """
+
     messages: List[BaseMessage]
 
 

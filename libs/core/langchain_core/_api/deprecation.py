@@ -33,6 +33,25 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
 T = TypeVar("T", bound=Union[Type, Callable[..., Any]])
 
 
+def _validate_deprecation_params(
+    pending: bool,
+    removal: str,
+    alternative: str,
+    alternative_import: str,
+) -> None:
+    """Validate the deprecation parameters."""
+    if pending and removal:
+        raise ValueError("A pending deprecation cannot have a scheduled removal")
+    if alternative and alternative_import:
+        raise ValueError("Cannot specify both alternative and alternative_import")
+
+    if alternative_import and "." not in alternative_import:
+        raise ValueError(
+            "alternative_import must be a fully qualified module path. Got "
+            f" {alternative_import}"
+        )
+
+
 def deprecated(
     since: str,
     *,
@@ -44,6 +63,7 @@ def deprecated(
     obj_type: str = "",
     addendum: str = "",
     removal: str = "",
+    package: str = "",
 ) -> Callable[[T], T]:
     """Decorator to mark a function, a class, or a property as deprecated.
 
@@ -98,6 +118,7 @@ def deprecated(
             def the_function_to_deprecate():
                 pass
     """
+    _validate_deprecation_params(pending, removal, alternative, alternative_import)
 
     def deprecate(
         obj: T,
@@ -109,6 +130,7 @@ def deprecated(
         _alternative_import: str = alternative_import,
         _pending: bool = pending,
         _addendum: str = addendum,
+        _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
 
@@ -124,6 +146,7 @@ def deprecated(
                 obj_type=_obj_type,
                 addendum=_addendum,
                 removal=removal,
+                package=_package,
             )
 
         warned = False
@@ -153,13 +176,13 @@ def deprecated(
                 emit_warning()
             return await wrapped(*args, **kwargs)
 
+        _package = _package or obj.__module__.split(".")[0].replace("_", "-")
+
         if isinstance(obj, type):
             if not _obj_type:
                 _obj_type = "class"
             wrapped = obj.__init__  # type: ignore
-            _name = _name or (
-                f"{obj.__module__}.{obj.__name__}" if obj.__module__ else obj.__name__
-            )
+            _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
@@ -188,7 +211,7 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or obj.fget.__name__
+            _name = _name or obj.fget.__qualname__
             old_doc = obj.__doc__
 
             class _deprecated_property(property):
@@ -227,10 +250,12 @@ def deprecated(
                 )
 
         else:
+            _name = _name or obj.__qualname__
             if not _obj_type:
-                _obj_type = "function"
+                # edge case: when a function is within another function
+                # within a test, this will call it a "method" not a "function"
+                _obj_type = "function" if "." not in _name else "method"
             wrapped = obj
-            _name = _name or obj.__name__
             old_doc = wrapped.__doc__
 
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
@@ -261,7 +286,9 @@ def deprecated(
             addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
-        package = _name.split(".")[0].replace("_", "-") if "." in _name else None
+        package = (
+            _package or _name.split(".")[0].replace("_", "-") if "." in _name else None
+        )
         since_str = f"{package}=={since}" if package else since
         new_doc = (
             f"[*Deprecated*] {old_doc}\n"
@@ -299,6 +326,7 @@ def warn_deprecated(
     obj_type: str = "",
     addendum: str = "",
     removal: str = "",
+    package: str = "",
 ) -> None:
     """Display a standardized deprecation.
 
@@ -329,13 +357,6 @@ def warn_deprecated(
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
     """
-    if pending and removal:
-        raise ValueError("A pending deprecation cannot have a scheduled removal")
-    if alternative and alternative_import:
-        raise ValueError("Cannot specify both alternative and alternative_import")
-    if alternative_import and "." not in alternative_import:
-        raise ValueError("alternative_import must be a fully qualified module path")
-
     if not pending:
         if not removal:
             removal = f"in {removal}" if removal else "within ?? minor releases"
@@ -348,7 +369,11 @@ def warn_deprecated(
 
     if not message:
         message = ""
-        package = name.split(".")[0].replace("_", "-") if "." in name else "LangChain"
+        _package = (
+            package or name.split(".")[0].replace("_", "-")
+            if "." in name
+            else "LangChain"
+        )
 
         if obj_type:
             message += f"The {obj_type} `{name}`"
@@ -358,14 +383,14 @@ def warn_deprecated(
         if pending:
             message += " will be deprecated in a future version"
         else:
-            message += f" was deprecated in {package} {since}"
+            message += f" was deprecated in {_package} {since}"
 
             if removal:
                 message += f" and will be removed {removal}"
 
         if alternative_import:
             alt_package = alternative_import.split(".")[0].replace("_", "-")
-            if alt_package == package:
+            if alt_package == _package:
                 message += f". Use {alternative_import} instead."
             else:
                 alt_module, alt_name = alternative_import.rsplit(".", 1)

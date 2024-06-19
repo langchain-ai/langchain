@@ -142,7 +142,7 @@ def resolve_criteria(
     >>> criterion = "relevance"
     >>> CriteriaEvalChain.resolve_criteria(criteria)
     {'relevance': 'Is the submission referring to a real quote from the text?'}
-    """  # noqa: E501
+    """
     if criteria is None:
         return {
             "helpfulness": _SUPPORTED_CRITERIA[Criteria.HELPFULNESS],
@@ -193,7 +193,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
     Examples
     --------
-    >>> from langchain_community.chat_models import ChatAnthropic
+    >>> from langchain_anthropic import ChatAnthropic
     >>> from langchain.evaluation.criteria import CriteriaEvalChain
     >>> llm = ChatAnthropic(temperature=0)
     >>> criteria = {"my-custom-criterion": "Is the submission the most amazing ever?"}
@@ -205,7 +205,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         'score': 0,
     }
 
-    >>> from langchain_community.chat_models import ChatOpenAI
+    >>> from langchain_openai import ChatOpenAI
     >>> from langchain.evaluation.criteria import LabeledCriteriaEvalChain
     >>> llm = ChatOpenAI(model="gpt-4", temperature=0)
     >>> criteria = "correctness"
@@ -307,7 +307,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         >>> criterion = "relevance"
         >>> CriteriaEvalChain.resolve_criteria(criteria)
         {'relevance': 'Is the submission referring to a real quote from the text?'}
-        """  # noqa: E501
+        """
         return resolve_criteria(criteria)
 
     @classmethod
@@ -344,7 +344,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
         Examples
         --------
-        >>> from langchain_community.llms import OpenAI
+        >>> from langchain_openai import OpenAI
         >>> from langchain.evaluation.criteria import LabeledCriteriaEvalChain
         >>> llm = OpenAI()
         >>> criteria = {
@@ -432,7 +432,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
         Examples
         --------
-        >>> from langchain_community.llms import OpenAI
+        >>> from langchain_openai import OpenAI
         >>> from langchain.evaluation.criteria import CriteriaEvalChain
         >>> llm = OpenAI()
         >>> criteria = "conciseness"
@@ -487,7 +487,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
         Examples
         --------
-        >>> from langchain_community.llms import OpenAI
+        >>> from langchain_openai import OpenAI
         >>> from langchain.evaluation.criteria import CriteriaEvalChain
         >>> llm = OpenAI()
         >>> criteria = "conciseness"
@@ -568,7 +568,7 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
 
         Examples
         --------
-        >>> from langchain_community.llms import OpenAI
+        >>> from langchain_openai import OpenAI
         >>> from langchain.evaluation.criteria import LabeledCriteriaEvalChain
         >>> llm = OpenAI()
         >>> criteria = {

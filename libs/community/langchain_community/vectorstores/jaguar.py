@@ -53,7 +53,7 @@ class Jaguar(VectorStore):
         try:
             from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import jaguardb-http-client python package. "
                 "Please install it with `pip install -U jaguardb-http-client`"
             )
@@ -431,7 +431,7 @@ class Jaguar(VectorStore):
 
     def prt(self, msg: str) -> None:
         with open("/tmp/debugjaguar.log", "a") as file:
-            print(f"msg={msg}", file=file, flush=True)  # noqa: T201
+            print(f"msg={msg}", file=file, flush=True)
 
     def _parseMeta(self, nvmap: dict, filecol: str) -> Tuple[List[str], List[str], str]:
         filepath = ""

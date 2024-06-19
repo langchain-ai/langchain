@@ -1,3 +1,3 @@
-from langchain_community.chat_loaders.base import BaseChatLoader
+from langchain_core.chat_loaders import BaseChatLoader
 
 __all__ = ["BaseChatLoader"]

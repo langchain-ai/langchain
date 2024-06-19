@@ -10,7 +10,7 @@ from langchain_community.document_loaders.parsers import (
 
 
 class AzureAIDocumentIntelligenceLoader(BaseLoader):
-    """Loads a PDF with Azure Document Intelligence"""
+    """Load a PDF with Azure Document Intelligence."""
 
     def __init__(
         self,

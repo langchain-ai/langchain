@@ -6,6 +6,7 @@ import pathlib
 import platform
 from typing import Optional, Tuple
 
+from langchain_core.documents import Document
 from langchain_core.env import get_runtime_environment
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -59,6 +60,10 @@ LOADER_TYPE_MAPPING = {
 SUPPORTED_LOADERS = (*file_loader, *dir_loader, *in_memory)
 
 logger = logging.getLogger(__name__)
+
+
+class IndexedDocument(Document):
+    id: str
 
 
 class Runtime(BaseModel):
@@ -164,7 +169,9 @@ def get_full_path(path: str) -> str:
         or (path in ["unknown", "-", "in-memory"])
     ):
         return path
-    full_path = pathlib.Path(path).resolve()
+    full_path = pathlib.Path(path)
+    if full_path.exists():
+        full_path = full_path.resolve()
     return str(full_path)
 
 
@@ -185,7 +192,7 @@ def get_loader_type(loader: str) -> str:
 
 def get_loader_full_path(loader: BaseLoader) -> str:
     """Return an absolute source path of source of loader based on the
-    keys present in Document object from loader.
+    keys present in Document.
 
     Args:
         loader (BaseLoader): Langchain document loader, derived from Baseloader.
@@ -229,6 +236,27 @@ def get_loader_full_path(loader: BaseLoader) -> str:
             location = "in-memory"
         elif isinstance(loader, NotionDBLoader):
             location = f"notiondb://{loader.database_id}"
+        elif loader.__class__.__name__ == "GoogleDriveLoader":
+            if loader_dict.get("folder_id"):
+                folder_id = loader_dict.get("folder_id")
+                location = f"https://drive.google.com/drive/u/2/folders/{folder_id}"
+            elif loader_dict.get("file_ids"):
+                file_ids = loader_dict.get("file_ids", [])
+                location = ", ".join(
+                    [
+                        f"https://drive.google.com/file/d/{file_id}/view"
+                        for file_id in file_ids
+                    ]
+                )
+            elif loader_dict.get("document_ids"):
+                document_ids = loader_dict.get("document_ids", [])
+                location = ", ".join(
+                    [
+                        f"https://docs.google.com/document/d/{doc_id}/edit"
+                        for doc_id in document_ids
+                    ]
+                )
+
     except Exception:
         pass
     return get_full_path(str(location))

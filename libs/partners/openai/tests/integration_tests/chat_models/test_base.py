@@ -1,5 +1,5 @@
 """Test ChatOpenAI chat model."""
-from typing import Any, List, Optional, cast
+from typing import Any, AsyncIterator, List, Optional, cast
 
 import pytest
 from langchain_core.callbacks import CallbackManager
@@ -42,7 +42,7 @@ def test_chat_openai() -> None:
         default_query=None,
     )
     message = HumanMessage(content="Hello")
-    response = chat([message])
+    response = chat.invoke([message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -60,7 +60,7 @@ def test_chat_openai_system_message() -> None:
     chat = ChatOpenAI(max_tokens=10)
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
-    response = chat([system_message, human_message])
+    response = chat.invoke([system_message, human_message])
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -349,16 +349,104 @@ def test_stream() -> None:
     for chunk in llm.stream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.response_metadata.get("finish_reason") is not None
+    assert full.response_metadata.get("model_name") is not None
+
+    # check token usage
+    aggregate: Optional[BaseMessageChunk] = None
+    chunks_with_token_counts = 0
+    chunks_with_response_metadata = 0
+    for chunk in llm.stream("Hello", stream_usage=True):
+        assert isinstance(chunk.content, str)
+        aggregate = chunk if aggregate is None else aggregate + chunk
+        assert isinstance(chunk, AIMessageChunk)
+        if chunk.usage_metadata is not None:
+            chunks_with_token_counts += 1
+        if chunk.response_metadata:
+            chunks_with_response_metadata += 1
+    if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
+        raise AssertionError(
+            "Expected exactly one chunk with metadata. "
+            "AIMessageChunk aggregation can add these metadata. Check that "
+            "this is behaving properly."
+        )
+    assert isinstance(aggregate, AIMessageChunk)
+    assert aggregate.usage_metadata is not None
+    assert aggregate.usage_metadata["input_tokens"] > 0
+    assert aggregate.usage_metadata["output_tokens"] > 0
+    assert aggregate.usage_metadata["total_tokens"] > 0
 
 
 async def test_astream() -> None:
     """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI()
 
-    full: Optional[BaseMessageChunk] = None
-    async for chunk in llm.astream("I'm Pickle Rick"):
-        assert isinstance(chunk.content, str)
-        full = chunk if full is None else full + chunk
+    async def _test_stream(stream: AsyncIterator, expect_usage: bool) -> None:
+        full: Optional[BaseMessageChunk] = None
+        chunks_with_token_counts = 0
+        chunks_with_response_metadata = 0
+        async for chunk in stream:
+            assert isinstance(chunk.content, str)
+            full = chunk if full is None else full + chunk
+            assert isinstance(chunk, AIMessageChunk)
+            if chunk.usage_metadata is not None:
+                chunks_with_token_counts += 1
+            if chunk.response_metadata:
+                chunks_with_response_metadata += 1
+        assert isinstance(full, AIMessageChunk)
+        if chunks_with_response_metadata != 1:
+            raise AssertionError(
+                "Expected exactly one chunk with metadata. "
+                "AIMessageChunk aggregation can add these metadata. Check that "
+                "this is behaving properly."
+            )
+        assert full.response_metadata.get("finish_reason") is not None
+        assert full.response_metadata.get("model_name") is not None
+        if expect_usage:
+            if chunks_with_token_counts != 1:
+                raise AssertionError(
+                    "Expected exactly one chunk with token counts. "
+                    "AIMessageChunk aggregation adds counts. Check that "
+                    "this is behaving properly."
+                )
+            assert full.usage_metadata is not None
+            assert full.usage_metadata["input_tokens"] > 0
+            assert full.usage_metadata["output_tokens"] > 0
+            assert full.usage_metadata["total_tokens"] > 0
+        else:
+            assert chunks_with_token_counts == 0
+            assert full.usage_metadata is None
+
+    llm = ChatOpenAI(temperature=0, max_tokens=5)
+    await _test_stream(llm.astream("Hello"), expect_usage=False)
+    await _test_stream(
+        llm.astream("Hello", stream_options={"include_usage": True}),
+        expect_usage=True,
+    )
+    await _test_stream(
+        llm.astream("Hello", stream_usage=True),
+        expect_usage=True,
+    )
+    llm = ChatOpenAI(
+        temperature=0,
+        max_tokens=5,
+        model_kwargs={"stream_options": {"include_usage": True}},
+    )
+    await _test_stream(llm.astream("Hello"), expect_usage=True)
+    await _test_stream(
+        llm.astream("Hello", stream_options={"include_usage": False}),
+        expect_usage=False,
+    )
+    llm = ChatOpenAI(
+        temperature=0,
+        max_tokens=5,
+        stream_usage=True,
+    )
+    await _test_stream(llm.astream("Hello"), expect_usage=True)
+    await _test_stream(
+        llm.astream("Hello", stream_usage=False),
+        expect_usage=False,
+    )
 
 
 async def test_abatch() -> None:
@@ -396,6 +484,7 @@ async def test_ainvoke() -> None:
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
+    assert result.response_metadata.get("model_name") is not None
 
 
 def test_invoke() -> None:
@@ -404,6 +493,7 @@ def test_invoke() -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+    assert result.response_metadata.get("model_name") is not None
 
 
 def test_response_metadata() -> None:
@@ -477,6 +567,15 @@ class GenerateUsername(BaseModel):
 
     name: str
     hair_color: str
+
+
+class MakeASandwich(BaseModel):
+    "Make a sandwich given a list of ingredients."
+
+    bread_type: str
+    cheese_type: str
+    condiments: List[str]
+    vegetables: List[str]
 
 
 def test_tool_use() -> None:
@@ -561,6 +660,21 @@ def test_manual_tool_call_msg() -> None:
     ]
     with pytest.raises(Exception):
         llm_with_tool.invoke(msgs)
+
+
+def test_bind_tools_tool_choice() -> None:
+    """Test passing in manually construct tool call message."""
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+    for tool_choice in ("any", "required"):
+        llm_with_tools = llm.bind_tools(
+            tools=[GenerateUsername, MakeASandwich], tool_choice=tool_choice
+        )
+        msg = cast(AIMessage, llm_with_tools.invoke("how are you"))
+        assert msg.tool_calls
+
+    llm_with_tools = llm.bind_tools(tools=[GenerateUsername, MakeASandwich])
+    msg = cast(AIMessage, llm_with_tools.invoke("how are you"))
+    assert not msg.tool_calls
 
 
 def test_openai_structured_output() -> None:

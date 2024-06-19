@@ -55,7 +55,7 @@ class TestChatKinetica:
 
         monkeypatch.setattr(ChatKinetica, "_execute_sql", patch_execute_sql)
 
-        kinetica_llm = ChatKinetica()
+        kinetica_llm = ChatKinetica()  # type: ignore[call-arg]
 
         test_messages = kinetica_llm.load_messages_from_context("test")
         LOG.info(f"test_messages: {test_messages}")
