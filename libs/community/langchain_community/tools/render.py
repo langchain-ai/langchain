@@ -39,6 +39,8 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
                 "required": ["__arg1"],
                 "type": "object",
             },
+            "few_shot_examples": tool.few_shot_examples,
+            "return_parameters": None,
         }
 
 
@@ -64,6 +66,8 @@ def format_tool_to_gigachat_function(tool: BaseTool) -> FunctionDescription:
                 "required": ["__arg1"],
                 "type": "object",
             },
+            "few_shot_examples": tool.few_shot_examples,
+            "return_parameters": None,
         }
 
 
