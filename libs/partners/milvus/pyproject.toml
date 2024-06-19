@@ -13,7 +13,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.2.0"
-pymilvus = "^2.4.3"
+pymilvus = "^2.4.3"  #
 scipy = "^1.7"
 
 [tool.poetry.group.test]
