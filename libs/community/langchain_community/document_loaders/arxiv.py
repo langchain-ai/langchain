@@ -13,7 +13,7 @@ class ArxivLoader(BaseLoader):
 
     Setup:
         Install ``arxiv`` and ``PyMuPDF`` packages.
-        ``PyMuPDF`` transforms PDF files downloaded from the arxiv.org site 
+        ``PyMuPDF`` transforms PDF files downloaded from the arxiv.org site
         into the text format.
 
         .. code-block:: bash
@@ -45,9 +45,9 @@ class ArxivLoader(BaseLoader):
             From the Perspective of Reasoning Paths Aggre
             {
                 'Published': '2024-02-29',
-                'Title': 'Understanding the Reasoning Ability of Language Models From the 
+                'Title': 'Understanding the Reasoning Ability of Language Models From the
                         Perspective of Reasoning Paths Aggregation',
-                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan, 
+                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan,
                         Wenhu Chen, William Yang Wang',
                 'Summary': 'Pre-trained language models (LMs) are able to perform complex reasoning
                         without explicit fine-tuning...'
@@ -73,8 +73,8 @@ class ArxivLoader(BaseLoader):
             Understanding the Reasoning Ability of Language Models
             From the Perspective of Reasoning Paths Aggre
             {
-                'Published': '2024-02-29', 
-                'Title': 'Understanding the Reasoning Ability of Language Models From the 
+                'Published': '2024-02-29',
+                'Title': 'Understanding the Reasoning Ability of Language Models From the
                         Perspective of Reasoning Paths Aggregation',
                 'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan,
                         Wenhu Chen, William Yang Wang',
