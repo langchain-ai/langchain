@@ -1747,6 +1747,7 @@ def test_split_json_with_lists() -> None:
 
     assert len(texts_list) >= len(texts)
 
+
 def test_split_json_many_calls():
     x = {"a": 1, "b": 2}
     y = {"c": 3, "d": 4}
