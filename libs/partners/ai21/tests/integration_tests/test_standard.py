@@ -10,98 +10,38 @@ from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
 from langchain_ai21 import ChatAI21
 
 
-class TestAI21J2(ChatModelIntegrationTests):
+class BaseTestAI21(ChatModelIntegrationTests):
     def teardown(self) -> None:
         # avoid getting rate limited
         time.sleep(1)
 
-    @pytest.fixture
+    @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatAI21
 
     @pytest.mark.xfail(reason="Emits AIMessage instead of AIMessageChunk.")
-    def test_stream(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-    ) -> None:
-        super().test_stream(
-            chat_model_class,
-            chat_model_params,
-        )
+    def test_stream(self, model: BaseChatModel) -> None:
+        super().test_stream(model)
 
     @pytest.mark.xfail(reason="Emits AIMessage instead of AIMessageChunk.")
-    async def test_astream(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-    ) -> None:
-        await super().test_astream(
-            chat_model_class,
-            chat_model_params,
-        )
+    async def test_astream(self, model: BaseChatModel) -> None:
+        await super().test_astream(model)
 
     @pytest.mark.xfail(reason="Not implemented.")
-    def test_usage_metadata(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-    ) -> None:
-        super().test_usage_metadata(
-            chat_model_class,
-            chat_model_params,
-        )
+    def test_usage_metadata(self, model: BaseChatModel) -> None:
+        super().test_usage_metadata(model)
 
-    @pytest.fixture
+
+class TestAI21J2(BaseTestAI21):
+    @property
     def chat_model_params(self) -> dict:
         return {
             "model": "j2-ultra",
         }
 
 
-class TestAI21Jamba(ChatModelIntegrationTests):
-    def teardown(self) -> None:
-        # avoid getting rate limited
-        time.sleep(1)
-
-    @pytest.fixture
-    def chat_model_class(self) -> Type[BaseChatModel]:
-        return ChatAI21
-
-    @pytest.mark.xfail(reason="Emits AIMessage instead of AIMessageChunk.")
-    def test_stream(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-    ) -> None:
-        super().test_stream(
-            chat_model_class,
-            chat_model_params,
-        )
-
-    @pytest.mark.xfail(reason="Emits AIMessage instead of AIMessageChunk.")
-    async def test_astream(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-    ) -> None:
-        await super().test_astream(
-            chat_model_class,
-            chat_model_params,
-        )
-
-    @pytest.mark.xfail(reason="Not implemented.")
-    def test_usage_metadata(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-    ) -> None:
-        super().test_usage_metadata(
-            chat_model_class,
-            chat_model_params,
-        )
-
-    @pytest.fixture
+class TestAI21Jamba(BaseTestAI21):
+    @property
     def chat_model_params(self) -> dict:
         return {
             "model": "jamba-instruct-preview",

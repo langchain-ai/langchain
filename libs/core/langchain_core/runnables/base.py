@@ -13,6 +13,7 @@ from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     AsyncIterator,
     Awaitable,
     Callable,
@@ -79,7 +80,7 @@ from langchain_core.runnables.utils import (
     is_async_callable,
     is_async_generator,
 )
-from langchain_core.utils.aiter import atee, py_anext
+from langchain_core.utils.aiter import aclosing, atee, py_anext
 from langchain_core.utils.iter import safetee
 
 if TYPE_CHECKING:
@@ -1141,8 +1142,9 @@ class Runnable(Generic[Input, Output], ABC):
                 'Only versions "v1" and "v2" of the schema is currently supported.'
             )
 
-        async for event in event_stream:
-            yield event
+        async with aclosing(event_stream):
+            async for event in event_stream:
+                yield event
 
     def transform(
         self,
@@ -1948,7 +1950,7 @@ class Runnable(Generic[Input, Output], ABC):
                 kwargs["run_manager"] = run_manager
             context = copy_context()
             context.run(_set_config_context, child_config)
-            iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
+            iterator_ = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
 
             if stream_handler := next(
                 (
@@ -1960,7 +1962,11 @@ class Runnable(Generic[Input, Output], ABC):
                 None,
             ):
                 # populates streamed_output in astream_log() output if needed
-                iterator = stream_handler.tap_output_aiter(run_manager.run_id, iterator)
+                iterator = stream_handler.tap_output_aiter(
+                    run_manager.run_id, iterator_
+                )
+            else:
+                iterator = iterator_
             try:
                 while True:
                     if accepts_context(asyncio.create_task):
@@ -2001,6 +2007,9 @@ class Runnable(Generic[Input, Output], ABC):
             raise
         else:
             await run_manager.on_chain_end(final_output, inputs=final_input)
+        finally:
+            if hasattr(iterator_, "aclose"):
+                await iterator_.aclose()
 
 
 class RunnableSerializable(Serializable, Runnable[Input, Output]):
@@ -3907,23 +3916,29 @@ class RunnableLambda(Runnable[Input, Output]):
 
         if is_async_generator(afunc):
             output: Optional[Output] = None
-            async for chunk in cast(
-                AsyncIterator[Output],
-                acall_func_with_variable_args(
-                    cast(Callable, afunc),
-                    input,
-                    config,
-                    run_manager,
-                    **kwargs,
-                ),
-            ):
-                if output is None:
-                    output = chunk
-                else:
-                    try:
-                        output = output + chunk  # type: ignore[operator]
-                    except TypeError:
+            async with aclosing(
+                cast(
+                    AsyncGenerator[Any, Any],
+                    acall_func_with_variable_args(
+                        cast(Callable, afunc),
+                        input,
+                        config,
+                        run_manager,
+                        **kwargs,
+                    ),
+                )
+            ) as stream:
+                async for chunk in cast(
+                    AsyncIterator[Output],
+                    stream,
+                ):
+                    if output is None:
                         output = chunk
+                    else:
+                        try:
+                            output = output + chunk  # type: ignore[operator]
+                        except TypeError:
+                            output = chunk
         else:
             output = await acall_func_with_variable_args(
                 cast(Callable, afunc), input, config, run_manager, **kwargs
