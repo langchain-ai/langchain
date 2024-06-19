@@ -228,7 +228,8 @@ def execute(
     """Execute a prompty.
 
     Args:
-        prompt: The prompt to execute. Can be a path to a prompty file or a Prompty object.
+        prompt: The prompt to execute.
+            Can be a path to a prompty file or a Prompty object.
         configuration: The configuration to use. Defaults to {}.
         parameters: The parameters to use. Defaults to {}.
         inputs: The inputs to the prompty. Defaults to {}.
