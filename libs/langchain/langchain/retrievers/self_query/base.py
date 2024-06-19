@@ -113,6 +113,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         SupabaseVectorStore: SupabaseVectorTranslator,
         TimescaleVector: TimescaleVectorTranslator,
         OpenSearchVectorSearch: OpenSearchTranslator,
+        CommunityMongoDBAtlasVectorSearch: MongoDBAtlasTranslator,
     }
     if isinstance(vectorstore, DatabricksVectorSearch):
         return DatabricksVectorSearchTranslator()
