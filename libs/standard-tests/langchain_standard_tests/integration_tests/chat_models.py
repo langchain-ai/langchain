@@ -1,5 +1,7 @@
+import base64
 import json
 
+import httpx
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
@@ -176,10 +178,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result_list_content = model_with_tools.invoke(messages_list_content)
         assert isinstance(result_list_content, AIMessage)
 
-    def test_structured_few_shot_examples(
-        self,
-        model: BaseChatModel,
-    ) -> None:
+    def test_structured_few_shot_examples(self, model: BaseChatModel) -> None:
         """
         Test that model can process few-shot examples with tool calls.
         """
@@ -212,3 +211,19 @@ class ChatModelIntegrationTests(ChatModelTests):
         ]
         result_string_content = model_with_tools.invoke(messages_string_content)
         assert isinstance(result_string_content, AIMessage)
+
+    def test_image_inputs(self, model: BaseChatModel) -> None:
+        if not self.supports_image_inputs:
+            return
+        image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "describe the weather in this image"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ],
+        )
+        model.invoke([message])
