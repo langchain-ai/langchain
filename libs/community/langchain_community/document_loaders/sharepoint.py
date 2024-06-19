@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Iterator, List, Optional, Sequence
 
-import requests # type: ignore
+import requests  # type: ignore
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import Field
@@ -42,16 +42,26 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
 
     @property
     def _file_types(self) -> Sequence[_FileType]:
-        """Return supported file types."""
+        """Return supported file types.
+        Returns:
+            A sequence of supported file types.
+        """
         return _FileType.DOC, _FileType.DOCX, _FileType.PDF
 
     @property
     def _scopes(self) -> List[str]:
-        """Return required scopes."""
+        """Return required scopes.
+        Returns:
+            List[str]: A list of required scopes.
+        """
         return ["sharepoint", "basic"]
 
     def lazy_load(self) -> Iterator[Document]:
-        """Load documents lazily. Use this when working at a large scale."""
+        """
+        Load documents lazily. Use this when working at a large scale.
+        Yields:
+            Document: A document object representing the parsed blob.
+        """
         try:
             from O365.drive import Drive, Folder
         except ImportError:
@@ -118,6 +128,14 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
                     yield blob_part
 
     def authorized_identities(self, file_id: str) -> List:
+        """
+        Retrieve the access identities (user/group emails) for a given file.
+        Args:
+            file_id (str): The ID of the file.
+        Returns:
+            List: A list of group names (email addresses) that have
+                  access to the file.
+        """
         data = self._fetch_access_token()
         access_token = data.get("access_token")
         url = (
@@ -144,12 +162,29 @@ class SharePointLoader(O365BaseLoader, BaseLoader):
         return group_names
 
     def _fetch_access_token(self) -> Any:
-        with open(self.token_path) as f:
+        """
+        Fetch the access token from the token file.
+        Returns:
+            The access token as a dictionary.
+        """
+        with open(self.token_path, encoding="utf-8") as f:
             s = f.read()
         data = json.loads(s)
         return data
 
     def get_extended_metadata(self, file_id: str) -> dict:
+        """
+        Retrieve extended metadata for a file in SharePoint.
+        As of today, following fields are supported in the extended metadata:
+        - size: size of the source file.
+        - owner: display name of the owner of the source file.
+        - full_path: pretty human readable path of the source file.
+        Args:
+            file_id (str): The ID of the file.
+        Returns:
+            dict: A dictionary containing the extended metadata of the file,
+                  including size, owner, and full path.
+        """
         data = self._fetch_access_token()
         access_token = data.get("access_token")
         url = (
