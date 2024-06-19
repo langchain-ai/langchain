@@ -24,7 +24,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
     def supports_image_inputs(self) -> bool:
         return True
 
-    def test_image_token_counting(self, model: BaseChatModel) -> None:
+    def test_image_token_counting_jpeg(self, model: BaseChatModel) -> None:
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         message = HumanMessage(
             content=[
@@ -45,6 +45,39 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         message = HumanMessage(
             content=[
                 {"type": "text", "text": "describe the weather in this image"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                },
+            ],
+        )
+        expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
+            "input_tokens"
+        ]
+        actual = model.get_num_tokens_from_messages([message])
+        assert expected == actual
+
+    def test_image_token_counting_png(self, model: BaseChatModel) -> None:
+        image_url = "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png"
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "how many dice are in this image"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": image_url},
+                },
+            ],
+        )
+        expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
+            "input_tokens"
+        ]
+        actual = model.get_num_tokens_from_messages([message])
+        assert expected == actual
+
+        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+        message = HumanMessage(
+            content=[
+                {"type": "text", "text": "how many dice are in this image"},
                 {
                     "type": "image_url",
                     "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
