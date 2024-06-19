@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 
 
 MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], Dict[str, Any]]
+GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
 class RunnableWithMessageHistory(RunnableBindingBase):
@@ -87,8 +88,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             RunnableLambda,
             ConfigurableFieldSpec,
             RunnablePassthrough,
-            RunnableWithMessageHistory
         )
+        from langchain_core.runnables.history import RunnableWithMessageHistory
 
 
         class InMemoryHistory(BaseChatMessageHistory, BaseModel):
@@ -126,7 +127,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
             from langchain_community.chat_models import ChatAnthropic
             from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-            from langchain_core.runnables import RunnableWithMessageHistory
+            from langchain_core.runnables.history import RunnableWithMessageHistory
 
 
             prompt = ChatPromptTemplate.from_messages([
@@ -215,7 +216,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
     """
 
-    get_session_history: Callable[..., BaseChatMessageHistory]
+    get_session_history: GetSessionHistoryCallable
     input_messages_key: Optional[str] = None
     output_messages_key: Optional[str] = None
     history_messages_key: Optional[str] = None
@@ -235,7 +236,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             ],
             LanguageModelLike,
         ],
-        get_session_history: Callable[..., BaseChatMessageHistory],
+        get_session_history: GetSessionHistoryCallable,
         *,
         input_messages_key: Optional[str] = None,
         output_messages_key: Optional[str] = None,
@@ -523,7 +524,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         return config
 
 
-def _get_parameter_names(callable_: Callable[..., BaseChatMessageHistory]) -> List[str]:
+def _get_parameter_names(callable_: GetSessionHistoryCallable) -> List[str]:
     """Get the parameter names of the callable."""
     sig = inspect.signature(callable_)
     return list(sig.parameters.keys())
