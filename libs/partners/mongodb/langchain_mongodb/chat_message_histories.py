@@ -39,6 +39,7 @@ class MongoDBChatMessageHistory(BaseChatMessageHistory):
         session_id: str,
         database_name: str = DEFAULT_DBNAME,
         collection_name: str = DEFAULT_COLLECTION_NAME,
+       *,
         session_id_key: str = DEFAULT_SESSION_ID_KEY,
         history_key: str = DEFAULT_HISTORY_KEY,
         create_index: bool = True,
