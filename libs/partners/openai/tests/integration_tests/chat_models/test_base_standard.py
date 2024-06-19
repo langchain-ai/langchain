@@ -24,6 +24,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
     def supports_image_inputs(self) -> bool:
         return True
 
+    # TODO: Add to standard tests if reliable token counting is added to other models.
     def test_image_token_counting_jpeg(self, model: BaseChatModel) -> None:
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         message = HumanMessage(
@@ -80,7 +81,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
                 {"type": "text", "text": "how many dice are in this image"},
                 {
                     "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    "image_url": {"url": f"data:image/png;base64,{image_data}"},
                 },
             ],
         )
