@@ -2,22 +2,19 @@ from openai import OpenAI
 from typing import Text, Dict, Any, Literal
 from mindsdb_sdk.utils.mind import Mind, create_mind
 
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, PrivateAttr, root_validator
+from langchain_core.pydantic_v1 import PrivateAttr, root_validator
 
-from langchain_community.utilities.mindsdb.database_mind.database_models import validate_data_source_connection_args
-
-DEFAULT_API_BASE = "https://llm.mdb.ai"
-DEFAULT_MODEL = "gpt-3.5-turbo"
+from langchain_community.utilities.mindsdb import BaseMindWrapper
+from langchain_community.utilities.mindsdb.database_mind.database_models import (
+    get_supported_data_sources,
+    validate_data_source_connection_args
+)
 
 
 # TODO: Support openai < 1
-class DatabaseMindWrapper(BaseModel):
-    mindsdb_api_key: SecretStr = Field(default=None)
-    mindsdb_api_base: Text = Field(default=DEFAULT_API_BASE)
-    model: Text = Field(default=DEFAULT_MODEL)
-    name: Text
-    description: Text
-    data_source_type: Text = Literal['postgres']
+class DatabaseMindWrapper(BaseMindWrapper):
+    data_source_description: Text
+    data_source_type: Text = Literal[tuple([key for key, val in get_supported_data_sources().items()])]
     data_source_connection_args: Dict
 
     _mind: Mind = PrivateAttr(default=None)
@@ -52,7 +49,7 @@ class DatabaseMindWrapper(BaseModel):
     def _create_mind(self) -> None:
         self._mind = create_mind(
             name=self.name,
-            description=self.description,
+            description=self.data_source_description,
             base_url=self.mindsdb_api_base,
             api_key=self.mindsdb_api_key.get_secret_value(),
             model=self.model,
