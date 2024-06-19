@@ -773,7 +773,7 @@ class BaseChatOpenAI(BaseChatModel):
             for key, value in message.items():
                 if isinstance(value, list):
                     for val in value:
-                        if val["type"] == "text" or isinstance(val, str):
+                        if isinstance(val, str) or val["type"] == "text":
                             text = val["text"] if isinstance(val, dict) else val
                             num_tokens += len(encoding.encode(text))
                         elif val["type"] == "image_url":
