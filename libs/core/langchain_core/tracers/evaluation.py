@@ -31,7 +31,7 @@ def wait_for_all_evaluators() -> None:
 
 
 class EvaluatorCallbackHandler(BaseTracer):
-    """A tracer that runs a run evaluator whenever a run is persisted.
+    """Tracer that runs a run evaluator whenever a run is persisted.
 
     Parameters
     ----------
@@ -64,7 +64,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         The LangSmith project name to be organize eval chain runs under.
     """
 
-    name = "evaluator_callback_handler"
+    name: str = "evaluator_callback_handler"
 
     def __init__(
         self,

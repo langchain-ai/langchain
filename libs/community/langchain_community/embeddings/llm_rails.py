@@ -56,7 +56,7 @@ class LLMRailsEmbeddings(BaseModel, Embeddings):
         """
         response = requests.post(
             "https://api.llmrails.com/v1/embeddings",
-            headers={"X-API-KEY": self.api_key.get_secret_value()},
+            headers={"X-API-KEY": self.api_key.get_secret_value()},  # type: ignore[union-attr]
             json={"input": texts, "model": self.model},
             timeout=60,
         )

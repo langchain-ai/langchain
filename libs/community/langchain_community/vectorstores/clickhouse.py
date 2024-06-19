@@ -39,6 +39,7 @@ class ClickhouseSettings(BaseSettings):
         port (int) : URL port to connect with HTTP. Defaults to 8443.
         username (str) : Username to login. Defaults to None.
         password (str) : Password to login. Defaults to None.
+        secure (bool) : Connect to server over secure connection. Defaults to False.
         index_type (str): index type string.
         index_param (list): index build parameter.
         index_query_params(dict): index query parameters.
@@ -72,7 +73,9 @@ class ClickhouseSettings(BaseSettings):
     username: Optional[str] = None
     password: Optional[str] = None
 
-    index_type: str = "annoy"
+    secure: bool = False
+
+    index_type: Optional[str] = "annoy"
     # Annoy supports L2Distance and cosineDistance.
     index_param: Optional[Union[List, Dict]] = ["'L2Distance'", 100]
     index_query_params: Dict[str, str] = {}
@@ -172,23 +175,15 @@ class Clickhouse(VectorStore):
                 else ""
             )
             if isinstance(self.config.index_param, Dict)
-            else ",".join([str(p) for p in self.config.index_param])
-            if isinstance(self.config.index_param, List)
-            else self.config.index_param
+            else (
+                ",".join([str(p) for p in self.config.index_param])
+                if isinstance(self.config.index_param, List)
+                else self.config.index_param
+            )
         )
 
-        self.schema = f"""\
-CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
-    {self.config.column_map['id']} Nullable(String),
-    {self.config.column_map['document']} Nullable(String),
-    {self.config.column_map['embedding']} Array(Float32),
-    {self.config.column_map['metadata']} JSON,
-    {self.config.column_map['uuid']} UUID DEFAULT generateUUIDv4(),
-    CONSTRAINT cons_vec_len CHECK length({self.config.column_map['embedding']}) = {dim},
-    INDEX vec_idx {self.config.column_map['embedding']} TYPE \
-{self.config.index_type}({index_params}) GRANULARITY 1000
-) ENGINE = MergeTree ORDER BY uuid SETTINGS index_granularity = 8192\
-"""
+        self.schema = self._schema(dim, index_params)
+
         self.dim = dim
         self.BS = "\\"
         self.must_escape = ("\\", "'")
@@ -201,22 +196,102 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
             port=self.config.port,
             username=self.config.username,
             password=self.config.password,
+            secure=self.config.secure,
             **kwargs,
         )
         # Enable JSON type
         self.client.command("SET allow_experimental_object_type=1")
-        # Enable Annoy index
-        self.client.command("SET allow_experimental_annoy_index=1")
+        if self.config.index_type:
+            # Enable index
+            self.client.command(
+                f"SET allow_experimental_{self.config.index_type}_index=1"
+            )
         self.client.command(self.schema)
+
+    def _schema(self, dim: int, index_params: Optional[str] = "") -> str:
+        """Create table schema
+        :param dim: dimension of embeddings
+        :param index_params: parameters used for index
+
+        This function returns a `CREATE TABLE` statement based on the value of
+        `self.config.index_type`.
+        If an index type is specified that index will be created, otherwise
+        no index will be created.
+        In the case of there being no index, a linear scan will be performed
+        when the embedding field is queried.
+        """
+
+        if self.config.index_type:
+            return f"""\
+        CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
+            {self.config.column_map['id']} Nullable(String),
+            {self.config.column_map['document']} Nullable(String),
+            {self.config.column_map['embedding']} Array(Float32),
+            {self.config.column_map['metadata']} JSON,
+            {self.config.column_map['uuid']} UUID DEFAULT generateUUIDv4(),
+            CONSTRAINT cons_vec_len CHECK length(
+                {self.config.column_map['embedding']}) = {dim},
+            INDEX vec_idx {self.config.column_map['embedding']} TYPE \
+        {self.config.index_type}({index_params}) GRANULARITY 1000
+        ) ENGINE = MergeTree ORDER BY uuid SETTINGS index_granularity = 8192\
+        """
+        else:
+            return f"""\
+                CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
+                    {self.config.column_map['id']} Nullable(String),
+                    {self.config.column_map['document']} Nullable(String),
+                    {self.config.column_map['embedding']} Array(Float32),
+                    {self.config.column_map['metadata']} JSON,
+                    {self.config.column_map['uuid']} UUID DEFAULT generateUUIDv4(),
+                    CONSTRAINT cons_vec_len CHECK length({
+                        self.config.column_map['embedding']}) = {dim}
+                ) ENGINE = MergeTree ORDER BY uuid
+                """
 
     @property
     def embeddings(self) -> Embeddings:
+        """Provides access to the embedding mechanism used by the Clickhouse instance.
+
+        This property allows direct access to the embedding function or model being
+        used by the Clickhouse instance to convert text documents into embedding vectors
+        for vector similarity search.
+
+        Returns:
+            The `Embeddings` instance associated with this Clickhouse instance.
+        """
         return self.embedding_function
 
     def escape_str(self, value: str) -> str:
+        """Escape special characters in a string for Clickhouse SQL queries.
+
+        This method is used internally to prepare strings for safe insertion
+        into SQL queries by escaping special characters that might otherwise
+        interfere with the query syntax.
+
+        Args:
+            value: The string to be escaped.
+
+        Returns:
+            The escaped string, safe for insertion into SQL queries.
+        """
         return "".join(f"{self.BS}{c}" if c in self.must_escape else c for c in value)
 
     def _build_insert_sql(self, transac: Iterable, column_names: Iterable[str]) -> str:
+        """Construct an SQL query for inserting data into the Clickhouse database.
+
+        This method formats and constructs an SQL `INSERT` query string using the
+        provided transaction data and column names. It is utilized internally during
+        the process of batch insertion of documents and their embeddings into the
+        database.
+
+        Args:
+            transac: iterable of tuples, representing a row of data to be inserted.
+            column_names: iterable of strings representing the names of the columns
+                into which data will be inserted.
+
+        Returns:
+            A string containing the constructed SQL `INSERT` query.
+        """
         ks = ",".join(column_names)
         _data = []
         for n in transac:
@@ -231,6 +306,17 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         return i_str
 
     def _insert(self, transac: Iterable, column_names: Iterable[str]) -> None:
+        """Execute an SQL query to insert data into the Clickhouse database.
+
+        This method performs the actual insertion of data into the database by
+        executing the SQL query constructed by `_build_insert_sql`. It's a critical
+        step in adding new documents and their associated data into the vector store.
+
+        Args:
+            transac:iterable of tuples, representing a row of data to be inserted.
+            column_names: An iterable of strings representing the names of the columns
+                into which data will be inserted.
+        """
         _insert_query = self._build_insert_sql(transac, column_names)
         self.client.command(_insert_query)
 
@@ -345,6 +431,21 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
     def _build_query_sql(
         self, q_emb: List[float], topk: int, where_str: Optional[str] = None
     ) -> str:
+        """Construct an SQL query for performing a similarity search.
+
+        This internal method generates an SQL query for finding the top-k most similar
+        vectors in the database to a given query vector.It allows for optional filtering
+        conditions to be applied via a WHERE clause.
+
+        Args:
+            q_emb: The query vector as a list of floats.
+            topk: The number of top similar items to retrieve.
+            where_str: opt str representing additional WHERE conditions for the query
+                Defaults to None.
+
+        Returns:
+            A string containing the SQL query for the similarity search.
+        """
         q_emb_str = ",".join(map(str, q_emb))
         if where_str:
             where_str = f"PREWHERE {where_str}"

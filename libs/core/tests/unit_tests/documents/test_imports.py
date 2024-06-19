@@ -1,6 +1,6 @@
 from langchain_core.documents import __all__
 
-EXPECTED_ALL = ["Document", "BaseDocumentTransformer"]
+EXPECTED_ALL = ["Document", "BaseDocumentTransformer", "BaseDocumentCompressor"]
 
 
 def test_all_imports() -> None:

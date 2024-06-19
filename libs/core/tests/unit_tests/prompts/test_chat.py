@@ -28,7 +28,8 @@ from langchain_core.prompts.chat import (
 )
 
 
-def create_messages() -> List[BaseMessagePromptTemplate]:
+@pytest.fixture
+def messages() -> List[BaseMessagePromptTemplate]:
     """Create messages."""
     system_message_prompt = SystemMessagePromptTemplate(
         prompt=PromptTemplate(
@@ -63,11 +64,14 @@ def create_messages() -> List[BaseMessagePromptTemplate]:
     ]
 
 
-def create_chat_prompt_template() -> ChatPromptTemplate:
+@pytest.fixture
+def chat_prompt_template(
+    messages: List[BaseMessagePromptTemplate],
+) -> ChatPromptTemplate:
     """Create a chat prompt template."""
     return ChatPromptTemplate(
         input_variables=["foo", "bar", "context"],
-        messages=create_messages(),
+        messages=messages,  # type: ignore[arg-type]
     )
 
 
@@ -95,6 +99,79 @@ def test_create_chat_prompt_template_from_template_partial() -> None:
     assert output_prompt.prompt == expected_prompt
 
 
+def test_create_system_message_prompt_template_from_template_partial() -> None:
+    """Create a system message prompt template with partials."""
+
+    graph_creator_content = """
+    Your instructions are:
+    {instructions}
+    History:
+    {history}
+    """
+    json_prompt_instructions: dict = {}
+    graph_analyst_template = SystemMessagePromptTemplate.from_template(
+        template=graph_creator_content,
+        input_variables=["history"],
+        partial_variables={"instructions": json_prompt_instructions},
+    )
+    assert graph_analyst_template.format(history="history") == SystemMessage(
+        content="\n    Your instructions are:\n  "
+        "  {}\n    History:\n    "
+        "history\n    "
+    )
+
+
+def test_create_system_message_prompt_list_template() -> None:
+    graph_creator_content1 = """
+    This is the prompt for the first test:
+    {variables}
+    """
+    graph_creator_content2 = """
+    This is the prompt for the second test:
+        {variables}
+        """
+    graph_analyst_template = SystemMessagePromptTemplate.from_template(
+        template=[graph_creator_content1, graph_creator_content2],
+        input_variables=["variables"],
+    )
+    assert graph_analyst_template.format(variables="foo") == SystemMessage(
+        content=[
+            {
+                "type": "text",
+                "text": "\n    This is the prompt for the first test:\n    foo\n    ",
+            },
+            {
+                "type": "text",
+                "text": "\n    This is the prompt for "
+                "the second test:\n        foo\n        ",
+            },
+        ]
+    )
+
+
+def test_create_system_message_prompt_list_template_partial_variables_not_null() -> (
+    None
+):
+    graph_creator_content1 = """
+    This is the prompt for the first test:
+    {variables}
+    """
+    graph_creator_content2 = """
+    This is the prompt for the second test:
+        {variables}
+        """
+
+    try:
+        graph_analyst_template = SystemMessagePromptTemplate.from_template(
+            template=[graph_creator_content1, graph_creator_content2],
+            input_variables=["variables"],
+            partial_variables={"variables": "foo"},
+        )
+        graph_analyst_template.format(variables="foo")
+    except ValueError as e:
+        assert str(e) == "Partial variables are not supported for list of templates."
+
+
 def test_message_prompt_template_from_template_file() -> None:
     expected = ChatMessagePromptTemplate(
         prompt=PromptTemplate(
@@ -110,10 +187,9 @@ def test_message_prompt_template_from_template_file() -> None:
     assert expected == actual
 
 
-def test_chat_prompt_template() -> None:
+async def test_chat_prompt_template(chat_prompt_template: ChatPromptTemplate) -> None:
     """Test chat prompt template."""
-    prompt_template = create_chat_prompt_template()
-    prompt = prompt_template.format_prompt(foo="foo", bar="bar", context="context")
+    prompt = chat_prompt_template.format_prompt(foo="foo", bar="bar", context="context")
     assert isinstance(prompt, ChatPromptValue)
     messages = prompt.to_messages()
     assert len(messages) == 4
@@ -121,6 +197,12 @@ def test_chat_prompt_template() -> None:
     assert messages[1].content == "Hello foo, I'm bar. Thanks for the context"
     assert messages[2].content == "I'm an AI. I'm foo. I'm bar."
     assert messages[3].content == "I'm a generic message. I'm foo. I'm bar."
+
+    async_prompt = await chat_prompt_template.aformat_prompt(
+        foo="foo", bar="bar", context="context"
+    )
+
+    assert async_prompt.to_messages() == messages
 
     string = prompt.to_string()
     expected = (
@@ -131,20 +213,25 @@ def test_chat_prompt_template() -> None:
     )
     assert string == expected
 
-    string = prompt_template.format(foo="foo", bar="bar", context="context")
+    string = chat_prompt_template.format(foo="foo", bar="bar", context="context")
+    assert string == expected
+
+    string = await chat_prompt_template.aformat(foo="foo", bar="bar", context="context")
     assert string == expected
 
 
-def test_chat_prompt_template_from_messages() -> None:
+def test_chat_prompt_template_from_messages(
+    messages: List[BaseMessagePromptTemplate],
+) -> None:
     """Test creating a chat prompt template from messages."""
-    chat_prompt_template = ChatPromptTemplate.from_messages(create_messages())
+    chat_prompt_template = ChatPromptTemplate.from_messages(messages)
     assert sorted(chat_prompt_template.input_variables) == sorted(
         ["context", "foo", "bar"]
     )
     assert len(chat_prompt_template.messages) == 4
 
 
-def test_chat_prompt_template_from_messages_using_role_strings() -> None:
+async def test_chat_prompt_template_from_messages_using_role_strings() -> None:
     """Test creating a chat prompt template from role string messages."""
     template = ChatPromptTemplate.from_messages(
         [
@@ -153,6 +240,40 @@ def test_chat_prompt_template_from_messages_using_role_strings() -> None:
             ("ai", "I'm doing well, thanks!"),
             ("human", "{user_input}"),
         ]
+    )
+
+    expected = [
+        SystemMessage(
+            content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
+        ),
+        HumanMessage(
+            content="Hello, how are you doing?", additional_kwargs={}, example=False
+        ),
+        AIMessage(
+            content="I'm doing well, thanks!", additional_kwargs={}, example=False
+        ),
+        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+    ]
+
+    messages = template.format_messages(name="Bob", user_input="What is your name?")
+    assert messages == expected
+
+    messages = await template.aformat_messages(
+        name="Bob", user_input="What is your name?"
+    )
+    assert messages == expected
+
+
+def test_chat_prompt_template_from_messages_mustache() -> None:
+    """Test creating a chat prompt template from role string messages."""
+    template = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are a helpful AI bot. Your name is {{name}}."),
+            ("human", "Hello, how are you doing?"),
+            ("ai", "I'm doing well, thanks!"),
+            ("human", "{{user_input}}"),
+        ],
+        "mustache",
     )
 
     messages = template.format_messages(name="Bob", user_input="What is your name?")
@@ -171,11 +292,12 @@ def test_chat_prompt_template_from_messages_using_role_strings() -> None:
     ]
 
 
-def test_chat_prompt_template_with_messages() -> None:
-    messages: List[Union[BaseMessagePromptTemplate, BaseMessage]] = (
-        create_messages() + [HumanMessage(content="foo")]
+def test_chat_prompt_template_with_messages(
+    messages: List[BaseMessagePromptTemplate],
+) -> None:
+    chat_prompt_template = ChatPromptTemplate.from_messages(
+        messages + [HumanMessage(content="foo")]
     )
-    chat_prompt_template = ChatPromptTemplate.from_messages(messages)
     assert sorted(chat_prompt_template.input_variables) == sorted(
         ["context", "foo", "bar"]
     )
@@ -191,10 +313,12 @@ def test_chat_invalid_input_variables_extra() -> None:
     messages = [HumanMessage(content="foo")]
     with pytest.raises(ValueError):
         ChatPromptTemplate(
-            messages=messages, input_variables=["foo"], validate_template=True
+            messages=messages,  # type: ignore[arg-type]
+            input_variables=["foo"],
+            validate_template=True,  # type: ignore[arg-type]
         )
     assert (
-        ChatPromptTemplate(messages=messages, input_variables=["foo"]).input_variables
+        ChatPromptTemplate(messages=messages, input_variables=["foo"]).input_variables  # type: ignore[arg-type]
         == []
     )
 
@@ -203,16 +327,19 @@ def test_chat_invalid_input_variables_missing() -> None:
     messages = [HumanMessagePromptTemplate.from_template("{foo}")]
     with pytest.raises(ValueError):
         ChatPromptTemplate(
-            messages=messages, input_variables=[], validate_template=True
+            messages=messages,  # type: ignore[arg-type]
+            input_variables=[],
+            validate_template=True,  # type: ignore[arg-type]
         )
     assert ChatPromptTemplate(
-        messages=messages, input_variables=[]
+        messages=messages,  # type: ignore[arg-type]
+        input_variables=[],  # type: ignore[arg-type]
     ).input_variables == ["foo"]
 
 
 def test_infer_variables() -> None:
     messages = [HumanMessagePromptTemplate.from_template("{foo}")]
-    prompt = ChatPromptTemplate(messages=messages)
+    prompt = ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
     assert prompt.input_variables == ["foo"]
 
 
@@ -223,7 +350,7 @@ def test_chat_valid_with_partial_variables() -> None:
         )
     ]
     prompt = ChatPromptTemplate(
-        messages=messages,
+        messages=messages,  # type: ignore[arg-type]
         input_variables=["question", "context"],
         partial_variables={"formatins": "some structure"},
     )
@@ -237,14 +364,15 @@ def test_chat_valid_infer_variables() -> None:
             "Do something with {question} using {context} giving it like {formatins}"
         )
     ]
-    prompt = ChatPromptTemplate(
-        messages=messages, partial_variables={"formatins": "some structure"}
+    prompt = ChatPromptTemplate(  # type: ignore[call-arg]
+        messages=messages,  # type: ignore[arg-type]
+        partial_variables={"formatins": "some structure"},  # type: ignore[arg-type]
     )
     assert set(prompt.input_variables) == {"question", "context"}
     assert prompt.partial_variables == {"formatins": "some structure"}
 
 
-def test_chat_from_role_strings() -> None:
+async def test_chat_from_role_strings() -> None:
     """Test instantiation of chat template from role strings."""
     with pytest.warns(LangChainPendingDeprecationWarning):
         template = ChatPromptTemplate.from_role_strings(
@@ -256,13 +384,18 @@ def test_chat_from_role_strings() -> None:
             ]
         )
 
-    messages = template.format_messages(question="How are you?", quack="duck")
-    assert messages == [
+    expected = [
         ChatMessage(content="You are a bot.", role="system"),
         ChatMessage(content="hello!", role="assistant"),
         ChatMessage(content="How are you?", role="human"),
         ChatMessage(content="duck", role="other"),
     ]
+
+    messages = template.format_messages(question="How are you?", quack="duck")
+    assert messages == expected
+
+    messages = await template.aformat_messages(question="How are you?", quack="duck")
+    assert messages == expected
 
 
 @pytest.mark.parametrize(
@@ -367,7 +500,7 @@ def test_chat_message_partial() -> None:
     assert template2.format(input="hello") == get_buffer_string(expected)
 
 
-def test_chat_tmpl_from_messages_multipart_text() -> None:
+async def test_chat_tmpl_from_messages_multipart_text() -> None:
     template = ChatPromptTemplate.from_messages(
         [
             ("system", "You are an AI assistant named {name}."),
@@ -380,7 +513,6 @@ def test_chat_tmpl_from_messages_multipart_text() -> None:
             ),
         ]
     )
-    messages = template.format_messages(name="R2D2")
     expected = [
         SystemMessage(content="You are an AI assistant named R2D2."),
         HumanMessage(
@@ -390,10 +522,14 @@ def test_chat_tmpl_from_messages_multipart_text() -> None:
             ]
         ),
     ]
+    messages = template.format_messages(name="R2D2")
+    assert messages == expected
+
+    messages = await template.aformat_messages(name="R2D2")
     assert messages == expected
 
 
-def test_chat_tmpl_from_messages_multipart_text_with_template() -> None:
+async def test_chat_tmpl_from_messages_multipart_text_with_template() -> None:
     template = ChatPromptTemplate.from_messages(
         [
             ("system", "You are an AI assistant named {name}."),
@@ -406,7 +542,6 @@ def test_chat_tmpl_from_messages_multipart_text_with_template() -> None:
             ),
         ]
     )
-    messages = template.format_messages(name="R2D2", object_name="image")
     expected = [
         SystemMessage(content="You are an AI assistant named R2D2."),
         HumanMessage(
@@ -416,10 +551,14 @@ def test_chat_tmpl_from_messages_multipart_text_with_template() -> None:
             ]
         ),
     ]
+    messages = template.format_messages(name="R2D2", object_name="image")
+    assert messages == expected
+
+    messages = await template.aformat_messages(name="R2D2", object_name="image")
     assert messages == expected
 
 
-def test_chat_tmpl_from_messages_multipart_image() -> None:
+async def test_chat_tmpl_from_messages_multipart_image() -> None:
     base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
     other_base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
     template = ChatPromptTemplate.from_messages(
@@ -453,9 +592,6 @@ def test_chat_tmpl_from_messages_multipart_image() -> None:
                 ],
             ),
         ]
-    )
-    messages = template.format_messages(
-        name="R2D2", my_image=base64_image, my_other_image=other_base64_image
     )
     expected = [
         SystemMessage(content="You are an AI assistant named R2D2."),
@@ -494,6 +630,14 @@ def test_chat_tmpl_from_messages_multipart_image() -> None:
             ]
         ),
     ]
+    messages = template.format_messages(
+        name="R2D2", my_image=base64_image, my_other_image=other_base64_image
+    )
+    assert messages == expected
+
+    messages = await template.aformat_messages(
+        name="R2D2", my_image=base64_image, my_other_image=other_base64_image
+    )
     assert messages == expected
 
 
@@ -503,7 +647,7 @@ def test_messages_placeholder() -> None:
         prompt.format_messages()
     prompt = MessagesPlaceholder("history", optional=True)
     assert prompt.format_messages() == []
-    prompt.format_messages(
+    assert prompt.format_messages(
         history=[("system", "You are an AI assistant."), "Hello!"]
     ) == [
         SystemMessage(content="You are an AI assistant."),
@@ -519,8 +663,64 @@ def test_messages_placeholder_with_max() -> None:
     ]
     prompt = MessagesPlaceholder("history")
     assert prompt.format_messages(history=history) == history
-    prompt = MessagesPlaceholder("history", k=1)
+    prompt = MessagesPlaceholder("history", k=2)
     assert prompt.format_messages(history=history) == [
         AIMessage(content="2"),
         AIMessage(content="3"),
     ]
+
+
+def test_chat_prompt_message_placeholder_partial() -> None:
+    prompt = ChatPromptTemplate.from_messages([MessagesPlaceholder("history")])
+    prompt = prompt.partial(history=[("system", "foo")])
+    assert prompt.format_messages() == [SystemMessage(content="foo")]
+    assert prompt.format_messages(history=[("system", "bar")]) == [
+        SystemMessage(content="bar")
+    ]
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            MessagesPlaceholder("history", optional=True),
+        ]
+    )
+    assert prompt.format_messages() == []
+    prompt = prompt.partial(history=[("system", "foo")])
+    assert prompt.format_messages() == [SystemMessage(content="foo")]
+
+
+def test_chat_prompt_message_placeholder_tuple() -> None:
+    prompt = ChatPromptTemplate.from_messages([("placeholder", "{convo}")])
+    assert prompt.format_messages(convo=[("user", "foo")]) == [
+        HumanMessage(content="foo")
+    ]
+
+    assert prompt.format_messages() == []
+
+    # Is optional = True
+    optional_prompt = ChatPromptTemplate.from_messages(
+        [("placeholder", ["{convo}", False])]
+    )
+    assert optional_prompt.format_messages(convo=[("user", "foo")]) == [
+        HumanMessage(content="foo")
+    ]
+    with pytest.raises(KeyError):
+        assert optional_prompt.format_messages() == []
+
+
+async def test_messages_prompt_accepts_list() -> None:
+    prompt = ChatPromptTemplate.from_messages([MessagesPlaceholder("history")])
+    value = prompt.invoke([("user", "Hi there")])  # type: ignore
+    assert value.to_messages() == [HumanMessage(content="Hi there")]
+
+    value = await prompt.ainvoke([("user", "Hi there")])  # type: ignore
+    assert value.to_messages() == [HumanMessage(content="Hi there")]
+
+    # Assert still raises a nice error
+    prompt = ChatPromptTemplate.from_messages(
+        [("system", "You are a {foo}"), MessagesPlaceholder("history")]
+    )
+    with pytest.raises(TypeError):
+        prompt.invoke([("user", "Hi there")])  # type: ignore
+
+    with pytest.raises(TypeError):
+        await prompt.ainvoke([("user", "Hi there")])  # type: ignore

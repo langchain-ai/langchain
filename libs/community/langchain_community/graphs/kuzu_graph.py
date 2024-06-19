@@ -36,10 +36,7 @@ class KuzuGraph:
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
         """Query Kùzu database"""
-        params_list = []
-        for param_name in params:
-            params_list.append([param_name, params[param_name]])
-        result = self.conn.execute(query, params_list)
+        result = self.conn.execute(query, params)
         column_names = result.get_column_names()
         return_list = []
         while result.has_next():
@@ -79,20 +76,16 @@ class KuzuGraph:
 
         rel_properties = []
         for table in rel_tables:
-            current_table_schema = {"properties": [], "label": table["name"]}
-            properties_text = self.conn._connection.get_rel_property_names(
-                table["name"]
-            ).split("\n")
-            for i, line in enumerate(properties_text):
-                # The first 3 lines defines src, dst and name, so we skip them
-                if i < 3:
-                    continue
-                if not line:
-                    continue
-                property_name, property_type = line.strip().split(" ")
-                current_table_schema["properties"].append(
-                    (property_name, property_type)
-                )
+            table_name = table["name"]
+            current_table_schema = {"properties": [], "label": table_name}
+            query_result = self.conn.execute(
+                f"CALL table_info('{table_name}') RETURN *;"
+            )
+            while query_result.has_next():
+                row = query_result.get_next()
+                prop_name = row[1]
+                prop_type = row[2]
+                current_table_schema["properties"].append((prop_name, prop_type))
             rel_properties.append(current_table_schema)
 
         self.schema = (

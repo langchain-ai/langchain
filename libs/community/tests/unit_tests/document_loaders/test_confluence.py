@@ -1,5 +1,5 @@
 import unittest
-from typing import Dict
+from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -108,10 +108,12 @@ class TestConfluenceLoader:
             self._get_mock_page_restrictions("456"),
         ]
 
-        confluence_loader = self._get_mock_confluence_loader(mock_confluence)
-
         mock_page_ids = ["123", "456"]
-        documents = confluence_loader.load(page_ids=mock_page_ids)
+        confluence_loader = self._get_mock_confluence_loader(
+            mock_confluence, page_ids=mock_page_ids
+        )
+
+        documents = list(confluence_loader.lazy_load())
 
         assert mock_confluence.get_page_by_id.call_count == 2
         assert mock_confluence.get_all_restrictions_for_content.call_count == 2
@@ -139,9 +141,11 @@ class TestConfluenceLoader:
             self._get_mock_page_restrictions("456"),
         ]
 
-        confluence_loader = self._get_mock_confluence_loader(mock_confluence)
+        confluence_loader = self._get_mock_confluence_loader(
+            mock_confluence, space_key=self.MOCK_SPACE_KEY, max_pages=2
+        )
 
-        documents = confluence_loader.load(space_key=self.MOCK_SPACE_KEY, max_pages=2)
+        documents = confluence_loader.load()
 
         assert mock_confluence.get_all_pages_from_space.call_count == 1
 
@@ -155,6 +159,7 @@ class TestConfluenceLoader:
         assert mock_confluence.cql.call_count == 0
         assert mock_confluence.get_page_child_by_type.call_count == 0
 
+    @pytest.mark.requires("markdownify")
     def test_confluence_loader_when_content_format_and_keep_markdown_format_enabled(
         self, mock_confluence: MagicMock
     ) -> None:
@@ -168,14 +173,15 @@ class TestConfluenceLoader:
             self._get_mock_page_restrictions("456"),
         ]
 
-        confluence_loader = self._get_mock_confluence_loader(mock_confluence)
-
-        documents = confluence_loader.load(
+        confluence_loader = self._get_mock_confluence_loader(
+            mock_confluence,
             space_key=self.MOCK_SPACE_KEY,
             content_format=ContentFormat.VIEW,
             keep_markdown_format=True,
             max_pages=2,
         )
+
+        documents = confluence_loader.load()
 
         assert mock_confluence.get_all_pages_from_space.call_count == 1
 
@@ -190,12 +196,13 @@ class TestConfluenceLoader:
         assert mock_confluence.get_page_child_by_type.call_count == 0
 
     def _get_mock_confluence_loader(
-        self, mock_confluence: MagicMock
+        self, mock_confluence: MagicMock, **kwargs: Any
     ) -> ConfluenceLoader:
         confluence_loader = ConfluenceLoader(
             self.CONFLUENCE_URL,
             username=self.MOCK_USERNAME,
             api_key=self.MOCK_API_TOKEN,
+            **kwargs,
         )
         confluence_loader.confluence = mock_confluence
         return confluence_loader

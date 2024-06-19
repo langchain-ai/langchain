@@ -125,12 +125,16 @@ class BearlyInterpreterTool:
             headers={"Authorization": self.api_key},
         ).json()
         return {
-            "stdout": base64.b64decode(resp["stdoutBasesixtyfour"]).decode()
-            if resp["stdoutBasesixtyfour"]
-            else "",
-            "stderr": base64.b64decode(resp["stderrBasesixtyfour"]).decode()
-            if resp["stderrBasesixtyfour"]
-            else "",
+            "stdout": (
+                base64.b64decode(resp["stdoutBasesixtyfour"]).decode()
+                if resp["stdoutBasesixtyfour"]
+                else ""
+            ),
+            "stderr": (
+                base64.b64decode(resp["stderrBasesixtyfour"]).decode()
+                if resp["stderrBasesixtyfour"]
+                else ""
+            ),
             "fileLinks": resp["fileLinks"],
             "exitCode": resp["exitCode"],
         }

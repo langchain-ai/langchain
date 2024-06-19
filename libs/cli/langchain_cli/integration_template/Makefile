@@ -5,15 +5,16 @@ all: help
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
+integration_test integration_tests: TEST_FILE = tests/integration_tests/
 
-integration_tests: TEST_FILE = tests/integration_tests/
 
-test integration_tests:
+# unit tests are run with the --disable-socket flag to prevent network calls
+test tests:
+	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+
+# integration tests are run without the --disable-socket flag to allow network calls
+integration_test integration_tests:
 	poetry run pytest $(TEST_FILE)
-
-tests:
-	poetry run pytest $(TEST_FILE)
-
 
 ######################
 # LINTING AND FORMATTING
@@ -32,7 +33,7 @@ lint lint_diff lint_package lint_tests:
 	poetry run ruff .
 	poetry run ruff format $(PYTHON_FILES) --diff
 	poetry run ruff --select I $(PYTHON_FILES)
-	mkdir $(MYPY_CACHE); poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	mkdir -p $(MYPY_CACHE); poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
 	poetry run ruff format $(PYTHON_FILES)

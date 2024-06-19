@@ -26,7 +26,7 @@ GUARDRAILS_TRIGGER = os.environ.get(
 class BedrockAsyncCallbackHandler(AsyncCallbackHandler):
     """Async callback handler that can be used to handle callbacks from langchain."""
 
-    guardrails_intervened = False
+    guardrails_intervened: bool = False
 
     async def on_llm_error(
         self,
@@ -37,12 +37,12 @@ class BedrockAsyncCallbackHandler(AsyncCallbackHandler):
         if reason == "GUARDRAIL_INTERVENED":
             self.guardrails_intervened = True
 
-    def get_response(self):
+    def get_response(self):  # type: ignore[no-untyped-def]
         return self.guardrails_intervened
 
 
 @pytest.fixture(autouse=True)
-def bedrock_runtime_client():
+def bedrock_runtime_client():  # type: ignore[no-untyped-def]
     import boto3
 
     try:
@@ -56,7 +56,7 @@ def bedrock_runtime_client():
 
 
 @pytest.fixture(autouse=True)
-def bedrock_client():
+def bedrock_client():  # type: ignore[no-untyped-def]
     import boto3
 
     try:
@@ -70,7 +70,7 @@ def bedrock_client():
 
 
 @pytest.fixture
-def bedrock_models(bedrock_client):
+def bedrock_models(bedrock_client):  # type: ignore[no-untyped-def]
     """List bedrock models."""
     response = bedrock_client.list_foundation_models().get("modelSummaries")
     models = {}
@@ -79,20 +79,20 @@ def bedrock_models(bedrock_client):
     return models
 
 
-def test_claude_instant_v1(bedrock_runtime_client, bedrock_models):
+def test_claude_instant_v1(bedrock_runtime_client, bedrock_models):  # type: ignore[no-untyped-def]
     try:
         llm = Bedrock(
             model_id="anthropic.claude-instant-v1",
             client=bedrock_runtime_client,
             model_kwargs={},
         )
-        output = llm("Say something positive:")
+        output = llm.invoke("Say something positive:")
         assert isinstance(output, str)
     except Exception as e:
         pytest.fail(f"can not instantiate claude-instant-v1: {e}", pytrace=False)
 
 
-def test_amazon_bedrock_guardrails_no_intervention_for_valid_query(
+def test_amazon_bedrock_guardrails_no_intervention_for_valid_query(  # type: ignore[no-untyped-def]
     bedrock_runtime_client, bedrock_models
 ):
     try:
@@ -106,13 +106,13 @@ def test_amazon_bedrock_guardrails_no_intervention_for_valid_query(
                 "trace": False,
             },
         )
-        output = llm("Say something positive:")
+        output = llm.invoke("Say something positive:")
         assert isinstance(output, str)
     except Exception as e:
         pytest.fail(f"can not instantiate claude-instant-v1: {e}", pytrace=False)
 
 
-def test_amazon_bedrock_guardrails_intervention_for_invalid_query(
+def test_amazon_bedrock_guardrails_intervention_for_invalid_query(  # type: ignore[no-untyped-def]
     bedrock_runtime_client, bedrock_models
 ):
     try:
@@ -131,6 +131,6 @@ def test_amazon_bedrock_guardrails_intervention_for_invalid_query(
     except Exception as e:
         pytest.fail(f"can not instantiate claude-instant-v1: {e}", pytrace=False)
     else:
-        llm(GUARDRAILS_TRIGGER)
+        llm.invoke(GUARDRAILS_TRIGGER)
         guardrails_intervened = handler.get_response()
         assert guardrails_intervened is True

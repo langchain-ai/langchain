@@ -14,6 +14,7 @@ from typing import (
 )
 
 import requests
+from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -58,6 +59,11 @@ def embed_with_retry(embeddings: VoyageEmbeddings, **kwargs: Any) -> Any:
     return _embed_with_retry(**kwargs)
 
 
+@deprecated(
+    since="0.0.29",
+    removal="0.3",
+    alternative_import="langchain_voyageai.VoyageAIEmbeddings",
+)
 class VoyageEmbeddings(BaseModel, Embeddings):
     """Voyage embedding models.
 
@@ -69,15 +75,15 @@ class VoyageEmbeddings(BaseModel, Embeddings):
 
             from langchain_community.embeddings import VoyageEmbeddings
 
-            voyage = VoyageEmbeddings(voyage_api_key="your-api-key")
+            voyage = VoyageEmbeddings(voyage_api_key="your-api-key", model="voyage-2")
             text = "This is a test query."
             query_result = voyage.embed_query(text)
     """
 
-    model: str = "voyage-01"
+    model: str
     voyage_api_base: str = "https://api.voyageai.com/v1/embeddings"
     voyage_api_key: Optional[SecretStr] = None
-    batch_size: int = 8
+    batch_size: int
     """Maximum number of texts to embed in each API request."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
@@ -86,6 +92,12 @@ class VoyageEmbeddings(BaseModel, Embeddings):
     show_progress_bar: bool = False
     """Whether to show a progress bar when embedding. Must have tqdm installed if set 
         to True."""
+    truncation: bool = True
+    """Whether to truncate the input texts to fit within the context length.
+    
+        If True, over-length input texts will be truncated to fit within the context 
+        length, before vectorized by the embedding model. If False, an error will be 
+        raised if any given text exceeds the context length."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -98,16 +110,37 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         values["voyage_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "voyage_api_key", "VOYAGE_API_KEY")
         )
+
+        if "model" not in values:
+            values["model"] = "voyage-01"
+            logger.warning(
+                "model will become a required arg for VoyageAIEmbeddings, "
+                "we recommend to specify it when using this class. "
+                "Currently the default is set to voyage-01."
+            )
+
+        if "batch_size" not in values:
+            values["batch_size"] = (
+                72
+                if "model" in values and (values["model"] in ["voyage-2", "voyage-02"])
+                else 7
+            )
+
         return values
 
     def _invocation_params(
         self, input: List[str], input_type: Optional[str] = None
     ) -> Dict:
         api_key = cast(SecretStr, self.voyage_api_key).get_secret_value()
-        params = {
+        params: Dict = {
             "url": self.voyage_api_base,
             "headers": {"Authorization": f"Bearer {api_key}"},
-            "json": {"model": self.model, "input": input, "input_type": input_type},
+            "json": {
+                "model": self.model,
+                "input": input,
+                "input_type": input_type,
+                "truncation": self.truncation,
+            },
             "timeout": self.request_timeout,
         }
         return params
@@ -175,7 +208,9 @@ class VoyageEmbeddings(BaseModel, Embeddings):
         Returns:
             Embedding for the text.
         """
-        return self._get_embeddings([text], input_type="query")[0]
+        return self._get_embeddings(
+            [text], batch_size=self.batch_size, input_type="query"
+        )[0]
 
     def embed_general_texts(
         self, texts: List[str], *, input_type: Optional[str] = None

@@ -24,7 +24,7 @@ integrations = ["AWS"]
 tags = ["conversation"]
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [build-system]
 requires = ["poetry-core"]

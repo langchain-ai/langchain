@@ -5,8 +5,9 @@ https://gist.github.com/foxmask/7b29c43a161e001ff04afdb2f181e31c
 import hashlib
 import logging
 from base64 import b64decode
+from pathlib import Path
 from time import strptime
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 from langchain_core.documents import Document
 
@@ -33,40 +34,39 @@ class EverNoteLoader(BaseLoader):
             notes into a single long Document.
         If this is set to True (default) then the only metadata on the document will be
             the 'source' which contains the file name of the export.
-    """  # noqa: E501
+    """
 
-    def __init__(self, file_path: str, load_single_document: bool = True):
+    def __init__(self, file_path: Union[str, Path], load_single_document: bool = True):
         """Initialize with file path."""
-        self.file_path = file_path
+        self.file_path = str(file_path)
         self.load_single_document = load_single_document
 
-    def load(self) -> List[Document]:
-        """Load documents from EverNote export file."""
-        documents = [
-            Document(
-                page_content=note["content"],
-                metadata={
-                    **{
-                        key: value
-                        for key, value in note.items()
-                        if key not in ["content", "content-raw", "resource"]
+    def _lazy_load(self) -> Iterator[Document]:
+        for note in self._parse_note_xml(self.file_path):
+            if note.get("content") is not None:
+                yield Document(
+                    page_content=note["content"],
+                    metadata={
+                        **{
+                            key: value
+                            for key, value in note.items()
+                            if key not in ["content", "content-raw", "resource"]
+                        },
+                        **{"source": self.file_path},
                     },
-                    **{"source": self.file_path},
-                },
-            )
-            for note in self._parse_note_xml(self.file_path)
-            if note.get("content") is not None
-        ]
+                )
 
+    def lazy_load(self) -> Iterator[Document]:
+        """Load documents from EverNote export file."""
         if not self.load_single_document:
-            return documents
-
-        return [
-            Document(
-                page_content="".join([document.page_content for document in documents]),
+            yield from self._lazy_load()
+        else:
+            yield Document(
+                page_content="".join(
+                    [document.page_content for document in self._lazy_load()]
+                ),
                 metadata={"source": self.file_path},
             )
-        ]
 
     @staticmethod
     def _parse_content(content: str) -> str:

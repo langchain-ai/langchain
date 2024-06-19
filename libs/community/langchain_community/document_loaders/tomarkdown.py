@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, List
+from typing import Iterator
 
 import requests
 from langchain_core.documents import Document
@@ -28,7 +28,3 @@ class ToMarkdownLoader(BaseLoader):
         text = response.json()["article"]
         metadata = {"source": self.url}
         yield Document(page_content=text, metadata=metadata)
-
-    def load(self) -> List[Document]:
-        """Load file."""
-        return list(self.lazy_load())

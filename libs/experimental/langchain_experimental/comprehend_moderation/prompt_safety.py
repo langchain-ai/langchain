@@ -7,6 +7,8 @@ from langchain_experimental.comprehend_moderation.base_moderation_exceptions imp
 
 
 class ComprehendPromptSafety:
+    """Class to handle prompt safety moderation."""
+
     def __init__(
         self,
         client: Any,

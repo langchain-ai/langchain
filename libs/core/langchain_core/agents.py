@@ -1,3 +1,33 @@
+"""
+**Agent** is a class that uses an LLM to choose a sequence of actions to take.
+
+In Chains, a sequence of actions is hardcoded. In Agents,
+a language model is used as a reasoning engine to determine which actions
+to take and in which order.
+
+Agents select and use **Tools** and **Toolkits** for actions.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    BaseSingleActionAgent --> LLMSingleActionAgent
+                              OpenAIFunctionsAgent
+                              XMLAgent
+                              Agent --> <name>Agent  # Examples: ZeroShotAgent, ChatAgent
+
+
+    BaseMultiActionAgent  --> OpenAIMultiFunctionsAgent
+
+
+**Main helpers:**
+
+.. code-block::
+
+    AgentType, AgentExecutor, AgentOutputParser, AgentExecutorIterator,
+    AgentAction, AgentFinish, AgentStep
+
+"""  # noqa: E501
 from __future__ import annotations
 
 import json

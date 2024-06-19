@@ -16,7 +16,7 @@ boto3 = ">=1.28.57"
 awscli = ">=1.29.57"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "rag_aws_bedrock"

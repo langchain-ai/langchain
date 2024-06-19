@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Iterator, Optional
 
 from langchain_core.documents import Document
 
@@ -20,7 +20,7 @@ class PsychicLoader(BaseLoader):
         """
 
         try:
-            from psychicapi import ConnectorId, Psychic  # noqa: F401
+            from psychicapi import ConnectorId, Psychic
         except ImportError:
             raise ImportError(
                 "`psychicapi` package not found, please run `pip install psychicapi`"
@@ -29,16 +29,12 @@ class PsychicLoader(BaseLoader):
         self.connector_id = ConnectorId(connector_id)
         self.account_id = account_id
 
-    def load(self) -> List[Document]:
-        """Load documents."""
-
+    def lazy_load(self) -> Iterator[Document]:
         psychic_docs = self.psychic.get_documents(
             connector_id=self.connector_id, account_id=self.account_id
         )
-        return [
-            Document(
+        for doc in psychic_docs.documents:
+            yield Document(
                 page_content=doc["content"],
                 metadata={"title": doc["title"], "source": doc["uri"]},
             )
-            for doc in psychic_docs.documents
-        ]

@@ -28,7 +28,7 @@ def _check_docarray_import() -> None:
     except ImportError:
         raise ImportError(
             "Could not import docarray python package. "
-            'Please install it with `pip install "langchain[docarray]"`.'
+            "Please install it with `pip install docarray`."
         )
 
 
@@ -51,9 +51,9 @@ class DocArrayIndex(VectorStore, ABC):
         from docarray.typing import NdArray
 
         class DocArrayDoc(BaseDoc):
-            text: Optional[str]
+            text: Optional[str] = Field(default=None, required=False)
             embedding: Optional[NdArray] = Field(**embeddings_params)
-            metadata: Optional[dict]
+            metadata: Optional[dict] = Field(default=None, required=False)
 
         return DocArrayDoc
 

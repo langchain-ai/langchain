@@ -1,4 +1,5 @@
 """Chain that takes in an input and produces an action and action input."""
+
 from __future__ import annotations
 
 import asyncio
@@ -185,7 +186,7 @@ class BaseSingleActionAgent(BaseModel):
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
                 json.dump(agent_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix.endswith((".yaml", ".yml")):
             with open(file_path, "w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
@@ -310,7 +311,7 @@ class BaseMultiActionAgent(BaseModel):
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
                 json.dump(agent_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix.endswith((".yaml", ".yml")):
             with open(file_path, "w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
@@ -345,6 +346,14 @@ class RunnableAgent(BaseSingleActionAgent):
     """Runnable to call to get agent action."""
     input_keys_arg: List[str] = []
     return_keys_arg: List[str] = []
+    stream_runnable: bool = True
+    """Whether to stream from the runnable or not.
+
+    If True then underlying LLM is invoked in a streaming fashion to make it possible
+        to get access to the individual LLM tokens when using stream_log with the Agent
+        Executor. If False then LLM is invoked in a non-streaming fashion and
+        individual LLM tokens will not be available in stream_log.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -378,17 +387,21 @@ class RunnableAgent(BaseSingleActionAgent):
             Action specifying what tool to use.
         """
         inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
-        # Use streaming to make sure that the underlying LLM is invoked in a streaming
-        # fashion to make it possible to get access to the individual LLM tokens
-        # when using stream_log with the Agent Executor.
-        # Because the response from the plan is not a generator, we need to
-        # accumulate the output into final output and return that.
         final_output: Any = None
-        for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
-            if final_output is None:
-                final_output = chunk
-            else:
-                final_output += chunk
+        if self.stream_runnable:
+            # Use streaming to make sure that the underlying LLM is invoked in a
+            # streaming
+            # fashion to make it possible to get access to the individual LLM tokens
+            # when using stream_log with the Agent Executor.
+            # Because the response from the plan is not a generator, we need to
+            # accumulate the output into final output and return that.
+            for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
+                if final_output is None:
+                    final_output = chunk
+                else:
+                    final_output += chunk
+        else:
+            final_output = self.runnable.invoke(inputs, config={"callbacks": callbacks})
 
         return final_output
 
@@ -414,18 +427,24 @@ class RunnableAgent(BaseSingleActionAgent):
         """
         inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
         final_output: Any = None
-        # Use streaming to make sure that the underlying LLM is invoked in a streaming
-        # fashion to make it possible to get access to the individual LLM tokens
-        # when using stream_log with the Agent Executor.
-        # Because the response from the plan is not a generator, we need to
-        # accumulate the output into final output and return that.
-        async for chunk in self.runnable.astream(
-            inputs, config={"callbacks": callbacks}
-        ):
-            if final_output is None:
-                final_output = chunk
-            else:
-                final_output += chunk
+        if self.stream_runnable:
+            # Use streaming to make sure that the underlying LLM is invoked in a
+            # streaming
+            # fashion to make it possible to get access to the individual LLM tokens
+            # when using stream_log with the Agent Executor.
+            # Because the response from the plan is not a generator, we need to
+            # accumulate the output into final output and return that.
+            async for chunk in self.runnable.astream(
+                inputs, config={"callbacks": callbacks}
+            ):
+                if final_output is None:
+                    final_output = chunk
+                else:
+                    final_output += chunk
+        else:
+            final_output = await self.runnable.ainvoke(
+                inputs, config={"callbacks": callbacks}
+            )
         return final_output
 
 
@@ -436,6 +455,14 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
     """Runnable to call to get agent actions."""
     input_keys_arg: List[str] = []
     return_keys_arg: List[str] = []
+    stream_runnable: bool = True
+    """Whether to stream from the runnable or not.
+
+    If True then underlying LLM is invoked in a streaming fashion to make it possible
+        to get access to the individual LLM tokens when using stream_log with the Agent
+        Executor. If False then LLM is invoked in a non-streaming fashion and
+        individual LLM tokens will not be available in stream_log.
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -477,17 +504,21 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
             Action specifying what tool to use.
         """
         inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
-        # Use streaming to make sure that the underlying LLM is invoked in a streaming
-        # fashion to make it possible to get access to the individual LLM tokens
-        # when using stream_log with the Agent Executor.
-        # Because the response from the plan is not a generator, we need to
-        # accumulate the output into final output and return that.
         final_output: Any = None
-        for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
-            if final_output is None:
-                final_output = chunk
-            else:
-                final_output += chunk
+        if self.stream_runnable:
+            # Use streaming to make sure that the underlying LLM is invoked in a
+            # streaming
+            # fashion to make it possible to get access to the individual LLM tokens
+            # when using stream_log with the Agent Executor.
+            # Because the response from the plan is not a generator, we need to
+            # accumulate the output into final output and return that.
+            for chunk in self.runnable.stream(inputs, config={"callbacks": callbacks}):
+                if final_output is None:
+                    final_output = chunk
+                else:
+                    final_output += chunk
+        else:
+            final_output = self.runnable.invoke(inputs, config={"callbacks": callbacks})
 
         return final_output
 
@@ -512,19 +543,25 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
             Action specifying what tool to use.
         """
         inputs = {**kwargs, **{"intermediate_steps": intermediate_steps}}
-        # Use streaming to make sure that the underlying LLM is invoked in a streaming
-        # fashion to make it possible to get access to the individual LLM tokens
-        # when using stream_log with the Agent Executor.
-        # Because the response from the plan is not a generator, we need to
-        # accumulate the output into final output and return that.
         final_output: Any = None
-        async for chunk in self.runnable.astream(
-            inputs, config={"callbacks": callbacks}
-        ):
-            if final_output is None:
-                final_output = chunk
-            else:
-                final_output += chunk
+        if self.stream_runnable:
+            # Use streaming to make sure that the underlying LLM is invoked in a
+            # streaming
+            # fashion to make it possible to get access to the individual LLM tokens
+            # when using stream_log with the Agent Executor.
+            # Because the response from the plan is not a generator, we need to
+            # accumulate the output into final output and return that.
+            async for chunk in self.runnable.astream(
+                inputs, config={"callbacks": callbacks}
+            ):
+                if final_output is None:
+                    final_output = chunk
+                else:
+                    final_output += chunk
+        else:
+            final_output = await self.runnable.ainvoke(
+                inputs, config={"callbacks": callbacks}
+            )
 
         return final_output
 
@@ -535,7 +572,7 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
-    removal="0.2.0",
+    removal="0.3.0",
 )
 class LLMSingleActionAgent(BaseSingleActionAgent):
     """Base class for single action agents."""
@@ -625,7 +662,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         "Use new agent constructor methods like create_react_agent, create_json_agent, "
         "create_structured_chat_agent, etc."
     ),
-    removal="0.2.0",
+    removal="0.3.0",
 )
 class Agent(BaseSingleActionAgent):
     """Agent that calls the language model and deciding the action.
@@ -890,7 +927,7 @@ class AgentExecutor(Chain):
     max_iterations: Optional[int] = 15
     """The maximum number of steps to take before ending the execution
     loop.
-    
+
     Setting to 'None' could lead to an infinite loop."""
     max_execution_time: Optional[float] = None
     """The maximum amount of wall clock time to spend in the execution
@@ -902,7 +939,7 @@ class AgentExecutor(Chain):
 
     `"force"` returns a string saying that it stopped because it met a
         time or iteration limit.
-    
+
     `"generate"` calls the agent's LLM Chain one final time to generate
         a final answer based on the previous steps.
     """
@@ -977,10 +1014,15 @@ class AgentExecutor(Chain):
             else:
                 multi_action = output_type == Union[List[AgentAction], AgentFinish]
 
+            stream_runnable = values.pop("stream_runnable", True)
             if multi_action:
-                values["agent"] = RunnableMultiActionAgent(runnable=agent)
+                values["agent"] = RunnableMultiActionAgent(
+                    runnable=agent, stream_runnable=stream_runnable
+                )
             else:
-                values["agent"] = RunnableAgent(runnable=agent)
+                values["agent"] = RunnableAgent(
+                    runnable=agent, stream_runnable=stream_runnable
+                )
         return values
 
     def save(self, file_path: Union[Path, str]) -> None:
@@ -1524,6 +1566,7 @@ class AgentExecutor(Chain):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.get("run_id"),
             yield_actions=True,
             **kwargs,
         )
@@ -1545,6 +1588,7 @@ class AgentExecutor(Chain):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.get("run_id"),
             yield_actions=True,
             **kwargs,
         )

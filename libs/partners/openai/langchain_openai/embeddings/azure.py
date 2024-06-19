@@ -1,4 +1,5 @@
 """Azure OpenAI embeddings wrapper."""
+
 from __future__ import annotations
 
 import os
@@ -23,18 +24,18 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
 
             from langchain_openai import AzureOpenAIEmbeddings
 
-            openai = AzureOpenAIEmbeddings(model=""text-embedding-3-large")
+            openai = AzureOpenAIEmbeddings(model="text-embedding-3-large")
     """
 
     azure_endpoint: Union[str, None] = None
     """Your Azure endpoint, including the resource.
 
         Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
-        
+
         Example: `https://example-resource.azure.openai.com/`
     """
     deployment: Optional[str] = Field(default=None, alias="azure_deployment")
-    """A model deployment. 
+    """A model deployment.
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
         Note: this means you won't be able to use non-deployment endpoints.
@@ -46,9 +47,9 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
 
         Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
 
-        For more: 
+        For more:
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """  # noqa: E501
+    """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
@@ -57,6 +58,8 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     openai_api_version: Optional[str] = Field(default=None, alias="api_version")
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     validate_base_url: bool = True
+    chunk_size: int = 2048
+    """Maximum number of texts to embed in each batch"""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -87,10 +90,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             or os.getenv("OPENAI_ORGANIZATION")
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
         values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
             "AZURE_OPENAI_ENDPOINT"
@@ -99,10 +99,6 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         values["azure_ad_token"] = (
             convert_to_secret_str(azure_ad_token) if azure_ad_token else None
         )
-        # Azure OpenAI embedding models allow a maximum of 16 texts
-        # at a time in each batch
-        # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
-        values["chunk_size"] = min(values["chunk_size"], 16)
         # For backwards compatibility. Before openai v1, no distinction was made
         # between azure_endpoint and base_url (openai_api_base).
         openai_api_base = values["openai_api_base"]
@@ -126,12 +122,16 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             "api_version": values["openai_api_version"],
             "azure_endpoint": values["azure_endpoint"],
             "azure_deployment": values["deployment"],
-            "api_key": values["openai_api_key"].get_secret_value()
-            if values["openai_api_key"]
-            else None,
-            "azure_ad_token": values["azure_ad_token"].get_secret_value()
-            if values["azure_ad_token"]
-            else None,
+            "api_key": (
+                values["openai_api_key"].get_secret_value()
+                if values["openai_api_key"]
+                else None
+            ),
+            "azure_ad_token": (
+                values["azure_ad_token"].get_secret_value()
+                if values["azure_ad_token"]
+                else None
+            ),
             "azure_ad_token_provider": values["azure_ad_token_provider"],
             "organization": values["openai_organization"],
             "base_url": values["openai_api_base"],
@@ -139,10 +139,17 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             "max_retries": values["max_retries"],
             "default_headers": values["default_headers"],
             "default_query": values["default_query"],
-            "http_client": values["http_client"],
         }
-        values["client"] = openai.AzureOpenAI(**client_params).embeddings
-        values["async_client"] = openai.AsyncAzureOpenAI(**client_params).embeddings
+        if not values.get("client"):
+            sync_specific = {"http_client": values["http_client"]}
+            values["client"] = openai.AzureOpenAI(
+                **client_params, **sync_specific
+            ).embeddings
+        if not values.get("async_client"):
+            async_specific = {"http_client": values["http_async_client"]}
+            values["async_client"] = openai.AsyncAzureOpenAI(
+                **client_params, **async_specific
+            ).embeddings
         return values
 
     @property

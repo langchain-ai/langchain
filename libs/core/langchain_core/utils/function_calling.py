@@ -1,7 +1,10 @@
 """Methods for creating function specs in the style of OpenAI Functions"""
+
 from __future__ import annotations
 
 import inspect
+import uuid
+from types import FunctionType, MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,6 +22,12 @@ from typing import (
 from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    ToolMessage,
+)
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.json_schema import dereference_refs
 
@@ -51,13 +60,16 @@ class ToolDescription(TypedDict):
     function: FunctionDescription
 
 
-def _rm_titles(kv: dict) -> dict:
+def _rm_titles(kv: dict, prev_key: str = "") -> dict:
     new_kv = {}
     for k, v in kv.items():
         if k == "title":
-            continue
+            if isinstance(v, dict) and prev_key == "properties" and "title" in v.keys():
+                new_kv[k] = _rm_titles(v, k)
+            else:
+                continue
         elif isinstance(v, dict):
-            new_kv[k] = _rm_titles(v)
+            new_kv[k] = _rm_titles(v, k)
         else:
             new_kv[k] = v
     return new_kv
@@ -66,7 +78,7 @@ def _rm_titles(kv: dict) -> dict:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def convert_pydantic_to_openai_function(
     model: Type[BaseModel],
@@ -90,7 +102,7 @@ def convert_pydantic_to_openai_function(
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def convert_pydantic_to_openai_tool(
     model: Type[BaseModel],
@@ -189,8 +201,11 @@ def _get_python_function_required_args(function: Callable) -> List[str]:
     required = spec.args[: -len(spec.defaults)] if spec.defaults else spec.args
     required += [k for k in spec.kwonlyargs if k not in (spec.kwonlydefaults or {})]
 
-    is_class = type(function) is type
-    if is_class and required[0] == "self":
+    is_function_type = isinstance(function, FunctionType)
+    is_method_type = isinstance(function, MethodType)
+    if required and is_function_type and required[0] == "self":
+        required = required[1:]
+    elif required and is_method_type and required[0] == "cls":
         required = required[1:]
     return required
 
@@ -198,7 +213,7 @@ def _get_python_function_required_args(function: Callable) -> List[str]:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def convert_python_function_to_openai_function(
     function: Callable,
@@ -224,7 +239,7 @@ def convert_python_function_to_openai_function(
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     """Format tool into the OpenAI function API."""
@@ -254,7 +269,7 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
     """Format tool into the OpenAI function API."""
@@ -270,7 +285,8 @@ def convert_to_openai_function(
     Args:
         function: Either a dictionary, a pydantic.BaseModel class, or a Python function.
             If a dictionary is passed in, it is assumed to already be a valid OpenAI
-            function.
+            function or a JSON schema with top-level 'title' and 'description' keys
+            specified.
 
     Returns:
         A dict version of the passed in function which is compatible with the
@@ -278,18 +294,33 @@ def convert_to_openai_function(
     """
     from langchain_core.tools import BaseTool
 
-    if isinstance(function, dict):
+    # already in OpenAI function format
+    if isinstance(function, dict) and all(
+        k in function for k in ("name", "description", "parameters")
+    ):
         return function
+    # a JSON schema with title and description
+    elif isinstance(function, dict) and all(
+        k in function for k in ("title", "description", "properties")
+    ):
+        function = function.copy()
+        return {
+            "name": function.pop("title"),
+            "description": function.pop("description"),
+            "parameters": function,
+        }
     elif isinstance(function, type) and issubclass(function, BaseModel):
         return cast(Dict, convert_pydantic_to_openai_function(function))
     elif isinstance(function, BaseTool):
-        return format_tool_to_openai_function(function)
+        return cast(Dict, format_tool_to_openai_function(function))
     elif callable(function):
         return convert_python_function_to_openai_function(function)
     else:
         raise ValueError(
-            f"Unsupported function type {type(function)}. Functions must be passed in"
-            f" as Dict, pydantic.BaseModel, or Callable."
+            f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
+            " as Dict, pydantic.BaseModel, or Callable. If they're a dict they must"
+            " either be in OpenAI function format or valid JSON schema with top-level"
+            " 'title' and 'description' keys."
         )
 
 
@@ -301,13 +332,107 @@ def convert_to_openai_tool(
     Args:
         tool: Either a dictionary, a pydantic.BaseModel class, Python function, or
             BaseTool. If a dictionary is passed in, it is assumed to already be a valid
-            OpenAI tool or OpenAI function.
+            OpenAI tool, OpenAI function, or a JSON schema with top-level 'title' and
+            'description' keys specified.
 
     Returns:
         A dict version of the passed in tool which is compatible with the
             OpenAI tool-calling API.
     """
-    if isinstance(tool, dict) and "type" in tool:
+    if isinstance(tool, dict) and tool.get("type") == "function" and "function" in tool:
         return tool
     function = convert_to_openai_function(tool)
     return {"type": "function", "function": function}
+
+
+def tool_example_to_messages(
+    input: str, tool_calls: List[BaseModel], tool_outputs: Optional[List[str]] = None
+) -> List[BaseMessage]:
+    """Convert an example into a list of messages that can be fed into an LLM.
+
+    This code is an adapter that converts a single example to a list of messages
+    that can be fed into a chat model.
+
+    The list of messages per example corresponds to:
+
+    1) HumanMessage: contains the content from which content should be extracted.
+    2) AIMessage: contains the extracted information from the model
+    3) ToolMessage: contains confirmation to the model that the model requested a tool
+        correctly.
+
+    The ToolMessage is required because some chat models are hyper-optimized for agents
+    rather than for an extraction use case.
+
+    Arguments:
+        input: string, the user input
+        tool_calls: List[BaseModel], a list of tool calls represented as Pydantic
+            BaseModels
+        tool_outputs: Optional[List[str]], a list of tool call outputs.
+            Does not need to be provided. If not provided, a placeholder value
+            will be inserted.
+
+    Returns:
+        A list of messages
+
+    Examples:
+
+        .. code-block:: python
+
+            from typing import List, Optional
+            from langchain_core.pydantic_v1 import BaseModel, Field
+            from langchain_openai import ChatOpenAI
+
+            class Person(BaseModel):
+                '''Information about a person.'''
+                name: Optional[str] = Field(..., description="The name of the person")
+                hair_color: Optional[str] = Field(
+                    ..., description="The color of the person's hair if known"
+                )
+                height_in_meters: Optional[str] = Field(
+                    ..., description="Height in METERs"
+                )
+
+            examples = [
+                (
+                    "The ocean is vast and blue. It's more than 20,000 feet deep.",
+                    Person(name=None, height_in_meters=None, hair_color=None),
+                ),
+                (
+                    "Fiona traveled far from France to Spain.",
+                    Person(name="Fiona", height_in_meters=None, hair_color=None),
+                ),
+            ]
+
+
+            messages = []
+
+            for txt, tool_call in examples:
+                messages.extend(
+                    tool_example_to_messages(txt, [tool_call])
+                )
+    """
+    messages: List[BaseMessage] = [HumanMessage(content=input)]
+    openai_tool_calls = []
+    for tool_call in tool_calls:
+        openai_tool_calls.append(
+            {
+                "id": str(uuid.uuid4()),
+                "type": "function",
+                "function": {
+                    # The name of the function right now corresponds to the name
+                    # of the pydantic model. This is implicit in the API right now,
+                    # and will be improved over time.
+                    "name": tool_call.__class__.__name__,
+                    "arguments": tool_call.json(),
+                },
+            }
+        )
+    messages.append(
+        AIMessage(content="", additional_kwargs={"tool_calls": openai_tool_calls})
+    )
+    tool_outputs = tool_outputs or ["You have correctly called this tool."] * len(
+        openai_tool_calls
+    )
+    for output, tool_call_dict in zip(tool_outputs, openai_tool_calls):
+        messages.append(ToolMessage(content=output, tool_call_id=tool_call_dict["id"]))  # type: ignore
+    return messages

@@ -2,7 +2,7 @@
 
 This template enables user to use `pgvector` for combining postgreSQL with semantic search / RAG. 
 
-It uses [PGVector](https://github.com/pgvector/pgvector) extension as shown in the [RAG empowered SQL cookbook](cookbook/retrieval_in_sql.ipynb)
+It uses [PGVector](https://github.com/pgvector/pgvector) extension as shown in the [RAG empowered SQL cookbook](https://github.com/langchain-ai/langchain/blob/master/cookbook/retrieval_in_sql.ipynb)
 
 ## Environment Setup
 
@@ -40,7 +40,7 @@ Apart from having `pgvector` extension enabled, you will need to do some setup b
 
 In order to run RAG over your postgreSQL database you will need to generate the embeddings for the specific columns you want. 
 
-This process is covered in the [RAG empowered SQL cookbook](cookbook/retrieval_in_sql.ipynb), but the overall approach consist of:
+This process is covered in the [RAG empowered SQL cookbook](https://github.com/langchain-ai/langchain/blob/master/cookbook/retrieval_in_sql.ipynb), but the overall approach consist of:
 1. Querying for unique values in the column
 2. Generating embeddings for those values
 3. Store the embeddings in a separate column or in an auxiliary table.
@@ -74,7 +74,7 @@ add_routes(app, sql_pgvector_chain, path="/sql-pgvector")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 

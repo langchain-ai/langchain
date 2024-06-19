@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 import pytest
 
@@ -7,7 +8,6 @@ from langchain_openai import OpenAI
 os.environ["OPENAI_API_KEY"] = "foo"
 
 
-@pytest.mark.requires("openai")
 def test_openai_model_param() -> None:
     llm = OpenAI(model="foo")
     assert llm.model_name == "foo"
@@ -15,19 +15,16 @@ def test_openai_model_param() -> None:
     assert llm.model_name == "foo"
 
 
-@pytest.mark.requires("openai")
 def test_openai_model_kwargs() -> None:
     llm = OpenAI(model_kwargs={"foo": "bar"})
     assert llm.model_kwargs == {"foo": "bar"}
 
 
-@pytest.mark.requires("openai")
 def test_openai_invalid_model_kwargs() -> None:
     with pytest.raises(ValueError):
         OpenAI(model_kwargs={"model_name": "foo"})
 
 
-@pytest.mark.requires("openai")
 def test_openai_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
         llm = OpenAI(foo="bar")
@@ -46,3 +43,17 @@ def mock_completion() -> dict:
         ],
         "usage": {"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 3},
     }
+
+
+@pytest.mark.parametrize("model", ["gpt-3.5-turbo-instruct", "text-davinci-003"])
+def test_get_token_ids(model: str) -> None:
+    OpenAI(model=model).get_token_ids("foo")
+    return
+
+
+def test_custom_token_counting() -> None:
+    def token_encoder(text: str) -> List[int]:
+        return [1, 2, 3]
+
+    llm = OpenAI(custom_get_token_ids=token_encoder)
+    assert llm.get_token_ids("foo") == [1, 2, 3]

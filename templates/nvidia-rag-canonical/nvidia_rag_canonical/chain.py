@@ -1,7 +1,6 @@
 import getpass
 import os
 
-from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import Milvus
 from langchain_core.output_parsers import StrOutputParser
@@ -13,6 +12,7 @@ from langchain_core.runnables import (
     RunnablePassthrough,
 )
 from langchain_nvidia_aiplay import ChatNVIDIA, NVIDIAEmbeddings
+from langchain_text_splitters.character import CharacterTextSplitter
 
 EMBEDDING_MODEL = "nvolveqa_40k"
 CHAT_MODEL = "llama2_13b"

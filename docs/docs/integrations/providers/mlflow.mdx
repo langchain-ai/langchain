@@ -51,7 +51,7 @@ mlflow deployments start-server --config-path /path/to/config.yaml
 > This module exports multivariate LangChain models in the langchain flavor and univariate LangChain
 > models in the pyfunc flavor.
 
-See the [API documentation and examples](https://www.mlflow.org/docs/latest/python_api/mlflow.langchain) for more information.
+See the [API documentation and examples](https://www.mlflow.org/docs/latest/llms/langchain/index.html) for more information.
 
 ## Completions Example
 
@@ -100,7 +100,7 @@ print(embeddings.embed_documents(["hello"]))
 
 ```python
 from langchain_community.chat_models import ChatMlflow
-from langchain.schema import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 
 chat = ChatMlflow(
     target_uri="http://127.0.0.1:5000",

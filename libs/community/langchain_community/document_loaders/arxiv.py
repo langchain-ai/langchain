@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Iterator, List, Optional
 
 from langchain_core.documents import Document
 
@@ -23,8 +23,8 @@ class ArxivLoader(BaseLoader):
             doc_content_chars_max=doc_content_chars_max, **kwargs
         )
 
-    def load(self) -> List[Document]:
-        return self.client.load(self.query)
+    def lazy_load(self) -> Iterator[Document]:
+        yield from self.client.lazy_load(self.query)
 
     def get_summaries_as_docs(self) -> List[Document]:
         return self.client.get_summaries_as_docs(self.query)

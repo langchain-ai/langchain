@@ -30,7 +30,7 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.chains import LLMChain
 
 
-@deprecated("0.1.0", alternative="create_json_chat_agent", removal="0.2.0")
+@deprecated("0.1.0", alternative="create_json_chat_agent", removal="0.3.0")
 class ConversationalChatAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 
@@ -88,7 +88,7 @@ class ConversationalChatAgent(Agent):
             HumanMessagePromptTemplate.from_template(final_prompt),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ]
-        return ChatPromptTemplate(input_variables=input_variables, messages=messages)
+        return ChatPromptTemplate(input_variables=input_variables, messages=messages)  # type: ignore[arg-type]
 
     def _construct_scratchpad(
         self, intermediate_steps: List[Tuple[AgentAction, str]]
@@ -125,7 +125,7 @@ class ConversationalChatAgent(Agent):
             input_variables=input_variables,
             output_parser=_output_parser,
         )
-        llm_chain = LLMChain(
+        llm_chain = LLMChain(  # type: ignore[misc]
             llm=llm,
             prompt=prompt,
             callback_manager=callback_manager,

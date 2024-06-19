@@ -4,33 +4,18 @@ from typing import Any, Dict, List, Optional, cast
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import BaseMessage
-from langchain_core.outputs import LLMResult
+from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.utils import guard_import
 
 
 def import_infino() -> Any:
     """Import the infino client."""
-    try:
-        from infinopy import InfinoClient
-    except ImportError:
-        raise ImportError(
-            "To use the Infino callbacks manager you need to have the"
-            " `infinopy` python package installed."
-            "Please install it with `pip install infinopy`"
-        )
-    return InfinoClient()
+    return guard_import("infinopy").InfinoClient()
 
 
 def import_tiktoken() -> Any:
     """Import tiktoken for counting tokens for OpenAI models."""
-    try:
-        import tiktoken
-    except ImportError:
-        raise ImportError(
-            "To use the ChatOpenAI model with Infino callback manager, you need to "
-            "have the `tiktoken` python package installed."
-            "Please install it with `pip install tiktoken`"
-        )
-    return tiktoken
+    return guard_import("tiktoken")
 
 
 def get_num_tokens(string: str, openai_model_name: str) -> int:
@@ -86,7 +71,7 @@ class InfinoCallbackHandler(BaseCallbackHandler):
             },
         }
         if self.verbose:
-            print(f"Tracking {key} with Infino: {payload}")
+            print(f"Tracking {key} with Infino: {payload}")  # noqa: T201
 
         # Append to Infino time series only if is_ts is True, otherwise
         # append to Infino log.
@@ -146,7 +131,7 @@ class InfinoCallbackHandler(BaseCallbackHandler):
         # Track completion token usage (for openai chat models).
         if self.is_chat_openai_model:
             messages = " ".join(
-                generation.message.content  # type: ignore[attr-defined]
+                cast(str, cast(ChatGeneration, generation).message.content)
                 for generation in generations
             )
             completion_tokens = get_num_tokens(
@@ -245,7 +230,7 @@ class InfinoCallbackHandler(BaseCallbackHandler):
                     self._send_to_infino("prompt_tokens", prompt_tokens)
 
         if self.verbose:
-            print(
+            print(  # noqa: T201
                 f"on_chat_model_start: is_chat_openai_model= \
                   {self.is_chat_openai_model}, \
                   chat_openai_model_name={self.chat_openai_model_name}"

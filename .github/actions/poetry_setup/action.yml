@@ -32,7 +32,7 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       id: cache-bin-poetry
       name: Cache Poetry binary - Python ${{ inputs.python-version }}
       env:
@@ -79,7 +79,7 @@ runs:
       run: pipx install "poetry==$POETRY_VERSION" --python '${{ steps.setup-python.outputs.python-path }}' --verbose
 
     - name: Restore pip and poetry cached dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       env:
         SEGMENT_DOWNLOAD_TIMEOUT_MIN: "4"
         WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}

@@ -4,7 +4,7 @@ import sys
 
 
 def main() -> int:
-    print("Hello World!")
+    print("Hello World!")  # noqa: T201
 
     return 0
 

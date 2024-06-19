@@ -15,7 +15,7 @@ tiktoken = "^0.5.1"
 cassio = "^0.1.3"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "cassandra_synonym_caching"

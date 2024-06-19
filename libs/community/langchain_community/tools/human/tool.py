@@ -8,8 +8,8 @@ from langchain_core.tools import BaseTool
 
 
 def _print_func(text: str) -> None:
-    print("\n")
-    print(text)
+    print("\n")  # noqa: T201
+    print(text)  # noqa: T201
 
 
 class HumanInputRun(BaseTool):

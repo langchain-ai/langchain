@@ -1,173 +1,42 @@
 # Anthropic
 
-All functionality related to Anthropic models.
+>[Anthropic](https://www.anthropic.com/) is an AI safety and research company, and is the creator of `Claude`.
+This page covers all integrations between `Anthropic` models and `LangChain`.
 
-[Anthropic](https://www.anthropic.com/) is an AI safety and research company, and is the creator of Claude.
-This page covers all integrations between Anthropic models and LangChain.
+## Installation and Setup
 
-## Prompting Overview
+To use `Anthropic` models, you need to install a python package:
 
-Claude is chat-based model, meaning it is trained on conversation data.
-However, it is a text based API, meaning it takes in single string.
-It expects this string to be in a particular format.
-This means that it is up the user to ensure that is the case.
-LangChain provides several utilities and helper functions to make sure prompts that you write -
-whether formatted as a string or as a list of messages - end up formatted correctly.
-
-Specifically, Claude is trained to fill in text for the Assistant role as part of an ongoing dialogue
-between a human user (`Human:`) and an AI assistant (`Assistant:`). Prompts sent via the API must contain
-`\n\nHuman:` and `\n\nAssistant:` as the signals of who's speaking.
-The final turn must always be `\n\nAssistant:` - the input string cannot have `\n\nHuman:` as the final role.
-
-Because Claude is chat-based but accepts a string as input, it can be treated as either a LangChain `ChatModel` or `LLM`.
-This means there are two wrappers in LangChain - `ChatAnthropic` and `Anthropic`.
-It is generally recommended to use the `ChatAnthropic` wrapper, and format your prompts as `ChatMessage`s (we will show examples of this below).
-This is because it keeps your prompt in a general format that you can easily then also use with other models (should you want to).
-However, if you want more fine-grained control over the prompt, you can use the `Anthropic` wrapper - we will show and example of this as well.
-The `Anthropic` wrapper however is deprecated, as all functionality can be achieved in a more generic way using `ChatAnthropic`.
-
-## Prompting Best Practices
-
-Anthropic models have several prompting best practices compared to OpenAI models.
-
-**No System Messages**
-
-Anthropic models are not trained on the concept of a "system message".
-We have worked with the Anthropic team to handle them somewhat appropriately (a Human message with an `admin` tag)
-but this is largely a hack and it is recommended that you do not use system messages.
-
-**AI Messages Can Continue**
-
-A completion from Claude is a continuation of the last text in the string which allows you further control over Claude's output.
-For example, putting words in Claude's mouth in a prompt like this:
-
-`\n\nHuman: Tell me a joke about bears\n\nAssistant: What do you call a bear with no teeth?`
-
-This will return a completion like this `A gummy bear!` instead of a whole new assistant message with a different random bear joke.
-
-
-## `ChatAnthropic`
-
-`ChatAnthropic` is a subclass of LangChain's `ChatModel`, meaning it works best with `ChatPromptTemplate`.
-You can import this wrapper with the following code:
-
-```
-from langchain_community.chat_models import ChatAnthropic
-model = ChatAnthropic()
+```bash
+pip install -U langchain-anthropic
 ```
 
-When working with ChatModels, it is preferred that you design your prompts as `ChatPromptTemplate`s.
-Here is an example below of doing that:
+You need to set the `ANTHROPIC_API_KEY` environment variable.
+You can get an Anthropic API key [here](https://console.anthropic.com/settings/keys)
 
-```
-from langchain_core.prompts import ChatPromptTemplate
+## Chat Models
 
-prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are a helpful chatbot"),
-    ("human", "Tell me a joke about {topic}"),
-])
-```
+### ChatAnthropic
 
-You can then use this in a chain as follows:
+See a [usage example](/docs/integrations/chat/anthropic).
 
-```
-chain = prompt | model
-chain.invoke({"topic": "bears"})
+```python
+from langchain_anthropic import ChatAnthropic
+
+model = ChatAnthropic(model='claude-3-opus-20240229')
 ```
 
-How is the prompt actually being formatted under the hood? We can see that by running the following code
+## LLMs
 
+### [Legacy] AnthropicLLM
+
+**NOTE**: `AnthropicLLM` only supports legacy `Claude 2` models. 
+To use the newest `Claude 3` models, please use `ChatAnthropic` instead.
+
+See a [usage example](/docs/integrations/llms/anthropic).
+
+```python
+from langchain_anthropic import AnthropicLLM
+
+model = AnthropicLLM(model='claude-2.1')
 ```
-prompt_value = prompt.format_prompt(topic="bears")
-model.convert_prompt(prompt_value)
-```
-
-This produces the following formatted string:
-
-```
-'\n\nYou are a helpful chatbot\n\nHuman: Tell me a joke about bears\n\nAssistant:'
-```
-
-We can see that under the hood LangChain is not appending any prefix/suffix to `SystemMessage`'s. This is because Anthropic has no concept of `SystemMessage`.
-Anthropic requires all prompts to end with assistant messages. This means if the last message is not an assistant message, the suffix `Assistant:` will automatically be inserted.
-
-If you decide instead to use a normal PromptTemplate (one that just works on a single string) let's take a look at
-what happens:
-
-```
-from langchain.prompts import PromptTemplate
-
-prompt = PromptTemplate.from_template("Tell me a joke about {topic}")
-prompt_value = prompt.format_prompt(topic="bears")
-model.convert_prompt(prompt_value)
-```
-
-This produces the following formatted string:
-
-```
-'\n\nHuman: Tell me a joke about bears\n\nAssistant:'
-```
-
-We can see that it automatically adds the Human and Assistant tags.
-What is happening under the hood?
-First: the string gets converted to a single human message. This happens generically (because we are using a subclass of `ChatModel`).
-Then, similarly to the above example, an empty Assistant message is getting appended.
-This is Anthropic specific.
-
-## [Deprecated] `Anthropic`
-
-This `Anthropic` wrapper is subclassed from `LLM`.
-We can import it with:
-
-```
-from langchain_community.llms import Anthropic
-model = Anthropic()
-```
-
-This model class is designed to work with normal PromptTemplates. An example of that is below:
-
-```
-prompt = PromptTemplate.from_template("Tell me a joke about {topic}")
-chain = prompt | model
-chain.invoke({"topic": "bears"})
-```
-
-Let's see what is going on with the prompt templating under the hood!
-
-```
-prompt_value = prompt.format_prompt(topic="bears")
-model.convert_prompt(prompt_value)
-```
-
-This outputs the following
-
-```
-'\n\nHuman: Tell me a joke about bears\n\nAssistant: Sure, here you go:\n'
-```
-
-Notice that it adds the Human tag at the start of the string, and then finishes it with `\n\nAssistant: Sure, here you go:`.
-The extra `Sure, here you go` was added on purpose by the Anthropic team.
-
-What happens if we have those symbols in the prompt directly?
-
-```
-prompt = PromptTemplate.from_template("Human: Tell me a joke about {topic}")
-prompt_value = prompt.format_prompt(topic="bears")
-model.convert_prompt(prompt_value)
-```
-
-This outputs:
-
-```
-'\n\nHuman: Tell me a joke about bears'
-```
-
-We can see that we detect that the user is trying to use the special tokens, and so we don't do any formatting.
-
-## `ChatAnthropicMessages` (Beta)
-
-`ChatAnthropicMessages` uses the beta release of Anthropic's new Messages API.
-
-You can use it from the `langchain-anthropic` package, which you can install with `pip install langchain-anthropic`.
-
-For more information, see the [ChatAnthropicMessages docs](../chat/anthropic#chatanthropicmessages)

@@ -3,18 +3,18 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your interest in 🦜️🔗 LangChain!
+        Thanks for your interest in LangChain 🦜️🔗!
 
         Please follow these instructions, fill every question, and do every step. 🙏
         
         We're asking for this because answering questions and solving problems in GitHub takes a lot of time --
-        this is time that we cannot spend on adding new features, fixing bugs, write documentation or reviewing pull requests.
+        this is time that we cannot spend on adding new features, fixing bugs, writing documentation or reviewing pull requests.
 
-        By asking questions in a structured way (following this) it will be much easier to help you.
+        By asking questions in a structured way (following this) it will be much easier for us to help you.
 
-        And there's a high chance that you will find the solution along the way and you won't even have to submit it and wait for an answer. 😎
+        There's a high chance that by following this process, you'll find the solution on your own, eliminating the need to submit a question and wait for an answer. 😎
 
-        As there are too many questions, we will **DISCARD** and close the incomplete ones. 
+        As there are many questions submitted every day, we will **DISCARD** and close the incomplete ones. 
         
         That will allow us (and others) to focus on helping people like you that follow the whole process. 🤓
         

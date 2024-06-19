@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "rag-jaguardb"
+version = "0.1.0"
+description = "RAG w/ JaguarDB"
+authors = [
+    "Daniel Ung <daniel.ung@sjsu.edu>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+tiktoken = ">=0.5.1"
+jaguar = ">=3.4"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+
+[tool.langserve]
+export_module = "rag_jaguardb"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["JaguarDB", "OpenAI"]
+tags = ["vectordbs"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

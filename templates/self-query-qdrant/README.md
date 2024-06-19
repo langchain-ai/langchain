@@ -63,7 +63,7 @@ You can find the documents in the `packages/self-query-qdrant/self_query_qdrant/
 Here is one of the documents:
 
 ```python
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 Document(
     page_content="Spaghetti with meatballs and tomato sauce",
@@ -108,7 +108,7 @@ chain = create_chain(
 The same goes for the `initialize` function that creates a Qdrant collection and indexes the documents:
 
 ```python
-from langchain.schema import Document
+from langchain_core.documents import Document
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
 from self_query_qdrant.chain import initialize

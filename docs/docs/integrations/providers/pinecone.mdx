@@ -1,3 +1,7 @@
+---
+keywords: [pinecone]
+---
+
 # Pinecone
 
 >[Pinecone](https://docs.pinecone.io/docs/overview) is a vector database with broad functionality.
@@ -8,7 +12,7 @@
 Install the Python SDK:
 
 ```bash
-pip install pinecone-client
+pip install langchain-pinecone
 ```
 
 
@@ -18,7 +22,30 @@ There exists a wrapper around Pinecone indexes, allowing you to use it as a vect
 whether for semantic search or example selection.
 
 ```python
-from langchain_community.vectorstores import Pinecone
+from langchain_pinecone import PineconeVectorStore
 ```
 
 For a more detailed walkthrough of the Pinecone vectorstore, see [this notebook](/docs/integrations/vectorstores/pinecone)
+
+## Retrievers
+
+### Pinecone Hybrid Search
+
+```bash
+pip install pinecone-client pinecone-text
+```
+
+```python
+from langchain_community.retrievers import (
+    PineconeHybridSearchRetriever,
+)
+```
+
+For more detailed information, see [this notebook](/docs/integrations/retrievers/pinecone_hybrid_search).
+
+
+### Self Query retriever
+
+Pinecone vector store can be used as a retriever for self-querying.
+
+For more detailed information, see [this notebook](/docs/integrations/retrievers/self_query/pinecone).

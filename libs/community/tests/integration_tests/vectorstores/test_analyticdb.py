@@ -1,4 +1,5 @@
 """Test PGVector functionality."""
+
 import os
 from typing import List
 
@@ -125,7 +126,7 @@ def test_analyticdb_with_filter_distant_match() -> None:
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "2"})
-    print(output)
+    print(output)  # noqa: T201
     assert output == [(Document(page_content="baz", metadata={"page": "2"}), 4.0)]
 
 
@@ -160,7 +161,7 @@ def test_analyticdb_delete() -> None:
         pre_delete_collection=True,
     )
     output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "2"})
-    print(output)
+    print(output)  # noqa: T201
     assert output == [(Document(page_content="baz", metadata={"page": "2"}), 4.0)]
     docsearch.delete(ids=ids)
     output = docsearch.similarity_search_with_score("foo", k=1, filter={"page": "2"})

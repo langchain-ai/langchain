@@ -78,7 +78,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         Returns:
             A list of embeddings, one for each document.
         """
-        return [self.nlp(text).vector.tolist() for text in texts]
+        return [self.nlp(text).vector.tolist() for text in texts]  # type: ignore[misc]
 
     def embed_query(self, text: str) -> List[float]:
         """
@@ -90,7 +90,7 @@ class SpacyEmbeddings(BaseModel, Embeddings):
         Returns:
             The embedding for the text.
         """
-        return self.nlp(text).vector.tolist()
+        return self.nlp(text).vector.tolist()  # type: ignore[misc]
 
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """

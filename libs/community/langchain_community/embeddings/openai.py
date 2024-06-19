@@ -139,8 +139,8 @@ async def async_embed_with_retry(embeddings: OpenAIEmbeddings, **kwargs: Any) ->
 
 
 @deprecated(
-    since="0.1.0",
-    removal="0.2.0",
+    since="0.0.9",
+    removal="0.3.0",
     alternative_import="langchain_openai.OpenAIEmbeddings",
 )
 class OpenAIEmbeddings(BaseModel, Embeddings):
@@ -390,7 +390,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 openai.proxy = {
                     "http": self.openai_proxy,
                     "https": self.openai_proxy,
-                }  # type: ignore[assignment]  # noqa: E501
+                }  # type: ignore[assignment]
         return openai_args
 
     # please refer to
@@ -424,7 +424,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             try:
                 from transformers import AutoTokenizer
             except ImportError:
-                raise ValueError(
+                raise ImportError(
                     "Could not import transformers python package. "
                     "This is needed in order to for OpenAIEmbeddings without "
                     "`tiktoken`. Please install it with `pip install transformers`. "
@@ -557,7 +557,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             try:
                 from transformers import AutoTokenizer
             except ImportError:
-                raise ValueError(
+                raise ImportError(
                     "Could not import transformers python package. "
                     "This is needed in order to for OpenAIEmbeddings without "
                     " `tiktoken`. Please install it with `pip install transformers`."

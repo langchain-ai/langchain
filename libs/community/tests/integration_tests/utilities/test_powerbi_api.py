@@ -1,4 +1,5 @@
 """Integration test for POWERBI API Wrapper."""
+
 import pytest
 from langchain_core.utils import get_from_env
 
@@ -12,7 +13,7 @@ def azure_installed() -> bool:
 
         return True
     except Exception as e:
-        print(f"azure not installed, skipping test {e}")
+        print(f"azure not installed, skipping test {e}")  # noqa: T201
         return False
 
 

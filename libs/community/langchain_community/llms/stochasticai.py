@@ -107,7 +107,7 @@ class StochasticAI(LLM):
             url=self.api_url,
             json={"prompt": prompt, "params": params},
             headers={
-                "apiKey": f"{self.stochasticai_api_key.get_secret_value()}",
+                "apiKey": f"{self.stochasticai_api_key.get_secret_value()}",  # type: ignore[union-attr]
                 "Accept": "application/json",
                 "Content-Type": "application/json",
             },
@@ -119,7 +119,7 @@ class StochasticAI(LLM):
             response_get = requests.get(
                 url=response_post_json["data"]["responseUrl"],
                 headers={
-                    "apiKey": f"{self.stochasticai_api_key.get_secret_value()}",
+                    "apiKey": f"{self.stochasticai_api_key.get_secret_value()}",  # type: ignore[union-attr]
                     "Accept": "application/json",
                     "Content-Type": "application/json",
                 },

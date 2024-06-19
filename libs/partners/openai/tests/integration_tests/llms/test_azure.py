@@ -30,15 +30,13 @@ def _get_llm(**kwargs: Any) -> AzureOpenAI:
 
 @pytest.fixture
 def llm() -> AzureOpenAI:
-    return _get_llm(
-        max_tokens=10,
-    )
+    return _get_llm(max_tokens=10)
 
 
 @pytest.mark.scheduled
 def test_openai_call(llm: AzureOpenAI) -> None:
     """Test valid call to openai."""
-    output = llm("Say something nice:")
+    output = llm.invoke("Say something nice:")
     assert isinstance(output, str)
 
 
@@ -133,7 +131,7 @@ def test_openai_streaming_multiple_prompts_error() -> None:
 def test_openai_streaming_call() -> None:
     """Test valid call to openai."""
     llm = _get_llm(max_tokens=10, streaming=True)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
@@ -148,7 +146,7 @@ def test_openai_streaming_callback() -> None:
         callback_manager=callback_manager,
         verbose=True,
     )
-    llm("Write me a sentence with 100 words.")
+    llm.invoke("Write me a sentence with 100 words.")
     assert callback_handler.llm_streams == 11
 
 

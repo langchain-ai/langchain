@@ -1,10 +1,10 @@
 from typing import Any, List, Sequence
 
 from langchain_core.documents import Document
+from langchain_text_splitters.character import CharacterTextSplitter
 
 from langchain.retrievers import ParentDocumentRetriever
 from langchain.storage import InMemoryStore
-from langchain.text_splitter import CharacterTextSplitter
 from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 
 
@@ -18,7 +18,7 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
         return [res]
 
     def add_documents(self, documents: Sequence[Document], **kwargs: Any) -> List[str]:
-        print(documents)
+        print(documents)  # noqa: T201
         return super().add_documents(
             documents, ids=[f"{i}" for i in range(len(documents))]
         )

@@ -47,12 +47,14 @@ def _results_to_docs(docs_and_scores: Any) -> List[Document]:
 
 
 class BaseEmbeddingStore:
-    """Embedding store."""
+    """Base class for the Lantern embedding store."""
 
 
 def get_embedding_store(
     distance_strategy: DistanceStrategy, collection_name: str
 ) -> Any:
+    """Get the embedding store class."""
+
     embedding_type = None
 
     if distance_strategy == DistanceStrategy.HAMMING:
@@ -439,7 +441,7 @@ class Lantern(VectorStore):
             - Useful for testing.
         """
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]

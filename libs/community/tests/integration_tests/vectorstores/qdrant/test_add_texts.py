@@ -8,6 +8,7 @@ from langchain_community.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
+from tests.integration_tests.vectorstores.qdrant.common import assert_documents_equals
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -33,7 +34,7 @@ def test_qdrant_add_documents_extends_existing_collection(
     # ConsistentFakeEmbeddings return the same query embedding as the first document
     # embedding computed in `embedding.embed_documents`. Thus, "foo" embedding is the
     # same as "foobar" embedding
-    assert output == [Document(page_content="foobar")]
+    assert_documents_equals(output, [Document(page_content="foobar")])
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])

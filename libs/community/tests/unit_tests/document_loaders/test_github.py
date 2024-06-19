@@ -1,8 +1,13 @@
+import base64
+
 import pytest
 from langchain_core.documents import Document
 from pytest_mock import MockerFixture
 
-from langchain_community.document_loaders.github import GitHubIssuesLoader
+from langchain_community.document_loaders.github import (
+    GithubFileLoader,
+    GitHubIssuesLoader,
+)
 
 
 def test_initialization() -> None:
@@ -33,22 +38,22 @@ def test_initialization_ghe() -> None:
 def test_invalid_initialization() -> None:
     # Invalid parameter
     with pytest.raises(ValueError):
-        GitHubIssuesLoader(invalid="parameter")
+        GitHubIssuesLoader(invalid="parameter")  # type: ignore[call-arg]
 
     # Invalid value for valid parameter
     with pytest.raises(ValueError):
-        GitHubIssuesLoader(state="invalid_state")
+        GitHubIssuesLoader(state="invalid_state")  # type: ignore[arg-type, call-arg]
 
     # Invalid type for labels
     with pytest.raises(ValueError):
-        GitHubIssuesLoader(labels="not_a_list")
+        GitHubIssuesLoader(labels="not_a_list")  # type: ignore[arg-type, call-arg]
 
     # Invalid date format for since
     with pytest.raises(ValueError):
-        GitHubIssuesLoader(since="not_a_date")
+        GitHubIssuesLoader(since="not_a_date")  # type: ignore[call-arg]
 
 
-def test_load(mocker: MockerFixture) -> None:
+def test_load_github_issue(mocker: MockerFixture) -> None:
     mocker.patch(
         "requests.get", return_value=mocker.MagicMock(json=lambda: [], links=None)
     )
@@ -127,3 +132,103 @@ def test_url() -> None:
         "&assignee=user1&creator=user2&mentioned=user3&labels=bug,ui,@high"
         "&sort=comments&direction=asc&since=2023-05-26T00:00:00Z"
     )
+
+
+def test_github_file_content_get_file_paths(mocker: MockerFixture) -> None:
+    # Mock the requests.get method to simulate the API response
+    mocker.patch(
+        "requests.get",
+        return_value=mocker.MagicMock(
+            json=lambda: {
+                "tree": [
+                    {
+                        "path": "readme.md",
+                        "mode": "100644",
+                        "type": "blob",
+                        "sha": "789",
+                        "size": 37,
+                        "url": "https://github.com/repos/shufanhao/langchain/git/blobs/789",
+                    }
+                ]
+            },
+            status_code=200,
+        ),
+    )
+
+    # case1: add file_filter
+    loader = GithubFileLoader(
+        repo="shufanhao/langchain",
+        access_token="access_token",
+        github_api_url="https://github.com",
+        file_filter=lambda file_path: file_path.endswith(".md"),
+    )
+
+    # Call the load method
+    files = loader.get_file_paths()
+
+    # Assert the results
+    assert len(files) == 1
+    assert files[0]["path"] == "readme.md"
+
+    # case2: didn't add file_filter
+    loader = GithubFileLoader(  # type: ignore[call-arg]
+        repo="shufanhao/langchain",
+        access_token="access_token",
+        github_api_url="https://github.com",
+    )
+
+    # Call the load method
+    files = loader.get_file_paths()
+    assert len(files) == 1
+    assert files[0]["path"] == "readme.md"
+
+    # case3: add file_filter with a non-exist file path
+    loader = GithubFileLoader(
+        repo="shufanhao/langchain",
+        access_token="access_token",
+        github_api_url="https://github.com",
+        file_filter=lambda file_path: file_path.endswith(".py"),
+    )
+
+    # Call the load method
+    files = loader.get_file_paths()
+    assert len(files) == 0
+
+
+def test_github_file_content_loader(mocker: MockerFixture) -> None:
+    # Mock the requests.get method to simulate the API response
+    file_path_res = mocker.MagicMock(
+        json=lambda: {
+            "tree": [
+                {
+                    "path": "readme.md",
+                    "mode": "100644",
+                    "type": "blob",
+                    "sha": "789",
+                    "size": 37,
+                    "url": "https://github.com/repos/shufanhao/langchain/git/blobs/789",
+                }
+            ]
+        },
+        status_code=200,
+    )
+    file_content_res = mocker.MagicMock(
+        json=lambda: {"content": base64.b64encode("Mocked content".encode("utf-8"))},
+        status_code=200,
+    )
+
+    mocker.patch("requests.get", side_effect=[file_path_res, file_content_res])
+
+    # case1: file_extension=".md"
+    loader = GithubFileLoader(  # type: ignore[call-arg]
+        repo="shufanhao/langchain",
+        access_token="access_token",
+        github_api_url="https://github.com",
+    )
+
+    # Call the load method
+    docs = loader.load()
+
+    assert len(docs) == 1
+    assert docs[0].page_content == "Mocked content"
+    assert docs[0].metadata["sha"] == "789"

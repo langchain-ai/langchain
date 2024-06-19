@@ -18,7 +18,7 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.chains import LLMChain
 
 
-@deprecated("0.1.0", alternative="create_react_agent", removal="0.2.0")
+@deprecated("0.1.0", alternative="create_react_agent", removal="0.3.0")
 class ConversationalAgent(Agent):
     """An agent that holds a conversation in addition to using tools."""
 
@@ -116,7 +116,7 @@ class ConversationalAgent(Agent):
             format_instructions=format_instructions,
             input_variables=input_variables,
         )
-        llm_chain = LLMChain(
+        llm_chain = LLMChain(  # type: ignore[misc]
             llm=llm,
             prompt=prompt,
             callback_manager=callback_manager,

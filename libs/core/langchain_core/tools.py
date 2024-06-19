@@ -1,36 +1,75 @@
-"""Base implementation for tools or skills."""
+"""**Tools** are classes that an Agent uses to interact with the world.
+
+Each tool has a **description**. Agent uses the description to choose the right
+tool for the job.
+
+**Class hierarchy:**
+
+.. code-block::
+
+    RunnableSerializable --> BaseTool --> <name>Tool  # Examples: AIPluginTool, BaseGraphQLTool
+                                          <name>      # Examples: BraveSearch, HumanInputRun
+
+**Main helpers:**
+
+.. code-block::
+
+    CallbackManagerForToolRun, AsyncCallbackManagerForToolRun
+"""  # noqa: E501
+
 from __future__ import annotations
 
+import asyncio
 import inspect
+import textwrap
+import uuid
 import warnings
-from abc import abstractmethod
+from abc import ABC, abstractmethod
+from contextvars import copy_context
+from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForToolRun,
     BaseCallbackManager,
     CallbackManager,
     CallbackManagerForToolRun,
+)
+from langchain_core.callbacks.manager import (
     Callbacks,
 )
 from langchain_core.load.serializable import Serializable
+from langchain_core.prompts import (
+    BasePromptTemplate,
+    PromptTemplate,
+    aformat_document,
+    format_document,
+)
 from langchain_core.pydantic_v1 import (
     BaseModel,
     Extra,
     Field,
+    ValidationError,
     create_model,
     root_validator,
     validate_arguments,
 )
+from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
     Runnable,
     RunnableConfig,
     RunnableSerializable,
     ensure_config,
 )
-from langchain_core.runnables.config import run_in_executor
+from langchain_core.runnables.config import (
+    _set_config_context,
+    patch_config,
+    run_in_executor,
+)
+from langchain_core.runnables.utils import accepts_context
 
 
 class SchemaAnnotationError(TypeError):
@@ -38,14 +77,21 @@ class SchemaAnnotationError(TypeError):
 
 
 def _create_subset_model(
-    name: str, model: BaseModel, field_names: list
+    name: str, model: Type[BaseModel], field_names: list
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     fields = {}
     for field_name in field_names:
         field = model.__fields__[field_name]
-        fields[field_name] = (field.outer_type_, field.field_info)
-    return create_model(name, **fields)  # type: ignore
+        t = (
+            # this isn't perfect but should work for most functions
+            field.outer_type_
+            if field.required and not field.allow_none
+            else Optional[field.outer_type_]
+        )
+        fields[field_name] = (t, field.field_info)
+    rtn = create_model(name, **fields)  # type: ignore
+    return rtn
 
 
 def _get_filtered_args(
@@ -91,10 +137,10 @@ def create_schema_from_function(
 
 
 class ToolException(Exception):
-    """An optional exception that tool throws when execution error occurs.
+    """Optional exception that tool throws when execution error occurs.
 
     When this exception is thrown, the agent will not stop working,
-    but will handle the exception according to the handle_tool_error
+    but it will handle the exception according to the handle_tool_error
     variable of the tool, and the processing result will be returned
     to the agent as observation, and printed in red on the console.
     """
@@ -169,6 +215,11 @@ class ChildTool(BaseTool):
     ] = False
     """Handle the content of the ToolException thrown."""
 
+    handle_validation_error: Optional[
+        Union[bool, str, Callable[[ValidationError], str]]
+    ] = False
+    """Handle the content of the ValidationError thrown."""
+
     class Config(Serializable.Config):
         """Configuration for this pydantic object."""
 
@@ -212,6 +263,8 @@ class ChildTool(BaseTool):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
+            config=config,
             **kwargs,
         )
 
@@ -228,6 +281,8 @@ class ChildTool(BaseTool):
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
+            config=config,
             **kwargs,
         )
 
@@ -254,7 +309,7 @@ class ChildTool(BaseTool):
                 }
         return tool_input
 
-    @root_validator()
+    @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
@@ -308,6 +363,8 @@ class ChildTool(BaseTool):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
+        run_id: Optional[uuid.UUID] = None,
+        config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
@@ -331,6 +388,7 @@ class ChildTool(BaseTool):
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
             name=run_name,
+            run_id=run_id,
             # Inputs by definition should always be dicts.
             # For now, it's unclear whether this assumption is ever violated,
             # but if it is we will send a `None` value to the callback instead
@@ -339,13 +397,36 @@ class ChildTool(BaseTool):
             **kwargs,
         )
         try:
+            child_config = patch_config(
+                config,
+                callbacks=run_manager.get_child(),
+            )
+            context = copy_context()
+            context.run(_set_config_context, child_config)
             parsed_input = self._parse_input(tool_input)
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
-                self._run(*tool_args, run_manager=run_manager, **tool_kwargs)
+                context.run(
+                    self._run, *tool_args, run_manager=run_manager, **tool_kwargs
+                )
                 if new_arg_supported
-                else self._run(*tool_args, **tool_kwargs)
+                else context.run(self._run, *tool_args, **tool_kwargs)
             )
+        except ValidationError as e:
+            if not self.handle_validation_error:
+                raise e
+            elif isinstance(self.handle_validation_error, bool):
+                observation = "Tool input validation error"
+            elif isinstance(self.handle_validation_error, str):
+                observation = self.handle_validation_error
+            elif callable(self.handle_validation_error):
+                observation = self.handle_validation_error(e)
+            else:
+                raise ValueError(
+                    f"Got unexpected type of `handle_validation_error`. Expected bool, "
+                    f"str or callable. Received: {self.handle_validation_error}"
+                )
+            return observation
         except ToolException as e:
             if not self.handle_tool_error:
                 run_manager.on_tool_error(e)
@@ -364,17 +445,13 @@ class ChildTool(BaseTool):
                     f"Got unexpected type of `handle_tool_error`. Expected bool, str "
                     f"or callable. Received: {self.handle_tool_error}"
                 )
-            run_manager.on_tool_end(
-                str(observation), color="red", name=self.name, **kwargs
-            )
+            run_manager.on_tool_end(observation, color="red", name=self.name, **kwargs)
             return observation
         except (Exception, KeyboardInterrupt) as e:
             run_manager.on_tool_error(e)
             raise e
         else:
-            run_manager.on_tool_end(
-                str(observation), color=color, name=self.name, **kwargs
-            )
+            run_manager.on_tool_end(observation, color=color, name=self.name, **kwargs)
             return observation
 
     async def arun(
@@ -388,6 +465,8 @@ class ChildTool(BaseTool):
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         run_name: Optional[str] = None,
+        run_id: Optional[uuid.UUID] = None,
+        config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
@@ -411,17 +490,46 @@ class ChildTool(BaseTool):
             color=start_color,
             name=run_name,
             inputs=tool_input,
+            run_id=run_id,
             **kwargs,
         )
         try:
             parsed_input = self._parse_input(tool_input)
             # We then call the tool on the tool input to get an observation
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
-            observation = (
-                await self._arun(*tool_args, run_manager=run_manager, **tool_kwargs)
-                if new_arg_supported
-                else await self._arun(*tool_args, **tool_kwargs)
+            child_config = patch_config(
+                config,
+                callbacks=run_manager.get_child(),
             )
+            context = copy_context()
+            context.run(_set_config_context, child_config)
+            coro = (
+                context.run(
+                    self._arun, *tool_args, run_manager=run_manager, **tool_kwargs
+                )
+                if new_arg_supported
+                else context.run(self._arun, *tool_args, **tool_kwargs)
+            )
+            if accepts_context(asyncio.create_task):
+                observation = await asyncio.create_task(coro, context=context)  # type: ignore
+            else:
+                observation = await coro
+
+        except ValidationError as e:
+            if not self.handle_validation_error:
+                raise e
+            elif isinstance(self.handle_validation_error, bool):
+                observation = "Tool input validation error"
+            elif isinstance(self.handle_validation_error, str):
+                observation = self.handle_validation_error
+            elif callable(self.handle_validation_error):
+                observation = self.handle_validation_error(e)
+            else:
+                raise ValueError(
+                    f"Got unexpected type of `handle_validation_error`. Expected bool, "
+                    f"str or callable. Received: {self.handle_validation_error}"
+                )
+            return observation
         except ToolException as e:
             if not self.handle_tool_error:
                 await run_manager.on_tool_error(e)
@@ -441,7 +549,7 @@ class ChildTool(BaseTool):
                     f"or callable. Received: {self.handle_tool_error}"
                 )
             await run_manager.on_tool_end(
-                str(observation), color="red", name=self.name, **kwargs
+                observation, color="red", name=self.name, **kwargs
             )
             return observation
         except (Exception, KeyboardInterrupt) as e:
@@ -449,10 +557,11 @@ class ChildTool(BaseTool):
             raise e
         else:
             await run_manager.on_tool_end(
-                str(observation), color=color, name=self.name, **kwargs
+                observation, color=color, name=self.name, **kwargs
             )
             return observation
 
+    @deprecated("0.1.47", alternative="invoke", removal="0.3.0")
     def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
         """Make tool callable."""
         return self.run(tool_input, callbacks=callbacks)
@@ -499,7 +608,8 @@ class Tool(BaseTool):
         all_args = list(args) + list(kwargs.values())
         if len(all_args) != 1:
             raise ToolException(
-                f"Too many arguments to single-input tool {self.name}."
+                f"""Too many arguments to single-input tool {self.name}.
+                Consider using StructuredTool instead."""
                 f" Args: {all_args}"
             )
         return tuple(all_args), {}
@@ -558,7 +668,7 @@ class Tool(BaseTool):
         self, name: str, func: Optional[Callable], description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
-        super(Tool, self).__init__(
+        super(Tool, self).__init__(  # type: ignore[call-arg]
             name=name, func=func, description=description, **kwargs
         )
 
@@ -716,25 +826,28 @@ class StructuredTool(BaseTool):
         else:
             raise ValueError("Function and/or coroutine must be provided")
         name = name or source_function.__name__
-        description = description or source_function.__doc__
-        if description is None:
+        description_ = description or source_function.__doc__
+        if description_ is None:
             raise ValueError(
                 "Function must have a docstring if description not provided."
             )
+        if description is None:
+            # Only apply if using the function's docstring
+            description_ = textwrap.dedent(description_).strip()
 
         # Description example:
         # search_api(query: str) - Searches the API for the query.
-        sig = signature(source_function)
-        description = f"{name}{sig} - {description.strip()}"
+        description_ = f"{description_.strip()}"
         _args_schema = args_schema
         if _args_schema is None and infer_schema:
-            _args_schema = create_schema_from_function(f"{name}Schema", source_function)
+            # schema name is appended within function
+            _args_schema = create_schema_from_function(name, source_function)
         return cls(
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=_args_schema,
-            description=description,
+            args_schema=_args_schema,  # type: ignore[arg-type]
+            description=description_,
             return_direct=return_direct,
             **kwargs,
         )
@@ -854,3 +967,133 @@ def tool(
         return _partial
     else:
         raise ValueError("Too many arguments for tool decorator")
+
+
+class RetrieverInput(BaseModel):
+    """Input to the retriever."""
+
+    query: str = Field(description="query to look up in retriever")
+
+
+def _get_relevant_documents(
+    query: str,
+    retriever: BaseRetriever,
+    document_prompt: BasePromptTemplate,
+    document_separator: str,
+    callbacks: Callbacks = None,
+) -> str:
+    docs = retriever.invoke(query, config={"callbacks": callbacks})
+    return document_separator.join(
+        format_document(doc, document_prompt) for doc in docs
+    )
+
+
+async def _aget_relevant_documents(
+    query: str,
+    retriever: BaseRetriever,
+    document_prompt: BasePromptTemplate,
+    document_separator: str,
+    callbacks: Callbacks = None,
+) -> str:
+    docs = await retriever.ainvoke(query, config={"callbacks": callbacks})
+    return document_separator.join(
+        [await aformat_document(doc, document_prompt) for doc in docs]
+    )
+
+
+def create_retriever_tool(
+    retriever: BaseRetriever,
+    name: str,
+    description: str,
+    *,
+    document_prompt: Optional[BasePromptTemplate] = None,
+    document_separator: str = "\n\n",
+) -> Tool:
+    """Create a tool to do retrieval of documents.
+
+    Args:
+        retriever: The retriever to use for the retrieval
+        name: The name for the tool. This will be passed to the language model,
+            so should be unique and somewhat descriptive.
+        description: The description for the tool. This will be passed to the language
+            model, so should be descriptive.
+
+    Returns:
+        Tool class to pass to an agent
+    """
+    document_prompt = document_prompt or PromptTemplate.from_template("{page_content}")
+    func = partial(
+        _get_relevant_documents,
+        retriever=retriever,
+        document_prompt=document_prompt,
+        document_separator=document_separator,
+    )
+    afunc = partial(
+        _aget_relevant_documents,
+        retriever=retriever,
+        document_prompt=document_prompt,
+        document_separator=document_separator,
+    )
+    return Tool(
+        name=name,
+        description=description,
+        func=func,
+        coroutine=afunc,
+        args_schema=RetrieverInput,
+    )
+
+
+ToolsRenderer = Callable[[List[BaseTool]], str]
+
+
+def render_text_description(tools: List[BaseTool]) -> str:
+    """Render the tool name and description in plain text.
+
+    Output will be in the format of:
+
+    .. code-block:: markdown
+
+        search: This tool is used for search
+        calculator: This tool is used for math
+    """
+    descriptions = []
+    for tool in tools:
+        if hasattr(tool, "func") and tool.func:
+            sig = signature(tool.func)
+            description = f"{tool.name}{sig} - {tool.description}"
+        else:
+            description = f"{tool.name} - {tool.description}"
+
+        descriptions.append(description)
+    return "\n".join(descriptions)
+
+
+def render_text_description_and_args(tools: List[BaseTool]) -> str:
+    """Render the tool name, description, and args in plain text.
+
+    Output will be in the format of:
+
+    .. code-block:: markdown
+
+        search: This tool is used for search, args: {"query": {"type": "string"}}
+        calculator: This tool is used for math, \
+args: {"expression": {"type": "string"}}
+    """
+    tool_strings = []
+    for tool in tools:
+        args_schema = str(tool.args)
+        if hasattr(tool, "func") and tool.func:
+            sig = signature(tool.func)
+            description = f"{tool.name}{sig} - {tool.description}"
+        else:
+            description = f"{tool.name} - {tool.description}"
+        tool_strings.append(f"{description}, args: {args_schema}")
+    return "\n".join(tool_strings)
+
+
+class BaseToolkit(BaseModel, ABC):
+    """Base Toolkit representing a collection of related tools."""
+
+    @abstractmethod
+    def get_tools(self) -> List[BaseTool]:
+        """Get the tools in the toolkit."""

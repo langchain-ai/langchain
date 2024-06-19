@@ -7,6 +7,7 @@ from langchain_community.vectorstores import Qdrant
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
+from tests.integration_tests.vectorstores.qdrant.common import assert_documents_equals
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -49,14 +50,18 @@ def test_qdrant_max_marginal_relevance_search(
     output = docsearch.max_marginal_relevance_search(
         "foo", k=2, fetch_k=3, lambda_mult=0.0
     )
-    assert output == [
-        Document(page_content="foo", metadata={"page": 0}),
-        Document(page_content="baz", metadata={"page": 2}),
-    ]
+    assert_documents_equals(
+        output,
+        [
+            Document(page_content="foo", metadata={"page": 0}),
+            Document(page_content="baz", metadata={"page": 2}),
+        ],
+    )
 
     output = docsearch.max_marginal_relevance_search(
         "foo", k=2, fetch_k=3, lambda_mult=0.0, filter=filter
     )
-    assert output == [
-        Document(page_content="baz", metadata={"page": 2}),
-    ]
+    assert_documents_equals(
+        output,
+        [Document(page_content="baz", metadata={"page": 2})],
+    )

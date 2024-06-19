@@ -2,6 +2,8 @@ from typing import Any, Callable, Dict
 
 
 class BaseModerationCallbackHandler:
+    """Base class for moderation callback handlers."""
+
     def __init__(self) -> None:
         if (
             self._is_method_unchanged(

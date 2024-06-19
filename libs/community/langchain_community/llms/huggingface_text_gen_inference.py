@@ -1,6 +1,7 @@
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -13,9 +14,15 @@ from langchain_core.utils import get_pydantic_field_names
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    "0.0.21",
+    removal="0.3.0",
+    alternative_import="langchain_huggingface.HuggingFaceEndpoint",
+)
 class HuggingFaceTextGenInference(LLM):
     """
     HuggingFace text generation API.
+    ! This class is deprecated, you should use HuggingFaceEndpoint instead !
 
     To use, you should have the `text-generation` python package installed and
     a text-generation server running.
@@ -33,7 +40,7 @@ class HuggingFaceTextGenInference(LLM):
                 temperature=0.01,
                 repetition_penalty=1.03,
             )
-            print(llm("What is Deep Learning?"))
+            print(llm.invoke("What is Deep Learning?"))  # noqa: T201
 
             # Streaming response example
             from langchain_community.callbacks import streaming_stdout
@@ -50,7 +57,7 @@ class HuggingFaceTextGenInference(LLM):
                 callbacks=callbacks,
                 streaming=True
             )
-            print(llm("What is Deep Learning?"))
+            print(llm.invoke("What is Deep Learning?"))  # noqa: T201
 
     """
 
@@ -256,9 +263,10 @@ class HuggingFaceTextGenInference(LLM):
             # yield text, if any
             if text:
                 chunk = GenerationChunk(text=text)
-                yield chunk
+
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text)
+                yield chunk
 
             # break if stop sequence found
             if stop_seq_found:
@@ -292,9 +300,10 @@ class HuggingFaceTextGenInference(LLM):
             # yield text, if any
             if text:
                 chunk = GenerationChunk(text=text)
-                yield chunk
+
                 if run_manager:
                     await run_manager.on_llm_new_token(chunk.text)
+                yield chunk
 
             # break if stop sequence found
             if stop_seq_found:

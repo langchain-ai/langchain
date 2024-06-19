@@ -14,11 +14,15 @@ FINAL_ANSWER_ACTION = "Final Answer:"
 class ChatOutputParser(AgentOutputParser):
     """Output parser for the chat agent."""
 
+    format_instructions: str = FORMAT_INSTRUCTIONS
+    """Default formatting instructions"""
+
     pattern = re.compile(r"^.*?`{3}(?:json)?\n(.*?)`{3}.*?$", re.DOTALL)
     """Regex pattern to parse the output."""
 
     def get_format_instructions(self) -> str:
-        return FORMAT_INSTRUCTIONS
+        """Returns formatting instructions for the given output parser."""
+        return self.format_instructions
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         includes_answer = FINAL_ANSWER_ACTION in text

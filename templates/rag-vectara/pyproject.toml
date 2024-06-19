@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rag-vectara"
-version = "0.1.0"
+version = "0.2.0"
 description = "RAG using vectara retriever"
 authors = [
     "Ofer Mendelevitch <ofer@vectara.com>",
@@ -14,7 +14,7 @@ openai = "<2"
 tiktoken = "^0.5.1"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 [tool.poetry.group.dev.dependencies.python-dotenv]
 extras = [
     "cli",

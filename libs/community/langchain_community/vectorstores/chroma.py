@@ -16,6 +16,7 @@ from typing import (
 )
 
 import numpy as np
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import xor_args
@@ -148,7 +149,7 @@ class Chroma(VectorStore):
         try:
             import chromadb  # noqa: F401
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import chromadb python package. "
                 "Please install it with `pip install chromadb`."
             )
@@ -187,7 +188,7 @@ class Chroma(VectorStore):
         b64_texts = [self.encode_image(uri=uri) for uri in uris]
         # Populate IDs
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in uris]
+            ids = [str(uuid.uuid4()) for _ in uris]
         embeddings = None
         # Set embeddings
         if self._embedding_function is not None and hasattr(
@@ -209,7 +210,7 @@ class Chroma(VectorStore):
                     empty_ids.append(idx)
             if non_empty_ids:
                 metadatas = [metadatas[idx] for idx in non_empty_ids]
-                images_with_metadatas = [uris[idx] for idx in non_empty_ids]
+                images_with_metadatas = [b64_texts[idx] for idx in non_empty_ids]
                 embeddings_with_metadatas = (
                     [embeddings[idx] for idx in non_empty_ids] if embeddings else None
                 )
@@ -231,7 +232,7 @@ class Chroma(VectorStore):
                     else:
                         raise e
             if empty_ids:
-                images_without_metadatas = [uris[j] for j in empty_ids]
+                images_without_metadatas = [b64_texts[j] for j in empty_ids]
                 embeddings_without_metadatas = (
                     [embeddings[j] for j in empty_ids] if embeddings else None
                 )
@@ -268,7 +269,7 @@ class Chroma(VectorStore):
         """
         # TODO: Handle the case where the user doesn't provide ids on the Collection
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
         embeddings = None
         texts = list(texts)
         if self._embedding_function is not None:
@@ -610,11 +611,22 @@ class Chroma(VectorStore):
 
         return self._collection.get(**kwargs)
 
+    @deprecated(
+        since="0.1.17",
+        message=(
+            "Since Chroma 0.4.x the manual persistence method is no longer "
+            "supported as docs are automatically persisted."
+        ),
+        removal="0.3.0",
+    )
     def persist(self) -> None:
         """Persist the collection.
 
         This can be used to explicitly persist the data to disk.
         It will also be called automatically when the object is destroyed.
+
+        Since Chroma 0.4.x the manual persistence method is no longer
+        supported as docs are automatically persisted.
         """
         if self._persist_directory is None:
             raise ValueError(
@@ -721,7 +733,7 @@ class Chroma(VectorStore):
             **kwargs,
         )
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
         if hasattr(
             chroma_collection._client, "max_batch_size"
         ):  # for Chroma 0.4.10 and above
@@ -795,3 +807,7 @@ class Chroma(VectorStore):
             ids: List of ids to delete.
         """
         self._collection.delete(ids=ids)
+
+    def __len__(self) -> int:
+        """Count the number of documents in the collection."""
+        return self._collection.count()

@@ -36,7 +36,9 @@ def _send_pipeline_to_device(pipeline: Any, device: int) -> Any:
     """Send a pipeline to a device on the cluster."""
     if isinstance(pipeline, str):
         with open(pipeline, "rb") as f:
-            pipeline = pickle.load(f)
+            # This code path can only be triggered if the user
+            # passed allow_dangerous_deserialization=True
+            pipeline = pickle.load(f)  # ignore[pickle]: explicit-opt-in
 
     if importlib.util.find_spec("torch") is not None:
         import torch
@@ -137,6 +139,11 @@ class SelfHostedPipeline(LLM):
     model_reqs: List[str] = ["./", "torch"]
     """Requirements to install on hardware to inference the model."""
 
+    allow_dangerous_deserialization: bool = False
+    """Allow deserialization using pickle which can be dangerous if 
+    loading compromised data.
+    """
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -149,6 +156,16 @@ class SelfHostedPipeline(LLM):
         and run on the server, i.e. in a module and not a REPL or closure.
         Then, initialize the remote inference function.
         """
+        if not kwargs.get("allow_dangerous_deserialization"):
+            raise ValueError(
+                "SelfHostedPipeline relies on the pickle module. "
+                "You will need to set allow_dangerous_deserialization=True "
+                "if you want to opt-in to allow deserialization of data using pickle."
+                "Data can be compromised by a malicious actor if "
+                "not handled properly to include "
+                "a malicious payload that when deserialized with "
+                "pickle can execute arbitrary code. "
+            )
         super().__init__(**kwargs)
         try:
             import runhouse as rh

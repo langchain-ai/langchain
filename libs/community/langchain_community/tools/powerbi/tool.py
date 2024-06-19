@@ -51,7 +51,7 @@ class QueryPowerBITool(BaseTool):
         for var in llm_chain.prompt.input_variables:
             if var not in ["tool_input", "tables", "schemas", "examples"]:
                 raise ValueError(
-                    "LLM chain for QueryPowerBITool must have input variables ['tool_input', 'tables', 'schemas', 'examples'], found %s",  # noqa: C0301 E501 # pylint: disable=C0301
+                    "LLM chain for QueryPowerBITool must have input variables ['tool_input', 'tables', 'schemas', 'examples'], found %s",  # noqa: E501 # pylint: disable=C0301
                     llm_chain.prompt.input_variables,
                 )
         return llm_chain

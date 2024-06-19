@@ -1,10 +1,10 @@
 # Ingest Documents into a Zep Collection
 import os
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.embeddings import FakeEmbeddings
 from langchain_community.vectorstores.zep import CollectionConfig, ZepVectorStore
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 ZEP_API_URL = os.environ.get("ZEP_API_URL", "http://localhost:8000")
 ZEP_API_KEY = os.environ.get("ZEP_API_KEY", None)

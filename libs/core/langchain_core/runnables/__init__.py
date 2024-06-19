@@ -9,7 +9,9 @@ synchronous, asynchronous, batch, and streaming operations.
 Support for **async** allows servers hosting LCEL based programs to scale better
 for higher concurrent loads.
 
-**Streaming** of intermediate outputs as they're being generated allows for
+**Batch** operations allow for processing multiple inputs in parallel.
+
+**Streaming** of intermediate outputs, as they're being generated, allows for
 creating more responsive UX.
 
 This module contains schema and implementation of LangChain Runnables primitives.
@@ -34,6 +36,7 @@ from langchain_core.runnables.config import (
     run_in_executor,
 )
 from langchain_core.runnables.fallbacks import RunnableWithFallbacks
+from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.passthrough import (
     RunnableAssign,
     RunnablePassthrough,
@@ -76,6 +79,7 @@ __all__ = [
     "RunnablePick",
     "RunnableSequence",
     "RunnableWithFallbacks",
+    "RunnableWithMessageHistory",
     "get_config_list",
     "aadd",
     "add",

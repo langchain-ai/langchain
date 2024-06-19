@@ -8,7 +8,7 @@ from langchain_community.llms import OCIGenAI
 
 
 class MockResponseDict(dict):
-    def __getattr__(self, val):
+    def __getattr__(self, val):  # type: ignore[no-untyped-def]
         return self[val]
 
 
@@ -23,7 +23,7 @@ def test_llm_call(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
 
     provider = llm._get_provider()
 
-    def mocked_response(*args):
+    def mocked_response(*args):  # type: ignore[no-untyped-def]
         response_text = "This is the completion."
 
         if provider == "cohere":

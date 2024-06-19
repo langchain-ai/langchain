@@ -1,4 +1,4 @@
-from typing import Iterator, List, Optional
+from typing import Iterator, Optional
 
 from langchain_community.docstore.document import Document
 from langchain_community.document_loaders.base import BaseLoader
@@ -15,10 +15,6 @@ class AzureAIDataLoader(BaseLoader):
         """URL to the data asset or storage location."""
         self.glob_pattern = glob
         """Optional glob pattern to select files. Defaults to None."""
-
-    def load(self) -> List[Document]:
-        """Load documents."""
-        return list(self.lazy_load())
 
     def lazy_load(self) -> Iterator[Document]:
         """A lazy loader for Documents."""

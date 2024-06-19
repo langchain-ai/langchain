@@ -1,7 +1,12 @@
+"""**Prompt values** for language model prompts.
+
+Prompt values are used to represent different pieces of prompts.
+They can be used to represent text, images, or chat message pieces.
+"""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Literal, Sequence
+from typing import List, Literal, Sequence, cast
 
 from typing_extensions import TypedDict
 
@@ -85,6 +90,8 @@ class ChatPromptValue(PromptValue):
 
 
 class ImageURL(TypedDict, total=False):
+    """Image URL."""
+
     detail: Literal["auto", "low", "high"]
     """Specifies the detail level of the image."""
 
@@ -105,7 +112,7 @@ class ImagePromptValue(PromptValue):
 
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as messages."""
-        return [HumanMessage(content=[self.image_url])]
+        return [HumanMessage(content=[cast(dict, self.image_url)])]
 
 
 class ChatPromptValueConcrete(ChatPromptValue):

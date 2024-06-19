@@ -22,7 +22,7 @@ def create_retry_decorator(
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
 ) -> Callable[[Any], Any]:
-    """Creates a retry decorator for Vertex / Palm LLMs."""
+    """Create a retry decorator for Vertex / Palm LLMs."""
     import google.api_core
 
     errors = [
@@ -57,7 +57,7 @@ def init_vertexai(
     location: Optional[str] = None,
     credentials: Optional["Credentials"] = None,
 ) -> None:
-    """Init vertexai.
+    """Init Vertex AI.
 
     Args:
         project: The default GCP project to use when making Vertex API calls.
@@ -82,7 +82,7 @@ def init_vertexai(
 
 
 def get_client_info(module: Optional[str] = None) -> "ClientInfo":
-    r"""Returns a custom user agent header.
+    r"""Return a custom user agent header.
 
     Args:
         module (Optional[str]):
@@ -109,7 +109,7 @@ def get_client_info(module: Optional[str] = None) -> "ClientInfo":
 
 
 def load_image_from_gcs(path: str, project: Optional[str] = None) -> "Image":
-    """Loads im Image from GCS."""
+    """Load an image from Google Cloud Storage."""
     try:
         from google.cloud import storage
     except ImportError:

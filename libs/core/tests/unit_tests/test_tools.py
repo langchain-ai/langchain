@@ -1,9 +1,13 @@
 """Test the base tool implementation."""
+
+import asyncio
 import json
+import sys
+import textwrap
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from typing import Any, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import pytest
 
@@ -11,13 +15,15 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import BaseModel, ValidationError
+from langchain_core.runnables import ensure_config
 from langchain_core.tools import (
     BaseTool,
     SchemaAnnotationError,
     StructuredTool,
     Tool,
     ToolException,
+    _create_subset_model,
     tool,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -34,7 +40,7 @@ def test_unnamed_decorator() -> None:
     assert isinstance(search_api, BaseTool)
     assert search_api.name == "search_api"
     assert not search_api.return_direct
-    assert search_api("test") == "API result"
+    assert search_api.invoke("test") == "API result"
 
 
 class _MockSchema(BaseModel):
@@ -321,14 +327,13 @@ def test_structured_tool_from_function_docstring() -> None:
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "string"},
         },
-        "title": "fooSchemaSchema",
+        "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
     }
 
-    prefix = "foo(bar: int, baz: str) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + foo.__doc__.strip()
+    assert structured_tool.description == textwrap.dedent(foo.__doc__.strip())
 
 
 def test_structured_tool_from_function_docstring_complex_args() -> None:
@@ -354,14 +359,13 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
         },
-        "title": "fooSchemaSchema",
+        "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
     }
 
-    prefix = "foo(bar: int, baz: List[str]) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + foo.__doc__.strip()
+    assert structured_tool.description == textwrap.dedent(foo.__doc__).strip()
 
 
 def test_structured_tool_lambda_multi_args_schema() -> None:
@@ -454,7 +458,7 @@ def test_structured_tool_from_function_with_run_manager() -> None:
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "string"},
         },
-        "title": "fooSchemaSchema",
+        "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
     }
@@ -557,7 +561,7 @@ def test_missing_docstring() -> None:
 def test_create_tool_positional_args() -> None:
     """Test that positional arguments are allowed."""
     test_tool = Tool("test_name", lambda x: x, "test_description")
-    assert test_tool("foo") == "foo"
+    assert test_tool.invoke("foo") == "foo"
     assert test_tool.name == "test_name"
     assert test_tool.description == "test_description"
     assert test_tool.is_single_input
@@ -567,7 +571,7 @@ def test_create_tool_keyword_args() -> None:
     """Test that keyword arguments are allowed."""
     test_tool = Tool(name="test_name", func=lambda x: x, description="test_description")
     assert test_tool.is_single_input
-    assert test_tool("foo") == "foo"
+    assert test_tool.invoke("foo") == "foo"
     assert test_tool.name == "test_name"
     assert test_tool.description == "test_description"
 
@@ -585,7 +589,7 @@ async def test_create_async_tool() -> None:
         coroutine=_test_func,
     )
     assert test_tool.is_single_input
-    assert test_tool("foo") == "foo"
+    assert test_tool.invoke("foo") == "foo"
     assert test_tool.name == "test_name"
     assert test_tool.description == "test_description"
     assert test_tool.coroutine is not None
@@ -620,7 +624,10 @@ def test_exception_handling_str() -> None:
 
 def test_exception_handling_callable() -> None:
     expected = "foo bar"
-    handling = lambda _: expected  # noqa: E731
+
+    def handling(e: ToolException) -> str:
+        return expected
+
     _tool = _FakeExceptionTool(handle_tool_error=handling)
     actual = _tool.run({})
     assert expected == actual
@@ -648,7 +655,10 @@ async def test_async_exception_handling_str() -> None:
 
 async def test_async_exception_handling_callable() -> None:
     expected = "foo bar"
-    handling = lambda _: expected  # noqa: E731
+
+    def handling(e: ToolException) -> str:
+        return expected
+
     _tool = _FakeExceptionTool(handle_tool_error=handling)
     actual = await _tool.arun({})
     assert expected == actual
@@ -679,7 +689,7 @@ def test_structured_tool_from_function() -> None:
     }
 
     assert structured_tool.args_schema.schema() == {
-        "title": "fooSchemaSchema",
+        "title": "fooSchema",
         "type": "object",
         "properties": {
             "bar": {"title": "Bar", "type": "integer"},
@@ -688,6 +698,220 @@ def test_structured_tool_from_function() -> None:
         "required": ["bar", "baz"],
     }
 
-    prefix = "foo(bar: int, baz: str) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + foo.__doc__.strip()
+    assert structured_tool.description == textwrap.dedent(foo.__doc__.strip())
+
+
+def test_validation_error_handling_bool() -> None:
+    """Test that validation errors are handled correctly."""
+    expected = "Tool input validation error"
+    _tool = _MockStructuredTool(handle_validation_error=True)
+    actual = _tool.run({})
+    assert expected == actual
+
+
+def test_validation_error_handling_str() -> None:
+    """Test that validation errors are handled correctly."""
+    expected = "foo bar"
+    _tool = _MockStructuredTool(handle_validation_error=expected)
+    actual = _tool.run({})
+    assert expected == actual
+
+
+def test_validation_error_handling_callable() -> None:
+    """Test that validation errors are handled correctly."""
+    expected = "foo bar"
+
+    def handling(e: ValidationError) -> str:
+        return expected
+
+    _tool = _MockStructuredTool(handle_validation_error=handling)
+    actual = _tool.run({})
+    assert expected == actual
+
+
+@pytest.mark.parametrize(
+    "handler",
+    [
+        True,
+        "foo bar",
+        lambda _: "foo bar",
+    ],
+)
+def test_validation_error_handling_non_validation_error(
+    handler: Union[bool, str, Callable[[ValidationError], str]],
+) -> None:
+    """Test that validation errors are handled correctly."""
+
+    class _RaiseNonValidationErrorTool(BaseTool):
+        name: str = "raise_non_validation_error_tool"
+        description: str = "A tool that raises a non-validation error"
+
+        def _parse_input(
+            self,
+            tool_input: Union[str, Dict],
+        ) -> Union[str, Dict[str, Any]]:
+            raise NotImplementedError()
+
+        def _run(self) -> str:
+            return "dummy"
+
+        async def _arun(self) -> str:
+            return "dummy"
+
+    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
+    with pytest.raises(NotImplementedError):
+        _tool.run({})
+
+
+async def test_async_validation_error_handling_bool() -> None:
+    """Test that validation errors are handled correctly."""
+    expected = "Tool input validation error"
+    _tool = _MockStructuredTool(handle_validation_error=True)
+    actual = await _tool.arun({})
+    assert expected == actual
+
+
+async def test_async_validation_error_handling_str() -> None:
+    """Test that validation errors are handled correctly."""
+    expected = "foo bar"
+    _tool = _MockStructuredTool(handle_validation_error=expected)
+    actual = await _tool.arun({})
+    assert expected == actual
+
+
+async def test_async_validation_error_handling_callable() -> None:
+    """Test that validation errors are handled correctly."""
+    expected = "foo bar"
+
+    def handling(e: ValidationError) -> str:
+        return expected
+
+    _tool = _MockStructuredTool(handle_validation_error=handling)
+    actual = await _tool.arun({})
+    assert expected == actual
+
+
+@pytest.mark.parametrize(
+    "handler",
+    [
+        True,
+        "foo bar",
+        lambda _: "foo bar",
+    ],
+)
+async def test_async_validation_error_handling_non_validation_error(
+    handler: Union[bool, str, Callable[[ValidationError], str]],
+) -> None:
+    """Test that validation errors are handled correctly."""
+
+    class _RaiseNonValidationErrorTool(BaseTool):
+        name: str = "raise_non_validation_error_tool"
+        description: str = "A tool that raises a non-validation error"
+
+        def _parse_input(
+            self,
+            tool_input: Union[str, Dict],
+        ) -> Union[str, Dict[str, Any]]:
+            raise NotImplementedError()
+
+        def _run(self) -> str:
+            return "dummy"
+
+        async def _arun(self) -> str:
+            return "dummy"
+
+    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)  # type: ignore[call-arg]
+    with pytest.raises(NotImplementedError):
+        await _tool.arun({})
+
+
+def test_optional_subset_model_rewrite() -> None:
+    class MyModel(BaseModel):
+        a: Optional[str]
+        b: str
+        c: Optional[List[Optional[str]]]
+
+    model2 = _create_subset_model("model2", MyModel, ["a", "b", "c"])
+
+    assert "a" not in model2.schema()["required"]  # should be optional
+    assert "b" in model2.schema()["required"]  # should be required
+    assert "c" not in model2.schema()["required"]  # should be optional
+
+
+@pytest.mark.parametrize(
+    "inputs, expected",
+    [
+        # Check not required
+        ({"bar": "bar"}, {"bar": "bar", "baz": 3, "buzz": "buzz"}),
+        # Check overwritten
+        (
+            {"bar": "bar", "baz": 4, "buzz": "not-buzz"},
+            {"bar": "bar", "baz": 4, "buzz": "not-buzz"},
+        ),
+        # Check validation error when missing
+        ({}, None),
+        # Check validation error when wrong type
+        ({"bar": "bar", "baz": "not-an-int"}, None),
+        # Check OK when None explicitly passed
+        ({"bar": "bar", "baz": None}, {"bar": "bar", "baz": None, "buzz": "buzz"}),
+    ],
+)
+def test_tool_invoke_optional_args(inputs: dict, expected: Optional[dict]) -> None:
+    @tool
+    def foo(bar: str, baz: Optional[int] = 3, buzz: Optional[str] = "buzz") -> dict:
+        """The foo."""
+        return {
+            "bar": bar,
+            "baz": baz,
+            "buzz": buzz,
+        }
+
+    if expected is not None:
+        assert foo.invoke(inputs) == expected  # type: ignore
+    else:
+        with pytest.raises(ValidationError):
+            foo.invoke(inputs)  # type: ignore
+
+
+def test_tool_pass_context() -> None:
+    @tool
+    def foo(bar: str) -> str:
+        """The foo."""
+        config = ensure_config()
+        assert config["configurable"]["foo"] == "not-bar"
+        assert bar == "baz"
+        return bar
+
+    assert foo.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 11),
+    reason="requires python3.11 or higher",
+)
+async def test_async_tool_pass_context() -> None:
+    @tool
+    async def foo(bar: str) -> str:
+        """The foo."""
+        await asyncio.sleep(0.0001)
+        config = ensure_config()
+        assert config["configurable"]["foo"] == "not-bar"
+        assert bar == "baz"
+        return bar
+
+    assert (
+        await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
+    )
+
+
+def test_tool_description() -> None:
+    def foo(bar: str) -> str:
+        """The foo."""
+        return bar
+
+    foo1 = tool(foo)
+    assert foo1.description == "The foo."  # type: ignore
+
+    foo2 = StructuredTool.from_function(foo)
+    assert foo2.description == "The foo."

@@ -1,8 +1,9 @@
 """Agent that interacts with OpenAPI APIs via a hierarchical planning approach."""
+
 import json
 import re
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import yaml
 from langchain_core.callbacks import BaseCallbackManager
@@ -68,7 +69,7 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
     """Tool name."""
     description = REQUESTS_GET_TOOL_DESCRIPTION
     """Tool description."""
-    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
     llm_chain: Any = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_GET_PROMPT)
@@ -83,7 +84,9 @@ class RequestsGetToolWithParsing(BaseRequestsTool, BaseTool):
         except json.JSONDecodeError as e:
             raise e
         data_params = data.get("params")
-        response = self.requests_wrapper.get(data["url"], params=data_params)
+        response: str = cast(
+            str, self.requests_wrapper.get(data["url"], params=data_params)
+        )
         response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
@@ -100,7 +103,7 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
     """Tool name."""
     description = REQUESTS_POST_TOOL_DESCRIPTION
     """Tool description."""
-    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
     llm_chain: Any = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_POST_PROMPT)
@@ -114,7 +117,7 @@ class RequestsPostToolWithParsing(BaseRequestsTool, BaseTool):
             data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
             raise e
-        response = self.requests_wrapper.post(data["url"], data["data"])
+        response: str = cast(str, self.requests_wrapper.post(data["url"], data["data"]))
         response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
@@ -131,7 +134,7 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
     """Tool name."""
     description = REQUESTS_PATCH_TOOL_DESCRIPTION
     """Tool description."""
-    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
     llm_chain: Any = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_PATCH_PROMPT)
@@ -145,7 +148,9 @@ class RequestsPatchToolWithParsing(BaseRequestsTool, BaseTool):
             data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
             raise e
-        response = self.requests_wrapper.patch(data["url"], data["data"])
+        response: str = cast(
+            str, self.requests_wrapper.patch(data["url"], data["data"])
+        )
         response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
@@ -162,7 +167,7 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
     """Tool name."""
     description = REQUESTS_PUT_TOOL_DESCRIPTION
     """Tool description."""
-    response_length: Optional[int] = MAX_RESPONSE_LENGTH
+    response_length: int = MAX_RESPONSE_LENGTH
     """Maximum length of the response to be returned."""
     llm_chain: Any = Field(
         default_factory=_get_default_llm_chain_factory(PARSING_PUT_PROMPT)
@@ -176,7 +181,7 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
             data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
             raise e
-        response = self.requests_wrapper.put(data["url"], data["data"])
+        response: str = cast(str, self.requests_wrapper.put(data["url"], data["data"]))
         response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
@@ -187,7 +192,7 @@ class RequestsPutToolWithParsing(BaseRequestsTool, BaseTool):
 
 
 class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
-    """A tool that sends a DELETE request and parses the response."""
+    """Tool that sends a DELETE request and parses the response."""
 
     name: str = "requests_delete"
     """The name of the tool."""
@@ -208,7 +213,7 @@ class RequestsDeleteToolWithParsing(BaseRequestsTool, BaseTool):
             data = parse_json_markdown(text)
         except json.JSONDecodeError as e:
             raise e
-        response = self.requests_wrapper.delete(data["url"])
+        response: str = cast(str, self.requests_wrapper.delete(data["url"]))
         response = response[: self.response_length]
         return self.llm_chain.predict(
             response=response, instructions=data["output_instructions"]
@@ -248,6 +253,7 @@ def _create_api_controller_agent(
     api_docs: str,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
+    allow_dangerous_requests: bool,
 ) -> Any:
     from langchain.agents.agent import AgentExecutor
     from langchain.agents.mrkl.base import ZeroShotAgent
@@ -256,11 +262,15 @@ def _create_api_controller_agent(
     get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
     post_llm_chain = LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
     tools: List[BaseTool] = [
-        RequestsGetToolWithParsing(
-            requests_wrapper=requests_wrapper, llm_chain=get_llm_chain
+        RequestsGetToolWithParsing(  # type: ignore[call-arg]
+            requests_wrapper=requests_wrapper,
+            llm_chain=get_llm_chain,
+            allow_dangerous_requests=allow_dangerous_requests,
         ),
-        RequestsPostToolWithParsing(
-            requests_wrapper=requests_wrapper, llm_chain=post_llm_chain
+        RequestsPostToolWithParsing(  # type: ignore[call-arg]
+            requests_wrapper=requests_wrapper,
+            llm_chain=post_llm_chain,
+            allow_dangerous_requests=allow_dangerous_requests,
         ),
     ]
     prompt = PromptTemplate(
@@ -286,6 +296,7 @@ def _create_api_controller_tool(
     api_spec: ReducedOpenAPISpec,
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
+    allow_dangerous_requests: bool,
 ) -> Tool:
     """Expose controller as a tool.
 
@@ -314,7 +325,9 @@ def _create_api_controller_tool(
             if not found_match:
                 raise ValueError(f"{endpoint_name} endpoint does not exist.")
 
-        agent = _create_api_controller_agent(base_url, docs_str, requests_wrapper, llm)
+        agent = _create_api_controller_agent(
+            base_url, docs_str, requests_wrapper, llm, allow_dangerous_requests
+        )
         return agent.run(plan_str)
 
     return Tool(
@@ -332,15 +345,24 @@ def create_openapi_agent(
     callback_manager: Optional[BaseCallbackManager] = None,
     verbose: bool = True,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
+    allow_dangerous_requests: bool = False,
     **kwargs: Any,
 ) -> Any:
-    """Instantiate OpenAI API planner and controller for a given spec.
+    """Construct an OpenAI API planner and controller for a given spec.
 
     Inject credentials via requests_wrapper.
 
     We use a top-level "orchestrator" agent to invoke the planner and controller,
     rather than a top-level planner
     that invokes a controller with its plan. This is to keep the planner simple.
+
+    You need to set allow_dangerous_requests to True to use Agent with BaseRequestsTool.
+    Requests can be dangerous and can lead to security vulnerabilities.
+    For example, users can ask a server to make a request to an internal
+    server. It's recommended to use requests through a proxy server
+    and avoid accepting inputs from untrusted sources without proper sandboxing.
+    Please see: https://python.langchain.com/docs/security
+    for further security information.
     """
     from langchain.agents.agent import AgentExecutor
     from langchain.agents.mrkl.base import ZeroShotAgent
@@ -348,7 +370,9 @@ def create_openapi_agent(
 
     tools = [
         _create_api_planner_tool(api_spec, llm),
-        _create_api_controller_tool(api_spec, requests_wrapper, llm),
+        _create_api_controller_tool(
+            api_spec, requests_wrapper, llm, allow_dangerous_requests
+        ),
     ]
     prompt = PromptTemplate(
         template=API_ORCHESTRATOR_PROMPT,

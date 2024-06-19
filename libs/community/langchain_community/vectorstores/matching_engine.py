@@ -6,6 +6,7 @@ import time
 import uuid
 from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -25,6 +26,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.0.12",
+    removal="0.3.0",
+    alternative_import="langchain_google_vertexai.VectorSearchVectorStore",
+)
 class MatchingEngine(VectorStore):
     """`Google Vertex AI Vector Search` (previously Matching Engine) vector store.
 

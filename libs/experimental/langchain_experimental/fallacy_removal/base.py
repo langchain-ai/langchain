@@ -3,10 +3,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.schema import BasePromptTemplate
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain_experimental.fallacy_removal.fallacies import FALLACIES
@@ -18,9 +18,10 @@ from langchain_experimental.fallacy_removal.prompts import (
 
 
 class FallacyChain(Chain):
-    """Chain for applying logical fallacy evaluations, modeled after Constitutional AI \
-    and in same format, but applying logical fallacies as generalized rules to remove \
-    in output
+    """Chain for applying logical fallacy evaluations.
+
+    It is modeled after Constitutional AI and in same format, but
+    applying logical fallacies as generalized rules to remove in output.
 
     Example:
         .. code-block:: python

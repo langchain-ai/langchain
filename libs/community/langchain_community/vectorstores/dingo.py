@@ -107,7 +107,7 @@ class Dingo(VectorStore):
         """
 
         # Embed and create the documents
-        ids = ids or [str(uuid.uuid1().int)[:13] for _ in texts]
+        ids = ids or [str(uuid.uuid4().int)[:13] for _ in texts]
         metadatas_list = []
         texts = list(texts)
         embeds = self._embedding.embed_documents(texts)
@@ -145,7 +145,7 @@ class Dingo(VectorStore):
             List of Documents most similar to the query and score for each
         """
         docs_and_scores = self.similarity_search_with_score(
-            query, k=k, search_params=search_params
+            query, k=k, search_params=search_params, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
@@ -177,9 +177,15 @@ class Dingo(VectorStore):
             return []
 
         for res in results[0]["vectorWithDistances"]:
+            score = res["distance"]
+            if (
+                "score_threshold" in kwargs
+                and kwargs.get("score_threshold") is not None
+            ):
+                if score > kwargs.get("score_threshold"):
+                    continue
             metadatas = res["scalarData"]
             id = res["id"]
-            score = res["distance"]
             text = metadatas[self._text_key]["fields"][0]["data"]
             metadata = {"id": id, "text": text, "score": score}
             for meta_key in metadatas.keys():
@@ -341,7 +347,7 @@ class Dingo(VectorStore):
 
         # Embed and create the documents
 
-        ids = ids or [str(uuid.uuid1().int)[:13] for _ in texts]
+        ids = ids or [str(uuid.uuid4().int)[:13] for _ in texts]
         metadatas_list = []
         texts = list(texts)
         embeds = embedding.embed_documents(texts)

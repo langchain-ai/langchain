@@ -38,7 +38,7 @@ def debug_output(s: Any) -> None:
         s: The message to print
     """
     if DEBUG:
-        print(s)
+        print(s)  # noqa: T201
 
 
 def get_named_result(connection: Any, query: str) -> List[dict[str, Any]]:
@@ -217,9 +217,11 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
         for n in transac:
             n = ",".join(
                 [
-                    f"'{self.escape_str(str(_n))}'"
-                    if idx != embed_tuple_index
-                    else f"array<float>{str(_n)}"
+                    (
+                        f"'{self.escape_str(str(_n))}'"
+                        if idx != embed_tuple_index
+                        else f"array<float>{str(_n)}"
+                    )
                     for (idx, _n) in enumerate(n)
                 ]
             )

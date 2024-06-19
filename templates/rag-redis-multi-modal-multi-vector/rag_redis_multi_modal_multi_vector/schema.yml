@@ -1,0 +1,10 @@
+text:
+- name: content
+tag:
+- name: doc_id
+vector:
+- name: content_vector
+  algorithm: FLAT
+  datatype: FLOAT32
+  dims: 1536
+  distance_metric: COSINE

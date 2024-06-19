@@ -1,5 +1,5 @@
 import os
-from typing import Callable, List, Optional
+from typing import Callable, Iterator, Optional
 
 from langchain_core.documents import Document
 
@@ -39,9 +39,9 @@ class GitLoader(BaseLoader):
         self.branch = branch
         self.file_filter = file_filter
 
-    def load(self) -> List[Document]:
+    def lazy_load(self) -> Iterator[Document]:
         try:
-            from git import Blob, Repo  # type: ignore
+            from git import Blob, Repo
         except ImportError as ex:
             raise ImportError(
                 "Could not import git python package. "
@@ -68,15 +68,13 @@ class GitLoader(BaseLoader):
             repo = Repo(self.repo_path)
             repo.git.checkout(self.branch)
 
-        docs: List[Document] = []
-
         for item in repo.tree().traverse():
             if not isinstance(item, Blob):
                 continue
 
             file_path = os.path.join(self.repo_path, item.path)
 
-            ignored_files = repo.ignored([file_path])  # type: ignore
+            ignored_files = repo.ignored([file_path])
             if len(ignored_files):
                 continue
 
@@ -102,9 +100,6 @@ class GitLoader(BaseLoader):
                         "file_name": item.name,
                         "file_type": file_type,
                     }
-                    doc = Document(page_content=text_content, metadata=metadata)
-                    docs.append(doc)
+                    yield Document(page_content=text_content, metadata=metadata)
             except Exception as e:
-                print(f"Error reading file {file_path}: {e}")
-
-        return docs
+                print(f"Error reading file {file_path}: {e}")  # noqa: T201

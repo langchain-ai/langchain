@@ -102,7 +102,7 @@ class PipelineAI(LLM, BaseModel):
                 "Could not import pipeline-ai python package. "
                 "Please install it with `pip install pipeline-ai`."
             )
-        client = PipelineCloud(token=self.pipeline_api_key.get_secret_value())
+        client = PipelineCloud(token=self.pipeline_api_key.get_secret_value())  # type: ignore[union-attr]
         params = self.pipeline_kwargs or {}
         params = {**params, **kwargs}
 

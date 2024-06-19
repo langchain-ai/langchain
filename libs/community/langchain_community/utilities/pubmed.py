@@ -144,7 +144,7 @@ class PubMedAPIWrapper(BaseModel):
                 if e.code == 429 and retry < self.max_retry:
                     # Too Many Requests errors
                     # wait for an exponentially increasing amount of time
-                    print(
+                    print(  # noqa: T201
                         f"Too Many Requests, "
                         f"waiting for {self.sleep_time:.2f} seconds..."
                     )

@@ -1,7 +1,7 @@
 
 # rag-elasticsearch
 
-This template performs RAG using [ElasticSearch](https://python.langchain.com/docs/integrations/vectorstores/elasticsearch).
+This template performs RAG using [Elasticsearch](https://python.langchain.com/docs/integrations/vectorstores/elasticsearch).
 
 It relies on sentence transformer `MiniLM-L6-v2` for embedding passages and questions.
 
@@ -56,7 +56,7 @@ add_routes(app, rag_elasticsearch_chain, path="/rag-elasticsearch")
 
 (Optional) Let's now configure LangSmith. 
 LangSmith will help us trace, monitor and debug LangChain applications. 
-LangSmith is currently in private beta, you can sign up [here](https://smith.langchain.com/). 
+You can sign up for LangSmith [here](https://smith.langchain.com/). 
 If you don't have access, you can skip this section
 
 ```shell

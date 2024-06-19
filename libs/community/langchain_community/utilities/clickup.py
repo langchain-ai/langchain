@@ -1,4 +1,5 @@
 """Util that calls clickup."""
+
 import json
 import warnings
 from dataclasses import asdict, dataclass, fields
@@ -195,12 +196,15 @@ def extract_dict_elements_from_component_fields(
 def load_query(
     query: str, fault_tolerant: bool = False
 ) -> Tuple[Optional[Dict], Optional[str]]:
-    """Attempts to parse a JSON string and return the parsed object.
+    """Parse a JSON string and return the parsed object.
 
     If parsing fails, returns an error message.
 
     :param query: The JSON string to parse.
     :return: A tuple containing the parsed object or None and an error message or None.
+
+    Exceptions:
+        json.JSONDecodeError: If the input is not a valid JSON string.
     """
     try:
         return json.loads(query), None
@@ -308,10 +312,10 @@ class ClickupAPIWrapper(BaseModel):
         data = response.json()
 
         if "access_token" not in data:
-            print(f"Error: {data}")
+            print(f"Error: {data}")  # noqa: T201
             if "ECODE" in data and data["ECODE"] == "OAUTH_014":
                 url = ClickupAPIWrapper.get_access_code_url(oauth_client_id)
-                print(
+                print(  # noqa: T201
                     "You already used this code once. Generate a new one.",
                     f"Our best guess for the url to get a new code is:\n{url}",
                 )

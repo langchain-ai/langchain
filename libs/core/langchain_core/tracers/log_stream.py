@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import copy
-import math
 import threading
 from collections import defaultdict
 from typing import (
     Any,
     AsyncIterator,
     Dict,
+    Iterator,
     List,
     Literal,
     Optional,
@@ -20,7 +20,6 @@ from typing import (
 from uuid import UUID
 
 import jsonpatch  # type: ignore[import]
-from anyio import BrokenResourceError, ClosedResourceError, create_memory_object_stream
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.load import dumps
@@ -28,7 +27,9 @@ from langchain_core.load.load import load
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.utils import Input, Output
+from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.memory_stream import _MemoryStream
 from langchain_core.tracers.schemas import Run
 
 
@@ -88,7 +89,7 @@ class RunState(TypedDict):
 
 
 class RunLogPatch:
-    """A patch to the run log."""
+    """Patch to the run log."""
 
     ops: List[Dict[str, Any]]
     """List of jsonpatch operations, which describe how to create the run state
@@ -121,7 +122,7 @@ class RunLogPatch:
 
 
 class RunLog(RunLogPatch):
-    """A run log."""
+    """Run log."""
 
     state: RunState
     """Current state of the log, obtained from applying all ops in sequence."""
@@ -158,8 +159,8 @@ class RunLog(RunLogPatch):
 T = TypeVar("T")
 
 
-class LogStreamCallbackHandler(BaseTracer):
-    """A tracer that streams run logs to a stream."""
+class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
+    """Tracer that streams run logs to a stream."""
 
     def __init__(
         self,
@@ -210,12 +211,11 @@ class LogStreamCallbackHandler(BaseTracer):
         self.exclude_types = exclude_types
         self.exclude_tags = exclude_tags
 
-        send_stream: Any
-        receive_stream: Any
-        send_stream, receive_stream = create_memory_object_stream(math.inf)
+        loop = asyncio.get_event_loop()
+        memory_stream = _MemoryStream[RunLogPatch](loop)
         self.lock = threading.Lock()
-        self.send_stream = send_stream
-        self.receive_stream = receive_stream
+        self.send_stream = memory_stream.get_send_stream()
+        self.receive_stream = memory_stream.get_receive_stream()
         self._key_map_by_run_id: Dict[UUID, str] = {}
         self._counter_map_by_name: Dict[str, int] = defaultdict(int)
         self.root_id: Optional[UUID] = None
@@ -225,17 +225,37 @@ class LogStreamCallbackHandler(BaseTracer):
 
     def send(self, *ops: Dict[str, Any]) -> bool:
         """Send a patch to the stream, return False if the stream is closed."""
-        try:
-            self.send_stream.send_nowait(RunLogPatch(*ops))
-            return True
-        except (ClosedResourceError, BrokenResourceError):
-            return False
+        # We will likely want to wrap this in try / except at some point
+        # to handle exceptions that might arise at run time.
+        # For now we'll let the exception bubble up, and always return
+        # True on the happy path.
+        self.send_stream.send_nowait(RunLogPatch(*ops))
+        return True
 
     async def tap_output_aiter(
         self, run_id: UUID, output: AsyncIterator[T]
     ) -> AsyncIterator[T]:
         """Tap an output async iterator to stream its values to the log."""
         async for chunk in output:
+            # root run is handled in .astream_log()
+            if run_id != self.root_id:
+                # if we can't find the run silently ignore
+                # eg. because this run wasn't included in the log
+                if key := self._key_map_by_run_id.get(run_id):
+                    if not self.send(
+                        {
+                            "op": "add",
+                            "path": f"/logs/{key}/streamed_output/-",
+                            "value": chunk,
+                        }
+                    ):
+                        break
+
+            yield chunk
+
+    def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
+        """Tap an output async iterator to stream its values to the log."""
+        for chunk in output:
             # root run is handled in .astream_log()
             if run_id != self.root_id:
                 # if we can't find the run silently ignore
@@ -462,7 +482,7 @@ def _get_standardized_inputs(
 
 
 def _get_standardized_outputs(
-    run: Run, schema_format: Literal["original", "streaming_events"]
+    run: Run, schema_format: Literal["original", "streaming_events", "original+chat"]
 ) -> Optional[Any]:
     """Extract standardized output from a run.
 
@@ -477,6 +497,10 @@ def _get_standardized_outputs(
     """
     outputs = load(run.outputs)
     if schema_format == "original":
+        if run.run_type == "prompt" and "output" in outputs:
+            # These were previously dumped before the tracer.
+            # Now we needn't do anything to them.
+            return outputs["output"]
         # Return the old schema, without standardizing anything
         return outputs
 
@@ -572,6 +596,7 @@ async def _astream_log_implementation(
                     try:
                         final_output = final_output + chunk  # type: ignore
                     except TypeError:
+                        prev_final_output = None
                         final_output = chunk
                 patches: List[Dict[str, Any]] = []
                 if with_streamed_output_list:

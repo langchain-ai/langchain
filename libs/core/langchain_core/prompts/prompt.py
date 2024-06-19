@@ -10,12 +10,14 @@ from langchain_core.prompts.string import (
     StringPromptTemplate,
     check_valid_template,
     get_template_variables,
+    mustache_schema,
 )
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.runnables.config import RunnableConfig
 
 
 class PromptTemplate(StringPromptTemplate):
-    """A prompt template for a language model.
+    """Prompt template for a language model.
 
     A prompt template consists of a string template. It accepts a set of parameters
     from the user that can be used to generate a prompt for a language model.
@@ -45,7 +47,7 @@ class PromptTemplate(StringPromptTemplate):
             prompt.format(foo="bar")
 
             # Instantiation using initializer
-            prompt = PromptTemplate(input_variables=["foo"], template="Say {foo}")
+            prompt = PromptTemplate(template="Say {foo}")
     """
 
     @property
@@ -65,11 +67,55 @@ class PromptTemplate(StringPromptTemplate):
     template: str
     """The prompt template."""
 
-    template_format: Literal["f-string", "jinja2"] = "f-string"
-    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
+    template_format: Literal["f-string", "mustache", "jinja2"] = "f-string"
+    """The format of the prompt template.
+    Options are: 'f-string', 'mustache', 'jinja2'."""
 
     validate_template: bool = False
     """Whether or not to try validating the template."""
+
+    @root_validator(pre=True)
+    def pre_init_validation(cls, values: Dict) -> Dict:
+        """Check that template and input variables are consistent."""
+        if values.get("template") is None:
+            # Will let pydantic fail with a ValidationError if template
+            # is not provided.
+            return values
+
+        # Set some default values based on the field defaults
+        values.setdefault("template_format", "f-string")
+        values.setdefault("partial_variables", {})
+
+        if values.get("validate_template"):
+            if values["template_format"] == "mustache":
+                raise ValueError("Mustache templates cannot be validated.")
+
+            if "input_variables" not in values:
+                raise ValueError(
+                    "Input variables must be provided to validate the template."
+                )
+
+            all_inputs = values["input_variables"] + list(values["partial_variables"])
+            check_valid_template(
+                values["template"], values["template_format"], all_inputs
+            )
+
+        if values["template_format"]:
+            values["input_variables"] = [
+                var
+                for var in get_template_variables(
+                    values["template"], values["template_format"]
+                )
+                if var not in values["partial_variables"]
+            ]
+
+        return values
+
+    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+        if self.template_format != "mustache":
+            return super().get_input_schema(config)
+
+        return mustache_schema(self.template)
 
     def __add__(self, other: Any) -> PromptTemplate:
         """Override the + operator to allow for combining prompt templates."""
@@ -114,40 +160,8 @@ class PromptTemplate(StringPromptTemplate):
         return "prompt"
 
     def format(self, **kwargs: Any) -> str:
-        """Format the prompt with the inputs.
-
-        Args:
-            kwargs: Any arguments to be passed to the prompt template.
-
-        Returns:
-            A formatted string.
-
-        Example:
-
-            .. code-block:: python
-
-                prompt.format(variable1="foo")
-        """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
-
-    @root_validator()
-    def template_is_valid(cls, values: Dict) -> Dict:
-        """Check that template and input variables are consistent."""
-        if values["validate_template"]:
-            all_inputs = values["input_variables"] + list(values["partial_variables"])
-            check_valid_template(
-                values["template"], values["template_format"], all_inputs
-            )
-        elif values.get("template_format"):
-            values["input_variables"] = [
-                var
-                for var in get_template_variables(
-                    values["template"], values["template_format"]
-                )
-                if var not in values["partial_variables"]
-            ]
-        return values
 
     @classmethod
     def from_examples(
@@ -255,7 +269,7 @@ class PromptTemplate(StringPromptTemplate):
         return cls(
             input_variables=input_variables,
             template=template,
-            template_format=template_format,
+            template_format=template_format,  # type: ignore[arg-type]
             partial_variables=_partial_variables,
             **kwargs,
         )

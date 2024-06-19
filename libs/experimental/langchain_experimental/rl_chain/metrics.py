@@ -6,6 +6,8 @@ if TYPE_CHECKING:
 
 
 class MetricsTrackerAverage:
+    """Metrics Tracker Average."""
+
     def __init__(self, step: int):
         self.history: List[Dict[str, Union[int, float]]] = [{"step": 0, "score": 0}]
         self.step: int = step
@@ -33,6 +35,8 @@ class MetricsTrackerAverage:
 
 
 class MetricsTrackerRollingWindow:
+    """Metrics Tracker Rolling Window."""
+
     def __init__(self, window_size: int, step: int):
         self.history: List[Dict[str, Union[int, float]]] = [{"step": 0, "score": 0}]
         self.step: int = step

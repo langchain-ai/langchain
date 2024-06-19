@@ -19,7 +19,7 @@ upstash-redis = ">=1.0.0"
 pillow = ">=10.1.0"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+langchain-cli = ">=0.0.21"
 
 [tool.langserve]
 export_module = "rag_chroma_multi_modal_multi_vector"

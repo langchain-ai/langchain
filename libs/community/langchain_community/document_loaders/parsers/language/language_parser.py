@@ -1,37 +1,100 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional
+from typing import Any, Dict, Iterator, Literal, Optional
 
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
+from langchain_community.document_loaders.parsers.language.c import CSegmenter
 from langchain_community.document_loaders.parsers.language.cobol import CobolSegmenter
+from langchain_community.document_loaders.parsers.language.cpp import CPPSegmenter
+from langchain_community.document_loaders.parsers.language.csharp import CSharpSegmenter
+from langchain_community.document_loaders.parsers.language.elixir import ElixirSegmenter
+from langchain_community.document_loaders.parsers.language.go import GoSegmenter
+from langchain_community.document_loaders.parsers.language.java import JavaSegmenter
 from langchain_community.document_loaders.parsers.language.javascript import (
     JavaScriptSegmenter,
 )
+from langchain_community.document_loaders.parsers.language.kotlin import KotlinSegmenter
+from langchain_community.document_loaders.parsers.language.lua import LuaSegmenter
+from langchain_community.document_loaders.parsers.language.perl import PerlSegmenter
+from langchain_community.document_loaders.parsers.language.php import PHPSegmenter
 from langchain_community.document_loaders.parsers.language.python import PythonSegmenter
+from langchain_community.document_loaders.parsers.language.ruby import RubySegmenter
+from langchain_community.document_loaders.parsers.language.rust import RustSegmenter
+from langchain_community.document_loaders.parsers.language.scala import ScalaSegmenter
+from langchain_community.document_loaders.parsers.language.typescript import (
+    TypeScriptSegmenter,
+)
 
-if TYPE_CHECKING:
-    from langchain.text_splitter import Language
+LANGUAGE_EXTENSIONS: Dict[str, str] = {
+    "py": "python",
+    "js": "js",
+    "cobol": "cobol",
+    "c": "c",
+    "cpp": "cpp",
+    "cs": "csharp",
+    "rb": "ruby",
+    "scala": "scala",
+    "rs": "rust",
+    "go": "go",
+    "kt": "kotlin",
+    "lua": "lua",
+    "pl": "perl",
+    "ts": "ts",
+    "java": "java",
+    "php": "php",
+    "ex": "elixir",
+    "exs": "elixir",
+}
 
-try:
-    from langchain.text_splitter import Language
+LANGUAGE_SEGMENTERS: Dict[str, Any] = {
+    "python": PythonSegmenter,
+    "js": JavaScriptSegmenter,
+    "cobol": CobolSegmenter,
+    "c": CSegmenter,
+    "cpp": CPPSegmenter,
+    "csharp": CSharpSegmenter,
+    "ruby": RubySegmenter,
+    "rust": RustSegmenter,
+    "scala": ScalaSegmenter,
+    "go": GoSegmenter,
+    "kotlin": KotlinSegmenter,
+    "lua": LuaSegmenter,
+    "perl": PerlSegmenter,
+    "ts": TypeScriptSegmenter,
+    "java": JavaSegmenter,
+    "php": PHPSegmenter,
+    "elixir": ElixirSegmenter,
+}
 
-    LANGUAGE_EXTENSIONS: Dict[str, str] = {
-        "py": Language.PYTHON,
-        "js": Language.JS,
-        "cobol": Language.COBOL,
-    }
-
-    LANGUAGE_SEGMENTERS: Dict[str, Any] = {
-        Language.PYTHON: PythonSegmenter,
-        Language.JS: JavaScriptSegmenter,
-        Language.COBOL: CobolSegmenter,
-    }
-except ImportError:
-    LANGUAGE_EXTENSIONS = {}
-    LANGUAGE_SEGMENTERS = {}
+Language = Literal[
+    "cpp",
+    "go",
+    "java",
+    "kotlin",
+    "js",
+    "ts",
+    "php",
+    "proto",
+    "python",
+    "rst",
+    "ruby",
+    "rust",
+    "scala",
+    "swift",
+    "markdown",
+    "latex",
+    "html",
+    "sol",
+    "csharp",
+    "cobol",
+    "c",
+    "lua",
+    "perl",
+    "elixir",
+]
 
 
 class LanguageParser(BaseBlobParser):
@@ -43,16 +106,39 @@ class LanguageParser(BaseBlobParser):
 
     This approach can potentially improve the accuracy of QA models over source code.
 
-    Currently, the supported languages for code parsing are Python and JavaScript.
+    The supported languages for code parsing are:
+
+    - C: "c" (*)
+    - C++: "cpp" (*)
+    - C#: "csharp" (*)
+    - COBOL: "cobol"
+    - Elixir: "elixir"
+    - Go: "go" (*)
+    - Java: "java" (*)
+    - JavaScript: "js" (requires package `esprima`)
+    - Kotlin: "kotlin" (*)
+    - Lua: "lua" (*)
+    - Perl: "perl" (*)
+    - Python: "python"
+    - Ruby: "ruby" (*)
+    - Rust: "rust" (*)
+    - Scala: "scala" (*)
+    - TypeScript: "ts" (*)
+
+    Items marked with (*) require the packages `tree_sitter` and
+    `tree_sitter_languages`. It is straightforward to add support for additional
+    languages using `tree_sitter`, although this currently requires modifying LangChain.
 
     The language used for parsing can be configured, along with the minimum number of
     lines required to activate the splitting based on syntax.
+
+    If a language is not explicitly specified, `LanguageParser` will infer one from
+    filename extensions, if present.
 
     Examples:
 
        .. code-block:: python
 
-            from langchain.text_splitter.Language
             from langchain_community.document_loaders.generic import GenericLoader
             from langchain_community.document_loaders.parsers import LanguageParser
 
@@ -68,13 +154,12 @@ class LanguageParser(BaseBlobParser):
 
         .. code-block:: python
 
-            from langchain.text_splitter import Language
 
             loader = GenericLoader.from_filesystem(
                 "./code",
                 glob="**/*",
                 suffixes=[".py"],
-                parser=LanguageParser(language=Language.PYTHON)
+                parser=LanguageParser(language="python")
             )
 
         Example instantiations to set number of lines threshold:
