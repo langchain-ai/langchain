@@ -1953,3 +1953,24 @@ def test_split_json_with_lists() -> None:
     texts_list = splitter.split_text(json_data=test_data_list, convert_lists=True)
 
     assert len(texts_list) >= len(texts)
+
+
+def test_split_json_many_calls() -> None:
+    x = {"a": 1, "b": 2}
+    y = {"c": 3, "d": 4}
+
+    splitter = RecursiveJsonSplitter()
+    chunk0 = splitter.split_json(x)
+    assert chunk0 == [{"a": 1, "b": 2}]
+
+    chunk1 = splitter.split_json(y)
+    assert chunk1 == [{"c": 3, "d": 4}]
+
+    # chunk0 is now altered by creating chunk1
+    assert chunk0 == [{"a": 1, "b": 2}]
+
+    chunk0_output = [{"a": 1, "b": 2}]
+    chunk1_output = [{"c": 3, "d": 4}]
+
+    assert chunk0 == chunk0_output
+    assert chunk1 == chunk1_output
