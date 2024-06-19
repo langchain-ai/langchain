@@ -663,7 +663,7 @@ def test_messages_placeholder_with_max() -> None:
     ]
     prompt = MessagesPlaceholder("history")
     assert prompt.format_messages(history=history) == history
-    prompt = MessagesPlaceholder("history", k=2)
+    prompt = MessagesPlaceholder("history", n_messages=2)
     assert prompt.format_messages(history=history) == [
         AIMessage(content="2"),
         AIMessage(content="3"),
