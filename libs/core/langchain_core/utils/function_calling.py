@@ -136,8 +136,8 @@ def convert_pydantic_to_gigachat_function(
         "description": description or schema["description"],
         "parameters": schema,
         "return_parameters": return_parameters,
-        "few_shot_examples": few_shot_examples
-    }    
+        "few_shot_examples": few_shot_examples,
+    }
 
 
 @deprecated(
