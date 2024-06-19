@@ -4,8 +4,29 @@ from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
 
 class SystemMessage(BaseMessage):
-    """Message for priming AI behavior, usually passed in as the first of a sequence
+    """Message for priming AI behavior.
+
+    The system message is usually passed in as the first of a sequence
     of input messages.
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain_core.messages import HumanMessage, SystemMessage
+
+            messages = [
+                SystemMessage(
+                    content="You are a helpful assistant! Your name is Bob."
+                ),
+                HumanMessage(
+                    content="What is your name?"
+                )
+            ]
+
+            # Define a chat model and invoke it with the messages
+            print(model.invoke(messages))
+
     """
 
     type: Literal["system"] = "system"
