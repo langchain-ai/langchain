@@ -40,8 +40,9 @@ class AIMessage(BaseMessage):
     """Message from an AI."""
 
     example: bool = False
-    """Whether this Message is being passed in to the model as part of an example 
-        conversation.
+    """Use to denote that a message is part of an example conversation.
+    
+    At the moment, this is ignored by most models. Usage is discouraged.
     """
 
     tool_calls: List[ToolCall] = []
