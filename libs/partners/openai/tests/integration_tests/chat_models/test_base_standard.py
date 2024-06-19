@@ -12,3 +12,11 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
     @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatOpenAI
+
+    @property
+    def chat_model_params(self) -> dict:
+        return {"model": "gpt-4o"}
+
+    @property
+    def supports_image_inputs(self) -> bool:
+        return True
