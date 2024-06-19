@@ -133,7 +133,7 @@ class RunEvalConfig(BaseModel):
     as `EvaluatorType.QA`, the evaluator type string ("qa"), or a configuration for a
     given evaluator
     (e.g., 
-    :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`)."""  # noqa: E501
+    :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`)."""
     custom_evaluators: Optional[List[CUSTOM_EVALUATOR_TYPE]] = None
     """Custom evaluators to apply to the dataset run."""
     batch_evaluators: Optional[List[BATCH_EVALUATOR_LIKE]] = None
@@ -178,7 +178,7 @@ class RunEvalConfig(BaseModel):
         def __init__(
             self, criteria: Optional[CRITERIA_TYPE] = None, **kwargs: Any
         ) -> None:
-            super().__init__(criteria=criteria, **kwargs)
+            super().__init__(criteria=criteria, **kwargs)  # type: ignore[call-arg]
 
     class LabeledCriteria(SingleKeyEvalConfig):
         """Configuration for a labeled (with references) criteria evaluator.
@@ -198,7 +198,7 @@ class RunEvalConfig(BaseModel):
         def __init__(
             self, criteria: Optional[CRITERIA_TYPE] = None, **kwargs: Any
         ) -> None:
-            super().__init__(criteria=criteria, **kwargs)
+            super().__init__(criteria=criteria, **kwargs)  # type: ignore[call-arg]
 
     class EmbeddingDistance(SingleKeyEvalConfig):
         """Configuration for an embedding distance evaluator.
@@ -370,7 +370,7 @@ class RunEvalConfig(BaseModel):
             normalize_by: Optional[float] = None,
             **kwargs: Any,
         ) -> None:
-            super().__init__(criteria=criteria, normalize_by=normalize_by, **kwargs)
+            super().__init__(criteria=criteria, normalize_by=normalize_by, **kwargs)  # type: ignore[call-arg]
 
     class LabeledScoreString(ScoreString):
         evaluator_type: EvaluatorType = EvaluatorType.LABELED_SCORE_STRING

@@ -47,12 +47,19 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         return self.key_prefix + self.session_id
 
     @property
-    def messages(self) -> List[BaseMessage]:  # type: ignore
+    def messages(self) -> List[BaseMessage]:
         """Retrieve the messages from Redis"""
         _items = self.redis_client.lrange(self.key, 0, -1)
         items = [json.loads(m.decode("utf-8")) for m in _items[::-1]]
         messages = messages_from_dict(items)
         return messages
+
+    @messages.setter
+    def messages(self, messages: List[BaseMessage]) -> None:
+        raise NotImplementedError(
+            "Direct assignment to 'messages' is not allowed."
+            " Use the 'add_messages' instead."
+        )
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in Redis"""

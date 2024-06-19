@@ -1,5 +1,5 @@
-from langchain.prompts.few_shot import FewShotPromptTemplate
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.few_shot import FewShotPromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 fallacy_critique_example = PromptTemplate(
     template="""Human: {input_prompt}

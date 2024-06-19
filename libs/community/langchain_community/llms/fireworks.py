@@ -29,7 +29,7 @@ def _stream_response_to_generation_chunk(
 
 @deprecated(
     since="0.0.26",
-    removal="0.2",
+    removal="0.3",
     alternative_import="langchain_fireworks.Fireworks",
 )
 class Fireworks(BaseLLM):
@@ -186,9 +186,9 @@ class Fireworks(BaseLLM):
             self, self.use_retry, run_manager=run_manager, stop=stop, **params
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
-            yield chunk
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
     async def _astream(
         self,
@@ -207,9 +207,9 @@ class Fireworks(BaseLLM):
             self, self.use_retry, run_manager=run_manager, stop=stop, **params
         ):
             chunk = _stream_response_to_generation_chunk(stream_resp)
-            yield chunk
             if run_manager:
                 await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
 
 
 def conditional_decorator(

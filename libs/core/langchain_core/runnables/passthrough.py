@@ -106,7 +106,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
         .. code-block:: python
 
-            from langchain_core.runnables import RunnablePassthrough, RunnableParallel
+            from langchain_core.runnables import RunnablePassthrough
 
             def fake_llm(prompt: str) -> str: # Fake LLM for the example
                 return "completion"
@@ -114,10 +114,9 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             runnable = {
                 'llm1':  fake_llm,
                 'llm2':  fake_llm,
-            }
-            | RunnablePassthrough.assign(
+            } | RunnablePassthrough.assign(
                 total_chars=lambda inputs: len(inputs['llm1'] + inputs['llm2'])
-              )
+            )
 
             runnable.invoke('hello')
             # {'llm1': 'completion', 'llm2': 'completion', 'total_chars': 20}
@@ -243,16 +242,22 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             for chunk in self._transform_stream_with_config(input, identity, config):
                 yield chunk
         else:
-            final = None
+            final: Other
+            got_first_chunk = False
 
             for chunk in self._transform_stream_with_config(input, identity, config):
                 yield chunk
-                if final is None:
-                    final = chunk
-                else:
-                    final = final + chunk
 
-            if final is not None:
+                if not got_first_chunk:
+                    final = chunk
+                    got_first_chunk = True
+                else:
+                    try:
+                        final = final + chunk  # type: ignore[operator]
+                    except TypeError:
+                        final = chunk
+
+            if got_first_chunk:
                 call_func_with_variable_args(
                     self.func, final, ensure_config(config), **kwargs
                 )
@@ -269,18 +274,28 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             ):
                 yield chunk
         else:
-            final = None
+            got_first_chunk = False
 
             async for chunk in self._atransform_stream_with_config(
                 input, identity, config
             ):
                 yield chunk
-                if final is None:
-                    final = chunk
-                else:
-                    final = final + chunk
 
-            if final is not None:
+                # By definitions, a function will operate on the aggregated
+                # input. So we'll aggregate the input until we get to the last
+                # chunk.
+                # If the input is not addable, then we'll assume that we can
+                # only operate on the last chunk.
+                if not got_first_chunk:
+                    final = chunk
+                    got_first_chunk = True
+                else:
+                    try:
+                        final = final + chunk  # type: ignore[operator]
+                    except TypeError:
+                        final = chunk
+
+            if got_first_chunk:
                 config = ensure_config(config)
                 if self.afunc is not None:
                     await acall_func_with_variable_args(
@@ -314,8 +329,7 @@ _graph_passthrough: RunnablePassthrough = RunnablePassthrough()
 
 
 class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
-    """
-    A runnable that assigns key-value pairs to Dict[str, Any] inputs.
+    """Runnable that assigns key-value pairs to Dict[str, Any] inputs.
 
     The `RunnableAssign` class takes input dictionaries and, through a
     `RunnableParallel` instance, applies transformations, then combines
@@ -369,7 +383,9 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
     ) -> str:
         name = (
-            name or self.name or f"RunnableAssign<{','.join(self.mapper.steps.keys())}>"
+            name
+            or self.name
+            or f"RunnableAssign<{','.join(self.mapper.steps__.keys())}>"
         )
         return super().get_name(suffix, name=name)
 
@@ -488,7 +504,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         **kwargs: Any,
     ) -> Iterator[Dict[str, Any]]:
         # collect mapper keys
-        mapper_keys = set(self.mapper.steps.keys())
+        mapper_keys = set(self.mapper.steps__.keys())
         # create two streams, one for the map and one for the passthrough
         for_passthrough, for_map = safetee(input, 2, lock=threading.Lock())
 
@@ -544,7 +560,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         **kwargs: Any,
     ) -> AsyncIterator[Dict[str, Any]]:
         # collect mapper keys
-        mapper_keys = set(self.mapper.steps.keys())
+        mapper_keys = set(self.mapper.steps__.keys())
         # create two streams, one for the map and one for the passthrough
         for_passthrough, for_map = atee(input, 2, lock=asyncio.Lock())
         # create map output stream
@@ -609,8 +625,30 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
 
 
 class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
-    """
-    Runnable that picks keys from Dict[str, Any] inputs.
+    """Runnable that picks keys from Dict[str, Any] inputs.
+
+    RunnablePick class represents a runnable that selectively picks keys from a
+    dictionary input. It allows you to specify one or more keys to extract
+    from the input dictionary. It returns a new dictionary containing only
+    the selected keys.
+
+    Example :
+        .. code-block:: python
+
+            from langchain_core.runnables.passthrough import RunnablePick
+
+            input_data = {
+                'name': 'John',
+                'age': 30,
+                'city': 'New York',
+                'country': 'USA'
+            }
+
+            runnable = RunnablePick(keys=['name', 'age'])
+
+            output_data = runnable.invoke(input_data)
+
+            print(output_data)  # Output: {'name': 'John', 'age': 30}
     """
 
     keys: Union[str, List[str]]

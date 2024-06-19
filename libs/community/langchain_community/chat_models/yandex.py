@@ -53,7 +53,7 @@ def _parse_chat_history(history: List[BaseMessage]) -> List[Dict[str, str]]:
 
 
 class ChatYandexGPT(_BaseYandexGPT, BaseChatModel):
-    """Wrapper around YandexGPT large language models.
+    """YandexGPT large language models.
 
     There are two authentication options for the service account
     with the ``ai.languageModels.user`` role:
@@ -127,16 +127,29 @@ def _make_request(
     try:
         import grpc
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
-            CompletionOptions,
-            Message,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
-            CompletionRequest,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
-            TextGenerationServiceStub,
-        )
+
+        try:
+            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (  # noqa: E501
+                TextGenerationServiceStub,
+            )
+        except ModuleNotFoundError:
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
+                TextGenerationServiceStub,
+            )
     except ImportError as e:
         raise ImportError(
             "Please install YandexCloud SDK  with `pip install yandexcloud` \
@@ -166,17 +179,31 @@ async def _amake_request(self: ChatYandexGPT, messages: List[BaseMessage]) -> st
 
         import grpc
         from google.protobuf.wrappers_pb2 import DoubleValue, Int64Value
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
-            CompletionOptions,
-            Message,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
-            CompletionRequest,
-            CompletionResponse,
-        )
-        from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
-            TextGenerationAsyncServiceStub,
-        )
+
+        try:
+            from yandex.cloud.ai.foundation_models.v1.text_common_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+                CompletionResponse,
+            )
+            from yandex.cloud.ai.foundation_models.v1.text_generation.text_generation_service_pb2_grpc import (  # noqa: E501
+                TextGenerationAsyncServiceStub,
+            )
+        except ModuleNotFoundError:
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_pb2 import (
+                CompletionOptions,
+                Message,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2 import (  # noqa: E501
+                CompletionRequest,
+                CompletionResponse,
+            )
+            from yandex.cloud.ai.foundation_models.v1.foundation_models_service_pb2_grpc import (  # noqa: E501
+                TextGenerationAsyncServiceStub,
+            )
         from yandex.cloud.operation.operation_service_pb2 import GetOperationRequest
         from yandex.cloud.operation.operation_service_pb2_grpc import (
             OperationServiceStub,

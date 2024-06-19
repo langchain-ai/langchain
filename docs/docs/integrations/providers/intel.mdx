@@ -1,0 +1,108 @@
+# Intel
+
+>[Optimum Intel](https://github.com/huggingface/optimum-intel?tab=readme-ov-file#optimum-intel) is the interface between the 🤗 Transformers and Diffusers libraries and the different tools and libraries provided by Intel to accelerate end-to-end pipelines on Intel architectures.
+
+>[Intel® Extension for Transformers](https://github.com/intel/intel-extension-for-transformers?tab=readme-ov-file#intel-extension-for-transformers) (ITREX) is an innovative toolkit designed to accelerate GenAI/LLM everywhere with the optimal performance of Transformer-based models on various Intel platforms, including Intel Gaudi2, Intel CPU, and Intel GPU.
+
+This page covers how to use optimum-intel and ITREX with LangChain.
+
+## Optimum-intel
+
+All functionality related to the [optimum-intel](https://github.com/huggingface/optimum-intel.git) and [IPEX](https://github.com/intel/intel-extension-for-pytorch).
+
+### Installation
+
+Install using optimum-intel and ipex using:
+
+```bash
+pip install optimum[neural-compressor]
+pip install intel_extension_for_pytorch
+```
+
+Please follow the installation instructions as specified below:
+
+* Install optimum-intel as shown [here](https://github.com/huggingface/optimum-intel).
+* Install IPEX as shown [here](https://intel.github.io/intel-extension-for-pytorch/index.html#installation?platform=cpu&version=v2.2.0%2Bcpu).
+
+### Embedding Models
+
+See a [usage example](/docs/integrations/text_embedding/optimum_intel).
+We also offer a full tutorial notebook "rag_with_quantized_embeddings.ipynb" for using the embedder in a RAG pipeline in the cookbook dir.
+
+```python
+from langchain_community.embeddings import QuantizedBiEncoderEmbeddings
+```
+
+## Intel® Extension for Transformers (ITREX)
+(ITREX) is an innovative toolkit to accelerate Transformer-based models on Intel platforms, in particular, effective on 4th Intel Xeon Scalable processor Sapphire Rapids (codenamed Sapphire Rapids).
+
+Quantization is a process that involves reducing the precision of these weights by representing them using a smaller number of bits. Weight-only quantization specifically focuses on quantizing the weights of the neural network while keeping other components, such as activations, in their original precision.
+
+As large language models (LLMs) become more prevalent, there is a growing need for new and improved quantization methods that can meet the computational demands of these modern architectures while maintaining the accuracy. Compared to [normal quantization](https://github.com/intel/intel-extension-for-transformers/blob/main/docs/quantization.md) like W8A8, weight only quantization is probably a better trade-off to balance the performance and the accuracy, since we will see below that the bottleneck of deploying LLMs is the memory bandwidth and normally weight only quantization could lead to better accuracy.
+
+Here, we will introduce Embedding Models and Weight-only quantization for Transformers large language models with ITREX. Weight-only quantization is a technique used in deep learning to reduce the memory and computational requirements of neural networks. In the context of deep neural networks, the model parameters, also known as weights, are typically represented using floating-point numbers, which can consume a significant amount of memory and require intensive computational resources.
+
+All functionality related to the [intel-extension-for-transformers](https://github.com/intel/intel-extension-for-transformers).
+
+### Installation
+
+Install intel-extension-for-transformers. For system requirements and other installation tips, please refer to [Installation Guide](https://github.com/intel/intel-extension-for-transformers/blob/main/docs/installation.md)
+
+```bash
+pip install intel-extension-for-transformers
+```
+Install other required packages.
+
+```bash
+pip install -U torch onnx accelerate datasets
+```
+
+### Embedding Models
+
+See a [usage example](/docs/integrations/text_embedding/itrex).
+
+```python
+from langchain_community.embeddings import QuantizedBgeEmbeddings
+```
+
+### Weight-Only Quantization with ITREX
+
+See a [usage example](/docs/integrations/llms/weight_only_quantization).
+
+## Detail of Configuration Parameters
+
+Here is the detail of the `WeightOnlyQuantConfig` class.
+
+#### weight_dtype (string): Weight Data Type, default is "nf4".
+We support quantize the weights to following data types for storing(weight_dtype in WeightOnlyQuantConfig):
+* **int8**: Uses 8-bit data type.
+* **int4_fullrange**: Uses the -8 value of int4 range compared with the normal int4 range [-7,7].
+* **int4_clip**: Clips and retains the values within the int4 range, setting others to zero.
+* **nf4**: Uses the normalized float 4-bit data type.
+* **fp4_e2m1**: Uses regular float 4-bit data type. "e2" means that 2 bits are used for the exponent, and "m1" means that 1 bits are used for the mantissa.
+
+#### compute_dtype (string): Computing Data Type, Default is "fp32".
+While these techniques store weights in 4 or 8 bit, the computation still happens in float32, bfloat16 or int8(compute_dtype in WeightOnlyQuantConfig):
+* **fp32**: Uses the float32 data type to compute.
+* **bf16**: Uses the bfloat16 data type to compute.
+* **int8**: Uses 8-bit data type to compute.
+
+#### llm_int8_skip_modules (list of module's name): Modules to Skip Quantization, Default is None.
+It is a list of modules to be skipped quantization.
+
+#### scale_dtype (string): The Scale Data Type, Default is "fp32".
+Now only support "fp32"(float32).
+
+#### mse_range (boolean): Whether to Search for The Best Clip Range from Range [0.805, 1.0, 0.005], default is False.
+#### use_double_quant (boolean): Whether to Quantize Scale, Default is False.
+Not support yet.
+#### double_quant_dtype (string): Reserve for Double Quantization.
+#### double_quant_scale_dtype (string): Reserve for Double Quantization.
+#### group_size (int): Group Size When Auantization.
+#### scheme (string): Which Format Weight Be Quantize to. Default is "sym".
+* **sym**: Symmetric.
+* **asym**: Asymmetric.
+#### algorithm (string): Which Algorithm to Improve the Accuracy . Default is "RTN"
+* **RTN**: Round-to-nearest (RTN) is a quantification method that we can think of very intuitively.
+* **AWQ**: Protecting only 1% of salient weights can greatly reduce quantization error. the salient weight channels are selected by observing the distribution of activation and weight per channel. The salient weights are also quantized after multiplying a big scale factor before quantization for preserving. .
+* **TEQ**: A trainable equivalent transformation that preserves the FP32 precision in weight-only quantization.

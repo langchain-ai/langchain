@@ -1,3 +1,4 @@
+"""Experimental **text splitter** based on semantic similarity."""
 import copy
 import re
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Tuple, cast
@@ -83,11 +84,14 @@ def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List
     return distances, sentences
 
 
-BreakpointThresholdType = Literal["percentile", "standard_deviation", "interquartile"]
+BreakpointThresholdType = Literal[
+    "percentile", "standard_deviation", "interquartile", "gradient"
+]
 BREAKPOINT_DEFAULTS: Dict[BreakpointThresholdType, float] = {
     "percentile": 95,
     "standard_deviation": 3,
     "interquartile": 1.5,
+    "gradient": 95,
 }
 
 
@@ -95,7 +99,7 @@ class SemanticChunker(BaseDocumentTransformer):
     """Split the text based on semantic similarity.
 
     Taken from Greg Kamradt's wonderful notebook:
-    https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/5_Levels_Of_Text_Splitting.ipynb
+    https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/tutorials/LevelsOfTextSplitting/5_Levels_Of_Text_Splitting.ipynb
 
     All credits to him.
 
@@ -106,15 +110,19 @@ class SemanticChunker(BaseDocumentTransformer):
     def __init__(
         self,
         embeddings: Embeddings,
+        buffer_size: int = 1,
         add_start_index: bool = False,
         breakpoint_threshold_type: BreakpointThresholdType = "percentile",
         breakpoint_threshold_amount: Optional[float] = None,
         number_of_chunks: Optional[int] = None,
+        sentence_split_regex: str = r"(?<=[.?!])\s+",
     ):
         self._add_start_index = add_start_index
         self.embeddings = embeddings
+        self.buffer_size = buffer_size
         self.breakpoint_threshold_type = breakpoint_threshold_type
         self.number_of_chunks = number_of_chunks
+        self.sentence_split_regex = sentence_split_regex
         if breakpoint_threshold_amount is None:
             self.breakpoint_threshold_amount = BREAKPOINT_DEFAULTS[
                 breakpoint_threshold_type
@@ -122,23 +130,34 @@ class SemanticChunker(BaseDocumentTransformer):
         else:
             self.breakpoint_threshold_amount = breakpoint_threshold_amount
 
-    def _calculate_breakpoint_threshold(self, distances: List[float]) -> float:
+    def _calculate_breakpoint_threshold(
+        self, distances: List[float]
+    ) -> Tuple[float, List[float]]:
         if self.breakpoint_threshold_type == "percentile":
             return cast(
                 float,
                 np.percentile(distances, self.breakpoint_threshold_amount),
-            )
+            ), distances
         elif self.breakpoint_threshold_type == "standard_deviation":
             return cast(
                 float,
                 np.mean(distances)
                 + self.breakpoint_threshold_amount * np.std(distances),
-            )
+            ), distances
         elif self.breakpoint_threshold_type == "interquartile":
             q1, q3 = np.percentile(distances, [25, 75])
             iqr = q3 - q1
 
-            return np.mean(distances) + self.breakpoint_threshold_amount * iqr
+            return np.mean(
+                distances
+            ) + self.breakpoint_threshold_amount * iqr, distances
+        elif self.breakpoint_threshold_type == "gradient":
+            # Calculate the threshold based on the distribution of gradient of distance array. # noqa: E501
+            distance_gradient = np.gradient(distances, range(0, len(distances)))
+            return cast(
+                float,
+                np.percentile(distance_gradient, self.breakpoint_threshold_amount),
+            ), distance_gradient
         else:
             raise ValueError(
                 f"Got unexpected `breakpoint_threshold_type`: "
@@ -173,7 +192,7 @@ class SemanticChunker(BaseDocumentTransformer):
         _sentences = [
             {"sentence": x, "index": i} for i, x in enumerate(single_sentences_list)
         ]
-        sentences = combine_sentences(_sentences)
+        sentences = combine_sentences(_sentences, self.buffer_size)
         embeddings = self.embeddings.embed_documents(
             [x["combined_sentence"] for x in sentences]
         )
@@ -186,8 +205,8 @@ class SemanticChunker(BaseDocumentTransformer):
         self,
         text: str,
     ) -> List[str]:
-        # Splitting the essay on '.', '?', and '!'
-        single_sentences_list = re.split(r"(?<=[.?!])\s+", text)
+        # Splitting the essay (by default on '.', '?', and '!')
+        single_sentences_list = re.split(self.sentence_split_regex, text)
 
         # having len(single_sentences_list) == 1 would cause the following
         # np.percentile to fail.
@@ -196,13 +215,17 @@ class SemanticChunker(BaseDocumentTransformer):
         distances, sentences = self._calculate_sentence_distances(single_sentences_list)
         if self.number_of_chunks is not None:
             breakpoint_distance_threshold = self._threshold_from_clusters(distances)
+            breakpoint_array = distances
         else:
-            breakpoint_distance_threshold = self._calculate_breakpoint_threshold(
-                distances
-            )
+            (
+                breakpoint_distance_threshold,
+                breakpoint_array,
+            ) = self._calculate_breakpoint_threshold(distances)
 
         indices_above_thresh = [
-            i for i, x in enumerate(distances) if x > breakpoint_distance_threshold
+            i
+            for i, x in enumerate(breakpoint_array)
+            if x > breakpoint_distance_threshold
         ]
 
         chunks = []

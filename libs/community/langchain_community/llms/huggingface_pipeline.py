@@ -4,6 +4,7 @@ import importlib.util
 import logging
 from typing import Any, List, Mapping, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
@@ -11,18 +12,29 @@ from langchain_core.pydantic_v1 import Extra
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
-VALID_TASKS = ("text2text-generation", "text-generation", "summarization")
+VALID_TASKS = (
+    "text2text-generation",
+    "text-generation",
+    "summarization",
+    "translation",
+)
 DEFAULT_BATCH_SIZE = 4
 
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.0.37",
+    removal="0.3",
+    alternative_import="langchain_huggingface.HuggingFacePipeline",
+)
 class HuggingFacePipeline(BaseLLM):
     """HuggingFace Pipeline API.
 
     To use, you should have the ``transformers`` python package installed.
 
-    Only supports `text-generation`, `text2text-generation` and `summarization` for now.
+    Only supports `text-generation`, `text2text-generation`, `summarization` and
+    `translation`  for now.
 
     Example using from_model_id:
         .. code-block:: python
@@ -86,7 +98,7 @@ class HuggingFacePipeline(BaseLLM):
             from transformers import pipeline as hf_pipeline
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
@@ -101,7 +113,7 @@ class HuggingFacePipeline(BaseLLM):
                         from optimum.intel.openvino import OVModelForCausalLM
 
                     except ImportError:
-                        raise ValueError(
+                        raise ImportError(
                             "Could not import optimum-intel python package. "
                             "Please install it with: "
                             "pip install 'optimum[openvino,nncf]' "
@@ -121,13 +133,13 @@ class HuggingFacePipeline(BaseLLM):
                     model = AutoModelForCausalLM.from_pretrained(
                         model_id, **_model_kwargs
                     )
-            elif task in ("text2text-generation", "summarization"):
+            elif task in ("text2text-generation", "summarization", "translation"):
                 if backend == "openvino":
                     try:
                         from optimum.intel.openvino import OVModelForSeq2SeqLM
 
                     except ImportError:
-                        raise ValueError(
+                        raise ImportError(
                             "Could not import optimum-intel python package. "
                             "Please install it with: "
                             "pip install 'optimum[openvino,nncf]' "
@@ -153,7 +165,7 @@ class HuggingFacePipeline(BaseLLM):
                     f"currently only {VALID_TASKS} are supported"
                 )
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 f"Could not load the {task} model due to missing dependencies."
             ) from e
 
@@ -200,7 +212,7 @@ class HuggingFacePipeline(BaseLLM):
                     cuda_device_count,
                 )
         if device is not None and device_map is not None and backend == "openvino":
-            logger.warning("Please set device for OpenVINO through: " "'model_kwargs'")
+            logger.warning("Please set device for OpenVINO through: `model_kwargs`")
         if "trust_remote_code" in _model_kwargs:
             _model_kwargs = {
                 k: v for k, v in _model_kwargs.items() if k != "trust_remote_code"
@@ -253,6 +265,7 @@ class HuggingFacePipeline(BaseLLM):
         # List to hold all results
         text_generations: List[str] = []
         pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
+        skip_prompt = kwargs.get("skip_prompt", False)
 
         for i in range(0, len(prompts), self.batch_size):
             batch_prompts = prompts[i : i + self.batch_size]
@@ -260,8 +273,6 @@ class HuggingFacePipeline(BaseLLM):
             # Process batch of prompts
             responses = self.pipeline(
                 batch_prompts,
-                stop_sequence=stop,
-                return_full_text=False,
                 **pipeline_kwargs,
             )
 
@@ -277,12 +288,15 @@ class HuggingFacePipeline(BaseLLM):
                     text = response["generated_text"]
                 elif self.pipeline.task == "summarization":
                     text = response["summary_text"]
+                elif self.pipeline.task in "translation":
+                    text = response["translation_text"]
                 else:
                     raise ValueError(
                         f"Got invalid task {self.pipeline.task}, "
                         f"currently only {VALID_TASKS} are supported"
                     )
-
+                if skip_prompt:
+                    text = text[len(batch_prompts[j]) :]
                 # Append the processed text to results
                 text_generations.append(text)
 

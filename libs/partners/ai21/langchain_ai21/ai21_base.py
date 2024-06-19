@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from ai21 import AI21Client
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
@@ -9,10 +9,12 @@ _DEFAULT_TIMEOUT_SEC = 300
 
 
 class AI21Base(BaseModel):
+    """Base class for AI21 models."""
+
     class Config:
         arbitrary_types_allowed = True
 
-    client: AI21Client = Field(default=None)
+    client: Any = Field(default=None, exclude=True)  #: :meta private:
     api_key: Optional[SecretStr] = None
     api_host: Optional[str] = None
     timeout_sec: Optional[float] = None

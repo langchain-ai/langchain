@@ -19,7 +19,7 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
 
 def test_multi_vector_retriever_initialization() -> None:
     vectorstore = InMemoryVectorstoreWithSearch()
-    retriever = MultiVectorRetriever(
+    retriever = MultiVectorRetriever(  # type: ignore[call-arg]
         vectorstore=vectorstore, docstore=InMemoryStore(), doc_id="doc_id"
     )
     documents = [Document(page_content="test document", metadata={"doc_id": "1"})]
@@ -32,7 +32,7 @@ def test_multi_vector_retriever_initialization() -> None:
 
 async def test_multi_vector_retriever_initialization_async() -> None:
     vectorstore = InMemoryVectorstoreWithSearch()
-    retriever = MultiVectorRetriever(
+    retriever = MultiVectorRetriever(  # type: ignore[call-arg]
         vectorstore=vectorstore, docstore=InMemoryStore(), doc_id="doc_id"
     )
     documents = [Document(page_content="test document", metadata={"doc_id": "1"})]

@@ -16,6 +16,7 @@ from typing import (
 )
 
 import numpy as np
+from bson import ObjectId, json_util
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
@@ -31,7 +32,7 @@ VST = TypeVar("VST", bound=VectorStore)
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_INSERT_BATCH_SIZE = 100
+DEFAULT_INSERT_BATCH_SIZE = 100_000
 
 
 class MongoDBAtlasVectorSearch(VectorStore):
@@ -45,8 +46,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain_community.vectorstores import MongoDBAtlasVectorSearch
-            from langchain_community.embeddings.openai import OpenAIEmbeddings
+            from langchain_mongodb import MongoDBAtlasVectorSearch
+            from langchain_openai import OpenAIEmbeddings
             from pymongo import MongoClient
 
             mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
@@ -150,18 +151,24 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """
         batch_size = kwargs.get("batch_size", DEFAULT_INSERT_BATCH_SIZE)
         _metadatas: Union[List, Generator] = metadatas or ({} for _ in texts)
-        texts_batch = []
-        metadatas_batch = []
+        texts_batch = texts
+        metadatas_batch = _metadatas
         result_ids = []
-        for i, (text, metadata) in enumerate(zip(texts, _metadatas)):
-            texts_batch.append(text)
-            metadatas_batch.append(metadata)
-            if (i + 1) % batch_size == 0:
-                result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))
-                texts_batch = []
-                metadatas_batch = []
+        if batch_size:
+            texts_batch = []
+            metadatas_batch = []
+            size = 0
+            for i, (text, metadata) in enumerate(zip(texts, _metadatas)):
+                size += len(text) + len(metadata)
+                texts_batch.append(text)
+                metadatas_batch.append(metadata)
+                if (i + 1) % batch_size == 0 or size >= 47_000_000:
+                    result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))
+                    texts_batch = []
+                    metadatas_batch = []
+                    size = 0
         if texts_batch:
-            result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))
+            result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))  # type: ignore
         return result_ids
 
     def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
@@ -183,6 +190,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
+        include_embedding: bool = False,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         params = {
             "queryVector": embedding,
@@ -199,13 +208,32 @@ class MongoDBAtlasVectorSearch(VectorStore):
             query,
             {"$set": {"score": {"$meta": "vectorSearchScore"}}},
         ]
+
+        # Exclude the embedding key from the return payload
+        if not include_embedding:
+            pipeline.append({"$project": {self._embedding_key: 0}})
+
         if post_filter_pipeline is not None:
             pipeline.extend(post_filter_pipeline)
         cursor = self._collection.aggregate(pipeline)  # type: ignore[arg-type]
         docs = []
+
+        def _make_serializable(obj: Dict[str, Any]) -> None:
+            for k, v in obj.items():
+                if isinstance(v, dict):
+                    _make_serializable(v)
+                elif isinstance(v, list) and v and isinstance(v[0], ObjectId):
+                    obj[k] = [json_util.default(item) for item in v]
+                elif isinstance(v, ObjectId):
+                    obj[k] = json_util.default(v)
+
         for res in cursor:
             text = res.pop(self._text_key)
             score = res.pop("score")
+            # Make every ObjectId found JSON-Serializable
+            # following format used in bson.json_util.loads
+            # e.g. loads('{"_id": {"$oid": "664..."}}') == {'_id': ObjectId('664..')} # noqa: E501
+            _make_serializable(res)
             docs.append((Document(page_content=text, metadata=res), score))
         return docs
 
@@ -215,6 +243,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         k: int = 4,
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return MongoDB documents most similar to the given query and their scores.
 
@@ -238,6 +267,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             k=k,
             pre_filter=pre_filter,
             post_filter_pipeline=post_filter_pipeline,
+            **kwargs,
         )
         return docs
 
@@ -271,6 +301,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             k=k,
             pre_filter=pre_filter,
             post_filter_pipeline=post_filter_pipeline,
+            **kwargs,
         )
 
         if additional and "similarity_score" in additional:
@@ -310,20 +341,15 @@ class MongoDBAtlasVectorSearch(VectorStore):
             List of documents selected by maximal marginal relevance.
         """
         query_embedding = self._embedding.embed_query(query)
-        docs = self._similarity_search_with_score(
-            query_embedding,
-            k=fetch_k,
+        return self.max_marginal_relevance_search_by_vector(
+            embedding=query_embedding,
+            k=k,
+            fetch_k=fetch_k,
+            lambda_mult=lambda_mult,
             pre_filter=pre_filter,
             post_filter_pipeline=post_filter_pipeline,
+            **kwargs,
         )
-        mmr_doc_indexes = maximal_marginal_relevance(
-            np.array(query_embedding),
-            [doc.metadata[self._embedding_key] for doc, _ in docs],
-            k=k,
-            lambda_mult=lambda_mult,
-        )
-        mmr_docs = [docs[i][0] for i in mmr_doc_indexes]
-        return mmr_docs
 
     @classmethod
     def from_texts(
@@ -347,8 +373,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
             .. code-block:: python
                 from pymongo import MongoClient
 
-                from langchain_community.vectorstores import MongoDBAtlasVectorSearch
-                from langchain_community.embeddings import OpenAIEmbeddings
+                from langchain_mongodb import MongoDBAtlasVectorSearch
+                from langchain_openai import OpenAIEmbeddings
 
                 mongo_client = MongoClient("<YOUR-CONNECTION-STRING>")
                 collection = mongo_client["<db_name>"]["<collection_name>"]
@@ -433,6 +459,8 @@ class MongoDBAtlasVectorSearch(VectorStore):
             k=fetch_k,
             pre_filter=pre_filter,
             post_filter_pipeline=post_filter_pipeline,
+            include_embedding=kwargs.pop("include_embedding", True),
+            **kwargs,
         )
         mmr_doc_indexes = maximal_marginal_relevance(
             np.array(embedding),

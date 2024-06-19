@@ -1,15 +1,10 @@
+---
+keywords: [azure]
+---
+
 # Microsoft
 
 All functionality related to `Microsoft Azure` and other `Microsoft` products.
-
-## LLMs
-### Azure OpenAI
-
-See a [usage example](/docs/integrations/llms/azure_openai).
-
-```python
-from langchain_openai import AzureOpenAI
-```
 
 ## Chat Models
 ### Azure OpenAI
@@ -36,6 +31,24 @@ See a [usage example](/docs/integrations/chat/azure_chat_openai)
 
 ```python
 from langchain_openai import AzureChatOpenAI
+```
+
+## LLMs
+
+### Azure ML
+
+See a [usage example](/docs/integrations/llms/azure_ml).
+
+```python
+from langchain_community.llms.azureml_endpoint import AzureMLOnlineEndpoint
+```
+
+### Azure OpenAI
+
+See a [usage example](/docs/integrations/llms/azure_openai).
+
+```python
+from langchain_openai import AzureOpenAI
 ```
 
 ## Embedding Models
@@ -75,10 +88,11 @@ from langchain.document_loaders import AzureAIDataLoader
 
 >[Azure AI Document Intelligence](https://aka.ms/doc-intelligence) (formerly known
 > as `Azure Form Recognizer`) is machine-learning
-> based service that extracts text (including handwriting), tables or key-value-pairs
-> from scanned documents or images.
+> based service that extracts texts (including handwriting), tables, document structures, 
+> and key-value-pairs
+> from digital or scanned PDFs, images, Office and HTML files.
 >
->Document Intelligence supports `PDF`, `JPEG`, `PNG`, `BMP`, or `TIFF`.
+> Document Intelligence supports `PDF`, `JPEG/JPG`, `PNG`, `BMP`, `TIFF`, `HEIF`, `DOCX`, `XLSX`, `PPTX` and `HTML`.
 
 First, you need to install a python package.
 
@@ -211,7 +225,7 @@ from langchain_community.document_loaders.onenote import OneNoteLoader
 
 ## Vector stores
 
-### Azure Cosmos DB
+### Azure Cosmos DB MongoDB vCore
 
 >[Azure Cosmos DB for MongoDB vCore](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/) makes it easy to create a database with full native MongoDB support.
 > You can apply your MongoDB experience and continue to use your favorite MongoDB drivers, SDKs, and tools by pointing your application to the API for MongoDB vCore account's connection string.
@@ -241,41 +255,107 @@ See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db).
 from langchain_community.vectorstores import AzureCosmosDBVectorSearch
 ```
 
-## Retrievers
-### Azure Cognitive Search
+### Azure Cosmos DB NoSQL
 
->[Azure Cognitive Search](https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search) (formerly known as `Azure Search`) is a cloud search service that gives developers infrastructure, APIs, and tools for building a rich search experience over private, heterogeneous content in web, mobile, and enterprise applications.
+>[Azure Cosmos DB for NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search) now offers vector indexing and search in preview.
+This feature is designed to handle high-dimensional vectors, enabling efficient and accurate vector search at any scale. You can now store vectors
+directly in the documents alongside your data. This means that each document in your database can contain not only traditional schema-free data,
+but also high-dimensional vectors as other properties of the documents. This colocation of data and vectors allows for efficient indexing and searching,
+as the vectors are stored in the same logical unit as the data they represent. This simplifies data management, AI application architectures, and the
+efficiency of vector-based operations.
+
+#### Installation and Setup
+
+See [detail configuration instructions](/docs/integrations/vectorstores/azure_cosmos_db_no_sql).
+
+We need to install `azure-cosmos` python package.
+
+```bash
+pip install azure-cosmos
+```
+
+#### Deploy Azure Cosmos DB on Microsoft Azure
+
+Azure Cosmos DB offers a solution for modern apps and intelligent workloads by being very responsive with dynamic and elastic autoscale. It is available
+in every Azure region and can automatically replicate data closer to users. It has SLA guaranteed low-latency and high availability.
+
+[Sign Up](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-python?pivots=devcontainer-codespace) for free to get started today.
+
+See a [usage example](/docs/integrations/vectorstores/azure_cosmos_db_no_sql).
+
+```python
+from langchain_community.vectorstores import AzureCosmosDBNoSQLVectorSearch
+```
+
+## Retrievers
+### Azure AI Search
+
+>[Azure AI Search](https://learn.microsoft.com/en-us/azure/search/search-what-is-azure-search) (formerly known as `Azure Search` or `Azure Cognitive Search` ) is a cloud search service that gives developers infrastructure, APIs, and tools for building a rich search experience over private, heterogeneous content in web, mobile, and enterprise applications.
 
 >Search is foundational to any app that surfaces text to users, where common scenarios include catalog or document search, online retail apps, or data exploration over proprietary content. When you create a search service, you'll work with the following capabilities:
 >- A search engine for full text search over a search index containing user-owned content
 >- Rich indexing, with lexical analysis and optional AI enrichment for content extraction and transformation
 >- Rich query syntax for text search, fuzzy search, autocomplete, geo-search and more
 >- Programmability through REST APIs and client libraries in Azure SDKs
->- Azure integration at the data layer, machine learning layer, and AI (Cognitive Services)
+>- Azure integration at the data layer, machine learning layer, and AI (AI Services)
 
 See [set up instructions](https://learn.microsoft.com/en-us/azure/search/search-create-service-portal).
 
-See a [usage example](/docs/integrations/retrievers/azure_cognitive_search).
+See a [usage example](/docs/integrations/retrievers/azure_ai_search).
 
 ```python
-from langchain.retrievers import AzureCognitiveSearchRetriever
+from langchain.retrievers import AzureAISearchRetriever
+```
+
+## Tools
+
+### Azure Container Apps dynamic sessions
+
+We need to get the `POOL_MANAGEMENT_ENDPOINT` environment variable from the Azure Container Apps service.
+See the instructions [here](/docs/integrations/tools/azure_dynamic_sessions/#setup).
+
+We need to install a python package.
+
+```bash
+pip install langchain-azure-dynamic-sessions
+```
+
+See a [usage example](/docs/integrations/tools/azure_dynamic_sessions).
+
+```python
+from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
+```
+
+### Bing Search
+
+Follow the documentation [here](/docs/integrations/tools/bing_search) to get a detail explanations and instructions of this tool.
+
+The environment variable `BING_SUBSCRIPTION_KEY` and `BING_SEARCH_URL` are required from Bing Search resource.
+
+```bash
+from langchain_community.tools.bing_search import BingSearchResults
+from langchain_community.utilities import BingSearchAPIWrapper
+
+api_wrapper = BingSearchAPIWrapper()
+tool = BingSearchResults(api_wrapper=api_wrapper)
 ```
 
 ## Toolkits
 
-### Azure Cognitive Services
+### Azure AI Services
 
 We need to install several python packages.
 
 ```bash
-pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision
+pip install azure-ai-formrecognizer azure-cognitiveservices-speech azure-ai-vision-imageanalysis
 ```
 
-See a [usage example](/docs/integrations/toolkits/azure_cognitive_services).
+See a [usage example](/docs/integrations/toolkits/azure_ai_services).
 
 ```python
-from langchain_community.agent_toolkits import O365Toolkit
+from langchain_community.agent_toolkits import azure_ai_services
 ```
+
 ### Microsoft Office 365 email and calendar
 
 We need to install `O365` python package.
@@ -304,6 +384,24 @@ See a [usage example](/docs/integrations/toolkits/powerbi).
 ```python
 from langchain_community.agent_toolkits import PowerBIToolkit
 from langchain_community.utilities.powerbi import PowerBIDataset
+```
+
+
+## Graphs
+
+### Azure Cosmos DB for Apache Gremlin
+
+We need to install a python package.
+
+```bash
+pip install gremlinpython
+```
+
+See a [usage example](/docs/integrations/graphs/azure_cosmosdb_gremlin).
+
+```python
+from langchain_community.graphs import GremlinGraph
+from langchain_community.graphs.graph_document import GraphDocument, Node, Relationship
 ```
 
 ## Utilities
@@ -335,7 +433,7 @@ pip install langchain-experimental openai presidio-analyzer presidio-anonymizer 
 python -m spacy download en_core_web_lg
 ```
 
-See [usage examples](/docs/guides/privacy/presidio_data_anonymization/).
+See [usage examples](https://python.langchain.com/v0.1/docs/guides/productionization/safety/presidio_data_anonymization).
 
 ```python
 from langchain_experimental.data_anonymizer import PresidioAnonymizer, PresidioReversibleAnonymizer

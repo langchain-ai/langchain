@@ -42,7 +42,7 @@ retriever = vector_store.as_retriever(search_kwargs={"k": 3})
 # Please remove this and/or adapt to your use case!
 inserted_lines = populate(vector_store)
 if inserted_lines:
-    print(f"Done ({inserted_lines} lines inserted).")  # noqa: T201
+    print(f"Done ({inserted_lines} lines inserted).")
 
 entomology_template = """
 You are an expert entomologist, tasked with answering enthusiast biologists' questions.

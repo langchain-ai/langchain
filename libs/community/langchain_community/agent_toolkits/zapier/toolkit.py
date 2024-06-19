@@ -2,8 +2,8 @@
 from typing import List
 
 from langchain_core._api import warn_deprecated
+from langchain_core.tools import BaseToolkit
 
-from langchain_community.agent_toolkits.base import BaseToolkit
 from langchain_community.tools import BaseTool
 from langchain_community.tools.zapier.tool import ZapierNLARunAction
 from langchain_community.utilities.zapier import ZapierNLAWrapper
@@ -29,7 +29,7 @@ class ZapierToolkit(BaseToolkit):
             )
             for action in actions
         ]
-        return cls(tools=tools)
+        return cls(tools=tools)  # type: ignore[arg-type]
 
     @classmethod
     async def async_from_zapier_nla_wrapper(
@@ -46,7 +46,7 @@ class ZapierToolkit(BaseToolkit):
             )
             for action in actions
         ]
-        return cls(tools=tools)
+        return cls(tools=tools)  # type: ignore[arg-type]
 
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
@@ -54,7 +54,7 @@ class ZapierToolkit(BaseToolkit):
             since="0.0.319",
             message=(
                 "This tool will be deprecated on 2023-11-17. See "
-                "https://nla.zapier.com/sunset/ for details"
+                "<https://nla.zapier.com/sunset/> for details"
             ),
         )
         return self.tools

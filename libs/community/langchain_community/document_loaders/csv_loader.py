@@ -1,6 +1,7 @@
 import csv
 from io import TextIOWrapper
-from typing import Any, Dict, Iterator, List, Optional, Sequence
+from pathlib import Path
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Union
 
 from langchain_core.documents import Document
 
@@ -15,8 +16,9 @@ from langchain_community.document_loaders.unstructured import (
 class CSVLoader(BaseLoader):
     """Load a `CSV` file into a list of Documents.
 
-    Each document represents one row of the CSV file. Every row is converted into a
-    key/value pair and outputted to a new line in the document's page_content.
+    Each document represents one row of the CSV file. Every row is converted
+    into a key/value pair and outputted to a new line in the document's
+    page_content.
 
     The source for each document loaded from csv is set to the value of the
     `file_path` argument for all documents by default.
@@ -31,11 +33,72 @@ class CSVLoader(BaseLoader):
             column1: value1
             column2: value2
             column3: value3
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import CSVLoader
+
+            loader = CSVLoader(file_path='./hw_200.csv',
+                csv_args={
+                'delimiter': ',',
+                'quotechar': '"',
+                'fieldnames': ['Index', 'Height', 'Weight']
+            })
+
+    Load:
+        .. code-block:: python
+
+            docs = loader.load()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Index: Index
+            Height: Height(Inches)"
+            Weight: "Weight(Pounds)"
+            {'source': './hw_200.csv', 'row': 0}
+
+    Async load:
+        .. code-block:: python
+
+            docs = await loader.aload()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Index: Index
+            Height: Height(Inches)"
+            Weight: "Weight(Pounds)"
+            {'source': './hw_200.csv', 'row': 0}
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            # async variant:
+            # docs_lazy = await loader.alazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            Index: Index
+            Height: Height(Inches)"
+            Weight: "Weight(Pounds)"
+            {'source': './hw_200.csv', 'row': 0}
     """
 
     def __init__(
         self,
-        file_path: str,
+        file_path: Union[str, Path],
         source_column: Optional[str] = None,
         metadata_columns: Sequence[str] = (),
         csv_args: Optional[Dict] = None,
@@ -89,14 +152,16 @@ class CSVLoader(BaseLoader):
                 source = (
                     row[self.source_column]
                     if self.source_column is not None
-                    else self.file_path
+                    else str(self.file_path)
                 )
             except KeyError:
                 raise ValueError(
                     f"Source column '{self.source_column}' not found in CSV file."
                 )
             content = "\n".join(
-                f"{k.strip()}: {v.strip() if v is not None else v}"
+                f"""{k.strip() if k is not None else k}: {v.strip()
+                if isinstance(v, str) else ','.join(map(str.strip, v))
+                if isinstance(v, list) else v}"""
                 for k, v in row.items()
                 if k not in self.metadata_columns
             )

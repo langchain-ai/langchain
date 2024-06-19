@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 
 def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
@@ -16,27 +16,57 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
         resulting in merged = {"function_call": {"arguments": "{\n"}}.
     """
     merged = left.copy()
-    for k, v in right.items():
-        if k not in merged:
-            merged[k] = v
-        elif v is not None and merged[k] is None:
-            merged[k] = v
-        elif v is None or merged[k] == v:
+    for right_k, right_v in right.items():
+        if right_k not in merged:
+            merged[right_k] = right_v
+        elif right_v is not None and merged[right_k] is None:
+            merged[right_k] = right_v
+        elif right_v is None:
             continue
-        elif type(merged[k]) != type(v):
+        elif type(merged[right_k]) != type(right_v):
             raise TypeError(
-                f'additional_kwargs["{k}"] already exists in this message,'
+                f'additional_kwargs["{right_k}"] already exists in this message,'
                 " but with a different type."
             )
-        elif isinstance(merged[k], str):
-            merged[k] += v
-        elif isinstance(merged[k], dict):
-            merged[k] = merge_dicts(merged[k], v)
-        elif isinstance(merged[k], list):
-            merged[k] = merged[k] + v
+        elif isinstance(merged[right_k], str):
+            merged[right_k] += right_v
+        elif isinstance(merged[right_k], dict):
+            merged[right_k] = merge_dicts(merged[right_k], right_v)
+        elif isinstance(merged[right_k], list):
+            merged[right_k] = merge_lists(merged[right_k], right_v)
+        elif merged[right_k] == right_v:
+            continue
         else:
             raise TypeError(
-                f"Additional kwargs key {k} already exists in left dict and value has "
-                f"unsupported type {type(merged[k])}."
+                f"Additional kwargs key {right_k} already exists in left dict and "
+                f"value has unsupported type {type(merged[right_k])}."
             )
     return merged
+
+
+def merge_lists(left: Optional[List], right: Optional[List]) -> Optional[List]:
+    """Add two lists, handling None."""
+    if left is None and right is None:
+        return None
+    elif left is None or right is None:
+        return left or right
+    else:
+        merged = left.copy()
+        for e in right:
+            if isinstance(e, dict) and "index" in e and isinstance(e["index"], int):
+                to_merge = [
+                    i
+                    for i, e_left in enumerate(merged)
+                    if e_left["index"] == e["index"]
+                ]
+                if to_merge:
+                    # If a top-level "type" has been set for a chunk, it should no
+                    # longer be overridden by the "type" field in future chunks.
+                    if "type" in merged[to_merge[0]] and "type" in e:
+                        e.pop("type")
+                    merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], e)
+                else:
+                    merged = merged + [e]
+            else:
+                merged = merged + [e]
+        return merged

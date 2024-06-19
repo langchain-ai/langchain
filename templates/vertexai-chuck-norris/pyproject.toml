@@ -12,7 +12,7 @@ google-cloud-aiplatform = "^1.36.4"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.21"
-fastapi = "^0.104.0"
+fastapi = ">=0.104.0,<1"
 sse-starlette = "^1.6.5"
 
 [tool.langserve]
@@ -26,7 +26,5 @@ integrations = ["Google"]
 tags = ["conversation"]
 
 [build-system]
-requires = [
-    "poetry-core",
-]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

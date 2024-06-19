@@ -1,6 +1,10 @@
 # langchain-robocorp
 
-This package contains the LangChain integrations for [Robocorp](https://github.com/robocorp/robocorp).
+| Note: this package is deprecated in favor of the renamed `langchain-sema4` package ([repo](https://github.com/langchain-ai/langchain-sema4), [package](https://pypi.org/project/langchain-sema4/)). |
+|-|
+
+This package contains the LangChain integrations for [Robocorp Action Server](https://github.com/robocorp/robocorp).
+Action Server enables an agent to execute actions in the real world. 
 
 ## Installation
 

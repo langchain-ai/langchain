@@ -1,8 +1,8 @@
 from pathlib import Path
 
 from langchain_community.document_loaders import TextLoader
-from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Neo4jVector
+from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import TokenTextSplitter
 
 txt_path = Path(__file__).parent / "dune.txt"

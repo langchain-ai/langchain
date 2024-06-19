@@ -30,7 +30,11 @@ from langchain_text_splitters.character import (
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
 )
-from langchain_text_splitters.html import ElementType, HTMLHeaderTextSplitter
+from langchain_text_splitters.html import (
+    ElementType,
+    HTMLHeaderTextSplitter,
+    HTMLSectionSplitter,
+)
 from langchain_text_splitters.json import RecursiveJsonSplitter
 from langchain_text_splitters.konlpy import KonlpyTextSplitter
 from langchain_text_splitters.latex import LatexTextSplitter
@@ -65,6 +69,7 @@ __all__ = [
     "HeaderType",
     "LineType",
     "HTMLHeaderTextSplitter",
+    "HTMLSectionSplitter",
     "MarkdownHeaderTextSplitter",
     "MarkdownTextSplitter",
     "CharacterTextSplitter",

@@ -139,29 +139,17 @@ class _AnthropicCommon(BaseLanguageModel):
 
 
 class AnthropicLLM(LLM, _AnthropicCommon):
-    """Anthropic large language models.
+    """Anthropic large language model.
 
-    To use, you should have the ``anthropic`` python package installed, and the
-    environment variable ``ANTHROPIC_API_KEY`` set with your API key, or pass
-    it as a named parameter to the constructor.
+    To use, you should have the environment variable ``ANTHROPIC_API_KEY``
+    set with your API key, or pass it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
 
-            import anthropic
-            from langchain_community.llms import Anthropic
+            from langchain_anthropic import AnthropicLLM
 
-            model = Anthropic(model="<model_name>", anthropic_api_key="my-api-key")
-
-            # Simplest invocation, automatically wrapped with HUMAN_PROMPT
-            # and AI_PROMPT.
-            response = model("What are the biggest risks facing humanity?")
-
-            # Or if you want to use the chat mode, build a few-shot-prompt, or
-            # put words in the Assistant's mouth, use HUMAN_PROMPT and AI_PROMPT:
-            raw_prompt = "What are the biggest risks facing humanity?"
-            prompt = f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}"
-            response = model(prompt)
+            model = AnthropicLLM()
     """
 
     class Config:
@@ -184,6 +172,29 @@ class AnthropicLLM(LLM, _AnthropicCommon):
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "anthropic-llm"
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
+
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        """Get the identifying parameters."""
+        return {
+            "model": self.model,
+            "max_tokens": self.max_tokens_to_sample,
+            "temperature": self.temperature,
+            "top_k": self.top_k,
+            "top_p": self.top_p,
+            "model_kwargs": self.model_kwargs,
+            "streaming": self.streaming,
+            "default_request_timeout": self.default_request_timeout,
+            "max_retries": self.max_retries,
+        }
 
     def _wrap_prompt(self, prompt: str) -> str:
         if not self.HUMAN_PROMPT or not self.AI_PROMPT:
@@ -221,7 +232,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
                 prompt = "What are the biggest risks facing humanity?"
                 prompt = f"\n\nHuman: {prompt}\n\nAssistant:"
-                response = model(prompt)
+                response = model.invoke(prompt)
 
         """
         if self.streaming:
@@ -349,6 +360,8 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         return self.count_tokens(text)
 
 
-@deprecated(since="0.1.0", removal="0.2.0", alternative="AnthropicLLM")
+@deprecated(since="0.1.0", removal="0.3.0", alternative="AnthropicLLM")
 class Anthropic(AnthropicLLM):
+    """Anthropic large language model."""
+
     pass

@@ -58,7 +58,7 @@ def _convert_delta_to_message_chunk(
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 def convert_dict_to_message(_dict: Any) -> BaseMessage:
@@ -81,7 +81,7 @@ def convert_dict_to_message(_dict: Any) -> BaseMessage:
 
 @deprecated(
     since="0.0.26",
-    removal="0.2",
+    removal="0.3",
     alternative_import="langchain_fireworks.ChatFireworks",
 )
 class ChatFireworks(BaseChatModel):

@@ -1,3 +1,4 @@
+import importlib
 from typing import Optional
 
 import typer
@@ -8,7 +9,7 @@ from langchain_cli.namespaces import integration as integration_namespace
 from langchain_cli.namespaces import template as template_namespace
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
-__version__ = "0.0.20"
+__version__ = "0.0.22rc0"
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 app.add_typer(
@@ -20,6 +21,13 @@ app.add_typer(
     name="integration",
     help=integration_namespace.__doc__,
 )
+
+
+# If libcst is installed, add the migrate namespace
+if importlib.util.find_spec("libcst"):
+    from langchain_cli.namespaces.migrate import main as migrate_namespace
+
+    app.add_typer(migrate_namespace.app, name="migrate", help=migrate_namespace.__doc__)
 
 
 def version_callback(show_version: bool) -> None:

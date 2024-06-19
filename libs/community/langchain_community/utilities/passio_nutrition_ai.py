@@ -9,6 +9,8 @@ from langchain_core.utils import get_from_dict_or_env
 
 
 class NoDiskStorage:
+    """Mixin to prevent storing on disk."""
+
     @final
     def __getstate__(self) -> None:
         raise AttributeError("Do not store on disk.")
@@ -46,11 +48,12 @@ except ImportError:
 
 
 def is_http_retryable(rsp: requests.Response) -> bool:
+    """Check if a HTTP response is retryable."""
     return bool(rsp) and rsp.status_code in [408, 425, 429, 500, 502, 503, 504]
 
 
 class ManagedPassioLifeAuth(NoDiskStorage):
-    """Manages the token for the NutritionAI API."""
+    """Manage the token for the NutritionAI API."""
 
     _access_token_expiry: Optional[datetime]
 

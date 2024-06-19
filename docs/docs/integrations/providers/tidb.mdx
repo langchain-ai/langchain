@@ -1,21 +1,38 @@
 # TiDB
 
-> [TiDB](https://github.com/pingcap/tidb) is an open-source, cloud-native, 
-> distributed, MySQL-Compatible database for elastic scale and real-time analytics.
+> [TiDB Cloud](https://tidbcloud.com/), is a comprehensive Database-as-a-Service (DBaaS) solution, 
+> that provides dedicated and serverless options. `TiDB Serverless` is now integrating 
+> a built-in vector search into the MySQL landscape. With this enhancement, you can seamlessly 
+> develop AI applications using `TiDB Serverless` without the need for a new database or additional 
+> technical stacks. Be among the first to experience it by joining the [waitlist for the private beta](https://tidb.cloud/ai).
+
 
 ## Installation and Setup
 
-We need to install the  `sqlalchemy` Python package:
+You have to get the connection details for the TiDB database. 
+Visit the [TiDB Cloud](https://tidbcloud.com/) to get the connection details.
 
 ```bash
-pip install sqlalchemy
+## Document loader
+
+```python
+from langchain_community.document_loaders import TiDBLoader
 ```
+
+Please refer the details [here](/docs/integrations/document_loaders/tidb).
+
+## Vector store
+
+```python
+from langchain_community.vectorstores import TiDBVectorStore
+```
+Please refer the details [here](/docs/integrations/vectorstores/tidb_vector).
 
 
 ## Memory
 
-See a [usage example](/docs/integrations/memory/tidb_chat_message_history).
-
 ```python
 from langchain_community.chat_message_histories import TiDBChatMessageHistory
 ```
+
+Please refer the details [here](/docs/integrations/memory/tidb_chat_message_history).

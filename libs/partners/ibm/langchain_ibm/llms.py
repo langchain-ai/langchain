@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Union
 
+from ibm_watsonx_ai import Credentials  # type: ignore
 from ibm_watsonx_ai.foundation_models import Model, ModelInference  # type: ignore
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class WatsonxLLM(BaseLLM):
     """
-    IBM watsonx.ai large language models.
+    IBM WatsonX.ai large language models.
 
     To use, you should have ``langchain_ibm`` python package installed,
     and the environment variable ``WATSONX_APIKEY`` set with your API key, or pass
@@ -80,7 +81,7 @@ class WatsonxLLM(BaseLLM):
     params: Optional[dict] = None
     """Model parameters to use during generate requests."""
 
-    verify: Union[str, bool] = ""
+    verify: Union[str, bool, None] = None
     """User can pass as verify one of following:
         the path to a CA_BUNDLE file
         the path of directory with certificates of trusted CAs
@@ -189,40 +190,34 @@ class WatsonxLLM(BaseLLM):
                             values, "instance_id", "WATSONX_INSTANCE_ID"
                         )
                     )
-
-            credentials = {
-                "url": values["url"].get_secret_value() if values["url"] else None,
-                "apikey": values["apikey"].get_secret_value()
+            credentials = Credentials(
+                url=values["url"].get_secret_value() if values["url"] else None,
+                api_key=values["apikey"].get_secret_value()
                 if values["apikey"]
                 else None,
-                "token": values["token"].get_secret_value()
-                if values["token"]
-                else None,
-                "password": values["password"].get_secret_value()
+                token=values["token"].get_secret_value() if values["token"] else None,
+                password=values["password"].get_secret_value()
                 if values["password"]
                 else None,
-                "username": values["username"].get_secret_value()
+                username=values["username"].get_secret_value()
                 if values["username"]
                 else None,
-                "instance_id": values["instance_id"].get_secret_value()
+                instance_id=values["instance_id"].get_secret_value()
                 if values["instance_id"]
                 else None,
-                "version": values["version"].get_secret_value()
+                version=values["version"].get_secret_value()
                 if values["version"]
                 else None,
-            }
-            credentials_without_none_value = {
-                key: value for key, value in credentials.items() if value is not None
-            }
+                verify=values["verify"],
+            )
 
             watsonx_model = ModelInference(
                 model_id=values["model_id"],
                 deployment_id=values["deployment_id"],
-                credentials=credentials_without_none_value,
+                credentials=credentials,
                 params=values["params"],
                 project_id=values["project_id"],
                 space_id=values["space_id"],
-                verify=values["verify"],
             )
             values["watsonx_model"] = watsonx_model
 
@@ -333,7 +328,7 @@ class WatsonxLLM(BaseLLM):
         Example:
             .. code-block:: python
 
-                response = watsonx_llm("What is a molecule")
+                response = watsonx_llm.invoke("What is a molecule")
         """
         result = self._generate(
             prompts=[prompt], stop=stop, run_manager=run_manager, **kwargs
@@ -419,3 +414,10 @@ class WatsonxLLM(BaseLLM):
             if run_manager:
                 run_manager.on_llm_new_token(chunk.text, chunk=chunk)
             yield chunk
+
+    def get_num_tokens(self, text: str) -> int:
+        response = self.watsonx_model.tokenize(text, return_tokens=False)
+        return response["result"]["token_count"]
+
+    def get_token_ids(self, text: str) -> List[int]:
+        raise NotImplementedError("API does not support returning token ids.")

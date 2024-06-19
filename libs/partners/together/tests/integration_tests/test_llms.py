@@ -1,11 +1,10 @@
 """Test Together API wrapper.
-
 In order to run this test, you need to have an Together api key.
-You can get it by registering for free at https://api.together.xyz/.
+You can get it by registering for free at https://api.together.ai/.
 A test key can be found at https://api.together.xyz/settings/api-keys
-
 You'll then need to set TOGETHER_API_KEY environment variable to your api key.
 """
+
 import pytest as pytest
 
 from langchain_together import Together

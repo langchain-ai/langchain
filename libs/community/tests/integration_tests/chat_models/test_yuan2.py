@@ -16,7 +16,7 @@ from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 @pytest.mark.scheduled
 def test_chat_yuan2() -> None:
     """Test ChatYuan2 wrapper."""
-    chat = ChatYuan2(
+    chat = ChatYuan2(  # type: ignore[call-arg]
         yuan2_api_key="EMPTY",
         yuan2_api_base="http://127.0.0.1:8001/v1",
         temperature=1.0,
@@ -27,14 +27,14 @@ def test_chat_yuan2() -> None:
     messages = [
         HumanMessage(content="Hello"),
     ]
-    response = chat(messages)
+    response = chat.invoke(messages)
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
 
 def test_chat_yuan2_system_message() -> None:
     """Test ChatYuan2 wrapper with system message."""
-    chat = ChatYuan2(
+    chat = ChatYuan2(  # type: ignore[call-arg]
         yuan2_api_key="EMPTY",
         yuan2_api_base="http://127.0.0.1:8001/v1",
         temperature=1.0,
@@ -46,7 +46,7 @@ def test_chat_yuan2_system_message() -> None:
         SystemMessage(content="You are an AI assistant."),
         HumanMessage(content="Hello"),
     ]
-    response = chat(messages)
+    response = chat.invoke(messages)
     assert isinstance(response, BaseMessage)
     assert isinstance(response.content, str)
 
@@ -54,7 +54,7 @@ def test_chat_yuan2_system_message() -> None:
 @pytest.mark.scheduled
 def test_chat_yuan2_generate() -> None:
     """Test ChatYuan2 wrapper with generate."""
-    chat = ChatYuan2(
+    chat = ChatYuan2(  # type: ignore[call-arg]
         yuan2_api_key="EMPTY",
         yuan2_api_base="http://127.0.0.1:8001/v1",
         temperature=1.0,
@@ -82,19 +82,19 @@ def test_chat_yuan2_streaming() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
 
-    chat = ChatYuan2(
+    chat = ChatYuan2(  # type: ignore[call-arg]
         yuan2_api_key="EMPTY",
         yuan2_api_base="http://127.0.0.1:8001/v1",
         temperature=1.0,
         model_name="yuan2",
         max_retries=3,
         streaming=True,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
     )
     messages = [
         HumanMessage(content="Hello"),
     ]
-    response = chat(messages)
+    response = chat.invoke(messages)
     assert callback_handler.llm_streams > 0
     assert isinstance(response, BaseMessage)
 
@@ -102,7 +102,7 @@ def test_chat_yuan2_streaming() -> None:
 @pytest.mark.asyncio
 async def test_async_chat_yuan2() -> None:
     """Test async generation."""
-    chat = ChatYuan2(
+    chat = ChatYuan2(  # type: ignore[call-arg]
         yuan2_api_key="EMPTY",
         yuan2_api_base="http://127.0.0.1:8001/v1",
         temperature=1.0,
@@ -129,14 +129,14 @@ async def test_async_chat_yuan2_streaming() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
 
-    chat = ChatYuan2(
+    chat = ChatYuan2(  # type: ignore[call-arg]
         yuan2_api_key="EMPTY",
         yuan2_api_base="http://127.0.0.1:8001/v1",
         temperature=1.0,
         model_name="yuan2",
         max_retries=3,
         streaming=True,
-        callback_manager=callback_manager,
+        callbacks=callback_manager,
     )
     messages: List = [
         HumanMessage(content="Hello"),

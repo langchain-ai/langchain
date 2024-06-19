@@ -1,13 +1,51 @@
-from typing import Any, Dict, List, Optional, Union
+import json
+from http import HTTPStatus
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
 
 import requests
-from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models.chat_models import SimpleChatModel
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Field
+from requests import Response
+from requests.exceptions import HTTPError
 
 
-class ChatMaritalk(SimpleChatModel):
+class MaritalkHTTPError(HTTPError):
+    def __init__(self, request_obj: Response) -> None:
+        self.request_obj = request_obj
+        try:
+            response_json = request_obj.json()
+            if "detail" in response_json:
+                api_message = response_json["detail"]
+            elif "message" in response_json:
+                api_message = response_json["message"]
+            else:
+                api_message = response_json
+        except Exception:
+            api_message = request_obj.text
+
+        self.message = api_message
+        self.status_code = request_obj.status_code
+
+    def __str__(self) -> str:
+        status_code_meaning = HTTPStatus(self.status_code).phrase
+        formatted_message = f"HTTP Error: {self.status_code} - {status_code_meaning}"
+        formatted_message += f"\nDetail: {self.message}"
+        return formatted_message
+
+
+class ChatMaritalk(BaseChatModel):
     """`MariTalk` Chat models API.
 
     This class allows interacting with the MariTalk chatbot API.
@@ -23,6 +61,14 @@ class ChatMaritalk(SimpleChatModel):
     api_key: str
     """Your MariTalk API key."""
 
+    model: str
+    """Chose one of the available models: 
+    - `sabia-2-medium`
+    - `sabia-2-small`
+    - `sabia-2-medium-2024-03-13`
+    - `sabia-2-small-2024-03-13`
+    - `maritalk-2024-01-08` (deprecated)"""
+
     temperature: float = Field(default=0.7, gt=0.0, lt=1.0)
     """Run inference with this temperature. 
     Must be in the closed interval [0.0, 1.0]."""
@@ -36,10 +82,6 @@ class ChatMaritalk(SimpleChatModel):
     top_p: float = Field(default=0.95, gt=0.0, lt=1.0)
     """Nucleus sampling parameter controlling the size of 
     the probability mass considered for sampling."""
-
-    system_message_workaround: bool = Field(default=True)
-    """Whether to include a workaround for system messages 
-    by adding them as a user message."""
 
     @property
     def _llm_type(self) -> str:
@@ -64,17 +106,13 @@ class ChatMaritalk(SimpleChatModel):
 
         for message in messages:
             if isinstance(message, HumanMessage):
-                parsed_messages.append({"role": "user", "content": message.content})
+                role = "user"
             elif isinstance(message, AIMessage):
-                parsed_messages.append(
-                    {"role": "assistant", "content": message.content}
-                )
-            elif isinstance(message, SystemMessage) and self.system_message_workaround:
-                # Maritalk models do not understand system message.
-                # #Instead we add these messages as user messages.
-                parsed_messages.append({"role": "user", "content": message.content})
-                parsed_messages.append({"role": "assistant", "content": "ok"})
+                role = "assistant"
+            elif isinstance(message, SystemMessage):
+                role = "system"
 
+            parsed_messages.append({"role": role, "content": message.content})
         return parsed_messages
 
     def _call(
@@ -105,7 +143,51 @@ class ChatMaritalk(SimpleChatModel):
                  If an error occurs (e.g., rate limiting), returns a string
                  describing the error.
         """
+        url = "https://chat.maritaca.ai/api/chat/inference"
+        headers = {"authorization": f"Key {self.api_key}"}
+        stopping_tokens = stop if stop is not None else []
+
+        parsed_messages = self.parse_messages_for_model(messages)
+
+        data = {
+            "messages": parsed_messages,
+            "model": self.model,
+            "do_sample": self.do_sample,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "stopping_tokens": stopping_tokens,
+            **kwargs,
+        }
+
+        response = requests.post(url, json=data, headers=headers)
+
+        if response.ok:
+            return response.json().get("answer", "No answer found")
+        else:
+            raise MaritalkHTTPError(response)
+
+    async def _acall(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> str:
+        """
+        Asynchronously sends the parsed messages to the MariTalk API and returns
+        the generated response or an error message.
+
+        This method makes an HTTP POST request to the MariTalk API with the
+        provided messages and other parameters using async I/O.
+        If the request is successful and the API returns a response,
+        this method returns a string containing the answer.
+        If the request is rate-limited or encounters another error,
+        it returns a string with the error message.
+        """
         try:
+            import httpx
+
             url = "https://chat.maritaca.ai/api/chat/inference"
             headers = {"authorization": f"Key {self.api_key}"}
             stopping_tokens = stop if stop is not None else []
@@ -114,6 +196,7 @@ class ChatMaritalk(SimpleChatModel):
 
             data = {
                 "messages": parsed_messages,
+                "model": self.model,
                 "do_sample": self.do_sample,
                 "max_tokens": self.max_tokens,
                 "temperature": self.temperature,
@@ -122,17 +205,157 @@ class ChatMaritalk(SimpleChatModel):
                 **kwargs,
             }
 
-            response = requests.post(url, json=data, headers=headers)
-            if response.status_code == 429:
-                return "Rate limited, please try again soon"
-            elif response.ok:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    url, json=data, headers=headers, timeout=None
+                )
+
+            if response.status_code == 200:
                 return response.json().get("answer", "No answer found")
+            else:
+                raise MaritalkHTTPError(response)
 
-        except requests.exceptions.RequestException as e:
-            return f"An error occurred: {str(e)}"
+        except ImportError:
+            raise ImportError(
+                "Could not import httpx python package. "
+                "Please install it with `pip install httpx`."
+            )
 
-        # Fallback return statement, in case of unexpected code paths
-        return "An unexpected error occurred"
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        headers = {"Authorization": f"Key {self.api_key}"}
+        stopping_tokens = stop if stop is not None else []
+
+        parsed_messages = self.parse_messages_for_model(messages)
+
+        data = {
+            "messages": parsed_messages,
+            "model": self.model,
+            "do_sample": self.do_sample,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "stopping_tokens": stopping_tokens,
+            "stream": True,
+            **kwargs,
+        }
+
+        response = requests.post(
+            "https://chat.maritaca.ai/api/chat/inference",
+            data=json.dumps(data),
+            headers=headers,
+            stream=True,
+        )
+
+        if response.ok:
+            for line in response.iter_lines():
+                if line.startswith(b"data: "):
+                    response_data = line.replace(b"data: ", b"").decode("utf-8")
+                    if response_data:
+                        parsed_data = json.loads(response_data)
+                        if "text" in parsed_data:
+                            delta = parsed_data["text"]
+                            chunk = ChatGenerationChunk(
+                                message=AIMessageChunk(content=delta)
+                            )
+                            if run_manager:
+                                run_manager.on_llm_new_token(delta, chunk=chunk)
+                            yield chunk
+
+        else:
+            raise MaritalkHTTPError(response)
+
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        try:
+            import httpx
+
+            headers = {"Authorization": f"Key {self.api_key}"}
+            stopping_tokens = stop if stop is not None else []
+
+            parsed_messages = self.parse_messages_for_model(messages)
+
+            data = {
+                "messages": parsed_messages,
+                "model": self.model,
+                "do_sample": self.do_sample,
+                "max_tokens": self.max_tokens,
+                "temperature": self.temperature,
+                "top_p": self.top_p,
+                "stopping_tokens": stopping_tokens,
+                "stream": True,
+                **kwargs,
+            }
+
+            async with httpx.AsyncClient() as client:
+                async with client.stream(
+                    "POST",
+                    "https://chat.maritaca.ai/api/chat/inference",
+                    data=json.dumps(data),
+                    headers=headers,
+                    timeout=None,
+                ) as response:
+                    if response.status_code == 200:
+                        async for line in response.aiter_lines():
+                            if line.startswith("data: "):
+                                response_data = line.replace("data: ", "")
+                                if response_data:
+                                    parsed_data = json.loads(response_data)
+                                    if "text" in parsed_data:
+                                        delta = parsed_data["text"]
+                                        chunk = ChatGenerationChunk(
+                                            message=AIMessageChunk(content=delta)
+                                        )
+                                        if run_manager:
+                                            await run_manager.on_llm_new_token(
+                                                delta, chunk=chunk
+                                            )
+                                        yield chunk
+
+                    else:
+                        raise MaritalkHTTPError(response)
+
+        except ImportError:
+            raise ImportError(
+                "Could not import httpx python package. "
+                "Please install it with `pip install httpx`."
+            )
+
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        output_str = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
+        message = AIMessage(content=output_str)
+        generation = ChatGeneration(message=message)
+        return ChatResult(generations=[generation])
+
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        output_str = await self._acall(
+            messages, stop=stop, run_manager=run_manager, **kwargs
+        )
+        message = AIMessage(content=output_str)
+        generation = ChatGeneration(message=message)
+        return ChatResult(generations=[generation])
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
@@ -144,7 +367,7 @@ class ChatMaritalk(SimpleChatModel):
             A dictionary of the key configuration parameters.
         """
         return {
-            "system_message_workaround": self.system_message_workaround,
+            "model": self.model,
             "temperature": self.temperature,
             "top_p": self.top_p,
             "max_tokens": self.max_tokens,

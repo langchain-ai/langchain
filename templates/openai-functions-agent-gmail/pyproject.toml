@@ -9,9 +9,9 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain = ">=0.0.349,<0.1.0"
+langchain = "^0.1"
 openai = "<2"
-langchain-core = ">=0.0.13,<0.1.0"
+langchain-core = "^0.1"
 langchain-community = ">=0.0.1,<0.1.0" 
 google-api-python-client = "^2.110.0"
 google-auth-oauthlib = "^1.1.0"
