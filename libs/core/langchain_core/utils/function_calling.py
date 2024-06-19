@@ -104,21 +104,39 @@ def convert_pydantic_to_gigachat_function(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    return_model: Optional[Type[BaseModel]] = None,
+    few_shot_examples: Optional[List[dict]] = None,
 ) -> FunctionDescription:
     """Converts a Pydantic model to a function description for the GigaChat API."""
     schema = dereference_refs(model.schema())
     schema.pop("definitions", None)
+    title = schema.pop("title", "")
     if "properties" in schema:
         for key in schema["properties"]:
             if "type" not in schema["properties"][key]:
                 schema["properties"][key]["type"] = "object"
             if "description" not in schema["properties"][key]:
                 schema["properties"][key]["description"] = ""
-    return {
-        "name": name or schema["title"],
+
+    return_parameters = None
+    if return_model:
+        return_schema = dereference_refs(return_model.schema())
+        return_schema.pop("definitions", None)
+        if "properties" in return_schema and "result" in return_schema["properties"]:
+            if "type" not in return_schema["properties"]["result"]:
+                return_schema["properties"]["result"]["type"] = "object"
+            return_parameters = return_schema["properties"]["result"]
+
+    res = {
+        "name": name or title,
         "description": description or schema["description"],
         "parameters": schema,
     }
+    if return_parameters:
+        res["return_parameters"] = return_parameters
+    if few_shot_examples:
+        res["few_shot_examples"] = few_shot_examples
+    return res
 
 
 @deprecated(
@@ -266,7 +284,11 @@ def format_tool_to_gigachat_function(tool: BaseTool) -> FunctionDescription:
     """Format tool into the OpenAI function API."""
     if tool.args_schema:
         return convert_pydantic_to_gigachat_function(
-            tool.args_schema, name=tool.name, description=tool.description
+            tool.args_schema,
+            name=tool.name,
+            description=tool.description,
+            return_model=tool.return_schema,
+            few_shot_examples=tool.few_shot_examples,
         )
     else:
         return {
