@@ -67,6 +67,8 @@ numpy = [
     {version = "^1", python = "<3.12"},
     {version = "^1.26.0", python = ">=3.12"}
 ]
+httpx = "^0.27.0"
+pillow = "^10.3.0"
 
 [tool.ruff.lint]
 select = [
@@ -75,6 +77,10 @@ select = [
   "I",    # isort
   "T201", # print
 ]
+
+[tool.ruff.format]
+docstring-code-format = true
+skip-magic-trailing-comma = true
 
 [tool.mypy]
 disallow_untyped_defs = "True"
