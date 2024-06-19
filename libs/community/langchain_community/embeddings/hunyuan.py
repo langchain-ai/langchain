@@ -10,6 +10,11 @@ from tqdm import tqdm
 
 
 class HunyuanEmbeddings(Embeddings, BaseModel):
+    """Tencent Hunyuan embedding models API by Tencent.
+
+    For more information, see https://cloud.tencent.com/document/product/1729
+    """
+
     tencent_cloud_secret_id: SecretStr = Field(alias="secret_id", default=None)
     """Hunyuan Secret ID"""
     tencent_cloud_secret_key: SecretStr = Field(alias="secret_key", default=None)
