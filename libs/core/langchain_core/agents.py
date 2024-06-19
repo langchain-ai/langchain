@@ -2,8 +2,13 @@
 
 **ATTENTION** The schema definitions are provided for backwards compatibility.
 
-    New agents should be built using the langgraph library, which provides a simpler
-    and more flexible way to define agents (https://github.com/langchain-ai/langgraph).
+    New agents should be built using the langgraph library
+    (https://github.com/langchain-ai/langgraph)), which provides a simpler
+    and more flexible way to define agents.
+   
+    Please see the migration guide for information on how to migrate existing 
+    agents to modern langgraph agents: 
+    https://python.langchain.com/v0.2/docs/how_to/migrate_agent/ 
 
 Agents use language models to choose a sequence of actions to take.
 
