@@ -3,15 +3,15 @@ from typing import Text, Optional
 from langchain_core.tools import BaseTool
 from langchain_core.callbacks import CallbackManagerForToolRun
 
-from langchain_community.utilities.mindsdb import DatabaseMindWrapper
+from langchain_community.utilities.mindsdb import BaseMindWrapper
 
 
-class MindsDBTool(BaseTool):
-    name: Text = "mindsdb"
+class AIMindTool(BaseTool):
+    name: Text = "ai_mind"
     description: Text = (
 
     )
-    api_wrapper: DatabaseMindWrapper
+    api_wrapper: BaseMindWrapper
 
     def _run(
         self,

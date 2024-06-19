@@ -1,3 +1,3 @@
-from langchain_community.tools.mindsdb.tool import MindsDBTool
+from langchain_community.tools.mindsdb.tool import AIMindTool
 
-__all__ = ["MindsDBTool"]
+__all__ = ["AIMindTool"]
