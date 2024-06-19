@@ -740,9 +740,13 @@ class BaseChatOpenAI(BaseChatModel):
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
 
-        Note: You must have the PIL package installed if you want to count Image tokens
+        **Requirements**: You must have the ``pillow`` installed if you want to count
+        image tokens if you are specifying the image as a base64 string, and you must
+        have both ``pillow`` and ``httpx`` installed if you are specifying the image
+        as a URL. If these aren't installed image inputs will be ignored in token
+        counting.
 
-        Official documentation: https://github.com/openai/openai-cookbook/blob/
+        OpenAI reference: https://github.com/openai/openai-cookbook/blob/
         main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
@@ -1620,11 +1624,20 @@ def _is_b64(s: str) -> bool:
 
 
 def _resize(width: int, height: int) -> Tuple[int, int]:
-    if width > 1024 or height > 1024:
+    # larger side must be <= 2048
+    if width > 2048 or height > 2048:
         if width > height:
-            height = int(height * 1024 / width)
-            width = 1024
+            height = (height * 2048) // width
+            width = 2048
         else:
-            width = int(width * 1024 / height)
-            height = 1024
+            width = (width * 2048) // height
+            height = 2048
+    # smaller side must be <= 768
+    if width > 768 and height > 768:
+        if width > height:
+            width = (width * 768) // height
+            height = 768
+        else:
+            height = (width * 768) // height
+            width = 768
     return width, height
