@@ -89,7 +89,7 @@ class ChatBaichuan(BaseChatModel):
 
     baichuan_api_base: str = Field(default=DEFAULT_API_BASE)
     """Baichuan custom endpoints"""
-    baichuan_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    baichuan_api_key: SecretStr = Field(alias="api_key")
     """Baichuan API Key"""
     baichuan_secret_key: Optional[SecretStr] = None
     """[DEPRECATED, keeping it for for backward compatibility] Baichuan Secret Key"""
@@ -153,12 +153,10 @@ class ChatBaichuan(BaseChatModel):
         values["baichuan_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "baichuan_api_key",
+                ["baichuan_api_key", "api_key"],
                 "BAICHUAN_API_KEY",
-                values.get("api_key"),
             )
         )
-
         return values
 
     @property

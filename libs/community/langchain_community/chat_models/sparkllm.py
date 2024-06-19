@@ -199,21 +199,18 @@ class ChatSparkLLM(BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         values["spark_app_id"] = get_from_dict_or_env(
             values,
-            "spark_app_id",
+            ["spark_app_id", "app_id"],
             "IFLYTEK_SPARK_APP_ID",
-            values.get("app_id"),
         )
         values["spark_api_key"] = get_from_dict_or_env(
             values,
-            "spark_api_key",
+            ["spark_api_key", "api_key"],
             "IFLYTEK_SPARK_API_KEY",
-            values.get("api_key"),
         )
         values["spark_api_secret"] = get_from_dict_or_env(
             values,
-            "spark_api_secret",
+            ["spark_api_secret", "api_secret"],
             "IFLYTEK_SPARK_API_SECRET",
-            values.get("api_secret"),
         )
         values["spark_api_url"] = get_from_dict_or_env(
             values,

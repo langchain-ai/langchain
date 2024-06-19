@@ -135,7 +135,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
     client: Any  #: :meta private:
 
-    qianfan_ak: Optional[SecretStr] = Field(default=None, alias="api_key")
+    qianfan_ak: SecretStr = Field(alias="api_key")
     """Qianfan API KEY"""
     qianfan_sk: Optional[SecretStr] = Field(default=None, alias="secret_key")
     """Qianfan SECRET KEY"""
@@ -176,17 +176,15 @@ class QianfanChatEndpoint(BaseChatModel):
         values["qianfan_ak"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "qianfan_ak",
+                ["qianfan_ak", "api_key"],
                 "QIANFAN_AK",
-                default=values.get("api_key"),
             )
         )
         values["qianfan_sk"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "qianfan_sk",
+                ["qianfan_sk", "secret_key"],
                 "QIANFAN_SK",
-                default=values.get("secret_key"),
             )
         )
 

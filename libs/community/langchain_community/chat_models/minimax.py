@@ -143,7 +143,7 @@ class MiniMaxChat(BaseChatModel):
     )
     minimax_group_id: Optional[str] = Field(default=None, alias="group_id")
     """[DEPRECATED, keeping it for for backward compatibility] Group Id"""
-    minimax_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    minimax_api_key: SecretStr = Field(alias="api_key")
     """Minimax API Key"""
     streaming: bool = False
     """Whether to stream the results or not."""
@@ -158,11 +158,13 @@ class MiniMaxChat(BaseChatModel):
         """Validate that api key and python package exists in environment."""
         values["minimax_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
-                values, "minimax_api_key", "MINIMAX_API_KEY", values.get("api_key")
+                values,
+                ["minimax_api_key", "api_key"],
+                "MINIMAX_API_KEY",
             )
         )
         values["minimax_group_id"] = get_from_dict_or_env(
-            values, "minimax_group_id", "MINIMAX_GROUP_ID", values.get("group_id")
+            values, ["minimax_group_id", "group_id"], "MINIMAX_GROUP_ID"
         )
         # Get custom api url from environment.
         values["minimax_api_host"] = get_from_dict_or_env(
