@@ -12,7 +12,7 @@ class ArxivLoader(BaseLoader):
     The loader converts the original PDF format into the text.
 
     Setup:
-        Install ``arxiv`` and ``PyMuPDF`` packages. 
+        Install ``arxiv`` and ``PyMuPDF`` packages.
         ``PyMuPDF`` transforms PDF files downloaded from the arxiv.org site 
         into the text format.
 
@@ -44,11 +44,11 @@ class ArxivLoader(BaseLoader):
             Understanding the Reasoning Ability of Language Models
             From the Perspective of Reasoning Paths Aggre
             {
-                'Published': '2024-02-29', 
+                'Published': '2024-02-29',
                 'Title': 'Understanding the Reasoning Ability of Language Models From the 
-                        Perspective of Reasoning Paths Aggregation', 
+                        Perspective of Reasoning Paths Aggregation',
                 'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan, 
-                        Wenhu Chen, William Yang Wang', 
+                        Wenhu Chen, William Yang Wang',
                 'Summary': 'Pre-trained language models (LMs) are able to perform complex reasoning
                         without explicit fine-tuning...'
             }
@@ -75,9 +75,9 @@ class ArxivLoader(BaseLoader):
             {
                 'Published': '2024-02-29', 
                 'Title': 'Understanding the Reasoning Ability of Language Models From the 
-                        Perspective of Reasoning Paths Aggregation', 
-                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan, 
-                        Wenhu Chen, William Yang Wang', 
+                        Perspective of Reasoning Paths Aggregation',
+                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan,
+                        Wenhu Chen, William Yang Wang',
                 'Summary': 'Pre-trained language models (LMs) are able to perform complex reasoning
                         without explicit fine-tuning...'
             }
@@ -96,9 +96,9 @@ class ArxivLoader(BaseLoader):
             {
                 'Published': '2024-02-29', 
                 'Title': 'Understanding the Reasoning Ability of Language Models From the 
-                        Perspective of Reasoning Paths Aggregation', 
-                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan, 
-                        Wenhu Chen, William Yang Wang', 
+                        Perspective of Reasoning Paths Aggregation',
+                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan,
+                        Wenhu Chen, William Yang Wang',
                 'Summary': 'Pre-trained language models (LMs) are able to perform complex reasoning
                         without explicit fine-tuning...'
             }
@@ -121,19 +121,17 @@ class ArxivLoader(BaseLoader):
             Pre-trained language models (LMs) are able to perform complex reasoning
             without explicit fine-tuning
             {
-                'Entry ID': 'http://arxiv.org/abs/2402.03268v2', 
-                'Published': datetime.date(2024, 2, 29), 
+                'Entry ID': 'http://arxiv.org/abs/2402.03268v2',
+                'Published': datetime.date(2024, 2, 29),
                 'Title': 'Understanding the Reasoning Ability of Language Models From the 
-                        Perspective of Reasoning Paths Aggregation', 
-                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan, 
-                        Wenhu Chen, William Yang Wang', 
+                        Perspective of Reasoning Paths Aggregation',
+                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan,
+                        Wenhu Chen, William Yang Wang'
             }
-    """ # noqa: E501
+    """  # noqa: E501
 
     def __init__(
-        self, query: str, doc_content_chars_max: Optional[int] = None,
-
-        **kwargs: Any
+        self, query: str, doc_content_chars_max: Optional[int] = None, **kwargs: Any
     ):
         """Initialize with search query to find documents in the Arxiv.
         Supports all arguments of `ArxivAPIWrapper`.
@@ -141,7 +139,7 @@ class ArxivLoader(BaseLoader):
         Args:
             query: free text which used to find documents in the Arxiv
             doc_content_chars_max: cut limit for the length of a document's content
-        """ # noqa: E501
+        """  # noqa: E501
 
         self.query = query
         self.client = ArxivAPIWrapper(
