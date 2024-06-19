@@ -11,16 +11,22 @@ from tqdm import tqdm
 
 class HunyuanEmbeddings(Embeddings, BaseModel):
     tencent_cloud_secret_id: SecretStr = Field(alias="secret_id", default=None)
+    """Hunyuan Secret ID"""
     tencent_cloud_secret_key: SecretStr = Field(alias="secret_key", default=None)
-
+    """Hunyuan Secret Key"""
     region: Literal["ap-guangzhou", "ap-beijing"] = "ap-guangzhou"
-
+    """The region of hunyuan service."""
     embedding_ctx_length: int = 1024
+    """The max embedding context length of hunyuan embedding. Just note that it is 1024."""
     max_retries: int = 5
-
+    """The max retries of hunyuan embedding. Default is 5."""
     show_progress_bar: bool = False
+    """Show progress bar when embedding. Default is False."""
 
+    client: Any = Field(default=None, exclude=True)
+    """The tencentcloud client."""
     request_cls: Type = Field(default=None, exclude=True)
+    """The request class of tencentcloud sdk."""
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -47,7 +53,7 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
             from tencentcloud.hunyuan.v20230901.hunyuan_client import HunyuanClient
             from tencentcloud.hunyuan.v20230901.models import GetEmbeddingRequest
         except ImportError:
-            raise ImportError("Could not import tencentcloud sdk python package. " "Please install it with `pip install tencentcloud-sdk-python`.")
+            raise ImportError("Could not import tencentcloud sdk python package. " "Please install it with `pip install \"tencentcloud-sdk-python>=3.0.1139\"`.")
 
         client_profile = ClientProfile()
         client_profile.httpProfile.pre_conn_pool_size = 3
@@ -55,6 +61,7 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
         credential = Credential(values["tencent_cloud_secret_id"].get_secret_value(), values["tencent_cloud_secret_key"].get_secret_value())
 
         values["request_cls"] = GetEmbeddingRequest
+
         values["client"] = HunyuanClient(credential, values["region"], client_profile)
         return values
 

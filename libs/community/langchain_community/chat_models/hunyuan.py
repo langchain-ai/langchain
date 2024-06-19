@@ -74,12 +74,12 @@ class ChatHunyuan(BaseChatModel):
     """
 
     tencent_cloud_secret_id: SecretStr = Field(alias="secret_id", default=None)
-    """Hunyuan Secret ID"""
+    """TencentCloud Secret ID"""
     tencent_cloud_secret_key: SecretStr = Field(alias="secret_key", default=None)
-    """Hunyuan Secret Key"""
+    """TencentCloud Secret Key"""
 
     model_name: str = Field(alias="model")
-    """The hunyuan model name"""
+    """The hunyuan model name. Available: hunyuan-pro, hunyuan-standard, hunyuan-lite, hunyuan-standard-256k"""
     region: Literal["ap-guangzhou", "ap-beijing"] = "ap-guangzhou"
     """The region of hunyuan service."""
     stream_moderation: bool = False
@@ -89,8 +89,12 @@ class ChatHunyuan(BaseChatModel):
     temperature: float = 1.0
     """What sampling temperature to use."""
 
+    client: Any = Field(default=None, exclude=True)
+    """The tencentcloud client"""
     request_cls: Type = Field(default=None, exclude=True)
+    """The request class of tencentcloud sdk"""
     message_cls: Type = Field(default=None, exclude=True)
+    """The message class of tencentcloud sdk"""
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -131,7 +135,7 @@ class ChatHunyuan(BaseChatModel):
             from tencentcloud.hunyuan.v20230901.hunyuan_client import HunyuanClient
             from tencentcloud.hunyuan.v20230901.models import ChatCompletionsRequest, Message
         except ImportError:
-            raise ImportError("Could not import tencentcloud sdk python package. " "Please install it with `pip install tencentcloud-sdk-python`.")
+            raise ImportError("Could not import tencentcloud sdk python package. " "Please install it with `pip install \"tencentcloud-sdk-python>=3.0.1139\"`.")
 
         client_profile = ClientProfile()
         client_profile.httpProfile.pre_conn_pool_size = 3
