@@ -94,8 +94,8 @@ class ArxivLoader(BaseLoader):
             Understanding the Reasoning Ability of Language Models
             From the Perspective of Reasoning Paths Aggre
             {
-                'Published': '2024-02-29', 
-                'Title': 'Understanding the Reasoning Ability of Language Models From the 
+                'Published': '2024-02-29',
+                'Title': 'Understanding the Reasoning Ability of Language Models From the
                         Perspective of Reasoning Paths Aggregation',
                 'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan,
                         Wenhu Chen, William Yang Wang',
@@ -123,7 +123,7 @@ class ArxivLoader(BaseLoader):
             {
                 'Entry ID': 'http://arxiv.org/abs/2402.03268v2',
                 'Published': datetime.date(2024, 2, 29),
-                'Title': 'Understanding the Reasoning Ability of Language Models From the 
+                'Title': 'Understanding the Reasoning Ability of Language Models From the
                         Perspective of Reasoning Paths Aggregation',
                 'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan,
                         Wenhu Chen, William Yang Wang'
