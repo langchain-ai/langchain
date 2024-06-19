@@ -115,7 +115,26 @@ async def agenerate_from_stream(
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
-    """Base class for Chat models."""
+    """Base class for Chat models.
+
+    Custom chat model implementations should inherit from this class.
+
+    Follow the guide for more information on how to implement a
+    custom Chat Model:
+    [Guide](https://python.langchain.com/v0.2/docs/how_to/custom_chat_model/).
+
+    Please reference the table below for information about which
+    methods and properties are required or optional for implementations.
+
+    | Method/Property                  | Description                                                        | Required/Optional |
+    |----------------------------------|--------------------------------------------------------------------|-------------------|
+    | `_generate`                      | Use to generate a chat result from a prompt                        | Required          |
+    | `_llm_type` (property)           | Used to uniquely identify the type of the model. Used for logging. | Required          |
+    | `_identifying_params` (property) | Represent model parameterization for tracing purposes.             | Optional          |
+    | `_stream`                        | Use to implement streaming                                         | Optional          |
+    | `_agenerate`                     | Use to implement a native async method                             | Optional          |
+    | `_astream`                       | Use to implement async version of `_stream`                        | Optional          |
+    """  # noqa: E501
 
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Callback manager to add to the run trace."""
@@ -952,7 +971,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
 
 class SimpleChatModel(BaseChatModel):
-    """Simplified implementation for a chat model to inherit from."""
+    """Simplified implementation for a chat model to inherit from.
+
+    **Note** This implementation is primarily here for backwards compatibility.
+        For new implementations, please use `BaseChatModel` directly.
+    """
 
     def _generate(
         self,
