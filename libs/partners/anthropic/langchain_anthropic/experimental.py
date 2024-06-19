@@ -55,6 +55,7 @@ def _get_type(parameter: Dict[str, Any]) -> str:
 
 
 def get_system_message(tools: List[Dict]) -> str:
+    """Generate a system message that describes the available tools."""
     tools_data: List[Dict] = [
         {
             "tool_name": tool["name"],
