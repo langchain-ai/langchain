@@ -131,6 +131,8 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
         connection: Union[None, DBConnection] = None,
         engine_args: Optional[Dict[str, Any]] = None,
         async_mode: Optional[bool] = None,  # Use only if connection is a string
+        *,
+        history_size: Optional[int] = None,
     ):
         assert not (
             connection_string and connection
@@ -184,6 +186,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
             self._create_table_if_not_exists()
 
         self.session_id = session_id
+        self.history_size = history_size
 
     def _create_table_if_not_exists(self) -> None:
         self.sql_model_class.metadata.create_all(self.engine)
@@ -206,12 +209,15 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
                     getattr(self.sql_model_class, self.session_id_field_name)
                     == self.session_id
                 )
-                .order_by(self.sql_model_class.id.asc())
+                .order_by(self.sql_model_class.id.desc())
             )
+            his_size = self.history_size
+            if his_size and isinstance(his_size, int) and his_size > 0:
+                result = result.limit(his_size)
             messages = []
             for record in result:
                 messages.append(self.converter.from_sql_model(record))
-            return messages
+            return messages[::-1]
 
     def get_messages(self) -> List[BaseMessage]:
         return self.messages
@@ -226,13 +232,16 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
                     getattr(self.sql_model_class, self.session_id_field_name)
                     == self.session_id
                 )
-                .order_by(self.sql_model_class.id.asc())
+                .order_by(self.sql_model_class.id.desc())
             )
+            his_size = self.history_size
+            if his_size and isinstance(his_size, int) and his_size > 0:
+                stmt = stmt.limit(his_size)
             result = await session.execute(stmt)
             messages = []
             for record in result.scalars():
                 messages.append(self.converter.from_sql_model(record))
-            return messages
+            return messages[::-1]
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in db"""

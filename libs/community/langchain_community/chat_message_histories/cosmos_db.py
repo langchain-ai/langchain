@@ -32,6 +32,8 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         connection_string: Optional[str] = None,
         ttl: Optional[int] = None,
         cosmos_client_kwargs: Optional[dict] = None,
+        *,
+        history_size: Optional[int] = None,
     ):
         """
         Initializes a new instance of the CosmosDBChatMessageHistory class.
@@ -50,6 +52,9 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         :param connection_string: The connection string to use to authenticate.
         :param ttl: The time to live (in seconds) to use for documents in the container.
         :param cosmos_client_kwargs: Additional kwargs to pass to the CosmosClient.
+        :param history_size: Maximum number fo messages to retrieve. If None then
+            there is no limit. If not None then only the latest `history_size`
+            messages are retrieved.
         """
         self.cosmos_endpoint = cosmos_endpoint
         self.cosmos_database = cosmos_database
@@ -59,6 +64,7 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
         self.session_id = session_id
         self.user_id = user_id
         self.ttl = ttl
+        self.history_size = history_size
 
         self.messages: List[BaseMessage] = []
         try:
@@ -144,7 +150,10 @@ class CosmosDBChatMessageHistory(BaseChatMessageHistory):
             logger.info("no session found")
             return
         if "messages" in item and len(item["messages"]) > 0:
-            self.messages = messages_from_dict(item["messages"])
+            messages = item["messages"]
+            if self.history_size:
+                messages = messages[-self.history_size :]
+            self.messages = messages_from_dict(messages)
 
     def add_message(self, message: BaseMessage) -> None:
         """Add a self-created message to the store"""

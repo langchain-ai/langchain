@@ -22,6 +22,8 @@ class UpstashRedisChatMessageHistory(BaseChatMessageHistory):
         token: str = "",
         key_prefix: str = "message_store:",
         ttl: Optional[int] = None,
+        *,
+        history_size: Optional[int] = None,
     ):
         try:
             from upstash_redis import Redis
@@ -44,6 +46,7 @@ class UpstashRedisChatMessageHistory(BaseChatMessageHistory):
         self.session_id = session_id
         self.key_prefix = key_prefix
         self.ttl = ttl
+        self.history_size = history_size
 
     @property
     def key(self) -> str:
@@ -53,7 +56,8 @@ class UpstashRedisChatMessageHistory(BaseChatMessageHistory):
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Retrieve the messages from Upstash Redis"""
-        _items = self.redis_client.lrange(self.key, 0, -1)
+        end = self.history_size - 1 if self.history_size else -1
+        _items = self.redis_client.lrange(self.key, 0, end)
         items = [json.loads(m) for m in _items[::-1]]
         messages = messages_from_dict(items)
         return messages

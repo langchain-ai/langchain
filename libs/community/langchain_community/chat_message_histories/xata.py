@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import Any, Dict, List, Optional
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import (
@@ -20,6 +20,8 @@ class XataChatMessageHistory(BaseChatMessageHistory):
         branch_name: str = "main",
         table_name: str = "messages",
         create_table: bool = True,
+        *,
+        history_size: Optional[int] = None,
     ) -> None:
         """Initialize with Xata client."""
         try:
@@ -34,6 +36,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
         )
         self._table_name = table_name
         self._session_id = session_id
+        self._history_size = history_size
 
         if create_table:
             self._create_table_if_not_exists()
@@ -84,14 +87,19 @@ class XataChatMessageHistory(BaseChatMessageHistory):
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
+        payload: Dict[str, Any] = {
+            "filter": {
+                "sessionId": self._session_id,
+            },
+            "sort": {"xata.createdAt": "desc"},
+        }
+        if self._history_size:
+            payload["page"] = {
+                "size": self._history_size,
+            }
         r = self._client.data().query(
             self._table_name,
-            payload={
-                "filter": {
-                    "sessionId": self._session_id,
-                },
-                "sort": {"xata.createdAt": "asc"},
-            },
+            payload=payload,
         )
         if r.status_code != 200:
             raise Exception(f"Error running query: {r.status_code} {r}")
@@ -109,7 +117,7 @@ class XataChatMessageHistory(BaseChatMessageHistory):
                 for m in r["records"]
             ]
         )
-        return msgs
+        return msgs[::-1]
 
     def clear(self) -> None:
         """Delete session from Xata table."""

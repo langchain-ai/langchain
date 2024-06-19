@@ -74,6 +74,8 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         session_id: str,
         url: str = "http://localhost:8000",
         api_key: Optional[str] = None,
+        *,
+        history_size: Optional[int] = None,
     ) -> None:
         try:
             from zep_python import ZepClient
@@ -85,6 +87,7 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
 
         self.zep_client = ZepClient(base_url=url, api_key=api_key)
         self.session_id = session_id
+        self.history_size = history_size
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
@@ -141,7 +144,10 @@ class ZepChatMessageHistory(BaseChatMessageHistory):
         from zep_python import NotFoundError
 
         try:
-            zep_memory: Memory = self.zep_client.memory.get_memory(self.session_id)
+            zep_memory: Memory = self.zep_client.memory.get_memory(
+                self.session_id,
+                lastn=self.history_size,
+            )
         except NotFoundError:
             logger.warning(
                 f"Session {self.session_id} not found in Zep. Returning None"

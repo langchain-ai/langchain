@@ -39,6 +39,7 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
         ttl_seconds: Optional[int] = DEFAULT_TTL_SECONDS,
         *,
         setup_mode: SetupMode = SetupMode.SYNC,
+        history_size: Optional[int] = None,
     ) -> None:
         """Chat message history that stores history in Cassandra.
 
@@ -52,6 +53,9 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
             ttl_seconds: time-to-live (seconds) for automatic expiration
                 of stored entries. None (default) for no expiration.
             setup_mode: mode used to create the Cassandra table (SYNC, ASYNC or OFF).
+            history_size: Maximum number fo messages to retrieve. If None then
+                there is no limit. If not None then only the latest `history_size`
+                messages are retrieved.
         """
         try:
             from cassio.table import ClusteredCassandraTable
@@ -62,6 +66,7 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
             )
         self.session_id = session_id
         self.ttl_seconds = ttl_seconds
+        self.history_size = history_size
         kwargs: Dict[str, Any] = {}
         if setup_mode == SetupMode.ASYNC:
             kwargs["async_setup"] = True
@@ -82,6 +87,7 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
         # The latest are returned, in chronological order
         rows = self.table.get_partition(
             partition_id=self.session_id,
+            n=None if not self.history_size else self.history_size,
         )
         return _rows_to_messages(rows)
 
@@ -90,6 +96,7 @@ class CassandraChatMessageHistory(BaseChatMessageHistory):
         # The latest are returned, in chronological order
         rows = await self.table.aget_partition(
             partition_id=self.session_id,
+            n=None if not self.history_size else self.history_size,
         )
         return _rows_to_messages(rows)
 

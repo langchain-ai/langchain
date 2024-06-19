@@ -46,6 +46,8 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
         session_id: str,
         user_id: str,
         firestore_client: Optional[Client] = None,
+        *,
+        history_size: Optional[int] = None,
     ):
         """
         Initialize a new instance of the FirestoreChatMessageHistory class.
@@ -53,10 +55,14 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
         :param collection_name: The name of the collection to use.
         :param session_id: The session ID for the chat..
         :param user_id: The user ID for the chat.
+        :param history_size: Maximum number fo messages to retrieve. If None then
+            there is no limit. If not None then only the latest `history_size`
+            messages are retrieved.
         """
         self.collection_name = collection_name
         self.session_id = session_id
         self.user_id = user_id
+        self.history_size = history_size
         self._document: Optional[DocumentReference] = None
         self.messages: List[BaseMessage] = []
         self.firestore_client = firestore_client or _get_firestore_client()
@@ -80,7 +86,10 @@ class FirestoreChatMessageHistory(BaseChatMessageHistory):
         if doc.exists:
             data = doc.to_dict()
             if "messages" in data and len(data["messages"]) > 0:
-                self.messages = messages_from_dict(data["messages"])
+                messages = data["messages"]
+                if self.history_size:
+                    messages = messages[-self.history_size :]
+                self.messages = messages_from_dict(messages)
 
     def add_message(self, message: BaseMessage) -> None:
         self.messages.append(message)

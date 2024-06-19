@@ -23,6 +23,8 @@ class TiDBChatMessageHistory(BaseChatMessageHistory):
         connection_string: str,
         table_name: str = "langchain_message_store",
         earliest_time: Optional[datetime] = None,
+        *,
+        history_size: Optional[int] = None,
     ):
         """
         Initializes a new instance of the TiDBChatMessageHistory class.
@@ -35,11 +37,15 @@ class TiDBChatMessageHistory(BaseChatMessageHistory):
                 Defaults to "langchain_message_store".
             earliest_time (Optional[datetime], optional): The earliest time to retrieve messages from.
                 Defaults to None.
+            history_size: Maximum number fo messages to retrieve. If None then
+                there is no limit. If not None then only the latest `history_size`
+                messages are retrieved.
         """  # noqa
 
         self.session_id = session_id
         self.table_name = table_name
         self.earliest_time = earliest_time
+        self.history_size = history_size
         self.cache: List = []
 
         # Set up SQLAlchemy engine and session
@@ -83,21 +89,29 @@ class TiDBChatMessageHistory(BaseChatMessageHistory):
             SQLAlchemyError: If there is an error executing the database query.
 
         """
+        his_size = self.history_size
         time_condition = (
             f"AND create_time >= '{self.earliest_time}'" if self.earliest_time else ""
+        )
+        limit_condition = (
+            f"LIMIT {his_size}"
+            if his_size and isinstance(his_size, int) and his_size > 0
+            else ""
         )
         query = text(
             f"""
             SELECT message FROM {self.table_name} 
             WHERE session_id = :session_id {time_condition} 
-            ORDER BY id;
+            ORDER BY id DESC {limit_condition};
         """
         )
         try:
             result = self.session.execute(query, {"session_id": self.session_id})
+            messages = []
             for record in result.fetchall():
                 message_dict = json.loads(record[0])
-                self.cache.append(messages_from_dict([message_dict])[0])
+                messages.append(messages_from_dict([message_dict])[0])
+            self.cache.extend(messages[::-1])
         except SQLAlchemyError as e:
             logger.error(f"Error loading messages to cache: {e}")
 
@@ -123,6 +137,8 @@ class TiDBChatMessageHistory(BaseChatMessageHistory):
             )
             self.session.commit()
             self.cache.append(message)
+            if self.history_size and len(self.cache) > self.history_size:
+                self.cache.pop(0)
         except SQLAlchemyError as e:
             logger.error(f"Error adding message: {e}")
             self.session.rollback()

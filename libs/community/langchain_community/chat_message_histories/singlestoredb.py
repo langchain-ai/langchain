@@ -4,6 +4,7 @@ import re
 from typing import (
     Any,
     List,
+    Optional,
 )
 
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -30,6 +31,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
         pool_size: int = 5,
         max_overflow: int = 10,
         timeout: float = 30,
+        history_size: Optional[int] = None,
         **kwargs: Any,
     ):
         """Initialize with necessary components.
@@ -45,6 +47,9 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
                 field in the table. Defaults to "session_id".
             message_field (str, optional): Specifies the name of the message field
                 in the table. Defaults to "message".
+            history_size (int, optional): Maximum number fo messages to retrieve.
+                If None then there is no limit. If not None then only the latest
+                `history_size` messages are retrieved.
 
             Following arguments pertain to the connection pool:
 
@@ -144,6 +149,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
         self.id_field = self._sanitize_input(id_field)
         self.session_id_field = self._sanitize_input(session_id_field)
         self.message_field = self._sanitize_input(message_field)
+        self.history_size = history_size
 
         # Pass the rest of the kwargs to the connection.
         self.connection_kwargs = kwargs
@@ -220,11 +226,18 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
         try:
             cur = conn.cursor()
             try:
+                his_size = self.history_size
+                if his_size and isinstance(his_size, int) and his_size > 0:
+                    limit_clause = f"LIMIT {his_size}"
+                else:
+                    limit_clause = ""
                 cur.execute(
-                    """SELECT {} FROM {} WHERE {} = %s""".format(
+                    """SELECT {} FROM {} WHERE {} = %s ORDER BY {} DESC {}""".format(
                         self.message_field,
                         self.table_name,
                         self.session_id_field,
+                        self.id_field,
+                        limit_clause,
                     ),
                     (self.session_id),
                 )
@@ -234,7 +247,7 @@ class SingleStoreDBChatMessageHistory(BaseChatMessageHistory):
                 cur.close()
         finally:
             conn.close()
-        messages = messages_from_dict(items)
+        messages = messages_from_dict(items[::-1])
         return messages
 
     def add_message(self, message: BaseMessage) -> None:

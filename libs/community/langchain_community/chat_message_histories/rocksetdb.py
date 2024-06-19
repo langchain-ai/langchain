@@ -1,6 +1,6 @@
 from datetime import datetime
 from time import sleep
-from typing import Any, Callable, List, Union
+from typing import Any, Callable, List, Optional, Union
 from uuid import uuid4
 
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -154,6 +154,8 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
         messages_key: str = "messages",
         sync: bool = False,
         message_uuid_method: Callable[[], Union[str, int]] = lambda: str(uuid4()),
+        *,
+        history_size: Optional[int] = None,
     ) -> None:
         """Constructs a new RocksetChatMessageHistory.
 
@@ -176,6 +178,9 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
                     and `sync` is `False`, message IDs will not be created.
                     If this param is not set and `sync` is `True`, the
                     `uuid.uuid4` method will be used to create message IDs.
+            - history_size: Maximum number fo messages to retrieve. If None then
+                there is no limit. If not None then only the latest `history_size`
+                messages are retrieved.
         """
         try:
             import rockset
@@ -200,6 +205,7 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
         self.messages_key = messages_key
         self.message_uuid_method = message_uuid_method
         self.sync = sync
+        self.history_size = history_size
 
         try:
             self.client.set_application("langchain")
@@ -217,7 +223,7 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
         """Messages in this chat history."""
-        return messages_from_dict(
+        messages = messages_from_dict(
             self._query(
                 f"""
                     SELECT *
@@ -230,6 +236,9 @@ class RocksetChatMessageHistory(BaseChatMessageHistory):
                 session_id=self.session_id,
             )
         )
+        if self.history_size:
+            messages = messages[-self.history_size :]
+        return messages
 
     def add_message(self, message: BaseMessage) -> None:
         """Add a Message object to the history.

@@ -50,6 +50,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
         key_prefix: str = "message_store:",
         ttl: Optional[timedelta] = None,
         ensure_cache_exists: bool = True,
+        history_size: Optional[int] = None,
     ):
         """Instantiate a chat message history cache that uses Momento as a backend.
 
@@ -66,6 +67,9 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
                 Defaults to None, ie the default TTL of the cache will be used.
             ensure_cache_exists (bool, optional): Create the cache if it doesn't exist.
                 Defaults to True.
+            history_size: Maximum number fo messages to retrieve. If None then
+                there is no limit. If not None then only the latest `history_size`
+                messages are retrieved.
 
         Raises:
             ImportError: Momento python package is not installed.
@@ -86,6 +90,7 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
         self.key = key_prefix + session_id
         self.cache_client = cache_client
         self.cache_name = cache_name
+        self.history_size = history_size
         if ttl is not None:
             self.ttl = CollectionTtl.of(ttl)
         else:
@@ -140,6 +145,8 @@ class MomentoChatMessageHistory(BaseChatMessageHistory):
 
         if isinstance(fetch_response, CacheListFetch.Hit):
             items = [json.loads(m) for m in fetch_response.value_list_string]
+            if self.history_size:
+                items = items[-self.history_size :]
             return messages_from_dict(items)
         elif isinstance(fetch_response, CacheListFetch.Miss):
             return []
