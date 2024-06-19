@@ -239,7 +239,7 @@ class ChildTool(BaseTool):
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a tool with its use case.
     """
-    few_shot_examples: Optional[List[Dict[str, Any]]] = (None,)
+    few_shot_examples: Optional[List[Dict[str, Any]]] = None
     """Few-shot examples to help the model understand how to use the tool."""
 
     handle_tool_error: Optional[

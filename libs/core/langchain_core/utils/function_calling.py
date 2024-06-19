@@ -51,6 +51,10 @@ class FunctionDescription(TypedDict):
     """A description of the function."""
     parameters: dict
     """The parameters of the function."""
+    return_parameters: Optional[dict]
+    """The result settings of the function."""
+    few_shot_examples: Optional[list]
+    """The examples of the function."""
 
 
 class ToolDescription(TypedDict):
@@ -127,16 +131,13 @@ def convert_pydantic_to_gigachat_function(
                 return_schema["properties"]["result"]["type"] = "object"
             return_parameters = return_schema["properties"]["result"]
 
-    res = {
+    return {
         "name": name or title,
         "description": description or schema["description"],
         "parameters": schema,
-    }
-    if return_parameters:
-        res["return_parameters"] = return_parameters
-    if few_shot_examples:
-        res["few_shot_examples"] = few_shot_examples
-    return res
+        "return_parameters": return_parameters,
+        "few_shot_examples": few_shot_examples
+    }    
 
 
 @deprecated(
@@ -383,11 +384,11 @@ def convert_to_openai_function(
             "parameters": function,
         }
     elif isinstance(function, type) and issubclass(function, BaseModel):
-        return cast(Dict, convert_pydantic_to_openai_function(function))
+        res = cast(Dict, convert_pydantic_to_openai_function(function))
     elif isinstance(function, BaseTool):
-        return cast(Dict, format_tool_to_openai_function(function))
+        res = cast(Dict, format_tool_to_openai_function(function))
     elif callable(function):
-        return convert_python_function_to_openai_function(function)
+        res = convert_python_function_to_openai_function(function)
     else:
         raise ValueError(
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
@@ -395,6 +396,10 @@ def convert_to_openai_function(
             " either be in OpenAI function format or valid JSON schema with top-level"
             " 'title' and 'description' keys."
         )
+    # Remove unused keys for openai
+    res.pop("return_parameters", None)
+    res.pop("few_shot_examples", None)
+    return res
 
 
 def flatten_all_of(schema: Any) -> Any:
