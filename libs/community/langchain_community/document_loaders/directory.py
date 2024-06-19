@@ -2,7 +2,7 @@ import concurrent
 import logging
 import random
 from pathlib import Path
-from typing import Any, Callable, Iterator, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Iterator, List, Optional, Sequence, Tuple, Type, Union
 
 from langchain_core.documents import Document
 
@@ -32,7 +32,7 @@ class DirectoryLoader(BaseLoader):
     def __init__(
         self,
         path: str,
-        glob: str = "**/[!.]*",
+        glob: Union[List[str], Tuple[str], str] = "**/[!.]*",
         silent_errors: bool = False,
         load_hidden: bool = False,
         loader_cls: FILE_LOADER_TYPE = UnstructuredFileLoader,
@@ -51,8 +51,8 @@ class DirectoryLoader(BaseLoader):
 
         Args:
             path: Path to directory.
-            glob: Glob pattern to use to find files. Defaults to "**/[!.]*"
-               (all files except hidden).
+            glob: A glob pattern or list of glob patterns to use to find files.
+                Defaults to "**/[!.]*" (all files except hidden).
             exclude: A pattern or list of patterns to exclude from results.
                 Use glob syntax.
             silent_errors: Whether to silently ignore errors. Defaults to False.
@@ -124,7 +124,20 @@ class DirectoryLoader(BaseLoader):
         if not p.is_dir():
             raise ValueError(f"Expected directory, got file: '{self.path}'")
 
-        paths = p.rglob(self.glob) if self.recursive else p.glob(self.glob)
+        # glob multiple patterns if a list is provided, e.g., multiple file extensions
+        if isinstance(self.glob, (list, tuple)):
+            paths = []
+            for pattern in self.glob:
+                paths.extend(
+                    list(p.rglob(pattern) if self.recursive else p.glob(pattern))
+                )
+        elif isinstance(self.glob, str):
+            paths = list(p.rglob(self.glob) if self.recursive else p.glob(self.glob))
+        else:
+            raise TypeError(
+                f"Expected glob to be str or sequence of str, but got {type(self.glob)}"
+            )
+
         items = [
             path
             for path in paths

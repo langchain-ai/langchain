@@ -44,7 +44,7 @@ class BaseMessage(Serializable):
         self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
     ) -> None:
         """Pass in content as positional arg."""
-        return super().__init__(content=content, **kwargs)
+        super().__init__(content=content, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
