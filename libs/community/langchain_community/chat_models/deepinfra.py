@@ -45,6 +45,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolMessage,
 )
 from langchain_core.messages.tool import ToolCall
 from langchain_core.outputs import (
@@ -180,6 +181,13 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             "role": "function",
             "content": message.content,
             "name": message.name,
+        }
+    elif isinstance(message, ToolMessage):
+        message_dict = {
+            "role": "tool",
+            "content": message.content,
+            "name": message.name,
+            "tool_call_id": message.tool_call_id,
         }
     else:
         raise ValueError(f"Got unknown type {message}")
