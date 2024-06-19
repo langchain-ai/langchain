@@ -45,9 +45,12 @@ class ArxivLoader(BaseLoader):
             From the Perspective of Reasoning Paths Aggre
             {
                 'Published': '2024-02-29', 
-                'Title': 'Understanding the Reasoning Ability of Language Models From the Perspective of Reasoning Paths Aggregation', 
-                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan, Wenhu Chen, William Yang Wang', 
-                'Summary': 'Pre-trained language models (LMs) are able to perform complex reasoning\nwithout explicit fine-tuning...'
+                'Title': 'Understanding the Reasoning Ability of Language Models From the 
+                        Perspective of Reasoning Paths Aggregation', 
+                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan, 
+                        Wenhu Chen, William Yang Wang', 
+                'Summary': 'Pre-trained language models (LMs) are able to perform complex reasoning
+                        without explicit fine-tuning...'
             }
 
 
@@ -71,9 +74,12 @@ class ArxivLoader(BaseLoader):
             From the Perspective of Reasoning Paths Aggre
             {
                 'Published': '2024-02-29', 
-                'Title': 'Understanding the Reasoning Ability of Language Models From the Perspective of Reasoning Paths Aggregation', 
-                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan, Wenhu Chen, William Yang Wang', 
-                'Summary': 'Pre-trained language models (LMs) are able to perform complex reasoning\nwithout explicit fine-tuning...'
+                'Title': 'Understanding the Reasoning Ability of Language Models From the 
+                        Perspective of Reasoning Paths Aggregation', 
+                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan, 
+                        Wenhu Chen, William Yang Wang', 
+                'Summary': 'Pre-trained language models (LMs) are able to perform complex reasoning
+                        without explicit fine-tuning...'
             }
 
     Async load:
@@ -89,9 +95,12 @@ class ArxivLoader(BaseLoader):
             From the Perspective of Reasoning Paths Aggre
             {
                 'Published': '2024-02-29', 
-                'Title': 'Understanding the Reasoning Ability of Language Models From the Perspective of Reasoning Paths Aggregation', 
-                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan, Wenhu Chen, William Yang Wang', 
-                'Summary': 'Pre-trained language models (LMs) are able to perform complex reasoning\nwithout explicit fine-tuning...'
+                'Title': 'Understanding the Reasoning Ability of Language Models From the 
+                        Perspective of Reasoning Paths Aggregation', 
+                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan, 
+                        Wenhu Chen, William Yang Wang', 
+                'Summary': 'Pre-trained language models (LMs) are able to perform complex reasoning
+                        without explicit fine-tuning...'
             }
 
     Use summaries of articles as docs:
@@ -114,13 +123,17 @@ class ArxivLoader(BaseLoader):
             {
                 'Entry ID': 'http://arxiv.org/abs/2402.03268v2', 
                 'Published': datetime.date(2024, 2, 29), 
-                'Title': 'Understanding the Reasoning Ability of Language Models From the Perspective of Reasoning Paths Aggregation', 
-                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan, Wenhu Chen, William Yang Wang'
+                'Title': 'Understanding the Reasoning Ability of Language Models From the 
+                        Perspective of Reasoning Paths Aggregation', 
+                'Authors': 'Xinyi Wang, Alfonso Amayuelas, Kexun Zhang, Liangming Pan, 
+                        Wenhu Chen, William Yang Wang', 
             }
     """ # noqa: E501
 
     def __init__(
-        self, query: str, doc_content_chars_max: Optional[int] = None, **kwargs: Any
+        self, query: str, doc_content_chars_max: Optional[int] = None,
+
+        **kwargs: Any
     ):
         """Initialize with search query to find documents in the Arxiv.
         Supports all arguments of `ArxivAPIWrapper`.
