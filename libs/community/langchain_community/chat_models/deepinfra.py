@@ -92,7 +92,7 @@ def _parse_tool_calling(tool_call: dict) -> ToolCall:
     Returns:
 
     """
-    name = tool_call.get("name", "")
+    name = tool_call["function"].get("name", "")
     args = json.loads(tool_call["function"]["arguments"])
     id = tool_call.get("id")
     return ToolCall(name=name, args=args, id=id)
