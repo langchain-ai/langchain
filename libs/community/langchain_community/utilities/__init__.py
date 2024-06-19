@@ -35,6 +35,9 @@ if TYPE_CHECKING:
     from langchain_community.utilities.brave_search import (
         BraveSearchWrapper,
     )
+    from langchain_community.utilities.mindsdb.database_mind import (
+        DatabaseMindWrapper
+    )
     from langchain_community.utilities.dataherald import DataheraldAPIWrapper
     from langchain_community.utilities.dria_index import (
         DriaAPIWrapper,
