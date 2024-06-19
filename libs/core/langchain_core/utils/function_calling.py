@@ -100,6 +100,8 @@ def convert_pydantic_to_openai_function(
         "name": name or title,
         "description": description or default_description,
         "parameters": _rm_titles(schema) if rm_titles else schema,
+        "few_shot_examples": None,
+        "return_parameters": None,
     }
 
 
@@ -307,6 +309,8 @@ def format_tool_to_gigachat_function(tool: BaseTool) -> FunctionDescription:
                 "required": ["__arg1"],
                 "type": "object",
             },
+            "few_shot_examples": tool.few_shot_examples,
+            "return_parameters": None,
         }
 
 
@@ -337,6 +341,8 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
                 "required": ["__arg1"],
                 "type": "object",
             },
+            "few_shot_examples": tool.few_shot_examples,
+            "return_parameters": None,
         }
 
 
