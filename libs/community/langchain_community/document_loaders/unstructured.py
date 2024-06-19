@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+import io
 import json
 from pathlib import Path
 from typing import IO, Any, Callable, Iterator, Optional, Sequence, Union
@@ -332,7 +333,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
     def __init__(
         self,
-        file: Union[IO[bytes], Sequence[IO[bytes]]],
+        file: IO[bytes],
         *,
         mode: str = "single",
         **unstructured_kwargs: Any,
@@ -357,7 +358,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     def _get_elements(self) -> list:
         from unstructured.partition.auto import partition
 
-        if isinstance(self.file, IO):
+        if isinstance(self.file, io.IOBase):
             return partition(file=self.file, **self.unstructured_kwargs)
         else:
             raise ValueError("file must be of type IO.")
