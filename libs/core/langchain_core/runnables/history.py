@@ -13,7 +13,6 @@ from typing import (
     Union,
 )
 
-from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
@@ -25,6 +24,7 @@ from langchain_core.runnables.utils import (
 )
 
 if TYPE_CHECKING:
+    from langchain_core.chat_history import BaseChatMessageHistory
     from langchain_core.language_models.base import LanguageModelLike
     from langchain_core.messages.base import BaseMessage
     from langchain_core.runnables.config import RunnableConfig
@@ -32,7 +32,6 @@ if TYPE_CHECKING:
 
 
 MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], Dict[str, Any]]
-GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
 class RunnableWithMessageHistory(RunnableBindingBase):
@@ -88,8 +87,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             RunnableLambda,
             ConfigurableFieldSpec,
             RunnablePassthrough,
+            RunnableWithMessageHistory
         )
-        from langchain_core.runnables.history import RunnableWithMessageHistory
 
 
         class InMemoryHistory(BaseChatMessageHistory, BaseModel):
@@ -127,7 +126,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
             from langchain_community.chat_models import ChatAnthropic
             from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-            from langchain_core.runnables.history import RunnableWithMessageHistory
+            from langchain_core.runnables import RunnableWithMessageHistory
 
 
             prompt = ChatPromptTemplate.from_messages([
@@ -216,7 +215,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
     """
 
-    get_session_history: GetSessionHistoryCallable
+    get_session_history: Callable[..., BaseChatMessageHistory]
     input_messages_key: Optional[str] = None
     output_messages_key: Optional[str] = None
     history_messages_key: Optional[str] = None
@@ -236,7 +235,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             ],
             LanguageModelLike,
         ],
-        get_session_history: GetSessionHistoryCallable,
+        get_session_history: Callable[..., BaseChatMessageHistory],
         *,
         input_messages_key: Optional[str] = None,
         output_messages_key: Optional[str] = None,
@@ -524,7 +523,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         return config
 
 
-def _get_parameter_names(callable_: GetSessionHistoryCallable) -> List[str]:
+def _get_parameter_names(callable_: Callable[..., BaseChatMessageHistory]) -> List[str]:
     """Get the parameter names of the callable."""
     sig = inspect.signature(callable_)
     return list(sig.parameters.keys())
