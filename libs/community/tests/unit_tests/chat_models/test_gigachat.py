@@ -264,3 +264,15 @@ async def test_gigachat_astream(patch_gigachat_astream: None) -> None:
     actual = [chunk async for chunk in llm.astream("bar")]
 
     assert actual == expected
+
+
+def test_gigachat_build_payload_existing_parameter() -> None:
+    llm = GigaChat()
+    payload = llm._build_payload([], max_tokens=1)
+    assert payload.max_tokens == 1
+
+
+def test_gigachat_build_payload_non_existing_parameter() -> None:
+    llm = GigaChat()
+    payload = llm._build_payload([], fake_parameter=1)
+    assert getattr(payload, "fake_param", None) is None
