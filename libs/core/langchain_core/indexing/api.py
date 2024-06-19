@@ -214,10 +214,18 @@ def index(
      are not able to specify the uid of the document.
 
     IMPORTANT:
-       if auto_cleanup is set to True, the loader should be returning
-       the entire dataset, and not just a subset of the dataset.
-       Otherwise, the auto_cleanup will remove documents that it is not
-       supposed to.
+       * if auto_cleanup is set to True, the loader should be returning
+         the entire dataset, and not just a subset of the dataset.
+         Otherwise, the auto_cleanup will remove documents that it is not
+         supposed to.
+       * In incremental mode, if documents associated with a particular
+         source id appear across different batches, the indexing API
+         will do some redundant work. This will still result in the
+         correct end state of the index, but will unfortunately not be
+         100% efficient. For example, if a given document is split into 15
+         chunks, and we index them using a batch size of 5, we'll have 3 batches
+         all with the same source id. In general, to avoid doing too much
+         redundant work select as big a batch size as possible.
 
     Args:
         docs_source: Data loader or iterable of documents to index.
