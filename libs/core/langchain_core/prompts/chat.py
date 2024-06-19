@@ -221,7 +221,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
             )
         value = convert_to_messages(value)
         if self.k:
-            value = value[-self.k : ]
+            value = value[-self.k :]
         return value
 
     @property
