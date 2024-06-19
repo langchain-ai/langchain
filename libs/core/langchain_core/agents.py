@@ -19,7 +19,7 @@ A basic agent works in the following manner:
 3. The agent returns the observation to the LLM, which can then be used to generate the next action.
 4. When the agent reaches a stopping condition, it returns a final return value.
 
-The schemas for agents are defined in langchain.agents.agent.
+The schemas for the agents themselves are defined in langchain.agents.agent.
 """  # noqa: E501
 from __future__ import annotations
 
