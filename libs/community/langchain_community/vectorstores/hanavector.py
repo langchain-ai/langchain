@@ -189,7 +189,7 @@ class HanaDB(VectorStore):
                 if column_length is not None:
                     if rows[0][1] != column_length:
                         raise AttributeError(
-                            f"Column {column_name} has the wrong length: {rows[0][1]}"
+                            f"Column {column_name} has the wrong length: {rows[0][1]} expected: {column_length}"
                         )
             else:
                 raise AttributeError(f"Column {column_name} does not exist")
@@ -527,7 +527,7 @@ class HanaDB(VectorStore):
                     if special_op in COMPARISONS_TO_SQL:
                         operator = COMPARISONS_TO_SQL[special_op]
                         if isinstance(special_val, bool):
-                            query_tuple.append("true" if filter_value else "false")
+                            query_tuple.append("true" if special_val else "false")
                         elif isinstance(special_val, float):
                             sql_param = "CAST(? as float)"
                             query_tuple.append(special_val)
