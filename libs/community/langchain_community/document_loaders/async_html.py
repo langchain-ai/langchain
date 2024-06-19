@@ -137,6 +137,7 @@ class AsyncHtmlLoader(BaseLoader):
                         url,
                         headers=self.session.headers,
                         ssl=None if self.session.verify else False,
+                        **self.requests_kwargs,
                     ) as response:
                         try:
                             text = await response.text()
@@ -144,7 +145,7 @@ class AsyncHtmlLoader(BaseLoader):
                             logger.error(f"Failed to decode content from {url}")
                             text = ""
                         return text
-                except aiohttp.ClientConnectionError as e:
+                except (aiohttp.ClientConnectionError, TimeoutError) as e:
                     if i == retries - 1 and self.ignore_load_errors:
                         logger.warning(f"Error fetching {url} after {retries} retries.")
                         return ""
