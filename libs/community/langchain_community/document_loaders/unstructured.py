@@ -269,9 +269,6 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
         else:
             raise ValueError(f"mode of {self.mode} not supported.")
 
-    def _get_metadata(self) -> dict:
-        return {"source": self.file_path}
-
     def _get_elements(self) -> list:
         if isinstance(self.file_path, list):
             elements = []
@@ -292,6 +289,9 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
             api_url=self.url,
             **self.unstructured_kwargs,
         )
+    
+    def _get_metadata(self) -> dict:
+        return {"source": self.file_path}
 
     def _post_process_elements(self, elements: list[dict]) -> list:
         """Apply post processing functions to extracted unstructured elements.
@@ -428,6 +428,48 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
+    def lazy_load(self) -> Iterator[Document]:
+        """Load file."""
+        # This method overwrites the UnstructuredBaseLoader method because that one expects
+        # `Element` objects instead of a json, which is what the SDK returns.
+        elements_json = self._get_elements()
+        self._post_process_elements(elements_json)
+
+        if self.mode == "elements":
+            for element in elements_json:
+                metadata = self._get_metadata()
+                metadata.update({"metadata": element.get("metadata")})
+                metadata.update({"category": element.get("category")})
+                yield Document(page_content=element.get("text"), metadata=metadata)
+        elif self.mode == "paged":
+            text_dict: dict[int, str] = {}
+            meta_dict: dict[int, dict] = {}
+
+            for element in elements_json:
+                metadata = self._get_metadata()
+                metadata.update({"category": element.get("category")})
+                page_number = metadata.get("page_number", 1)
+
+                # Check if this page_number already exists in text_dict
+                if page_number not in text_dict:
+                    # If not, create new entry with initial text and metadata
+                    text_dict[page_number] = str(element.get("text")) + "\n\n"
+                    meta_dict[page_number] = metadata
+                else:
+                    # If exists, append to text and update the metadata
+                    text_dict[page_number] += str(element.get("text")) + "\n\n"
+                    meta_dict[page_number].update(metadata)
+
+            # Convert the dict to a list of Document objects
+            for key in text_dict.keys():
+                yield Document(page_content=text_dict[key], metadata=meta_dict[key])
+        elif self.mode == "single":
+            metadata = self._get_metadata()
+            text = "\n\n".join([el.get("text") for el in elements_json])
+            yield Document(page_content=text, metadata=metadata)
+        else:
+            raise ValueError(f"mode of {self.mode} not supported.")
+    
     def _get_elements(self) -> list:
         if isinstance(self.file, Sequence):
             if _metadata_filenames := self.unstructured_kwargs.pop("metadata_filename"):
@@ -479,7 +521,7 @@ def get_elements_from_api(
     api_url: str = "https://api.unstructured.io/general/v0/general",
     api_key: str = "",
     **unstructured_kwargs: Any,
-) -> list:
+) -> list[dict[str, Any]]:
     """Retrieve a list of elements from the `Unstructured API`."""
 
     try:
