@@ -10,7 +10,8 @@ across different LangChain versions.
 For example,
 
 The code for AIMessage class is located in langchain_core.messages.ai.AIMessage,
-This message is associated with the lc_namespace ["langchain", "schema", "messages", "AIMessage"],
+This message is associated with the lc_namespace
+["langchain", "schema", "messages", "AIMessage"],
 because this code was originally in langchain.schema.messages.AIMessage.
 
 The mapping allows us to deserialize an AIMessage created with an older
