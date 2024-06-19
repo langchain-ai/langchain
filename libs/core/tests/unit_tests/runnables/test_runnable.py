@@ -909,7 +909,7 @@ def test_schema_complex_seq() -> None:
 
     model = FakeListChatModel(responses=[""])
 
-    chain1: Runnable = RunnableSequence(
+    chain1: Runnable = RunnableSequence.from_steps(
         prompt1, model, StrOutputParser(), name="city_chain"
     )
 

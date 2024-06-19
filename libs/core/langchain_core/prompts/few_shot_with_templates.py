@@ -7,7 +7,6 @@ from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
     StringPromptTemplate,
 )
-from langchain_core.pydantic_v1 import Extra, root_validator
 
 
 class FewShotPromptWithTemplates(StringPromptTemplate):
@@ -27,9 +26,6 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     suffix: StringPromptTemplate
     """A PromptTemplate to put after the examples."""
 
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
-
     example_separator: str = "\n\n"
     """String separator used to join the prefix, the examples, and suffix."""
 
@@ -47,32 +43,25 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "few_shot_with_templates"]
 
-    @root_validator(pre=True)
-    def check_examples_and_selector(cls, values: Dict) -> Dict:
+    def __post_init__(self) -> None:
         """Check that one and only one of examples/example_selector are provided."""
-        examples = values.get("examples", None)
-        example_selector = values.get("example_selector", None)
-        if examples and example_selector:
+        if self.examples and self.example_selector:
             raise ValueError(
                 "Only one of 'examples' and 'example_selector' should be provided"
             )
 
-        if examples is None and example_selector is None:
+        if self.examples is None and self.example_selector is None:
             raise ValueError(
                 "One of 'examples' and 'example_selector' should be provided"
             )
 
-        return values
-
-    @root_validator(pre=False, skip_on_failure=True)
-    def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix, and input variables are consistent."""
-        if values["validate_template"]:
-            input_variables = values["input_variables"]
-            expected_input_variables = set(values["suffix"].input_variables)
-            expected_input_variables |= set(values["partial_variables"])
-            if values["prefix"] is not None:
-                expected_input_variables |= set(values["prefix"].input_variables)
+        if self.validate_template:
+            input_variables = self.input_variables
+            expected_input_variables = set(self.suffix.input_variables)
+            expected_input_variables |= set(self.partial_variables)
+            if self.prefix is not None:
+                expected_input_variables |= set(self.prefix.input_variables)
             missing_vars = expected_input_variables.difference(input_variables)
             if missing_vars:
                 raise ValueError(
@@ -80,18 +69,11 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
                     f"prefix/suffix expected {expected_input_variables}"
                 )
         else:
-            values["input_variables"] = sorted(
-                set(values["suffix"].input_variables)
-                | set(values["prefix"].input_variables if values["prefix"] else [])
-                - set(values["partial_variables"])
+            self.input_variables = sorted(
+                set(self.suffix.input_variables)
+                | set(self.prefix.input_variables if self.prefix else [])
+                - set(self.partial_variables)
             )
-        return values
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
 
     def _get_examples(self, **kwargs: Any) -> List[dict]:
         if self.examples is not None:

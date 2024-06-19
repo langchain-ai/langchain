@@ -31,9 +31,6 @@ class FunctionMessage(BaseMessage):
         return ["langchain", "schema", "messages"]
 
 
-FunctionMessage.update_forward_refs()
-
-
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     """Function Message chunk."""
 

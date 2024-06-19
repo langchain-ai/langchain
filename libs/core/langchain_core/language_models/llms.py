@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import field
 import functools
 import inspect
 import json
@@ -58,7 +59,6 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunInfo
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
 from langchain_core.runnables.config import run_in_executor
 
@@ -224,24 +224,19 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     It should take in a prompt and return a string."""
 
-    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
+    callback_manager: Optional[BaseCallbackManager] = field(
+        default=None, metadata={"exclude": True}
+    )
     """[DEPRECATED]"""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
-        """Raise deprecation warning if callback_manager is used."""
-        if values.get("callback_manager") is not None:
+    def __post_init__(self) -> None:
+        """Post-init method."""
+        if self.callback_manager is not None:
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
             )
-            values["callbacks"] = values.pop("callback_manager", None)
-        return values
+            self.callbacks = self.callback_manager
 
     # --- Runnable methods ---
 

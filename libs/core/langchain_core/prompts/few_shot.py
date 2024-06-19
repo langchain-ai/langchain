@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import field
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, List, Literal, Optional, Union
 
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string
@@ -18,42 +19,10 @@ from langchain_core.prompts.string import (
     check_valid_template,
     get_template_variables,
 )
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 
 
-class _FewShotPromptTemplateMixin(BaseModel):
+class _FewShotPromptTemplateMixin:
     """Prompt template that contains few shot examples."""
-
-    examples: Optional[List[dict]] = None
-    """Examples to format into the prompt.
-    Either this or example_selector should be provided."""
-
-    example_selector: Optional[BaseExampleSelector] = None
-    """ExampleSelector to choose the examples to format into the prompt.
-    Either this or examples should be provided."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
-    def check_examples_and_selector(cls, values: Dict) -> Dict:
-        """Check that one and only one of examples/example_selector are provided."""
-        examples = values.get("examples", None)
-        example_selector = values.get("example_selector", None)
-        if examples and example_selector:
-            raise ValueError(
-                "Only one of 'examples' and 'example_selector' should be provided"
-            )
-
-        if examples is None and example_selector is None:
-            raise ValueError(
-                "One of 'examples' and 'example_selector' should be provided"
-            )
-
-        return values
 
     def _get_examples(self, **kwargs: Any) -> List[dict]:
         """Get the examples to use for formatting the prompt.
@@ -92,8 +61,41 @@ class _FewShotPromptTemplateMixin(BaseModel):
             )
 
 
-class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
+class FewShotPromptTemplate(StringPromptTemplate, _FewShotPromptTemplateMixin):
     """Prompt template that contains few shot examples."""
+
+    examples: Optional[List[dict]] = None
+    """Examples to format into the prompt.
+    Either this or example_selector should be provided."""
+
+    example_selector: Optional[BaseExampleSelector] = None
+    """ExampleSelector to choose the examples to format into the prompt.
+    Either this or examples should be provided."""
+
+    def __post_init__(self) -> None:
+        """Check that one and only one of examples/example_selector are provided."""
+        if self.examples and self.example_selector:
+            raise ValueError(
+                "Only one of 'examples' and 'example_selector' should be provided"
+            )
+        if self.examples is None and self.example_selector is None:
+            raise ValueError(
+                "One of 'examples' and 'example_selector' should be provided"
+            )
+        if self.validate_template:
+            check_valid_template(
+                self.prefix + self.suffix,
+                self.template_format,
+                self.input_variables + list(self.partial_variables),
+            )
+
+        self.input_variables = [
+            var
+            for var in get_template_variables(
+                self.prefix + self.suffix, self.template_format
+            )
+            if var not in self.partial_variables
+        ]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -102,9 +104,6 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
 
     validate_template: bool = False
     """Whether or not to try validating the template."""
-
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
 
     example_prompt: PromptTemplate
     """PromptTemplate used to format an individual example."""
@@ -120,31 +119,6 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
 
     template_format: Literal["f-string", "jinja2"] = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
-
-    @root_validator(pre=False, skip_on_failure=True)
-    def template_is_valid(cls, values: Dict) -> Dict:
-        """Check that prefix, suffix, and input variables are consistent."""
-        if values["validate_template"]:
-            check_valid_template(
-                values["prefix"] + values["suffix"],
-                values["template_format"],
-                values["input_variables"] + list(values["partial_variables"]),
-            )
-        elif values.get("template_format"):
-            values["input_variables"] = [
-                var
-                for var in get_template_variables(
-                    values["prefix"] + values["suffix"], values["template_format"]
-                )
-                if var not in values["partial_variables"]
-            ]
-        return values
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
 
     def format(self, **kwargs: Any) -> str:
         kwargs = self._merge_partial_and_user_variables(**kwargs)
@@ -309,22 +283,32 @@ class FewShotChatMessagePromptTemplate(
             chain.invoke({"input": "What's 3+3?"})
     """
 
+    examples: Optional[List[dict]] = None
+    """Examples to format into the prompt.
+    Either this or example_selector should be provided."""
+
+    example_selector: Optional[BaseExampleSelector] = None
+    """ExampleSelector to choose the examples to format into the prompt.
+    Either this or examples should be provided."""
+
+    def __post_init__(self) -> None:
+        """Check that one and only one of examples/example_selector are provided."""
+        if self.examples and self.example_selector:
+            raise ValueError(
+                "Only one of 'examples' and 'example_selector' should be provided"
+            )
+        if self.examples is None and self.example_selector is None:
+            raise ValueError(
+                "One of 'examples' and 'example_selector' should be provided"
+            )
+
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether or not the class is serializable."""
         return False
 
-    input_variables: List[str] = Field(default_factory=list)
-    """A list of the names of the variables the prompt template will use
-    to pass to the example_selector, if provided."""
     example_prompt: Union[BaseMessagePromptTemplate, BaseChatPromptTemplate]
     """The class to format each example."""
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format kwargs into a list of messages.

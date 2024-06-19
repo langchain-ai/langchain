@@ -140,32 +140,32 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         # See https://github.com/pydantic/pydantic/issues/7327
         return []
 
-    def __init__(
-        self,
-        func: Optional[
-            Union[
-                Union[Callable[[Other], None], Callable[[Other, RunnableConfig], None]],
-                Union[
-                    Callable[[Other], Awaitable[None]],
-                    Callable[[Other, RunnableConfig], Awaitable[None]],
-                ],
-            ]
-        ] = None,
-        afunc: Optional[
-            Union[
-                Callable[[Other], Awaitable[None]],
-                Callable[[Other, RunnableConfig], Awaitable[None]],
-            ]
-        ] = None,
-        *,
-        input_type: Optional[Type[Other]] = None,
-        **kwargs: Any,
-    ) -> None:
-        if inspect.iscoroutinefunction(func):
-            afunc = func
-            func = None
+    # def __init__(
+    #     self,
+    #     func: Optional[
+    #         Union[
+    #             Union[Callable[[Other], None], Callable[[Other, RunnableConfig], None]],
+    #             Union[
+    #                 Callable[[Other], Awaitable[None]],
+    #                 Callable[[Other, RunnableConfig], Awaitable[None]],
+    #             ],
+    #         ]
+    #     ] = None,
+    #     afunc: Optional[
+    #         Union[
+    #             Callable[[Other], Awaitable[None]],
+    #             Callable[[Other, RunnableConfig], Awaitable[None]],
+    #         ]
+    #     ] = None,
+    #     *,
+    #     input_type: Optional[Type[Other]] = None,
+    #     **kwargs: Any,
+    # ) -> None:
+    #     if inspect.iscoroutinefunction(func):
+    #         afunc = func
+    #         func = None
 
-        super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)  # type: ignore[call-arg]
+    #     super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

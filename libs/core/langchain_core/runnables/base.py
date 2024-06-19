@@ -7,8 +7,9 @@ import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import FIRST_COMPLETED, wait
 from contextvars import copy_context
+from dataclasses import field, fields
 from functools import wraps
-from itertools import groupby, tee
+from itertools import tee
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -427,7 +428,7 @@ class Runnable(Generic[Input, Output], ABC):
         ],
     ) -> RunnableSerializable[Input, Other]:
         """Compose this runnable with another object to create a RunnableSequence."""
-        return RunnableSequence(self, coerce_to_runnable(other))
+        return RunnableSequence.from_steps(self, coerce_to_runnable(other))
 
     def __ror__(
         self,
@@ -439,7 +440,7 @@ class Runnable(Generic[Input, Output], ABC):
         ],
     ) -> RunnableSerializable[Other, Output]:
         """Compose this runnable with another object to create a RunnableSequence."""
-        return RunnableSequence(coerce_to_runnable(other), self)
+        return RunnableSequence.from_steps(coerce_to_runnable(other), self)
 
     def pipe(
         self,
@@ -448,7 +449,7 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> RunnableSerializable[Input, Other]:
         """Compose this Runnable with Runnable-like objects to make a RunnableSequence.
 
-        Equivalent to `RunnableSequence(self, *others)` or `self | others[0] | ...`
+        Equivalent to `RunnableSequence.from_steps(self, *others)` or `self | others[0] | ...`
 
         Example:
             .. code-block:: python
@@ -475,7 +476,7 @@ class Runnable(Generic[Input, Output], ABC):
                 await sequence.abatch([1, 2, 3])
                 # -> [4, 6, 8]
         """
-        return RunnableSequence(self, *others, name=name)
+        return RunnableSequence.from_steps(self, *others, name=name)
 
     def pick(self, keys: Union[str, List[str]]) -> RunnableSerializable[Any, Any]:
         """Pick keys from the dict output of this runnable.
@@ -2061,7 +2062,7 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         from langchain_core.runnables.configurable import RunnableConfigurableFields
 
         for key in kwargs:
-            if key not in self.__fields__:
+            if key not in [f.name for f in fields(self)]:
                 raise ValueError(
                     f"Configuration key {key} not found in {self}: "
                     f"available keys are {self.__fields__.keys()}"
@@ -2275,28 +2276,17 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     # the last type.
     first: Runnable[Input, Any]
     """The first runnable in the sequence."""
-    middle: List[Runnable[Any, Any]] = Field(default_factory=list)
+    middle: List[Runnable[Any, Any]] = field(default_factory=list)
     """The middle runnables in the sequence."""
     last: Runnable[Any, Output]
     """The last runnable in the sequence."""
 
-    def __init__(
-        self,
-        *steps: RunnableLike,
-        name: Optional[str] = None,
-        first: Optional[Runnable[Any, Any]] = None,
-        middle: Optional[List[Runnable[Any, Any]]] = None,
-        last: Optional[Runnable[Any, Any]] = None,
-    ) -> None:
-        """Create a new RunnableSequence.
-
-        Args:
-            steps: The steps to include in the sequence.
-        """
+    @classmethod
+    def from_steps(
+        cls, *steps: RunnableLike, name: Optional[str] = None
+    ) -> "RunnableSequence":
+        """Create a RunnableSequence from a list of Runnables."""
         steps_flat: List[Runnable] = []
-        if not steps:
-            if first is not None and last is not None:
-                steps_flat = [first] + (middle or []) + [last]
         for step in steps:
             if isinstance(step, RunnableSequence):
                 steps_flat.extend(step.steps)
@@ -2306,11 +2296,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             raise ValueError(
                 f"RunnableSequence must have at least 2 steps, got {len(steps_flat)}"
             )
-        super().__init__(  # type: ignore[call-arg]
-            first=steps_flat[0],
-            middle=list(steps_flat[1:-1]),
-            last=steps_flat[-1],
-            name=name,
+        return RunnableSequence(
+            first=steps_flat[0], middle=steps_flat[1:-1], last=steps_flat[-1], name=name
         )
 
     @classmethod
@@ -2350,48 +2337,12 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
     @property
     def config_specs(self) -> List[ConfigurableFieldSpec]:
-        from langchain_core.beta.runnables.context import (
-            CONTEXT_CONFIG_PREFIX,
-            _key_from_id,
-        )
-
         # get all specs
         all_specs = [
             (spec, idx)
             for idx, step in enumerate(self.steps)
             for spec in step.config_specs
         ]
-        # calculate context dependencies
-        specs_by_pos = groupby(
-            [tup for tup in all_specs if tup[0].id.startswith(CONTEXT_CONFIG_PREFIX)],
-            lambda x: x[1],
-        )
-        next_deps: Set[str] = set()
-        deps_by_pos: Dict[int, Set[str]] = {}
-        for pos, specs in specs_by_pos:
-            deps_by_pos[pos] = next_deps
-            next_deps = next_deps | {spec[0].id for spec in specs}
-        # assign context dependencies
-        for pos, (spec, idx) in enumerate(all_specs):
-            if spec.id.startswith(CONTEXT_CONFIG_PREFIX):
-                all_specs[pos] = (
-                    ConfigurableFieldSpec(
-                        id=spec.id,
-                        annotation=spec.annotation,
-                        name=spec.name,
-                        default=spec.default,
-                        description=spec.description,
-                        is_shared=spec.is_shared,
-                        dependencies=[
-                            d
-                            for d in deps_by_pos[idx]
-                            if _key_from_id(d) != _key_from_id(spec.id)
-                        ]
-                        + (spec.dependencies or []),
-                    ),
-                    idx,
-                )
-
         return get_unique_config_specs(spec for spec, _ in all_specs)
 
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
@@ -2429,7 +2380,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         ],
     ) -> RunnableSerializable[Input, Other]:
         if isinstance(other, RunnableSequence):
-            return RunnableSequence(
+            return RunnableSequence.from_steps(
                 self.first,
                 *self.middle,
                 self.last,
@@ -2439,7 +2390,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 name=self.name or other.name,
             )
         else:
-            return RunnableSequence(
+            return RunnableSequence.from_steps(
                 self.first,
                 *self.middle,
                 self.last,
@@ -2457,7 +2408,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         ],
     ) -> RunnableSerializable[Other, Output]:
         if isinstance(other, RunnableSequence):
-            return RunnableSequence(
+            return RunnableSequence.from_steps(
                 other.first,
                 *other.middle,
                 other.last,
@@ -2467,7 +2418,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 name=other.name or self.name,
             )
         else:
-            return RunnableSequence(
+            return RunnableSequence.from_steps(
                 coerce_to_runnable(other),
                 self.first,
                 *self.middle,
@@ -2478,10 +2429,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        from langchain_core.beta.runnables.context import config_with_context
-
         # setup callbacks and context
-        config = config_with_context(ensure_config(config), self.steps)
+        config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
@@ -2516,10 +2465,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        from langchain_core.beta.runnables.context import aconfig_with_context
-
         # setup callbacks and context
-        config = aconfig_with_context(ensure_config(config), self.steps)
+        config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
@@ -2556,17 +2503,13 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
-        from langchain_core.beta.runnables.context import config_with_context
         from langchain_core.callbacks.manager import CallbackManager
 
         if not inputs:
             return []
 
         # setup callbacks and context
-        configs = [
-            config_with_context(c, self.steps)
-            for c in get_config_list(config, len(inputs))
-        ]
+        configs = get_config_list(config, len(inputs))
         callback_managers = [
             CallbackManager.configure(
                 inheritable_callbacks=config.get("callbacks"),
@@ -2682,17 +2625,13 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Output]:
-        from langchain_core.beta.runnables.context import aconfig_with_context
         from langchain_core.callbacks.manager import AsyncCallbackManager
 
         if not inputs:
             return []
 
         # setup callbacks and context
-        configs = [
-            aconfig_with_context(c, self.steps)
-            for c in get_config_list(config, len(inputs))
-        ]
+        configs = get_config_list(config, len(inputs))
         callback_managers = [
             AsyncCallbackManager.configure(
                 inheritable_callbacks=config.get("callbacks"),
@@ -2810,16 +2749,11 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> Iterator[Output]:
-        from langchain_core.beta.runnables.context import config_with_context
-
-        steps = [self.first] + self.middle + [self.last]
-        config = config_with_context(config, self.steps)
-
         # transform the input stream of each step with the next
         # steps that don't natively support transforming an input stream will
         # buffer input in memory until all available, and then start emitting output
         final_pipeline = cast(Iterator[Output], input)
-        for idx, step in enumerate(steps):
+        for idx, step in enumerate(self.steps):
             config = patch_config(
                 config, callbacks=run_manager.get_child(f"seq:step:{idx+1}")
             )
@@ -2838,17 +2772,12 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
-        from langchain_core.beta.runnables.context import aconfig_with_context
-
-        steps = [self.first] + self.middle + [self.last]
-        config = aconfig_with_context(config, self.steps)
-
         # stream the last steps
         # transform the input stream of each step with the next
         # steps that don't natively support transforming an input stream will
         # buffer input in memory until all available, and then start emitting output
         final_pipeline = cast(AsyncIterator[Output], input)
-        for idx, step in enumerate(steps):
+        for idx, step in enumerate(self.steps):
             config = patch_config(
                 config,
                 callbacks=run_manager.get_child(f"seq:step:{idx+1}"),
@@ -2988,31 +2917,7 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
                 print(output)  # noqa: T201
     """
 
-    steps__: Mapping[str, Runnable[Input, Any]]
-
-    def __init__(
-        self,
-        steps__: Optional[
-            Mapping[
-                str,
-                Union[
-                    Runnable[Input, Any],
-                    Callable[[Input], Any],
-                    Mapping[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
-                ],
-            ]
-        ] = None,
-        **kwargs: Union[
-            Runnable[Input, Any],
-            Callable[[Input], Any],
-            Mapping[str, Union[Runnable[Input, Any], Callable[[Input], Any]]],
-        ],
-    ) -> None:
-        merged = {**steps__} if steps__ is not None else {}
-        merged.update(kwargs)
-        super().__init__(  # type: ignore[call-arg]
-            steps__={key: coerce_to_runnable(r) for key, r in merged.items()}
-        )
+    steps__: Mapping[str, Runnable[Input, Any]] = field(kw_only=False)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -4435,7 +4340,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     bound: Runnable[Input, Output]
     """The underlying runnable that this runnable delegates to."""
 
-    kwargs: Mapping[str, Any] = Field(default_factory=dict)
+    kwargs: Mapping[str, Any] = field(default_factory=dict)
     """kwargs to pass to the underlying runnable when running.
 
     For example, when the runnable binding is invoked the underlying
@@ -4443,10 +4348,10 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
     kwargs.
     """
 
-    config: RunnableConfig = Field(default_factory=dict)
+    config: RunnableConfig = field(default_factory=dict)
     """The config to bind to the underlying runnable."""
 
-    config_factories: List[Callable[[RunnableConfig], RunnableConfig]] = Field(
+    config_factories: List[Callable[[RunnableConfig], RunnableConfig]] = field(
         default_factory=list
     )
     """The config factories to bind to the underlying runnable."""
@@ -4799,9 +4704,6 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             **{**self.kwargs, **kwargs},
         ):
             yield item
-
-
-RunnableBindingBase.update_forward_refs(RunnableConfig=RunnableConfig)
 
 
 class RunnableBinding(RunnableBindingBase[Input, Output]):

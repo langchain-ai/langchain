@@ -1,10 +1,10 @@
 from typing import List, Optional
 
+from langchain_core.load.serializable import Serializable
 from langchain_core.outputs.chat_generation import ChatGeneration
-from langchain_core.pydantic_v1 import BaseModel
 
 
-class ChatResult(BaseModel):
+class ChatResult(Serializable):
     """Use to represent the result of a chat model call with a single prompt.
 
     This container is used internally by some implementations of chat model,

@@ -5,6 +5,7 @@ import inspect
 import uuid
 import warnings
 from abc import ABC, abstractmethod
+from dataclasses import field
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -136,7 +137,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     | `_astream`                       | Use to implement async version of `_stream`                        | Optional          |
     """  # noqa: E501
 
-    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
+    callback_manager: Optional[BaseCallbackManager] = field(
+        default=None, metadata={"exclude": True}
+    )
     """[DEPRECATED] Callback manager to add to the run trace."""
 
     @root_validator(pre=True)

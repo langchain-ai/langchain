@@ -203,7 +203,7 @@ def test_prompt_from_template_with_partial_variables() -> None:
 def test_prompt_missing_input_variables() -> None:
     """Test error is raised when input variables are not provided."""
     template = "This is a {foo} test."
-    input_variables: list = []
+    input_variables: list = ["bar"]
     with pytest.raises(ValueError):
         PromptTemplate(
             input_variables=input_variables, template=template, validate_template=True

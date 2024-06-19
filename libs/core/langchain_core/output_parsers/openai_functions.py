@@ -184,19 +184,10 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
     determine which schema to use.
     """
 
-    @root_validator(pre=True)
-    def validate_schema(cls, values: Dict) -> Dict:
-        schema = values["pydantic_schema"]
-        if "args_only" not in values:
-            values["args_only"] = isinstance(schema, type) and issubclass(
-                schema, BaseModel
-            )
-        elif values["args_only"] and isinstance(schema, Dict):
-            raise ValueError(
-                "If multiple pydantic schemas are provided then args_only should be"
-                " False."
-            )
-        return values
+    def __post_init__(self) -> None:
+        schema = self.pydantic_schema
+        if self.args_only:
+            self.args_only = isinstance(schema, type) and issubclass(schema, BaseModel)
 
     def parse_result(self, result: List[Generation], *, partial: bool = False) -> Any:
         _result = super().parse_result(result)

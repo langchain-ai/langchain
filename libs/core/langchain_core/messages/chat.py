@@ -23,9 +23,6 @@ class ChatMessage(BaseMessage):
         return ["langchain", "schema", "messages"]
 
 
-ChatMessage.update_forward_refs()
-
-
 class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     """Chat Message chunk."""
 

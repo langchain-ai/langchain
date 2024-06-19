@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import field
 from typing import List, Optional
 
+from langchain_core.load.serializable import Serializable
 from langchain_core.outputs.generation import Generation
 from langchain_core.outputs.run_info import RunInfo
-from langchain_core.pydantic_v1 import BaseModel
 
 
-class LLMResult(BaseModel):
+class LLMResult(Serializable):
     """A container for results of an LLM call.
 
     Both chat models and LLMs generate an LLMResult object. This object contains
@@ -41,7 +42,8 @@ class LLMResult(BaseModel):
     accessing relevant information from standardized fields present in
     AIMessage.
     """
-    run: Optional[List[RunInfo]] = None
+
+    run: Optional[List[RunInfo]] = field(compare=False, default=None)
     """List of metadata info for model call for each input."""
 
     def flatten(self) -> List[LLMResult]:
@@ -79,12 +81,3 @@ class LLMResult(BaseModel):
                     )
                 )
         return llm_results
-
-    def __eq__(self, other: object) -> bool:
-        """Check for LLMResult equality by ignoring any metadata related to runs."""
-        if not isinstance(other, LLMResult):
-            return NotImplemented
-        return (
-            self.generations == other.generations
-            and self.llm_output == other.llm_output
-        )

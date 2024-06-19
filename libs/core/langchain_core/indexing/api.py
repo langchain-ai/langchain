@@ -4,13 +4,13 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
+from dataclasses import field
 from itertools import islice
 from typing import (
     Any,
     AsyncIterable,
     AsyncIterator,
     Callable,
-    Dict,
     Iterable,
     Iterator,
     List,
@@ -27,7 +27,6 @@ from typing import (
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.indexing.base import RecordManager
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.vectorstores import VectorStore
 
 # Magic UUID to use as a namespace for hashing.
@@ -55,23 +54,22 @@ def _hash_nested_dict_to_uuid(data: dict[Any, Any]) -> uuid.UUID:
 class _HashedDocument(Document):
     """A hashed document with a unique ID."""
 
-    uid: str
-    hash_: str
+    uid: Optional[str] = None
+    hash_: str = field(init=False)
     """The hash of the document including content and metadata."""
-    content_hash: str
+    content_hash: str = field(init=False)
     """The hash of the document content."""
-    metadata_hash: str
+    metadata_hash: str = field(init=False)
     """The hash of the document metadata."""
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
         return False
 
-    @root_validator(pre=True)
-    def calculate_hashes(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def __post_init__(self) -> None:
         """Root validator to calculate content and metadata hash."""
-        content = values.get("page_content", "")
-        metadata = values.get("metadata", {})
+        content = self.page_content
+        metadata = self.metadata
 
         forbidden_keys = ("hash_", "content_hash", "metadata_hash")
 
@@ -92,15 +90,12 @@ class _HashedDocument(Document):
                 f"Please use a dict that can be serialized using json."
             )
 
-        values["content_hash"] = content_hash
-        values["metadata_hash"] = metadata_hash
-        values["hash_"] = str(_hash_string_to_uuid(content_hash + metadata_hash))
+        self.content_hash = content_hash
+        self.metadata_hash = metadata_hash
+        self.hash_ = str(_hash_string_to_uuid(content_hash + metadata_hash))
 
-        _uid = values.get("uid", None)
-
-        if _uid is None:
-            values["uid"] = values["hash_"]
-        return values
+        if self.uid is None:
+            self.uid = self.hash_
 
     def to_document(self) -> Document:
         """Return a Document object."""

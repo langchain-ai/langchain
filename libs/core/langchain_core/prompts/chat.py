@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from dataclasses import field
 from pathlib import Path
 from typing import (
     Any,
@@ -38,13 +39,14 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import StringPromptTemplate, get_template_variables
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
 
 
 class BaseMessagePromptTemplate(Serializable, ABC):
     """Base class for message prompt templates."""
+
+    input_variables: List[str] = field(default_factory=list)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -77,15 +79,6 @@ class BaseMessagePromptTemplate(Serializable, ABC):
             List of BaseMessages.
         """
         return self.format_messages(**kwargs)
-
-    @property
-    @abstractmethod
-    def input_variables(self) -> List[str]:
-        """Input variables for this prompt template.
-
-        Returns:
-            List of input variables.
-        """
 
     def pretty_repr(self, html: bool = False) -> str:
         """Human-readable representation."""
@@ -162,7 +155,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
             # ])
     """
 
-    variable_name: str
+    variable_name: str = field(kw_only=False)
     """Name of variable to use as messages."""
 
     optional: bool = False
@@ -170,13 +163,14 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         list. If False then a named argument with name `variable_name` must be passed 
         in, even if the value is an empty list."""
 
+    def __post_init__(self) -> None:
+        if not self.input_variables:
+            self.input_variables = [self.variable_name] if not self.optional else []
+
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "chat"]
-
-    def __init__(self, variable_name: str, *, optional: bool = False, **kwargs: Any):
-        super().__init__(variable_name=variable_name, optional=optional, **kwargs)
 
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs.
@@ -199,15 +193,6 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
             )
         return convert_to_messages(value)
 
-    @property
-    def input_variables(self) -> List[str]:
-        """Input variables for this prompt template.
-
-        Returns:
-            List of input variable names.
-        """
-        return [self.variable_name] if not self.optional else []
-
     def pretty_repr(self, html: bool = False) -> str:
         var = "{" + self.variable_name + "}"
         if html:
@@ -229,8 +214,12 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
 
     prompt: StringPromptTemplate
     """String prompt template."""
-    additional_kwargs: dict = Field(default_factory=dict)
+    additional_kwargs: dict = field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
+
+    def __post_init__(self) -> None:
+        if not self.input_variables:
+            self.input_variables = self.prompt.input_variables
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -323,16 +312,6 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
         return [await self.aformat(**kwargs)]
 
-    @property
-    def input_variables(self) -> List[str]:
-        """
-        Input variables for this prompt template.
-
-        Returns:
-            List of input variable names.
-        """
-        return self.prompt.input_variables
-
     def pretty_repr(self, html: bool = False) -> str:
         # TODO: Handle partials
         title = self.__class__.__name__.replace("MessagePromptTemplate", " Message")
@@ -392,10 +371,17 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         StringPromptTemplate, List[Union[StringPromptTemplate, ImagePromptTemplate]]
     ]
     """Prompt template."""
-    additional_kwargs: dict = Field(default_factory=dict)
+    additional_kwargs: dict = field(default_factory=dict)
     """Additional keyword arguments to pass to the prompt template."""
 
     _msg_class: Type[BaseMessage]
+
+    def __post_init__(self) -> None:
+        if not self.input_variables:
+            prompts = self.prompt if isinstance(self.prompt, list) else [self.prompt]
+            self.input_variables = [
+                iv for prompt in prompts for iv in prompt.input_variables
+            ]
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -518,18 +504,6 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
 
     async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
         return [await self.aformat(**kwargs)]
-
-    @property
-    def input_variables(self) -> List[str]:
-        """
-        Input variables for this prompt template.
-
-        Returns:
-            List of input variable names.
-        """
-        prompts = self.prompt if isinstance(self.prompt, list) else [self.prompt]
-        input_variables = [iv for prompt in prompts for iv in prompt.input_variables]
-        return input_variables
 
     def format(self, **kwargs: Any) -> BaseMessage:
         """Format the prompt template.
@@ -809,8 +783,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     """  # noqa: E501
 
-    input_variables: List[str]
-    """List of input variables in template messages. Used for validation."""
     messages: List[MessageLike]
     """List of messages consisting of either message prompt templates or messages."""
     validate_template: bool = False
@@ -846,8 +818,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         else:
             raise NotImplementedError(f"Unsupported operand type for +: {type(other)}")
 
-    @root_validator(pre=True)
-    def validate_input_variables(cls, values: dict) -> dict:
+    def __post_init__(self) -> None:
         """Validate input variables.
 
         If input_variables is not set, it will be set to the union of
@@ -859,28 +830,25 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Returns:
             Validated values.
         """
-        messages = values["messages"]
+        messages = self.messages
         input_vars = set()
-        input_types: Dict[str, Any] = values.get("input_types", {})
         for message in messages:
             if isinstance(message, (BaseMessagePromptTemplate, BaseChatPromptTemplate)):
                 input_vars.update(message.input_variables)
             if isinstance(message, MessagesPlaceholder):
-                if message.variable_name not in input_types:
-                    input_types[message.variable_name] = List[AnyMessage]
-        if "partial_variables" in values:
-            input_vars = input_vars - set(values["partial_variables"])
-        if "input_variables" in values and values.get("validate_template"):
-            if input_vars != set(values["input_variables"]):
+                if message.variable_name not in self.input_types:
+                    self.input_types[message.variable_name] = List[AnyMessage]
+        if self.partial_variables:
+            input_vars = input_vars - set(self.partial_variables)
+        if self.validate_template:
+            if input_vars != set(self.input_variables):
                 raise ValueError(
                     "Got mismatched input_variables. "
                     f"Expected: {input_vars}. "
-                    f"Got: {values['input_variables']}"
+                    f"Got: {self.input_variables}"
                 )
         else:
-            values["input_variables"] = sorted(input_vars)
-        values["input_types"] = input_types
-        return values
+            self.input_variables = sorted(input_vars)
 
     @classmethod
     def from_template(cls, template: str, **kwargs: Any) -> ChatPromptTemplate:

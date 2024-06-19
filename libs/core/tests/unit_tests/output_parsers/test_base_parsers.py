@@ -47,6 +47,7 @@ def test_base_generation_parser() -> None:
 
     model = GenericFakeChatModel(messages=iter([AIMessage(content="hEllo")]))
     chain = model | StrInvertCase()
+    print(chain)
     assert chain.invoke("") == "HeLLO"
 
 

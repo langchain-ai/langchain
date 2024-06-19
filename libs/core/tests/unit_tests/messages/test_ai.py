@@ -21,7 +21,6 @@ def test_serdes_message() -> None:
         "type": "constructor",
         "id": ["langchain", "schema", "messages", "AIMessage"],
         "kwargs": {
-            "type": "ai",
             "content": [{"text": "blah", "type": "text"}],
             "tool_calls": [{"name": "foo", "args": {"bar": 1}, "id": "baz"}],
             "invalid_tool_calls": [
@@ -47,7 +46,6 @@ def test_serdes_message_chunk() -> None:
         "type": "constructor",
         "id": ["langchain", "schema", "messages", "AIMessageChunk"],
         "kwargs": {
-            "type": "AIMessageChunk",
             "content": [{"text": "blah", "type": "text"}],
             "tool_calls": [{"name": "foo", "args": {"bar": 1}, "id": "baz"}],
             "invalid_tool_calls": [

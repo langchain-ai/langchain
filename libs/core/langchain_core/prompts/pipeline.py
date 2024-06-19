@@ -33,16 +33,14 @@ class PipelinePromptTemplate(BasePromptTemplate):
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "pipeline"]
 
-    @root_validator(pre=True)
-    def get_input_variables(cls, values: Dict) -> Dict:
+    def __post_init__(self) -> None:
         """Get input variables."""
         created_variables = set()
         all_variables = set()
-        for k, prompt in values["pipeline_prompts"]:
+        for k, prompt in self.pipeline_prompts:
             created_variables.add(k)
             all_variables.update(prompt.input_variables)
-        values["input_variables"] = list(all_variables.difference(created_variables))
-        return values
+        self.input_variables = list(all_variables.difference(created_variables))
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         for k, prompt in self.pipeline_prompts:

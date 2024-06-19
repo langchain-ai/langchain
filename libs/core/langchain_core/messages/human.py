@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Literal, Union
+from typing import List, Literal
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
@@ -40,15 +40,6 @@ class HumanMessage(BaseMessage):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "messages"]
-
-    def __init__(
-        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
-    ) -> None:
-        """Pass in content as positional arg."""
-        super().__init__(content=content, **kwargs)
-
-
-HumanMessage.update_forward_refs()
 
 
 class HumanMessageChunk(HumanMessage, BaseMessageChunk):

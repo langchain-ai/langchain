@@ -12,7 +12,7 @@ from langchain_core.prompts.string import (
     get_template_variables,
     mustache_schema,
 )
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables.config import RunnableConfig
 
 
@@ -74,42 +74,21 @@ class PromptTemplate(StringPromptTemplate):
     validate_template: bool = False
     """Whether or not to try validating the template."""
 
-    @root_validator(pre=True)
-    def pre_init_validation(cls, values: Dict) -> Dict:
+    def __post_init__(self) -> None:
         """Check that template and input variables are consistent."""
-        if values.get("template") is None:
-            # Will let pydantic fail with a ValidationError if template
-            # is not provided.
-            return values
-
-        # Set some default values based on the field defaults
-        values.setdefault("template_format", "f-string")
-        values.setdefault("partial_variables", {})
-
-        if values.get("validate_template"):
-            if values["template_format"] == "mustache":
+        if self.validate_template:
+            if self.template_format == "mustache":
                 raise ValueError("Mustache templates cannot be validated.")
 
-            if "input_variables" not in values:
-                raise ValueError(
-                    "Input variables must be provided to validate the template."
-                )
+            all_inputs = self.input_variables + list(self.partial_variables)
+            check_valid_template(self.template, self.template_format, all_inputs)
 
-            all_inputs = values["input_variables"] + list(values["partial_variables"])
-            check_valid_template(
-                values["template"], values["template_format"], all_inputs
-            )
-
-        if values["template_format"]:
-            values["input_variables"] = [
+        if self.template_format:
+            self.input_variables = [
                 var
-                for var in get_template_variables(
-                    values["template"], values["template_format"]
-                )
-                if var not in values["partial_variables"]
+                for var in get_template_variables(self.template, self.template_format)
+                if var not in self.partial_variables
             ]
-
-        return values
 
     def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
         if self.template_format != "mustache":

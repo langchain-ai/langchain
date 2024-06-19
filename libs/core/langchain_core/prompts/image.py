@@ -10,21 +10,19 @@ from langchain_core.utils import image as image_utils
 class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
     """Image prompt template for a multimodal model."""
 
+    input_variables: List[str] = Field(default_factory=list)
+
     template: dict = Field(default_factory=dict)
     """Template for the prompt."""
 
-    def __init__(self, **kwargs: Any) -> None:
-        if "input_variables" not in kwargs:
-            kwargs["input_variables"] = []
-
-        overlap = set(kwargs["input_variables"]) & set(("url", "path", "detail"))
+    def __post_init__(self) -> None:
+        overlap = set(self.input_variables) & set(("url", "path", "detail"))
         if overlap:
             raise ValueError(
                 "input_variables for the image template cannot contain"
                 " any of 'url', 'path', or 'detail'."
                 f" Found: {overlap}"
             )
-        super().__init__(**kwargs)
 
     @property
     def _prompt_type(self) -> str:

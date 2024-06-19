@@ -1,4 +1,5 @@
 import json
+from dataclasses import field
 from typing import Any, Dict, List, Literal, Optional, Union
 
 from typing_extensions import TypedDict
@@ -15,7 +16,6 @@ from langchain_core.messages.tool import (
     default_tool_chunk_parser,
     default_tool_parser,
 )
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import (
     parse_partial_json,
@@ -62,9 +62,9 @@ class AIMessage(BaseMessage):
     At the moment, this is ignored by most models. Usage is discouraged.
     """
 
-    tool_calls: List[ToolCall] = []
+    tool_calls: List[ToolCall] = field(default_factory=list)
     """If provided, tool calls associated with the message."""
-    invalid_tool_calls: List[InvalidToolCall] = []
+    invalid_tool_calls: List[InvalidToolCall] = field(default_factory=list)
     """If provided, tool calls with parsing errors associated with the message."""
     usage_metadata: Optional[UsageMetadata] = None
     """If provided, usage metadata for a message, such as token counts.
@@ -74,12 +74,6 @@ class AIMessage(BaseMessage):
 
     type: Literal["ai"] = "ai"
     """The type of the message (used for deserialization)."""
-
-    def __init__(
-        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
-    ) -> None:
-        """Pass in content as positional arg."""
-        super().__init__(content=content, **kwargs)
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -94,27 +88,23 @@ class AIMessage(BaseMessage):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
-    @root_validator(pre=True)
-    def _backwards_compat_tool_calls(cls, values: dict) -> dict:
-        raw_tool_calls = values.get("additional_kwargs", {}).get("tool_calls")
+    def __post_init__(self) -> None:
+        raw_tool_calls = (self.additional_kwargs or {}).get("tool_calls")
         tool_calls = (
-            values.get("tool_calls")
-            or values.get("invalid_tool_calls")
-            or values.get("tool_call_chunks")
+            self.tool_calls
+            or self.invalid_tool_calls
+            or getattr(self, "tool_call_chunks", None)
         )
         if raw_tool_calls and not tool_calls:
             try:
-                if issubclass(cls, AIMessageChunk):  # type: ignore
-                    values["tool_call_chunks"] = default_tool_chunk_parser(
-                        raw_tool_calls
-                    )
+                if isinstance(self, AIMessageChunk):  # type: ignore
+                    self.tool_call_chunks = default_tool_chunk_parser(raw_tool_calls)
                 else:
                     tool_calls, invalid_tool_calls = default_tool_parser(raw_tool_calls)
-                    values["tool_calls"] = tool_calls
-                    values["invalid_tool_calls"] = invalid_tool_calls
+                    self.tool_calls = tool_calls
+                    self.invalid_tool_calls = invalid_tool_calls
             except Exception:
                 pass
-        return values
 
     def pretty_repr(self, html: bool = False) -> str:
         """Return a pretty representation of the message."""
@@ -148,9 +138,6 @@ class AIMessage(BaseMessage):
         return (base.strip() + "\n" + "\n".join(lines)).strip()
 
 
-AIMessage.update_forward_refs()
-
-
 class AIMessageChunk(AIMessage, BaseMessageChunk):
     """Message chunk from an AI."""
 
@@ -159,7 +146,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     # non-chunk variant.
     type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
 
-    tool_call_chunks: List[ToolCallChunk] = []
+    tool_call_chunks: List[ToolCallChunk] = field(default_factory=list)
     """If provided, tool call chunks associated with the message."""
 
     @classmethod
@@ -175,35 +162,36 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def init_tool_calls(cls, values: dict) -> dict:
-        if not values["tool_call_chunks"]:
-            if values["tool_calls"]:
-                values["tool_call_chunks"] = [
+    def __post_init__(self) -> None:
+        super().__post_init__()
+
+        if not self.tool_call_chunks:
+            if self.tool_calls:
+                self.tool_call_chunks = [
                     ToolCallChunk(
                         name=tc["name"],
                         args=json.dumps(tc["args"]),
                         id=tc["id"],
                         index=None,
                     )
-                    for tc in values["tool_calls"]
+                    for tc in self.tool_calls
                 ]
-            if values["invalid_tool_calls"]:
-                tool_call_chunks = values.get("tool_call_chunks", [])
+            if self.invalid_tool_calls:
+                tool_call_chunks = self.tool_call_chunks or []
                 tool_call_chunks.extend(
                     [
                         ToolCallChunk(
                             name=tc["name"], args=tc["args"], id=tc["id"], index=None
                         )
-                        for tc in values["invalid_tool_calls"]
+                        for tc in self.invalid_tool_calls
                     ]
                 )
-                values["tool_call_chunks"] = tool_call_chunks
+                self.tool_call_chunks = tool_call_chunks
 
-            return values
+            return
         tool_calls = []
         invalid_tool_calls = []
-        for chunk in values["tool_call_chunks"]:
+        for chunk in self.tool_call_chunks:
             try:
                 args_ = parse_partial_json(chunk["args"])
                 if isinstance(args_, dict):
@@ -225,9 +213,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                         error=None,
                     )
                 )
-        values["tool_calls"] = tool_calls
-        values["invalid_tool_calls"] = invalid_tool_calls
-        return values
+        self.tool_calls = tool_calls
+        self.invalid_tool_calls = invalid_tool_calls
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):

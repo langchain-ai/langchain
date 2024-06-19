@@ -1,18 +1,21 @@
 from abc import ABC
+from dataclasses import MISSING, dataclass, fields, replace
+from inspect import signature
 from typing import (
     Any,
     Dict,
+    Iterable,
+    Iterator,
     List,
     Literal,
     Optional,
+    Tuple,
     TypedDict,
     Union,
     cast,
 )
 
 from typing_extensions import NotRequired
-
-from langchain_core.pydantic_v1 import BaseModel
 
 
 class BaseSerialized(TypedDict):
@@ -44,24 +47,7 @@ class SerializedNotImplemented(BaseSerialized):
     repr: Optional[str]
 
 
-def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
-    """Try to determine if a value is different from the default.
-
-    Args:
-        value: The value.
-        key: The key.
-        model: The model.
-
-    Returns:
-        Whether the value is different from the default.
-    """
-    try:
-        return model.__fields__[key].get_default() != value
-    except Exception:
-        return True
-
-
-class Serializable(BaseModel, ABC):
+class Serializable(ABC):
     """Serializable base class.
 
     This class is used to serialize objects to JSON.
@@ -82,6 +68,34 @@ class Serializable(BaseModel, ABC):
     - `lc_attributes`: List of additional attribute names that should be included
         as part of the serialized representation..
     """
+
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        dataclass(kw_only=True)(cls)
+
+    def __iter__(self) -> Iterator[Tuple[str, Any]]:
+        return iter(self.__dict__.items())
+
+    def copy(
+        self, deep: Optional[bool] = False, update: Optional[Dict[str, Any]] = None
+    ) -> "Serializable":
+        """Create a copy of the object."""
+        if deep:
+            copied = {
+                k: v.copy() if hasattr(v, "copy") and callable(v.copy) else v
+                for k, v in self.__dict__.items()
+            }
+        else:
+            copied = {}
+        return replace(self, **{**copied, **(update or {})})
+
+    def dict(self, exclude: Optional[Iterable[str]] = None) -> Dict[str, Any]:
+        """Return the object as a dictionary."""
+        return {
+            k: v.dict() if hasattr(v, "dict") and callable(v.dict) else v
+            for k, v in self.__dict__.items()
+            if exclude is None or k not in exclude
+        }
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -123,16 +137,6 @@ class Serializable(BaseModel, ABC):
         """
         return [*cls.get_lc_namespace(), cls.__name__]
 
-    class Config:
-        extra = "ignore"
-
-    def __repr_args__(self) -> Any:
-        return [
-            (k, v)
-            for k, v in super().__repr_args__()
-            if (k not in self.__fields__ or try_neq_default(v, k, self))
-        ]
-
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
@@ -140,10 +144,7 @@ class Serializable(BaseModel, ABC):
         secrets = dict()
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {
-            k: getattr(self, k, v)
-            for k, v in self
-            if not (self.__exclude_fields__ or {}).get(k, False)  # type: ignore
-            and _is_field_useful(self, k, v)
+            k: getattr(self, k, v) for k, v in self if _is_field_useful(self, k, v)
         }
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
@@ -211,10 +212,18 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
     Returns:
         Whether the field is useful.
     """
-    field = inst.__fields__.get(key)
+    field = next((f for f in fields(inst) if f.name == key), None)
     if not field:
         return False
-    return field.required is True or value or field.get_default() != value
+    if field.metadata.get("exclude"):
+        return False
+    if not field.init:
+        return False
+    if field.default is not MISSING:
+        return value != field.default
+    if field.default_factory is not MISSING:
+        return value != field.default_factory()
+    return True
 
 
 def _replace_secrets(

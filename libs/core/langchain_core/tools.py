@@ -26,6 +26,7 @@ import uuid
 import warnings
 from abc import ABC, abstractmethod
 from contextvars import copy_context
+from dataclasses import field
 from functools import partial
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
@@ -41,7 +42,6 @@ from langchain_core.callbacks import (
 from langchain_core.callbacks.manager import (
     Callbacks,
 )
-from langchain_core.load.serializable import Serializable
 from langchain_core.prompts import (
     BasePromptTemplate,
     PromptTemplate,
@@ -51,10 +51,8 @@ from langchain_core.prompts import (
 from langchain_core.pydantic_v1 import (
     BaseModel,
     Extra,
-    Field,
     ValidationError,
     create_model,
-    root_validator,
     validate_arguments,
 )
 from langchain_core.retrievers import BaseRetriever
@@ -193,9 +191,11 @@ class ChildTool(BaseTool):
     verbose: bool = False
     """Whether to log the tool's progress."""
 
-    callbacks: Callbacks = Field(default=None, exclude=True)
+    callbacks: Callbacks = field(default=None, metadata={"exclude": True})
     """Callbacks to be called during tool execution."""
-    callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
+    callback_manager: Optional[BaseCallbackManager] = field(
+        default=None, metadata={"exclude": True}
+    )
     """Deprecated. Please use callbacks instead."""
     tags: Optional[List[str]] = None
     """Optional list of tags associated with the tool. Defaults to None
@@ -219,11 +219,6 @@ class ChildTool(BaseTool):
         Union[bool, str, Callable[[ValidationError], str]]
     ] = False
     """Handle the content of the ValidationError thrown."""
-
-    class Config(Serializable.Config):
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
 
     @property
     def is_single_input(self) -> bool:
@@ -309,16 +304,14 @@ class ChildTool(BaseTool):
                 }
         return tool_input
 
-    @root_validator(pre=True)
-    def raise_deprecation(cls, values: Dict) -> Dict:
-        """Raise deprecation warning if callback_manager is used."""
-        if values.get("callback_manager") is not None:
+    def __post_init__(self):
+        """Post init method."""
+        if self.callback_manager is not None:
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
             )
-            values["callbacks"] = values.pop("callback_manager", None)
-        return values
+            self.callbacks = self.callback_manager
 
     @abstractmethod
     def _run(
@@ -663,15 +656,6 @@ class Tool(BaseTool):
                 **kwargs,
             )
 
-    # TODO: this is for backwards compatibility, remove in future
-    def __init__(
-        self, name: str, func: Optional[Callable], description: str, **kwargs: Any
-    ) -> None:
-        """Initialize tool."""
-        super(Tool, self).__init__(  # type: ignore[call-arg]
-            name=name, func=func, description=description, **kwargs
-        )
-
     @classmethod
     def from_function(
         cls,
@@ -703,7 +687,7 @@ class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
     description: str = ""
-    args_schema: Type[BaseModel] = Field(..., description="The tool schema.")
+    args_schema: Type[BaseModel]
     """The input arguments' schema."""
     func: Optional[Callable[..., Any]]
     """The function to run when the tool is called."""
@@ -972,7 +956,8 @@ def tool(
 class RetrieverInput(BaseModel):
     """Input to the retriever."""
 
-    query: str = Field(description="query to look up in retriever")
+    query: str
+    """query to look up in retriever"""
 
 
 def _get_relevant_documents(

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from dataclasses import field
 from typing import Any, List, Literal
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.pydantic_v1 import Field
 
 
 class Document(Serializable):
@@ -21,17 +21,13 @@ class Document(Serializable):
             )
     """
 
-    page_content: str
+    page_content: str = field(kw_only=False)
     """String text."""
-    metadata: dict = Field(default_factory=dict)
+    metadata: dict = field(default_factory=dict)
     """Arbitrary metadata about the page content (e.g., source, relationships to other
         documents, etc.).
     """
     type: Literal["Document"] = "Document"
-
-    def __init__(self, page_content: str, **kwargs: Any) -> None:
-        """Pass page_content in as positional or named arg."""
-        super().__init__(page_content=page_content, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

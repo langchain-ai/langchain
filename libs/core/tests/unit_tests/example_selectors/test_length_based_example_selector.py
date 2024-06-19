@@ -17,7 +17,7 @@ def selector() -> LengthBasedExampleSelector:
     """Get length based selector to use in tests."""
     prompts = PromptTemplate(input_variables=["question"], template="{question}")
     selector = LengthBasedExampleSelector(
-        examples=EXAMPLES,
+        examples=EXAMPLES.copy(),
         example_prompt=prompts,
         max_length=30,
     )

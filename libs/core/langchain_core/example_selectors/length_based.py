@@ -1,17 +1,18 @@
 """Select examples based on length."""
 import re
+from dataclasses import field
 from typing import Callable, Dict, List
 
 from langchain_core.example_selectors.base import BaseExampleSelector
+from langchain_core.load.serializable import Serializable
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, validator
 
 
 def _get_length_based(text: str) -> int:
     return len(re.split("\n| ", text))
 
 
-class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
+class LengthBasedExampleSelector(BaseExampleSelector, Serializable):
     """Select examples based on length."""
 
     examples: List[dict]
@@ -26,7 +27,19 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
     max_length: int = 2048
     """Max length for the prompt, beyond which examples are cut."""
 
-    example_text_lengths: List[int] = []  #: :meta private:
+    example_text_lengths: List[int] = field(default_factory=list)  #: :meta private:
+
+    def __post_init__(self) -> None:
+        # validate example_text_lengths
+        # Check if text lengths were passed in
+        if self.example_text_lengths:
+            return
+        else:
+            # If they were not, calculate them
+            example_prompt = self.example_prompt
+            get_text_length = self.get_text_length
+            string_examples = [example_prompt.format(**eg) for eg in self.examples]
+            self.example_text_lengths = [get_text_length(eg) for eg in string_examples]
 
     def add_example(self, example: Dict[str, str]) -> None:
         """Add new example to list."""
@@ -37,18 +50,6 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
     async def aadd_example(self, example: Dict[str, str]) -> None:
         """Add new example to list."""
         self.add_example(example)
-
-    @validator("example_text_lengths", always=True)
-    def calculate_example_text_lengths(cls, v: List[int], values: Dict) -> List[int]:
-        """Calculate text lengths if they don't exist."""
-        # Check if text lengths were passed in
-        if v:
-            return v
-        # If they were not, calculate them
-        example_prompt = values["example_prompt"]
-        get_text_length = values["get_text_length"]
-        string_examples = [example_prompt.format(**eg) for eg in values["examples"]]
-        return [get_text_length(eg) for eg in string_examples]
 
     def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
         """Select which examples to use based on the input lengths."""

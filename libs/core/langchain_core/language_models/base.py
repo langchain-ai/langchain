@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from dataclasses import field
 from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
+    Generic,
     List,
     Mapping,
     Optional,
@@ -73,7 +75,9 @@ def _get_verbosity() -> bool:
 
 
 class BaseLanguageModel(
-    RunnableSerializable[LanguageModelInput, LanguageModelOutputVar], ABC
+    RunnableSerializable[LanguageModelInput, LanguageModelOutputVar],
+    Generic[LanguageModelOutputVar],
+    ABC,
 ):
     """Abstract base class for interfacing with language models.
 
@@ -90,16 +94,16 @@ class BaseLanguageModel(
     
     Caching is not currently supported for streaming methods of models.
     """
-    verbose: bool = Field(default_factory=_get_verbosity)
+    verbose: bool = field(default_factory=_get_verbosity)
     """Whether to print out response text."""
-    callbacks: Callbacks = Field(default=None, exclude=True)
+    callbacks: Callbacks = field(default=None, metadata={"exclude": True})
     """Callbacks to add to the run trace."""
-    tags: Optional[List[str]] = Field(default=None, exclude=True)
+    tags: Optional[List[str]] = field(default=None, metadata={"exclude": True})
     """Tags to add to the run trace."""
-    metadata: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
+    metadata: Optional[Dict[str, Any]] = field(default=None, metadata={"exclude": True})
     """Metadata to add to the run trace."""
-    custom_get_token_ids: Optional[Callable[[str], List[int]]] = Field(
-        default=None, exclude=True
+    custom_get_token_ids: Optional[Callable[[str], List[int]]] = field(
+        default=None, metadata={"exclude": True}
     )
     """Optional encoder to use for counting tokens."""
 

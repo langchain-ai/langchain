@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from dataclasses import field
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -25,7 +26,7 @@ from langchain_core.prompt_values import (
     PromptValue,
     StringPromptValue,
 )
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
 from langchain_core.runnables.utils import create_model
@@ -42,14 +43,14 @@ class BasePromptTemplate(
 ):
     """Base class for all prompt templates, returning a prompt."""
 
-    input_variables: List[str]
+    input_variables: List[str] = field(default_factory=list)
     """A list of the names of the variables the prompt template expects."""
-    input_types: Dict[str, Any] = Field(default_factory=dict)
+    input_types: Dict[str, Any] = field(default_factory=dict)
     """A dictionary of the types of the variables the prompt template expects.
     If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
     """How to parse the output of calling an LLM on this formatted prompt."""
-    partial_variables: Mapping[str, Any] = Field(default_factory=dict)
+    partial_variables: Mapping[str, Any] = field(default_factory=dict)
     """A dictionary of the partial variables the prompt template carries.
     
     Partial variables populate the template so that you don't need to
@@ -59,28 +60,22 @@ class BasePromptTemplate(
     tags: Optional[List[str]] = None
     """Tags to be used for tracing."""
 
-    @root_validator(pre=False, skip_on_failure=True)
-    def validate_variable_names(cls, values: Dict) -> Dict:
+    def __post_init__(self) -> None:
         """Validate variable names do not include restricted names."""
-        if "stop" in values["input_variables"]:
+        if "stop" in self.input_variables:
             raise ValueError(
                 "Cannot have an input variable named 'stop', as it is used internally,"
                 " please rename."
             )
-        if "stop" in values["partial_variables"]:
+        if "stop" in self.partial_variables:
             raise ValueError(
                 "Cannot have an partial variable named 'stop', as it is used "
                 "internally, please rename."
             )
-
-        overall = set(values["input_variables"]).intersection(
-            values["partial_variables"]
-        )
-        if overall:
+        if overall := set(self.input_variables).intersection(self.partial_variables):
             raise ValueError(
                 f"Found overlapping input and partial variables: {overall}"
             )
-        return values
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -91,11 +86,6 @@ class BasePromptTemplate(
     def is_lc_serializable(cls) -> bool:
         """Return whether this class is serializable."""
         return True
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
 
     @property
     def OutputType(self) -> Any:
