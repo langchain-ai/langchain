@@ -10,6 +10,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import pytest
+from typing_extensions import Annotated
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -24,6 +25,7 @@ from langchain_core.tools import (
     Tool,
     ToolException,
     _create_subset_model,
+    create_schema_from_function,
     tool,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -54,7 +56,12 @@ class _MockStructuredTool(BaseTool):
     args_schema: Type[BaseModel] = _MockSchema
     description: str = "A Structured Tool"
 
-    def _run(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
+    def _run(
+        self,
+        arg1: int,
+        arg2: bool,
+        arg3: Optional[dict] = None,
+    ) -> str:
         return f"{arg1} {arg2} {arg3}"
 
     async def _arun(self, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
@@ -69,6 +76,33 @@ def test_structured_args() -> None:
     expected_result = "1 True {'foo': 'bar'}"
     args = {"arg1": 1, "arg2": True, "arg3": {"foo": "bar"}}
     assert structured_api.run(args) == expected_result
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Requires Python 3.10 or above")
+def test_structured_args_description() -> None:
+    class _AnnotatedTool(BaseTool):
+        name: str = "structured_api"
+        description: str = "A Structured Tool"
+
+        def _run(
+            self,
+            arg1: int,
+            arg2: Annotated[bool, "V important"],
+            arg3: Optional[dict] = None,
+        ) -> str:
+            return f"{arg1} {arg2} {arg3}"
+
+        async def _arun(
+            self, arg1: int, arg2: bool, arg3: Optional[dict] = None
+        ) -> str:
+            raise NotImplementedError
+
+    expected = {
+        "arg1": {"title": "Arg1", "type": "integer"},
+        "arg2": {"title": "Arg2", "type": "boolean", "description": "V important"},
+        "arg3": {"title": "Arg3", "type": "object"},
+    }
+    assert _AnnotatedTool().args == expected
 
 
 def test_misannotated_base_tool_raises_error() -> None:
@@ -872,6 +906,72 @@ def test_tool_invoke_optional_args(inputs: dict, expected: Optional[dict]) -> No
     else:
         with pytest.raises(ValidationError):
             foo.invoke(inputs)  # type: ignore
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="Requires Python 3.10 or above")
+def test_create_schema_from_function_with_descriptions() -> None:
+    def foo(bar: int, baz: str) -> str:
+        """Docstring
+        Args:
+            bar: int
+            baz: str
+        """
+        raise NotImplementedError()
+
+    async def foo_async(bar: int, baz: str) -> str:
+        """Docstring
+        Args:
+            bar: int
+            baz: str
+        """
+        raise NotImplementedError()
+
+    for func in [foo, foo_async]:
+        schema = create_schema_from_function("foo", func)
+        expected = {
+            "title": "fooSchema",
+            "type": "object",
+            "properties": {
+                "bar": {"title": "Bar", "type": "integer"},
+                "baz": {"title": "Baz", "type": "string"},
+            },
+            "required": ["bar", "baz"],
+        }
+        assert schema.schema() == expected
+
+    def foo_annotated(
+        bar: Annotated[int, "This is bar", {"gte": 5}, "it's useful"],
+    ) -> str:
+        """Docstring
+        Args:
+            bar: int
+        """
+        raise NotImplementedError
+
+    async def foo_async_annotated(
+        bar: Annotated[int, "This is bar", {"gte": 5}, "it's useful"],
+    ) -> str:
+        """Docstring
+        Args:
+            bar: int
+        """
+        raise bar
+
+    for func in [foo_annotated, foo_async_annotated]:
+        schema = create_schema_from_function("foo_annotated", func)
+        annotated_expected = {
+            "title": "foo_annotatedSchema",
+            "type": "object",
+            "properties": {
+                "bar": {
+                    "title": "Bar",
+                    "type": "integer",
+                    "description": "This is bar\nit's useful",
+                },
+            },
+            "required": ["bar"],
+        }
+        assert schema.schema() == annotated_expected
 
 
 def test_tool_pass_context() -> None:
