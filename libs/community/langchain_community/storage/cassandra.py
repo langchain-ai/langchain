@@ -103,7 +103,8 @@ class CassandraByteStore(ByteStore):
             await self.db_setup_task
 
     def get_select_statement(self) -> PreparedStatement:
-        """Get the prepared select statement for the table. If not available, prepare it.
+        """Get the prepared select statement for the table.
+        If not available, prepare it.
 
         Returns:
             PreparedStatement: The prepared statement.
@@ -117,7 +118,8 @@ class CassandraByteStore(ByteStore):
         return self.select_statement
 
     def get_insert_statement(self) -> PreparedStatement:
-        """Get the prepared insert statement for the table. If not available, prepare it.
+        """Get the prepared insert statement for the table.
+        If not available, prepare it.
 
         Returns:
             PreparedStatement: The prepared statement.
@@ -131,7 +133,8 @@ class CassandraByteStore(ByteStore):
         return self.insert_statement
 
     def get_delete_statement(self) -> PreparedStatement:
-        """Get the prepared delete statement for the table. If not available, prepare it.
+        """Get the prepared delete statement for the table.
+        If not available, prepare it.
 
         Returns:
             PreparedStatement: The prepared statement.

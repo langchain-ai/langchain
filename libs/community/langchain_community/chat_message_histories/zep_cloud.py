@@ -48,10 +48,12 @@ def get_zep_message_role_type(role: str) -> RoleType:
     """Get the Zep role type from the role string.
 
     Args:
-        role: The role string. One of "human", "ai", "system", "function", "tool".
+        role: The role string. One of "human", "ai", "system",
+        "function", "tool".
 
     Returns:
-        RoleType: The Zep role type. One of "user", "assistant", "system", "function", "tool".
+        RoleType: The Zep role type. One of "user", "assistant",
+        "system", "function", "tool".
     """
     if role == "human":
         return "user"
