@@ -11,14 +11,19 @@ from typing import Dict, List, Literal, Optional, Sequence, TypedDict, Union
 
 import toml
 import typing_extensions
-from langchain_core.runnables import RunnableSerializable, Runnable
+from langchain_core.runnables import Runnable, RunnableSerializable
 from pydantic import BaseModel
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
 HERE = Path(__file__).parent
 
 ClassKind = Literal[
-    "TypedDict", "Regular", "Pydantic", "enum", "RunnablePydantic", "RunnableNonPydantic"
+    "TypedDict",
+    "Regular",
+    "Pydantic",
+    "enum",
+    "RunnablePydantic",
+    "RunnableNonPydantic",
 ]
 
 
