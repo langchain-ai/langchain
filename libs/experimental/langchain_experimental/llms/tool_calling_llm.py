@@ -199,7 +199,6 @@ class ToolCallingLLM(BaseChatModel, ABC):
       AIMessage(content='The capital of France is Paris.', id='run-497d0e1a-d63b-45e8-9c8b-5e76d99b9468-0')
       ```
 
-    # TODO: Delete if .bind_tools() isn't supported.
     Tool calling:
       ```
       from langchain_core.pydantic_v1 import BaseModel, Field
