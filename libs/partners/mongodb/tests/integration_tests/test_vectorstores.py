@@ -9,16 +9,16 @@ import numpy as np
 import pytest
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.runnables.base import RunnableLambda
-from pymongo import MongoClient
-from pymongo.collection import Collection
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import (
     ConfigurableField,
     RunnablePassthrough,
 )
+from langchain_core.runnables.base import RunnableLambda
 from langchain_openai import ChatOpenAI
+from pymongo import MongoClient
+from pymongo.collection import Collection
 
 from tests.utils import ConsistentFakeEmbeddings, PatchedMongoDBAtlasVectorSearch
 
@@ -541,20 +541,22 @@ class TestMongoDBAtlasVectorSearch:
         ]
 
     def test_include_embeddings(
-            self,
-            embedding_openai: Embeddings,
-            collection: Any,
-            example_documents: List[Document],
-        ) -> None:
-            """Test explicitly passing vector kwarg matches default."""
-            vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
-                example_documents,
-                embedding_openai,
-                collection=collection,
-                vector_index_name=INDEX_NAME,
-            )
+        self,
+        embedding_openai: Embeddings,
+        collection: Any,
+        example_documents: List[Document],
+    ) -> None:
+        """Test explicitly passing vector kwarg matches default."""
+        vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
+            example_documents,
+            embedding_openai,
+            collection=collection,
+            vector_index_name=INDEX_NAME,
+        )
 
-            output_with = vectorstore.similarity_search("Sandwich", include_embeddings=True, k=1)
-            assert vectorstore._embedding_key in output_with[0].metadata
-            output_without = vectorstore.similarity_search("Sandwich", k=1)
-            assert vectorstore._embedding_key not in output_without[0].metadata
+        output_with = vectorstore.similarity_search(
+            "Sandwich", include_embeddings=True, k=1
+        )
+        assert vectorstore._embedding_key in output_with[0].metadata
+        output_without = vectorstore.similarity_search("Sandwich", k=1)
+        assert vectorstore._embedding_key not in output_without[0].metadata

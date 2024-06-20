@@ -9,9 +9,10 @@ are duplicated in this utility respectively from modules:
 """
 
 import logging
-from typing import List, Dict, Union, Any
-from bson import ObjectId, json_util
+from typing import Any, Dict, List, Union
+
 import numpy as np
+from bson import ObjectId, json_util
 
 logger = logging.getLogger(__name__)
 
@@ -59,9 +60,9 @@ def maximal_marginal_relevance(
 ) -> List[int]:
     """Compute Maximal Marginal Relevance (MMR).
 
-    MMR is a technique used to select documents that are both relevant to the query and diverse among themselves. 
+    MMR is a technique used to select documents that are both relevant to the query and diverse among themselves.
     This function returns the indices of the top-k embeddings that maximize the marginal relevance.
-   
+
     Args:
         query_embedding (np.ndarray): The embedding vector of the query.
         embedding_list (list of np.ndarray): A list containing the embedding vectors of the candidate documents.

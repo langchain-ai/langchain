@@ -16,7 +16,6 @@ from typing import (
 )
 
 import numpy as np
-
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
@@ -25,14 +24,14 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.driver_info import DriverInfo
 
-from langchain_mongodb.utils import maximal_marginal_relevance, make_serializable
 from langchain_mongodb.pipelines import (
-    vector_search_stage,
     combine_pipelines,
+    final_hybrid_stage,
     reciprocal_rank_stage,
     text_search_stage,
-    final_hybrid_stage,
+    vector_search_stage,
 )
+from langchain_mongodb.utils import make_serializable, maximal_marginal_relevance
 
 MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 VST = TypeVar("VST", bound=VectorStore)
@@ -674,7 +673,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 {"$limit": k},
             ]
 
-
         elif strategy == "hybrid":
             # Combines Vector and Full-Text searches with Reciprocal Rank Fusion weighting
             scores_fields = ["vector_score", "fulltext_score"]
@@ -714,8 +712,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 )
                 combine_pipelines(pipeline, text_pipeline, self._collection.name)
             else:
-                logger.warning(f"{strategy=} selected but fulltext_search_query is empty. "
-                               f"No text search will be performed, but scores are still RRF.")
+                logger.warning(
+                    f"{strategy=} selected but fulltext_search_query is empty. "
+                    f"No text search will be performed, but scores are still RRF."
+                )
 
             # Sum and sort pipeline
             pipeline += final_hybrid_stage(
