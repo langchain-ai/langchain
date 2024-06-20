@@ -32,6 +32,27 @@ class ChatMinds(ChatOpenAI):
 
     available_models: Optional[Set[str]] = None
 
+    def __init__(
+            self, 
+            mindsdb_api_key: SecretStr = None, 
+            mindsdb_api_base: Text = None, 
+            model_name: Text = None, 
+            max_tokens: int = None,
+            temperature: float = None,
+            stream: bool = None,
+            frequency_penalty: float = None,
+        ):
+        data = {
+            "mindsdb_api_key": mindsdb_api_key,
+            "mindsdb_api_base": mindsdb_api_base or self.__fields__["mindsdb_api_base"].default,
+            "model_name": model_name or self.__fields__["model_name"].default,
+            "max_tokens": max_tokens or self.__fields__["max_tokens"].default,
+            "temperature": temperature or self.__fields__["temperature"].default,
+            "stream": stream or self.__fields__["streaming"].default,
+            "frequency_penalty": frequency_penalty or self.__fields__["frequency_penalty"].default,
+        }
+        super().__init__(**data)
+
     @staticmethod
     def get_available_models(
         mindsdb_api_key: Optional[Text],
