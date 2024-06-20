@@ -3,7 +3,7 @@
 import json
 import re
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Sequence, cast
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, cast
 
 import yaml
 from langchain_core.callbacks import BaseCallbackManager
@@ -44,6 +44,8 @@ from langchain_community.utilities.requests import RequestsWrapper
 # However, the goal for now is to have only a single inference step.
 MAX_RESPONSE_LENGTH = 5000
 """Maximum length of the response to be returned."""
+
+Operation = Literal['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
 
 
 def _get_default_llm_chain(prompt: BasePromptTemplate) -> Any:
@@ -254,14 +256,14 @@ def _create_api_controller_agent(
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
     allow_dangerous_requests: bool,
-    allow_operations: Sequence[str],
+    allow_operations: Sequence[Operation],
 ) -> Any:
     from langchain.agents.agent import AgentExecutor
     from langchain.agents.mrkl.base import ZeroShotAgent
     from langchain.chains.llm import LLMChain
 
     tools: List[BaseTool] = []
-    if 'get' in allow_operations:
+    if 'GET' in allow_operations:
         get_llm_chain = LLMChain(llm=llm, prompt=PARSING_GET_PROMPT)
         tools.append(
             RequestsGetToolWithParsing(  # type: ignore[call-arg]
@@ -270,7 +272,7 @@ def _create_api_controller_agent(
                 allow_dangerous_requests=allow_dangerous_requests,
             )
         )
-    if 'post' in allow_operations:
+    if 'POST' in allow_operations:
         post_llm_chain = LLMChain(llm=llm, prompt=PARSING_POST_PROMPT)
         tools.append(
             RequestsPostToolWithParsing(  # type: ignore[call-arg]
@@ -279,7 +281,7 @@ def _create_api_controller_agent(
                 allow_dangerous_requests=allow_dangerous_requests,
             )
         )
-    if 'put' in allow_operations:
+    if 'PUT' in allow_operations:
         put_llm_chain = LLMChain(llm=llm, prompt=PARSING_PUT_PROMPT)
         tools.append(
             RequestsPutToolWithParsing(  # type: ignore[call-arg]
@@ -288,14 +290,14 @@ def _create_api_controller_agent(
                 allow_dangerous_requests=allow_dangerous_requests,
             )
         )
-    if 'delete' in allow_operations:
+    if 'DELETE' in allow_operations:
         delete_llm_chain = LLMChain(llm=llm, prompt=PARSING_DELETE_PROMPT)
         RequestsDeleteToolWithParsing(  # type: ignore[call-arg]
             requests_wrapper=requests_wrapper,
             llm_chain=delete_llm_chain,
             allow_dangerous_requests=allow_dangerous_requests,
         )
-    if 'patch' in allow_operations:
+    if 'PATCH' in allow_operations:
         patch_llm_chain = LLMChain(llm=llm, prompt=PARSING_PATCH_PROMPT)
         RequestsPatchToolWithParsing(  # type: ignore[call-arg]
             requests_wrapper=requests_wrapper,
@@ -328,7 +330,7 @@ def _create_api_controller_tool(
     requests_wrapper: RequestsWrapper,
     llm: BaseLanguageModel,
     allow_dangerous_requests: bool,
-    allow_operations: Sequence[str],
+    allow_operations: Sequence[Operation],
 ) -> Tool:
     """Expose controller as a tool.
 
@@ -358,7 +360,12 @@ def _create_api_controller_tool(
                 raise ValueError(f"{endpoint_name} endpoint does not exist.")
 
         agent = _create_api_controller_agent(
-            base_url, docs_str, requests_wrapper, llm, allow_dangerous_requests, allow_operations
+            base_url,
+            docs_str,
+            requests_wrapper,
+            llm,
+            allow_dangerous_requests,
+            allow_operations,
         )
         return agent.run(plan_str)
 
@@ -378,7 +385,7 @@ def create_openapi_agent(
     verbose: bool = True,
     agent_executor_kwargs: Optional[Dict[str, Any]] = None,
     allow_dangerous_requests: bool = False,
-    allow_operations: Sequence[str] = ('get', 'post'),
+    allow_operations: Sequence[Operation] = ('GET', 'POST'),
     **kwargs: Any,
 ) -> Any:
     """Construct an OpenAI API planner and controller for a given spec.
