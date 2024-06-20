@@ -21,6 +21,12 @@ def my_adder_tool(a: int, b: int) -> int:
     return a + b
 
 
+@tool
+def magic_function(input: int) -> int:
+    """Applies a magic function to an input."""
+    return input + 2
+
+
 class ChatModelTests(ABC):
     @property
     @abstractmethod
