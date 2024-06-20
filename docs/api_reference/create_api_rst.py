@@ -11,13 +11,13 @@ from typing import Dict, List, Literal, Optional, Sequence, TypedDict, Union
 
 import toml
 import typing_extensions
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import RunnableSerializable
 from pydantic import BaseModel
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
 HERE = Path(__file__).parent
 
-ClassKind = Literal["TypedDict", "Regular", "Pydantic", "enum", "RunnableSubclass"]
+ClassKind = Literal["TypedDict", "Regular", "Pydantic", "enum", "RunableSerializableSubclass"]
 
 
 class ClassInfo(TypedDict):
@@ -78,8 +78,10 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
                 kind: ClassKind = "TypedDict"
             elif type(type_) is typing._TypedDictMeta:  # type: ignore
                 kind: ClassKind = "TypedDict"
-            elif issubclass(type_, Runnable) and not type_ is Runnable:
-                kind = "RunnableSubclass"
+            elif issubclass(type_, RunnableSerializable):
+                # RunnableSerializable subclasses from Pydantic which
+                # has a lot of inherited methods are not relevant.
+                kind = "RunableSerializableSubclass"
             elif issubclass(type_, Enum):
                 kind = "enum"
             elif issubclass(type_, BaseModel):
@@ -260,7 +262,7 @@ Classes
                     template = "enum.rst"
                 elif class_["kind"] == "Pydantic":
                     template = "pydantic.rst"
-                elif class_["kind"] == "RunnableSubclass":
+                elif class_["kind"] == "RunableSerializableSubclass":
                     template = "runnable_subclass.rst"
                 else:
                     template = "class.rst"
