@@ -1,4 +1,4 @@
-"""MindsDB Endpoint chat wrapper. Relies heavily on ChatOpenAI."""
+"""MindsDB Endpoint chat wrapper. Relies heavily on ChatOpenAI as the Minds Endpoint is OpenAI API compatible."""
 
 import requests
 from typing import Text, Dict, Set, Optional
@@ -15,7 +15,7 @@ DEFAULT_MODEL = "gpt-3.5-turbo"
 
 class ChatAIMind(ChatOpenAI):
     """
-    `Minds Endpoint` Chat large language models from MindsDB.
+    `Minds Endpoint` chat large language models from MindsDB.
 
     See https://docs.mdb.ai/ for information about MindsDB and the MindsDB Endpoint.
 
