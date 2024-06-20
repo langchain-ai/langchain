@@ -11,13 +11,15 @@ from typing import Dict, List, Literal, Optional, Sequence, TypedDict, Union
 
 import toml
 import typing_extensions
-from langchain_core.runnables import RunnableSerializable
+from langchain_core.runnables import RunnableSerializable, Runnable
 from pydantic import BaseModel
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
 HERE = Path(__file__).parent
 
-ClassKind = Literal["TypedDict", "Regular", "Pydantic", "enum", "RunableSerializableSubclass"]
+ClassKind = Literal[
+    "TypedDict", "Regular", "Pydantic", "enum", "RunnablePydantic", "RunnableNonPydantic"
+]
 
 
 class ClassInfo(TypedDict):
@@ -74,14 +76,33 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
             # The clasification of the class is used to select a template
             # for the object when rendering the documentation.
             # See `templates` directory for defined templates.
+            # This is a hacky solution to distinguish between different
+            # kinds of thing that we want to render.
             if type(type_) is typing_extensions._TypedDictMeta:  # type: ignore
                 kind: ClassKind = "TypedDict"
             elif type(type_) is typing._TypedDictMeta:  # type: ignore
                 kind: ClassKind = "TypedDict"
-            elif issubclass(type_, RunnableSerializable):
+            elif (
+                issubclass(type_, Runnable)
+                and issubclass(type_, BaseModel)
+                and not type_ is Runnable
+            ):
                 # RunnableSerializable subclasses from Pydantic which
-                # has a lot of inherited methods are not relevant.
-                kind = "RunableSerializableSubclass"
+                # for which we use autodoc_pydantic for rendering.
+                # We need to distinguish these from regular Pydantic
+                # classes so we can hide inherited Runnable methods
+                # and provide a link to the Runnable interface from
+                # the template.
+                kind = "RunnablePydantic"
+            elif (
+                issubclass(type_, Runnable)
+                and not issubclass(type_, BaseModel)
+                and not type_ is Runnable
+            ):
+                # These are not pydantic classes but are Runnable.
+                # We'll hide all the inherited methods from Runnable
+                # but use a regular class template to render.
+                kind = "RunnableNonPydantic"
             elif issubclass(type_, Enum):
                 kind = "enum"
             elif issubclass(type_, BaseModel):
@@ -262,8 +283,10 @@ Classes
                     template = "enum.rst"
                 elif class_["kind"] == "Pydantic":
                     template = "pydantic.rst"
-                elif class_["kind"] == "RunableSerializableSubclass":
-                    template = "runnable_subclass.rst"
+                elif class_["kind"] == "RunnablePydantic":
+                    template = "runnable_pydantic.rst"
+                elif class_["kind"] == "RunnableNonPydantic":
+                    template = "runnable_non_pydantic.rst"
                 else:
                     template = "class.rst"
 

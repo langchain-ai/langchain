@@ -1,7 +1,7 @@
 :mod:`{{module}}`.{{objname}}
 {{ underline }}==============
 
-{{objname}} implements the standard :py:class:`Runnable Interface <langchain_core.runnables.base.Runnable>`.
+.. NOTE:: {{objname}} implements the standard :py:class:`Runnable Interface <langchain_core.runnables.base.Runnable>`. 🏃
 
 .. currentmodule:: {{ module }}
 
