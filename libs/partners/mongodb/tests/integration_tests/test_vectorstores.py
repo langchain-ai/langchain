@@ -5,16 +5,12 @@ from __future__ import annotations
 import os
 from typing import Any, List
 
-import numpy as np
 import pytest
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import (
-    ConfigurableField,
-    RunnablePassthrough,
-)
+from langchain_core.runnables import RunnablePassthrough
 from langchain_core.runnables.base import RunnableLambda
 from langchain_openai import ChatOpenAI
 from pymongo import MongoClient
@@ -78,7 +74,7 @@ class TestMongoDBAtlasVectorSearch:
                 openai_api_key=os.environ["OPENAI_API_KEY"],
                 model="text-embedding-3-small",
             )
-        except:
+        except Exception:
             return ConsistentFakeEmbeddings(DIMENSIONS)
 
     def test_from_documents(
