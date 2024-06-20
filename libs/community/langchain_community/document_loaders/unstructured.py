@@ -103,14 +103,14 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
 class UnstructuredFileLoader(UnstructuredBaseLoader):
     """Load files using `Unstructured`.
 
-    The file loader uses the
-    unstructured partition function and will automatically detect the file
-    type. You can run the loader in one of two modes: "single" and "elements".
-    If you use "single" mode, the document will be returned as a single
-    langchain Document object. If you use "elements" mode, the unstructured
-    library will split the document into elements such as Title and NarrativeText.
-    You can pass in additional unstructured kwargs after mode to apply
-    different unstructured settings.
+    The file loader uses the unstructured partition function and will automatically detect the file
+    type. You can run the loader in different modes: "single" and "elements". If you use "single"
+    mode, the document will be returned as a single langchain Document object. If you use "elements"
+    mode, the unstructured library will split the document into elements such as Title and
+    NarrativeText. In addition to these modes (which are specific to the LangChain Loaders)
+    Unstructured has its own "chunking" parameters for post-processing elements into more useful
+    "chunks" for uses cases such as Retrieval Augmented Generation (RAG). You can pass in additional
+    unstructured kwargs to configure different unstructured settings.
 
     Examples
     --------
@@ -123,7 +123,8 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
     References
     ----------
-    https://unstructured-io.github.io/unstructured/bricks.html#partition
+    https://docs.unstructured.io/open-source/core-functionality/partitioning
+    https://docs.unstructured.io/open-source/core-functionality/chunking
     """
 
     def __init__(
@@ -183,18 +184,18 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
     """Load files using `unstructured-client` sdk to access the Unstructured API.
 
-    By default, the loader makes a call to the hosted Unstructured API.
-    If you are running the unstructured API locally, you can change the
-    API rule by passing in the url parameter when you initialize the loader.
-    The hosted Unstructured API requires an API key. See
-    https://www.unstructured.io/api-key/ if you need to generate a key.
+    By default, the loader makes a call to the hosted Unstructured API. If you are running the
+    unstructured API locally, you can change the API rule by passing in the url parameter when you
+    initialize the loader. The hosted Unstructured API requires an API key. See the links below to
+    learn more about our API offerings and get an API key.
 
-    You can run the loader in one of two modes: "single" and "elements".
-    If you use "single" mode, the document will be returned as a single
-    langchain Document object. If you use "elements" mode, the unstructured
-    library will split the document into elements such as Title and NarrativeText.
-    You can pass in additional unstructured kwargs after mode to apply
-    different unstructured settings.
+    You can run the loader in one of two modes: "single" and "elements". If you use "single" mode,
+    the document will be returned as a single langchain Document object. If you use "elements" mode,
+    the unstructured library will split the document into elements such as Title and NarrativeText.
+    In addition to these modes (which are specific to the LangChain Loaders) Unstructured has its
+    own "chunking" parameters for post-processing elements into more useful "chunks" for uses cases
+    such as Retrieval Augmented Generation (RAG). You can pass in additional unstructured kwargs to
+    configure different unstructured settings.
 
     Examples
     ```python
@@ -207,9 +208,10 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
 
     References
     ----------
-    https://unstructured-io.github.io/unstructured/bricks.html#partition
-    https://www.unstructured.io/api-key/
-    https://github.com/Unstructured-IO/unstructured-api
+    https://docs.unstructured.io/api-reference/api-services/sdk
+    https://docs.unstructured.io/api-reference/api-services/overview
+    https://docs.unstructured.io/open-source/core-functionality/partitioning
+    https://docs.unstructured.io/open-source/core-functionality/chunking
     """
 
     def __init__(
@@ -315,8 +317,10 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     type. You can run the loader in one of two modes: "single" and "elements". If you use "single"
     mode, the document will be returned as a single langchain Document object. If you use "elements"
     mode, the unstructured library will split the document into elements such as Title and
-    NarrativeText. You can pass in additional unstructured kwargs after mode to apply different
-    unstructured settings.
+    NarrativeText. In addition to these modes (which are specific to the LangChain Loaders)
+    Unstructured has its own "chunking" parameters for post-processing elements into more useful
+    "chunks" for uses cases such as Retrieval Augmented Generation (RAG). You can pass in additional
+    unstructured kwargs to configure different unstructured settings.
 
     Examples
     --------
@@ -331,7 +335,8 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
     References
     ----------
-    https://unstructured-io.github.io/unstructured/bricks.html#partition
+    https://docs.unstructured.io/open-source/core-functionality/partitioning
+    https://docs.unstructured.io/open-source/core-functionality/chunking
     """
 
     def __init__(
@@ -384,18 +389,18 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
     """Load file-like objects using the `unstructured-client` sdk to access the Unstructured API.
 
-    By default, the loader makes a call to the hosted Unstructured API.
-    If you are running the unstructured API locally, you can change the
-    API rule by passing in the url parameter when you initialize the loader.
-    The hosted Unstructured API requires an API key. See
-    https://www.unstructured.io/api-key/ if you need to generate a key.
+    By default, the loader makes a call to the hosted Unstructured API. If you are running the
+    unstructured API locally, you can change the API rule by passing in the url parameter when you
+    initialize the loader. The hosted Unstructured API requires an API key. See the links below to
+    learn more about our API offerings and get an API key.
 
-    You can run the loader in one of two modes: "single" and "elements".
-    If you use "single" mode, the document will be returned as a single
-    langchain Document object. If you use "elements" mode, the unstructured
-    library will split the document into elements such as Title and NarrativeText.
-    You can pass in additional unstructured kwargs after mode to apply
-    different unstructured settings.
+    You can run the loader in one of two modes: "single" and "elements". If you use "single" mode,
+    the document will be returned as a single langchain Document object. If you use "elements" mode,
+    the unstructured library will split the document into elements such as Title and NarrativeText.
+    In addition to these modes (which are specific to the LangChain Loaders) Unstructured has its
+    own "chunking" parameters for post-processing elements into more useful "chunks" for uses cases
+    such as Retrieval Augmented Generation (RAG). You can pass in additional unstructured kwargs to
+    configure different unstructured settings.
 
     Examples
     --------
@@ -409,9 +414,10 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
 
     References
     ----------
-    https://unstructured-io.github.io/unstructured/bricks.html#partition
-    https://www.unstructured.io/api-key/
-    https://github.com/Unstructured-IO/unstructured-api
+    https://docs.unstructured.io/api-reference/api-services/sdk
+    https://docs.unstructured.io/api-reference/api-services/overview
+    https://docs.unstructured.io/open-source/core-functionality/partitioning
+    https://docs.unstructured.io/open-source/core-functionality/chunking
     """
 
     def __init__(
