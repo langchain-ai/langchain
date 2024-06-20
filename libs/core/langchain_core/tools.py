@@ -122,10 +122,29 @@ class _SchemaConfig:
     arbitrary_types_allowed: bool = True
 
 
+def create_return_schema_from_function(
+    model_name: str,
+    func: Callable,
+) -> Optional[Type[BaseModel]]:
+    return_type = get_type_hints(func).get("return", Any)
+    if (
+        return_type is not str
+        and return_type is not int
+        and return_type is not float
+        and return_type is not None
+    ):
+        if return_type is not Any:
+            return create_model(f"{model_name}ReturnSchema", result=(return_type, ...))
+        else:
+            return create_model(f"{model_name}ReturnSchema", result=(Any, ...))
+
+    return None
+
+
 def create_schema_from_function(
     model_name: str,
     func: Callable,
-) -> Tuple[Type[BaseModel], Optional[Type[BaseModel]]]:
+) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature.
     Args:
         model_name: Name to assign to the generated pydandic schema
@@ -146,22 +165,7 @@ def create_schema_from_function(
         f"{model_name}Schema", inferred_model, list(valid_properties)
     )
 
-    return_type = get_type_hints(func).get("return", Any)
-    return_model = None
-    if (
-        return_type is not str
-        and return_type is not int
-        and return_type is not float
-        and return_type is not None
-    ):
-        if return_type is not Any:
-            return_model = create_model(
-                f"{model_name}ReturnSchema", result=(return_type, ...)
-            )
-        else:
-            return_model = create_model(f"{model_name}ReturnSchema", result=(Any, ...))
-
-    return arg_model, return_model
+    return arg_model
 
 
 class ToolException(Exception):
@@ -268,7 +272,7 @@ class ChildTool(BaseTool):
         if self.args_schema is not None:
             return self.args_schema.schema()["properties"]
         else:
-            schema, _ = create_schema_from_function(self.name, self._run)
+            schema = create_schema_from_function(self.name, self._run)
             return schema.schema()["properties"]
 
     # --- Runnable ---
@@ -280,8 +284,7 @@ class ChildTool(BaseTool):
         if self.args_schema is not None:
             return self.args_schema
         else:
-            input, _ = create_schema_from_function(self.name, self._run)
-            return input
+            return create_schema_from_function(self.name, self._run)
 
     def invoke(
         self,
@@ -881,9 +884,10 @@ class StructuredTool(BaseTool):
         _return_schema = return_schema
         if _args_schema is None and infer_schema:
             # schema name is appended within function
-            _args_schema, _return_schema = create_schema_from_function(
-                name, source_function
-            )
+            _args_schema = create_schema_from_function(name, source_function)
+        if _return_schema is None and infer_schema:
+            # schema name is appended within function
+            _return_schema = create_return_schema_from_function(name, source_function)
         return cls(
             name=name,
             func=func,
@@ -901,6 +905,7 @@ def tool(
     *args: Union[str, Callable, Runnable],
     return_direct: bool = False,
     args_schema: Optional[Type[BaseModel]] = None,
+    return_schema: Optional[Type[BaseModel]] = None,
     infer_schema: bool = True,
     few_shot_examples: Optional[List[Dict[str, Any]]] = None,
 ) -> Callable:
@@ -974,6 +979,7 @@ def tool(
                     description=description,
                     return_direct=return_direct,
                     args_schema=schema,
+                    return_schema=return_schema,
                     infer_schema=infer_schema,
                     few_shot_examples=few_shot_examples,
                 )

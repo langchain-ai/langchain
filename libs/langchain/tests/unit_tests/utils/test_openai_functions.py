@@ -13,7 +13,6 @@ def test_convert_pydantic_to_openai_function() -> None:
     expected = {
         "name": "Data",
         "description": "The data to return.",
-        "few_shot_examples": None,
         "parameters": {
             "type": "object",
             "properties": {
@@ -26,7 +25,6 @@ def test_convert_pydantic_to_openai_function() -> None:
             },
             "required": ["key"],
         },
-        "return_parameters": None,
     }
     assert actual == expected
 
@@ -47,7 +45,6 @@ def test_convert_pydantic_to_openai_function_nested() -> None:
     expected = {
         "name": "Model",
         "description": "The model to return.",
-        "few_shot_examples": None,
         "parameters": {
             "type": "object",
             "properties": {
@@ -70,6 +67,5 @@ def test_convert_pydantic_to_openai_function_nested() -> None:
             },
             "required": ["data"],
         },
-        "return_parameters": None,
     }
     assert actual == expected

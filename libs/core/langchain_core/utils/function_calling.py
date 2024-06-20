@@ -50,7 +50,11 @@ class FunctionDescription(TypedDict):
     description: str
     """A description of the function."""
     parameters: dict
+
+
+class GigaFunctionDescription(TypedDict):
     """The parameters of the function."""
+
     return_parameters: Optional[dict]
     """The result settings of the function."""
     few_shot_examples: Optional[list]
@@ -100,8 +104,6 @@ def convert_pydantic_to_openai_function(
         "name": name or title,
         "description": description or default_description,
         "parameters": _rm_titles(schema) if rm_titles else schema,
-        "few_shot_examples": None,
-        "return_parameters": None,
     }
 
 
@@ -112,7 +114,7 @@ def convert_pydantic_to_gigachat_function(
     description: Optional[str] = None,
     return_model: Optional[Type[BaseModel]] = None,
     few_shot_examples: Optional[List[dict]] = None,
-) -> FunctionDescription:
+) -> GigaFunctionDescription:
     """Converts a Pydantic model to a function description for the GigaChat API."""
     schema = dereference_refs(model.schema())
     schema.pop("definitions", None)
@@ -283,7 +285,7 @@ def convert_python_function_to_openai_function(
     "0.1.16",
     removal="0.3.0",
 )
-def format_tool_to_gigachat_function(tool: BaseTool) -> FunctionDescription:
+def format_tool_to_gigachat_function(tool: BaseTool) -> GigaFunctionDescription:
     """Format tool into the OpenAI function API."""
     if tool.args_schema:
         return convert_pydantic_to_gigachat_function(
@@ -341,8 +343,6 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
                 "required": ["__arg1"],
                 "type": "object",
             },
-            "few_shot_examples": tool.few_shot_examples,
-            "return_parameters": None,
         }
 
 
