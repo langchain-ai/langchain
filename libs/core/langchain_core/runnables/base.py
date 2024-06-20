@@ -26,7 +26,6 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
-    Set,
     Tuple,
     Type,
     TypeVar,
@@ -428,7 +427,7 @@ class Runnable(Generic[Input, Output], ABC):
         ],
     ) -> RunnableSerializable[Input, Other]:
         """Compose this runnable with another object to create a RunnableSequence."""
-        return RunnableSequence.from_steps(self, coerce_to_runnable(other))
+        return RunnableSequence(self, coerce_to_runnable(other))
 
     def __ror__(
         self,
@@ -440,7 +439,7 @@ class Runnable(Generic[Input, Output], ABC):
         ],
     ) -> RunnableSerializable[Other, Output]:
         """Compose this runnable with another object to create a RunnableSequence."""
-        return RunnableSequence.from_steps(coerce_to_runnable(other), self)
+        return RunnableSequence(coerce_to_runnable(other), self)
 
     def pipe(
         self,
@@ -449,7 +448,7 @@ class Runnable(Generic[Input, Output], ABC):
     ) -> RunnableSerializable[Input, Other]:
         """Compose this Runnable with Runnable-like objects to make a RunnableSequence.
 
-        Equivalent to `RunnableSequence.from_steps(self, *others)` or `self | others[0] | ...`
+        Equivalent to `RunnableSequence(self, *others)` or `self | others[0] | ...`
 
         Example:
             .. code-block:: python
@@ -476,7 +475,7 @@ class Runnable(Generic[Input, Output], ABC):
                 await sequence.abatch([1, 2, 3])
                 # -> [4, 6, 8]
         """
-        return RunnableSequence.from_steps(self, *others, name=name)
+        return RunnableSequence(self, *others, name=name)
 
     def pick(self, keys: Union[str, List[str]]) -> RunnableSerializable[Any, Any]:
         """Pick keys from the dict output of this runnable.
@@ -2281,12 +2280,22 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     last: Runnable[Any, Output]
     """The last runnable in the sequence."""
 
-    @classmethod
-    def from_steps(
-        cls, *steps: RunnableLike, name: Optional[str] = None
-    ) -> "RunnableSequence":
-        """Create a RunnableSequence from a list of Runnables."""
+    def __init__(
+        self,
+        *steps: RunnableLike,
+        name: Optional[str] = None,
+        first: Optional[Runnable[Any, Any]] = None,
+        middle: Optional[List[Runnable[Any, Any]]] = None,
+        last: Optional[Runnable[Any, Any]] = None,
+    ) -> None:
+        """Create a new RunnableSequence.
+        Args:
+            steps: The steps to include in the sequence.
+        """
         steps_flat: List[Runnable] = []
+        if not steps:
+            if first is not None and last is not None:
+                steps_flat = [first] + (middle or []) + [last]
         for step in steps:
             if isinstance(step, RunnableSequence):
                 steps_flat.extend(step.steps)
@@ -2296,8 +2305,11 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
             raise ValueError(
                 f"RunnableSequence must have at least 2 steps, got {len(steps_flat)}"
             )
-        return RunnableSequence(
-            first=steps_flat[0], middle=steps_flat[1:-1], last=steps_flat[-1], name=name
+        return self.__default_init__(
+            first=steps_flat[0],
+            middle=steps_flat[1:-1],
+            last=steps_flat[-1],
+            name=name,
         )
 
     @classmethod
@@ -2380,7 +2392,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         ],
     ) -> RunnableSerializable[Input, Other]:
         if isinstance(other, RunnableSequence):
-            return RunnableSequence.from_steps(
+            return RunnableSequence(
                 self.first,
                 *self.middle,
                 self.last,
@@ -2390,7 +2402,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 name=self.name or other.name,
             )
         else:
-            return RunnableSequence.from_steps(
+            return RunnableSequence(
                 self.first,
                 *self.middle,
                 self.last,
@@ -2408,7 +2420,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         ],
     ) -> RunnableSerializable[Other, Output]:
         if isinstance(other, RunnableSequence):
-            return RunnableSequence.from_steps(
+            return RunnableSequence(
                 other.first,
                 *other.middle,
                 other.last,
@@ -2418,7 +2430,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                 name=other.name or self.name,
             )
         else:
-            return RunnableSequence.from_steps(
+            return RunnableSequence(
                 coerce_to_runnable(other),
                 self.first,
                 *self.middle,
@@ -2918,6 +2930,10 @@ class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     """
 
     steps__: Mapping[str, Runnable[Input, Any]] = field(kw_only=False)
+
+    def __post_init__(self) -> None:
+        for key, step in self.steps__.items():
+            self.steps__[key] = coerce_to_runnable(step)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -4368,51 +4384,6 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
 
     The type can be a pydantic model, or a type annotation (e.g., `List[str]`).
     """
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    def __init__(
-        self,
-        *,
-        bound: Runnable[Input, Output],
-        kwargs: Optional[Mapping[str, Any]] = None,
-        config: Optional[RunnableConfig] = None,
-        config_factories: Optional[
-            List[Callable[[RunnableConfig], RunnableConfig]]
-        ] = None,
-        custom_input_type: Optional[Union[Type[Input], BaseModel]] = None,
-        custom_output_type: Optional[Union[Type[Output], BaseModel]] = None,
-        **other_kwargs: Any,
-    ) -> None:
-        """Create a RunnableBinding from a runnable and kwargs.
-
-        Args:
-            bound: The underlying runnable that this runnable delegates calls to.
-            kwargs: optional kwargs to pass to the underlying runnable, when running
-                    the underlying runnable (e.g., via `invoke`, `batch`,
-                    `transform`, or `stream` or async variants)
-            config: config_factories:
-            config_factories: optional list of config factories to apply to the
-            custom_input_type: Specify to override the input type of the underlying
-                               runnable with a custom type.
-            custom_output_type: Specify to override the output type of the underlying
-                runnable with a custom type.
-            **other_kwargs: Unpacked into the base class.
-        """
-        super().__init__(  # type: ignore[call-arg]
-            bound=bound,
-            kwargs=kwargs or {},
-            config=config or {},
-            config_factories=config_factories or [],
-            custom_input_type=custom_input_type,
-            custom_output_type=custom_output_type,
-            **other_kwargs,
-        )
-        # if we don't explicitly set config to the TypedDict here,
-        # the pydantic init above will strip out any of the "extra"
-        # fields even though total=False on the typed dict.
-        self.config = config or {}
 
     def get_name(
         self, suffix: Optional[str] = None, *, name: Optional[str] = None

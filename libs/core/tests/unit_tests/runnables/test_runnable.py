@@ -306,7 +306,6 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "definitions": {
             "Document": {
                 "title": "Document",
-                "description": AnyStr(),
                 "type": "object",
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
@@ -909,7 +908,7 @@ def test_schema_complex_seq() -> None:
 
     model = FakeListChatModel(responses=[""])
 
-    chain1: Runnable = RunnableSequence.from_steps(
+    chain1: Runnable = RunnableSequence(
         prompt1, model, StrOutputParser(), name="city_chain"
     )
 

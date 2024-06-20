@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import threading
+from dataclasses import field
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -140,32 +141,32 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         # See https://github.com/pydantic/pydantic/issues/7327
         return []
 
-    # def __init__(
-    #     self,
-    #     func: Optional[
-    #         Union[
-    #             Union[Callable[[Other], None], Callable[[Other, RunnableConfig], None]],
-    #             Union[
-    #                 Callable[[Other], Awaitable[None]],
-    #                 Callable[[Other, RunnableConfig], Awaitable[None]],
-    #             ],
-    #         ]
-    #     ] = None,
-    #     afunc: Optional[
-    #         Union[
-    #             Callable[[Other], Awaitable[None]],
-    #             Callable[[Other, RunnableConfig], Awaitable[None]],
-    #         ]
-    #     ] = None,
-    #     *,
-    #     input_type: Optional[Type[Other]] = None,
-    #     **kwargs: Any,
-    # ) -> None:
-    #     if inspect.iscoroutinefunction(func):
-    #         afunc = func
-    #         func = None
+    def __init__(
+        self,
+        func: Optional[
+            Union[
+                Union[Callable[[Other], None], Callable[[Other, RunnableConfig], None]],
+                Union[
+                    Callable[[Other], Awaitable[None]],
+                    Callable[[Other, RunnableConfig], Awaitable[None]],
+                ],
+            ]
+        ] = None,
+        afunc: Optional[
+            Union[
+                Callable[[Other], Awaitable[None]],
+                Callable[[Other, RunnableConfig], Awaitable[None]],
+            ]
+        ] = None,
+        *,
+        input_type: Optional[Type[Other]] = None,
+        **kwargs: Any,
+    ) -> None:
+        if inspect.iscoroutinefunction(func):
+            afunc = func
+            func = None
 
-    #     super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)  # type: ignore[call-arg]
+        self.__default_init__(func=func, afunc=afunc, input_type=input_type, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -365,10 +366,7 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
             # returns {'input': 5, 'add_step': {'added': 15}}
     """
 
-    mapper: RunnableParallel[Dict[str, Any]]
-
-    def __init__(self, mapper: RunnableParallel[Dict[str, Any]], **kwargs: Any) -> None:
-        super().__init__(mapper=mapper, **kwargs)  # type: ignore[call-arg]
+    mapper: RunnableParallel[Dict[str, Any]] = field(kw_only=False)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

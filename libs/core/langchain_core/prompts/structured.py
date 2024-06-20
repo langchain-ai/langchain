@@ -119,7 +119,7 @@ class StructuredPrompt(ChatPromptTemplate):
             other, "with_structured_output"
         ):
             try:
-                return RunnableSequence.from_steps(
+                return RunnableSequence(
                     self, other.with_structured_output(self.schema_)
                 )
             except NotImplementedError as e:
@@ -143,7 +143,7 @@ class StructuredPrompt(ChatPromptTemplate):
             and isinstance(others[0], BaseLanguageModel)
             or hasattr(others[0], "with_structured_output")
         ):
-            return RunnableSequence.from_steps(
+            return RunnableSequence(
                 self,
                 others[0].with_structured_output(self.schema_),
                 *others[1:],

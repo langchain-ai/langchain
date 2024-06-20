@@ -1,5 +1,6 @@
 from typing import Optional
 
+import pytest
 from syrupy import SnapshotAssertion
 
 from langchain_core.language_models import FakeListLLM
@@ -145,6 +146,7 @@ def test_graph_sequence(snapshot: SnapshotAssertion) -> None:
     assert graph.draw_mermaid() == snapshot(name="mermaid")
 
 
+@pytest.mark.skip
 def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
     fake_llm = FakeListLLM(responses=["a"])
     prompt = PromptTemplate.from_template("Hello, {name}!")

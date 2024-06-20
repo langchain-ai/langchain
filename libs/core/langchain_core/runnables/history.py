@@ -325,7 +325,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 ),
             ]
 
-        super().__init__(
+        self.__default_init__(
             get_session_history=get_session_history,
             input_messages_key=input_messages_key,
             output_messages_key=output_messages_key,

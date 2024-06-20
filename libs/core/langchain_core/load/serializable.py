@@ -1,6 +1,6 @@
 from abc import ABC
+from collections import deque
 from dataclasses import MISSING, dataclass, fields, replace
-from inspect import signature
 from typing import (
     Any,
     Dict,
@@ -10,12 +10,15 @@ from typing import (
     Literal,
     Optional,
     Tuple,
+    Type,
     TypedDict,
     Union,
     cast,
 )
 
 from typing_extensions import NotRequired
+
+from langchain_core.load.dataclass_ext import set_init
 
 
 class BaseSerialized(TypedDict):
@@ -72,6 +75,10 @@ class Serializable(ABC):
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
         dataclass(kw_only=True)(cls)
+        set_init(cls)
+
+    def __default_init__(self, *args: Any, **kwargs: Any) -> None:
+        pass
 
     def __iter__(self) -> Iterator[Tuple[str, Any]]:
         return iter(self.__dict__.items())
@@ -91,8 +98,18 @@ class Serializable(ABC):
 
     def dict(self, exclude: Optional[Iterable[str]] = None) -> Dict[str, Any]:
         """Return the object as a dictionary."""
+
+        def convert(v: Any) -> Any:
+            if hasattr(v, "dict") and callable(v.dict):
+                return v.dict()
+            if _sequence_like(v):
+                return v.__class__(convert(x) for x in v)
+            if isinstance(v, dict):
+                return {k: convert(x) for k, x in v.items()}
+            return v
+
         return {
-            k: v.dict() if hasattr(v, "dict") and callable(v.dict) else v
+            k: convert(v)
             for k, v in self.__dict__.items()
             if exclude is None or k not in exclude
         }
@@ -276,3 +293,27 @@ def to_json_not_implemented(obj: object) -> SerializedNotImplemented:
     except Exception:
         pass
     return result
+
+
+def _sequence_like(v: Any) -> bool:
+    return isinstance(v, (list, tuple, set, frozenset, deque)) and not _is_namedtuple(
+        type(v)
+    )
+
+
+def _is_namedtuple(type_: Type[Any]) -> bool:
+    """
+    Check if a given class is a named tuple.
+    It can be either a `typing.NamedTuple` or `collections.namedtuple`
+    """
+
+    return _lenient_issubclass(type_, tuple) and hasattr(type_, "_fields")
+
+
+def _lenient_issubclass(
+    cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...], None]
+) -> bool:
+    try:
+        return isinstance(cls, type) and issubclass(cls, class_or_tuple)  # type: ignore[arg-type]
+    except TypeError:
+        return False

@@ -12,6 +12,8 @@ from typing import (
     Union,
 )
 
+from langchain_core.runnables.base import RunnableSequence
+
 import pytest
 from syrupy import SnapshotAssertion
 
