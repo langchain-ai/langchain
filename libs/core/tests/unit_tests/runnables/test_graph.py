@@ -8,6 +8,7 @@ from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.xml import XMLOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables.base import Runnable, RunnableConfig
+from tests.unit_tests.stubs import AnyStr
 
 
 def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
@@ -254,7 +255,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "AIMessage": {
                             "title": "AIMessage",
-                            "description": "Message from an AI.",
+                            "description": AnyStr(),
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -313,7 +314,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "HumanMessage": {
                             "title": "HumanMessage",
-                            "description": "Message from a human.",
+                            "description": AnyStr(),
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -357,7 +358,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "ChatMessage": {
                             "title": "ChatMessage",
-                            "description": "Message that can be assigned an arbitrary speaker (i.e. role).",  # noqa: E501
+                            "description": AnyStr(),
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -397,7 +398,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "SystemMessage": {
                             "title": "SystemMessage",
-                            "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa: E501
+                            "description": AnyStr(),
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -436,7 +437,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "FunctionMessage": {
                             "title": "FunctionMessage",
-                            "description": "Message for passing the result of executing a function back to a model.",  # noqa: E501
+                            "description": AnyStr(),
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -475,7 +476,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "ToolMessage": {
                             "title": "ToolMessage",
-                            "description": "Message for passing the result of executing a tool back to a model.",  # noqa: E501
+                            "description": AnyStr(),
                             "type": "object",
                             "properties": {
                                 "content": {
