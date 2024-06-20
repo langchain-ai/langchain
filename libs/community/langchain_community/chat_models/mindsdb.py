@@ -1,3 +1,5 @@
+"""MindsDB Endpoint chat wrapper. Relies heavily on ChatOpenAI."""
+
 import requests
 from typing import Text, Dict, Set, Optional
 
@@ -12,6 +14,30 @@ DEFAULT_MODEL = "gpt-3.5-turbo"
 
 
 class ChatAIMind(ChatOpenAI):
+    """
+    `Minds Endpoint` Chat large language models.
+
+    See https://docs.mdb.ai/ for information about Anyscale.
+
+    To use this chat model, you should have the ``openai`` python package installed, and the
+    environment variable ``MINDSDB_API_KEY`` set with your API key.
+    Alternatively, you can use the mindsdb_api_key keyword argument.
+
+    The valid parameters that can be passed to this model are:
+    - `mindsdb_api_key`: API key for the MindsDB API. As mentioned above, this can be set as an environment variable.
+    - `mindsdb_api_base`: Base URL for the MindsDB API. Default is https://llm.mdb.ai. This can be set as an environment variable.
+    - `model`: ID of the model to use. Default is s``gpt-3.5-turbo``. See https://docs.mdb.ai/docs/models for a list of supported models.
+    - `max_tokens`: This parameter sets the maximum number of tokens that can be generated in the chat completion. It's limited by the model's total allowable context length, which includes both the input and generated tokens.
+    - `temperature`: This parameter controls the randomness of the output with values ranging from 0 to 2. A higher value, increases randomness in the output, while a lower value, like 0.1, results in more focused and deterministic output.
+    - `stream`: If set, partial message deltas will be sent, like in ChatGPT. Tokens will be sent as data-only server-sent events as they become available, with the stream terminated by a data: [DONE] message. 
+    - `frequency_penalty`: This setting ranges from -2.0 to 2.0. Positive values make the model less likely to repeat phrases it has already used.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_community.chat_models import ChatAIMind
+            chat = ChatAIMind(model_name="llama-3-70b")
+    """
     @property
     def _llm_type(self) -> Text:
         """Return type of chat model."""
@@ -23,7 +49,7 @@ class ChatAIMind(ChatOpenAI):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        return False
+        return True
 
     mindsdb_api_key: SecretStr = Field(default=None)
     mindsdb_api_base: str = Field(default=DEFAULT_API_BASE)
@@ -35,7 +61,7 @@ class ChatAIMind(ChatOpenAI):
             self, 
             mindsdb_api_key: SecretStr = None, 
             mindsdb_api_base: Text = None, 
-            model_name: Text = None, 
+            model: Text = None, 
             max_tokens: int = None,
             temperature: float = None,
             stream: bool = None,
@@ -44,10 +70,10 @@ class ChatAIMind(ChatOpenAI):
         data = {
             "mindsdb_api_key": mindsdb_api_key,
             "mindsdb_api_base": mindsdb_api_base or self.__fields__["mindsdb_api_base"].default,
-            "model_name": model_name or self.__fields__["model_name"].default,
+            "model_name": model or self.__fields__["model_name"].default,
             "max_tokens": max_tokens or self.__fields__["max_tokens"].default,
             "temperature": temperature or self.__fields__["temperature"].default,
-            "stream": stream or self.__fields__["streaming"].default,
+            "streaming": stream or self.__fields__["streaming"].default,
             "frequency_penalty": frequency_penalty or self.__fields__["frequency_penalty"].default,
         }
         super().__init__(**data)
@@ -97,7 +123,7 @@ class ChatAIMind(ChatOpenAI):
             default=DEFAULT_API_BASE,
         )
 
-        # Validate that the `openai` can be imported.
+        # Validate that the `openai` package can be imported.
         try:
             import openai
 
