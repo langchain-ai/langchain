@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict, List, Literal, Optional, Sequence, TypedDict, Union
 
 import toml
+import typing_extensions
 from pydantic import BaseModel
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
@@ -69,7 +70,9 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
             continue
 
         if inspect.isclass(type_):
-            if type(type_) == typing._TypedDictMeta:  # type: ignore
+            if type(type_) is typing_extensions._TypedDictMeta:  # type: ignore
+                kind: ClassKind = "TypedDict"
+            elif type(type_) is typing._TypedDictMeta:  # type: ignore
                 kind: ClassKind = "TypedDict"
             elif issubclass(type_, Enum):
                 kind = "enum"
