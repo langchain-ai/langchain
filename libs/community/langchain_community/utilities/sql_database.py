@@ -206,7 +206,6 @@ class SQLDatabase:
         except ImportError:
             default_host = None
 
-        
         if host is None:
             host = get_from_env("host", "DATABRICKS_HOST", default_host)
 
