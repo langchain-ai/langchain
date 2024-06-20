@@ -160,8 +160,8 @@ class PngDrawer:
             self.add_node(viz, node)
 
     def add_edges(self, viz: Any, graph: Graph) -> None:
-        for start, end, label, cond in graph.edges:
-            self.add_edge(viz, start, end, label, cond)
+        for start, end, data, cond in graph.edges:
+            self.add_edge(viz, start, end, str(data), cond)
 
     def update_styles(self, viz: Any, graph: Graph) -> None:
         if first := graph.first_node():
