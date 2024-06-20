@@ -168,7 +168,7 @@ class ConfluenceLoader(BaseLoader):
         include_comments: bool = False,
         content_format: ContentFormat = ContentFormat.STORAGE,
         limit: Optional[int] = 50,
-        max_pages: Optional[int] = 1000,
+        max_pages: Optional[int] = None,
         ocr_languages: Optional[str] = None,
         keep_markdown_format: bool = False,
         keep_newlines: bool = False,
@@ -430,7 +430,8 @@ class ConfluenceLoader(BaseLoader):
         seems to cap the response to 100. Also, due to the Atlassian Python
         package, we don't get the "next" values from the "_links" key because
         they only return the value from the result key. So here, the pagination
-        starts from 0 and goes until the max_pages, getting the `limit` number
+        starts from 0 and goes until the max_pages (if set, otherwise gets all the
+        pages until the end), getting the `limit` number
         of pages with each request. We have to manually check if there
         are more docs based on the length of the returned list of pages, rather than
         just checking for the presence of a `next` key in the response like this page
@@ -443,9 +444,10 @@ class ConfluenceLoader(BaseLoader):
         :rtype: List
         """
 
-        max_pages = kwargs.pop("max_pages")
+        max_pages = kwargs.pop("max_pages") if "max_pages" in kwargs else -1
+        pages_limit_condition = (len(docs) < max_pages) if max_pages != -1 else True
         docs: List[dict] = []
-        while len(docs) < max_pages:
+        while pages_limit_condition:
             get_pages = retry(
                 reraise=True,
                 stop=stop_after_attempt(
@@ -462,7 +464,7 @@ class ConfluenceLoader(BaseLoader):
             if not batch:
                 break
             docs.extend(batch)
-        return docs[:max_pages]
+        return docs[:max_pages] if max_pages != -1 else docs
 
     def is_public_page(self, page: dict) -> bool:
         """Check if a page is publicly accessible."""
