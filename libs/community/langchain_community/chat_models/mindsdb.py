@@ -1,4 +1,3 @@
-import os
 import requests
 from typing import Text, Dict, Set, Optional
 
@@ -12,11 +11,11 @@ DEFAULT_API_BASE = "https://llm.mdb.ai"
 DEFAULT_MODEL = "gpt-3.5-turbo"
 
 
-class ChatMinds(ChatOpenAI):
+class ChatAIMind(ChatOpenAI):
     @property
     def _llm_type(self) -> Text:
         """Return type of chat model."""
-        return "minds-chat"
+        return "ai-mind-chat"
 
     @property
     def lc_secrets(self) -> Dict[Text, Text]:
