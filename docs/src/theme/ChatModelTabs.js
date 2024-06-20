@@ -8,7 +8,7 @@ import CodeBlock from "@theme-original/CodeBlock";
  * @typedef {Object} ChatModelTabsProps - Component props.
  * @property {string} [openaiParams] - Parameters for OpenAI chat model. Defaults to `model="gpt-3.5-turbo-0125"`
  * @property {string} [anthropicParams] - Parameters for Anthropic chat model. Defaults to `model="claude-3-sonnet-20240229"`
- * @property {string} [cohereParams] - Parameters for Cohere chat model. Defaults to `model="command-r"`
+ * @property {string} [cohereParams] - Parameters for Cohere chat model. Defaults to `model="command-r-plus"`
  * @property {string} [fireworksParams] - Parameters for Fireworks chat model. Defaults to `model="accounts/fireworks/models/mixtral-8x7b-instruct"`
  * @property {string} [mistralParams] - Parameters for Mistral chat model. Defaults to `model="mistral-large-latest"`
  * @property {string} [googleParams] - Parameters for Google chat model. Defaults to `model="gemini-pro"`
@@ -51,7 +51,7 @@ export default function ChatModelTabs(props) {
   const openAIParamsOrDefault = openaiParams ?? `model="gpt-3.5-turbo-0125"`;
   const anthropicParamsOrDefault =
     anthropicParams ?? `model="claude-3-sonnet-20240229"`;
-  const cohereParamsOrDefault = cohereParams ?? `model="command-r"`;
+  const cohereParamsOrDefault = cohereParams ?? `model="command-r-plus"`;
   const fireworksParamsOrDefault =
     fireworksParams ??
     `model="accounts/fireworks/models/mixtral-8x7b-instruct"`;
