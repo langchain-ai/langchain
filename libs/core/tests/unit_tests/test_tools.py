@@ -918,16 +918,26 @@ def test_create_schema_from_function_with_descriptions() -> None:
         """
         raise NotImplementedError()
 
-    schema = create_schema_from_function("foo", foo)
-    assert schema.schema() == {
-        "title": "fooSchema",
-        "type": "object",
-        "properties": {
-            "bar": {"title": "Bar", "type": "integer"},
-            "baz": {"title": "Baz", "type": "string"},
-        },
-        "required": ["bar", "baz"],
-    }
+    async def foo_async(bar: int, baz: str) -> str:
+        """Docstring
+        Args:
+            bar: int
+            baz: str
+        """
+        raise NotImplementedError()
+
+    for func in [foo, foo_async]:
+        schema = create_schema_from_function("foo", func)
+        expected = {
+            "title": "fooSchema",
+            "type": "object",
+            "properties": {
+                "bar": {"title": "Bar", "type": "integer"},
+                "baz": {"title": "Baz", "type": "string"},
+            },
+            "required": ["bar", "baz"],
+        }
+        assert schema.schema() == expected
 
     def foo_annotated(
         bar: Annotated[int, "This is bar", {"gte": 5}, "it's useful"],
@@ -938,41 +948,30 @@ def test_create_schema_from_function_with_descriptions() -> None:
         """
         raise NotImplementedError
 
-    schema = create_schema_from_function("foo_annotated", foo_annotated)
-    assert schema.schema() == {
-        "title": "foo_annotatedSchema",
-        "type": "object",
-        "properties": {
-            "bar": {
-                "title": "Bar",
-                "type": "integer",
-                "description": "This is bar\nit's useful",
+    async def foo_async_annotated(
+        bar: Annotated[int, "This is bar", {"gte": 5}, "it's useful"],
+    ) -> str:
+        """Docstring
+        Args:
+            bar: int
+        """
+        raise bar
+
+    for func in [foo_annotated, foo_async_annotated]:
+        schema = create_schema_from_function("foo_annotated", func)
+        annotated_expected = {
+            "title": "foo_annotatedSchema",
+            "type": "object",
+            "properties": {
+                "bar": {
+                    "title": "Bar",
+                    "type": "integer",
+                    "description": "This is bar\nit's useful",
+                },
             },
-        },
-        "required": ["bar"],
-    }
-
-
-def test_annotated_tool_typing() -> None:
-    @tool
-    def foo(bar: Annotated[int, "This is bar", {"gte": 5}, "it's useful"]) -> str:
-        """The foo."""
-        return str(bar)
-
-    assert foo.invoke({"bar": 5}) == "5"  # type: ignore
-    with pytest.raises(ValidationError):
-        foo.invoke({"bar": 4})  # type: ignore
-
-
-async def test_annotated_async_tool_typing() -> None:
-    @tool
-    async def foo(bar: Annotated[int, "This is bar", {"gte": 5}, "it's useful"]) -> str:
-        """The foo."""
-        return str(bar)
-
-    assert await foo.ainvoke({"bar": 5}) == "5"  # type: ignore
-    with pytest.raises(ValidationError):
-        await foo.ainvoke({"bar": 4})  # type: ignore
+            "required": ["bar"],
+        }
+        assert schema.schema() == annotated_expected
 
 
 def test_tool_pass_context() -> None:

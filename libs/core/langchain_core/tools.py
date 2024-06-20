@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import logging
 import textwrap
 import typing
 import uuid
@@ -83,6 +84,8 @@ from langchain_core.runnables.config import (
 )
 from langchain_core.runnables.utils import accepts_context
 
+logger = logging.getLogger(__name__)
+
 
 class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
@@ -135,7 +138,14 @@ def _get_descriptions(func: Callable) -> Dict[str, str]:
     descriptions = {}
     for param in inspect.signature(func).parameters.values():
         if param.annotation is not inspect.Parameter.empty:
-            description = _get_description_from_annotation(param.annotation)
+            try:
+                description = _get_description_from_annotation(param.annotation)
+            except Exception as e:
+                logger.warning(
+                    "Could not infer tool parameter description"
+                    f" from annotation : {repr(e)}"
+                )
+                description = None
             if description:
                 descriptions[param.name] = description
     return descriptions
