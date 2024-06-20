@@ -658,8 +658,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 ),
                 {"$set": {"score": {"$meta": "vectorSearchScore"}}},
             ]
-            if not include_embeddings:
-                pipeline.append({"$project": {self._embedding_key: 0}})
 
         elif strategy == "fulltext":
             # Atlas Full-Text Search, potentially with filter
@@ -692,8 +690,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
                     **kwargs,
                 )
             ]
-            if not include_embeddings:
-                vector_pipeline.append({"$project": {self._embedding_key: 0}})
             vector_pipeline.extend(
                 reciprocal_rank_stage(self._text_key, "vector_score", vector_penalty)
             )
@@ -711,8 +707,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
                     {"$match": {"$and": pre_filter} if pre_filter else {}},
                     {"$limit": k},
                 ]
-                if not include_embeddings:
-                    text_pipeline.append({"$project": {self._embedding_key: 0}})
                 text_pipeline.extend(
                     reciprocal_rank_stage(
                         self._text_key, "fulltext_score", fulltext_penalty
@@ -733,10 +727,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 f"Unrecognized {strategy=}. Expecting one of [vector, fulltext, hybrid]"
             )
 
-        # Post-processing
-        if not include_embeddings:  # TODO - Put in one place for all
+        # Remove embeddings unless requested.
+        if not include_embeddings:
             pipeline.append({"$project": {self._embedding_key: 0}})
-
+        # Post-processing
         if post_filter_pipeline is not None:
             pipeline.extend(post_filter_pipeline)
 

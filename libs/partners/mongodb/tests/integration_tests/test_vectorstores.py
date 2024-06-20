@@ -539,3 +539,22 @@ class TestMongoDBAtlasVectorSearch:
         assert 0 in [
             output_penalized[i][0].metadata["fulltext_score"] for i in range(n)
         ]
+
+    def test_include_embeddings(
+            self,
+            embedding_openai: Embeddings,
+            collection: Any,
+            example_documents: List[Document],
+        ) -> None:
+            """Test explicitly passing vector kwarg matches default."""
+            vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
+                example_documents,
+                embedding_openai,
+                collection=collection,
+                vector_index_name=INDEX_NAME,
+            )
+
+            output_with = vectorstore.similarity_search("Sandwich", include_embeddings=True, k=1)
+            assert vectorstore._embedding_key in output_with[0].metadata
+            output_without = vectorstore.similarity_search("Sandwich", k=1)
+            assert vectorstore._embedding_key not in output_without[0].metadata
