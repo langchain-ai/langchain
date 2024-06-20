@@ -1,9 +1,10 @@
+import secrets
 from typing import Text, Dict, Any
 
 from langchain_community.utils.openai import is_openai_v1
 
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
-from langchain_core.pydantic_v1 import BaseModel, Field, PrivateAttr, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 
 DEFAULT_API_BASE = "https://llm.mdb.ai"
 DEFAULT_MODEL = "gpt-3.5-turbo"
@@ -13,7 +14,7 @@ class BaseMindWrapper(BaseModel):
     mindsdb_api_key: SecretStr = Field(default=None)
     mindsdb_api_base: Text = Field(default=DEFAULT_API_BASE)
     model: Text = Field(default=DEFAULT_MODEL)
-    name: Text
+    name: Text = Field(default=None)
 
     client: Any = Field(default=None, exclude=True)
 
@@ -37,6 +38,10 @@ class BaseMindWrapper(BaseModel):
             "MINDSDB_API_BASE",
             default=DEFAULT_API_BASE,
         )
+
+        # If a name is not provided, generate a random one.
+        if not values.get("name"):
+            values["name"] = f"lc_mind_{secrets.token_hex(5)}"
 
         # Validate that the `openai' packages can be imported.
         try:
