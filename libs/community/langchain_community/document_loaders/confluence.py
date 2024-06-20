@@ -444,9 +444,10 @@ class ConfluenceLoader(BaseLoader):
         :rtype: List
         """
 
+        docs: List[dict] = []
         max_pages = kwargs.pop("max_pages") if "max_pages" in kwargs else -1
         pages_limit_condition = (len(docs) < max_pages) if max_pages != -1 else True
-        docs: List[dict] = []
+
         while pages_limit_condition:
             get_pages = retry(
                 reraise=True,
