@@ -15,9 +15,9 @@ DEFAULT_MODEL = "gpt-3.5-turbo"
 
 class ChatAIMind(ChatOpenAI):
     """
-    `Minds Endpoint` Chat large language models.
+    `Minds Endpoint` Chat large language models from MindsDB.
 
-    See https://docs.mdb.ai/ for information about Anyscale.
+    See https://docs.mdb.ai/ for information about MindsDB and the MindsDB Endpoint.
 
     To use this chat model, you should have the ``openai`` python package installed, and the
     environment variable ``MINDSDB_API_KEY`` set with your API key.
@@ -66,7 +66,7 @@ class ChatAIMind(ChatOpenAI):
             temperature: float = None,
             stream: bool = None,
             frequency_penalty: float = None,
-        ):
+    ):
         data = {
             "mindsdb_api_key": mindsdb_api_key,
             "mindsdb_api_base": mindsdb_api_base or self.__fields__["mindsdb_api_base"].default,
