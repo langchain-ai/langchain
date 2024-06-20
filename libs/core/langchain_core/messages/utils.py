@@ -1,3 +1,11 @@
+"""Module contains utility functions for working with messages.
+
+Some examples of what you can do with these functions include:
+
+* Convert messages to strings (serialization)
+* Convert messages from dicts to Message objects (deserialization)
+* Filter messages from a list of messages based on name, type or id etc.
+"""
 from __future__ import annotations
 
 import inspect

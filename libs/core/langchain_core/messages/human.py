@@ -4,7 +4,29 @@ from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
 
 class HumanMessage(BaseMessage):
-    """Message from a human."""
+    """Message from a human.
+
+    HumanMessages are messages that are passed in from a human to the model.
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain_core.messages import HumanMessage, SystemMessage
+
+            messages = [
+                SystemMessage(
+                    content="You are a helpful assistant! Your name is Bob."
+                ),
+                HumanMessage(
+                    content="What is your name?"
+                )
+            ]
+
+            # Instantiate a chat model and invoke it with the messages
+            model = ...
+            print(model.invoke(messages))
+    """
 
     example: bool = False
     """Use to denote that a message is part of an example conversation.
