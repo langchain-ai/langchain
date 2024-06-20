@@ -26,7 +26,10 @@ from langchain_mongodb.cache import MongoDBAtlasSemanticCache
 
 
 class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
-    """Standard MongoDBAtlasVectorSearch, but waits for data to be indexed before returning."""
+    """Standard MongoDBAtlasVectorSearch
+
+    Only change is that it waits for data to be indexed before returning.
+    """
 
     timeout = 10.0
     interval = 0.5
