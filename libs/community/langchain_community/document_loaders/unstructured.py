@@ -66,6 +66,8 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                     metadata.update(element.metadata.to_dict())
                 if hasattr(element, "category"):
                     metadata["category"] = element.category
+                if element.to_dict().get("element_id"):
+                    metadata["element_id"] = element.to_dict().get("element_id")
                 yield Document(page_content=str(element), metadata=metadata)
         elif self.mode == "paged":
             text_dict: dict[int, str] = {}
@@ -239,6 +241,7 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
                 metadata = self._get_metadata()
                 metadata.update({"metadata": element.get("metadata")})
                 metadata.update({"category": element.get("category")})
+                metadata.update({"element_id": element.get("element_id")})
                 yield Document(page_content=element.get("text"), metadata=metadata)
         elif self.mode == "paged":
             text_dict: dict[int, str] = {}
@@ -440,6 +443,7 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
                 metadata = self._get_metadata()
                 metadata.update({"metadata": element.get("metadata")})
                 metadata.update({"category": element.get("category")})
+                metadata.update({"element_id": element.get("element_id")})
                 yield Document(page_content=element.get("text"), metadata=metadata)
         elif self.mode == "paged":
             text_dict: dict[int, str] = {}

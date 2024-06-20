@@ -34,8 +34,9 @@ def test_unstructured_file_loader_with_multiple_files() -> None:
     )
     docs = loader.load()
 
-    assert docs[-1].metadata.get("filename") == "whatsapp_chat.txt"
+    assert docs[0].metadata.get("element_id") is not None
     assert docs[0].metadata.get("filename") == "layout-parser-paper.pdf"
+    assert docs[-1].metadata.get("filename") == "whatsapp_chat.txt"
 
 
 def test_unstructured_file_loader_with_post_processor(get_post_processor) -> None:
@@ -71,6 +72,7 @@ def test_unstructured_api_file_loader(json_response) -> None:
         docs = loader.load()
 
     assert mock_get_elements.assert_called_once
+    assert docs[0].metadata.get("element_id") is not None
     assert docs[0].metadata.get("metadata") == json_response[0].get("metadata")
 
 
@@ -133,6 +135,7 @@ def test_unstructured_file_io_loader() -> None:
         )
         docs = loader.load()
 
+    assert docs[0].metadata.get("element_id") is not None
     assert len(docs) > 1
 
 
@@ -157,6 +160,7 @@ def test_unstructured_api_file_io_loader(json_response) -> None:
             docs = loader.load()
 
     assert mock_get_elements.assert_called_once
+    assert docs[0].metadata.get("element_id") is not None
     assert docs[0].metadata.get("metadata") == json_response[0].get("metadata")
 
 
