@@ -260,8 +260,8 @@ Classes
                     template = "enum.rst"
                 elif class_["kind"] == "Pydantic":
                     template = "pydantic.rst"
-                # elif class_["kind"] == "RunnableSubclass":
-                #     template = "runnable_subclass.rst"
+                elif class_["kind"] == "RunnableSubclass":
+                    template = "runnable_subclass.rst"
                 else:
                     template = "class.rst"
 
