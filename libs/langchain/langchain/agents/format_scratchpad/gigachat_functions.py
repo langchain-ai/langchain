@@ -3,6 +3,7 @@ from typing import List, Sequence, Tuple
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog
 from langchain_core.messages import AIMessage, BaseMessage, FunctionMessage
+from langchain_core.pydantic_v1 import BaseModel
 
 
 def _convert_agent_action_to_messages(
@@ -38,7 +39,10 @@ def _create_function_message(
     """
     if not isinstance(observation, str):
         try:
-            content = json.dumps(observation, ensure_ascii=False)
+            if isinstance(observation, BaseModel):
+                content = json.dumps(observation.dict(), ensure_ascii=False)
+            else:
+                content = json.dumps(observation, ensure_ascii=False)
         except Exception:
             content = str(observation)
     else:
