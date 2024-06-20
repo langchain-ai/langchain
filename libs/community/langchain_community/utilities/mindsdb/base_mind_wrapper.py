@@ -10,7 +10,7 @@ DEFAULT_MODEL = "gpt-3.5-turbo"
 
 
 class BaseMindWrapper(BaseModel):
-    mindsdb_api_key: SecretStr = Field(default=None, alias="api_key")
+    mindsdb_api_key: SecretStr = Field(default=None)
     mindsdb_api_base: Text = Field(default=DEFAULT_API_BASE)
     model: Text = Field(default=DEFAULT_MODEL)
     name: Text
@@ -38,7 +38,7 @@ class BaseMindWrapper(BaseModel):
             default=DEFAULT_API_BASE,
         )
 
-        # Validate that the `mindsdb_sdk` and `openai' packages can be imported.
+        # Validate that the `openai' packages can be imported.
         try:
             import openai
 
@@ -46,15 +46,6 @@ class BaseMindWrapper(BaseModel):
             raise ImportError(
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`.",
-            ) from e
-
-        try:
-            import mindsdb_sdk
-
-        except ImportError as e:
-            raise ImportError(
-                "Could not import mindsdb_sdk python package. "
-                "Please install it with `pip install mindsdb_sdk`.",
             ) from e
 
         # Set the client based on the version of the `openai` package that is being used.
