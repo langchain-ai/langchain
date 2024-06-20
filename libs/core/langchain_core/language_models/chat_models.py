@@ -126,14 +126,21 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     Please reference the table below for information about which
     methods and properties are required or optional for implementations.
 
+    +----------------------------------+--------------------------------------------------------------------+-------------------+
     | Method/Property                  | Description                                                        | Required/Optional |
-    |----------------------------------|--------------------------------------------------------------------|-------------------|
+    +==================================+====================================================================+===================+
     | `_generate`                      | Use to generate a chat result from a prompt                        | Required          |
+    +----------------------------------+--------------------------------------------------------------------+-------------------+
     | `_llm_type` (property)           | Used to uniquely identify the type of the model. Used for logging. | Required          |
+    +----------------------------------+--------------------------------------------------------------------+-------------------+
     | `_identifying_params` (property) | Represent model parameterization for tracing purposes.             | Optional          |
+    +----------------------------------+--------------------------------------------------------------------+-------------------+
     | `_stream`                        | Use to implement streaming                                         | Optional          |
+    +----------------------------------+--------------------------------------------------------------------+-------------------+
     | `_agenerate`                     | Use to implement a native async method                             | Optional          |
+    +----------------------------------+--------------------------------------------------------------------+-------------------+
     | `_astream`                       | Use to implement async version of `_stream`                        | Optional          |
+    +----------------------------------+--------------------------------------------------------------------+-------------------+
     """  # noqa: E501
 
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
