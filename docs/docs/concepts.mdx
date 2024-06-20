@@ -144,8 +144,19 @@ LangChain does not host any Chat Models, rather we rely on third party integrati
 
 We have some standardized parameters when constructing ChatModels:
 - `model`: the name of the model
+- `temperature`: the sampling temperature
+- `timeout`: request timeout
+- `max_tokens`: max tokens to generate
+- `stop`: default stop sequences
+- `max_retries`: max number of times to retry requests
+- `api_key`: API key for the model provider
+- `base_url`: endpoint to send requests to
 
-ChatModels also accept other parameters that are specific to that integration.
+Some important things to note:
+- standard params only apply to model providers that expose parameters with the intended functionality. For example, some providers do not expose a configuration for maximum output tokens, so max_tokens can't be supported on these.
+- standard params are currently only enforced on integrations that have their own integration packages (e.g. `langchain-openai`, `langchain-anthropic`, etc.), they're not enforced on models in ``langchain-community``.
+
+ChatModels also accept other parameters that are specific to that integration. To find all the parameters supported by a ChatModel head to the API reference for that model.
 
 :::important
 **Tool Calling** Some chat models have been fine-tuned for tool calling and provide a dedicated API for tool calling.
