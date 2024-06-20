@@ -3,10 +3,7 @@ from typing import Text, Dict, Any
 from langchain_core.pydantic_v1 import Field, root_validator
 
 from langchain_community.utilities.mindsdb import BaseMindWrapper
-from langchain_community.utilities.mindsdb.database_mind.database_models import (
-    get_supported_data_sources,
-    validate_data_source_connection_args
-)
+from langchain_community.utilities.mindsdb.database_mind.database_models import get_supported_data_sources
 
 
 class DatabaseMindWrapper(BaseMindWrapper):
@@ -31,15 +28,18 @@ class DatabaseMindWrapper(BaseMindWrapper):
             ) from e
         
         # Validate that the data source type is supported.
-        supported_data_sources = [key for key, _ in get_supported_data_sources().items()]
-        if values['data_source_type'] not in supported_data_sources:
+        supported_data_sources = get_supported_data_sources()
+
+        if values['data_source_type'] not in supported_data_sources.keys():
             raise ValueError(
                 f"Data source type '{values['data_source_type']}' is not supported. "
                 f"Supported data source types are: {supported_data_sources}."
             )
         
         # Validate that the correct connection arguments are provided for the chosen data source.
-        validate_data_source_connection_args(values['data_source_type'], values['data_source_connection_args'])
+        model_cls = supported_data_sources[values['data_source_type']]
+        model_obj = model_cls(**values['data_source_connection_args'])
+        values['data_source_connection_args'] = model_obj.dict()
 
         # Create the MindsDB mind object.
         values['mind'] = create_mind(
