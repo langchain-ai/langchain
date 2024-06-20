@@ -1,6 +1,7 @@
 import sys
+import json
 import inspect
-from typing import Text, Dict, Literal
+from typing import Text, Dict, Literal, Union
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -156,5 +157,81 @@ class ClickHouseModel(BaseModel):
             "DATABASE_PROTOCOL",
             default='http',
         )
+
+        return values
+    
+
+class SnowflakeModel(BaseModel):
+    account: Text = Field(default=None)
+    user: Text = Field(default=None)
+    password: SecretStr = Field(default=None)
+    warehouse: Text = Field(default=None)
+    database: Text = Field(default=None)
+    schema: Text = Field(default=None)
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        values["account"] = get_from_dict_or_env(
+            values,
+            "account",
+            "DATABASE_ACCOUNT",
+        )
+        values["user"] = get_from_dict_or_env(
+            values,
+            "user",
+            "DATABASE_USER",
+        )
+        values["password"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "password",
+                "DATABASE_PASSWORD",
+            )
+        )
+        values["warehouse"] = get_from_dict_or_env(
+            values,
+            "warehouse",
+            "DATABASE_WAREHOUSE",
+        )
+        values["database"] = get_from_dict_or_env(
+            values,
+            "database",
+            "DATABASE_DATABASE",
+        )
+        values["schema"] = get_from_dict_or_env(
+            values,
+            "schema",
+            "DATABASE_SCHEMA",
+        )
+
+        return values
+    
+
+class BigQueryModel(BaseModel):
+    project_id: Text = Field(default=None)
+    dataset: Text = Field(default=None)
+    service_account_json: Union[SecretStr, Dict] = Field(default=None)
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        values["project_id"] = get_from_dict_or_env(
+            values,
+            "project_id",
+            "DATABASE_PROJECT_ID",
+        )
+        values["dataset"] = get_from_dict_or_env(
+            values,
+            "dataset",
+            "DATABASE_DATASET",
+        )
+        service_account_json = get_from_dict_or_env(
+            values,
+            "service_account_json",
+            "DATABASE_SERVICE_ACCOUNT_JSON",
+        )
+        if isinstance(service_account_json, Dict):
+            service_account_json_str = json.dumps(service_account_json)
+
+        values["service_account_json"] = convert_to_secret_str(service_account_json_str)
 
         return values
