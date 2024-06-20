@@ -276,7 +276,7 @@ class SingleStoreDB(VectorStore):
             self.connection_kwargs["conn_attrs"] = dict()
 
         self.connection_kwargs["conn_attrs"]["_connector_name"] = "langchain python sdk"
-        self.connection_kwargs["conn_attrs"]["_connector_version"] = "2.0.0"
+        self.connection_kwargs["conn_attrs"]["_connector_version"] = "2.1.0"
 
         # Create connection pool.
         self.connection_pool = QueuePool(
@@ -397,6 +397,7 @@ class SingleStoreDB(VectorStore):
         Returns:
             List[str]: empty list
         """
+        ids: List[str] = []
         conn = self.connection_pool.connect()
         try:
             cur = conn.cursor()
@@ -424,13 +425,47 @@ class SingleStoreDB(VectorStore):
                             json.dumps(metadata),
                         ),
                     )
+                    cur.execute("SELECT LAST_INSERT_ID();")
+                    row = cur.fetchone()
+                    if row:
+                        ids.append(str(row[0]))
                 if self.use_vector_index or self.use_full_text_search:
                     cur.execute("OPTIMIZE TABLE {} FLUSH;".format(self.table_name))
             finally:
                 cur.close()
         finally:
             conn.close()
-        return []
+        return ids
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> bool | None:
+        """Delete documents from the vectorstore.
+
+        Args:
+            ids (List[str], optional): List of document ids to delete.
+                If None, all documents will be deleted. Defaults to None.
+
+        Returns:
+            bool: True if deletion was successful, False otherwise.
+        """
+        if ids is None:
+            return True
+
+        conn = self.connection_pool.connect()
+        try:
+            cur = conn.cursor()
+            try:
+                cur.execute(
+                    "DELETE FROM {} WHERE {} IN ({})".format(
+                        self.table_name, self.id_field, ",".join(ids)
+                    )
+                )
+                if self.use_vector_index or self.use_full_text_search:
+                    cur.execute("OPTIMIZE TABLE {} FLUSH;".format(self.table_name))
+            finally:
+                cur.close()
+        finally:
+            conn.close()
+        return True
 
     def similarity_search(
         self,
@@ -994,6 +1029,20 @@ class SingleStoreDB(VectorStore):
         )
         instance.add_texts(texts, metadatas, embedding.embed_documents(texts), **kwargs)
         return instance
+
+    def drop(self) -> None:
+        """Drop table if it exists.
+        Vector store will be unusable after this operation.
+        """
+        conn = self.connection_pool.connect()
+        try:
+            cur = conn.cursor()
+            try:
+                cur.execute("DROP TABLE IF EXISTS {}".format(self.table_name))
+            finally:
+                cur.close()
+        finally:
+            conn.close()
 
 
 # SingleStoreDBRetriever is not needed, but we keep it for backwards compatibility
