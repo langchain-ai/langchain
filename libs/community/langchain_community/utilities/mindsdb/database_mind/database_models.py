@@ -1,6 +1,6 @@
 import sys
 import inspect
-from typing import Text, Dict
+from typing import Text, Dict, Literal
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -106,3 +106,55 @@ class MySQLModel(BaseModel):
             "database",
             "DATABASE_DATABASE",
         )
+
+
+class MariaDBModel(MySQLModel):
+    pass
+
+
+class ClickHouseModel(BaseModel):
+    user: Text = Field(default=None)
+    password: SecretStr = Field(default=None)
+    host: Text = Field(default=None)
+    port: int = Field(default=8443)
+    database: Text = Field(default=None)
+    protocol: Literal['native', 'http', 'https'] = Field(default='http')
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        values["user"] = get_from_dict_or_env(
+            values,
+            "user",
+            "DATABASE_USER",
+        )
+        values["password"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values,
+                "password",
+                "DATABASE_PASSWORD",
+            )
+        )
+        values["host"] = get_from_dict_or_env(
+            values,
+            "host",
+            "DATABASE_HOST",
+        )
+        values["port"] = get_from_dict_or_env(
+            values,
+            "port",
+            "DATABASE_PORT",
+            default=8443,
+        )
+        values["database"] = get_from_dict_or_env(
+            values,
+            "database",
+            "DATABASE_DATABASE",
+        )
+        values["protocol"] = get_from_dict_or_env(
+            values,
+            "protocol",
+            "DATABASE_PROTOCOL",
+            default='http',
+        )
+
+        return values
