@@ -108,6 +108,15 @@ class MySQLModel(BaseModel):
             "DATABASE_DATABASE",
         )
 
+        return values
+    
+    def dict(self, **kwargs):
+        base_dict = super().dict(**kwargs)
+
+        # Convert the secret password to a string.
+        base_dict["password"] = base_dict["password"].get_secret_value()
+        return base_dict
+
 
 class MariaDBModel(MySQLModel):
     pass
@@ -160,6 +169,13 @@ class ClickHouseModel(BaseModel):
 
         return values
     
+    def dict(self, **kwargs):
+        base_dict = super().dict(**kwargs)
+
+        # Convert the secret password to a string.
+        base_dict["password"] = base_dict["password"].get_secret_value()
+        return base_dict
+    
 
 class SnowflakeModel(BaseModel):
     account: Text = Field(default=None)
@@ -206,6 +222,13 @@ class SnowflakeModel(BaseModel):
 
         return values
     
+    def dict(self, **kwargs):
+        base_dict = super().dict(**kwargs)
+
+        # Convert the secret password to a string.
+        base_dict["password"] = base_dict["password"].get_secret_value()
+        return base_dict
+    
 
 class BigQueryModel(BaseModel):
     project_id: Text = Field(default=None)
@@ -235,3 +258,10 @@ class BigQueryModel(BaseModel):
         values["service_account_json"] = convert_to_secret_str(service_account_json_str)
 
         return values
+    
+    def dict(self, **kwargs):
+        base_dict = super().dict(**kwargs)
+
+        # Convert the  secret service account json to a dict.
+        base_dict["service_account_json"] = json.loads(base_dict["service_account_json"].get_secret_value())
+        return base_dict
