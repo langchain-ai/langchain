@@ -334,7 +334,7 @@ class FakeStructuredOutputModel(BaseChatModel):
     def with_structured_output(
         self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
-        return lambda x: {"foo": self.foo}
+        return RunnableLambda(lambda x: {"foo": self.foo})
 
     @property
     def _llm_type(self) -> str:
