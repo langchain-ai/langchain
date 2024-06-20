@@ -52,10 +52,10 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
 
 
 def maximal_marginal_relevance(
-    query_embedding: np.ndarray,
-    embedding_list: list,
-    lambda_mult: float = 0.5,
-    k: int = 4,
+        query_embedding: np.ndarray,
+        embedding_list: list,
+        lambda_mult: float = 0.5,
+        k: int = 4,
 ) -> List[int]:
     """Calculate maximal marginal relevance."""
     if min(k, len(embedding_list)) <= 0:
@@ -75,7 +75,7 @@ def maximal_marginal_relevance(
                 continue
             redundant_score = max(similarity_to_selected[i])
             equation_score = (
-                lambda_mult * query_score - (1 - lambda_mult) * redundant_score
+                    lambda_mult * query_score - (1 - lambda_mult) * redundant_score
             )
             if equation_score > best_score:
                 best_score = equation_score
@@ -177,27 +177,27 @@ class Milvus(VectorStore):
     """
 
     def __init__(
-        self,
-        embedding_function: Embeddings,
-        collection_name: str = "LangChainCollection",
-        collection_description: str = "",
-        collection_properties: Optional[dict[str, Any]] = None,
-        connection_args: Optional[dict[str, Any]] = None,
-        consistency_level: str = "Session",
-        index_params: Optional[dict] = None,
-        search_params: Optional[dict] = None,
-        drop_old: Optional[bool] = False,
-        auto_id: bool = False,
-        *,
-        primary_field: str = "pk",
-        text_field: str = "text",
-        vector_field: str = "vector",
-        metadata_field: Optional[str] = None,
-        partition_key_field: Optional[str] = None,
-        partition_names: Optional[list] = None,
-        replica_number: int = 1,
-        timeout: Optional[float] = None,
-        num_shards: Optional[int] = None,
+            self,
+            embedding_function: Embeddings,
+            collection_name: str = "LangChainCollection",
+            collection_description: str = "",
+            collection_properties: Optional[dict[str, Any]] = None,
+            connection_args: Optional[dict[str, Any]] = None,
+            consistency_level: str = "Session",
+            index_params: Optional[dict] = None,
+            search_params: Optional[dict] = None,
+            drop_old: Optional[bool] = False,
+            auto_id: bool = False,
+            *,
+            primary_field: str = "pk",
+            text_field: str = "text",
+            vector_field: str = "vector",
+            metadata_field: Optional[str] = None,
+            partition_key_field: Optional[str] = None,
+            partition_names: Optional[list] = None,
+            replica_number: int = 1,
+            timeout: Optional[float] = None,
+            num_shards: Optional[int] = None,
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -326,11 +326,11 @@ class Milvus(VectorStore):
             for con in connections.list_connections():
                 addr = connections.get_connection_addr(con[0])
                 if (
-                    con[1]
-                    and ("address" in addr)
-                    and (addr["address"] == given_address)
-                    and ("user" in addr)
-                    and (addr["user"] == tmp_user)
+                        con[1]
+                        and ("address" in addr)
+                        and (addr["address"] == given_address)
+                        and ("user" in addr)
+                        and (addr["user"] == tmp_user)
                 ):
                     logger.debug("Using previous connection: %s", con[0])
                     return con[0]
@@ -346,12 +346,12 @@ class Milvus(VectorStore):
             raise e
 
     def _init(
-        self,
-        embeddings: Optional[list] = None,
-        metadatas: Optional[list[dict]] = None,
-        partition_names: Optional[list] = None,
-        replica_number: int = 1,
-        timeout: Optional[float] = None,
+            self,
+            embeddings: Optional[list] = None,
+            metadatas: Optional[list[dict]] = None,
+            partition_names: Optional[list] = None,
+            replica_number: int = 1,
+            timeout: Optional[float] = None,
     ) -> None:
         if embeddings is not None:
             self._create_collection(embeddings, metadatas)
@@ -365,7 +365,7 @@ class Milvus(VectorStore):
         )
 
     def _create_collection(
-        self, embeddings: list, metadatas: Optional[list[dict]] = None
+            self, embeddings: list, metadatas: Optional[list[dict]] = None
     ) -> None:
         from pymilvus import (
             Collection,
@@ -402,6 +402,15 @@ class Milvus(VectorStore):
                     elif dtype == DataType.VARCHAR:
                         fields.append(
                             FieldSchema(key, DataType.VARCHAR, max_length=65_535)
+                        )
+                    elif dtype == DataType.ARRAY:
+                        kwargs = {
+                            "element_type": DataType.VARCHAR,
+                            "max_capacity": 5,
+                            "max_length": 512,
+                        }
+                        fields.append(
+                            FieldSchema(name=key, dtype=DataType.ARRAY, **kwargs)
                         )
                     else:
                         fields.append(FieldSchema(key, dtype))
@@ -544,10 +553,10 @@ class Milvus(VectorStore):
                 self.search_params["metric_type"] = metric_type
 
     def _load(
-        self,
-        partition_names: Optional[list] = None,
-        replica_number: int = 1,
-        timeout: Optional[float] = None,
+            self,
+            partition_names: Optional[list] = None,
+            replica_number: int = 1,
+            timeout: Optional[float] = None,
     ) -> None:
         """Load the collection if available."""
         from pymilvus import Collection, utility
@@ -555,10 +564,10 @@ class Milvus(VectorStore):
 
         timeout = self.timeout or timeout
         if (
-            isinstance(self.col, Collection)
-            and self._get_index() is not None
-            and utility.load_state(self.collection_name, using=self.alias)
-            == LoadState.NotLoad
+                isinstance(self.col, Collection)
+                and self._get_index() is not None
+                and utility.load_state(self.collection_name, using=self.alias)
+                == LoadState.NotLoad
         ):
             self.col.load(
                 partition_names=partition_names,
@@ -567,14 +576,14 @@ class Milvus(VectorStore):
             )
 
     def add_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        timeout: Optional[float] = None,
-        batch_size: int = 1000,
-        *,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
+            self,
+            texts: Iterable[str],
+            metadatas: Optional[List[dict]] = None,
+            timeout: Optional[float] = None,
+            batch_size: int = 1000,
+            *,
+            ids: Optional[List[str]] = None,
+            **kwargs: Any,
     ) -> List[str]:
         """Insert text data into Milvus.
 
@@ -690,13 +699,13 @@ class Milvus(VectorStore):
         return pks
 
     def similarity_search(
-        self,
-        query: str,
-        k: int = 4,
-        param: Optional[dict] = None,
-        expr: Optional[str] = None,
-        timeout: Optional[float] = None,
-        **kwargs: Any,
+            self,
+            query: str,
+            k: int = 4,
+            param: Optional[dict] = None,
+            expr: Optional[str] = None,
+            timeout: Optional[float] = None,
+            **kwargs: Any,
     ) -> List[Document]:
         """Perform a similarity search against the query string.
 
@@ -723,13 +732,13 @@ class Milvus(VectorStore):
         return [doc for doc, _ in res]
 
     def similarity_search_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        param: Optional[dict] = None,
-        expr: Optional[str] = None,
-        timeout: Optional[float] = None,
-        **kwargs: Any,
+            self,
+            embedding: List[float],
+            k: int = 4,
+            param: Optional[dict] = None,
+            expr: Optional[str] = None,
+            timeout: Optional[float] = None,
+            **kwargs: Any,
     ) -> List[Document]:
         """Perform a similarity search against the query string.
 
@@ -756,13 +765,13 @@ class Milvus(VectorStore):
         return [doc for doc, _ in res]
 
     def similarity_search_with_score(
-        self,
-        query: str,
-        k: int = 4,
-        param: Optional[dict] = None,
-        expr: Optional[str] = None,
-        timeout: Optional[float] = None,
-        **kwargs: Any,
+            self,
+            query: str,
+            k: int = 4,
+            param: Optional[dict] = None,
+            expr: Optional[str] = None,
+            timeout: Optional[float] = None,
+            **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Perform a search on a query string and return results with score.
 
@@ -796,13 +805,13 @@ class Milvus(VectorStore):
         return res
 
     def similarity_search_with_score_by_vector(
-        self,
-        embedding: List[float],
-        k: int = 4,
-        param: Optional[dict] = None,
-        expr: Optional[str] = None,
-        timeout: Optional[float] = None,
-        **kwargs: Any,
+            self,
+            embedding: List[float],
+            k: int = 4,
+            param: Optional[dict] = None,
+            expr: Optional[str] = None,
+            timeout: Optional[float] = None,
+            **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Perform a search on a query string and return results with score.
 
@@ -856,15 +865,15 @@ class Milvus(VectorStore):
         return ret
 
     def max_marginal_relevance_search(
-        self,
-        query: str,
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        param: Optional[dict] = None,
-        expr: Optional[str] = None,
-        timeout: Optional[float] = None,
-        **kwargs: Any,
+            self,
+            query: str,
+            k: int = 4,
+            fetch_k: int = 20,
+            lambda_mult: float = 0.5,
+            param: Optional[dict] = None,
+            expr: Optional[str] = None,
+            timeout: Optional[float] = None,
+            **kwargs: Any,
     ) -> List[Document]:
         """Perform a search and return results that are reordered by MMR.
 
@@ -906,15 +915,15 @@ class Milvus(VectorStore):
         )
 
     def max_marginal_relevance_search_by_vector(
-        self,
-        embedding: list[float],
-        k: int = 4,
-        fetch_k: int = 20,
-        lambda_mult: float = 0.5,
-        param: Optional[dict] = None,
-        expr: Optional[str] = None,
-        timeout: Optional[float] = None,
-        **kwargs: Any,
+            self,
+            embedding: list[float],
+            k: int = 4,
+            fetch_k: int = 20,
+            lambda_mult: float = 0.5,
+            param: Optional[dict] = None,
+            expr: Optional[str] = None,
+            timeout: Optional[float] = None,
+            **kwargs: Any,
     ) -> List[Document]:
         """Perform a search and return results that are reordered by MMR.
 
@@ -996,7 +1005,7 @@ class Milvus(VectorStore):
         return ret
 
     def delete(  # type: ignore[no-untyped-def]
-        self, ids: Optional[List[str]] = None, expr: Optional[str] = None, **kwargs: str
+            self, ids: Optional[List[str]] = None, expr: Optional[str] = None, **kwargs: str
     ):
         """Delete by vector ID or boolean expression.
         Refer to [Milvus documentation](https://milvus.io/docs/delete_data.md)
@@ -1021,19 +1030,19 @@ class Milvus(VectorStore):
 
     @classmethod
     def from_texts(
-        cls,
-        texts: List[str],
-        embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
-        collection_name: str = "LangChainCollection",
-        connection_args: dict[str, Any] = DEFAULT_MILVUS_CONNECTION,
-        consistency_level: str = "Session",
-        index_params: Optional[dict] = None,
-        search_params: Optional[dict] = None,
-        drop_old: bool = False,
-        *,
-        ids: Optional[List[str]] = None,
-        **kwargs: Any,
+            cls,
+            texts: List[str],
+            embedding: Embeddings,
+            metadatas: Optional[List[dict]] = None,
+            collection_name: str = "LangChainCollection",
+            connection_args: dict[str, Any] = DEFAULT_MILVUS_CONNECTION,
+            consistency_level: str = "Session",
+            index_params: Optional[dict] = None,
+            search_params: Optional[dict] = None,
+            drop_old: bool = False,
+            *,
+            ids: Optional[List[str]] = None,
+            **kwargs: Any,
     ) -> Milvus:
         """Create a Milvus collection, indexes it with HNSW, and insert data.
 
@@ -1111,10 +1120,10 @@ class Milvus(VectorStore):
         return pks
 
     def upsert(
-        self,
-        ids: Optional[List[str]] = None,
-        documents: List[Document] | None = None,
-        **kwargs: Any,
+            self,
+            ids: Optional[List[str]] = None,
+            documents: List[Document] | None = None,
+            **kwargs: Any,
     ) -> List[str] | None:
         """Update/Insert documents to the vectorstore.
 
