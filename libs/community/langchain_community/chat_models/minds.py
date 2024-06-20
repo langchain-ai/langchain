@@ -34,20 +34,12 @@ class ChatMinds(ChatOpenAI):
 
     @staticmethod
     def get_available_models(
-        mindsdb_api_key: Optional[Text] = None,
+        mindsdb_api_key: Optional[Text],
         mindsdb_api_base: str = DEFAULT_API_BASE,
     ) -> Set[Text]:
         """
         Get models supported by the MindsDB API.
         """
-        try:
-            mindsdb_api_key = mindsdb_api_key or os.environ["MINDSDB_API_KEY"]
-        except KeyError as e:
-            raise ValueError(
-                "MindsDB API key must be passed as keyword argument or "
-                "set in environment variable MINDSDB_API_KEY.",
-            ) from e
-
         models_url = f"{mindsdb_api_base}/models"
         models_response = requests.get(
             models_url,
