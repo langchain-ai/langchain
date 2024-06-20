@@ -12,6 +12,7 @@ from langchain_community.utils.gigachat_functions import (
 )
 from langchain_community.utils.openai_functions import (
     FunctionDescription,
+    GigaFunctionDescription,
     ToolDescription,
     convert_pydantic_to_openai_function,
 )
@@ -39,12 +40,10 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
                 "required": ["__arg1"],
                 "type": "object",
             },
-            "few_shot_examples": tool.few_shot_examples,
-            "return_parameters": None,
         }
 
 
-def format_tool_to_gigachat_function(tool: BaseTool) -> FunctionDescription:
+def format_tool_to_gigachat_function(tool: BaseTool) -> GigaFunctionDescription:
     """Format tool into the OpenAI function API."""
     if tool.args_schema:
         return convert_pydantic_to_gigachat_function(

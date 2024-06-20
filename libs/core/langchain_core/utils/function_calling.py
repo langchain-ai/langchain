@@ -52,7 +52,7 @@ class FunctionDescription(TypedDict):
     parameters: dict
 
 
-class GigaFunctionDescription(TypedDict):
+class GigaFunctionDescription(FunctionDescription):
     """The parameters of the function."""
 
     return_parameters: Optional[dict]
