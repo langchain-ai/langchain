@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict
+from typing import Any
 
 from langchain_core.load.serializable import Serializable, to_json_not_implemented
 
@@ -41,7 +41,7 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
             return json.dumps(to_json_not_implemented(obj), **kwargs)
 
 
-def dumpd(obj: Any) -> Dict[str, Any]:
+def dumpd(obj: Any) -> Any:
     """Return a dict representation of an object.
 
     Note:
