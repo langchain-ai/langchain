@@ -97,6 +97,7 @@ class PebbloRetrievalQA(Chain):
         answer, docs = res['result'], res['source_documents']
         """
         prompt_time = datetime.datetime.now().isoformat()
+        PebbloRetrievalQA.set_prompt_sent(value=False)
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
         auth_context = inputs.get(self.auth_context_key, {})
@@ -371,7 +372,7 @@ class PebbloRetrievalQA(Chain):
             except Exception as e:
                 logger.warning("An Exception caught in _send_discover: local %s", e)
 
-        if api_key and classifier_location == "pebblo-cloud":
+        if api_key:
             try:
                 headers.update({"x-api-key": api_key})
                 pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}{APP_DISCOVER_URL}"
@@ -404,8 +405,8 @@ class PebbloRetrievalQA(Chain):
         cls._discover_sent = True
 
     @classmethod
-    def set_prompt_sent(cls) -> None:
-        cls._prompt_sent = True
+    def set_prompt_sent(cls, value: bool = True) -> None:
+        cls._prompt_sent = value
 
     def _send_prompt(self, qa_payload: Qa) -> None:
         headers = {
@@ -449,6 +450,8 @@ class PebbloRetrievalQA(Chain):
             except Exception as e:
                 logger.warning("An Exception caught in _send_discover: local %s", e)
 
+        # If classifier location is local, then response, context and prompt
+        # should be fetched from pebblo_resp and replaced in payload.
         if self.api_key:
             if self.classifier_location == "local":
                 if pebblo_resp:
