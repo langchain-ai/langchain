@@ -11,12 +11,13 @@ from typing import Dict, List, Literal, Optional, Sequence, TypedDict, Union
 
 import toml
 import typing_extensions
+from langchain_core.runnables import Runnable
 from pydantic import BaseModel
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
 HERE = Path(__file__).parent
 
-ClassKind = Literal["TypedDict", "Regular", "Pydantic", "enum"]
+ClassKind = Literal["TypedDict", "Regular", "Pydantic", "enum", "RunnableSubclass"]
 
 
 class ClassInfo(TypedDict):
@@ -70,10 +71,15 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
             continue
 
         if inspect.isclass(type_):
+            # The clasification of the class is used to select a template
+            # for the object when rendering the documentation.
+            # See `templates` directory for defined templates.
             if type(type_) is typing_extensions._TypedDictMeta:  # type: ignore
                 kind: ClassKind = "TypedDict"
             elif type(type_) is typing._TypedDictMeta:  # type: ignore
                 kind: ClassKind = "TypedDict"
+            elif issubclass(type_, Runnable) and not type_ is Runnable:
+                kind = "RunnableSubclass"
             elif issubclass(type_, Enum):
                 kind = "enum"
             elif issubclass(type_, BaseModel):
@@ -254,6 +260,8 @@ Classes
                     template = "enum.rst"
                 elif class_["kind"] == "Pydantic":
                     template = "pydantic.rst"
+                # elif class_["kind"] == "RunnableSubclass":
+                #     template = "runnable_subclass.rst"
                 else:
                     template = "class.rst"
 
