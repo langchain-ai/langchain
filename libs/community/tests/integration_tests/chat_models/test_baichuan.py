@@ -47,7 +47,7 @@ def test_chat_baichuan_with_temperature() -> None:
 
 
 def test_chat_baichuan_with_kwargs() -> None:
-    chat = ChatBaichuan()
+    chat = ChatBaichuan()  # type: ignore[call-arg]
     message = HumanMessage(content="百川192K API是什么时候上线的？")
     response = chat.invoke(
         [message], temperature=0.88, top_p=0.7, with_search_enhance=True
@@ -58,7 +58,7 @@ def test_chat_baichuan_with_kwargs() -> None:
 
 
 def test_extra_kwargs() -> None:
-    chat = ChatBaichuan(temperature=0.88, top_p=0.7, with_search_enhance=True)
+    chat = ChatBaichuan(temperature=0.88, top_p=0.7, with_search_enhance=True)  # type: ignore[call-arg]
     assert chat.temperature == 0.88
     assert chat.top_p == 0.7
     assert chat.with_search_enhance is True
