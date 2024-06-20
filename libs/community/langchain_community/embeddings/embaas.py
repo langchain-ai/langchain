@@ -22,7 +22,7 @@ class EmbaasEmbeddingsPayload(TypedDict):
 
 
 @deprecated(
-    since="0.2.5",
+    since="0.2.6",
     removal="0.3.0",
     alternative_import="langchain_mixedbreadai.MixedbreadAIEmbeddings",
 )
