@@ -1518,7 +1518,7 @@
 # ---
 # name: test_combining_sequences.3
   list([
-    Run(id=UUID('00000000-0000-4000-8000-000000000000'), name='RunnableSequence', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='chain', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'runnable', 'RunnableSequence'], 'kwargs': {'first': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, 'middle': [{'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo, bar'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'kwargs': {}, 'name': 'CommaSeparatedListOutputParser', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 2, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, {'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'runnables', 'base', 'RunnableLambda'], 'repr': "RunnableLambda(lambda x: {'question': x[0] + x[1]})"}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nicer assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, {'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['baz, qux'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}], 'last': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'kwargs': {}, 'name': 'CommaSeparatedListOutputParser', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 2, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}, 'name': 'RunnableSequence', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 3, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 4, 'type': 'runnable', 'data': {'id': ['langchain_core', 'runnables', 'base', 'RunnableLambda'], 'name': 'RunnableLambda'}}, {'id': 5, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 6, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 7, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 8, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}, {'source': 2, 'target': 3}, {'source': 3, 'target': 4}, {'source': 4, 'target': 5}, {'source': 5, 'target': 6}, {'source': 7, 'target': 8}, {'source': 6, 'target': 7}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': ['baz', 'qux']}, reference_example_id=None, parent_run_id=None, tags=[], child_runs=[Run(id=UUID('00000000-0000-4000-8000-000000000001'), name='ChatPromptTemplate', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='prompt', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': ChatPromptValue(messages=[SystemMessage(content='You are a nice assistant.'), HumanMessage(content='What is your name?')])}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:1'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000001'), Run(id=UUID('00000000-0000-4000-8000-000000000002'), name='FakeListChatModel', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='llm', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={'invocation_params': {'responses': ['foo, bar'], '_type': 'fake-list-chat-model', 'stop': None}, 'options': {'stop': None}, 'batch_size': 1}, error=None, serialized={'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo, bar'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'prompts': ['System: You are a nice assistant.\nHuman: What is your name?']}, outputs={'generations': [[{'text': 'foo, bar', 'generation_info': None, 'type': 'ChatGeneration', 'message': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'messages', 'AIMessage'], 'kwargs': {'content': 'foo, bar', 'type': 'ai', 'id': 'run-00000000-0000-4000-8000-000000000002-0', 'tool_calls': [], 'invalid_tool_calls': []}}}]], 'llm_output': None, 'run': None}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:2'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000002'), Run(id=UUID('00000000-0000-4000-8000-000000000003'), name='CommaSeparatedListOutputParser', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='parser', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'kwargs': {}, 'name': 'CommaSeparatedListOutputParser', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 2, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'input': AIMessage(content='foo, bar', id='00000000-0000-4000-8000-000000000004')}, outputs={'output': ['foo', 'bar']}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:3'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000003'), Run(id=UUID('00000000-0000-4000-8000-000000000005'), name='RunnableLambda', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='chain', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'runnables', 'base', 'RunnableLambda'], 'repr': "RunnableLambda(lambda x: {'question': x[0] + x[1]})"}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'input': ['foo', 'bar']}, outputs={'question': 'foobar'}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:4'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000005'), Run(id=UUID('00000000-0000-4000-8000-000000000006'), name='ChatPromptTemplate', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='prompt', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nicer assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'foobar'}, outputs={'output': ChatPromptValue(messages=[SystemMessage(content='You are a nicer assistant.'), HumanMessage(content='foobar')])}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:5'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000006'), Run(id=UUID('00000000-0000-4000-8000-000000000007'), name='FakeListChatModel', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='llm', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={'invocation_params': {'responses': ['baz, qux'], '_type': 'fake-list-chat-model', 'stop': None}, 'options': {'stop': None}, 'batch_size': 1}, error=None, serialized={'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['baz, qux'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'prompts': ['System: You are a nicer assistant.\nHuman: foobar']}, outputs={'generations': [[{'text': 'baz, qux', 'generation_info': None, 'type': 'ChatGeneration', 'message': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'messages', 'AIMessage'], 'kwargs': {'content': 'baz, qux', 'type': 'ai', 'id': 'run-00000000-0000-4000-8000-000000000006-0', 'tool_calls': [], 'invalid_tool_calls': []}}}]], 'llm_output': None, 'run': None}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:6'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000007'), Run(id=UUID('00000000-0000-4000-8000-000000000008'), name='CommaSeparatedListOutputParser', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='parser', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'kwargs': {}, 'name': 'CommaSeparatedListOutputParser', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 2, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'input': AIMessage(content='baz, qux', id='00000000-0000-4000-8000-000000000009')}, outputs={'output': ['baz', 'qux']}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:7'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000008')], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000'),
+    Run(id=UUID('00000000-0000-4000-8000-000000000000'), name='RunnableSequence', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='chain', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'runnable', 'RunnableSequence'], 'kwargs': {'first': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, 'middle': [{'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo, bar'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'kwargs': {}, 'name': 'CommaSeparatedListOutputParser', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 2, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, {'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'runnables', 'base', 'RunnableLambda'], 'repr': "RunnableLambda(lambda x: {'question': x[0] + x[1]})"}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nicer assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, {'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['baz, qux'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}], 'last': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'kwargs': {}, 'name': 'CommaSeparatedListOutputParser', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 2, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}, 'name': 'RunnableSequence', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 3, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 4, 'type': 'runnable', 'data': {'id': ['langchain_core', 'runnables', 'base', 'RunnableLambda'], 'name': 'RunnableLambda'}}, {'id': 5, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 6, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 7, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 8, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}, {'source': 2, 'target': 3}, {'source': 3, 'target': 4}, {'source': 4, 'target': 5}, {'source': 5, 'target': 6}, {'source': 7, 'target': 8}, {'source': 6, 'target': 7}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': ['baz', 'qux']}, reference_example_id=None, parent_run_id=None, tags=[], child_runs=[Run(id=UUID('00000000-0000-4000-8000-000000000001'), name='ChatPromptTemplate', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='prompt', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': ChatPromptValue(messages=[SystemMessage(content='You are a nice assistant.'), HumanMessage(content='What is your name?')])}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:1'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000001'), Run(id=UUID('00000000-0000-4000-8000-000000000002'), name='FakeListChatModel', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='llm', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={'invocation_params': {'responses': ['foo, bar'], '_type': 'fake-list-chat-model', 'stop': None}, 'options': {'stop': None}, 'batch_size': 1, 'metadata': {'ls_model_type': 'chat'}}, error=None, serialized={'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo, bar'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'prompts': ['System: You are a nice assistant.\nHuman: What is your name?']}, outputs={'generations': [[{'text': 'foo, bar', 'generation_info': None, 'type': 'ChatGeneration', 'message': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'messages', 'AIMessage'], 'kwargs': {'content': 'foo, bar', 'type': 'ai', 'id': 'run-00000000-0000-4000-8000-000000000002-0', 'tool_calls': [], 'invalid_tool_calls': []}}}]], 'llm_output': None, 'run': None}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:2'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000002'), Run(id=UUID('00000000-0000-4000-8000-000000000003'), name='CommaSeparatedListOutputParser', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='parser', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'kwargs': {}, 'name': 'CommaSeparatedListOutputParser', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 2, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'input': AIMessage(content='foo, bar', id='00000000-0000-4000-8000-000000000004')}, outputs={'output': ['foo', 'bar']}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:3'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000003'), Run(id=UUID('00000000-0000-4000-8000-000000000005'), name='RunnableLambda', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='chain', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'runnables', 'base', 'RunnableLambda'], 'repr': "RunnableLambda(lambda x: {'question': x[0] + x[1]})"}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'input': ['foo', 'bar']}, outputs={'question': 'foobar'}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:4'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000005'), Run(id=UUID('00000000-0000-4000-8000-000000000006'), name='ChatPromptTemplate', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='prompt', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nicer assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'foobar'}, outputs={'output': ChatPromptValue(messages=[SystemMessage(content='You are a nicer assistant.'), HumanMessage(content='foobar')])}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:5'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000006'), Run(id=UUID('00000000-0000-4000-8000-000000000007'), name='FakeListChatModel', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='llm', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={'invocation_params': {'responses': ['baz, qux'], '_type': 'fake-list-chat-model', 'stop': None}, 'options': {'stop': None}, 'batch_size': 1, 'metadata': {'ls_model_type': 'chat'}}, error=None, serialized={'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['baz, qux'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'prompts': ['System: You are a nicer assistant.\nHuman: foobar']}, outputs={'generations': [[{'text': 'baz, qux', 'generation_info': None, 'type': 'ChatGeneration', 'message': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'messages', 'AIMessage'], 'kwargs': {'content': 'baz, qux', 'type': 'ai', 'id': 'run-00000000-0000-4000-8000-000000000006-0', 'tool_calls': [], 'invalid_tool_calls': []}}}]], 'llm_output': None, 'run': None}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:6'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000007'), Run(id=UUID('00000000-0000-4000-8000-000000000008'), name='CommaSeparatedListOutputParser', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='parser', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'kwargs': {}, 'name': 'CommaSeparatedListOutputParser', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 2, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'input': AIMessage(content='baz, qux', id='00000000-0000-4000-8000-000000000009')}, outputs={'output': ['baz', 'qux']}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:7'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000008')], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000'),
   ])
 # ---
 # name: test_each
@@ -2653,7 +2653,7 @@
 # ---
 # name: test_prompt_with_chat_model.2
   list([
-    Run(id=UUID('00000000-0000-4000-8000-000000000000'), name='RunnableSequence', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='chain', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'runnable', 'RunnableSequence'], 'kwargs': {'first': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, 'last': {'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}, 'name': 'RunnableSequence', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 3, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 2, 'target': 3}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': AIMessage(content='foo', id='00000000-0000-4000-8000-000000000003')}, reference_example_id=None, parent_run_id=None, tags=[], child_runs=[Run(id=UUID('00000000-0000-4000-8000-000000000001'), name='ChatPromptTemplate', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='prompt', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': ChatPromptValue(messages=[SystemMessage(content='You are a nice assistant.'), HumanMessage(content='What is your name?')])}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:1'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000001'), Run(id=UUID('00000000-0000-4000-8000-000000000002'), name='FakeListChatModel', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='llm', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={'invocation_params': {'responses': ['foo'], '_type': 'fake-list-chat-model', 'stop': None}, 'options': {'stop': None}, 'batch_size': 1}, error=None, serialized={'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'prompts': ['System: You are a nice assistant.\nHuman: What is your name?']}, outputs={'generations': [[{'text': 'foo', 'generation_info': None, 'type': 'ChatGeneration', 'message': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'messages', 'AIMessage'], 'kwargs': {'content': 'foo', 'type': 'ai', 'id': 'run-00000000-0000-4000-8000-000000000002-0', 'tool_calls': [], 'invalid_tool_calls': []}}}]], 'llm_output': None, 'run': None}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:2'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000002')], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000'),
+    Run(id=UUID('00000000-0000-4000-8000-000000000000'), name='RunnableSequence', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='chain', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'runnable', 'RunnableSequence'], 'kwargs': {'first': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, 'last': {'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}, 'name': 'RunnableSequence', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 3, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 2, 'target': 3}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': AIMessage(content='foo', id='00000000-0000-4000-8000-000000000003')}, reference_example_id=None, parent_run_id=None, tags=[], child_runs=[Run(id=UUID('00000000-0000-4000-8000-000000000001'), name='ChatPromptTemplate', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='prompt', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': ChatPromptValue(messages=[SystemMessage(content='You are a nice assistant.'), HumanMessage(content='What is your name?')])}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:1'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000001'), Run(id=UUID('00000000-0000-4000-8000-000000000002'), name='FakeListChatModel', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='llm', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={'invocation_params': {'responses': ['foo'], '_type': 'fake-list-chat-model', 'stop': None}, 'options': {'stop': None}, 'batch_size': 1, 'metadata': {'ls_model_type': 'chat'}}, error=None, serialized={'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'prompts': ['System: You are a nice assistant.\nHuman: What is your name?']}, outputs={'generations': [[{'text': 'foo', 'generation_info': None, 'type': 'ChatGeneration', 'message': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'messages', 'AIMessage'], 'kwargs': {'content': 'foo', 'type': 'ai', 'id': 'run-00000000-0000-4000-8000-000000000002-0', 'tool_calls': [], 'invalid_tool_calls': []}}}]], 'llm_output': None, 'run': None}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:2'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000002')], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000'),
   ])
 # ---
 # name: test_prompt_with_chat_model_and_parser
@@ -3033,7 +3033,7 @@
 # ---
 # name: test_prompt_with_chat_model_and_parser.1
   list([
-    Run(id=UUID('00000000-0000-4000-8000-000000000000'), name='RunnableSequence', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='chain', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'runnable', 'RunnableSequence'], 'kwargs': {'first': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, 'middle': [{'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo, bar'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}], 'last': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'kwargs': {}, 'name': 'CommaSeparatedListOutputParser', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 2, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}, 'name': 'RunnableSequence', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 3, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 4, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}, {'source': 3, 'target': 4}, {'source': 2, 'target': 3}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': ['foo', 'bar']}, reference_example_id=None, parent_run_id=None, tags=[], child_runs=[Run(id=UUID('00000000-0000-4000-8000-000000000001'), name='ChatPromptTemplate', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='prompt', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': ChatPromptValue(messages=[SystemMessage(content='You are a nice assistant.'), HumanMessage(content='What is your name?')])}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:1'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000001'), Run(id=UUID('00000000-0000-4000-8000-000000000002'), name='FakeListChatModel', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='llm', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={'invocation_params': {'responses': ['foo, bar'], '_type': 'fake-list-chat-model', 'stop': None}, 'options': {'stop': None}, 'batch_size': 1}, error=None, serialized={'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo, bar'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'prompts': ['System: You are a nice assistant.\nHuman: What is your name?']}, outputs={'generations': [[{'text': 'foo, bar', 'generation_info': None, 'type': 'ChatGeneration', 'message': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'messages', 'AIMessage'], 'kwargs': {'content': 'foo, bar', 'type': 'ai', 'id': 'run-00000000-0000-4000-8000-000000000002-0', 'tool_calls': [], 'invalid_tool_calls': []}}}]], 'llm_output': None, 'run': None}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:2'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000002'), Run(id=UUID('00000000-0000-4000-8000-000000000003'), name='CommaSeparatedListOutputParser', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='parser', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'kwargs': {}, 'name': 'CommaSeparatedListOutputParser', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 2, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'input': AIMessage(content='foo, bar', id='00000000-0000-4000-8000-000000000004')}, outputs={'output': ['foo', 'bar']}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:3'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000003')], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000'),
+    Run(id=UUID('00000000-0000-4000-8000-000000000000'), name='RunnableSequence', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='chain', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'runnable', 'RunnableSequence'], 'kwargs': {'first': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, 'middle': [{'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo, bar'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}], 'last': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'kwargs': {}, 'name': 'CommaSeparatedListOutputParser', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 2, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}, 'name': 'RunnableSequence', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 3, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 4, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}, {'source': 3, 'target': 4}, {'source': 2, 'target': 3}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': ['foo', 'bar']}, reference_example_id=None, parent_run_id=None, tags=[], child_runs=[Run(id=UUID('00000000-0000-4000-8000-000000000001'), name='ChatPromptTemplate', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='prompt', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': ChatPromptValue(messages=[SystemMessage(content='You are a nice assistant.'), HumanMessage(content='What is your name?')])}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:1'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000001'), Run(id=UUID('00000000-0000-4000-8000-000000000002'), name='FakeListChatModel', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='llm', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={'invocation_params': {'responses': ['foo, bar'], '_type': 'fake-list-chat-model', 'stop': None}, 'options': {'stop': None}, 'batch_size': 1, 'metadata': {'ls_model_type': 'chat'}}, error=None, serialized={'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo, bar'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'prompts': ['System: You are a nice assistant.\nHuman: What is your name?']}, outputs={'generations': [[{'text': 'foo, bar', 'generation_info': None, 'type': 'ChatGeneration', 'message': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'messages', 'AIMessage'], 'kwargs': {'content': 'foo, bar', 'type': 'ai', 'id': 'run-00000000-0000-4000-8000-000000000002-0', 'tool_calls': [], 'invalid_tool_calls': []}}}]], 'llm_output': None, 'run': None}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:2'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000002'), Run(id=UUID('00000000-0000-4000-8000-000000000003'), name='CommaSeparatedListOutputParser', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='parser', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'kwargs': {}, 'name': 'CommaSeparatedListOutputParser', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'output_parsers', 'list', 'CommaSeparatedListOutputParser'], 'name': 'CommaSeparatedListOutputParser'}}, {'id': 2, 'type': 'schema', 'data': 'CommaSeparatedListOutputParserOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'input': AIMessage(content='foo, bar', id='00000000-0000-4000-8000-000000000004')}, outputs={'output': ['foo', 'bar']}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:3'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000003')], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000'),
   ])
 # ---
 # name: test_prompt_with_chat_model_async
@@ -3351,7 +3351,7 @@
 # ---
 # name: test_prompt_with_chat_model_async.2
   list([
-    Run(id=UUID('00000000-0000-4000-8000-000000000000'), name='RunnableSequence', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='chain', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'runnable', 'RunnableSequence'], 'kwargs': {'first': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, 'last': {'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}, 'name': 'RunnableSequence', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 3, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 2, 'target': 3}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': AIMessage(content='foo', id='00000000-0000-4000-8000-000000000003')}, reference_example_id=None, parent_run_id=None, tags=[], child_runs=[Run(id=UUID('00000000-0000-4000-8000-000000000001'), name='ChatPromptTemplate', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='prompt', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': ChatPromptValue(messages=[SystemMessage(content='You are a nice assistant.'), HumanMessage(content='What is your name?')])}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:1'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000001'), Run(id=UUID('00000000-0000-4000-8000-000000000002'), name='FakeListChatModel', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='llm', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={'invocation_params': {'responses': ['foo'], '_type': 'fake-list-chat-model', 'stop': None}, 'options': {'stop': None}, 'batch_size': 1}, error=None, serialized={'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'prompts': ['System: You are a nice assistant.\nHuman: What is your name?']}, outputs={'generations': [[{'text': 'foo', 'generation_info': None, 'type': 'ChatGeneration', 'message': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'messages', 'AIMessage'], 'kwargs': {'content': 'foo', 'type': 'ai', 'id': 'run-00000000-0000-4000-8000-000000000002-0', 'tool_calls': [], 'invalid_tool_calls': []}}}]], 'llm_output': None, 'run': None}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:2'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000002')], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000'),
+    Run(id=UUID('00000000-0000-4000-8000-000000000000'), name='RunnableSequence', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='chain', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'runnable', 'RunnableSequence'], 'kwargs': {'first': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, 'last': {'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}, 'name': 'RunnableSequence', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 3, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 2, 'target': 3}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': AIMessage(content='foo', id='00000000-0000-4000-8000-000000000003')}, reference_example_id=None, parent_run_id=None, tags=[], child_runs=[Run(id=UUID('00000000-0000-4000-8000-000000000001'), name='ChatPromptTemplate', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='prompt', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={}, error=None, serialized={'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'kwargs': {'input_variables': ['question'], 'messages': [{'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'SystemMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': [], 'template': 'You are a nice assistant.', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}, {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'chat', 'HumanMessagePromptTemplate'], 'kwargs': {'prompt': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'kwargs': {'input_variables': ['question'], 'template': '{question}', 'template_format': 'f-string'}, 'name': 'PromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'prompt', 'PromptTemplate'], 'name': 'PromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'PromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}}}]}, 'name': 'ChatPromptTemplate', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'PromptInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain', 'prompts', 'chat', 'ChatPromptTemplate'], 'name': 'ChatPromptTemplate'}}, {'id': 2, 'type': 'schema', 'data': 'ChatPromptTemplateOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'question': 'What is your name?'}, outputs={'output': ChatPromptValue(messages=[SystemMessage(content='You are a nice assistant.'), HumanMessage(content='What is your name?')])}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:1'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000001'), Run(id=UUID('00000000-0000-4000-8000-000000000002'), name='FakeListChatModel', start_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), run_type='llm', end_time=FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc), extra={'invocation_params': {'responses': ['foo'], '_type': 'fake-list-chat-model', 'stop': None}, 'options': {'stop': None}, 'batch_size': 1, 'metadata': {'ls_model_type': 'chat'}}, error=None, serialized={'lc': 1, 'type': 'not_implemented', 'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'repr': "FakeListChatModel(responses=['foo'])", 'name': 'FakeListChatModel', 'graph': {'nodes': [{'id': 0, 'type': 'schema', 'data': 'FakeListChatModelInput'}, {'id': 1, 'type': 'runnable', 'data': {'id': ['langchain_core', 'language_models', 'fake_chat_models', 'FakeListChatModel'], 'name': 'FakeListChatModel'}}, {'id': 2, 'type': 'schema', 'data': 'FakeListChatModelOutput'}], 'edges': [{'source': 0, 'target': 1}, {'source': 1, 'target': 2}]}}, events=[{'name': 'start', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}, {'name': 'end', 'time': FakeDatetime(2023, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)}], inputs={'prompts': ['System: You are a nice assistant.\nHuman: What is your name?']}, outputs={'generations': [[{'text': 'foo', 'generation_info': None, 'type': 'ChatGeneration', 'message': {'lc': 1, 'type': 'constructor', 'id': ['langchain', 'schema', 'messages', 'AIMessage'], 'kwargs': {'content': 'foo', 'type': 'ai', 'id': 'run-00000000-0000-4000-8000-000000000002-0', 'tool_calls': [], 'invalid_tool_calls': []}}}]], 'llm_output': None, 'run': None}, reference_example_id=None, parent_run_id=UUID('00000000-0000-4000-8000-000000000000'), tags=['seq:step:2'], child_runs=[], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000.20230101T000000000000Z00000000-0000-4000-8000-000000000002')], trace_id=UUID('00000000-0000-4000-8000-000000000000'), dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000'),
   ])
 # ---
 # name: test_prompt_with_llm
@@ -5216,7 +5216,15 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'Message from an AI.',
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -5285,6 +5293,9 @@
             ]),
             'title': 'Type',
             'type': 'string',
+          }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
           }),
         }),
         'required': list([
@@ -5401,7 +5412,16 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'Message for passing the result of executing a function back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -5457,7 +5477,30 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'Message from a human.',
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -5568,8 +5611,28 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
           of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -5648,7 +5711,24 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'Message for passing the result of executing a tool back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A TooMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -5705,6 +5785,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),
@@ -5751,7 +5854,15 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'Message from an AI.',
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -5820,6 +5931,9 @@
             ]),
             'title': 'Type',
             'type': 'string',
+          }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
           }),
         }),
         'required': list([
@@ -5936,7 +6050,16 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'Message for passing the result of executing a function back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -5992,7 +6115,30 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'Message from a human.',
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6103,8 +6249,28 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
           of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -6183,7 +6349,24 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'Message for passing the result of executing a tool back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A TooMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6240,6 +6423,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),
@@ -6270,7 +6476,15 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'Message from an AI.',
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6340,6 +6554,9 @@
             'title': 'Type',
             'type': 'string',
           }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
+          }),
         }),
         'required': list([
           'content',
@@ -6408,7 +6625,16 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'Message for passing the result of executing a function back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6464,7 +6690,30 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'Message from a human.',
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6553,8 +6802,28 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
           of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -6633,7 +6902,24 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'Message for passing the result of executing a tool back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A TooMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6690,6 +6976,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),
@@ -6708,7 +7017,15 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'Message from an AI.',
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6777,6 +7094,9 @@
             ]),
             'title': 'Type',
             'type': 'string',
+          }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
           }),
         }),
         'required': list([
@@ -6893,7 +7213,16 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'Message for passing the result of executing a function back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6949,7 +7278,30 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'Message from a human.',
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7060,8 +7412,28 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
           of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -7140,7 +7512,24 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'Message for passing the result of executing a tool back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A TooMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7197,6 +7586,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),
@@ -7215,7 +7627,15 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'Message from an AI.',
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7284,6 +7704,9 @@
             ]),
             'title': 'Type',
             'type': 'string',
+          }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
           }),
         }),
         'required': list([
@@ -7400,7 +7823,16 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'Message for passing the result of executing a function back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7456,7 +7888,30 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'Message from a human.',
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7567,8 +8022,28 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
           of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -7647,7 +8122,24 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'Message for passing the result of executing a tool back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A TooMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7706,6 +8198,29 @@
         'title': 'ToolMessage',
         'type': 'object',
       }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
+        'type': 'object',
+      }),
     }),
     'title': 'PromptTemplateOutput',
   })
@@ -7714,7 +8229,15 @@
   dict({
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'Message from an AI.',
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7783,6 +8306,9 @@
             ]),
             'title': 'Type',
             'type': 'string',
+          }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
           }),
         }),
         'required': list([
@@ -7899,7 +8425,16 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'Message for passing the result of executing a function back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7955,7 +8490,30 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'Message from a human.',
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -8077,8 +8635,28 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
           of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -8157,7 +8735,24 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'Message for passing the result of executing a tool back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A TooMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -8216,6 +8811,29 @@
         'title': 'ToolMessage',
         'type': 'object',
       }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
+        'type': 'object',
+      }),
     }),
     'items': dict({
       '$ref': '#/definitions/PromptTemplateOutput',
@@ -8251,7 +8869,15 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'Message from an AI.',
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -8321,6 +8947,9 @@
             'title': 'Type',
             'type': 'string',
           }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
+          }),
         }),
         'required': list([
           'content',
@@ -8389,7 +9018,16 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'Message for passing the result of executing a function back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -8445,7 +9083,30 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'Message from a human.',
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -8534,8 +9195,28 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
           of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -8614,7 +9295,24 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'Message for passing the result of executing a tool back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A TooMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -8671,6 +9369,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),

@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 @deprecated(
     since="0.0.37",
     removal="0.3",
-    alternative_import="from rom langchain_huggingface.llms import HuggingFacePipeline",
+    alternative_import="langchain_huggingface.HuggingFacePipeline",
 )
 class HuggingFacePipeline(BaseLLM):
     """HuggingFace Pipeline API.
@@ -212,7 +212,7 @@ class HuggingFacePipeline(BaseLLM):
                     cuda_device_count,
                 )
         if device is not None and device_map is not None and backend == "openvino":
-            logger.warning("Please set device for OpenVINO through: " "'model_kwargs'")
+            logger.warning("Please set device for OpenVINO through: `model_kwargs`")
         if "trust_remote_code" in _model_kwargs:
             _model_kwargs = {
                 k: v for k, v in _model_kwargs.items() if k != "trust_remote_code"
@@ -265,6 +265,7 @@ class HuggingFacePipeline(BaseLLM):
         # List to hold all results
         text_generations: List[str] = []
         pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
+        skip_prompt = kwargs.get("skip_prompt", False)
 
         for i in range(0, len(prompts), self.batch_size):
             batch_prompts = prompts[i : i + self.batch_size]
@@ -294,7 +295,8 @@ class HuggingFacePipeline(BaseLLM):
                         f"Got invalid task {self.pipeline.task}, "
                         f"currently only {VALID_TASKS} are supported"
                     )
-
+                if skip_prompt:
+                    text = text[len(batch_prompts[j]) :]
                 # Append the processed text to results
                 text_generations.append(text)
 

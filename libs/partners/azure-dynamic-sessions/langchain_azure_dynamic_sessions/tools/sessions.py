@@ -92,9 +92,11 @@ class SessionsPythonREPLTool(BaseTool):
     Example:
 
         .. code-block:: python
-        from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
-        tool = SessionsPythonREPLTool(pool_management_endpoint="...")
-        result = tool.run("6 * 7")
+
+            from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
+
+            tool = SessionsPythonREPLTool(pool_management_endpoint="...")
+            result = tool.invoke("6 * 7")
     """
 
     name: str = "Python_REPL"

@@ -254,7 +254,7 @@ class LocalAIEmbeddings(BaseModel, Embeddings):
             openai.proxy = {
                 "http": self.openai_proxy,
                 "https": self.openai_proxy,
-            }  # type: ignore[assignment]  # noqa: E501
+            }  # type: ignore[assignment]
         return openai_args
 
     def _embedding_func(self, text: str, *, engine: str) -> List[float]:

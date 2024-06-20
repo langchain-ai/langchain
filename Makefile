@@ -3,7 +3,7 @@
 ## help: Show this help info.
 help: Makefile
 	@printf "\n\033[1mUsage: make <TARGETS> ...\033[0m\n\n\033[1mTargets:\033[0m\n\n"
-	@sed -n 's/^##//p' $< | awk -F':' '{printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' | sort | sed -e 's/^/ /'
+	@sed -n 's/^## //p' $< | awk -F':' '{printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' | sort | sed -e 's/^/  /'
 
 ## all: Default target, shows help.
 all: help
@@ -32,10 +32,19 @@ api_docs_build:
 	poetry run python docs/api_reference/create_api_rst.py
 	cd docs/api_reference && poetry run make html
 
+API_PKG ?= text-splitters
+
+api_docs_quick_preview:
+	poetry run pip install "pydantic<2"
+	poetry run python docs/api_reference/create_api_rst.py $(API_PKG)
+	cd docs/api_reference && poetry run make html
+	open docs/api_reference/_build/html/$(shell echo $(API_PKG) | sed 's/-/_/g')_api_reference.html
+
 ## api_docs_clean: Clean the API Reference documentation build artifacts.
 api_docs_clean:
 	find ./docs/api_reference -name '*_api_reference.rst' -delete
-	cd docs/api_reference && poetry run make clean
+	git clean -fdX ./docs/api_reference
+	
 
 ## api_docs_linkcheck: Run linkchecker on the API Reference documentation.
 api_docs_linkcheck:

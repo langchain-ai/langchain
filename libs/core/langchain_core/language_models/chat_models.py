@@ -13,12 +13,15 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     Optional,
     Sequence,
     Type,
     Union,
     cast,
 )
+
+from typing_extensions import TypedDict
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
@@ -58,6 +61,15 @@ if TYPE_CHECKING:
     from langchain_core.pydantic_v1 import BaseModel
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
+
+
+class LangSmithParams(TypedDict, total=False):
+    ls_provider: str
+    ls_model_name: str
+    ls_model_type: Literal["chat"]
+    ls_temperature: Optional[float]
+    ls_max_tokens: Optional[int]
+    ls_stop: Optional[List[str]]
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
@@ -103,12 +115,38 @@ async def agenerate_from_stream(
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
-    """Base class for Chat models."""
+    """Base class for Chat models.
+
+    Custom chat model implementations should inherit from this class.
+
+    Follow the guide for more information on how to implement a
+    custom Chat Model:
+    [Guide](https://python.langchain.com/v0.2/docs/how_to/custom_chat_model/).
+
+    Please reference the table below for information about which
+    methods and properties are required or optional for implementations.
+
+    +----------------------------------+--------------------------------------------------------------------+-------------------+
+    | Method/Property                  | Description                                                        | Required/Optional |
+    +==================================+====================================================================+===================+
+    | `_generate`                      | Use to generate a chat result from a prompt                        | Required          |
+    +----------------------------------+--------------------------------------------------------------------+-------------------+
+    | `_llm_type` (property)           | Used to uniquely identify the type of the model. Used for logging. | Required          |
+    +----------------------------------+--------------------------------------------------------------------+-------------------+
+    | `_identifying_params` (property) | Represent model parameterization for tracing purposes.             | Optional          |
+    +----------------------------------+--------------------------------------------------------------------+-------------------+
+    | `_stream`                        | Use to implement streaming                                         | Optional          |
+    +----------------------------------+--------------------------------------------------------------------+-------------------+
+    | `_agenerate`                     | Use to implement a native async method                             | Optional          |
+    +----------------------------------+--------------------------------------------------------------------+-------------------+
+    | `_astream`                       | Use to implement async version of `_stream`                        | Optional          |
+    +----------------------------------+--------------------------------------------------------------------+-------------------+
+    """  # noqa: E501
 
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED] Callback manager to add to the run trace."""
 
-    @root_validator()
+    @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
@@ -206,13 +244,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             messages = self._convert_input(input).to_messages()
             params = self._get_invocation_params(stop=stop, **kwargs)
             options = {"stop": stop, **kwargs}
+            inheritable_metadata = {
+                **(config.get("metadata") or {}),
+                **self._get_ls_params(stop=stop, **kwargs),
+            }
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
                 self.callbacks,
                 self.verbose,
                 config.get("tags"),
                 self.tags,
-                config.get("metadata"),
+                inheritable_metadata,
                 self.metadata,
             )
             (run_manager,) = callback_manager.on_chat_model_start(
@@ -273,13 +315,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         messages = self._convert_input(input).to_messages()
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **kwargs}
+        inheritable_metadata = {
+            **(config.get("metadata") or {}),
+            **self._get_ls_params(stop=stop, **kwargs),
+        }
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
             self.callbacks,
             self.verbose,
             config.get("tags"),
             self.tags,
-            config.get("metadata"),
+            inheritable_metadata,
             self.metadata,
         )
         (run_manager,) = await callback_manager.on_chat_model_start(
@@ -336,6 +382,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         params["stop"] = stop
         return {**params, **kwargs}
 
+    def _get_ls_params(
+        self,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        ls_params = LangSmithParams(ls_model_type="chat")
+        if stop:
+            ls_params["ls_stop"] = stop
+        return ls_params
+
     def _get_llm_string(self, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
         if self.is_lc_serializable():
             params = {**kwargs, **{"stop": stop}}
@@ -385,6 +442,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop}
+        inheritable_metadata = {
+            **(metadata or {}),
+            **self._get_ls_params(stop=stop, **kwargs),
+        }
 
         callback_manager = CallbackManager.configure(
             callbacks,
@@ -392,7 +453,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             self.verbose,
             tags,
             self.tags,
-            metadata,
+            inheritable_metadata,
             self.metadata,
         )
         run_managers = callback_manager.on_chat_model_start(
@@ -472,6 +533,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop}
+        inheritable_metadata = {
+            **(metadata or {}),
+            **self._get_ls_params(stop=stop, **kwargs),
+        }
 
         callback_manager = AsyncCallbackManager.configure(
             callbacks,
@@ -479,7 +544,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             self.verbose,
             tags,
             self.tags,
-            metadata,
+            inheritable_metadata,
             self.metadata,
         )
 
@@ -913,7 +978,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
 
 class SimpleChatModel(BaseChatModel):
-    """Simplified implementation for a chat model to inherit from."""
+    """Simplified implementation for a chat model to inherit from.
+
+    **Note** This implementation is primarily here for backwards compatibility.
+        For new implementations, please use `BaseChatModel` directly.
+    """
 
     def _generate(
         self,

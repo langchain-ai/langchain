@@ -208,9 +208,9 @@ class PebbloSafeLoader(BaseLoader):
         if loading_end is True:
             payload["loading_end"] = "true"
             if "loader_details" in payload:
-                payload["loader_details"]["source_aggregate_size"] = (  # noqa
-                    self.source_aggregate_size
-                )
+                payload["loader_details"][
+                    "source_aggregate_size"
+                ] = self.source_aggregate_size
         payload = Doc(**payload).dict(exclude_unset=True)
         load_doc_url = f"{self.classifier_url}{LOADER_DOC_URL}"
         classified_docs = []
@@ -303,12 +303,6 @@ class PebbloSafeLoader(BaseLoader):
             pebblo_resp = requests.post(
                 app_discover_url, headers=headers, json=payload, timeout=20
             )
-            if self.api_key:
-                pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}/v1/discover"
-                headers.update({"x-api-key": self.api_key})
-                _ = requests.post(
-                    pebblo_cloud_url, headers=headers, json=payload, timeout=20
-                )
             logger.debug(
                 "send_discover[local]: request url %s, body %s len %s\
                     response status %s body %s",
@@ -333,17 +327,16 @@ class PebbloSafeLoader(BaseLoader):
             try:
                 headers.update({"x-api-key": self.api_key})
                 if pebblo_resp:
-                    pebblo_resp_docs = json.loads(pebblo_resp.text).get("docs")
+                    pebblo_server_version = json.loads(pebblo_resp.text).get(
+                        "pebblo_server_version"
+                    )
                     payload.update(
                         {
-                            "pebbloServerVersion": pebblo_resp_docs.get(
-                                "pebbloServerVersion"
-                            ),
-                            "pebbloClientVersion": pebblo_resp_docs.get(
-                                "pebbloClientVersion"
-                            ),
+                            "pebblo_server_version": pebblo_server_version,
+                            "pebblo_client_version": payload["plugin_version"],
                         }
                     )
+                    payload.pop("plugin_version")
                 pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}{APP_DISCOVER_URL}"
                 pebblo_cloud_response = requests.post(
                     pebblo_cloud_url, headers=headers, json=payload, timeout=20

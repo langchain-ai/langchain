@@ -12,7 +12,7 @@ from langchain_core._api.deprecation import deprecated
     message=(
         "Using the hwchase17/langchain-hub "
         "repo for prompts is deprecated. Please use "
-        "https://smith.langchain.com/hub instead."
+        "<https://smith.langchain.com/hub> instead."
     ),
 )
 def try_load_from_hub(

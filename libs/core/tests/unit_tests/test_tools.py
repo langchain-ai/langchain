@@ -332,9 +332,8 @@ def test_structured_tool_from_function_docstring() -> None:
         "required": ["bar", "baz"],
     }
 
-    prefix = "foo(bar: int, baz: str) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + textwrap.dedent(foo.__doc__.strip())
+    assert structured_tool.description == textwrap.dedent(foo.__doc__.strip())
 
 
 def test_structured_tool_from_function_docstring_complex_args() -> None:
@@ -365,9 +364,8 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
         "required": ["bar", "baz"],
     }
 
-    prefix = "foo(bar: int, baz: List[str]) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + textwrap.dedent(foo.__doc__).strip()
+    assert structured_tool.description == textwrap.dedent(foo.__doc__).strip()
 
 
 def test_structured_tool_lambda_multi_args_schema() -> None:
@@ -628,7 +626,7 @@ def test_exception_handling_callable() -> None:
     expected = "foo bar"
 
     def handling(e: ToolException) -> str:
-        return expected  # noqa: E731
+        return expected
 
     _tool = _FakeExceptionTool(handle_tool_error=handling)
     actual = _tool.run({})
@@ -659,7 +657,7 @@ async def test_async_exception_handling_callable() -> None:
     expected = "foo bar"
 
     def handling(e: ToolException) -> str:
-        return expected  # noqa: E731
+        return expected
 
     _tool = _FakeExceptionTool(handle_tool_error=handling)
     actual = await _tool.arun({})
@@ -700,9 +698,8 @@ def test_structured_tool_from_function() -> None:
         "required": ["bar", "baz"],
     }
 
-    prefix = "foo(bar: int, baz: str) -> str - "
     assert foo.__doc__ is not None
-    assert structured_tool.description == prefix + textwrap.dedent(foo.__doc__.strip())
+    assert structured_tool.description == textwrap.dedent(foo.__doc__.strip())
 
 
 def test_validation_error_handling_bool() -> None:
@@ -726,7 +723,7 @@ def test_validation_error_handling_callable() -> None:
     expected = "foo bar"
 
     def handling(e: ValidationError) -> str:
-        return expected  # noqa: E731
+        return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
     actual = _tool.run({})
@@ -747,8 +744,8 @@ def test_validation_error_handling_non_validation_error(
     """Test that validation errors are handled correctly."""
 
     class _RaiseNonValidationErrorTool(BaseTool):
-        name = "raise_non_validation_error_tool"
-        description = "A tool that raises a non-validation error"
+        name: str = "raise_non_validation_error_tool"
+        description: str = "A tool that raises a non-validation error"
 
         def _parse_input(
             self,
@@ -788,7 +785,7 @@ async def test_async_validation_error_handling_callable() -> None:
     expected = "foo bar"
 
     def handling(e: ValidationError) -> str:
-        return expected  # noqa: E731
+        return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
     actual = await _tool.arun({})
@@ -809,8 +806,8 @@ async def test_async_validation_error_handling_non_validation_error(
     """Test that validation errors are handled correctly."""
 
     class _RaiseNonValidationErrorTool(BaseTool):
-        name = "raise_non_validation_error_tool"
-        description = "A tool that raises a non-validation error"
+        name: str = "raise_non_validation_error_tool"
+        description: str = "A tool that raises a non-validation error"
 
         def _parse_input(
             self,
@@ -906,3 +903,15 @@ async def test_async_tool_pass_context() -> None:
     assert (
         await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
     )
+
+
+def test_tool_description() -> None:
+    def foo(bar: str) -> str:
+        """The foo."""
+        return bar
+
+    foo1 = tool(foo)
+    assert foo1.description == "The foo."  # type: ignore
+
+    foo2 = StructuredTool.from_function(foo)
+    assert foo2.description == "The foo."
