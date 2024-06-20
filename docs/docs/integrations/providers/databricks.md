@@ -7,7 +7,7 @@ Databricks embraces the LangChain ecosystem in various ways:
 
 1. 🚀 **Model Serving** - Access state-of-the-art LLMs or your fine-tuned models on [Databricks Model Serving](https://www.databricks.com/product/model-serving), via a highly available and low-latency inference endpoint. LangChain provides LLM (`Databricks`), Chat Model (`ChatDatabricks`), and Embeddings (`DatabricksEmbeddings`) implementations, streamlines the integration of your models hosted on Databricks Model Serving into your LangChain application.
 2. 📃 **Vector Search** - [Databricks Vector Search](https://www.databricks.com/product/machine-learning/vector-search) is a serverless vector database seamlessly integrated in teh Databricks Platform. Using `DatabricksVectorSearch`, you can incorporate the highly scalable and reliable similarity search engine into your LangChain application.
-3. 📊 **MLflow** - [MLflow](https://mlflow.org/) is an open-source platrofm to manage the MLf lifecycle, including experiment management, evaluation, tracing, deployment, and more. [MLflow LangChain Integration](../providers/mlflow_tracking.ipynb) streamline the process of developing and operating modern compound ML systems.
+3. 📊 **MLflow** - [MLflow](https://mlflow.org/) is an open-source platrofm to manage the MLf lifecycle, including experiment management, evaluation, tracing, deployment, and more. [MLflow LangChain Integration](/docs/integrations/providers/mlflow_tracking) streamline the process of developing and operating modern compound ML systems.
 4. 🌐 **SQL Database** - [Databricks SQL](https://www.databricks.com/product/databricks-sql) is integrated with `SQLDatabase` in LangChain, allowing you to access the auto-optimizing best performant data warehouse.
 5. 💡 **Open Models** - Databricks open-sourced [DBRX](https://www.databricks.com/blog/introducing-dbrx-new-state-art-open-llm) model which allows for commercial use, and can be accessed through the [Hugging Face Hub](https://huggingface.co/databricks/dbrx-instruct).
 
@@ -22,7 +22,7 @@ from langchain_community.chat_models.databricks import ChatDatabricks
 chat_model = ChatDatabricks(endpoint="databricks-meta-llama-3-70b-instruct")
 ```
 
-See [usage example](../chat/databricks.ipynb) for more guidance for how to use it within your LangChain application.
+See [usage example](/docs/integrations/chat/databricks) for more guidance for how to use it within your LangChain application.
 
 LLM
 ---
@@ -35,7 +35,7 @@ from langchain_community.llm.databricks import Databricks
 llm = Databricks(endpoint="your-completion-endpoint")
 ```
 
-See [usage example](../llms/databricks.ipynb) for more guidance for how to use it within your LangChain application.
+See [usage example](/docs/integrations/llms/databricks) for more guidance for how to use it within your LangChain application.
 
 
 Embeddings
@@ -49,7 +49,7 @@ from langchain_community.embeddings import DatabricksEmbeddings
 embeddings = DatabricksEmbeddings(endpoint="databricks-bge-large-en")
 ```
 
-See [usage example](../text_embedding/databricks.ipynb) for more guidance for how to use it within your LangChain application.
+See [usage example](/docs/integrations/text_embedding/databricks) for more guidance for how to use it within your LangChain application.
 
 
 Vector Search
@@ -79,7 +79,7 @@ In the context of LangChain integration, MLflow provides the following capabilit
 - **Model Evaluation** Offers native capabilities for evaluating LangChain applications.
 - **Tracing**: Visually traces data flows through your LangChain application.
 
-See [MLflow LangChain Integration](../providers/mlflow_tracking.ipynb) to learn about the full ability of LangChain with MLflow and code examples.
+See [MLflow LangChain Integration](/docs/integrations/providers/mlflow_tracking) to learn about the full ability of LangChain with MLflow and code examples.
 
 SQLDatabase
 -----------
@@ -95,7 +95,7 @@ See [Databricks SQL Agent](https://docs.databricks.com/en/large-language-models/
 Open Models
 -----------
 
-To directly integrate Databricks's open models hosted on HuggingFace, you can use [HuggingFace Integration](../platforms/huggingface.mdx) of LangChain.
+To directly integrate Databricks's open models hosted on HuggingFace, you can use [HuggingFace Integration](/docs/integrations/platforms/huggingface) of LangChain.
 
 ```
 from langchain_huggingface import HuggingFaceEndpoint
