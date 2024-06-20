@@ -90,7 +90,7 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
             elif (
                 issubclass(type_, Runnable)
                 and issubclass(type_, BaseModel)
-                and not type_ is Runnable
+                and type_ is not Runnable
             ):
                 # RunnableSerializable subclasses from Pydantic which
                 # for which we use autodoc_pydantic for rendering.
@@ -102,7 +102,7 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
             elif (
                 issubclass(type_, Runnable)
                 and not issubclass(type_, BaseModel)
-                and not type_ is Runnable
+                and type_ is not Runnable
             ):
                 # These are not pydantic classes but are Runnable.
                 # We'll hide all the inherited methods from Runnable
