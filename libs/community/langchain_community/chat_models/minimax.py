@@ -1,4 +1,5 @@
 """Wrapper around Minimax chat models."""
+
 import json
 import logging
 from contextlib import asynccontextmanager, contextmanager
@@ -32,6 +33,17 @@ logger = logging.getLogger(__name__)
 
 @contextmanager
 def connect_httpx_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
+    """Context manager for connecting to an SSE stream.
+
+    Args:
+        client: The httpx client.
+        method: The HTTP method.
+        url: The URL to connect to.
+        kwargs: Additional keyword arguments to pass to the client.
+
+    Yields:
+        An EventSource object.
+    """
     from httpx_sse import EventSource
 
     with client.stream(method, url, **kwargs) as response:
@@ -42,6 +54,17 @@ def connect_httpx_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iter
 async def aconnect_httpx_sse(
     client: Any, method: str, url: str, **kwargs: Any
 ) -> AsyncIterator:
+    """Async context manager for connecting to an SSE stream.
+
+    Args:
+        client: The httpx client.
+        method: The HTTP method.
+        url: The URL to connect to.
+        kwargs: Additional keyword arguments to pass to the client.
+
+    Yields:
+        An EventSource object.
+    """
     from httpx_sse import EventSource
 
     async with client.stream(method, url, **kwargs) as response:
