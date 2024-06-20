@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from time import sleep
 from typing import Any, Dict, List, Mapping, Optional, cast
 
 from bson import ObjectId
@@ -20,7 +21,24 @@ from langchain_core.pydantic_v1 import validator
 from pymongo.collection import Collection
 from pymongo.results import DeleteResult, InsertManyResult
 
+from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_mongodb.cache import MongoDBAtlasSemanticCache
+
+
+class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
+    """Standard MongoDBAtlasVectorSearch, but waits for data to be indexed before returning."""
+
+    timeout = 10.0
+    interval = 0.5
+
+    def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
+        ids = super()._insert_texts(texts, metadatas)
+        timeout = self.timeout
+        k = len(ids)
+        while k != len(self.similarity_search("sandwich", k=k)) and timeout >= 0:
+            sleep(self.interval)
+            timeout -= self.interval
+        return ids
 
 
 class ConsistentFakeEmbeddings(Embeddings):

@@ -272,6 +272,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         post_filter_pipeline: Optional[List[Dict]] = None,
         strategy: str = "vector",
         oversampling_factor: int = 10,
+        include_scores: bool = True,
         include_embeddings: bool = False,
         fulltext_search_query: str = "",
         fulltext_search_operator: str = "phrase",
@@ -307,6 +308,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             post_filter_pipeline: (Optional) Pipeline of MongoDB aggregation stages for postprocessing.
             strategy: (Optional) Type of search to make. One of "vector", "fulltext", or "hybrid".
             oversampling_factor: Multiple of k used when generating number of candidates in HNSW Vector Search,
+            include_scores: If True, search scores will be included in result metadata
             include_embeddings: If True, the embedding vector of each result will be included in metadata.
             vector_penalty: Weighting factor applied to vector search results.
             fulltext_penalty: Weighting factor applied to full-text search results.
@@ -319,7 +321,6 @@ class MongoDBAtlasVectorSearch(VectorStore):
         Returns:
             List of documents most similar to the query.
         """
-        additional = kwargs.get("additional")
         docs_and_scores = self.similarity_search_with_score(
             query,
             k=k,
@@ -335,7 +336,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             **kwargs,
         )
 
-        if additional and "similarity_score" in additional:
+        if include_scores:
             for doc, score in docs_and_scores:
                 doc.metadata["score"] = score
         return [doc for doc, _ in docs_and_scores]
@@ -675,6 +676,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                 {"$limit": k},
             ]
 
+
         elif strategy == "hybrid":
             # Combines Vector and Full-Text searches with Reciprocal Rank Fusion weighting
             scores_fields = ["vector_score", "fulltext_score"]
@@ -698,24 +700,28 @@ class MongoDBAtlasVectorSearch(VectorStore):
             combine_pipelines(pipeline, vector_pipeline, self._collection.name)
 
             # Full-Text Search pipeline
-            text_pipeline = [
-                text_search_stage(
-                    fulltext_search_query,
-                    self._text_key,
-                    self._text_index_name,
-                    fulltext_search_operator,
-                ),
-                {"$match": {"$and": pre_filter} if pre_filter else {}},
-                {"$limit": k},
-            ]
-            if not include_embeddings:
-                text_pipeline.append({"$project": {self._embedding_key: 0}})
-            text_pipeline.extend(
-                reciprocal_rank_stage(
-                    self._text_key, "fulltext_score", fulltext_penalty
+            if fulltext_search_query:
+                text_pipeline = [
+                    text_search_stage(
+                        fulltext_search_query,
+                        self._text_key,
+                        self._text_index_name,
+                        fulltext_search_operator,
+                    ),
+                    {"$match": {"$and": pre_filter} if pre_filter else {}},
+                    {"$limit": k},
+                ]
+                if not include_embeddings:
+                    text_pipeline.append({"$project": {self._embedding_key: 0}})
+                text_pipeline.extend(
+                    reciprocal_rank_stage(
+                        self._text_key, "fulltext_score", fulltext_penalty
+                    )
                 )
-            )
-            combine_pipelines(pipeline, text_pipeline, self._collection.name)
+                combine_pipelines(pipeline, text_pipeline, self._collection.name)
+            else:
+                logger.warning(f"{strategy=} selected but fulltext_search_query is empty. "
+                               f"No text search will be performed, but scores are still RRF.")
 
             # Sum and sort pipeline
             pipeline += final_hybrid_stage(
@@ -728,6 +734,9 @@ class MongoDBAtlasVectorSearch(VectorStore):
             )
 
         # Post-processing
+        if not include_embeddings:  # TODO - Put in one place for all
+            pipeline.append({"$project": {self._embedding_key: 0}})
+
         if post_filter_pipeline is not None:
             pipeline.extend(post_filter_pipeline)
 
