@@ -1079,52 +1079,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
-
-        Example: JSON mode, Pydantic schema (method="json_mode", include_raw=True):
-            .. code-block::
-
-                from langchain_core.pydantic_v1 import BaseModel
-
-                class AnswerWithJustification(BaseModel):
-                    answer: str
-                    justification: str
-
-                llm = ChatModel(model="model-name", temperature=0)
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification,
-                    method="json_mode",
-                    include_raw=True
-                )
-
-                structured_llm.invoke(
-                    "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
-                    "What's heavier a pound of bricks or a pound of feathers?"
-                )
-                # -> {
-                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
-                #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
-                #     'parsing_error': None
-                # }
-
-        Example: JSON mode, no schema (schema=None, method="json_mode", include_raw=True):
-            .. code-block::
-
-                structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
-
-                structured_llm.invoke(
-                    "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
-                    "What's heavier a pound of bricks or a pound of feathers?"
-                )
-                # -> {
-                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
-                #     'parsed': {
-                #         'answer': 'They are both the same weight.',
-                #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
-                #     },
-                #     'parsing_error': None
-                # }
         """  # noqa: E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
@@ -1137,11 +1091,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if self.bind_tools is BaseChatModel.bind_tools:
             raise NotImplementedError(
                 "with_structured_output is not implemented for this model."
-            )
-        if schema is None:
-            raise ValueError(
-                "schema must be specified when method is 'function_calling'. "
-                "Received None."
             )
         llm = self.bind_tools([schema], tool_choice="any")
         if isinstance(schema, type) and issubclass(schema, BaseModel):
