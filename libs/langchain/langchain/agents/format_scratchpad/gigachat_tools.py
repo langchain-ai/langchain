@@ -7,6 +7,7 @@ from langchain_core.messages import (
     BaseMessage,
     ToolMessage,
 )
+from langchain_core.pydantic_v1 import BaseModel
 
 from langchain.agents.output_parsers.openai_tools import OpenAIToolAgentAction
 
@@ -23,7 +24,10 @@ def _create_tool_message(
     """
     if not isinstance(observation, str):
         try:
-            content = json.dumps(observation, ensure_ascii=False)
+            if isinstance(observation, BaseModel):
+                content = json.dumps(observation.dict(), ensure_ascii=False)
+            else:
+                content = json.dumps(observation, ensure_ascii=False)
         except Exception:
             content = str(observation)
     else:

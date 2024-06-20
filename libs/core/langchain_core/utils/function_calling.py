@@ -50,7 +50,15 @@ class FunctionDescription(TypedDict):
     description: str
     """A description of the function."""
     parameters: dict
+
+
+class GigaFunctionDescription(FunctionDescription):
     """The parameters of the function."""
+
+    return_parameters: Optional[dict]
+    """The result settings of the function."""
+    few_shot_examples: Optional[list]
+    """The examples of the function."""
 
 
 class ToolDescription(TypedDict):
@@ -104,20 +112,35 @@ def convert_pydantic_to_gigachat_function(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-) -> FunctionDescription:
+    return_model: Optional[Type[BaseModel]] = None,
+    few_shot_examples: Optional[List[dict]] = None,
+) -> GigaFunctionDescription:
     """Converts a Pydantic model to a function description for the GigaChat API."""
     schema = dereference_refs(model.schema())
     schema.pop("definitions", None)
+    title = schema.pop("title", "")
     if "properties" in schema:
         for key in schema["properties"]:
             if "type" not in schema["properties"][key]:
                 schema["properties"][key]["type"] = "object"
             if "description" not in schema["properties"][key]:
                 schema["properties"][key]["description"] = ""
+
+    return_parameters = None
+    if return_model:
+        return_schema = dereference_refs(return_model.schema())
+        return_schema.pop("definitions", None)
+        if "properties" in return_schema and "result" in return_schema["properties"]:
+            if "type" not in return_schema["properties"]["result"]:
+                return_schema["properties"]["result"]["type"] = "object"
+            return_parameters = return_schema["properties"]["result"]
+
     return {
-        "name": name or schema["title"],
+        "name": name or title,
         "description": description or schema["description"],
         "parameters": schema,
+        "return_parameters": return_parameters,
+        "few_shot_examples": few_shot_examples,
     }
 
 
@@ -262,11 +285,15 @@ def convert_python_function_to_openai_function(
     "0.1.16",
     removal="0.3.0",
 )
-def format_tool_to_gigachat_function(tool: BaseTool) -> FunctionDescription:
+def format_tool_to_gigachat_function(tool: BaseTool) -> GigaFunctionDescription:
     """Format tool into the OpenAI function API."""
     if tool.args_schema:
         return convert_pydantic_to_gigachat_function(
-            tool.args_schema, name=tool.name, description=tool.description
+            tool.args_schema,
+            name=tool.name,
+            description=tool.description,
+            return_model=tool.return_schema,
+            few_shot_examples=tool.few_shot_examples,
         )
     else:
         return {
@@ -284,6 +311,8 @@ def format_tool_to_gigachat_function(tool: BaseTool) -> FunctionDescription:
                 "required": ["__arg1"],
                 "type": "object",
             },
+            "few_shot_examples": tool.few_shot_examples,
+            "return_parameters": None,
         }
 
 
@@ -361,11 +390,11 @@ def convert_to_openai_function(
             "parameters": function,
         }
     elif isinstance(function, type) and issubclass(function, BaseModel):
-        return cast(Dict, convert_pydantic_to_openai_function(function))
+        res = cast(Dict, convert_pydantic_to_openai_function(function))
     elif isinstance(function, BaseTool):
-        return cast(Dict, format_tool_to_openai_function(function))
+        res = cast(Dict, format_tool_to_openai_function(function))
     elif callable(function):
-        return convert_python_function_to_openai_function(function)
+        res = convert_python_function_to_openai_function(function)
     else:
         raise ValueError(
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
@@ -373,6 +402,10 @@ def convert_to_openai_function(
             " either be in OpenAI function format or valid JSON schema with top-level"
             " 'title' and 'description' keys."
         )
+    # Remove unused keys for openai
+    res.pop("return_parameters", None)
+    res.pop("few_shot_examples", None)
+    return res
 
 
 def flatten_all_of(schema: Any) -> Any:

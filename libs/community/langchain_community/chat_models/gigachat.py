@@ -167,6 +167,7 @@ def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
         kwargs["content"] = message.content
     elif isinstance(message, FunctionMessage):
         kwargs["role"] = MessagesRole.FUNCTION
+        # TODO Switch to using 'result' field in future GigaChat models
         kwargs["content"] = message.content
     elif isinstance(message, ToolMessage):
         kwargs["role"] = MessagesRole.FUNCTION
@@ -318,6 +319,20 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
         }
 
         payload = Chat.parse_obj(payload_dict)
+
+        # Iterative remove title keys from the payload.
+        # It is not needed for the GigaChat API.
+        def _remove_title_keys(payload: gm.Chat) -> None:
+            if isinstance(payload, dict):
+                if "title" in payload:
+                    del payload["title"]
+                for value in payload.values():
+                    _remove_title_keys(value)
+            elif isinstance(payload, list):
+                for item in payload:
+                    _remove_title_keys(item)
+
+        _remove_title_keys(payload)
 
         if self.verbose:
             logger.warning(
