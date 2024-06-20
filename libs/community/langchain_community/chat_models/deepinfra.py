@@ -186,7 +186,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {
             "role": "tool",
             "content": message.content,
-            "name": message.name,
+            "name": message.name, # type: ignore[dict-item]
             "tool_call_id": message.tool_call_id,
         }
     else:
