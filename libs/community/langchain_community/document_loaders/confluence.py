@@ -304,9 +304,23 @@ class ConfluenceLoader(BaseLoader):
         keep_newlines = self._resolve_param("keep_newlines", kwargs)
 
         if not space_key and not page_ids and not label and not cql:
-            raise ValueError(
-                "Must specify at least one among `space_key`, `page_ids`, "
-                "`label`, `cql` parameters."
+            pages = self.paginate_request(
+                self.confluence.get_all_pages_from_space,
+                space=None,
+                limit=limit,
+                max_pages=max_pages,
+                status="any" if include_archived_content else "current",
+                expand=f"{content_format.value},version",
+            )
+            yield from self.process_pages(
+                pages,
+                include_restricted_content,
+                include_attachments,
+                include_comments,
+                content_format,
+                ocr_languages=ocr_languages,
+                keep_markdown_format=keep_markdown_format,
+                keep_newlines=keep_newlines,
             )
 
         if space_key:
