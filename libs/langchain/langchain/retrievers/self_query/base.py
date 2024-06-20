@@ -43,11 +43,11 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     from langchain_community.query_constructors.elasticsearch import (
         ElasticsearchTranslator,
     )
+    from langchain_community.query_constructors.hanavector import HANATranslator
     from langchain_community.query_constructors.milvus import MilvusTranslator
     from langchain_community.query_constructors.mongodb_atlas import (
         MongoDBAtlasTranslator,
     )
-    from langchain_community.query_constructors.hanavector import HANATranslator
     from langchain_community.query_constructors.myscale import MyScaleTranslator
     from langchain_community.query_constructors.opensearch import OpenSearchTranslator
     from langchain_community.query_constructors.pgvector import PGVectorTranslator
