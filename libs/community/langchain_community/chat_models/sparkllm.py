@@ -195,21 +195,21 @@ class ChatSparkLLM(BaseChatModel):
 
         return values
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["spark_app_id"] = get_from_dict_or_env(
             values,
-            "spark_app_id",
+            ["spark_app_id", "app_id"],
             "IFLYTEK_SPARK_APP_ID",
         )
         values["spark_api_key"] = get_from_dict_or_env(
             values,
-            "spark_api_key",
+            ["spark_api_key", "api_key"],
             "IFLYTEK_SPARK_API_KEY",
         )
         values["spark_api_secret"] = get_from_dict_or_env(
             values,
-            "spark_api_secret",
+            ["spark_api_secret", "api_secret"],
             "IFLYTEK_SPARK_API_SECRET",
         )
         values["spark_api_url"] = get_from_dict_or_env(
@@ -224,9 +224,15 @@ class ChatSparkLLM(BaseChatModel):
             "IFLYTEK_SPARK_LLM_DOMAIN",
             SPARK_LLM_DOMAIN,
         )
+
         # put extra params into model_kwargs
-        values["model_kwargs"]["temperature"] = values["temperature"] or cls.temperature
-        values["model_kwargs"]["top_k"] = values["top_k"] or cls.top_k
+        default_values = {
+            name: field.default
+            for name, field in cls.__fields__.items()
+            if field.default is not None
+        }
+        values["model_kwargs"]["temperature"] = default_values.get("temperature")
+        values["model_kwargs"]["top_k"] = default_values.get("top_k")
 
         values["client"] = _SparkLLMClient(
             app_id=values["spark_app_id"],
