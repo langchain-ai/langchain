@@ -19,24 +19,19 @@ class ChatAIMind(ChatOpenAI):
 
     See https://docs.mdb.ai/ for information about MindsDB and the MindsDB Endpoint.
 
-    To use this chat model, you should have the ``openai`` python package installed, and the
-    environment variable ``MINDSDB_API_KEY`` set with your API key.
+    To use this chat model, you should have the ``openai`` python package installed, and the environment variable ``MINDSDB_API_KEY`` set with your API key.
     Alternatively, you can use the mindsdb_api_key keyword argument.
 
-    The valid parameters that can be passed to this model are:
-    - `mindsdb_api_key`: API key for the MindsDB API. As mentioned above, this can be set as an environment variable.
-    - `mindsdb_api_base`: Base URL for the MindsDB API. Default is https://llm.mdb.ai. This can be set as an environment variable.
-    - `model`: ID of the model to use. Default is s``gpt-3.5-turbo``. See https://docs.mdb.ai/docs/models for a list of supported models.
-    - `max_tokens`: This parameter sets the maximum number of tokens that can be generated in the chat completion. It's limited by the model's total allowable context length, which includes both the input and generated tokens.
-    - `temperature`: This parameter controls the randomness of the output with values ranging from 0 to 2. A higher value, increases randomness in the output, while a lower value, like 0.1, results in more focused and deterministic output.
-    - `stream`: If set, partial message deltas will be sent, like in ChatGPT. Tokens will be sent as data-only server-sent events as they become available, with the stream terminated by a data: [DONE] message. 
-    - `frequency_penalty`: This setting ranges from -2.0 to 2.0. Positive values make the model less likely to repeat phrases it has already used.
+    Any parameters that are valid to be passed to the `openai.create` call can be passed in, even if not explicitly saved on this class.
+
+    However, whether or not the parameters will take effect depends on that provider + model combination.
+    See https://docs.litellm.ai/docs/completion/input for more information.
 
     Example:
         .. code-block:: python
 
             from langchain_community.chat_models import ChatAIMind
-            chat = ChatAIMind(model_name="llama-3-70b")
+            chat = ChatAIMind(model="llama-3-70b")
     """
     @property
     def _llm_type(self) -> Text:
@@ -56,27 +51,6 @@ class ChatAIMind(ChatOpenAI):
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
 
     available_models: Optional[Set[str]] = None
-
-    def __init__(
-            self, 
-            mindsdb_api_key: SecretStr = None, 
-            mindsdb_api_base: Text = None, 
-            model: Text = None, 
-            max_tokens: int = None,
-            temperature: float = None,
-            stream: bool = None,
-            frequency_penalty: float = None,
-    ):
-        data = {
-            "mindsdb_api_key": mindsdb_api_key,
-            "mindsdb_api_base": mindsdb_api_base or self.__fields__["mindsdb_api_base"].default,
-            "model_name": model or self.__fields__["model_name"].default,
-            "max_tokens": max_tokens or self.__fields__["max_tokens"].default,
-            "temperature": temperature or self.__fields__["temperature"].default,
-            "streaming": stream or self.__fields__["streaming"].default,
-            "frequency_penalty": frequency_penalty or self.__fields__["frequency_penalty"].default,
-        }
-        super().__init__(**data)
 
     @staticmethod
     def get_available_models(
@@ -177,4 +151,3 @@ class ChatAIMind(ChatOpenAI):
 
         return values
 
-    # TODO: Evaluate need for tiktoken methods
