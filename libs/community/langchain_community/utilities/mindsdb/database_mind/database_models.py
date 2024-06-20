@@ -1,15 +1,16 @@
+import sys
+import inspect
 from typing import Text, Dict
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
-# TODO: Improve this method to generate the mapping dynamically.
 def get_supported_data_sources() -> Dict:
     return {
-        "postgres": PostgresModel,
-        "mysql": MySQLModel,
-        "mariadb": MySQLModel
+        name.lower().replace('model', ''): cls
+        for name, cls in inspect.getmembers(sys.modules[__name__], inspect.isclass)
+        if issubclass(cls, BaseModel) and cls is not BaseModel
     }
 
 
