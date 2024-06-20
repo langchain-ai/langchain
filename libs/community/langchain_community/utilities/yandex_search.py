@@ -106,6 +106,10 @@ class YandexSearchAPIClient:
         tag_pattern = re.compile(r"</?[a-z]+>")
         docs = []
 
+        errors = selector.xpath("//error")
+        if errors and len(errors) > 0:
+            raise Exception(errors[0].get())
+
         for doc in selector.xpath("//doc"):
             doc_id = doc.xpath("./@id").get()
 
