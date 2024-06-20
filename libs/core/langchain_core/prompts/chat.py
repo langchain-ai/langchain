@@ -38,7 +38,7 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import StringPromptTemplate, get_template_variables
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field, PositiveInt, root_validator
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
 
@@ -160,6 +160,24 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
             #     AIMessage(content="5 + 2 is 7"),
             #     HumanMessage(content="now multiply that by 4"),
             # ])
+
+    Limiting the number of messages:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import MessagesPlaceholder
+
+            prompt = MessagesPlaceholder("history", n_messages=1)
+
+            prompt.format_messages(
+                history=[
+                    ("system", "You are an AI assistant."),
+                    ("human", "Hello!"),
+                ]
+            )
+            # -> [
+            #     HumanMessage(content="Hello!"),
+            # ]
     """
 
     variable_name: str
@@ -169,6 +187,10 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
     """If True format_messages can be called with no arguments and will return an empty 
         list. If False then a named argument with name `variable_name` must be passed 
         in, even if the value is an empty list."""
+
+    n_messages: Optional[PositiveInt] = None
+    """Maximum number of messages to include. If None, then will include all. 
+    Defaults to None."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -197,7 +219,10 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
                 f"variable {self.variable_name} should be a list of base messages, "
                 f"got {value}"
             )
-        return convert_to_messages(value)
+        value = convert_to_messages(value)
+        if self.n_messages:
+            value = value[-self.n_messages :]
+        return value
 
     @property
     def input_variables(self) -> List[str]:

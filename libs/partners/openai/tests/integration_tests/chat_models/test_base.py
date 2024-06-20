@@ -13,11 +13,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
-from langchain_core.outputs import (
-    ChatGeneration,
-    ChatResult,
-    LLMResult,
-)
+from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 
@@ -120,21 +116,13 @@ def test_chat_openai_streaming_generation_info() -> None:
     class _FakeCallback(FakeCallbackHandler):
         saved_things: dict = {}
 
-        def on_llm_end(
-            self,
-            *args: Any,
-            **kwargs: Any,
-        ) -> Any:
+        def on_llm_end(self, *args: Any, **kwargs: Any) -> Any:
             # Save the generation
             self.saved_things["generation"] = args[0]
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
-    chat = ChatOpenAI(
-        max_tokens=2,
-        temperature=0,
-        callback_manager=callback_manager,
-    )
+    chat = ChatOpenAI(max_tokens=2, temperature=0, callback_manager=callback_manager)
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned
@@ -162,12 +150,7 @@ def test_chat_openai_streaming_llm_output_contains_model_name() -> None:
 def test_chat_openai_invalid_streaming_params() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     with pytest.raises(ValueError):
-        ChatOpenAI(
-            max_tokens=10,
-            streaming=True,
-            temperature=0,
-            n=5,
-        )
+        ChatOpenAI(max_tokens=10, streaming=True, temperature=0, n=5)
 
 
 @pytest.mark.scheduled
@@ -225,17 +208,12 @@ async def test_async_chat_openai_bind_functions() -> None:
             default=None, title="Fav Food", description="The person's favorite food"
         )
 
-    chat = ChatOpenAI(
-        max_tokens=30,
-        n=1,
-        streaming=True,
-    ).bind_functions(functions=[Person], function_call="Person")
+    chat = ChatOpenAI(max_tokens=30, n=1, streaming=True).bind_functions(
+        functions=[Person], function_call="Person"
+    )
 
     prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", "Use the provided Person function"),
-            ("user", "{input}"),
-        ]
+        [("system", "Use the provided Person function"), ("user", "{input}")]
     )
 
     chain = prompt | chat
@@ -420,13 +398,9 @@ async def test_astream() -> None:
     llm = ChatOpenAI(temperature=0, max_tokens=5)
     await _test_stream(llm.astream("Hello"), expect_usage=False)
     await _test_stream(
-        llm.astream("Hello", stream_options={"include_usage": True}),
-        expect_usage=True,
+        llm.astream("Hello", stream_options={"include_usage": True}), expect_usage=True
     )
-    await _test_stream(
-        llm.astream("Hello", stream_usage=True),
-        expect_usage=True,
-    )
+    await _test_stream(llm.astream("Hello", stream_usage=True), expect_usage=True)
     llm = ChatOpenAI(
         temperature=0,
         max_tokens=5,
@@ -437,16 +411,9 @@ async def test_astream() -> None:
         llm.astream("Hello", stream_options={"include_usage": False}),
         expect_usage=False,
     )
-    llm = ChatOpenAI(
-        temperature=0,
-        max_tokens=5,
-        stream_usage=True,
-    )
+    llm = ChatOpenAI(temperature=0, max_tokens=5, stream_usage=True)
     await _test_stream(llm.astream("Hello"), expect_usage=True)
-    await _test_stream(
-        llm.astream("Hello", stream_usage=False),
-        expect_usage=False,
-    )
+    await _test_stream(llm.astream("Hello", stream_usage=False), expect_usage=False)
 
 
 async def test_abatch() -> None:
@@ -538,10 +505,7 @@ def test_response_metadata_streaming() -> None:
         full = chunk if full is None else full + chunk
     assert all(
         k in cast(BaseMessageChunk, full).response_metadata
-        for k in (
-            "logprobs",
-            "finish_reason",
-        )
+        for k in ("logprobs", "finish_reason")
     )
     assert "content" in cast(BaseMessageChunk, full).response_metadata["logprobs"]
 
@@ -554,10 +518,7 @@ async def test_async_response_metadata_streaming() -> None:
         full = chunk if full is None else full + chunk
     assert all(
         k in cast(BaseMessageChunk, full).response_metadata
-        for k in (
-            "logprobs",
-            "finish_reason",
-        )
+        for k in ("logprobs", "finish_reason")
     )
     assert "content" in cast(BaseMessageChunk, full).response_metadata["logprobs"]
 
@@ -693,9 +654,7 @@ def test_openai_structured_output() -> None:
 
 def test_openai_proxy() -> None:
     """Test ChatOpenAI with proxy."""
-    chat_openai = ChatOpenAI(
-        openai_proxy="http://localhost:8080",
-    )
+    chat_openai = ChatOpenAI(openai_proxy="http://localhost:8080")
     mounts = chat_openai.client._client._client._mounts
     assert len(mounts) == 1
     for key, value in mounts.items():
