@@ -115,32 +115,80 @@ async def agenerate_from_stream(
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
-    """Base class for Chat models.
+    """Base class for chat models.
 
-    Custom chat model implementations should inherit from this class.
+    Key imperative methods:
+        Methods that actually call the underlying model.
 
-    Follow the guide for more information on how to implement a
-    custom Chat Model:
-    [Guide](https://python.langchain.com/v0.2/docs/how_to/custom_chat_model/).
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | Method                    | Input                                                          | Output                                                              | Description                                                                                      |
+        +===========================+================================================================+=====================================================================+==================================================================================================+
+        | `invoke`                  | str | List[dict | tuple | BaseMessage] | PromptValue           | BaseMessage                                                         | A single chat model call.                                                                        |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `ainvoke`                 | '''                                                            | BaseMessage                                                         | Defaults to running invoke in an async executor.                                                 |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `stream`                  | '''                                                            | Iterator[BaseMessageChunk]                                          | Defaults to yielding output of invoke.                                                           |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `astream`                 | '''                                                            | AsyncIterator[BaseMessageChunk]                                     | Defaults to yielding output of ainvoke.                                                          |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `astream_events`          | '''                                                            | AsyncIterator[StreamEvent]                                          | Event types: 'on_chat_model_start', 'on_chat_model_stream', 'on_chat_model_end'.                 |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `batch`                   | List[''']                                                      | List[BaseMessage]                                                   | Defaults to running invoke in concurrent threads.                                                |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `abatch`                  | List[''']                                                      | List[BaseMessage]                                                   | Defaults to running ainvoke in concurrent threads.                                               |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `batch_as_completed`      | List[''']                                                      | Iterator[Tuple[int, Union[BaseMessage, Exception]]]                 | Defaults to running invoke in concurrent threads.                                                |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `abatch_as_completed`     | List[''']                                                      | AsyncIterator[Tuple[int, Union[BaseMessage, Exception]]]            | Defaults to running ainvoke in concurrent threads.                                               |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
 
-    Please reference the table below for information about which
-    methods and properties are required or optional for implementations.
+        This table provides a brief overview of the main imperative methods. Please see the base Runnable reference for full documentation.
 
-    +----------------------------------+--------------------------------------------------------------------+-------------------+
-    | Method/Property                  | Description                                                        | Required/Optional |
-    +==================================+====================================================================+===================+
-    | `_generate`                      | Use to generate a chat result from a prompt                        | Required          |
-    +----------------------------------+--------------------------------------------------------------------+-------------------+
-    | `_llm_type` (property)           | Used to uniquely identify the type of the model. Used for logging. | Required          |
-    +----------------------------------+--------------------------------------------------------------------+-------------------+
-    | `_identifying_params` (property) | Represent model parameterization for tracing purposes.             | Optional          |
-    +----------------------------------+--------------------------------------------------------------------+-------------------+
-    | `_stream`                        | Use to implement streaming                                         | Optional          |
-    +----------------------------------+--------------------------------------------------------------------+-------------------+
-    | `_agenerate`                     | Use to implement a native async method                             | Optional          |
-    +----------------------------------+--------------------------------------------------------------------+-------------------+
-    | `_astream`                       | Use to implement async version of `_stream`                        | Optional          |
-    +----------------------------------+--------------------------------------------------------------------+-------------------+
+    Key declarative methods:
+        Methods for creating another Runnable using the ChatModel.
+
+        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+        | Method                           | Description                                                                                               |
+        +==================================+===========================================================================================================+
+        | `bind_tools`                     | Create ChatModel that can call tools.                                                                     |
+        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+        | `with_structured_output`         | Create wrapper that structures model output using schema.                                                 |
+        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+        | `with_retry`                     | Create wrapper that retries model calls on failure.                                                       |
+        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+        | `with_fallbacks`                 | Create wrapper that falls back to other models on failure.                                                |
+        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+        | `configurable_fields`            | Specify init args of the model that can be configured at runtime via the RunnableConfig.                  |
+        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+        | `configurable_alternatives`      | Specify alternative models which can be swapped in at runtime via the RunnableConfig.                     |
+        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+
+        This table provides a brief overview of the main declarative methods. Please see the reference for each method for full documentation.
+
+    Creating custom chat model:
+        Custom chat model implementations should inherit from this class.
+        Please reference the table below for information about which
+        methods and properties are required or optional for implementations.
+
+        +----------------------------------+--------------------------------------------------------------------+-------------------+
+        | Method/Property                  | Description                                                        | Required/Optional |
+        +==================================+====================================================================+===================+
+        | `_generate`                      | Use to generate a chat result from a prompt                        | Required          |
+        +----------------------------------+--------------------------------------------------------------------+-------------------+
+        | `_llm_type` (property)           | Used to uniquely identify the type of the model. Used for logging. | Required          |
+        +----------------------------------+--------------------------------------------------------------------+-------------------+
+        | `_identifying_params` (property) | Represent model parameterization for tracing purposes.             | Optional          |
+        +----------------------------------+--------------------------------------------------------------------+-------------------+
+        | `_stream`                        | Use to implement streaming                                         | Optional          |
+        +----------------------------------+--------------------------------------------------------------------+-------------------+
+        | `_agenerate`                     | Use to implement a native async method                             | Optional          |
+        +----------------------------------+--------------------------------------------------------------------+-------------------+
+        | `_astream`                       | Use to implement async version of `_stream`                        | Optional          |
+        +----------------------------------+--------------------------------------------------------------------+-------------------+
+
+        Follow the guide for more information on how to implement a custom Chat Model:
+        [Guide](https://python.langchain.com/v0.2/docs/how_to/custom_chat_model/).
+
     """  # noqa: E501
 
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
