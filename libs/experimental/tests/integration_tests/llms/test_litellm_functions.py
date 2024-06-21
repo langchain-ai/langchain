@@ -147,5 +147,6 @@ class TestLiteLLMFunctions(unittest.TestCase):
         res = structured_llm.invoke("Tell me a joke about cars")
         assert "raw" in res
         assert "parsed" in res
+        assert isinstance(res, dict)
         assert isinstance(res["raw"], AIMessage)
         assert isinstance(res["parsed"], Joke)
