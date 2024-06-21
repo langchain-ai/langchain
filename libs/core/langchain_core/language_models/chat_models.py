@@ -5,6 +5,7 @@ import inspect
 import uuid
 import warnings
 from abc import ABC, abstractmethod
+from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -54,10 +55,13 @@ from langchain_core.outputs import (
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 if TYPE_CHECKING:
+    from langchain_core.output_parsers.base import OutputParserLike
     from langchain_core.pydantic_v1 import BaseModel
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
@@ -115,32 +119,80 @@ async def agenerate_from_stream(
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
-    """Base class for Chat models.
+    """Base class for chat models.
 
-    Custom chat model implementations should inherit from this class.
+    Key imperative methods:
+        Methods that actually call the underlying model.
 
-    Follow the guide for more information on how to implement a
-    custom Chat Model:
-    [Guide](https://python.langchain.com/v0.2/docs/how_to/custom_chat_model/).
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | Method                    | Input                                                          | Output                                                              | Description                                                                                      |
+        +===========================+================================================================+=====================================================================+==================================================================================================+
+        | `invoke`                  | str | List[dict | tuple | BaseMessage] | PromptValue           | BaseMessage                                                         | A single chat model call.                                                                        |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `ainvoke`                 | '''                                                            | BaseMessage                                                         | Defaults to running invoke in an async executor.                                                 |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `stream`                  | '''                                                            | Iterator[BaseMessageChunk]                                          | Defaults to yielding output of invoke.                                                           |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `astream`                 | '''                                                            | AsyncIterator[BaseMessageChunk]                                     | Defaults to yielding output of ainvoke.                                                          |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `astream_events`          | '''                                                            | AsyncIterator[StreamEvent]                                          | Event types: 'on_chat_model_start', 'on_chat_model_stream', 'on_chat_model_end'.                 |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `batch`                   | List[''']                                                      | List[BaseMessage]                                                   | Defaults to running invoke in concurrent threads.                                                |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `abatch`                  | List[''']                                                      | List[BaseMessage]                                                   | Defaults to running ainvoke in concurrent threads.                                               |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `batch_as_completed`      | List[''']                                                      | Iterator[Tuple[int, Union[BaseMessage, Exception]]]                 | Defaults to running invoke in concurrent threads.                                                |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
+        | `abatch_as_completed`     | List[''']                                                      | AsyncIterator[Tuple[int, Union[BaseMessage, Exception]]]            | Defaults to running ainvoke in concurrent threads.                                               |
+        +---------------------------+----------------------------------------------------------------+---------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+
 
-    Please reference the table below for information about which
-    methods and properties are required or optional for implementations.
+        This table provides a brief overview of the main imperative methods. Please see the base Runnable reference for full documentation.
 
-    +----------------------------------+--------------------------------------------------------------------+-------------------+
-    | Method/Property                  | Description                                                        | Required/Optional |
-    +==================================+====================================================================+===================+
-    | `_generate`                      | Use to generate a chat result from a prompt                        | Required          |
-    +----------------------------------+--------------------------------------------------------------------+-------------------+
-    | `_llm_type` (property)           | Used to uniquely identify the type of the model. Used for logging. | Required          |
-    +----------------------------------+--------------------------------------------------------------------+-------------------+
-    | `_identifying_params` (property) | Represent model parameterization for tracing purposes.             | Optional          |
-    +----------------------------------+--------------------------------------------------------------------+-------------------+
-    | `_stream`                        | Use to implement streaming                                         | Optional          |
-    +----------------------------------+--------------------------------------------------------------------+-------------------+
-    | `_agenerate`                     | Use to implement a native async method                             | Optional          |
-    +----------------------------------+--------------------------------------------------------------------+-------------------+
-    | `_astream`                       | Use to implement async version of `_stream`                        | Optional          |
-    +----------------------------------+--------------------------------------------------------------------+-------------------+
+    Key declarative methods:
+        Methods for creating another Runnable using the ChatModel.
+
+        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+        | Method                           | Description                                                                                               |
+        +==================================+===========================================================================================================+
+        | `bind_tools`                     | Create ChatModel that can call tools.                                                                     |
+        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+        | `with_structured_output`         | Create wrapper that structures model output using schema.                                                 |
+        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+        | `with_retry`                     | Create wrapper that retries model calls on failure.                                                       |
+        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+        | `with_fallbacks`                 | Create wrapper that falls back to other models on failure.                                                |
+        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+        | `configurable_fields`            | Specify init args of the model that can be configured at runtime via the RunnableConfig.                  |
+        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+        | `configurable_alternatives`      | Specify alternative models which can be swapped in at runtime via the RunnableConfig.                     |
+        +----------------------------------+-----------------------------------------------------------------------------------------------------------+
+
+        This table provides a brief overview of the main declarative methods. Please see the reference for each method for full documentation.
+
+    Creating custom chat model:
+        Custom chat model implementations should inherit from this class.
+        Please reference the table below for information about which
+        methods and properties are required or optional for implementations.
+
+        +----------------------------------+--------------------------------------------------------------------+-------------------+
+        | Method/Property                  | Description                                                        | Required/Optional |
+        +==================================+====================================================================+===================+
+        | `_generate`                      | Use to generate a chat result from a prompt                        | Required          |
+        +----------------------------------+--------------------------------------------------------------------+-------------------+
+        | `_llm_type` (property)           | Used to uniquely identify the type of the model. Used for logging. | Required          |
+        +----------------------------------+--------------------------------------------------------------------+-------------------+
+        | `_identifying_params` (property) | Represent model parameterization for tracing purposes.             | Optional          |
+        +----------------------------------+--------------------------------------------------------------------+-------------------+
+        | `_stream`                        | Use to implement streaming                                         | Optional          |
+        +----------------------------------+--------------------------------------------------------------------+-------------------+
+        | `_agenerate`                     | Use to implement a native async method                             | Optional          |
+        +----------------------------------+--------------------------------------------------------------------+-------------------+
+        | `_astream`                       | Use to implement async version of `_stream`                        | Optional          |
+        +----------------------------------+--------------------------------------------------------------------+-------------------+
+
+        Follow the guide for more information on how to implement a custom Chat Model:
+        [Guide](https://python.langchain.com/v0.2/docs/how_to/custom_chat_model/).
+
     """  # noqa: E501
 
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
@@ -975,6 +1027,140 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         raise NotImplementedError()
+
+    def with_structured_output(
+        self,
+        schema: Union[Dict, Type[BaseModel]],
+        *,
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
+                then the model output will be an object of that class. If a dict then
+                the model output will be a dict. With a Pydantic class the returned
+                attributes will be validated, whereas with a dict they will not be. If
+                `method` is "function_calling" and `schema` is a dict, then the dict
+                must match the OpenAI function-calling spec.
+            include_raw: If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+        Returns:
+            A Runnable that takes any ChatModel input and returns as output:
+
+                If include_raw is True then a dict with keys:
+                    raw: BaseMessage
+                    parsed: Optional[_DictOrPydantic]
+                    parsing_error: Optional[BaseException]
+
+                If include_raw is False then just _DictOrPydantic is returned,
+                where _DictOrPydantic depends on the schema:
+
+                If schema is a Pydantic class then _DictOrPydantic is the Pydantic
+                    class.
+
+                If schema is a dict then _DictOrPydantic is a dict.
+
+        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
+            .. code-block:: python
+
+                from langchain_core.pydantic_v1 import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                llm = ChatModel(model="model-name", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+
+                # -> AnswerWithJustification(
+                #     answer='They weigh the same',
+                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+                # )
+
+        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
+            .. code-block:: python
+
+                from langchain_core.pydantic_v1 import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                llm = ChatModel(model="model-name", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> {
+                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+                #     'parsing_error': None
+                # }
+
+        Example: Function-calling, dict schema (method="function_calling", include_raw=False):
+            .. code-block:: python
+
+                from langchain_core.pydantic_v1 import BaseModel
+                from langchain_core.utils.function_calling import convert_to_openai_tool
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                dict_schema = convert_to_openai_tool(AnswerWithJustification)
+                llm = ChatModel(model="model-name", temperature=0)
+                structured_llm = llm.with_structured_output(dict_schema)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+                # }
+        """  # noqa: E501
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+
+        from langchain_core.output_parsers.openai_tools import (
+            JsonOutputKeyToolsParser,
+            PydanticToolsParser,
+        )
+
+        if self.bind_tools is BaseChatModel.bind_tools:
+            raise NotImplementedError(
+                "with_structured_output is not implemented for this model."
+            )
+        llm = self.bind_tools([schema], tool_choice="any")
+        if isinstance(schema, type) and issubclass(schema, BaseModel):
+            output_parser: OutputParserLike = PydanticToolsParser(
+                tools=[schema], first_tool_only=True
+            )
+        else:
+            key_name = convert_to_openai_tool(schema)["function"]["name"]
+            output_parser = JsonOutputKeyToolsParser(
+                key_name=key_name, first_tool_only=True
+            )
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser
 
 
 class SimpleChatModel(BaseChatModel):
