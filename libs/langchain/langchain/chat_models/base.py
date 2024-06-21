@@ -1,13 +1,16 @@
 from importlib import util
-from typing import Any, Optional
+from typing import Any, Optional, Literal, overload, Callable, Union
 
 from langchain_core._api import beta
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     SimpleChatModel,
     agenerate_from_stream,
     generate_from_stream,
 )
+from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables.base import RunnableLambda, Runnable
 
 __all__ = [
     "BaseChatModel",
@@ -17,11 +20,34 @@ __all__ = [
     "init_chat_model",
 ]
 
+def _runnable_support(initializer: Callable) -> Callable:
+    @overload
+    def wrapped( model: str, **kwargs: Any ) -> BaseChatModel:
+        ...
+
+    @overload
+    def wrapped(model: Literal[None]=None, **kwargs: Any ) -> Runnable:
+        ...
+
+    def wrapped(
+        model: Optional[str] = None, **kwargs: Any
+    ) -> Union[BaseChatModel, Runnable]:
+
+        if model:
+            return initializer(model, **kwargs)
+        else:
+            def from_config(input: LanguageModelInput, config: RunnableConfig) -> BaseChatModel:
+                config_params = {k: v for k, v in config["configurable"].items() if k in ("model", "model_provider")}
+                return initializer(**{**kwargs, **config_params})
+            return RunnableLambda(from_config, name="configurable_chat_model")
+
+    return wrapped
 
 # FOR CONTRIBUTORS: If adding support for a new provider, please append the provider
 # name to the supported list in the docstring below. Do *not* change the order of the
 # existing providers.
 @beta()
+@_runnable_support
 def init_chat_model(
     model: str, *, model_provider: Optional[str] = None, **kwargs: Any
 ) -> BaseChatModel:
