@@ -411,9 +411,12 @@ def create_openapi_agent(
         shared_memory: Optional. The shared memory. Default is None.
         callback_manager: Optional. The callback manager. Default is None.
         verbose: Optional. Whether to print verbose output. Default is True.
-        agent_executor_kwargs: Optional. Additional keyword arguments for the agent executor.
-        allow_dangerous_requests: Optional. Whether to allow dangerous requests. Default is False.
-        allowed_operations: Optional. The allowed operations. Default is ("GET", "POST").
+        agent_executor_kwargs: Optional. Additional keyword arguments
+            for the agent executor.
+        allow_dangerous_requests: Optional. Whether to allow dangerous requests.
+            Default is False.
+        allowed_operations: Optional. The allowed operations.
+            Default is ("GET", "POST").
         **kwargs: Additional arguments.
 
     Returns:

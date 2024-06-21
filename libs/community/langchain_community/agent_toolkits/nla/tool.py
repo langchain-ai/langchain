@@ -60,7 +60,8 @@ class NLATool(Tool):
             spec: The OpenAPI spec.
             requests: Optional requests object. Default is None.
             verbose: Whether to print verbose output. Default is False.
-            return_intermediate_steps: Whether to return intermediate steps. Default is False.
+            return_intermediate_steps: Whether to return intermediate steps.
+                Default is False.
             **kwargs: Additional arguments.
 
         Returns:

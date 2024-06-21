@@ -62,7 +62,8 @@ def create_openapi_agent(
         verbose: Optional. Whether to print verbose output. Default is False.
         return_intermediate_steps: Optional. Whether to return intermediate steps.
             Default is False.
-        agent_executor_kwargs: Optional. Additional keyword arguments for the agent executor.
+        agent_executor_kwargs: Optional. Additional keyword arguments
+            for the agent executor.
         **kwargs: Additional arguments.
 
     Returns:
