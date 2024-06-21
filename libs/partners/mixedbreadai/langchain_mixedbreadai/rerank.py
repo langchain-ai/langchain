@@ -27,7 +27,7 @@ class MixedbreadAIRerank(MixedBreadAIClient, BaseDocumentCompressor):
     """
 
     model: str = Field(
-        default="mixedbread-ai/mxbai-rerank-large-v1",
+        default="default",
         description="Model to use for reranking.",
         min_length=1,
     )
