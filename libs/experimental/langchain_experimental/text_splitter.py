@@ -1,92 +1,16 @@
-"""Experimental **text splitter** based on semantic similarity."""
 import copy
 import re
-from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Tuple
+from dataclasses import dataclass
 
 import numpy as np
-from langchain_community.utils.math import (
-    cosine_similarity,
-)
+from numpy.typing import NDArray
+from langchain_community.utils.math import cosine_similarity
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.embeddings import Embeddings
 
+BreakpointThresholdType = Literal["percentile", "standard_deviation", "interquartile", "gradient"]
 
-def combine_sentences(sentences: List[dict], buffer_size: int = 1) -> List[dict]:
-    """Combine sentences based on buffer size.
-
-    Args:
-        sentences: List of sentences to combine.
-        buffer_size: Number of sentences to combine. Defaults to 1.
-
-    Returns:
-        List of sentences with combined sentences.
-    """
-
-    # Go through each sentence dict
-    for i in range(len(sentences)):
-        # Create a string that will hold the sentences which are joined
-        combined_sentence = ""
-
-        # Add sentences before the current one, based on the buffer size.
-        for j in range(i - buffer_size, i):
-            # Check if the index j is not negative
-            # (to avoid index out of range like on the first one)
-            if j >= 0:
-                # Add the sentence at index j to the combined_sentence string
-                combined_sentence += sentences[j]["sentence"] + " "
-
-        # Add the current sentence
-        combined_sentence += sentences[i]["sentence"]
-
-        # Add sentences after the current one, based on the buffer size
-        for j in range(i + 1, i + 1 + buffer_size):
-            # Check if the index j is within the range of the sentences list
-            if j < len(sentences):
-                # Add the sentence at index j to the combined_sentence string
-                combined_sentence += " " + sentences[j]["sentence"]
-
-        # Then add the whole thing to your dict
-        # Store the combined sentence in the current sentence dict
-        sentences[i]["combined_sentence"] = combined_sentence
-
-    return sentences
-
-
-def calculate_cosine_distances(sentences: List[dict]) -> Tuple[List[float], List[dict]]:
-    """Calculate cosine distances between sentences.
-
-    Args:
-        sentences: List of sentences to calculate distances for.
-
-    Returns:
-        Tuple of distances and sentences.
-    """
-    distances = []
-    for i in range(len(sentences) - 1):
-        embedding_current = sentences[i]["combined_sentence_embedding"]
-        embedding_next = sentences[i + 1]["combined_sentence_embedding"]
-
-        # Calculate cosine similarity
-        similarity = cosine_similarity([embedding_current], [embedding_next])[0][0]
-
-        # Convert to cosine distance
-        distance = 1 - similarity
-
-        # Append cosine distance to the list
-        distances.append(distance)
-
-        # Store distance in the dictionary
-        sentences[i]["distance_to_next"] = distance
-
-    # Optionally handle the last sentence
-    # sentences[-1]['distance_to_next'] = None  # or a default value
-
-    return distances, sentences
-
-
-BreakpointThresholdType = Literal[
-    "percentile", "standard_deviation", "interquartile", "gradient"
-]
 BREAKPOINT_DEFAULTS: Dict[BreakpointThresholdType, float] = {
     "percentile": 95,
     "standard_deviation": 3,
@@ -94,17 +18,113 @@ BREAKPOINT_DEFAULTS: Dict[BreakpointThresholdType, float] = {
     "gradient": 95,
 }
 
+@dataclass
+class SentenceData:
+    sentence: str
+    index: int
+    combined_sentence: Optional[str] = None
+    combined_sentence_embedding: Optional[NDArray[np.float32]] = None
+    distance_to_next: Optional[float] = None
+
+class SentenceProcessor:
+    def __init__(self, buffer_size: int = 1):
+        self.buffer_size = buffer_size
+
+    def combine_sentences(self, sentences: List[SentenceData]) -> List[SentenceData]:
+        """
+        Combine sentences based on buffer size.
+
+        Args:
+            sentences: List of SentenceData objects.
+
+        Returns:
+            List of SentenceData objects with combined sentences.
+        """
+        for i, sentence in enumerate(sentences):
+            start = max(0, i - self.buffer_size)
+            end = min(len(sentences), i + self.buffer_size + 1)
+            combined = [s.sentence for s in sentences[start:end]]
+            sentence.combined_sentence = " ".join(combined)
+        return sentences
+
+class DistanceCalculator:
+    @staticmethod
+    def calculate_cosine_distances(sentences: List[SentenceData]) -> Tuple[NDArray[np.float32], List[SentenceData]]:
+        """
+        Calculate cosine distances between sentences.
+
+        Args:
+            sentences: List of SentenceData objects with embeddings.
+
+        Returns:
+            Tuple of distances array and updated SentenceData objects.
+        """
+        embeddings = np.array([s.combined_sentence_embedding for s in sentences if s.combined_sentence_embedding is not None])
+        similarities = cosine_similarity(embeddings[:-1], embeddings[1:])
+        distances = 1 - similarities.diagonal()
+
+        for i, distance in enumerate(distances):
+            sentences[i].distance_to_next = float(distance)
+
+        return distances, sentences
+
+class ThresholdCalculator:
+    @staticmethod
+    def calculate_threshold(
+        distances: NDArray[np.float32],
+        threshold_type: BreakpointThresholdType,
+        threshold_amount: float
+    ) -> float:
+        """
+        Calculate the threshold based on the specified method.
+
+        Args:
+            distances: Array of distances.
+            threshold_type: Type of threshold calculation.
+            threshold_amount: Amount to use in threshold calculation.
+
+        Returns:
+            Calculated threshold value.
+        """
+        if threshold_type == "percentile":
+            return float(np.percentile(distances, threshold_amount))
+        elif threshold_type == "standard_deviation":
+            return float(np.mean(distances) + threshold_amount * np.std(distances))
+        elif threshold_type == "interquartile":
+            q1, q3 = np.percentile(distances, [25, 75])
+            iqr = q3 - q1
+            return float(np.mean(distances) + threshold_amount * iqr)
+        elif threshold_type == "gradient":
+            distance_gradient = np.gradient(distances)
+            return float(np.percentile(distance_gradient, threshold_amount))
+        else:
+            raise ValueError(f"Unsupported threshold type: {threshold_type}")
+
+    @staticmethod
+    def threshold_from_clusters(distances: NDArray[np.float32], number_of_chunks: int) -> float:
+        """
+        Calculate the threshold based on the number of chunks.
+
+        Args:
+            distances: Array of distances.
+            number_of_chunks: Desired number of chunks.
+
+        Returns:
+            Calculated threshold value.
+        """
+        x1, y1 = len(distances), 0.0
+        x2, y2 = 1.0, 100.0
+        x = max(min(number_of_chunks, x1), x2)
+        y = y1 + ((y2 - y1) / (x2 - x1)) * (x - x1)
+        y = min(max(y, 0), 100)
+        return float(np.percentile(distances, y))
 
 class SemanticChunker(BaseDocumentTransformer):
-    """Split the text based on semantic similarity.
+    """
+    Split text based on semantic similarity.
 
-    Taken from Greg Kamradt's wonderful notebook:
-    https://github.com/FullStackRetrieval-com/RetrievalTutorials/blob/main/tutorials/LevelsOfTextSplitting/5_Levels_Of_Text_Splitting.ipynb
-
-    All credits to him.
-
-    At a high level, this splits into sentences, then groups into groups of 3
-    sentences, and then merges one that are similar in the embedding space.
+    This class implements a method to split text into chunks based on semantic
+    similarity, using embeddings and various thresholding techniques.
     """
 
     def __init__(
@@ -117,166 +137,124 @@ class SemanticChunker(BaseDocumentTransformer):
         number_of_chunks: Optional[int] = None,
         sentence_split_regex: str = r"(?<=[.?!])\s+",
     ):
-        self._add_start_index = add_start_index
         self.embeddings = embeddings
-        self.buffer_size = buffer_size
+        self.sentence_processor = SentenceProcessor(buffer_size)
+        self.distance_calculator = DistanceCalculator()
+        self.threshold_calculator = ThresholdCalculator()
+        self._add_start_index = add_start_index
         self.breakpoint_threshold_type = breakpoint_threshold_type
         self.number_of_chunks = number_of_chunks
         self.sentence_split_regex = sentence_split_regex
-        if breakpoint_threshold_amount is None:
-            self.breakpoint_threshold_amount = BREAKPOINT_DEFAULTS[
-                breakpoint_threshold_type
-            ]
-        else:
-            self.breakpoint_threshold_amount = breakpoint_threshold_amount
-
-    def _calculate_breakpoint_threshold(
-        self, distances: List[float]
-    ) -> Tuple[float, List[float]]:
-        if self.breakpoint_threshold_type == "percentile":
-            return cast(
-                float,
-                np.percentile(distances, self.breakpoint_threshold_amount),
-            ), distances
-        elif self.breakpoint_threshold_type == "standard_deviation":
-            return cast(
-                float,
-                np.mean(distances)
-                + self.breakpoint_threshold_amount * np.std(distances),
-            ), distances
-        elif self.breakpoint_threshold_type == "interquartile":
-            q1, q3 = np.percentile(distances, [25, 75])
-            iqr = q3 - q1
-
-            return np.mean(
-                distances
-            ) + self.breakpoint_threshold_amount * iqr, distances
-        elif self.breakpoint_threshold_type == "gradient":
-            # Calculate the threshold based on the distribution of gradient of distance array. # noqa: E501
-            distance_gradient = np.gradient(distances, range(0, len(distances)))
-            return cast(
-                float,
-                np.percentile(distance_gradient, self.breakpoint_threshold_amount),
-            ), distance_gradient
-        else:
-            raise ValueError(
-                f"Got unexpected `breakpoint_threshold_type`: "
-                f"{self.breakpoint_threshold_type}"
-            )
-
-    def _threshold_from_clusters(self, distances: List[float]) -> float:
-        """
-        Calculate the threshold based on the number of chunks.
-        Inverse of percentile method.
-        """
-        if self.number_of_chunks is None:
-            raise ValueError(
-                "This should never be called if `number_of_chunks` is None."
-            )
-        x1, y1 = len(distances), 0.0
-        x2, y2 = 1.0, 100.0
-
-        x = max(min(self.number_of_chunks, x1), x2)
-
-        # Linear interpolation formula
-        y = y1 + ((y2 - y1) / (x2 - x1)) * (x - x1)
-        y = min(max(y, 0), 100)
-
-        return cast(float, np.percentile(distances, y))
-
-    def _calculate_sentence_distances(
-        self, single_sentences_list: List[str]
-    ) -> Tuple[List[float], List[dict]]:
-        """Split text into multiple components."""
-
-        _sentences = [
-            {"sentence": x, "index": i} for i, x in enumerate(single_sentences_list)
-        ]
-        sentences = combine_sentences(_sentences, self.buffer_size)
-        embeddings = self.embeddings.embed_documents(
-            [x["combined_sentence"] for x in sentences]
+        self.breakpoint_threshold_amount = (
+            breakpoint_threshold_amount or BREAKPOINT_DEFAULTS[breakpoint_threshold_type]
         )
-        for i, sentence in enumerate(sentences):
-            sentence["combined_sentence_embedding"] = embeddings[i]
 
-        return calculate_cosine_distances(sentences)
+    def split_text(self, text: str) -> List[str]:
+        """
+        Split the input text into chunks based on semantic similarity.
 
-    def split_text(
-        self,
-        text: str,
-    ) -> List[str]:
-        # Splitting the essay (by default on '.', '?', and '!')
-        single_sentences_list = re.split(self.sentence_split_regex, text)
+        Args:
+            text: Input text to be split.
 
-        # having len(single_sentences_list) == 1 would cause the following
-        # np.percentile to fail.
-        if len(single_sentences_list) == 1:
-            return single_sentences_list
-        distances, sentences = self._calculate_sentence_distances(single_sentences_list)
+        Returns:
+            List of text chunks.
+        """
+        sentences = re.split(self.sentence_split_regex, text)
+        if len(sentences) <= 1:
+            return sentences
+
+        sentence_data = [SentenceData(sentence=s, index=i) for i, s in enumerate(sentences)]
+        combined_sentences = self.sentence_processor.combine_sentences(sentence_data)
+        
+        embeddings = self.embeddings.embed_documents([s.combined_sentence for s in combined_sentences if s.combined_sentence])
+        for s, e in zip(combined_sentences, embeddings):
+            s.combined_sentence_embedding = e
+
+        distances, updated_sentences = self.distance_calculator.calculate_cosine_distances(combined_sentences)
+        
         if self.number_of_chunks is not None:
-            breakpoint_distance_threshold = self._threshold_from_clusters(distances)
-            breakpoint_array = distances
+            threshold = self.threshold_calculator.threshold_from_clusters(distances, self.number_of_chunks)
         else:
-            (
-                breakpoint_distance_threshold,
-                breakpoint_array,
-            ) = self._calculate_breakpoint_threshold(distances)
+            threshold = self.threshold_calculator.calculate_threshold(
+                distances, self.breakpoint_threshold_type, self.breakpoint_threshold_amount
+            )
 
-        indices_above_thresh = [
-            i
-            for i, x in enumerate(breakpoint_array)
-            if x > breakpoint_distance_threshold
-        ]
+        breakpoints = np.where(distances > threshold)[0]
+        return self._create_chunks(updated_sentences, breakpoints)
 
+    def _create_chunks(self, sentences: List[SentenceData], breakpoints: NDArray[np.int64]) -> List[str]:
+        """
+        Create text chunks based on calculated breakpoints.
+
+        Args:
+            sentences: List of SentenceData objects.
+            breakpoints: Array of breakpoint indices.
+
+        Returns:
+            List of text chunks.
+        """
         chunks = []
-        start_index = 0
-
-        # Iterate through the breakpoints to slice the sentences
-        for index in indices_above_thresh:
-            # The end index is the current breakpoint
-            end_index = index
-
-            # Slice the sentence_dicts from the current start index to the end index
-            group = sentences[start_index : end_index + 1]
-            combined_text = " ".join([d["sentence"] for d in group])
-            chunks.append(combined_text)
-
-            # Update the start index for the next group
-            start_index = index + 1
-
-        # The last group, if any sentences remain
-        if start_index < len(sentences):
-            combined_text = " ".join([d["sentence"] for d in sentences[start_index:]])
-            chunks.append(combined_text)
+        start = 0
+        for end in breakpoints:
+            chunk = " ".join(s.sentence for s in sentences[start:end+1])
+            chunks.append(chunk)
+            start = end + 1
+        
+        if start < len(sentences):
+            chunk = " ".join(s.sentence for s in sentences[start:])
+            chunks.append(chunk)
+        
         return chunks
 
-    def create_documents(
-        self, texts: List[str], metadatas: Optional[List[dict]] = None
-    ) -> List[Document]:
-        """Create documents from a list of texts."""
+    def create_documents(self, texts: List[str], metadatas: Optional[List[Dict[str, Any]]] = None) -> List[Document]:
+        """
+        Create Document objects from a list of texts.
+
+        Args:
+            texts: List of input texts.
+            metadatas: Optional list of metadata dictionaries.
+
+        Returns:
+            List of Document objects.
+        """
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
-        for i, text in enumerate(texts):
+        for text, metadata in zip(texts, _metadatas):
             index = -1
             for chunk in self.split_text(text):
-                metadata = copy.deepcopy(_metadatas[i])
+                doc_metadata = copy.deepcopy(metadata)
                 if self._add_start_index:
                     index = text.find(chunk, index + 1)
-                    metadata["start_index"] = index
-                new_doc = Document(page_content=chunk, metadata=metadata)
-                documents.append(new_doc)
+                    doc_metadata["start_index"] = index
+                documents.append(Document(page_content=chunk, metadata=doc_metadata))
         return documents
 
     def split_documents(self, documents: Iterable[Document]) -> List[Document]:
-        """Split documents."""
-        texts, metadatas = [], []
+        """
+        Split a collection of Document objects.
+
+        Args:
+            documents: Iterable of Document objects.
+
+        Returns:
+            List of split Document objects.
+        """
+        texts = []
+        metadatas = []
         for doc in documents:
             texts.append(doc.page_content)
             metadatas.append(doc.metadata)
         return self.create_documents(texts, metadatas=metadatas)
 
-    def transform_documents(
-        self, documents: Sequence[Document], **kwargs: Any
-    ) -> Sequence[Document]:
-        """Transform sequence of documents by splitting them."""
+    def transform_documents(self, documents: Sequence[Document], **kwargs: Any) -> Sequence[Document]:
+        """
+        Transform a sequence of documents by splitting them.
+
+        Args:
+            documents: Sequence of Document objects.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Sequence of transformed Document objects.
+        """
         return self.split_documents(list(documents))
