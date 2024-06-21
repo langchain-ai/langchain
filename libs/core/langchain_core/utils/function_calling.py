@@ -40,6 +40,10 @@ PYTHON_TO_JSON_TYPES = {
     "int": "integer",
     "float": "number",
     "bool": "boolean",
+    "list": "array",
+    "tuple": "array",
+    "dict": "object",
+    "set": {"type": "array", "uniqueItems": True},
 }
 
 
@@ -185,6 +189,7 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
                     if isinstance(annotation, str):
                         arg_descriptions[arg] = annotation
                         break
+        origin = get_origin(arg_type)
         if (
             isinstance(arg_type, type)
             and hasattr(arg_type, "model_json_schema")
@@ -197,11 +202,12 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
             and callable(arg_type.schema)
         ):
             properties[arg] = arg_type.schema()
-        elif (
-            hasattr(arg_type, "__name__")
-            and getattr(arg_type, "__name__") in PYTHON_TO_JSON_TYPES
-        ):
-            properties[arg] = {"type": PYTHON_TO_JSON_TYPES[arg_type.__name__]}
+        elif getattr(arg_type, "__name__", None) in PYTHON_TO_JSON_TYPES:
+            typ_ = PYTHON_TO_JSON_TYPES[arg_type.__name__]
+            properties[arg] = {"type": typ_} if isinstance(typ_, str) else typ_
+        elif getattr(origin, "__name__", None) in PYTHON_TO_JSON_TYPES:
+            typ_ = PYTHON_TO_JSON_TYPES[getattr(origin, "__name__")]
+            properties[arg] = {"type": typ_} if isinstance(typ_, str) else typ_
         elif (
             hasattr(arg_type, "__dict__")
             and getattr(arg_type, "__dict__").get("__origin__", None) == Literal
@@ -211,6 +217,7 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
                 "type": PYTHON_TO_JSON_TYPES[arg_type.__args__[0].__class__.__name__],
             }
         else:
+            # TODO We don't handle optionals or union types well here.
             logger.warning(
                 f"Argument {arg} of type {arg_type} from function {function.__name__} "
                 "could not be not be converted to a JSON schema."

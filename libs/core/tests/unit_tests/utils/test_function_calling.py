@@ -1,5 +1,5 @@
 # mypy: disable-error-code="annotation-unchecked"
-from typing import Any, Callable, Dict, List, Literal, Optional, Type
+from typing import Any, Callable, Dict, List, Literal, Optional, Set, Tuple, Type
 
 import pytest
 from pydantic import BaseModel as BaseModelV2Maybe  #  pydantic: ignore
@@ -228,6 +228,51 @@ def test_convert_to_openai_function_nested() -> None:
 
         actual = convert_to_openai_function(my_function)
         assert actual == expected
+
+
+def test_convert_list_dict_tuple() -> None:
+    def my_function(
+        arg1: list,
+        arg2: dict,
+        arg3: tuple,
+        arg4: List,
+        arg5: Dict,
+        arg6: Tuple,
+        arg7: set,
+        arg8: Set,
+    ) -> None:
+        """dummy function"""
+        pass
+
+    expected = {
+        "name": "my_function",
+        "description": "dummy function",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {"type": "array"},
+                "arg2": {"type": "object"},
+                "arg3": {"type": "array"},
+                "arg4": {"type": "array"},
+                "arg5": {"type": "object"},
+                "arg6": {"type": "array"},
+                "arg7": {"type": "array", "uniqueItems": True},
+                "arg8": {"type": "array", "uniqueItems": True},
+            },
+            "required": [
+                "arg1",
+                "arg2",
+                "arg3",
+                "arg4",
+                "arg5",
+                "arg6",
+                "arg7",
+                "arg8",
+            ],
+        },
+    }
+    actual = convert_to_openai_function(my_function)
+    assert actual == expected
 
 
 @pytest.mark.xfail(reason="Pydantic converts Optional[str] to str in .schema()")
