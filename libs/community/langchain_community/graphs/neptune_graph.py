@@ -310,6 +310,7 @@ class NeptuneGraph(BaseNeptuneGraph):
         client: Any = None,
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
+        service: str = "neptunedata",
         sign: bool = True,
     ) -> None:
         """Create a new Neptune graph wrapper instance."""
@@ -335,13 +336,13 @@ class NeptuneGraph(BaseNeptuneGraph):
                 client_params["endpoint_url"] = f"{protocol}://{host}:{port}"
 
                 if sign:
-                    self.client = session.client("neptunedata", **client_params)
+                    self.client = session.client(service_name=service, **client_params)
                 else:
                     from botocore import UNSIGNED
                     from botocore.config import Config
 
                     self.client = session.client(
-                        "neptunedata",
+                        service_name=service,
                         **client_params,
                         config=Config(signature_version=UNSIGNED),
                     )
