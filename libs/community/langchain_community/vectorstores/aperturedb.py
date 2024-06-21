@@ -43,6 +43,7 @@ class ApertureDB(VectorStore):
                  engine: str = None,
                  metric: str = None,
                  log_level: int = logging.WARN,
+                 properties: Optional[Dict] = None,
                  **kwargs):
         """Create a vectorstore backed by ApertureDB
 
@@ -67,6 +68,7 @@ class ApertureDB(VectorStore):
         self.dimensions = dimensions
         self.engine = engine
         self.metric = metric
+        self.properties = properties
         if embeddings is None:
             self.logger.fatal(
                 "No embedding function provided.")
@@ -98,6 +100,7 @@ class ApertureDB(VectorStore):
                 "engines": True,
                 "metrics": True,
                 "dimensions": True,
+                "results": {"all_properties": True},
             }
         }]
         r, b = self.connection.query(find_ds_query)
@@ -134,6 +137,9 @@ class ApertureDB(VectorStore):
                 self.logger.error(
                     f"Dimensions mismatch: {self.dimensions} != {dimensions}")
 
+            self.properties = {k[len(PROPERTY_PREFIX):]: v for k, v in e.items() if k.startswith(
+                PROPERTY_PREFIX)}
+
         else:
             self.logger.info(
                 f"Descriptor set {descriptor_set} does not exist. Creating it")
@@ -146,8 +152,11 @@ class ApertureDB(VectorStore):
                 self.dimensions = len(
                     self.embedding_function.embed_query(""))
 
+            properties = {PROPERTY_PREFIX + k: v for k, v in self.properties.items()
+                          } if self.properties is not None else None
+
             self.utils.add_descriptorset(
-                name=descriptor_set, dim=self.dimensions, engine=self.engine, metric=self.metric)
+                name=descriptor_set, dim=self.dimensions, engine=self.engine, metric=self.metric, properties=properties)
 
             # Create indexes
             self.utils.create_entity_index("_Descriptor", "_create_txn")
