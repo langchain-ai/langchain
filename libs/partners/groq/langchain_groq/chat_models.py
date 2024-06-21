@@ -85,8 +85,8 @@ class ChatGroq(BaseChatModel):
     To use, you should have the
     environment variable ``GROQ_API_KEY`` set with your API key.
 
-    Any parameters that are valid to be passed to the groq.create call can be passed
-    in, even if not explicitly saved on this class.
+    Any parameters that are valid to be passed to the groq.create call
+    can be passed in, even if not explicitly saved on this class.
 
     Example:
         .. code-block:: python
@@ -94,6 +94,208 @@ class ChatGroq(BaseChatModel):
             from langchain_groq import ChatGroq
 
             model = ChatGroq(model_name="mixtral-8x7b-32768")
+
+    Setup:
+        Install ``langchain-groq`` and set environment variable
+        ``GROQ_API_KEY``.
+
+        .. code-block:: bash
+
+            pip install -U langchain-groq
+            export GROQ_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: str
+            Name of Groq model to use. E.g. "mixtral-8x7b-32768".
+        temperature: float
+            Sampling temperature. Ranges from 0.0 to 1.0.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
+        model_kwargs: Dict[str, Any]
+            Holds any model parameters valid for create call not
+            explicitly specified.
+
+    Key init args — client params:
+        timeout: Union[float, Tuple[float, float], Any, None]
+            Timeout for requests.
+        max_retries: int
+            Max number of retries.
+        api_key: Optional[str]
+            Groq API key. If not passed in will be read from env var GROQ_API_KEY.
+        base_url: Optional[str]
+            Base URL path for API requests, leave blank if not using a proxy
+            or service emulator.
+        custom_get_token_ids: Optional[Callable[[str], List[int]]]
+            Optional encoder to use for counting tokens.
+
+    See full list of supported init args and their descriptions in the params
+    section.
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_groq import ChatGroq
+
+            model = ChatGroq(
+                model="mixtral-8x7b-32768",
+                temperature=0.0,
+                max_retries=2,
+                # other params...
+                )
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "You are a helpful translator. Translate the user
+                sentence to French."),
+                ("human", "I love programming."),
+            ]
+            model.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(content='The English sentence "I love programming" can
+            be translated to French as "J\'aime programmer". The word
+            "programming" is translated as "programmer" in French.',
+            response_metadata={'token_usage': {'completion_tokens': 38,
+            'prompt_tokens': 28, 'total_tokens': 66, 'completion_time':
+            0.057975474, 'prompt_time': 0.005366091, 'queue_time': None,
+            'total_time': 0.063341565}, 'model_name': 'mixtral-8x7b-32768',
+            'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
+            'logprobs': None}, id='run-ecc71d70-e10c-4b69-8b8c-b8027d95d4b8-0')
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in model.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
+            content='The' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
+            content=' English' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
+            content=' sentence' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
+            ...
+            content=' program' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
+            content='".' id='run-4e9f926b-73f5-483b-8ef5-09533d925853'
+            content='' response_metadata={'finish_reason': 'stop'}
+            id='run-4e9f926b-73f5-483b-8ef5-09533d925853
+
+        .. code-block:: python
+
+            stream = model.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block:: python
+
+            AIMessageChunk(content='The English sentence "I love programming"
+            can be translated to French as "J\'aime programmer".
+            Here\'s the breakdown of the sentence:\n\n* "J\'aime" is the
+            French equivalent of "I love"\n* "programmer" is the French
+            infinitive for "to program"\n\nSo, the literal translation
+            is "I love to program". However, in English we often omit the
+            "to" when talking about activities we love, and the same applies
+            to French. Therefore, "J\'aime programmer" is the correct and
+            natural way to express "I love programming" in French.',
+            response_metadata={'finish_reason': 'stop'},
+            id='run-a3c35ac4-0750-4d08-ac55-bfc63805de76')
+
+    Async:
+        .. code-block:: python
+
+            await model.ainvoke(messages)
+
+        .. code-block:: python
+
+           AIMessage(content='The English sentence "I love programming" can
+           be translated to French as "J\'aime programmer". The word
+           "programming" is translated as "programmer" in French. I hope
+           this helps! Let me know if you have any other questions.',
+           response_metadata={'token_usage': {'completion_tokens': 53,
+           'prompt_tokens': 28, 'total_tokens': 81, 'completion_time':
+           0.083623752, 'prompt_time': 0.007365126, 'queue_time': None,
+           'total_time': 0.090988878}, 'model_name': 'mixtral-8x7b-32768',
+           'system_fingerprint': 'fp_c5f20b5bb1', 'finish_reason': 'stop',
+           'logprobs': None}, id='run-897f3391-1bea-42e2-82e0-686e2367bcf8-0')
+
+    Tool calling:
+        .. code-block:: python
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(..., description="The city and state,
+                e.g. San Francisco, CA")
+
+            class GetPopulation(BaseModel):
+                '''Get the current population in a given location'''
+
+                location: str = Field(..., description="The city and state,
+                e.g. San Francisco, CA")
+
+            model_with_tools = model.bind_tools([GetWeather, GetPopulation])
+            ai_msg = model_with_tools.invoke("What is the population of NY?")
+            ai_msg.tool_calls
+
+        .. code-block:: python
+
+            [{'name': 'GetPopulation',
+            'args': {'location': 'NY'},
+            'id': 'call_bb8d'}]
+
+        See ``ChatGroq.bind_tools()`` method for more.
+
+    Structured output:
+        .. code-block:: python
+
+            from typing import Optional
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+            class Joke(BaseModel):
+                '''Joke to tell user.'''
+
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke")
+                rating: Optional[int] = Field(description="How funny the joke
+                is, from 1 to 10")
+
+            structured_model = model.with_structured_output(Joke)
+            structured_model.invoke("Tell me a joke about cats")
+
+        .. code-block:: python
+
+            Joke(setup="Why don't cats play poker in the jungle?",
+            punchline='Too many cheetahs!', rating=None)
+
+        See ``ChatGroq.with_structured_output()`` for more.
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = model.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {'token_usage': {'completion_tokens': 70,
+            'prompt_tokens': 28,
+            'total_tokens': 98,
+            'completion_time': 0.111956391,
+            'prompt_time': 0.007518279,
+            'queue_time': None,
+            'total_time': 0.11947467},
+            'model_name': 'mixtral-8x7b-32768',
+            'system_fingerprint': 'fp_c5f20b5bb1',
+            'finish_reason': 'stop',
+            'logprobs': None}
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -102,10 +304,12 @@ class ChatGroq(BaseChatModel):
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
+    stop: Optional[Union[List[str], str]] = Field(None, alias="stop_sequences")
+    """Default stop sequences."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     groq_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    """Automatically inferred from env var `groq_API_KEY` if not provided."""
+    """Automatically inferred from env var `GROQ_API_KEY` if not provided."""
     groq_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
@@ -124,8 +328,6 @@ class ChatGroq(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
-    stop: Optional[List[str]] = Field(None, alias="stop_sequences")
-    """Default stop sequences."""
     default_headers: Union[Mapping[str, str], None] = None
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
@@ -247,7 +449,7 @@ class ChatGroq(BaseChatModel):
         if ls_max_tokens := params.get("max_tokens", self.max_tokens):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None) or self.stop:
-            ls_params["ls_stop"] = ls_stop
+            ls_params["ls_stop"] = ls_stop if isinstance(ls_stop, list) else [ls_stop]
         return ls_params
 
     def _generate(
@@ -602,10 +804,19 @@ class ChatGroq(BaseChatModel):
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
+            if tool_choice == "any":
+                if len(tools) > 1:
+                    raise ValueError(
+                        f"Groq does not currently support {tool_choice=}. Should "
+                        f"be one of 'auto', 'none', or the name of the tool to call."
+                    )
+                else:
+                    tool_choice = convert_to_openai_tool(tools[0])["function"]["name"]
             if isinstance(tool_choice, str) and (
                 tool_choice not in ("auto", "any", "none")
             ):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
+            # TODO: Remove this update once 'any' is supported.
             if isinstance(tool_choice, dict) and (len(formatted_tools) != 1):
                 raise ValueError(
                     "When specifying `tool_choice`, you must provide exactly one "
@@ -823,7 +1034,7 @@ class ChatGroq(BaseChatModel):
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_format'. Received: '{method}'"
+                f"'json_mode'. Received: '{method}'"
             )
 
         if include_raw:
