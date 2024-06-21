@@ -106,7 +106,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
             _output_keys += self.metadata_keys
         return _output_keys
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_llm_output(cls, values: Dict) -> Dict:
         """Validate that the combine chain outputs a dictionary."""
         output_parser = values["llm_chain"].prompt.output_parser

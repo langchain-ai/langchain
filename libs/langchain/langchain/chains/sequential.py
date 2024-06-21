@@ -152,7 +152,7 @@ class SimpleSequentialChain(Chain):
         """
         return [self.output_key]
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_chains(cls, values: Dict) -> Dict:
         """Validate that chains are all single input/output."""
         for chain in values["chains"]:
