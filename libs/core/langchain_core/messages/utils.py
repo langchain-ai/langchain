@@ -295,7 +295,7 @@ def _runnable_support(func: Callable) -> Callable:
             return RunnableLambda(
                 partial(func, **kwargs), name=getattr(func, "__name__")
             )
-
+    wrapped.__doc__ = func.__doc__
     return wrapped
 
 
