@@ -6,7 +6,7 @@ from langchain_core.pydantic_v1 import Field
 from langchain_core.utils.iter import batch_iterate
 from mixedbread_ai.types import EncodingFormat, TruncationStrategy  # type: ignore
 
-from .client import MixedBreadAIClient
+from langchain_mixedbreadai.client import MixedBreadAIClient
 
 logger = logging.getLogger(__name__)
 

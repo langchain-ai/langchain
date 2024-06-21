@@ -9,7 +9,7 @@ from langchain_core.documents.compressor import BaseDocumentCompressor
 from langchain_core.pydantic_v1 import Field
 from mixedbread_ai import RankedDocument  # type: ignore
 
-from .client import MixedBreadAIClient
+from langchain_mixedbreadai.client import MixedBreadAIClient
 
 
 class MixedbreadAIRerank(MixedBreadAIClient, BaseDocumentCompressor):
