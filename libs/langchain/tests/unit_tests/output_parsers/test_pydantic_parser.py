@@ -60,6 +60,7 @@ def test_pydantic_output_parser() -> None:
     result = pydantic_parser.parse(DEF_RESULT)
     print("parse_result:", result)  # noqa: T201
     assert DEF_EXPECTED_RESULT == result
+    assert pydantic_parser.OutputType is TestModel
 
 
 def test_pydantic_output_parser_fail() -> None:

@@ -107,7 +107,7 @@ def test_baichuan_key_masked_when_passed_from_env(
     """Test initialization with an API key provided via an env variable"""
     monkeypatch.setenv("BAICHUAN_API_KEY", "test-api-key")
 
-    chat = ChatBaichuan()
+    chat = ChatBaichuan()  # type: ignore[call-arg]
     print(chat.baichuan_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
