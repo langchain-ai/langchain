@@ -1,3 +1,7 @@
+"""This is the langchain_chroma.vectorstores module.
+
+It contains the Chroma class which is a vector store for handling various tasks.
+"""
 from __future__ import annotations
 
 import base64
@@ -98,7 +102,6 @@ def maximal_marginal_relevance(
     Returns:
         List of indices of embeddings selected by maximal marginal relevance.
     """
-
     if min(k, len(embedding_list)) <= 0:
         return []
     if query_embedding.ndim == 1:
@@ -159,7 +162,7 @@ class Chroma(VectorStore):
         Args:
             collection_name: Name of the collection to create.
             embedding_function: Embedding class object. Used to embed texts.
-            persist_director: Directory to persist the collection.
+            persist_directory: Directory to persist the collection.
             client_settings: Chroma client settings
             collection_metadata: Collection configurations.
             client: Chroma client. Documentation:
@@ -223,6 +226,7 @@ class Chroma(VectorStore):
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
+        """Access the query embedding object."""
         return self._embedding_function
 
     @xor_args(("query_texts", "query_embeddings"))
@@ -245,6 +249,7 @@ class Chroma(VectorStore):
                     e.g. {"color" : "red", "price": 4.20}.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
+            **kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of `n_results` nearest neighbor embeddings for provided
@@ -280,6 +285,7 @@ class Chroma(VectorStore):
             metadatas: Optional list of metadatas.
                     When querying, you can filter on this metadata.
             ids: Optional list of IDs.
+            **kwargs: Additional keyword arguments to pass.
 
         Returns:
             List of IDs of the added images.
@@ -367,6 +373,7 @@ class Chroma(VectorStore):
             metadatas: Optional list of metadatas.
                     When querying, you can filter on this metadata.
             ids: Optional list of IDs.
+            **kwargs: Additional keyword arguments.
 
         Returns:
             List of IDs of the added texts.
@@ -374,7 +381,6 @@ class Chroma(VectorStore):
         Raises:
             ValueError: When metadata is incorrect.
         """
-
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         embeddings = None
@@ -449,6 +455,7 @@ class Chroma(VectorStore):
             query: Query text to search for.
             k: Number of results to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
+            **kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of documents most similar to the query text.
@@ -474,6 +481,7 @@ class Chroma(VectorStore):
             filter: Filter by metadata. Defaults to None.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
+            **kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of Documents most similar to the query vector.
@@ -495,8 +503,7 @@ class Chroma(VectorStore):
         where_document: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
-        """
-        Return docs most similar to embedding vector and similarity score.
+        """Return docs most similar to embedding vector and similarity score.
 
         Args:
             embedding (List[float]): Embedding to look up documents similar to.
@@ -504,6 +511,7 @@ class Chroma(VectorStore):
             filter: Filter by metadata. Defaults to None.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
+            **kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of documents most similar to the query text and relevance score
@@ -534,6 +542,7 @@ class Chroma(VectorStore):
             filter: Filter by metadata. Defaults to None.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
+            **kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of documents most similar to the query text and
@@ -574,7 +583,6 @@ class Chroma(VectorStore):
         Raises:
             ValueError: If the distance metric is not supported.
         """
-
         if self.override_relevance_score_fn:
             return self.override_relevance_score_fn
 
@@ -623,11 +631,13 @@ class Chroma(VectorStore):
                 to maximum diversity and 1 to minimum diversity.
                 Defaults to 0.5.
             filter: Filter by metadata. Defaults to None.
+            where_document: dict used to filter by the documents.
+                    E.g. {$contains: {"text": "hello"}}.
+            **kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
         """
-
         results = self.__query_collection(
             query_embeddings=embedding,
             n_results=fetch_k,
@@ -659,6 +669,7 @@ class Chroma(VectorStore):
         **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance.
+
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
 
@@ -673,6 +684,7 @@ class Chroma(VectorStore):
             filter: Filter by metadata. Defaults to None.
             where_document: dict used to filter by the documents.
                     E.g. {$contains: {"text": "hello"}}.
+            **kwargs: Additional keyword arguments to pass to Chroma collection query.
 
         Returns:
             List of Documents selected by maximal marginal relevance.
@@ -701,8 +713,10 @@ class Chroma(VectorStore):
         self._chroma_collection = None
 
     def reset_collection(self) -> None:
-        """Resets the collection by deleting the collection
-        and recreating an empty one."""
+        """Resets the collection.
+
+        Resets the collection by deleting the collection and recreating an empty one.
+        """
         self.delete_collection()
         self.__ensure_collection()
 
@@ -827,9 +841,12 @@ class Chroma(VectorStore):
             embedding: Embedding function. Defaults to None.
             metadatas: List of metadatas. Defaults to None.
             ids: List of document IDs. Defaults to None.
-            client_settings: Chroma client settings
+            client_settings: Chroma client settings.
+            client: Chroma client. Documentation:
+                    https://docs.trychroma.com/reference/js-client#class:-chromaclient
             collection_metadata: Collection configurations.
                                                   Defaults to None.
+            **kwargs: Additional keyword arguments to initialize a Chroma client.
 
         Returns:
             Chroma: Chroma vectorstore.
@@ -889,9 +906,12 @@ class Chroma(VectorStore):
             ids : List of document IDs. Defaults to None.
             documents: List of documents to add to the vectorstore.
             embedding: Embedding function. Defaults to None.
-            client_settings: Chroma client settings
+            client_settings: Chroma client settings.
+            client: Chroma client. Documentation:
+                    https://docs.trychroma.com/reference/js-client#class:-chromaclient
             collection_metadata: Collection configurations.
                                                   Defaults to None.
+            **kwargs: Additional keyword arguments to initialize a Chroma client.
 
         Returns:
             Chroma: Chroma vectorstore.
@@ -916,5 +936,6 @@ class Chroma(VectorStore):
 
         Args:
             ids: List of ids to delete.
+            **kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids)
