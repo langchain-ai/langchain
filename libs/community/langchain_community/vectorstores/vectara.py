@@ -748,6 +748,14 @@ class VectaraRetriever(VectorStoreRetriever):
 
 
 class VectaraRAG(Runnable):
+    """Vectara RAG runnable.
+
+    Parameters:
+        vectara: Vectara object
+        config: VectaraQueryConfig object
+        chat: bool, default False
+    """
+
     def __init__(
         self, vectara: Vectara, config: VectaraQueryConfig, chat: bool = False
     ):
@@ -762,10 +770,12 @@ class VectaraRAG(Runnable):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Iterator[dict]:
-        """get streaming output from Vectara RAG
+        """Get streaming output from Vectara RAG.
 
         Args:
-            query: The input query
+            input: The input query
+            config: RunnableConfig object
+            kwargs: Any additional arguments
 
         Returns:
             The output dictionary with question, answer and context

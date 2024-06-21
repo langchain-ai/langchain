@@ -42,9 +42,12 @@ from langchain_core.messages.utils import (
     MessageLikeRepresentation,
     _message_from_dict,
     convert_to_messages,
+    filter_messages,
     get_buffer_string,
+    merge_message_runs,
     message_chunk_to_message,
     messages_from_dict,
+    trim_messages,
 )
 
 __all__ = [
@@ -75,4 +78,7 @@ __all__ = [
     "message_to_dict",
     "messages_from_dict",
     "messages_to_dict",
+    "filter_messages",
+    "merge_message_runs",
+    "trim_messages",
 ]
