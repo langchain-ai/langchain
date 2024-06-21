@@ -51,8 +51,10 @@ class OVHCloudEmbeddings(BaseModel, Embeddings):
         """
         headers = {
             "content-type": "text/plain",
-            "Authorization": f"Bearer {self.access_token}",
         }
+
+        if self.access_token is not None:
+            headers["Authorization"] = f"Bearer {self.access_token}"
 
         session = requests.session()
         while True:
