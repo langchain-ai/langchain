@@ -1,3 +1,4 @@
+# mypy: disable-error-code="annotation-unchecked"
 from typing import Any, Callable, Dict, List, Literal, Optional, Type
 
 import pytest
@@ -173,7 +174,7 @@ def test_convert_to_openai_function(
         assert actual == expected
 
 
-def test_convert_to_openai_function_nested():
+def test_convert_to_openai_function_nested() -> None:
     class Nested(BaseModel):
         nested_arg1: int = Field(..., description="foo")
         nested_arg2: Literal["bar", "baz"] = Field(
