@@ -5,7 +5,12 @@ from typing import Any, Optional
 
 import pytest
 from langchain_core.callbacks import CallbackManager
-from langchain_core.messages import BaseMessage, BaseMessageChunk, HumanMessage
+from langchain_core.messages import (
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    HumanMessage,
+)
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -34,9 +39,7 @@ def _get_llm(**kwargs: Any) -> AzureChatOpenAI:
 @pytest.mark.scheduled
 @pytest.fixture
 def llm() -> AzureChatOpenAI:
-    return _get_llm(
-        max_tokens=10,
-    )
+    return _get_llm(max_tokens=10)
 
 
 def test_chat_openai(llm: AzureChatOpenAI) -> None:
@@ -101,21 +104,13 @@ def test_chat_openai_streaming_generation_info() -> None:
     class _FakeCallback(FakeCallbackHandler):
         saved_things: dict = {}
 
-        def on_llm_end(
-            self,
-            *args: Any,
-            **kwargs: Any,
-        ) -> Any:
+        def on_llm_end(self, *args: Any, **kwargs: Any) -> Any:
             # Save the generation
             self.saved_things["generation"] = args[0]
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
-    chat = _get_llm(
-        max_tokens=2,
-        temperature=0,
-        callback_manager=callback_manager,
-    )
+    chat = _get_llm(max_tokens=2, temperature=0, callback_manager=callback_manager)
     list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
     # `Hello!` is two tokens, assert that that is what is returned
@@ -170,6 +165,8 @@ def test_openai_streaming(llm: AzureChatOpenAI) -> None:
     for chunk in llm.stream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.response_metadata.get("model_name") is not None
 
 
 @pytest.mark.scheduled
@@ -180,6 +177,8 @@ async def test_openai_astream(llm: AzureChatOpenAI) -> None:
     async for chunk in llm.astream("I'm Pickle Rick"):
         assert isinstance(chunk.content, str)
         full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.response_metadata.get("model_name") is not None
 
 
 @pytest.mark.scheduled
@@ -217,6 +216,7 @@ async def test_openai_ainvoke(llm: AzureChatOpenAI) -> None:
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
+    assert result.response_metadata.get("model_name") is not None
 
 
 @pytest.mark.scheduled
@@ -225,6 +225,7 @@ def test_openai_invoke(llm: AzureChatOpenAI) -> None:
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
+    assert result.response_metadata.get("model_name") is not None
 
 
 @pytest.mark.skip(reason="Need tool calling model deployed on azure")

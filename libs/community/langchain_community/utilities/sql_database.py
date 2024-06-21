@@ -14,7 +14,7 @@ from sqlalchemy import (
     select,
     text,
 )
-from sqlalchemy.engine import Engine, Result
+from sqlalchemy.engine import URL, Engine, Result
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.sql.expression import Executable
@@ -128,7 +128,10 @@ class SQLDatabase:
 
     @classmethod
     def from_uri(
-        cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
+        cls,
+        database_uri: Union[str, URL],
+        engine_args: Optional[dict] = None,
+        **kwargs: Any,
     ) -> SQLDatabase:
         """Construct a SQLAlchemy engine from URI."""
         _engine_args = engine_args or {}
@@ -198,10 +201,10 @@ class SQLDatabase:
             from dbruntime.databricks_repl_context import get_context
 
             context = get_context()
+            default_host = context.browserHostName
         except ImportError:
-            pass
+            default_host = None
 
-        default_host = context.browserHostName if context else None
         if host is None:
             host = get_from_env("host", "DATABRICKS_HOST", default_host)
 

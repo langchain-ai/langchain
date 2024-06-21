@@ -12,7 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.45,<0.3"
+langchain-core = ">=0.2.2,<0.3"
 groq = ">=0.4.1,<1"
 
 [tool.poetry.group.test]
@@ -92,5 +92,6 @@ filterwarnings = [
   'ignore:The method `ChatGroq.with_structured_output` is in beta',
   # Maintain support for pydantic 1.X
   'default:The `dict` method is deprecated; use `model_dump` instead:DeprecationWarning',
+  "ignore:tool_choice='any' is not currently supported. Converting to 'auto'.",
 ]
 asyncio_mode = "auto"
