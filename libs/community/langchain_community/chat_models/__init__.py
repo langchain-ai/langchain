@@ -160,6 +160,7 @@ if TYPE_CHECKING:
     )
     from langchain_community.chat_models.volcengine_maas import (
         VolcEngineMaasChat,
+        VolcEngineMaasChatV3,
     )
     from langchain_community.chat_models.yandex import (
         ChatYandexGPT,
@@ -223,6 +224,7 @@ __all__ = [
     "QianfanChatEndpoint",
     "SolarChat",
     "VolcEngineMaasChat",
+    "VolcEngineMaasChatV3",
 ]
 
 
@@ -276,6 +278,7 @@ _module_lookup = {
     "SolarChat": "langchain_community.chat_models.solar",
     "QianfanChatEndpoint": "langchain_community.chat_models.baidu_qianfan_endpoint",
     "VolcEngineMaasChat": "langchain_community.chat_models.volcengine_maas",
+    "VolcEngineMaasChatV3": "langchain_community.chat_models.volcengine_maas",
     "ChatPremAI": "langchain_community.chat_models.premai",
     "ChatLlamaCpp": "langchain_community.chat_models.llamacpp",
 }
