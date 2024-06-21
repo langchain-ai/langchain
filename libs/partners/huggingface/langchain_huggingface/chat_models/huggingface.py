@@ -42,12 +42,16 @@ DEFAULT_SYSTEM_PROMPT = """You are a helpful, respectful, and honest assistant."
 
 @dataclass
 class TGI_RESPONSE:
+    """Response from the TextGenInference API."""
+
     choices: List[Any]
     usage: Dict
 
 
 @dataclass
 class TGI_MESSAGE:
+    """Message to send to the TextGenInference API."""
+
     role: str
     content: str
     tool_calls: List[Dict]
@@ -141,8 +145,7 @@ def _is_huggingface_pipeline(llm: Any) -> bool:
 
 
 class ChatHuggingFace(BaseChatModel):
-    """
-    Wrapper for using Hugging Face LLM's as ChatModels.
+    """Hugging Face LLM's as ChatModels.
 
     Works with `HuggingFaceTextGenInference`, `HuggingFaceEndpoint`,
     `HuggingFaceHub`, and `HuggingFacePipeline` LLMs.

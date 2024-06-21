@@ -7,6 +7,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLLM
+from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
 
@@ -36,7 +37,7 @@ class RePhraseQueryRetriever(BaseRetriever):
         cls,
         retriever: BaseRetriever,
         llm: BaseLLM,
-        prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
+        prompt: BasePromptTemplate = DEFAULT_QUERY_PROMPT,
     ) -> "RePhraseQueryRetriever":
         """Initialize from llm using default template.
 

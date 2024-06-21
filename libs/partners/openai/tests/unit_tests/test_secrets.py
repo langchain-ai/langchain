@@ -93,10 +93,7 @@ def test_azure_openai_api_key_masked_when_passed_from_env(
     """Test that the API key is masked when passed from an environment variable."""
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "secret-api-key")
     monkeypatch.setenv("AZURE_OPENAI_AD_TOKEN", "secret-ad-token")
-    model = model_class(
-        azure_endpoint="endpoint",
-        api_version="version",
-    )
+    model = model_class(azure_endpoint="endpoint", api_version="version")
     print(model.openai_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
 
@@ -112,8 +109,7 @@ def test_azure_openai_api_key_masked_when_passed_from_env(
     "model_class", [AzureChatOpenAI, AzureOpenAI, AzureOpenAIEmbeddings]
 )
 def test_azure_openai_api_key_masked_when_passed_via_constructor(
-    model_class: Type,
-    capsys: CaptureFixture,
+    model_class: Type, capsys: CaptureFixture
 ) -> None:
     """Test that the API key is masked when passed via the constructor."""
     model = model_class(
@@ -172,8 +168,7 @@ def test_openai_api_key_masked_when_passed_from_env(
 
 @pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
 def test_openai_api_key_masked_when_passed_via_constructor(
-    model_class: Type,
-    capsys: CaptureFixture,
+    model_class: Type, capsys: CaptureFixture
 ) -> None:
     """Test that the API key is masked when passed via the constructor."""
     model = model_class(openai_api_key="secret-api-key")

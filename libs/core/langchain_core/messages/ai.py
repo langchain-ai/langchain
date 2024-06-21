@@ -25,23 +25,41 @@ from langchain_core.utils.json import (
 class UsageMetadata(TypedDict):
     """Usage metadata for a message, such as token counts.
 
-    Attributes:
-        input_tokens: (int) count of input (or prompt) tokens
-        output_tokens: (int) count of output (or completion) tokens
-        total_tokens: (int) total token count
+    This is a standard representation of token usage that is consistent across models.
+
+    Example:
+
+        .. code-block:: python
+
+            {
+                "input_tokens": 10,
+                "output_tokens": 20,
+                "total_tokens": 30
+            }
     """
 
     input_tokens: int
+    """Count of input (or prompt) tokens."""
     output_tokens: int
+    """Count of output (or completion) tokens."""
     total_tokens: int
+    """Total token count."""
 
 
 class AIMessage(BaseMessage):
-    """Message from an AI."""
+    """Message from an AI.
+
+    AIMessage is returned from a chat model as a response to a prompt.
+
+    This message represents the output of the model and consists of both
+    the raw output as returned by the model together standardized fields
+    (e.g., tool calls, usage metadata) added by the LangChain framework.
+    """
 
     example: bool = False
-    """Whether this Message is being passed in to the model as part of an example 
-        conversation.
+    """Use to denote that a message is part of an example conversation.
+    
+    At the moment, this is ignored by most models. Usage is discouraged.
     """
 
     tool_calls: List[ToolCall] = []
@@ -55,6 +73,7 @@ class AIMessage(BaseMessage):
     """
 
     type: Literal["ai"] = "ai"
+    """The type of the message (used for deserialization)."""
 
     def __init__(
         self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
