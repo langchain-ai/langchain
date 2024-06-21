@@ -310,6 +310,8 @@ def filter_messages(
     exclude_types: Optional[Sequence[Union[str, Type[BaseMessage]]]] = None,
     include_ids: Optional[Sequence[str]] = None,
     exclude_ids: Optional[Sequence[str]] = None,
+    include_tool_names: Optional[Sequence[str]] = None,
+    exclude_tool_names: Optional[Sequence[str]] = None,
 ) -> List[BaseMessage]:
     """Filter messages based on name, type or id.
 
@@ -325,6 +327,10 @@ def filter_messages(
             SystemMessage, HumanMessage, AIMessage, ...).
         include_ids: Message IDs to include.
         exclude_ids: Message IDs to exclude.
+        include_tool_names: Remove any ToolCalls (on AIMessages) and ToolMessages that
+            don't have one of these tool names.
+        exclude_tool_names: Remove any ToolCalls (on AIMessages) and ToolMessage that
+            have one of these tool names.
 
     Returns:
         A list of Messages that meets at least one of the incl_* conditions and none
@@ -363,6 +369,19 @@ def filter_messages(
     """  # noqa: E501
     messages = convert_to_messages(messages)
     filtered: List[BaseMessage] = []
+    include_tool_names = include_tool_names or ()
+    exclude_tool_names = exclude_tool_names or ()
+
+    def exclude_tool_name_condition(name: Optional[str]) -> bool:
+        if name is None:
+            return False
+        elif name in exclude_names:
+            return True
+        elif include_tool_names and name not in include_tool_names:
+            return True
+        else:
+            return False
+
     for msg in messages:
         if exclude_names and msg.name in exclude_names:
             continue
@@ -372,6 +391,71 @@ def filter_messages(
             continue
         else:
             pass
+
+        if include_tool_names or exclude_tool_names:
+            if (
+                isinstance(msg, AIMessage)
+                and msg.tool_calls
+                or (
+                    isinstance(msg.content, list)
+                    and any(
+                        block.get("type") == "tool_use"
+                        for block in msg.content
+                        if isinstance(block, dict)
+                    )
+                )
+            ):
+                msg = msg.copy(deep=True)
+                filtered_tool_calls = []
+                for tc in msg.tool_calls:
+                    if exclude_tool_name_condition(tc["name"]):
+                        continue
+                    else:
+                        filtered_tool_calls.append(tc)
+                msg.tool_calls = filtered_tool_calls
+                if isinstance(msg.content, list):
+                    filtered_content = []
+                    for block in msg.content:
+                        if (
+                            isinstance(block, dict)
+                            and block.get("type") == "tool_use"
+                            and exclude_tool_name_condition(block.get("name"))
+                        ):
+                            continue
+                        else:
+                            filtered_content.append(block)
+                    msg.content = filtered_content
+            elif isinstance(msg, ToolMessage):
+                tool_name = _tool_call_id_to_tool_name(messages, msg.tool_call_id)
+                if exclude_tool_name_condition(tool_name):
+                    continue
+            elif (
+                isinstance(msg, HumanMessage)
+                and isinstance(msg.content, list)
+                and any(
+                    block.get("type") == "tool_result"
+                    for block in msg.content
+                    if isinstance(block, dict)
+                )
+            ):
+                msg = msg.copy(deep=True)
+                filtered_content = []
+                for block in msg.content:
+                    if (
+                        isinstance(block, dict)
+                        and block.get("type") == "tool_result"
+                        and exclude_tool_name_condition(
+                            _tool_call_id_to_tool_name(
+                                messages, block.get("tool_use_id")
+                            )
+                        )
+                    ):
+                        continue
+                    else:
+                        filtered_content.append(block)
+                msg.content = filtered_content
+            else:
+                pass
 
         # default to inclusion when no inclusion criteria given.
         if not (include_types or include_ids or include_names):
@@ -386,6 +470,19 @@ def filter_messages(
             pass
 
     return filtered
+
+
+def _tool_call_id_to_tool_name(
+    messages: List[BaseMessage], tool_call_id: str
+) -> Optional[str]:
+    tool_calls = [
+        tc
+        for msg in messages
+        if isinstance(msg, AIMessage)
+        for tc in msg.tool_calls
+        if tc["id"] == tool_call_id
+    ]
+    return tool_calls[0]["name"] if tool_calls else None
 
 
 @_runnable_support
@@ -585,137 +682,163 @@ def trim_messages(
                 return count
 
         First 30 tokens, not allowing partial messages:
-            .. code-block:: python
+        .. code-block:: python
 
-                trim_messages(messages, max_tokens=30, token_counter=dummy_token_counter, strategy="first")
+            trim_messages(messages, max_tokens=30, token_counter=dummy_token_counter, strategy="first")
 
-            .. code-block:: python
+        .. code-block:: python
 
-                [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
-                ]
+            [
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
+            ]
 
         First 30 tokens, allowing partial messages:
-            .. code-block:: python
+        .. code-block:: python
 
-                trim_messages(
-                    messages,
-                    max_tokens=30,
-                    token_counter=dummy_token_counter,
-                    strategy="first",
-                    allow_partial=True,
-                )
+            trim_messages(
+                messages,
+                max_tokens=30,
+                token_counter=dummy_token_counter,
+                strategy="first",
+                allow_partial=True,
+            )
 
-            .. code-block:: python
+        .. code-block:: python
 
-                [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
-                    AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
-                ]
+            [
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
+                AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
+            ]
 
         First 30 tokens, allowing partial messages, have to end on HumanMessage:
-            .. code-block:: python
+        .. code-block:: python
 
-                trim_messages(
-                    messages,
-                    max_tokens=30,
-                    token_counter=dummy_token_counter,
-                    strategy="first"
-                    allow_partial=True,
-                    end_on="human",
-                )
+            trim_messages(
+                messages,
+                max_tokens=30,
+                token_counter=dummy_token_counter,
+                strategy="first"
+                allow_partial=True,
+                end_on="human",
+            )
 
-            .. code-block:: python
+        .. code-block:: python
 
-                [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
-                ]
+            [
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
+            ]
 
 
         Last 30 tokens, including system message, not allowing partial messages:
-            .. code-block:: python
+        .. code-block:: python
 
-                trim_messages(messages, max_tokens=30, include_system=True, token_counter=dummy_token_counter, strategy="last")
+            trim_messages(messages, max_tokens=30, include_system=True, token_counter=dummy_token_counter, strategy="last")
 
-            .. code-block:: python
+        .. code-block:: python
 
-                [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
-                    AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
-                ]
+            [
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
+                AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
+            ]
 
         Last 40 tokens, including system message, allowing partial messages:
-            .. code-block:: python
+        .. code-block:: python
 
-                trim_messages(
-                    messages,
-                    max_tokens=40,
-                    token_counter=dummy_token_counter,
-                    strategy="last",
-                    allow_partial=True,
-                    include_system=True
-                )
+            trim_messages(
+                messages,
+                max_tokens=40,
+                token_counter=dummy_token_counter,
+                strategy="last",
+                allow_partial=True,
+                include_system=True
+            )
 
-            .. code-block:: python
+        .. code-block:: python
 
-                [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    AIMessage(
-                        [{"type": "text", "text": "This is the FIRST 4 token block."},],
-                        id="second",
-                    ),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
-                    AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
-                ]
+            [
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+                AIMessage(
+                    [{"type": "text", "text": "This is the FIRST 4 token block."},],
+                    id="second",
+                ),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
+                AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
+            ]
 
         Last 30 tokens, including system message, allowing partial messages, end on HumanMessage:
-            .. code-block:: python
+        .. code-block:: python
 
-                trim_messages(
-                    messages,
-                    max_tokens=30,
-                    token_counter=dummy_token_counter,
-                    strategy="last",
-                    end_on="human",
-                    include_system=True,
-                    allow_partial=True,
-                )
+            trim_messages(
+                messages,
+                max_tokens=30,
+                token_counter=dummy_token_counter,
+                strategy="last",
+                end_on="human",
+                include_system=True,
+                allow_partial=True,
+            )
 
-            .. code-block:: python
+        .. code-block:: python
 
-                [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    AIMessage(
-                        [{"type": "text", "text": "This is the FIRST 4 token block."},],
-                        id="second",
-                    ),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
-                ]
+            [
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+                AIMessage(
+                    [{"type": "text", "text": "This is the FIRST 4 token block."},],
+                    id="second",
+                ),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
+            ]
+
 
         Last 40 tokens, including system message, allowing partial messages, start on HumanMessage:
+        .. code-block:: python
+
+            trim_messages(
+                messages,
+                max_tokens=40,
+                token_counter=dummy_token_counter,
+                strategy="last",
+                include_system=True,
+                allow_partial=True,
+                start_on="human"
+            )
+
+        .. code-block:: python
+
+            [
+                SystemMessage("This is a 4 token text. The full message is 10 tokens."),
+                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
+                AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
+            ]
+
+        Using a TextSplitter for splitting parting messages:
             .. code-block:: python
 
-                trim_messages(
-                    messages,
-                    max_tokens=40,
-                    token_counter=dummy_token_counter,
-                    strategy="last",
-                    include_system=True,
-                    allow_partial=True,
-                    start_on="human"
-                )
+                ...
 
             .. code-block:: python
 
-                [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
-                    AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
-                ]
+                ...
+
+        Using a model for token counting:
+            .. code-block:: python
+
+                ...
+
+            .. code-block:: python
+
+                ...
+
+        Chaining:
+            .. code-block:: python
+
+                ...
+
+
     """  # noqa: E501
     from langchain_core.language_models import BaseLanguageModel
 
