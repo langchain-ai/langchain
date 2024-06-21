@@ -1,5 +1,5 @@
 from importlib import util
-from typing import Any, Optional, Literal, overload, Callable, Union
+from typing import Any, Callable, Literal, Optional, Union, overload
 
 from langchain_core._api import beta
 from langchain_core.language_models import LanguageModelInput
@@ -10,7 +10,7 @@ from langchain_core.language_models.chat_models import (
     generate_from_stream,
 )
 from langchain_core.runnables import RunnableConfig
-from langchain_core.runnables.base import RunnableLambda, Runnable
+from langchain_core.runnables.base import Runnable, RunnableLambda
 
 __all__ = [
     "BaseChatModel",
@@ -20,28 +20,37 @@ __all__ = [
     "init_chat_model",
 ]
 
+
 def _runnable_support(initializer: Callable) -> Callable:
     @overload
-    def wrapped( model: str, **kwargs: Any ) -> BaseChatModel:
+    def wrapped(model: str, **kwargs: Any) -> BaseChatModel:
         ...
 
     @overload
-    def wrapped(model: Literal[None]=None, **kwargs: Any ) -> Runnable:
+    def wrapped(model: Literal[None] = None, **kwargs: Any) -> Runnable:
         ...
 
     def wrapped(
         model: Optional[str] = None, **kwargs: Any
     ) -> Union[BaseChatModel, Runnable]:
-
         if model:
             return initializer(model, **kwargs)
         else:
-            def from_config(input: LanguageModelInput, config: RunnableConfig) -> BaseChatModel:
-                config_params = {k: v for k, v in config["configurable"].items() if k in ("model", "model_provider")}
+
+            def from_config(
+                input: LanguageModelInput, config: RunnableConfig
+            ) -> BaseChatModel:
+                config_params = {
+                    k: v
+                    for k, v in config["configurable"].items()
+                    if k in ("model", "model_provider")
+                }
                 return initializer(**{**kwargs, **config_params})
+
             return RunnableLambda(from_config, name="configurable_chat_model")
 
     return wrapped
+
 
 # FOR CONTRIBUTORS: If adding support for a new provider, please append the provider
 # name to the supported list in the docstring below. Do *not* change the order of the
