@@ -5,6 +5,8 @@ from langchain_core.pydantic_v1 import BaseModel, Field, validator
 from mixedbread_ai.client import AsyncMixedbreadAI, MixedbreadAI  # type: ignore
 from mixedbread_ai.core import RequestOptions  # type: ignore
 
+USER_AGENT = "mixedbread-ai@langchain/0.1.0"
+
 
 class MixedBreadAIClient(BaseModel):
     _client: MixedbreadAI = Field(default=None, exclude=True)
@@ -61,9 +63,10 @@ class MixedBreadAIClient(BaseModel):
             self,
             "_request_options",
             (
-                RequestOptions(max_retries=self.max_retries)
-                if self.max_retries is not None
-                else None
+                RequestOptions(
+                    max_retries=self.max_retries,
+                    additional_headers={"User-Agent": USER_AGENT},
+                )
             ),
         )
 
