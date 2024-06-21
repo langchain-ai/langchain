@@ -424,7 +424,7 @@ class Score(Operation):
                 var_dic_list = [var_dic for i in range(self.num_samples)]
                 self.logger.debug("Prompt for LM: %s", prompt)
                 # Build the chain of operations
-                chain = prompt | lm | StrOutputParser()
+                chain = prompt | lm.load_llm() | StrOutputParser()
                 # Execute the chain of operations as many times as the number of samples in parallel
                 responses = chain.batch(var_dic_list)
                 self.logger.debug("Responses from LM: %s", responses)
@@ -448,7 +448,7 @@ class Score(Operation):
                     var_dic_list = [var_dic for i in range(self.num_samples)]
                     self.logger.debug("Prompt for LM: %s", prompt)
                     # Build the chain of operations
-                    chain = prompt | lm | StrOutputParser()
+                    chain = prompt | lm.load_llm() | StrOutputParser()
                     # Execute the chain of operations as many times as the number of samples in parallel
                     responses = chain.batch(var_dic_list)
                     self.logger.debug("Responses from LM: %s", responses)
@@ -549,7 +549,7 @@ class ValidateAndImprove(Operation):
                     var_dic_list = [var_dic for i in range(self.num_samples)]
                     self.logger.debug("Prompt for LM: %s", prompt)
                     # Build the chain of operations
-                    chain = prompt | lm | StrOutputParser()
+                    chain = prompt | lm.load_llm() | StrOutputParser()
                     # Execute the chain of operations in parallel as many times as the number of samples
                     responses = chain.batch(var_dic_list)
                     self.logger.debug("Responses from LM: %s", responses)
@@ -570,7 +570,7 @@ class ValidateAndImprove(Operation):
                 var_dic_list = [var_dic]    # The LLM is called only once to improve the thought
                 self.logger.debug("Prompt for LM: %s", improve_prompt)
                 # Build the chain of operations
-                chain = improve_prompt | lm | StrOutputParser()
+                chain = improve_prompt | lm.load_llm() | StrOutputParser()
                 # Execute the chain of operations once
                 responses = chain.batch(var_dic_list)
                 self.logger.debug("Responses from LM: %s", responses)
@@ -663,7 +663,7 @@ class Generate(Operation):
             var_dic_list = [var_dic for i in range(self.num_branches_response)]
             self.logger.debug("Prompt for LM: %s", prompt)
             # Build the chain of operations
-            chain = prompt | lm | StrOutputParser()
+            chain = prompt | lm.load_llm() | StrOutputParser()
             # Execute the chain of operations as many times as the number of branches of the prompt in parallel
             responses = chain.batch(var_dic_list)
             self.logger.debug("Responses from LM: %s", responses)
@@ -744,7 +744,7 @@ class Improve(Operation):
             var_dic_list = [var_dic]    # The LLM is called only once to improve the thought
             self.logger.debug("Prompt for LM: %s", improve_prompt)
             # Build the chain of operations
-            chain = improve_prompt | lm | StrOutputParser()
+            chain = improve_prompt | lm.load_llm() | StrOutputParser()
             # Execute the chain of operations once
             responses = chain.batch(var_dic_list)
             self.logger.debug("Responses from LM: %s", responses)
@@ -823,7 +823,7 @@ class Aggregate(Operation):
         self.logger.debug("Prompt for LM: %s", prompt)
 
         # Build the chain of operations
-        chain = prompt | lm | StrOutputParser()
+        chain = prompt | lm.load_llm() | StrOutputParser()
         # Execute the chain of operations in parallel as many times as the number of samples
         responses = chain.batch(var_dic_list)
         self.logger.debug("Responses from LM: %s", responses)
