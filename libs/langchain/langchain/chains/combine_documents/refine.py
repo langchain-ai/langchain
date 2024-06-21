@@ -112,7 +112,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
             del values["return_refine_steps"]
         return values
 
-    @root_validator(pre=True)
+    @root_validator(pre=False, skip_on_failure=True)
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
         """Get default document variable name, if not provided."""
         if "document_variable_name" not in values:

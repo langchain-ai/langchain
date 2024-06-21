@@ -147,7 +147,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @root_validator(pre=True)
+    @root_validator(pre=False, skip_on_failure=True)
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
         """Get default document variable name, if not provided.
 
