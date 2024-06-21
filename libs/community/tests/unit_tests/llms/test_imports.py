@@ -101,6 +101,7 @@ EXPECT_ALL = [
     "YiLLM",
     "You",
     "VolcEngineMaasLLM",
+    "VolcEngineMaasLLMV3",
     "WatsonxLLM",
     "SparkLLM",
 ]

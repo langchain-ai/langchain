@@ -5,6 +5,7 @@ from langchain._api import create_importer
 if TYPE_CHECKING:
     from langchain_community.chat_models.volcengine_maas import (
         VolcEngineMaasChat,
+        VolcEngineMaasChatV3,
         convert_dict_to_message,
     )
 
@@ -14,9 +15,11 @@ if TYPE_CHECKING:
 DEPRECATED_LOOKUP = {
     "convert_dict_to_message": "langchain_community.chat_models.volcengine_maas",
     "VolcEngineMaasChat": "langchain_community.chat_models.volcengine_maas",
+    "VolcEngineMaasChatV3": "langchain_community.chat_models.volcengine_maas",
 }
 
-_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
+_import_attribute = create_importer(
+    __package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
 def __getattr__(name: str) -> Any:
@@ -27,4 +30,5 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "convert_dict_to_message",
     "VolcEngineMaasChat",
+    "VolcEngineMaasChatV3",
 ]

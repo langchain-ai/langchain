@@ -5,8 +5,9 @@ from typing import Any, Dict, Iterator, List, Optional
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.language_models.llms import Generation, LLMResult
 
 
 class VolcEngineMaasBase(BaseModel):
@@ -26,11 +27,11 @@ class VolcEngineMaasBase(BaseModel):
     """Region of the VolcEngineMaas LLM."""
 
     model: str = "skylark-lite-public"
-    """Model name. you could check this model details here 
+    """Model name. you could check this model details here
     https://www.volcengine.com/docs/82379/1133187
     and you could choose other models by change this field"""
     model_version: Optional[str] = None
-    """Model version. Only used in moonshot large language model. 
+    """Model version. Only used in moonshot large language model.
     you could check details here https://www.volcengine.com/docs/82379/1158281"""
 
     top_p: Optional[float] = 0.8
@@ -49,16 +50,18 @@ class VolcEngineMaasBase(BaseModel):
     """Timeout for connect to volc engine maas endpoint. Default is 60 seconds."""
 
     read_timeout: Optional[int] = 60
-    """Timeout for read response from volc engine maas endpoint. 
+    """Timeout for read response from volc engine maas endpoint.
     Default is 60 seconds."""
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         volc_engine_maas_ak = convert_to_secret_str(
-            get_from_dict_or_env(values, "volc_engine_maas_ak", "VOLC_ACCESSKEY")
+            get_from_dict_or_env(
+                values, "volc_engine_maas_ak", "VOLC_ACCESSKEY")
         )
         volc_engine_maas_sk = convert_to_secret_str(
-            get_from_dict_or_env(values, "volc_engine_maas_sk", "VOLC_SECRETKEY")
+            get_from_dict_or_env(
+                values, "volc_engine_maas_sk", "VOLC_SECRETKEY")
         )
         endpoint = values["endpoint"]
         if values["endpoint"] is not None and values["endpoint"] != "":
@@ -173,8 +176,190 @@ class VolcEngineMaasLLM(LLM, VolcEngineMaasBase):
         for res in self.client.stream_chat(params):
             if res:
                 chunk = GenerationChunk(
-                    text=res.get("choice", {}).get("message", {}).get("content", "")
+                    text=res.get("choice", {}).get(
+                        "message", {}).get("content", "")
                 )
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                yield chunk
+
+
+class VolcEngineMaasBaseV3(BaseModel):
+    """Base class for VolcEngineMaas V3 models."""
+
+    client: Any
+
+    volc_engine_maas_ak: Optional[SecretStr] = None
+    """access key for volc engine"""
+    volc_engine_maas_sk: Optional[SecretStr] = None
+    """secret key for volc engine"""
+
+    region: Optional[str] = "Region"
+    """Region of the VolcEngineMaas LLM."""
+
+    model: str = "skylark-lite-public"
+    """Model name. you could check this model details here
+    https://www.volcengine.com/docs/82379/1263482
+    and you could choose other models by change this field.
+    The model field only supports specifying the inference
+    endpoint in the format ep-xxxxxxxxx-yyyy and no longer
+    supports the model name and version number format."""
+
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """model special arguments, you could check detail on model page"""
+
+    streaming: bool = False
+    """Whether to stream the results."""
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        volc_engine_maas_ak = convert_to_secret_str(
+            get_from_dict_or_env(
+                values, "volc_engine_maas_ak", "VOLC_ACCESSKEY")
+        )
+        volc_engine_maas_sk = convert_to_secret_str(
+            get_from_dict_or_env(
+                values, "volc_engine_maas_sk", "VOLC_SECRETKEY")
+        )
+        try:
+            from volcenginesdkarkruntime import Ark
+
+            client = Ark(
+                ak=volc_engine_maas_ak.get_secret_value(),
+                sk=volc_engine_maas_sk.get_secret_value(),
+            )
+            values["volc_engine_maas_ak"] = volc_engine_maas_ak
+            values["volc_engine_maas_sk"] = volc_engine_maas_sk
+            values["client"] = client
+        except ImportError:
+            raise ImportError(
+                "volcengine-python-sdk package not found, please install it with "
+                "`pip install volcengine-python-sdk`"
+            )
+        return values
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling VolcEngineMaas API."""
+        return self.model_kwargs
+
+
+class VolcEngineMaasLLMV3(LLM, VolcEngineMaasBaseV3):
+    """volc engine maas hosts a plethora of models.
+    You can utilize these models through this class.
+
+    To use, you should have the ``volcengine-python-sdk`` python package installed.
+    and set access key and secret key by environment variable or direct pass those to
+    this class.
+    access key, secret key are required parameters which you could get help
+    https://www.volcengine.com/docs/82379/1263482
+
+    In order to use them, it is necessary to install the 'volcengine-python-sdk' Python package.
+    The access key and secret key must be set either via environment variables or
+    passed directly to this class.
+    access key and secret key are mandatory parameters for which assistance can be
+    sought at https://www.volcengine.com/docs/82379/1263482.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_community.llms import VolcEngineMaasLLMV3
+            model = VolcEngineMaasLLMV3(model="ep-xxxxxxxxx-yyyy",
+                                          volc_engine_maas_ak="your_ak",
+                                          volc_engine_maas_sk="your_sk")
+    """
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "volc-engine-maas-llm-v3"
+
+    def _convert_prompt_msg_params(
+        self,
+        prompts: List[Dict[str, str]],
+        **kwargs: Any,
+    ) -> dict:
+        messages = [{"role": item["role"], "content": item["content"]}
+                    for item in prompts]
+        return {
+            "model": self.model,
+            "messages": messages,
+            "stream": self.streaming,
+            **kwargs
+        }
+
+    def invoke(self, inputs: List[Dict[str, str]], **kwargs: Any) -> List[str]:
+        return self._call(prompts=inputs, **kwargs)
+
+    def generate(
+        self,
+        prompts: List[Dict[str, str]],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        results = self._call(prompts=prompts, stop=stop, **kwargs)
+        generations = [[Generation(text=result) for result in results]]
+        return LLMResult(generations=generations)
+
+    def _call(
+        self,
+        prompts: List[Dict[str, str]],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        if self.streaming:
+            completions = []
+            for chunk in self._stream(prompts, stop, run_manager, **kwargs):
+                completions.append(chunk.text)
+            return completions
+        params = self._convert_prompt_msg_params(prompts, **kwargs)
+        response = self.client.chat.completions.create(**params)
+        return [choice.message.content for choice in response.choices]
+
+    def stream(
+        self,
+        prompts: List[Dict[str, str]],
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Iterator[str]:
+        self.streaming = True
+        params = self._convert_prompt_msg_params(prompts, **kwargs)
+        response_stream = self.client.chat.completions.create(**params)
+        for res in response_stream:
+            for choice in res.choices:
+                yield choice.delta.content
+
+    async def _acall(
+        self,
+        prompts: List[Dict[str, str]],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        if self.streaming:
+            completions = []
+            async for chunk in self._astream(prompts, stop, run_manager, **kwargs):
+                completions.append(chunk.text)
+            return completions
+        params = self._convert_prompt_msg_params(prompts, **kwargs)
+        response = await self.client.chat.completions.create(**params)
+        return [choice.message.content for choice in response.choices]
+
+    async def _astream(
+        self,
+        prompts: List[Dict[str, str]],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[GenerationChunk]:
+        params = self._convert_prompt_msg_params(prompts, **kwargs)
+        stream = await self.client.chat.completions.create(**params)
+        async for res in stream:
+            if res:
+                chunk = GenerationChunk(
+                    text=res.choices[0].delta.content
+                )
+                if run_manager:
+                    await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
                 yield chunk
