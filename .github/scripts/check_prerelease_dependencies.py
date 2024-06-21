@@ -1,4 +1,5 @@
 import sys
+import tomllib
 
 if __name__ == "__main__":
     # Get the TOML file path from the command line argument
