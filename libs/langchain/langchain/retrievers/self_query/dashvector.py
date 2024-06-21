@@ -1,64 +1,23 @@
-"""Logic for converting internal query language to a valid DashVector query."""
-from typing import Tuple, Union
+from typing import TYPE_CHECKING, Any
 
-from langchain.chains.query_constructor.ir import (
-    Comparator,
-    Comparison,
-    Operation,
-    Operator,
-    StructuredQuery,
-    Visitor,
-)
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.query_constructors.dashvector import DashvectorTranslator
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "DashvectorTranslator": "langchain_community.query_constructors.dashvector",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class DashvectorTranslator(Visitor):
-    """Logic for converting internal query language elements to valid filters."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    allowed_operators = [Operator.AND, Operator.OR]
-    allowed_comparators = [
-        Comparator.EQ,
-        Comparator.GT,
-        Comparator.GTE,
-        Comparator.LT,
-        Comparator.LTE,
-        Comparator.LIKE,
-    ]
 
-    map_dict = {
-        Operator.AND: " AND ",
-        Operator.OR: " OR ",
-        Comparator.EQ: " = ",
-        Comparator.GT: " > ",
-        Comparator.GTE: " >= ",
-        Comparator.LT: " < ",
-        Comparator.LTE: " <= ",
-        Comparator.LIKE: " LIKE ",
-    }
-
-    def _format_func(self, func: Union[Operator, Comparator]) -> str:
-        self._validate_func(func)
-        return self.map_dict[func]
-
-    def visit_operation(self, operation: Operation) -> str:
-        args = [arg.accept(self) for arg in operation.arguments]
-        return self._format_func(operation.operator).join(args)
-
-    def visit_comparison(self, comparison: Comparison) -> str:
-        value = comparison.value
-        if isinstance(value, str):
-            if comparison.comparator == Comparator.LIKE:
-                value = f"'%{value}%'"
-            else:
-                value = f"'{value}'"
-        return (
-            f"{comparison.attribute}{self._format_func(comparison.comparator)}{value}"
-        )
-
-    def visit_structured_query(
-        self, structured_query: StructuredQuery
-    ) -> Tuple[str, dict]:
-        if structured_query.filter is None:
-            kwargs = {}
-        else:
-            kwargs = {"filter": structured_query.filter.accept(self)}
-        return structured_query.query, kwargs
+__all__ = ["DashvectorTranslator"]

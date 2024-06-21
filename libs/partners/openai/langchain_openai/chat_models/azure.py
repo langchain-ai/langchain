@@ -3,19 +3,25 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Type, Union
 
 import openai
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models.chat_models import LangSmithParams
+from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatResult
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
-from langchain_openai.chat_models.base import ChatOpenAI
+from langchain_openai.chat_models.base import BaseChatOpenAI
 
 logger = logging.getLogger(__name__)
 
 
-class AzureChatOpenAI(ChatOpenAI):
+class AzureChatOpenAI(BaseChatOpenAI):
     """`Azure OpenAI` Chat Completion API.
 
     To use this class you
@@ -37,10 +43,7 @@ class AzureChatOpenAI(ChatOpenAI):
 
         from langchain_openai import AzureChatOpenAI
 
-        AzureChatOpenAI(
-            azure_deployment="35-turbo-dev",
-            openai_api_version="2023-05-15",
-        )
+        AzureChatOpenAI(azure_deployment="35-turbo-dev", openai_api_version="2023-05-15")
 
     Be aware the API version may change.
 
@@ -54,7 +57,7 @@ class AzureChatOpenAI(ChatOpenAI):
 
     Any parameters that are valid to be passed to the openai.create call can be passed
     in, even if not explicitly saved on this class.
-    """
+    """  # noqa: E501
 
     azure_endpoint: Union[str, None] = None
     """Your Azure endpoint, including the resource.
@@ -80,7 +83,7 @@ class AzureChatOpenAI(ChatOpenAI):
         
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """  # noqa: E501
+    """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
         
@@ -99,6 +102,17 @@ class AzureChatOpenAI(ChatOpenAI):
     def get_lc_namespace(cls) -> List[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "azure_openai"]
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {
+            "openai_api_key": "AZURE_OPENAI_API_KEY",
+            "azure_ad_token": "AZURE_OPENAI_AD_TOKEN",
+        }
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -166,7 +180,7 @@ class AzureChatOpenAI(ChatOpenAI):
                     'azure_endpoint="https://xxx.openai.azure.com/", '
                     'azure_deployment="my-deployment"\n\n'
                     "Or you can equivalently specify:\n\n"
-                    'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'  # noqa: E501
+                    'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'
                 )
         client_params = {
             "api_version": values["openai_api_version"],
@@ -198,6 +212,27 @@ class AzureChatOpenAI(ChatOpenAI):
             ).chat.completions
         return values
 
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        # As of 05/2024 Azure OpenAI doesn't support tool_choice="required".
+        # TODO: Update this condition once tool_choice="required" is supported.
+        if tool_choice in ("any", "required", True):
+            if len(tools) > 1:
+                raise ValueError(
+                    f"Azure OpenAI does not currently support {tool_choice=}. Should "
+                    f"be one of 'auto', 'none', or the name of the tool to call."
+                )
+            else:
+                tool_choice = convert_to_openai_tool(tools[0])["function"]["name"]
+        return super().bind_tools(tools, tool_choice=tool_choice, **kwargs)
+
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
@@ -216,6 +251,16 @@ class AzureChatOpenAI(ChatOpenAI):
             "openai_api_type": self.openai_api_type,
             "openai_api_version": self.openai_api_version,
         }
+
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get the parameters used to invoke the model."""
+        params = super()._get_ls_params(stop=stop, **kwargs)
+        params["ls_provider"] = "azure"
+        if self.deployment_name:
+            params["ls_model_name"] = self.deployment_name
+        return params
 
     def _create_chat_result(
         self, response: Union[dict, openai.BaseModel]

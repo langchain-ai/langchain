@@ -122,8 +122,8 @@ def create_json_chat_agent(
 
             ```json
             {{
-                "action": string, \ The action to take. Must be one of {tool_names}
-                "action_input": string \ The input to the action
+                "action": string, \\ The action to take. Must be one of {tool_names}
+                "action_input": string \\ The input to the action
             }}
             ```
 
@@ -134,7 +134,7 @@ def create_json_chat_agent(
             ```json
             {{
                 "action": "Final Answer",
-                "action_input": string \ You should put what you want to return to use here
+                "action_input": string \\ You should put what you want to return to use here
             }}
             ```
 
@@ -155,7 +155,7 @@ def create_json_chat_agent(
             )
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
-        prompt.input_variables
+        prompt.input_variables + list(prompt.partial_variables)
     )
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")

@@ -1,7 +1,7 @@
 """Test ChatGroq chat model."""
 
 import json
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 from langchain_core.messages import (
@@ -93,9 +93,28 @@ async def test_astream() -> None:
     """Test streaming tokens from Groq."""
     chat = ChatGroq(max_tokens=10)
 
+    full: Optional[BaseMessageChunk] = None
+    chunks_with_token_counts = 0
     async for token in chat.astream("Welcome to the Groqetship!"):
-        assert isinstance(token, BaseMessageChunk)
+        assert isinstance(token, AIMessageChunk)
         assert isinstance(token.content, str)
+        full = token if full is None else full + token
+        if token.usage_metadata is not None:
+            chunks_with_token_counts += 1
+    if chunks_with_token_counts != 1:
+        raise AssertionError(
+            "Expected exactly one chunk with token counts. "
+            "AIMessageChunk aggregation adds counts. Check that "
+            "this is behaving properly."
+        )
+    assert isinstance(full, AIMessageChunk)
+    assert full.usage_metadata is not None
+    assert full.usage_metadata["input_tokens"] > 0
+    assert full.usage_metadata["output_tokens"] > 0
+    assert (
+        full.usage_metadata["input_tokens"] + full.usage_metadata["output_tokens"]
+        == full.usage_metadata["total_tokens"]
+    )
 
 
 #
@@ -223,7 +242,7 @@ def test_system_message() -> None:
     assert isinstance(response.content, str)
 
 
-@pytest.mark.scheduled
+@pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 def test_tool_choice() -> None:
     """Test that tool choice is respected."""
     llm = ChatGroq()
@@ -247,8 +266,14 @@ def test_tool_choice() -> None:
     }
     assert tool_call["type"] == "function"
 
+    assert isinstance(resp.tool_calls, list)
+    assert len(resp.tool_calls) == 1
+    tool_call = resp.tool_calls[0]
+    assert tool_call["name"] == "MyTool"
+    assert tool_call["args"] == {"name": "Erick", "age": 27}
 
-@pytest.mark.scheduled
+
+@pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 def test_tool_choice_bool() -> None:
     """Test that tool choice is respected just passing in True."""
     llm = ChatGroq()
@@ -273,6 +298,7 @@ def test_tool_choice_bool() -> None:
     assert tool_call["type"] == "function"
 
 
+@pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 def test_streaming_tool_call() -> None:
     """Test that tool choice is respected."""
     llm = ChatGroq()
@@ -301,7 +327,16 @@ def test_streaming_tool_call() -> None:
     }
     assert tool_call["type"] == "function"
 
+    assert isinstance(chunk, AIMessageChunk)
+    assert isinstance(chunk.tool_call_chunks, list)
+    assert len(chunk.tool_call_chunks) == 1
+    tool_call_chunk = chunk.tool_call_chunks[0]
+    assert tool_call_chunk["name"] == "MyTool"
+    assert isinstance(tool_call_chunk["args"], str)
+    assert json.loads(tool_call_chunk["args"]) == {"name": "Erick", "age": 27}
 
+
+@pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 async def test_astreaming_tool_call() -> None:
     """Test that tool choice is respected."""
     llm = ChatGroq()
@@ -329,6 +364,14 @@ async def test_astreaming_tool_call() -> None:
         "name": "Erick",
     }
     assert tool_call["type"] == "function"
+
+    assert isinstance(chunk, AIMessageChunk)
+    assert isinstance(chunk.tool_call_chunks, list)
+    assert len(chunk.tool_call_chunks) == 1
+    tool_call_chunk = chunk.tool_call_chunks[0]
+    assert tool_call_chunk["name"] == "MyTool"
+    assert isinstance(tool_call_chunk["args"], str)
+    assert json.loads(tool_call_chunk["args"]) == {"name": "Erick", "age": 27}
 
 
 @pytest.mark.scheduled

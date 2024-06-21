@@ -80,7 +80,7 @@ class Hologres(VectorStore):
         **kwargs: Any,
     ) -> Hologres:
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         if not metadatas:
             metadatas = [{} for _ in texts]
@@ -141,7 +141,7 @@ class Hologres(VectorStore):
             List of ids from adding the texts into the vectorstore.
         """
         if ids is None:
-            ids = [str(uuid.uuid1()) for _ in texts]
+            ids = [str(uuid.uuid4()) for _ in texts]
 
         embeddings = self.embedding_function.embed_documents(list(texts))
 

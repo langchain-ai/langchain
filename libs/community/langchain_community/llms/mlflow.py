@@ -9,7 +9,7 @@ from langchain_core.pydantic_v1 import Field, PrivateAttr
 
 
 class Mlflow(LLM):
-    """Wrapper around completions LLMs in MLflow.
+    """MLflow LLM service.
 
     To use, you should have the `mlflow[genai]` python package installed.
     For more information, see https://mlflow.org/docs/latest/llms/deployments.

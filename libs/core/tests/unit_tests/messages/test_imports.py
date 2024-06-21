@@ -14,8 +14,11 @@ EXPECTED_ALL = [
     "FunctionMessageChunk",
     "HumanMessage",
     "HumanMessageChunk",
+    "InvalidToolCall",
     "SystemMessage",
     "SystemMessageChunk",
+    "ToolCall",
+    "ToolCallChunk",
     "ToolMessage",
     "ToolMessageChunk",
     "convert_to_messages",
@@ -25,6 +28,9 @@ EXPECTED_ALL = [
     "message_to_dict",
     "messages_from_dict",
     "messages_to_dict",
+    "filter_messages",
+    "merge_message_runs",
+    "trim_messages",
 ]
 
 
