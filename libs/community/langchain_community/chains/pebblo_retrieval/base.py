@@ -127,8 +127,10 @@ class PebbloRetrievalQA(Chain):
                 "data": answer,
             },
             "prompt_time": prompt_time,
-            "user": getattr(auth_context, "user_id", "unknown"),
-            "user_identities": getattr(auth_context, "user_auth", []),
+            "user": auth_context.user_id if auth_context else "unknown",
+            "user_identities": auth_context.user_auth
+            if auth_context and hasattr(auth_context, "user_auth")
+            else [],
         }
         qa_payload = Qa(**qa)
         self._send_prompt(qa_payload)
