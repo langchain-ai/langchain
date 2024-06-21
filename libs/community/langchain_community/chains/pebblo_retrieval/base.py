@@ -503,6 +503,9 @@ class PebbloRetrievalQA(Chain):
                 logger.warning("Unable to reach Pebblo cloud server.")
             except Exception as e:
                 logger.warning("An Exception caught in _send_prompt: cloud %s", e)
+        elif self.classifier_location == "pebblo-cloud":
+            logger.warning("API key is missing for sending prompt to Pebblo cloud.")
+            raise ValueError("API key is missing for sending prompt to Pebblo cloud.")
 
     @classmethod
     def get_chain_details(cls, llm, **kwargs):  # type: ignore

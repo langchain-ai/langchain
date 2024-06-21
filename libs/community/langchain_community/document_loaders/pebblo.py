@@ -278,6 +278,9 @@ class PebbloSafeLoader(BaseLoader):
                 logger.warning("Unable to reach Pebblo cloud server.")
             except Exception as e:
                 logger.warning("An Exception caught in _send_loader_doc: cloud %s", e)
+        elif self.classifier_location == "pebblo-cloud":
+            logger.warning("API key is missing for sending docs to Pebblo cloud.")
+            raise ValueError("API key is missing for sending docs to Pebblo cloud.")
 
         return classified_docs
 
