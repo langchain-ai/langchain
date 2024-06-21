@@ -8,10 +8,15 @@ ecosystem within LangChain.
 
 ## Installation and Setup
 
-If you are using a loader that runs locally, use the following steps to get `unstructured` and
-its dependencies running locally.
+If you are using a loader that runs locally, use the following steps to get `unstructured` and its
+dependencies running.
 
-- Install the Python SDK with `pip install unstructured`.
+- For the smallest installation footprint and to take advantage of features not available in the
+  open-source `unstructured package`, install the Python SDK with `pip install unstructured-client`.
+    - Unstructured's documentation for the sdk can be found here:
+      https://docs.unstructured.io/api-reference/api-services/sdk
+
+- Install the open-source python package with `pip install unstructured`.
     - You can install document specific dependencies with extras, i.e. `pip install "unstructured[docx]"`.
     - To install the dependencies for all document types, use `pip install "unstructured[all-docs]"`.
 - Install the following system dependencies if they are not already available on your system.
@@ -21,11 +26,6 @@ its dependencies running locally.
     - `tesseract-ocr`(images and PDFs)
     - `libreoffice` (MS Office docs)
     - `pandoc` (EPUBs)
-
-If you want to get up and running with less set up, you can
-simply run `pip install unstructured` and use `UnstructuredAPIFileLoader` or
-`UnstructuredAPIFileIOLoader`. That will process your document using the hosted Unstructured API.
-
 
 The `Unstructured API` requires API keys to make requests.
 You can request an API key [here](https://unstructured.io/api-key-hosted) and start using it today!
