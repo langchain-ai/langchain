@@ -12,11 +12,13 @@ If you are using a loader that runs locally, use the following steps to get `uns
 dependencies running.
 
 - For the smallest installation footprint and to take advantage of features not available in the
-  open-source `unstructured package`, install the Python SDK with `pip install unstructured-client`.
+  open-source `unstructured` package, install the Python SDK with `pip install unstructured-client`
+  and use the `UnstructuredAPIFileLoader` or `UnstructuredAPIFileIOLoader`.
     - Unstructured's documentation for the sdk can be found here:
       https://docs.unstructured.io/api-reference/api-services/sdk
 
-- Install the open-source python package with `pip install unstructured`.
+- To run everything locally, install the open-source python package with `pip install unstructured`
+  and use the `UnstructuredFileLoader` or `UnstructuredFileIOLoader`.
     - You can install document specific dependencies with extras, i.e. `pip install "unstructured[docx]"`.
     - To install the dependencies for all document types, use `pip install "unstructured[all-docs]"`.
 - Install the following system dependencies if they are not already available on your system.
@@ -27,7 +29,7 @@ dependencies running.
     - `libreoffice` (MS Office docs)
     - `pandoc` (EPUBs)
 
-The `Unstructured API` requires API keys to make requests.
+The Unstructured API requires API keys to make requests.
 You can request an API key [here](https://unstructured.io/api-key-hosted) and start using it today!
 Checkout the README [here](https://github.com/Unstructured-IO/unstructured-api) here to get started making API calls.
 We'd love to hear your feedback, let us know how it goes in our [community slack](https://join.slack.com/t/unstructuredw-kbe4326/shared_invite/zt-1x7cgo0pg-PTptXWylzPQF9xZolzCnwQ).
