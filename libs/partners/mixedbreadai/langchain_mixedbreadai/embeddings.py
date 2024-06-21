@@ -83,6 +83,9 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
         return batch_itr
 
     def _embed(self, texts: List[str]) -> List[List[float]]:
+        if not texts:
+            return []
+
         result: List[List[float]] = []
         for batch in self._batch_iterate(texts, desc="Embedding"):
             embeddings = self._client.embeddings(
@@ -99,6 +102,9 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
         return result
 
     async def _aembed(self, texts: List[str]) -> List[List[float]]:
+        if not texts:
+            return []
+
         result: List[List[float]] = []
         for batch in self._batch_iterate(texts, desc="Async Embedding"):
             embeddings = (
