@@ -12,6 +12,7 @@ repository = "https://github.com/langchain-ai/langchain"
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.2.0"
 
+
 [tool.poetry.group.lint]
 optional = true
 
@@ -28,6 +29,8 @@ lxml-stubs = "^0.5.1"
 types-requests = "^2.31.0.20240218"
 tiktoken = "^0.6.0"
 spacy = "^3.7.4"
+numpy = "1.21"
+en-core-web-sm = {url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz"}
 
 [tool.poetry.group.dev]
 optional = true
@@ -53,7 +56,7 @@ langchain-core = { path = "../core", develop = true }
 
 
 [tool.poetry.group.test_integration]
-dependencies = {}
+dependencies = {nltk = "^3.8.1",spacy = "3.7.4"}
 
 [tool.ruff.lint]
 select = [
