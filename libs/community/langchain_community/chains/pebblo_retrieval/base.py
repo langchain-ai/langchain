@@ -241,7 +241,7 @@ class PebbloRetrievalQA(Chain):
         )
 
         # generate app
-        app = PebbloRetrievalQA._get_app_details(
+        app: App = PebbloRetrievalQA._get_app_details(
             app_name=app_name,
             description=description,
             owner=owner,
@@ -314,7 +314,9 @@ class PebbloRetrievalQA(Chain):
         )
 
     @staticmethod
-    def _get_app_details(app_name, owner, description, llm, **kwargs) -> App:  # type: ignore
+    def _get_app_details(  # type: ignore
+        app_name: str, owner: str, description: str, llm: BaseLanguageModel, **kwargs
+    ) -> App:
         """Fetch app details. Internal method.
         Returns:
             App: App details.
@@ -333,7 +335,12 @@ class PebbloRetrievalQA(Chain):
         return app
 
     @staticmethod
-    def _send_discover(app, api_key, classifier_url, classifier_location) -> None:  # type: ignore
+    def _send_discover(
+        app: App,
+        api_key: Optional[str],
+        classifier_url: str,
+        classifier_location: str,
+    ) -> None:  # type: ignore
         """Send app discovery payload to pebblo-server. Internal method."""
         headers = {
             "Accept": "application/json",
@@ -505,10 +512,10 @@ class PebbloRetrievalQA(Chain):
                 logger.warning("An Exception caught in _send_prompt: cloud %s", e)
         elif self.classifier_location == "pebblo-cloud":
             logger.warning("API key is missing for sending prompt to Pebblo cloud.")
-            raise ValueError("API key is missing for sending prompt to Pebblo cloud.")
+            raise NameError("API key is missing for sending prompt to Pebblo cloud.")
 
     @classmethod
-    def get_chain_details(cls, llm, **kwargs):  # type: ignore
+    def get_chain_details(cls, llm: BaseLanguageModel, **kwargs):  # type: ignore
         llm_dict = llm.__dict__
         chain = [
             {
@@ -531,6 +538,6 @@ class PebbloRetrievalQA(Chain):
                         ),
                     }
                 ],
-            }
+            },
         ]
         return chain

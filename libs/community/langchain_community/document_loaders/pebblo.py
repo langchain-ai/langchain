@@ -46,6 +46,7 @@ class PebbloSafeLoader(BaseLoader):
         api_key: Optional[str] = None,
         load_semantic: bool = False,
         classifier_url: Optional[str] = None,
+        *,
         classifier_location: str = "local",
     ):
         if not name or not isinstance(name, str):
@@ -280,7 +281,7 @@ class PebbloSafeLoader(BaseLoader):
                 logger.warning("An Exception caught in _send_loader_doc: cloud %s", e)
         elif self.classifier_location == "pebblo-cloud":
             logger.warning("API key is missing for sending docs to Pebblo cloud.")
-            raise ValueError("API key is missing for sending docs to Pebblo cloud.")
+            raise NameError("API key is missing for sending docs to Pebblo cloud.")
 
         return classified_docs
 
