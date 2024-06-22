@@ -12,7 +12,7 @@ class ReducedOpenAPISpec:
 
     This is a quick and dirty representation for OpenAPI specs.
 
-    Parameters
+    Parameters:
         servers: The servers in the spec.
         description: The description of the spec.
         endpoints: The endpoints in the spec.
