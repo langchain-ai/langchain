@@ -1,6 +1,6 @@
 """Tool for the Bing search API."""
 
-from typing import Optional
+from typing import Dict, List, Optional, Union
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
@@ -29,14 +29,15 @@ class BingSearchRun(BaseTool):
 
 
 class BingSearchResults(BaseTool):
-    """Tool that queries the Bing Search API and gets back json."""
+    """Tool that queries the Bing Search API and gets a list of results."""
 
     name: str = "bing_search_results_json"
     description: str = (
         "A wrapper around Bing Search. "
         "Useful for when you need to answer questions about current events. "
-        "Input should be a search query. Output is a JSON array of the query results"
+        "Input should be a search query. Output is an array of the query results."
     )
+    """Max search results to return, default is 4"""
     num_results: int = 4
     api_wrapper: BingSearchAPIWrapper
 
@@ -44,6 +45,9 @@ class BingSearchResults(BaseTool):
         self,
         query: str,
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> str:
+    ) -> Union[List[Dict], str]:
         """Use the tool."""
-        return str(self.api_wrapper.results(query, self.num_results))
+        try:
+            return self.api_wrapper.results(query, self.num_results)
+        except Exception as e:
+            return repr(e)
