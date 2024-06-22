@@ -1,3 +1,4 @@
+"""This module checks for specific import statements in the codebase."""
 import sys
 import traceback
 from importlib.machinery import SourceFileLoader

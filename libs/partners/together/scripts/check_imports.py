@@ -1,3 +1,4 @@
+"""This module checks if the given python files can be imported without error."""
 import sys
 import traceback
 from importlib.machinery import SourceFileLoader

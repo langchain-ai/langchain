@@ -111,6 +111,7 @@ class TogetherEmbeddings(BaseModel, Embeddings):
         http_client as well if you'd like a custom client for sync invocations."""
 
     class Config:
+        """Configuration for this pydantic object."""
         extra = Extra.forbid
         allow_population_by_field_name = True
 
@@ -143,7 +144,6 @@ class TogetherEmbeddings(BaseModel, Embeddings):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-
         together_api_key = get_from_dict_or_env(
             values, "together_api_key", "TOGETHER_API_KEY"
         )
