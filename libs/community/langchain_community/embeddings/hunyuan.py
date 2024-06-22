@@ -50,7 +50,6 @@ class HunyuanEmbeddings(Embeddings, BaseModel):
                 "HUNYUAN_SECRET_KEY",
             )
         )
-        # Check OPENAI_ORGANIZATION for backwards compatibility.
 
         try:
             from tencentcloud.common.credential import Credential
