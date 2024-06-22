@@ -14,9 +14,9 @@ class VolcEngineMaasBase(BaseModel):
 
     client: Any
 
-    volc_engine_maas_ak: SecretStr = Field(default=None, alias="api_key")
+    volc_engine_maas_ak: Optional[SecretStr] = None
     """access key for volc engine"""
-    volc_engine_maas_sk: SecretStr = Field(default=None, alias="secret_key")
+    volc_engine_maas_sk: Optional[SecretStr] = None
     """secret key for volc engine"""
 
     endpoint: Optional[str] = "maas-api.ml-platform-cn-beijing.volces.com"
@@ -52,22 +52,13 @@ class VolcEngineMaasBase(BaseModel):
     """Timeout for read response from volc engine maas endpoint. 
     Default is 60 seconds."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        allow_population_by_field_name = True
-
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         volc_engine_maas_ak = convert_to_secret_str(
-            get_from_dict_or_env(
-                values, ["volc_engine_maas_ak", "api_key"], "VOLC_ACCESSKEY"
-            )
+            get_from_dict_or_env(values, "volc_engine_maas_ak", "VOLC_ACCESSKEY")
         )
         volc_engine_maas_sk = convert_to_secret_str(
-            get_from_dict_or_env(
-                values, ["volc_engine_maas_sk", "secret_key"], "VOLC_SECRETKEY"
-            )
+            get_from_dict_or_env(values, "volc_engine_maas_sk", "VOLC_SECRETKEY")
         )
         default_values = {
             name: field.default
