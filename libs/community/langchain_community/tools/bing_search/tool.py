@@ -37,8 +37,8 @@ class BingSearchResults(BaseTool):
         "Useful for when you need to answer questions about current events. "
         "Input should be a search query. Output is an array of the query results."
     )
-    """Max search results to return, default is 4"""
     num_results: int = 4
+    """Max search results to return, default is 4."""
     api_wrapper: BingSearchAPIWrapper
 
     def _run(
