@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import logging
 import uuid
 from types import FunctionType, MethodType
 from typing import (
@@ -19,7 +20,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypedDict
+from typing_extensions import Annotated, TypedDict, get_args, get_origin
 
 from langchain_core._api import deprecated
 from langchain_core.messages import (
@@ -33,7 +34,7 @@ from langchain_core.utils.json_schema import dereference_refs
 
 if TYPE_CHECKING:
     from langchain_core.tools import BaseTool
-
+logger = logging.getLogger(__name__)
 PYTHON_TO_JSON_TYPES = {
     "str": "string",
     "int": "integer",
@@ -160,6 +161,10 @@ def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
     return description, arg_descriptions
 
 
+def _is_annotated_type(typ: Type[Any]) -> bool:
+    return get_origin(typ) is Annotated
+
+
 def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -> dict:
     """Get JsonSchema describing a Python functions arguments.
 
@@ -171,10 +176,27 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
     for arg, arg_type in annotations.items():
         if arg == "return":
             continue
-        if isinstance(arg_type, type) and issubclass(arg_type, BaseModel):
-            # Mypy error:
-            # "type" has no attribute "schema"
-            properties[arg] = arg_type.schema()  # type: ignore[attr-defined]
+
+        if _is_annotated_type(arg_type):
+            annotated_args = get_args(arg_type)
+            arg_type = annotated_args[0]
+            if len(annotated_args) > 1:
+                for annotation in annotated_args[1:]:
+                    if isinstance(annotation, str):
+                        arg_descriptions[arg] = annotation
+                        break
+        if (
+            isinstance(arg_type, type)
+            and hasattr(arg_type, "model_json_schema")
+            and callable(arg_type.model_json_schema)
+        ):
+            properties[arg] = arg_type.model_json_schema()
+        elif (
+            isinstance(arg_type, type)
+            and hasattr(arg_type, "schema")
+            and callable(arg_type.schema)
+        ):
+            properties[arg] = arg_type.schema()
         elif (
             hasattr(arg_type, "__name__")
             and getattr(arg_type, "__name__") in PYTHON_TO_JSON_TYPES
@@ -185,13 +207,20 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
             and getattr(arg_type, "__dict__").get("__origin__", None) == Literal
         ):
             properties[arg] = {
-                "enum": list(arg_type.__args__),  # type: ignore
-                "type": PYTHON_TO_JSON_TYPES[arg_type.__args__[0].__class__.__name__],  # type: ignore
+                "enum": list(arg_type.__args__),
+                "type": PYTHON_TO_JSON_TYPES[arg_type.__args__[0].__class__.__name__],
             }
+        else:
+            logger.warning(
+                f"Argument {arg} of type {arg_type} from function {function.__name__} "
+                "could not be not be converted to a JSON schema."
+            )
+
         if arg in arg_descriptions:
             if arg not in properties:
                 properties[arg] = {}
             properties[arg]["description"] = arg_descriptions[arg]
+
     return properties
 
 
