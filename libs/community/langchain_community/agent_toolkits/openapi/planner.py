@@ -403,6 +403,24 @@ def create_openapi_agent(
     and avoid accepting inputs from untrusted sources without proper sandboxing.
     Please see: https://python.langchain.com/docs/security
     for further security information.
+
+    Args:
+        api_spec: The OpenAPI spec.
+        requests_wrapper: The requests wrapper.
+        llm: The language model.
+        shared_memory: Optional. The shared memory. Default is None.
+        callback_manager: Optional. The callback manager. Default is None.
+        verbose: Optional. Whether to print verbose output. Default is True.
+        agent_executor_kwargs: Optional. Additional keyword arguments
+            for the agent executor.
+        allow_dangerous_requests: Optional. Whether to allow dangerous requests.
+            Default is False.
+        allowed_operations: Optional. The allowed operations.
+            Default is ("GET", "POST").
+        **kwargs: Additional arguments.
+
+    Returns:
+        The agent executor.
     """
     from langchain.agents.agent import AgentExecutor
     from langchain.agents.mrkl.base import ZeroShotAgent
