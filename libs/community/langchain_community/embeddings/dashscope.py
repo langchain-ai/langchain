@@ -10,7 +10,7 @@ from typing import (
 )
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 from requests.exceptions import HTTPError
 from tenacity import (
@@ -101,7 +101,7 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
     client: Any  #: :meta private:
     """The DashScope client."""
     model: str = "text-embedding-v1"
-    dashscope_api_key: Optional[str] = None
+    dashscope_api_key: Optional[str] = Field(default=None, alias="api_key")
     max_retries: int = 5
     """Maximum number of retries to make when generating."""
 
@@ -109,19 +109,18 @@ class DashScopeEmbeddings(BaseModel, Embeddings):
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
+        allow_population_by_field_name = True
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
-        import dashscope
-
         """Validate that api key and python package exists in environment."""
         values["dashscope_api_key"] = get_from_dict_or_env(
-            values, "dashscope_api_key", "DASHSCOPE_API_KEY"
+            values, ["dashscope_api_key", "api_key"], "DASHSCOPE_API_KEY"
         )
-        dashscope.api_key = values["dashscope_api_key"]
         try:
             import dashscope
 
+            dashscope.api_key = values["dashscope_api_key"]
             values["client"] = dashscope.TextEmbedding
         except ImportError:
             raise ImportError(

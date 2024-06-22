@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
     """`Baidu Qianfan Embeddings` embedding models."""
 
-    qianfan_ak: Optional[str] = None
+    qianfan_ak: Optional[str] = Field(default=None, alias="api_key")
     """Qianfan application apikey"""
 
-    qianfan_sk: Optional[str] = None
+    qianfan_sk: Optional[str] = Field(default=None, alias="secret_key")
     """Qianfan application secretkey"""
 
     chunk_size: int = 16
@@ -48,7 +48,12 @@ class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """extra params for model invoke using with `do`."""
 
-    @root_validator()
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
+
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """
         Validate whether qianfan_ak and qianfan_sk in the environment variables or
@@ -74,7 +79,7 @@ class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
         values["qianfan_ak"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "qianfan_ak",
+                ["qianfan_ak", "api_key"],
                 "QIANFAN_AK",
                 default="",
             )
@@ -82,7 +87,7 @@ class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
         values["qianfan_sk"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "qianfan_sk",
+                ["qianfan_sk", "secret_key"],
                 "QIANFAN_SK",
                 default="",
             )
@@ -91,16 +96,25 @@ class QianfanEmbeddingsEndpoint(BaseModel, Embeddings):
         try:
             import qianfan
 
+            default_values = {
+                name: field.default
+                for name, field in cls.__fields__.items()
+                if field.default is not None
+            }
+            default_values.update(values)
             params = {
                 **values.get("init_kwargs", {}),
-                "model": values["model"],
+                "model": default_values.get("model"),
             }
             if values["qianfan_ak"].get_secret_value() != "":
                 params["ak"] = values["qianfan_ak"].get_secret_value()
             if values["qianfan_sk"].get_secret_value() != "":
                 params["sk"] = values["qianfan_sk"].get_secret_value()
-            if values["endpoint"] is not None and values["endpoint"] != "":
-                params["endpoint"] = values["endpoint"]
+            if (
+                default_values.get("endpoint") is not None
+                and default_values["endpoint"] != ""
+            ):
+                params["endpoint"] = default_values["endpoint"]
             values["client"] = qianfan.Embedding(**params)
         except ImportError:
             raise ImportError(

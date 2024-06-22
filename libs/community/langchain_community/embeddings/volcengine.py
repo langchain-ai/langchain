@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
@@ -13,11 +13,11 @@ logger = logging.getLogger(__name__)
 class VolcanoEmbeddings(BaseModel, Embeddings):
     """`Volcengine Embeddings` embedding models."""
 
-    volcano_ak: Optional[str] = None
+    volcano_ak: Optional[str] = Field(default=None, alias="api_key")
     """volcano access key
     learn more from: https://www.volcengine.com/docs/6459/76491#ak-sk"""
 
-    volcano_sk: Optional[str] = None
+    volcano_sk: Optional[str] = Field(default=None, alias="secret_key")
     """volcano secret key
     learn more from: https://www.volcengine.com/docs/6459/76491#ak-sk"""
 
@@ -43,7 +43,12 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
     client: Any
     """volcano client"""
 
-    @root_validator()
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
+
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """
         Validate whether volcano_ak and volcano_sk in the environment variables or
@@ -68,19 +73,25 @@ class VolcanoEmbeddings(BaseModel, Embeddings):
         """
         values["volcano_ak"] = get_from_dict_or_env(
             values,
-            "volcano_ak",
+            ["volcano_ak", "api_key"],
             "VOLC_ACCESSKEY",
         )
         values["volcano_sk"] = get_from_dict_or_env(
             values,
-            "volcano_sk",
+            ["volcano_sk", "secret_key"],
             "VOLC_SECRETKEY",
         )
+        default_values = {
+            name: field.default
+            for name, field in cls.__fields__.items()
+            if field.default is not None
+        }
+        default_values.update(values)
 
         try:
             from volcengine.maas import MaasService
 
-            client = MaasService(values["host"], values["region"])
+            client = MaasService(default_values["host"], default_values["region"])
             client.set_ak(values["volcano_ak"])
             client.set_sk(values["volcano_sk"])
             values["client"] = client
