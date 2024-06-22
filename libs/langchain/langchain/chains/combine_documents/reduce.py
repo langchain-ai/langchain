@@ -319,7 +319,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
         **kwargs: Any,
     ) -> Tuple[List[Document], dict]:
         result_docs = docs
-        length_func = self.combine_documents_chain.prompt_length
+        length_func = self._collapse_chain.prompt_length
         num_tokens = length_func(result_docs, **kwargs)
 
         async def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:
