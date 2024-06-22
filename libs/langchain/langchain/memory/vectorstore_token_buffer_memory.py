@@ -61,7 +61,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
 
 
     Example using ChromaDB:
-    
+
     .. code-block:: python
 
         from langchain.memory.token_buffer_vectorstore_memory import (
