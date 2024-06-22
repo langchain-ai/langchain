@@ -5,10 +5,12 @@ from __future__ import annotations
 import warnings
 from abc import ABC
 from string import Formatter
-from typing import Any, Callable, Dict, List, Set
+from typing import Any, Callable, Dict, List, Set, Tuple, Type
 
+import langchain_core.utils.mustache as mustache
 from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.prompts.base import BasePromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, create_model
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.formatting import formatter
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -85,8 +87,74 @@ def _get_jinja2_variables_from_template(template: str) -> Set[str]:
     return variables
 
 
+def mustache_formatter(template: str, **kwargs: Any) -> str:
+    """Format a template using mustache."""
+    return mustache.render(template, kwargs)
+
+
+def mustache_template_vars(
+    template: str,
+) -> Set[str]:
+    """Get the variables from a mustache template."""
+    vars: Set[str] = set()
+    in_section = False
+    for type, key in mustache.tokenize(template):
+        if type == "end":
+            in_section = False
+        elif in_section:
+            continue
+        elif (
+            type in ("variable", "section", "inverted section", "no escape")
+            and key != "."
+        ):
+            vars.add(key.split(".")[0])
+            if type in ("section", "inverted section"):
+                in_section = True
+    return vars
+
+
+Defs = Dict[str, "Defs"]
+
+
+def mustache_schema(
+    template: str,
+) -> Type[BaseModel]:
+    """Get the variables from a mustache template."""
+    fields = {}
+    prefix: Tuple[str, ...] = ()
+    for type, key in mustache.tokenize(template):
+        if key == ".":
+            continue
+        if type == "end":
+            prefix = prefix[: -key.count(".")]
+        elif type in ("section", "inverted section"):
+            prefix = prefix + tuple(key.split("."))
+            fields[prefix] = False
+        elif type in ("variable", "no escape"):
+            fields[prefix + tuple(key.split("."))] = True
+    defs: Defs = {}  # None means leaf node
+    while fields:
+        field, is_leaf = fields.popitem()
+        current = defs
+        for part in field[:-1]:
+            current = current.setdefault(part, {})
+        current.setdefault(field[-1], "" if is_leaf else {})  # type: ignore[arg-type]
+    return _create_model_recursive("PromptInput", defs)
+
+
+def _create_model_recursive(name: str, defs: Defs) -> Type:
+    return create_model(  # type: ignore[call-overload]
+        name,
+        **{
+            k: (_create_model_recursive(k, v), None) if v else (type(v), None)
+            for k, v in defs.items()
+        },
+    )
+
+
 DEFAULT_FORMATTER_MAPPING: Dict[str, Callable] = {
     "f-string": formatter.format,
+    "mustache": mustache_formatter,
     "jinja2": jinja2_formatter,
 }
 
@@ -145,6 +213,8 @@ def get_template_variables(template: str, template_format: str) -> List[str]:
         input_variables = {
             v for _, v, _, _ in Formatter().parse(template) if v is not None
         }
+    elif template_format == "mustache":
+        input_variables = mustache_template_vars(template)
     else:
         raise ValueError(f"Unsupported template format: {template_format}")
 
@@ -160,8 +230,10 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
         return ["langchain", "prompts", "base"]
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
-        """Create Chat Messages."""
         return StringPromptValue(text=self.format(**kwargs))
+
+    async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        return StringPromptValue(text=await self.aformat(**kwargs))
 
     def pretty_repr(self, html: bool = False) -> str:
         # TODO: handle partials

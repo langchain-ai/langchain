@@ -8,6 +8,7 @@ from typing import (
     Any,
     Dict,
     List,
+    Literal,
     Optional,
     Sequence,
     Set,
@@ -37,7 +38,7 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import StringPromptTemplate, get_template_variables
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field, PositiveInt, root_validator
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
 
@@ -159,6 +160,24 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
             #     AIMessage(content="5 + 2 is 7"),
             #     HumanMessage(content="now multiply that by 4"),
             # ])
+
+    Limiting the number of messages:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import MessagesPlaceholder
+
+            prompt = MessagesPlaceholder("history", n_messages=1)
+
+            prompt.format_messages(
+                history=[
+                    ("system", "You are an AI assistant."),
+                    ("human", "Hello!"),
+                ]
+            )
+            # -> [
+            #     HumanMessage(content="Hello!"),
+            # ]
     """
 
     variable_name: str
@@ -168,6 +187,10 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
     """If True format_messages can be called with no arguments and will return an empty 
         list. If False then a named argument with name `variable_name` must be passed 
         in, even if the value is an empty list."""
+
+    n_messages: Optional[PositiveInt] = None
+    """Maximum number of messages to include. If None, then will include all. 
+    Defaults to None."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -196,7 +219,10 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
                 f"variable {self.variable_name} should be a list of base messages, "
                 f"got {value}"
             )
-        return convert_to_messages(value)
+        value = convert_to_messages(value)
+        if self.n_messages:
+            value = value[-self.n_messages :]
+        return value
 
     @property
     def input_variables(self) -> List[str]:
@@ -297,6 +323,17 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
             Formatted message.
         """
 
+    async def aformat(self, **kwargs: Any) -> BaseMessage:
+        """Format the prompt template.
+
+        Args:
+            **kwargs: Keyword arguments to use for formatting.
+
+        Returns:
+            Formatted message.
+        """
+        return self.format(**kwargs)
+
     def format_messages(self, **kwargs: Any) -> List[BaseMessage]:
         """Format messages from kwargs.
 
@@ -307,6 +344,9 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
             List of BaseMessages.
         """
         return [self.format(**kwargs)]
+
+    async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        return [await self.aformat(**kwargs)]
 
     @property
     def input_variables(self) -> List[str]:
@@ -350,6 +390,12 @@ class ChatMessagePromptTemplate(BaseStringMessagePromptTemplate):
             content=text, role=self.role, additional_kwargs=self.additional_kwargs
         )
 
+    async def aformat(self, **kwargs: Any) -> BaseMessage:
+        text = await self.prompt.aformat(**kwargs)
+        return ChatMessage(
+            content=text, role=self.role, additional_kwargs=self.additional_kwargs
+        )
+
 
 _StringImageMessagePromptTemplateT = TypeVar(
     "_StringImageMessagePromptTemplateT", bound="_StringImageMessagePromptTemplate"
@@ -386,6 +432,8 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         cls: Type[_StringImageMessagePromptTemplateT],
         template: Union[str, List[Union[str, _TextTemplateParam, _ImageTemplateParam]]],
         template_format: str = "f-string",
+        *,
+        partial_variables: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> _StringImageMessagePromptTemplateT:
         """Create a class from a string template.
@@ -393,6 +441,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         Args:
             template: a template.
             template_format: format of the template.
+            partial_variables: A dictionary of variables that can be used too partially.
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:
@@ -400,17 +449,23 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         """
         if isinstance(template, str):
             prompt: Union[StringPromptTemplate, List] = PromptTemplate.from_template(
-                template, template_format=template_format
+                template,
+                template_format=template_format,
+                partial_variables=partial_variables,
             )
             return cls(prompt=prompt, **kwargs)
         elif isinstance(template, list):
+            if (partial_variables is not None) and len(partial_variables) > 0:
+                raise ValueError(
+                    "Partial variables are not supported for list of templates."
+                )
             prompt = []
             for tmpl in template:
                 if isinstance(tmpl, str) or isinstance(tmpl, dict) and "text" in tmpl:
                     if isinstance(tmpl, str):
                         text: str = tmpl
                     else:
-                        text = cast(_TextTemplateParam, tmpl)["text"]  # type: ignore[assignment]  # noqa: E501
+                        text = cast(_TextTemplateParam, tmpl)["text"]  # type: ignore[assignment]
                     prompt.append(
                         PromptTemplate.from_template(
                             text, template_format=template_format
@@ -486,6 +541,9 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         """
         return [self.format(**kwargs)]
 
+    async def aformat_messages(self, **kwargs: Any) -> List[BaseMessage]:
+        return [await self.aformat(**kwargs)]
+
     @property
     def input_variables(self) -> List[str]:
         """
@@ -521,6 +579,34 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     content.append({"type": "text", "text": formatted})
                 elif isinstance(prompt, ImagePromptTemplate):
                     formatted = prompt.format(**inputs)
+                    content.append({"type": "image_url", "image_url": formatted})
+            return self._msg_class(
+                content=content, additional_kwargs=self.additional_kwargs
+            )
+
+    async def aformat(self, **kwargs: Any) -> BaseMessage:
+        """Format the prompt template.
+
+        Args:
+            **kwargs: Keyword arguments to use for formatting.
+
+        Returns:
+            Formatted message.
+        """
+        if isinstance(self.prompt, StringPromptTemplate):
+            text = await self.prompt.aformat(**kwargs)
+            return self._msg_class(
+                content=text, additional_kwargs=self.additional_kwargs
+            )
+        else:
+            content: List = []
+            for prompt in self.prompt:
+                inputs = {var: kwargs[var] for var in prompt.input_variables}
+                if isinstance(prompt, StringPromptTemplate):
+                    formatted: Union[str, ImageURL] = await prompt.aformat(**inputs)
+                    content.append({"type": "text", "text": formatted})
+                elif isinstance(prompt, ImagePromptTemplate):
+                    formatted = await prompt.aformat(**inputs)
                     content.append({"type": "image_url", "image_url": formatted})
             return self._msg_class(
                 content=content, additional_kwargs=self.additional_kwargs
@@ -589,6 +675,18 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
         """
         return self.format_prompt(**kwargs).to_string()
 
+    async def aformat(self, **kwargs: Any) -> str:
+        """Format the chat template into a string.
+
+        Args:
+            **kwargs: keyword arguments to use for filling in template variables
+                      in all the template messages in this chat template.
+
+        Returns:
+            formatted string
+        """
+        return (await self.aformat_prompt(**kwargs)).to_string()
+
     def format_prompt(self, **kwargs: Any) -> PromptValue:
         """
         Format prompt. Should return a PromptValue.
@@ -599,6 +697,10 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
             PromptValue.
         """
         messages = self.format_messages(**kwargs)
+        return ChatPromptValue(messages=messages)
+
+    async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        messages = await self.aformat_messages(**kwargs)
         return ChatPromptValue(messages=messages)
 
     @abstractmethod
@@ -862,6 +964,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     def from_messages(
         cls,
         messages: Sequence[MessageLikeRepresentation],
+        template_format: Literal["f-string", "mustache"] = "f-string",
     ) -> ChatPromptTemplate:
         """Create a chat prompt template from a variety of message formats.
 
@@ -897,7 +1000,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         Returns:
             a chat prompt template
         """
-        _messages = [_convert_to_message(message) for message in messages]
+        _messages = [
+            _convert_to_message(message, template_format) for message in messages
+        ]
 
         # Automatically infer input variables from messages
         input_vars: Set[str] = set()
@@ -1054,7 +1159,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
 
 def _create_template_from_message_type(
-    message_type: str, template: Union[str, list]
+    message_type: str,
+    template: Union[str, list],
+    template_format: Literal["f-string", "mustache"] = "f-string",
 ) -> BaseMessagePromptTemplate:
     """Create a message prompt template from a message type and template string.
 
@@ -1067,12 +1174,16 @@ def _create_template_from_message_type(
     """
     if message_type in ("human", "user"):
         message: BaseMessagePromptTemplate = HumanMessagePromptTemplate.from_template(
-            template
+            template, template_format=template_format
         )
     elif message_type in ("ai", "assistant"):
-        message = AIMessagePromptTemplate.from_template(cast(str, template))
+        message = AIMessagePromptTemplate.from_template(
+            cast(str, template), template_format=template_format
+        )
     elif message_type == "system":
-        message = SystemMessagePromptTemplate.from_template(cast(str, template))
+        message = SystemMessagePromptTemplate.from_template(
+            cast(str, template), template_format=template_format
+        )
     elif message_type == "placeholder":
         if isinstance(template, str):
             if template[0] != "{" or template[-1] != "}":
@@ -1113,6 +1224,7 @@ def _create_template_from_message_type(
 
 def _convert_to_message(
     message: MessageLikeRepresentation,
+    template_format: Literal["f-string", "mustache"] = "f-string",
 ) -> Union[BaseMessage, BaseMessagePromptTemplate, BaseChatPromptTemplate]:
     """Instantiate a message from a variety of message formats.
 
@@ -1137,16 +1249,22 @@ def _convert_to_message(
     elif isinstance(message, BaseMessage):
         _message = message
     elif isinstance(message, str):
-        _message = _create_template_from_message_type("human", message)
+        _message = _create_template_from_message_type(
+            "human", message, template_format=template_format
+        )
     elif isinstance(message, tuple):
         if len(message) != 2:
             raise ValueError(f"Expected 2-tuple of (role, template), got {message}")
         message_type_str, template = message
         if isinstance(message_type_str, str):
-            _message = _create_template_from_message_type(message_type_str, template)
+            _message = _create_template_from_message_type(
+                message_type_str, template, template_format=template_format
+            )
         else:
             _message = message_type_str(
-                prompt=PromptTemplate.from_template(cast(str, template))
+                prompt=PromptTemplate.from_template(
+                    cast(str, template), template_format=template_format
+                )
             )
     else:
         raise NotImplementedError(f"Unsupported message type: {type(message)}")

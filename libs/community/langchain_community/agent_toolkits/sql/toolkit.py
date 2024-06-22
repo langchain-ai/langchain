@@ -1,10 +1,11 @@
 """Toolkit for interacting with an SQL database."""
+
 from typing import List
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.pydantic_v1 import Field
+from langchain_core.tools import BaseToolkit
 
-from langchain_community.agent_toolkits.base import BaseToolkit
 from langchain_community.tools import BaseTool
 from langchain_community.tools.sql_database.tool import (
     InfoSQLDatabaseTool,
@@ -16,7 +17,12 @@ from langchain_community.utilities.sql_database import SQLDatabase
 
 
 class SQLDatabaseToolkit(BaseToolkit):
-    """Toolkit for interacting with SQL databases."""
+    """Toolkit for interacting with SQL databases.
+
+    Parameters:
+        db: SQLDatabase. The SQL database.
+        llm: BaseLanguageModel. The language model.
+    """
 
     db: SQLDatabase = Field(exclude=True)
     llm: BaseLanguageModel = Field(exclude=True)

@@ -66,9 +66,9 @@ def _convert_delta_to_message_chunk(
     elif role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 class ChatBaichuan(BaseChatModel):
@@ -89,18 +89,18 @@ class ChatBaichuan(BaseChatModel):
 
     baichuan_api_base: str = Field(default=DEFAULT_API_BASE)
     """Baichuan custom endpoints"""
-    baichuan_api_key: Optional[SecretStr] = None
+    baichuan_api_key: SecretStr = Field(alias="api_key")
     """Baichuan API Key"""
     baichuan_secret_key: Optional[SecretStr] = None
     """[DEPRECATED, keeping it for for backward compatibility] Baichuan Secret Key"""
     streaming: bool = False
     """Whether to stream the results or not."""
-    request_timeout: int = 60
+    request_timeout: int = Field(default=60, alias="timeout")
     """request timeout for chat http requests"""
-    model = "Baichuan2-Turbo-192K"
+    model: str = "Baichuan2-Turbo-192K"
     """model name of Baichuan, default is `Baichuan2-Turbo-192K`,
     other options include `Baichuan2-Turbo`"""
-    temperature: float = 0.3
+    temperature: Optional[float] = Field(default=0.3)
     """What sampling temperature to use."""
     top_k: int = 5
     """What search sampling control to use."""
@@ -142,7 +142,7 @@ class ChatBaichuan(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["baichuan_api_base"] = get_from_dict_or_env(
             values,
@@ -153,11 +153,10 @@ class ChatBaichuan(BaseChatModel):
         values["baichuan_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "baichuan_api_key",
+                ["baichuan_api_key", "api_key"],
                 "BAICHUAN_API_KEY",
             )
         )
-
         return values
 
     @property

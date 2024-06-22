@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 import pytest
 
@@ -44,13 +45,15 @@ def mock_completion() -> dict:
     }
 
 
-@pytest.mark.parametrize(
-    "model",
-    [
-        "gpt-3.5-turbo-instruct",
-        "text-davinci-003",
-    ],
-)
+@pytest.mark.parametrize("model", ["gpt-3.5-turbo-instruct", "text-davinci-003"])
 def test_get_token_ids(model: str) -> None:
     OpenAI(model=model).get_token_ids("foo")
     return
+
+
+def test_custom_token_counting() -> None:
+    def token_encoder(text: str) -> List[int]:
+        return [1, 2, 3]
+
+    llm = OpenAI(custom_get_token_ids=token_encoder)
+    assert llm.get_token_ids("foo") == [1, 2, 3]

@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 _BASE_URL = "https://api.python.langchain.com/en/latest/"
 
 # Regular expression to match Python code blocks
-code_block_re = re.compile(r"^(```python\n)(.*?)(```\n)", re.DOTALL | re.MULTILINE)
+code_block_re = re.compile(r"^(```\s?python\n)(.*?)(```)", re.DOTALL | re.MULTILINE)
 # Regular expression to match langchain import lines
 _IMPORT_RE = re.compile(
-    r"from\s+(langchain\.\w+(\.\w+)*?)\s+import\s+"
+    r"from\s+(langchain(?:_\w+)?(?:\.\w+)*?)\s+import\s+"
     r"((?:\w+(?:,\s*)?)*"  # Match zero or more words separated by a comma+optional ws
     r"(?:\s*\(.*?\))?)",  # Match optional parentheses block
     re.DOTALL,  # Match newlines as well
@@ -24,20 +24,24 @@ _IMPORT_RE = re.compile(
 
 _CURRENT_PATH = Path(__file__).parent.absolute()
 # Directory where generated markdown files are stored
-_DOCS_DIR = _CURRENT_PATH / "docs"
-_JSON_PATH = _CURRENT_PATH / "api_reference" / "guide_imports.json"
+_DOCS_DIR = _CURRENT_PATH.parent.parent / "docs"
 
 
 def find_files(path):
     """Find all MDX files in the given path"""
     # Check if is file first
+    if ".ipynb_checkpoints" in str(path):
+        return
     if os.path.isfile(path):
         yield path
         return
     for root, _, files in os.walk(path):
         for file in files:
             if file.endswith(".mdx") or file.endswith(".md"):
-                yield os.path.join(root, file)
+                full = os.path.join(root, file)
+                if ".ipynb_checkpoints" in str(full):
+                    continue
+                yield full
 
 
 def get_full_module_name(module_path, class_name):
@@ -55,6 +59,12 @@ def get_args():
         default=_DOCS_DIR,
         help="Directory where generated markdown files are stored",
     )
+    parser.add_argument(
+        "--json_path",
+        type=str,
+        default=None,
+        help="Path to store the generated JSON file",
+    )
     return parser.parse_args()
 
 
@@ -64,16 +74,18 @@ def main():
     global_imports = {}
 
     for file in find_files(args.docs_dir):
-        print(f"Adding links for imports in {file}")  # noqa: T201
         file_imports = replace_imports(file)
+        print(file)
 
         if file_imports:
             # Use relative file path as key
             relative_path = (
-                os.path.relpath(file, _DOCS_DIR).replace(".mdx", "").replace(".md", "")
+                os.path.relpath(file, args.docs_dir)
+                .replace(".mdx", "/")
+                .replace(".md", "/")
             )
 
-            doc_url = f"https://python.langchain.com/docs/{relative_path}"
+            doc_url = f"https://python.langchain.com/v0.2/docs/{relative_path}"
             for import_info in file_imports:
                 doc_title = import_info["title"]
                 class_name = import_info["imported"]
@@ -82,14 +94,16 @@ def main():
                 global_imports[class_name][doc_title] = doc_url
 
     # Write the global imports information to a JSON file
-    _JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with _JSON_PATH.open("w") as f:
-        json.dump(global_imports, f)
+    if args.json_path:
+        json_path = Path(args.json_path)
+        json_path.parent.mkdir(parents=True, exist_ok=True)
+        with json_path.open("w") as f:
+            json.dump(global_imports, f)
 
 
 def _get_doc_title(data: str, file_name: str) -> str:
     try:
-        return re.findall(r"^#\s+(.*)", data, re.MULTILINE)[0]
+        return re.findall(r"^#\s*(.*)", data, re.MULTILINE)[0]
     except IndexError:
         pass
     # Parse the rst-style titles
@@ -122,8 +136,10 @@ def replace_imports(file):
         imports = []
         for import_match in _IMPORT_RE.finditer(code):
             module = import_match.group(1)
+            if "pydantic_v1" in module:
+                continue
             imports_str = (
-                import_match.group(3).replace("(\n", "").replace("\n)", "")
+                import_match.group(2).replace("(\n", "").replace("\n)", "")
             )  # Handle newlines within parentheses
             # remove any newline and spaces, then split by comma
             imported_classes = [
@@ -140,7 +156,8 @@ def replace_imports(file):
                 except ImportError as e:
                     logger.warning(f"Failed to load for class {class_name}, {e}")
                     continue
-
+                if len(module_path.split(".")) < 2:
+                    continue
                 url = (
                     _BASE_URL
                     + module_path.split(".")[1]
@@ -174,6 +191,8 @@ def replace_imports(file):
     # Use re.sub to replace each Python code block
     data = code_block_re.sub(replacer, data)
 
+    # if all_imports:
+    #     print(f"Adding {len(all_imports)} links for imports in {file}")
     with open(file, "w") as f:
         f.write(data)
     return all_imports

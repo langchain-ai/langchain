@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class BaichuanLLM(LLM):
     # TODO: Adding streaming support.
-    """Wrapper around Baichuan large language models."""
+    """Baichuan large language models."""
 
     model: str = "Baichuan2-Turbo-192k"
     """

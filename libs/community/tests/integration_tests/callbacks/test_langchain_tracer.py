@@ -1,11 +1,12 @@
 """Integration tests for the langchain tracer module."""
+
 import asyncio
 import os
 
 from aiohttp import ClientSession
 from langchain_core.callbacks.manager import atrace_as_chain_group, trace_as_chain_group
 from langchain_core.prompts import PromptTemplate
-from langchain_core.tracers.context import tracing_enabled, tracing_v2_enabled
+from langchain_core.tracers.context import tracing_v2_enabled
 
 from langchain_community.chat_models import ChatOpenAI
 from langchain_community.llms import OpenAI
@@ -93,44 +94,6 @@ async def test_tracing_concurrent_bw_compat_environ() -> None:
     await aiosession.close()
     if "LANGCHAIN_HANDLER" in os.environ:
         del os.environ["LANGCHAIN_HANDLER"]
-
-
-def test_tracing_context_manager() -> None:
-    from langchain.agents import AgentType, initialize_agent, load_tools
-
-    llm = OpenAI(temperature=0)
-    tools = load_tools(["llm-math", "serpapi"], llm=llm)
-    agent = initialize_agent(
-        tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
-    )
-    if "LANGCHAIN_TRACING" in os.environ:
-        del os.environ["LANGCHAIN_TRACING"]
-    with tracing_enabled() as session:
-        assert session
-        agent.run(questions[0])  # this should be traced
-
-    agent.run(questions[0])  # this should not be traced
-
-
-async def test_tracing_context_manager_async() -> None:
-    from langchain.agents import AgentType, initialize_agent, load_tools
-
-    llm = OpenAI(temperature=0)
-    async_tools = load_tools(["llm-math", "serpapi"], llm=llm)
-    agent = initialize_agent(
-        async_tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
-    )
-    if "LANGCHAIN_TRACING" in os.environ:
-        del os.environ["LANGCHAIN_TRACING"]
-
-    # start a background task
-    task = asyncio.create_task(agent.arun(questions[0]))  # this should not be traced
-    with tracing_enabled() as session:
-        assert session
-        tasks = [agent.arun(q) for q in questions[1:4]]  # these should be traced
-        await asyncio.gather(*tasks)
-
-    await task
 
 
 async def test_tracing_v2_environment_variable() -> None:

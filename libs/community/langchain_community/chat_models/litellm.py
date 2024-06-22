@@ -131,9 +131,9 @@ def _convert_delta_to_message_chunk(
     elif role == "function" or default_class == FunctionMessageChunk:
         return FunctionMessageChunk(content=content, name=_dict["name"])
     elif role or default_class == ChatMessageChunk:
-        return ChatMessageChunk(content=content, role=role)
+        return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
@@ -161,7 +161,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
 
 class ChatLiteLLM(BaseChatModel):
-    """A chat model that uses the LiteLLM API."""
+    """Chat model that uses the LiteLLM API."""
 
     client: Any  #: :meta private:
     model: str = "gpt-3.5-turbo"

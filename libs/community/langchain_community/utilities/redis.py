@@ -214,4 +214,4 @@ def _check_for_cluster(redis_client: RedisType) -> bool:
 def _redis_cluster_client(redis_url: str, **kwargs: Any) -> RedisType:
     from redis.cluster import RedisCluster
 
-    return RedisCluster.from_url(redis_url, **kwargs)
+    return RedisCluster.from_url(redis_url, **kwargs)  # type: ignore[return-value]

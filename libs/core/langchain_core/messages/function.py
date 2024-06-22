@@ -9,12 +9,21 @@ from langchain_core.utils._merge import merge_dicts
 
 
 class FunctionMessage(BaseMessage):
-    """Message for passing the result of executing a function back to a model."""
+    """Message for passing the result of executing a tool back to a model.
+
+    FunctionMessage are an older version of the ToolMessage schema, and
+    do not contain the tool_call_id field.
+
+    The tool_call_id field is used to associate the tool call request with the
+    tool call response. This is useful in situations where a chat model is able
+    to request multiple tool calls in parallel.
+    """
 
     name: str
     """The name of the function that was executed."""
 
     type: Literal["function"] = "function"
+    """The type of the message (used for serialization)."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -54,6 +63,7 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
                 response_metadata=merge_dicts(
                     self.response_metadata, other.response_metadata
                 ),
+                id=self.id,
             )
 
         return super().__add__(other)
