@@ -5,9 +5,10 @@ import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-# BING_SEARCH_ENDPOINT is the default endpoint for Bing Search API and is
-# normally invariant to users.
+# BING_SEARCH_ENDPOINT is the default endpoint for Bing Search API and is normally
+# invariant to users.
 BING_SEARCH_ENDPOINT = "https://api.bing.microsoft.com/v7.0/search"
+
 
 class BingSearchAPIWrapper(BaseModel):
     """Wrapper for Bing Search API."""
