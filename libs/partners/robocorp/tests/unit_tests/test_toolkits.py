@@ -15,7 +15,7 @@ from ._fixtures import FakeChatLLMT
 
 def test_initialization() -> None:
     """Test toolkit initialization."""
-    ActionServerToolkit(url="http://localhost", llm=FakeChatLLMT())
+    ActionServerToolkit(url="http://localhost", llm=FakeChatLLMT())  # type: ignore[call-arg]
 
 
 def test_get_tools_success() -> None:

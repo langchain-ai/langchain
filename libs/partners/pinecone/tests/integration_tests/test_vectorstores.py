@@ -9,7 +9,7 @@ import pytest
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from pinecone import PodSpec
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture  # type: ignore[import-not-found]
 
 from langchain_pinecone import PineconeVectorStore
 

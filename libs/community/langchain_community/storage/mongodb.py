@@ -68,7 +68,7 @@ class MongoDBStore(BaseStore[str, Document]):
         if not collection_name:
             raise ValueError("collection_name must be provided.")
 
-        self.client = MongoClient(connection_string, **(client_kwargs or {}))
+        self.client = MongoClient(connection_string, **(client_kwargs or {}))  # type: ignore[var-annotated]
         self.collection = self.client[db_name][collection_name]
 
     def mget(self, keys: Sequence[str]) -> List[Optional[Document]]:

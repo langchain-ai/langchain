@@ -13,7 +13,7 @@ from typing import (
 from unittest.mock import patch
 
 import pytest
-import pytest_asyncio
+import pytest_asyncio  # type: ignore[import-not-found]
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document

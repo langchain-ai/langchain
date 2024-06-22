@@ -3,7 +3,7 @@
 from typing import Type
 
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
+from langchain_standard_tests.integration_tests import ChatModelIntegrationTests  # type: ignore[import-not-found]
 
 from langchain_anthropic import ChatAnthropic
 

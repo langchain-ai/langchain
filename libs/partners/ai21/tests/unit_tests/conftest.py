@@ -19,7 +19,7 @@ from ai21.models import (
     SegmentationResponse,
 )
 from ai21.models.responses.segmentation_response import Segment
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture  # type: ignore[import-not-found]
 
 J2_CHAT_MODEL_NAME = "j2-ultra"
 JAMBA_CHAT_MODEL_NAME = "jamba-instruct-preview"

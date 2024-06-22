@@ -4,8 +4,8 @@ from typing import Type
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.runnables import RunnableBinding
-from langchain_standard_tests.unit_tests import ChatModelUnitTests
-from langchain_standard_tests.unit_tests.chat_models import Person, my_adder_tool
+from langchain_standard_tests.unit_tests import ChatModelUnitTests  # type: ignore[import-not-found]
+from langchain_standard_tests.unit_tests.chat_models import Person, my_adder_tool  # type: ignore[import-not-found]
 
 from langchain_openai import AzureChatOpenAI
 

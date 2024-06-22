@@ -138,7 +138,7 @@ class DallEAPIWrapper(BaseModel):
             if not values.get("async_client"):
                 values["async_client"] = openai.AsyncOpenAI(**client_params).images
         elif not values.get("client"):
-            values["client"] = openai.Image
+            values["client"] = openai.Image  # type: ignore[attr-defined]
         else:
             pass
         return values

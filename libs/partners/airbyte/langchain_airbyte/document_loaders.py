@@ -14,7 +14,7 @@ from typing import (
     TypeVar,
 )
 
-import airbyte as ab
+import airbyte as ab  # type: ignore[import-not-found]
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import run_in_executor

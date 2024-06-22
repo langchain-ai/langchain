@@ -205,7 +205,7 @@ def test_chroma_update_document() -> None:
         embedding=embedding,
         ids=[document_id],
     )
-    old_embedding = docsearch._collection.peek()["embeddings"][
+    old_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore[index]
         docsearch._collection.peek()["ids"].index(document_id)
     ]
 
@@ -225,7 +225,7 @@ def test_chroma_update_document() -> None:
     assert output == [Document(page_content=updated_content, metadata={"page": "0"})]
 
     # Assert that the new embedding is correct
-    new_embedding = docsearch._collection.peek()["embeddings"][
+    new_embedding = docsearch._collection.peek()["embeddings"][  # type: ignore[index]
         docsearch._collection.peek()["ids"].index(document_id)
     ]
     assert new_embedding == embedding.embed_documents([updated_content])[0]

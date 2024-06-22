@@ -2256,7 +2256,7 @@ class Qdrant(VectorStore):
             https=https,
             api_key=api_key,
             prefix=prefix,
-            timeout=timeout,
+            timeout=timeout,  # type: ignore[arg-type]
             host=host,
             path=path,
             **kwargs,
@@ -2276,7 +2276,7 @@ class Qdrant(VectorStore):
                 https=https,
                 api_key=api_key,
                 prefix=prefix,
-                timeout=timeout,
+                timeout=timeout,  # type: ignore[arg-type]
                 host=host,
                 path=path,
                 **kwargs,

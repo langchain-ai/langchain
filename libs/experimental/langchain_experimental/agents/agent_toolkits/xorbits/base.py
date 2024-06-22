@@ -108,11 +108,11 @@ def create_xorbits_agent(
         callback_manager=callback_manager,
     )
     tool_names = [tool.name for tool in tools]
-    agent = ZeroShotAgent(
+    agent = ZeroShotAgent(  # type: ignore[call-arg]
         llm_chain=llm_chain,
         allowed_tools=tool_names,
         callback_manager=callback_manager,
-        **kwargs,
+        **kwargs,  # type: ignore[arg-type]
     )
     return AgentExecutor.from_agent_and_tools(
         agent=agent,

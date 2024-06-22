@@ -21,5 +21,5 @@ def test_together_invalid_model_kwargs() -> None:
 
 def test_together_incorrect_field() -> None:
     with pytest.warns(match="not default parameter"):
-        llm = TogetherEmbeddings(foo="bar")
+        llm = TogetherEmbeddings(foo="bar")  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": "bar"}

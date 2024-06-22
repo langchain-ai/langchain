@@ -18,9 +18,9 @@ from typing import (
 from uuid import UUID
 
 import pytest
-from freezegun import freeze_time
-from pytest_mock import MockerFixture
-from syrupy import SnapshotAssertion
+from freezegun import freeze_time  # type: ignore[import-not-found]
+from pytest_mock import MockerFixture  # type: ignore[import-not-found]
+from syrupy import SnapshotAssertion  # type: ignore[import-not-found]
 from typing_extensions import TypedDict
 
 from langchain_core.callbacks.manager import (

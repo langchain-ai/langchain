@@ -85,11 +85,11 @@ class QdrantSparseVectorRetriever(BaseRetriever):
             collection_info = client.get_collection(collection_name)
             sparse_vectors_config = collection_info.config.params.sparse_vectors
 
-            if sparse_vector_name not in sparse_vectors_config:
+            if sparse_vector_name not in sparse_vectors_config:  # type: ignore[operator]
                 raise QdrantException(
                     f"Existing Qdrant collection {collection_name} does not "
                     f"contain sparse vector named {sparse_vector_name}."
-                    f"Did you mean one of {', '.join(sparse_vectors_config.keys())}?"
+                    f"Did you mean one of {', '.join(sparse_vectors_config.keys())}?"  # type: ignore[union-attr]
                 )
         except (UnexpectedResponse, RpcError, ValueError):
             raise QdrantException(

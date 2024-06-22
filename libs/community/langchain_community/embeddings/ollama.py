@@ -193,9 +193,9 @@ class OllamaEmbeddings(BaseModel, Embeddings):
                     "Unable to show progress bar because tqdm could not be imported. "
                     "Please install with `pip install tqdm`."
                 )
-                iter_ = input
+                iter_ = input  # type: ignore[assignment]
         else:
-            iter_ = input
+            iter_ = input  # type: ignore[assignment]
         return [self._process_emb_response(prompt) for prompt in iter_]
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:

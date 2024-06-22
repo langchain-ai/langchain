@@ -122,7 +122,7 @@ class UnstructuredURLLoader(BaseLoader):
 
             urls = tqdm(self.urls)
         else:
-            urls = self.urls
+            urls = self.urls  # type: ignore[assignment]
 
         for url in urls:
             try:

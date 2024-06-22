@@ -13,7 +13,7 @@ from typing import (
 )
 
 import pytest
-from syrupy import SnapshotAssertion
+from syrupy import SnapshotAssertion  # type: ignore[import-not-found]
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import (

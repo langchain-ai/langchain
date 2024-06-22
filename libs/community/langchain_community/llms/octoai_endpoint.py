@@ -102,7 +102,7 @@ class OctoAIEndpoint(BaseOpenAI):
             else:
                 values["openai_api_base"] = values["octoai_api_base"]
                 values["openai_api_key"] = values["octoai_api_token"].get_secret_value()
-                values["client"] = openai.Completion
+                values["client"] = openai.Completion  # type: ignore[attr-defined]
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "

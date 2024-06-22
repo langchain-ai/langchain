@@ -135,7 +135,7 @@ class Anyscale(BaseOpenAI):
             else:
                 values["openai_api_base"] = values["anyscale_api_base"]
                 values["openai_api_key"] = values["anyscale_api_key"].get_secret_value()
-                values["client"] = openai.Completion
+                values["client"] = openai.Completion  # type: ignore[attr-defined]
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "

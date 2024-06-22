@@ -116,7 +116,7 @@ def test_prompty_used_in_agent() -> None:
             extra={"widget": {"type": "chat", "input": "input", "output": "output"}},
         )
 
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True).with_types(
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True).with_types(  # type: ignore[arg-type, arg-type]
         input_type=AgentInput  # type: ignore[arg-type]
     )
 

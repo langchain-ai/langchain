@@ -54,11 +54,11 @@ def _create_retry_decorator(embeddings: OpenAIEmbeddings) -> Callable[[Any], Any
             max=embeddings.retry_max_seconds,
         ),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -81,11 +81,11 @@ def _async_retry_decorator(embeddings: OpenAIEmbeddings) -> Any:
             max=embeddings.retry_max_seconds,
         ),
         retry=(
-            retry_if_exception_type(openai.error.Timeout)
-            | retry_if_exception_type(openai.error.APIError)
-            | retry_if_exception_type(openai.error.APIConnectionError)
-            | retry_if_exception_type(openai.error.RateLimitError)
-            | retry_if_exception_type(openai.error.ServiceUnavailableError)
+            retry_if_exception_type(openai.error.Timeout)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.APIConnectionError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.RateLimitError)  # type: ignore[attr-defined]
+            | retry_if_exception_type(openai.error.ServiceUnavailableError)  # type: ignore[attr-defined]
         ),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
@@ -106,7 +106,7 @@ def _check_response(response: dict, skip_empty: bool = False) -> dict:
     if any(len(d["embedding"]) == 1 for d in response["data"]) and not skip_empty:
         import openai
 
-        raise openai.error.APIError("OpenAI API returned an empty embedding")
+        raise openai.error.APIError("OpenAI API returned an empty embedding")  # type: ignore[attr-defined]
     return response
 
 
@@ -354,7 +354,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         **client_params
                     ).embeddings
             elif not values.get("client"):
-                values["client"] = openai.Embedding
+                values["client"] = openai.Embedding  # type: ignore[attr-defined]
             else:
                 pass
         return values
@@ -387,7 +387,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                         "Please install it with `pip install openai`."
                     )
 
-                openai.proxy = {
+                openai.proxy = {  # type: ignore[attr-defined]
                     "http": self.openai_proxy,
                     "https": self.openai_proxy,
                 }  # type: ignore[assignment]
@@ -485,9 +485,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
                 _iter = tqdm(range(0, len(tokens), _chunk_size))
             except ImportError:
-                _iter = range(0, len(tokens), _chunk_size)
+                _iter = range(0, len(tokens), _chunk_size)  # type: ignore[assignment]
         else:
-            _iter = range(0, len(tokens), _chunk_size)
+            _iter = range(0, len(tokens), _chunk_size)  # type: ignore[assignment]
 
         batched_embeddings: List[List[float]] = []
         for i in _iter:

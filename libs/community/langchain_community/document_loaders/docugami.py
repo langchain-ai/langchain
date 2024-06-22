@@ -276,11 +276,11 @@ class DocugamiLoader(BaseLoader, BaseModel):
                     artifact_tree = etree.parse(io.BytesIO(response.content))
                     artifact_root = artifact_tree.getroot()
                     ns = artifact_root.nsmap
-                    entries = artifact_root.xpath("//pr:Entry", namespaces=ns)
-                    for entry in entries:
-                        heading = entry.xpath("./pr:Heading", namespaces=ns)[0].text
+                    entries = artifact_root.xpath("//pr:Entry", namespaces=ns)  # type: ignore[arg-type]
+                    for entry in entries:  # type: ignore[union-attr, union-attr]
+                        heading = entry.xpath("./pr:Heading", namespaces=ns)[0].text  # type: ignore[union-attr, union-attr, union-attr, union-attr, index, union-attr, union-attr, union-attr, union-attr, arg-type]
                         value = " ".join(
-                            entry.xpath("./pr:Value", namespaces=ns)[0].itertext()
+                            entry.xpath("./pr:Value", namespaces=ns)[0].itertext()  # type: ignore[union-attr, union-attr, union-attr, union-attr, index, union-attr, union-attr, union-attr, union-attr, arg-type, arg-type]
                         ).strip()
                         metadata[heading] = value[: self.max_metadata_length]
                     per_file_metadata[doc_id] = metadata

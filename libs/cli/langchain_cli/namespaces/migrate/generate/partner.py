@@ -2,7 +2,7 @@
 import importlib
 from typing import List, Tuple
 
-from langchain_core.documents import BaseDocumentCompressor, BaseDocumentTransformer
+from langchain_core.documents import BaseDocumentCompressor, BaseDocumentTransformer  # type: ignore[attr-defined]
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.retrievers import BaseRetriever

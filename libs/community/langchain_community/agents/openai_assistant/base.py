@@ -254,7 +254,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             name=name,
             instructions=instructions,
             tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore
-            tool_resources=tool_resources,
+            tool_resources=tool_resources,  # type: ignore[arg-type]
             model=model,
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
@@ -390,7 +390,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
             name=name,
             instructions=instructions,
             tools=openai_tools,  # type: ignore
-            tool_resources=tool_resources,
+            tool_resources=tool_resources,  # type: ignore[arg-type]
             model=model,
         )
         return cls(assistant_id=assistant.id, async_client=async_client, **kwargs)

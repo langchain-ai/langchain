@@ -192,7 +192,7 @@ class AsyncHtmlLoader(BaseLoader):
                 for result in await asyncio.gather(*tasks):
                     yield result
             else:
-                for task in asyncio.as_completed(tasks):
+                for task in asyncio.as_completed(tasks):  # type: ignore[assignment]
                     yield await task
 
     async def fetch_all(self, urls: List[str]) -> List[str]:

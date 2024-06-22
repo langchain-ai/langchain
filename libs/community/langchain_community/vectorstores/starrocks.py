@@ -157,7 +157,7 @@ class StarRocks(VectorStore):
             self.pgbar = tqdm
         except ImportError:
             # Just in case if tqdm is not installed
-            self.pgbar = lambda x, **kwargs: x
+            self.pgbar = lambda x, **kwargs: x  # type: ignore[assignment]
         super().__init__()
         if config is not None:
             self.config = config

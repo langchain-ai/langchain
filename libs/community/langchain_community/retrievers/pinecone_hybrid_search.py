@@ -48,7 +48,7 @@ def create_index(
     try:
         from tqdm.auto import tqdm
 
-        _iterator = tqdm(_iterator)
+        _iterator = tqdm(_iterator)  # type: ignore[assignment]
     except ImportError:
         pass
 

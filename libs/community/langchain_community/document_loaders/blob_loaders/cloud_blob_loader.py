@@ -111,7 +111,7 @@ def _make_iterator(
         # a progress bar that takes into account the total number of files.
         def _with_tqdm(iterable: Iterable[T]) -> Iterator[T]:
             """Wrap an iterable in a tqdm progress bar."""
-            return tqdm(iterable, total=length_func())
+            return tqdm(iterable, total=length_func())  # type: ignore[return-value]
 
         iterator = _with_tqdm
     else:
@@ -223,7 +223,7 @@ class CloudBlobLoader(BlobLoader):
             yield self.path
             return
 
-        paths = self.path.glob(self.glob)
+        paths = self.path.glob(self.glob)  # type: ignore[attr-defined]
         for path in paths:
             if self.exclude:
                 if any(path.match(glob) for glob in self.exclude):

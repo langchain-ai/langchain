@@ -90,9 +90,9 @@ class GooglePalmEmbeddings(BaseModel, Embeddings):
                     "Unable to show progress bar because tqdm could not be imported. "
                     "Please install with `pip install tqdm`."
                 )
-                iter_ = texts
+                iter_ = texts  # type: ignore[assignment]
         else:
-            iter_ = texts
+            iter_ = texts  # type: ignore[assignment]
         return [self.embed_query(text) for text in iter_]
 
     def embed_query(self, text: str) -> List[float]:

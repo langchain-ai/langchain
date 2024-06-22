@@ -5,7 +5,7 @@ from uuid import UUID
 
 import pytest
 from pytest import Config, Function, Parser
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture  # type: ignore[import-not-found]
 
 
 def pytest_addoption(parser: Parser) -> None:

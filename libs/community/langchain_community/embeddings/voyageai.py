@@ -167,7 +167,7 @@ class VoyageEmbeddings(BaseModel, Embeddings):
 
             _iter = tqdm(range(0, len(texts), batch_size))
         else:
-            _iter = range(0, len(texts), batch_size)
+            _iter = range(0, len(texts), batch_size)  # type: ignore[assignment]
 
         if input_type and input_type not in ["query", "document"]:
             raise ValueError(

@@ -7,7 +7,7 @@ from typing import Any, List
 from uuid import uuid4
 
 import pytest
-from freezegun import freeze_time
+from freezegun import freeze_time  # type: ignore[import-not-found]
 
 from langchain_core.callbacks import AsyncCallbackManager
 from langchain_core.exceptions import TracerException

@@ -116,7 +116,7 @@ def _get_search_client(
         credential = InteractiveBrowserCredential()
         credential.get_token("https://search.azure.com/.default")
     else:
-        credential = AzureKeyCredential(key)
+        credential = AzureKeyCredential(key)  # type: ignore[assignment]
     index_client: SearchIndexClient = SearchIndexClient(
         endpoint=endpoint, credential=credential, user_agent=user_agent
     )

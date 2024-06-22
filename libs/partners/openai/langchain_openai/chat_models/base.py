@@ -147,7 +147,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             id=id_,
         )
     else:
-        return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)
+        return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
 
 
 def _format_message_content(content: Any) -> Any:
@@ -261,7 +261,7 @@ def _convert_delta_to_message_chunk(
             content=content,
             additional_kwargs=additional_kwargs,
             id=id_,
-            tool_call_chunks=tool_call_chunks,
+            tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content, id=id_)
@@ -491,7 +491,7 @@ class BaseChatOpenAI(BaseChatModel):
                             total_tokens=token_usage.get("total_tokens", 0),
                         )
                         generation_chunk = ChatGenerationChunk(
-                            message=default_chunk_class(
+                            message=default_chunk_class(  # type: ignore[call-arg]
                                 content="", usage_metadata=usage_metadata
                             )
                         )
@@ -611,7 +611,7 @@ class BaseChatOpenAI(BaseChatModel):
                             total_tokens=token_usage.get("total_tokens", 0),
                         )
                         generation_chunk = ChatGenerationChunk(
-                            message=default_chunk_class(
+                            message=default_chunk_class(  # type: ignore[call-arg]
                                 content="", usage_metadata=usage_metadata
                             )
                         )
@@ -1123,7 +1123,7 @@ class BaseChatOpenAI(BaseChatModel):
             llm = self.bind_tools([schema], tool_choice="any")
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], first_tool_only=True
+                    tools=[schema], first_tool_only=True  # type: ignore[list-item]
                 )
             else:
                 key_name = convert_to_openai_tool(schema)["function"]["name"]
@@ -1133,7 +1133,7 @@ class BaseChatOpenAI(BaseChatModel):
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )

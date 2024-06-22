@@ -26,7 +26,7 @@ def _make_iterator(
         # a progress bar that takes into account the total number of files.
         def _with_tqdm(iterable: Iterable[T]) -> Iterator[T]:
             """Wrap an iterable in a tqdm progress bar."""
-            return tqdm(iterable, total=length_func())
+            return tqdm(iterable, total=length_func())  # type: ignore[return-value]
 
         iterator = _with_tqdm
     else:

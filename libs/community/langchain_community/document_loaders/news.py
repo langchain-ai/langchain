@@ -77,7 +77,7 @@ class NewsURLLoader(BaseLoader):
                     "Please install with 'pip install tqdm' or set "
                     "show_progress_bar=False."
                 ) from e
-            iter = tqdm(iter)
+            iter = tqdm(iter)  # type: ignore[assignment]
         return list(iter)
 
     def lazy_load(self) -> Iterator[Document]:

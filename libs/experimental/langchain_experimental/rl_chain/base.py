@@ -316,7 +316,7 @@ class AutoSelectionScorer(SelectionScorer[Event], BaseModel):
                 [default_system_prompt, human_message_prompt]
             )
         values["prompt"] = prompt
-        values["llm_chain"] = LLMChain(llm=llm, prompt=prompt)
+        values["llm_chain"] = LLMChain(llm=llm, prompt=prompt)  # type: ignore[arg-type, arg-type]
         return values
 
     def score_response(

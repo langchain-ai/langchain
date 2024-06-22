@@ -41,7 +41,7 @@ def _process_name(name: str):
         raise ValueError("Name should not end with `-`.")
     if preprocessed.find("--") != -1:
         raise ValueError("Name should not contain consecutive hyphens.")
-    return Replacements(
+    return Replacements(  # type: ignore[typeddict-unknown-key]
         {
             "__package_name__": f"langchain-{preprocessed}",
             "__module_name__": "langchain_" + preprocessed.replace("-", "_"),

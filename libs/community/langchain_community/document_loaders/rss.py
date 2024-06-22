@@ -76,7 +76,7 @@ class RSSFeedLoader(BaseLoader):
                     "Please install with 'pip install tqdm' or set "
                     "show_progress_bar=False."
                 ) from e
-            iter = tqdm(iter)
+            iter = tqdm(iter)  # type: ignore[assignment]
         return list(iter)
 
     @property

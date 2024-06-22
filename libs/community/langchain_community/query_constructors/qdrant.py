@@ -53,7 +53,7 @@ class QdrantTranslator(Visitor):
             Operator.OR: "should",
             Operator.NOT: "must_not",
         }[operation.operator]
-        return rest.Filter(**{operator: args})
+        return rest.Filter(**{operator: args})  # type: ignore[arg-type]
 
     def visit_comparison(self, comparison: Comparison) -> rest.FieldCondition:
         try:

@@ -119,7 +119,7 @@ class QueryModel(BaseModel):
 
     translate a question about the story outcome into a programmatic expression"""
 
-    question: str = Field(alias=Constant.narrative_input.value)  # input
+    question: str = Field(alias=Constant.narrative_input.value)  # input  # type: ignore[literal-required]  # type: ignore[literal-required]
     expression: str  # output, part of llm completion
     llm_error_msg: str  # output, part of llm completion
     _result_table: str = PrivateAttr()  # result of the executed query
@@ -128,7 +128,7 @@ class QueryModel(BaseModel):
 class ResultModel(BaseModel):
     """Result of the story query."""
 
-    question: str = Field(alias=Constant.narrative_input.value)  # input
+    question: str = Field(alias=Constant.narrative_input.value)  # input  # type: ignore[literal-required]  # type: ignore[literal-required]
     _result_table: str = PrivateAttr()  # result of the executed query
 
 
