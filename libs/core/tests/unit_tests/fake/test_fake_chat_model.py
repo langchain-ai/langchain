@@ -1,11 +1,23 @@
 """Tests for verifying that testing utility code works as expected."""
+
 from itertools import cycle
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
+import pytest
+
 from langchain_core.callbacks.base import AsyncCallbackHandler
-from langchain_core.language_models import GenericFakeChatModel, ParrotFakeChatModel
-from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.language_models import (
+    FakeMessagesListChatModel,
+    GenericFakeChatModel,
+    ParrotFakeChatModel,
+)
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+)
 from langchain_core.messages.human import HumanMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from tests.unit_tests.stubs import AnyStr
@@ -207,3 +219,83 @@ def test_chat_model_inputs() -> None:
     assert fake.invoke([AIMessage(content="blah")]) == AIMessage(
         content="blah", id=AnyStr()
     )
+
+
+@pytest.mark.parametrize(
+    "responses, expected_content",
+    [
+        ([AIMessage(content="Hello")], "Hello"),
+        (["Hello"], "Hello"),
+    ],
+)
+def test_fake_messages_list_chat_model_invoke(
+    responses: List[Union[BaseMessage, BaseMessageChunk, str]],
+    expected_content: str,
+) -> None:
+    model = FakeMessagesListChatModel(responses=responses)
+    result = model.invoke("Test input")
+    assert isinstance(result, AIMessage)
+    assert result.content == expected_content
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "responses, expected_content",
+    [
+        ([AIMessage(content="Hello")], "Hello"),
+        (["Hello"], "Hello"),
+    ],
+)
+async def test_fake_messages_list_chat_model_ainvoke(
+    responses: List[Union[BaseMessage, BaseMessageChunk, str]],
+    expected_content: str,
+) -> None:
+    model = FakeMessagesListChatModel(responses=responses)
+    result = await model.ainvoke("Test input")
+    assert isinstance(result, AIMessage)
+    assert result.content == expected_content
+
+
+@pytest.mark.parametrize(
+    "responses, expected_chunks",
+    [
+        ([["Hello", "World"]], ["Hello", "World"]),
+        (
+            [[AIMessageChunk(content="Hello"), AIMessageChunk(content="World")]],
+            ["Hello", "World"],
+        ),
+    ],
+)
+def test_fake_messages_list_chat_model_stream(
+    responses: List[List[Union[BaseMessage, BaseMessageChunk, str]]],
+    expected_chunks: List[str],
+) -> None:
+    model = FakeMessagesListChatModel(responses=responses)
+    chunks = list(model.stream("Test input"))
+    assert len(chunks) == len(expected_chunks)
+    for chunk, expected_content in zip(chunks, expected_chunks):
+        assert isinstance(chunk, AIMessageChunk)
+        assert chunk.content == expected_content
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "responses, expected_chunks",
+    [
+        ([["Hello", "World"]], ["Hello", "World"]),
+        (
+            [[AIMessageChunk(content="Hello"), AIMessageChunk(content="World")]],
+            ["Hello", "World"],
+        ),
+    ],
+)
+async def test_fake_messages_list_chat_model_astream(
+    responses: List[List[Union[BaseMessage, BaseMessageChunk, str]]],
+    expected_chunks: List[str],
+) -> None:
+    model = FakeMessagesListChatModel(responses=responses)
+    chunks = [chunk async for chunk in model.astream("Test input")]
+    assert len(chunks) == len(expected_chunks)
+    for chunk, expected_chunk in zip(chunks, expected_chunks):
+        assert isinstance(chunk, AIMessageChunk)
+        assert chunk.content == expected_chunk
