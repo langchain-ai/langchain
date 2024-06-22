@@ -112,6 +112,7 @@ class TogetherEmbeddings(BaseModel, Embeddings):
 
     class Config:
         """Configuration for this pydantic object."""
+
         extra = Extra.forbid
         allow_population_by_field_name = True
 
