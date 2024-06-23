@@ -193,7 +193,8 @@ class DuckDB(VectorStore):
             df = pd.DataFrame.from_dict(data)
             df.to_sql(name=self._table_name,
                       con=self._connection,
-                      if_exists='append')
+                      if_exists='append',
+                      index=False)
         return ids
 
     def similarity_search(
