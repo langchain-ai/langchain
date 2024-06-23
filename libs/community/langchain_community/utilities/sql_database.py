@@ -73,6 +73,11 @@ class SQLDatabase:
         self._all_tables = set(
             self._inspector.get_table_names(schema=schema)
             + (self._inspector.get_view_names(schema=schema) if view_support else [])
+            + (
+                self._inspector.get_materialized_view_names(schema=schema)
+                if view_support
+                else []
+            )
         )
 
         self._include_tables = set(include_tables) if include_tables else set()
