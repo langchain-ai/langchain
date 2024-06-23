@@ -52,6 +52,16 @@ include_docs_query = (
 
 
 def clean_string_values(text: str) -> str:
+    """Clean string values for schema.
+
+    Cleans the input text by replacing newline and carriage return characters.
+
+    Args:
+        text (str): The input text to clean.
+
+    Returns:
+        str: The cleaned text.
+    """
     return text.replace("\n", " ").replace("\r", " ")
 
 
@@ -63,6 +73,12 @@ def value_sanitize(d: Any) -> Any:
     generating answers in a LLM context. These properties, if left in
     results, can occupy significant context space and detract from
     the LLM's performance by introducing unnecessary noise and cost.
+
+    Args:
+        d (Any): The input dictionary or list to sanitize.
+
+    Returns:
+        Any: The sanitized dictionary or list.
     """
     if isinstance(d, dict):
         new_dict = {}
@@ -382,7 +398,15 @@ class Neo4jGraph(GraphStore):
         return self.structured_schema
 
     def query(self, query: str, params: dict = {}) -> List[Dict[str, Any]]:
-        """Query Neo4j database."""
+        """Query Neo4j database.
+
+        Args:
+            query (str): The Cypher query to execute.
+            params (dict): The parameters to pass to the query.
+
+        Returns:
+            List[Dict[str, Any]]: The list of dictionaries containing the query results.
+        """
         from neo4j import Query
         from neo4j.exceptions import CypherSyntaxError
 

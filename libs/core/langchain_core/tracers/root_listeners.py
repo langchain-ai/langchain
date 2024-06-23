@@ -71,7 +71,7 @@ class AsyncRootListenersTracer(AsyncBaseTracer):
         on_end: Optional[AsyncListener],
         on_error: Optional[AsyncListener],
     ) -> None:
-        super().__init__()
+        super().__init__(_schema_format="original+chat")
 
         self.config = config
         self._arg_on_start = on_start

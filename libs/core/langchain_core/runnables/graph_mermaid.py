@@ -114,7 +114,7 @@ def draw_mermaid(
 
 def _escape_node_label(node_label: str) -> str:
     """Escapes the node label for Mermaid syntax."""
-    return re.sub(r"[^a-zA-Z-_]", "_", node_label)
+    return re.sub(r"[^a-zA-Z-_0-9]", "_", node_label)
 
 
 def _adjust_mermaid_edge(
