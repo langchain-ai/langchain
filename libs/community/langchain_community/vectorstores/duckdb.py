@@ -190,10 +190,8 @@ class DuckDB(VectorStore):
 
         if have_pandas:
             # noinspection PyUnusedLocal
-            df = pd.DataFrame.from_dict(data)  # noqa: F841
-            self._connection.execute(
-                f"INSERT INTO {self._table_name} SELECT * FROM df",
-            )
+            df = pd.DataFrame.from_dict(data)
+            df.to_sql(name=self._table_name, con=self._connection)
         return ids
 
     def similarity_search(
