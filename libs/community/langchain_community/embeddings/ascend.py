@@ -72,7 +72,7 @@ class AscendEmbeddings(Embeddings, BaseModel):
             raise Exception(f"set device failed due to {e}")
         return values
 
-    def encode(self, sentences):
+    def encode(self, sentences: Any) -> Any:
         inputs = self.tokenizer(
             sentences,
             padding=True,
@@ -93,7 +93,7 @@ class AscendEmbeddings(Embeddings, BaseModel):
         embeddings = torch.nn.functional.normalize(tmp, dim=-1)
         return embeddings.cpu().detach().numpy()
 
-    def pooling(self, last_hidden_state: Any, attention_mask: Any = None):
+    def pooling(self, last_hidden_state: Any, attention_mask: Any = None) -> Any:
         try:
             import torch
         except ImportError as e:
