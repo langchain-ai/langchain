@@ -464,3 +464,8 @@ class Graph:
             background_color=background_color,
             padding=padding,
         )
+
+    def _repr_html_(self) -> str:
+        from langchain_core.globals import get_renderer
+
+        return get_renderer().render_html(self)

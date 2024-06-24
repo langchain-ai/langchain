@@ -17,9 +17,6 @@ _verbose: bool = False
 _debug: bool = False
 _llm_cache: Optional["BaseCache"] = None
 
-# Renderer
-
-
 class BaseRenderer(abc.ABC):
     def render_html(self, obj: Any) -> str:
         """Render an object as HTML."""
