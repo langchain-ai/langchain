@@ -55,10 +55,12 @@ EXPECTED_ALL = [
     "LocalAIEmbeddings",
     "AwaEmbeddings",
     "HuggingFaceBgeEmbeddings",
+    "IpexLLMBgeEmbeddings",
     "ErnieEmbeddings",
     "JavelinAIGatewayEmbeddings",
     "OllamaEmbeddings",
     "OracleEmbeddings",
+    "OVHCloudEmbeddings",
     "QianfanEmbeddingsEndpoint",
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
@@ -76,6 +78,7 @@ EXPECTED_ALL = [
     "OpenVINOEmbeddings",
     "OpenVINOBgeEmbeddings",
     "SolarEmbeddings",
+    "ZhipuAIEmbeddings",
 ]
 
 

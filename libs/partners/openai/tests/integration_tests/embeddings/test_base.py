@@ -32,9 +32,7 @@ def test_embeddings_dimensions() -> None:
     assert len(output[0]) == 128
 
 
-def test_embeddings_equivalent_to_raw(
-    embeddings: OpenAIEmbeddings,
-) -> None:
+def test_embeddings_equivalent_to_raw(embeddings: OpenAIEmbeddings) -> None:
     documents = ["disallowed special token '<|endoftext|>'"]
 
     lc_output = embeddings.embed_documents(documents)[0]
@@ -47,9 +45,7 @@ def test_embeddings_equivalent_to_raw(
     assert lc_output == direct_output
 
 
-async def test_embeddings_equivalent_to_raw_async(
-    embeddings: OpenAIEmbeddings,
-) -> None:
+async def test_embeddings_equivalent_to_raw_async(embeddings: OpenAIEmbeddings) -> None:
     documents = ["disallowed special token '<|endoftext|>'"]
 
     lc_output = (await embeddings.aembed_documents(documents))[0]
@@ -76,9 +72,7 @@ def test_embed_documents_long(embeddings: OpenAIEmbeddings) -> None:
     assert len(output[0]) > 0
 
 
-async def test_embed_documents_long_async(
-    embeddings: OpenAIEmbeddings,
-) -> None:
+async def test_embed_documents_long_async(embeddings: OpenAIEmbeddings) -> None:
     """Test openai embeddings."""
     long_text = " ".join(["foo bar"] * embeddings.embedding_ctx_length)
     token_splits, _ = embeddings._tokenize_and_split([long_text])

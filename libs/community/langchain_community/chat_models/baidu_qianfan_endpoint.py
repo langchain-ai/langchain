@@ -135,7 +135,7 @@ class QianfanChatEndpoint(BaseChatModel):
 
     client: Any  #: :meta private:
 
-    qianfan_ak: Optional[SecretStr] = Field(default=None, alias="api_key")
+    qianfan_ak: SecretStr = Field(alias="api_key")
     """Qianfan API KEY"""
     qianfan_sk: Optional[SecretStr] = Field(default=None, alias="secret_key")
     """Qianfan SECRET KEY"""
@@ -171,35 +171,43 @@ class QianfanChatEndpoint(BaseChatModel):
 
         allow_population_by_field_name = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "qianfan_ak",
+                ["qianfan_ak", "api_key"],
                 "QIANFAN_AK",
-                default="",
             )
         )
         values["qianfan_sk"] = convert_to_secret_str(
             get_from_dict_or_env(
                 values,
-                "qianfan_sk",
+                ["qianfan_sk", "secret_key"],
                 "QIANFAN_SK",
-                default="",
             )
         )
+
+        default_values = {
+            name: field.default
+            for name, field in cls.__fields__.items()
+            if field.default is not None
+        }
+        default_values.update(values)
         params = {
             **values.get("init_kwargs", {}),
-            "model": values["model"],
-            "stream": values["streaming"],
+            "model": default_values.get("model"),
+            "stream": default_values.get("streaming"),
         }
         if values["qianfan_ak"].get_secret_value() != "":
             params["ak"] = values["qianfan_ak"].get_secret_value()
         if values["qianfan_sk"].get_secret_value() != "":
             params["sk"] = values["qianfan_sk"].get_secret_value()
-        if values["endpoint"] is not None and values["endpoint"] != "":
-            params["endpoint"] = values["endpoint"]
+        if (
+            default_values.get("endpoint") is not None
+            and default_values["endpoint"] != ""
+        ):
+            params["endpoint"] = default_values["endpoint"]
         try:
             import qianfan
 

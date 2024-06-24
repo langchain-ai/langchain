@@ -173,10 +173,7 @@ class BaseOpenAI(BaseLLM):
             "OPENAI_API_BASE"
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
         values["openai_organization"] = (
             values["openai_organization"]
@@ -365,11 +362,7 @@ class BaseOpenAI(BaseLLM):
                 if not system_fingerprint:
                     system_fingerprint = response.get("system_fingerprint")
         return self.create_llm_result(
-            choices,
-            prompts,
-            params,
-            token_usage,
-            system_fingerprint=system_fingerprint,
+            choices, prompts, params, token_usage, system_fingerprint=system_fingerprint
         )
 
     async def _agenerate(
@@ -425,11 +418,7 @@ class BaseOpenAI(BaseLLM):
                 choices.extend(response["choices"])
                 _update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(
-            choices,
-            prompts,
-            params,
-            token_usage,
-            system_fingerprint=system_fingerprint,
+            choices, prompts, params, token_usage, system_fingerprint=system_fingerprint
         )
 
     def get_sub_prompts(
@@ -440,8 +429,6 @@ class BaseOpenAI(BaseLLM):
     ) -> List[List[str]]:
         """Get the sub prompts for llm call."""
         if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
         if params["max_tokens"] == -1:
             if len(prompts) != 1:
