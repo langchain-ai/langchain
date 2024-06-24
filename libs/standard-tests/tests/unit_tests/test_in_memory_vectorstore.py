@@ -9,12 +9,14 @@ from langchain_standard_tests.integration_tests.vectorstores import (
 # We'll need to move this dependency to core
 pytest.importorskip("langchain_community")
 
+from langchain_community.vectorstores.inmemory import (  # noqa # type: ignore
+    InMemoryVectorStore,
+)
+
 
 class TestInMemoryVectorStore(ReadWriteTestSuite):
     @pytest.fixture
     def vectorstore(self) -> VectorStore:
-        from langchain_community.vectorstores.inmemory import InMemoryVectorStore
-
         embeddings = self.get_embeddings()
         return InMemoryVectorStore(embedding=embeddings)
 
@@ -22,7 +24,5 @@ class TestInMemoryVectorStore(ReadWriteTestSuite):
 class TestAysncInMemoryVectorStore(AsyncReadWriteTestSuite):
     @pytest.fixture
     async def vectorstore(self) -> VectorStore:
-        from langchain_community.vectorstores.inmemory import InMemoryVectorStore
-
         embeddings = self.get_embeddings()
         return InMemoryVectorStore(embedding=embeddings)
