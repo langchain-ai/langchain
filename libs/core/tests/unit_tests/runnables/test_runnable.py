@@ -347,7 +347,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"history": {"title": "History", "type": "string"}},
-        "required": ["history"]
+        "required": ["history"],
     }
     assert chat_prompt.output_schema.schema() == snapshot
 
