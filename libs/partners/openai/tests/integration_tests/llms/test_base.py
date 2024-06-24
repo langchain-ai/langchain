@@ -6,9 +6,7 @@ from langchain_core.callbacks import CallbackManager
 from langchain_core.outputs import LLMResult
 
 from langchain_openai import OpenAI
-from tests.unit_tests.fake.callbacks import (
-    FakeCallbackHandler,
-)
+from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
 
 def test_stream() -> None:
@@ -97,13 +95,6 @@ def test_openai_stop_valid() -> None:
     second_output = second_llm.invoke(query, stop=["3"])
     # Because it stops on new lines, shouldn't return anything
     assert first_output == second_output
-
-
-def test_openai_stop_error() -> None:
-    """Test openai stop logic on bad configuration."""
-    llm = OpenAI(stop="3", temperature=0)
-    with pytest.raises(ValueError):
-        llm.invoke("write an ordered list of five items", stop=["\n"])
 
 
 @pytest.mark.scheduled

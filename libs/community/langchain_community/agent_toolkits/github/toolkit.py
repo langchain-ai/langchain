@@ -1,4 +1,5 @@
 """GitHub Toolkit."""
+
 from typing import Dict, List
 
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -162,6 +163,9 @@ class GitHubToolkit(BaseToolkit):
         and comments on GitHub.
 
         See [Security](https://python.langchain.com/docs/security) for more information.
+
+    Parameters:
+        tools: List[BaseTool]. The tools in the toolkit. Default is an empty list.
     """
 
     tools: List[BaseTool] = []
@@ -170,6 +174,14 @@ class GitHubToolkit(BaseToolkit):
     def from_github_api_wrapper(
         cls, github_api_wrapper: GitHubAPIWrapper
     ) -> "GitHubToolkit":
+        """Create a GitHubToolkit from a GitHubAPIWrapper.
+
+        Args:
+            github_api_wrapper: GitHubAPIWrapper. The GitHub API wrapper.
+
+        Returns:
+            GitHubToolkit. The GitHub toolkit.
+        """
         operations: List[Dict] = [
             {
                 "mode": "get_issues",
