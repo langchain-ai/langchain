@@ -9,7 +9,7 @@ from langchain_standard_tests.integration_tests.vectorstores import (
 # We'll need to move this dependency to core
 pytest.importorskip("langchain_community")
 
-from langchain_community.vectorstores.inmemory import (  # noqa # type: ignore
+from langchain_community.vectorstores.inmemory import (  # type: ignore # noqa
     InMemoryVectorStore,
 )
 
