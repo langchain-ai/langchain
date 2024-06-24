@@ -32,13 +32,13 @@ from langchain_core.utils.function_calling import (
         "LangChain has introduced a method called `with_structured_output` that "
         "is available on ChatModels capable of tool calling. "
         "You can read more about the method here: "
-        "https://python.langchain.com/docs/modules/model_io/chat/structured_output/ "
+        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>. "
         "Please follow our extraction use case documentation for more guidelines "
         "on how to do information extraction with LLMs. "
-        "https://python.langchain.com/docs/use_cases/extraction/. "
+        "<https://python.langchain.com/docs/use_cases/extraction/>. "
         "If you notice other issues, please provide "
         "feedback here: "
-        "https://github.com/langchain-ai/langchain/discussions/18154"
+        "<https://github.com/langchain-ai/langchain/discussions/18154>"
     ),
     removal="0.3.0",
     alternative=(
@@ -150,13 +150,13 @@ def create_openai_fn_runnable(
         "LangChain has introduced a method called `with_structured_output` that "
         "is available on ChatModels capable of tool calling. "
         "You can read more about the method here: "
-        "https://python.langchain.com/docs/modules/model_io/chat/structured_output/ "
+        "<https://python.langchain.com/docs/modules/model_io/chat/structured_output/>."
         "Please follow our extraction use case documentation for more guidelines "
         "on how to do information extraction with LLMs. "
-        "https://python.langchain.com/docs/use_cases/extraction/. "
+        "<https://python.langchain.com/docs/use_cases/extraction/>. "
         "If you notice other issues, please provide "
         "feedback here: "
-        "https://github.com/langchain-ai/langchain/discussions/18154"
+        "<https://github.com/langchain-ai/langchain/discussions/18154>"
     ),
     removal="0.3.0",
     alternative=(
@@ -518,7 +518,7 @@ def _create_openai_json_runnable(
     """"""
     if isinstance(output_schema, type) and issubclass(output_schema, BaseModel):
         output_parser = output_parser or PydanticOutputParser(
-            pydantic_object=output_schema,
+            pydantic_object=output_schema,  # type: ignore
         )
         schema_as_dict = convert_to_openai_function(output_schema)["parameters"]
     else:

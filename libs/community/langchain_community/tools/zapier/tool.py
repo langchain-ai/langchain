@@ -134,7 +134,7 @@ class ZapierNLARunAction(BaseTool):
             since="0.0.319",
             message=(
                 "This tool will be deprecated on 2023-11-17. See "
-                "https://nla.zapier.com/sunset/ for details"
+                "<https://nla.zapier.com/sunset/> for details"
             ),
         )
         return self.api_wrapper.run_as_str(self.action_id, instructions, self.params)
@@ -149,7 +149,7 @@ class ZapierNLARunAction(BaseTool):
             since="0.0.319",
             message=(
                 "This tool will be deprecated on 2023-11-17. See "
-                "https://nla.zapier.com/sunset/ for details"
+                "<https://nla.zapier.com/sunset/> for details"
             ),
         )
         return await self.api_wrapper.arun_as_str(
@@ -186,7 +186,7 @@ class ZapierNLAListActions(BaseTool):
             since="0.0.319",
             message=(
                 "This tool will be deprecated on 2023-11-17. See "
-                "https://nla.zapier.com/sunset/ for details"
+                "<https://nla.zapier.com/sunset/> for details"
             ),
         )
         return self.api_wrapper.list_as_str()
@@ -201,7 +201,7 @@ class ZapierNLAListActions(BaseTool):
             since="0.0.319",
             message=(
                 "This tool will be deprecated on 2023-11-17. See "
-                "https://nla.zapier.com/sunset/ for details"
+                "<https://nla.zapier.com/sunset/> for details"
             ),
         )
         return await self.api_wrapper.alist_as_str()

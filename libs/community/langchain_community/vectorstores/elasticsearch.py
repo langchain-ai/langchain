@@ -805,7 +805,7 @@ class ElasticsearchStore(VectorStore):
         if self.query_field not in fields:
             fields.append(self.query_field)
 
-        if self.embedding and query is not None:
+        if self.embedding and query is not None and query_vector is None:
             query_vector = self.embedding.embed_query(query)
 
         query_body = self.strategy.query(

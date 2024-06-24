@@ -9,6 +9,7 @@ import pytest
 from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from pinecone import PodSpec
+from pytest_mock import MockerFixture
 
 from langchain_pinecone import PineconeVectorStore
 
@@ -290,3 +291,41 @@ class TestPinecone:
 
         query = "What did the president say about Ketanji Brown Jackson"
         _ = docsearch.similarity_search(query, k=1, namespace=NAMESPACE_NAME)
+
+    @pytest.fixture
+    def mock_pool_not_supported(self, mocker: MockerFixture) -> None:
+        """
+        This is the error thrown when multiprocessing is not supported.
+        See https://github.com/langchain-ai/langchain/issues/11168
+        """
+        mocker.patch(
+            "multiprocessing.synchronize.SemLock.__init__",
+            side_effect=OSError(
+                "FileNotFoundError: [Errno 2] No such file or directory"
+            ),
+        )
+
+    @pytest.mark.usefixtures("mock_pool_not_supported")
+    def test_that_async_freq_uses_multiprocessing(
+        self, texts: List[str], embedding_openai: OpenAIEmbeddings
+    ) -> None:
+        with pytest.raises(OSError):
+            PineconeVectorStore.from_texts(
+                texts=texts,
+                embedding=embedding_openai,
+                index_name=INDEX_NAME,
+                namespace=NAMESPACE_NAME,
+                async_req=True,
+            )
+
+    @pytest.mark.usefixtures("mock_pool_not_supported")
+    def test_that_async_freq_false_enabled_singlethreading(
+        self, texts: List[str], embedding_openai: OpenAIEmbeddings
+    ) -> None:
+        PineconeVectorStore.from_texts(
+            texts=texts,
+            embedding=embedding_openai,
+            index_name=INDEX_NAME,
+            namespace=NAMESPACE_NAME,
+            async_req=False,
+        )

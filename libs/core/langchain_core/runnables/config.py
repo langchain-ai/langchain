@@ -542,13 +542,21 @@ async def run_in_executor(
     Returns:
         Output: The output of the function.
     """
+
+    def wrapper() -> T:
+        try:
+            return func(*args, **kwargs)
+        except StopIteration as exc:
+            # StopIteration can't be set on an asyncio.Future
+            # it raises a TypeError and leaves the Future pending forever
+            # so we need to convert it to a RuntimeError
+            raise RuntimeError from exc
+
     if executor_or_config is None or isinstance(executor_or_config, dict):
         # Use default executor with context copied from current context
         return await asyncio.get_running_loop().run_in_executor(
             None,
-            cast(Callable[..., T], partial(copy_context().run, func, *args, **kwargs)),
+            cast(Callable[..., T], partial(copy_context().run, wrapper)),
         )
 
-    return await asyncio.get_running_loop().run_in_executor(
-        executor_or_config, partial(func, **kwargs), *args
-    )
+    return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)

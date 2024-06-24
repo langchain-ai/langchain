@@ -18,6 +18,15 @@ def test_fireworks_api_key_is_secret_string() -> None:
     )
     assert isinstance(llm.fireworks_api_key, SecretStr)
 
+    # Test api_key alias
+    llm = Fireworks(
+        api_key="secret-api-key",
+        model="accounts/fireworks/models/mixtral-8x7b-instruct",
+        temperature=0.2,
+        max_tokens=250,
+    )
+    assert isinstance(llm.fireworks_api_key, SecretStr)
+
 
 def test_fireworks_api_key_masked_when_passed_from_env(
     monkeypatch: MonkeyPatch, capsys: CaptureFixture

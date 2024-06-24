@@ -20,7 +20,15 @@ class NLATool(Tool):
     def from_open_api_endpoint_chain(
         cls, chain: OpenAPIEndpointChain, api_title: str
     ) -> "NLATool":
-        """Convert an endpoint chain to an API endpoint tool."""
+        """Convert an endpoint chain to an API endpoint tool.
+
+        Args:
+            chain: The endpoint chain.
+            api_title: The title of the API.
+
+        Returns:
+            The API endpoint tool.
+        """
         expanded_name = (
             f'{api_title.replace(" ", "_")}.{chain.api_operation.operation_id}'
         )
@@ -43,7 +51,22 @@ class NLATool(Tool):
         return_intermediate_steps: bool = False,
         **kwargs: Any,
     ) -> "NLATool":
-        """Instantiate the tool from the specified path and method."""
+        """Instantiate the tool from the specified path and method.
+
+        Args:
+            llm: The language model to use.
+            path: The path of the API.
+            method: The method of the API.
+            spec: The OpenAPI spec.
+            requests: Optional requests object. Default is None.
+            verbose: Whether to print verbose output. Default is False.
+            return_intermediate_steps: Whether to return intermediate steps.
+                Default is False.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The tool.
+        """
         api_operation = APIOperation.from_openapi_spec(spec, path, method)
         chain = OpenAPIEndpointChain.from_api_operation(
             api_operation,

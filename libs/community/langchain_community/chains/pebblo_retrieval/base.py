@@ -72,9 +72,9 @@ class PebbloRetrievalQA(Chain):
     """Pebblo cloud API key for app."""
     classifier_url: str = CLASSIFIER_URL  #: :meta private:
     """Classifier endpoint."""
-    _discover_sent = False  #: :meta private:
+    _discover_sent: bool = False  #: :meta private:
     """Flag to check if discover payload has been sent."""
-    _prompt_sent = False  #: :meta private:
+    _prompt_sent: bool = False  #: :meta private:
     """Flag to check if prompt payload has been sent."""
 
     def _call(
@@ -129,9 +129,7 @@ class PebbloRetrievalQA(Chain):
             "prompt_time": prompt_time,
             "user": auth_context.user_id if auth_context else "unknown",
             "user_identities": auth_context.user_auth
-            if "user_auth" in dict(auth_context)
-            else []
-            if auth_context
+            if auth_context and hasattr(auth_context, "user_auth")
             else [],
         }
         qa_payload = Qa(**qa)

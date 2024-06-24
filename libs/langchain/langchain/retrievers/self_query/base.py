@@ -168,6 +168,15 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
             if isinstance(vectorstore, Chroma):
                 return ChromaTranslator()
 
+        try:
+            from langchain_postgres import PGVector
+            from langchain_postgres import PGVectorTranslator as NewPGVectorTranslator
+        except ImportError:
+            pass
+        else:
+            if isinstance(vectorstore, PGVector):
+                return NewPGVectorTranslator()
+
         raise ValueError(
             f"Self query retriever with Vector Store type {vectorstore.__class__}"
             f" not supported."
