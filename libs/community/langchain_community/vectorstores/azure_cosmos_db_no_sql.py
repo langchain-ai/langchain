@@ -14,6 +14,25 @@ from langchain_community.vectorstores.utils import maximal_marginal_relevance
 if TYPE_CHECKING:
     from azure.cosmos.cosmos_client import CosmosClient
 
+COMPARISONS_TO_SQL = {
+    "$eq": "=",
+    "$ne": "<>",
+    "$lt": "<",
+    "$lte": "<=",
+    "$gt": ">",
+    "$gte": ">=",
+}
+
+IN_OPERATORS_TO_SQL = {
+    "$in": "IN",
+    "$nin": "NOT IN",
+}
+
+BETWEEN_OPERATOR = "$between"
+
+LIKE_OPERATOR = "$like"
+
+LOGICAL_OPERATORS_TO_SQL = {"$and": "AND", "$or": "OR"}
 
 class AzureCosmosDBNoSqlVectorSearch(VectorStore):
     """`Azure Cosmos DB for NoSQL` vector store.
@@ -234,6 +253,94 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             metadatas=metadatas,
         )
         return vectorstore
+    
+    def _create_where_by_filter(self, filter):  # type: ignore[no-untyped-def]
+        query_tuple = []
+        where_str = ""
+        if filter:
+            where_str, query_tuple = self._process_filter_object(filter)
+            where_str = " WHERE " + where_str
+        return where_str, query_tuple
+    
+    def _process_filter_object(self, filter):  # type: ignore[no-untyped-def]
+        query_tuple = []
+        where_str = ""
+        if filter:
+            for i, key in enumerate(filter.keys()):
+                filter_value = filter[key]
+                if i != 0:
+                    where_str += " AND "
+
+                # Handling of 'special' boolean operators "$and", "$or"
+                if key in LOGICAL_OPERATORS_TO_SQL:
+                    logical_operator = LOGICAL_OPERATORS_TO_SQL[key]
+                    logical_operands = filter_value
+                    for j, logical_operand in enumerate(logical_operands):
+                        if j != 0:
+                            where_str += f" {logical_operator} "
+                        (
+                            where_str_logical,
+                            query_tuple_logical,
+                        ) = self._process_filter_object(logical_operand)
+                        where_str += where_str_logical
+                        query_tuple += query_tuple_logical
+                    continue
+
+                operator = "="
+                sql_param = filter_value
+
+                if isinstance(filter_value, bool):
+                    sql_param = "true" if filter_value else "false"
+                elif isinstance(filter_value, int) or isinstance(filter_value, str):
+                    sql_param = filter_value
+                elif isinstance(filter_value, Dict):
+                    # Handling of 'special' operators starting with "$"
+                    special_op = next(iter(filter_value))
+                    special_val = filter_value[special_op]
+                    # "$eq", "$ne", "$lt", "$lte", "$gt", "$gte"
+                    if special_op in COMPARISONS_TO_SQL:
+                        operator = COMPARISONS_TO_SQL[special_op]
+                        if isinstance(special_val, bool):
+                            sql_param = "true" if filter_value else "false"
+                        elif isinstance(special_val, float):
+                            sql_param = f"CAST({special_val} as float)"
+                        elif isinstance(special_val, str):
+                            sql_param = special_val
+                    # "$between"
+                    elif special_op == BETWEEN_OPERATOR:
+                        between_from = special_val[0]
+                        between_to = special_val[1]
+                        operator = "BETWEEN"
+                        sql_param = f"{between_from} AND {between_to}"
+                    # "$like"
+                    elif special_op == LIKE_OPERATOR:
+                        operator = "LIKE"
+                        sql_param = special_val
+                    # "$in"
+                    elif special_op in IN_OPERATORS_TO_SQL:
+                        operator = IN_OPERATORS_TO_SQL[special_op]
+                        if isinstance(special_val, list):
+                            for i, list_entry in enumerate(special_val):
+                                if i == 0:
+                                    sql_param = "("
+                                sql_param += list_entry
+                                if i == (len(special_val) - 1):
+                                    sql_param += ")"
+                                else:
+                                    sql_param += ","
+                        else:
+                            raise ValueError(
+                                f"Unsupported value for {operator}: {special_val}"
+                            )
+                    else:
+                        raise ValueError(f"Unsupported operator: {special_op}")
+                else:
+                    raise ValueError(
+                        f"Unsupported filter data-type: {type(filter_value)}"
+                    )
+                where_str += f'c.{key} {operator} "{sql_param}"'
+
+        return where_str, query_tuple
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         if ids is None:
@@ -257,41 +364,48 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         self,
         embeddings: List[float],
         k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float]]:
+        filter_query = ""
+        if filter is not None:
+            filter_query, _ = self._create_where_by_filter(filter)
+            
         query = (
-            "SELECT TOP {} c.id, c.{}, c.text, VectorDistance(c.{}, {}) AS "
-            "SimilarityScore FROM c ORDER BY VectorDistance(c.{}, {})".format(
-                k,
-                self._embedding_key,
-                self._embedding_key,
-                embeddings,
-                self._embedding_key,
-                embeddings,
-            )
+            f'''SELECT TOP {k} VALUE {{
+                "document": c, 
+                "SimilarityScore": VectorDistance(c.{self._embedding_key}, {embeddings}) 
+            }} 
+            FROM c 
+            {filter_query} 
+            ORDER BY VectorDistance(c.{self._embedding_key}, {embeddings})'''
         )
+
         docs_and_scores = []
         items = list(
             self._container.query_items(query=query, enable_cross_partition_query=True)
         )
         for item in items:
-            text = item["text"]
-            score = item["SimilarityScore"]
-            docs_and_scores.append((Document(page_content=text, metadata=item), score))
+            document = item.get('document')
+            text = document["text"]
+            score = item.get('SimilarityScore')
+            metadata = {k:v for k,v in document.items() if k not in ["id", "text", self._embedding_key] and not k.startswith("_")}
+            docs_and_scores.append((Document(page_content=text, metadata=metadata), score))
         return docs_and_scores
 
     def similarity_search_with_score(
         self,
         query: str,
         k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
     ) -> List[Tuple[Document, float]]:
         embeddings = self._embedding.embed_query(query)
-        docs_and_scores = self._similarity_search_with_score(embeddings=embeddings, k=k)
+        docs_and_scores = self._similarity_search_with_score(embeddings=embeddings, k=k, filter=filter)
         return docs_and_scores
 
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Document]:
-        docs_and_scores = self.similarity_search_with_score(query, k=k)
+        docs_and_scores = self.similarity_search_with_score(query, k=k, **kwargs)
 
         return [doc for doc, _ in docs_and_scores]
 
