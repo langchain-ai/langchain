@@ -320,7 +320,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             )
             generation: Optional[ChatGenerationChunk] = None
             try:
-                for chunk in self._stream(messages, stop=stop, **kwargs):
+                for chunk in self._stream(messages, stop=stop, run_manager=run_manager, **kwargs):
                     if chunk.message.id is None:
                         chunk.message.id = f"run-{run_manager.run_id}"
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
