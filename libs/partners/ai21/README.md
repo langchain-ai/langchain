@@ -39,7 +39,7 @@ For a list of the supported models, see [this page](https://docs.ai21.com/refere
 You can use AI21's generative AI models as LangChain LLMs:
 
 ```python
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_ai21 import AI21LLM
 
 llm = AI21LLM(model="jamba-instruct-preview")
