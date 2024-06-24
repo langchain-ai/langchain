@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, Union
 from langchain_core._api.deprecation import deprecated
 from langchain_core.outputs import ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.utils.openai import is_openai_v1
@@ -69,7 +69,7 @@ class AzureChatOpenAI(ChatOpenAI):
         Example: `https://example-resource.azure.openai.com/`
     """
     deployment_name: Union[str, None] = Field(default=None, alias="azure_deployment")
-    """A model deployment. 
+    """A model deployment.
     
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
         Note: this means you won't be able to use non-deployment endpoints.
@@ -79,13 +79,18 @@ class AzureChatOpenAI(ChatOpenAI):
     openai_api_key: Union[str, None] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
     azure_ad_token: Union[str, None] = None
-    """Your Azure Active Directory token.
-    
+    """Your Azure Active Directory token to access Azure OpenAI Service.
+
         Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
-        
-        For more: 
+        To get an access token, make sure current login user have at least 
+        `Cognitive Services User` role, and run the following command:
+        .. code-block:: bash
+
+            az account get-access-token --resource https://cognitiveservices.azure.com --query "accessToken" -o tsv
+
+        For more:
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """
+    """  # noqa: E501
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
         
@@ -113,31 +118,34 @@ class AzureChatOpenAI(ChatOpenAI):
         if values["n"] > 1 and values["streaming"]:
             raise ValueError("n must be 1 when streaming.")
 
-        # Check OPENAI_KEY for backwards compatibility.
-        # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
-        # other forms of azure credentials.
+        openai_api_key = get_from_dict_or_env(
+            values, "openai_api_key", "AZURE_OPENAI_API_KEY"
+        )
         values["openai_api_key"] = (
-            values["openai_api_key"]
-            or os.getenv("AZURE_OPENAI_API_KEY")
-            or os.getenv("OPENAI_API_KEY")
+            convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
+        values["openai_api_version"] = get_from_dict_or_env(
+            values,"openai_api_version", "OPENAI_API_VERSION"
         )
-        values["openai_api_version"] = values["openai_api_version"] or os.getenv(
-            "OPENAI_API_VERSION"
+        values["azure_endpoint"] = get_from_dict_or_env(
+            values, "azure_endpoint", "AZURE_OPENAI_ENDPOINT"
         )
+
+        values["openai_api_base"] = get_from_dict_or_env(
+            values, "openai_api_base", "OPENAI_API_BASE"
+        )
+
+        azure_ad_token = get_from_dict_or_env(
+            values, "azure_ad_token", "AZURE_OPENAI_AD_TOKEN")
+        values["azure_ad_token"] = (
+            convert_to_secret_str(azure_ad_token) if azure_ad_token else None
+        )
+
         # Check OPENAI_ORGANIZATION for backwards compatibility.
         values["openai_organization"] = (
             values["openai_organization"]
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
-        )
-        values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
-            "AZURE_OPENAI_ENDPOINT"
-        )
-        values["azure_ad_token"] = values["azure_ad_token"] or os.getenv(
-            "AZURE_OPENAI_AD_TOKEN"
         )
 
         values["openai_api_type"] = get_from_dict_or_env(

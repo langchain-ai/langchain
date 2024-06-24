@@ -48,13 +48,18 @@ class AzureOpenAI(BaseOpenAI):
     openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
     """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
     azure_ad_token: Optional[SecretStr] = None
-    """Your Azure Active Directory token.
+    """Your Azure Active Directory token to access Azure OpenAI Service.
 
         Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
+        To get an access token, make sure current login user have at least 
+        `Cognitive Services User` role, and run the following command:
+        .. code-block:: bash
 
-        For more: 
+            az account get-access-token --resource https://cognitiveservices.azure.com --query "accessToken" -o tsv
+
+        For more:
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """
+    """  # noqa: E501
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
@@ -94,41 +99,41 @@ class AzureOpenAI(BaseOpenAI):
         if values["streaming"] and values["best_of"] > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
 
-        # Check OPENAI_KEY for backwards compatibility.
-        # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
-        # other forms of azure credentials.
-        openai_api_key = (
-            values["openai_api_key"]
-            or os.getenv("AZURE_OPENAI_API_KEY")
-            or os.getenv("OPENAI_API_KEY")
+        openai_api_key = get_from_dict_or_env(
+            values, "openai_api_key", "AZURE_OPENAI_API_KEY"
         )
         values["openai_api_key"] = (
             convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
-
-        values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
-            "AZURE_OPENAI_ENDPOINT"
+        values["openai_api_version"] = get_from_dict_or_env(
+            values,"openai_api_version", "OPENAI_API_VERSION"
         )
-        azure_ad_token = values["azure_ad_token"] or os.getenv("AZURE_OPENAI_AD_TOKEN")
+        values["azure_endpoint"] = get_from_dict_or_env(
+            values, "azure_endpoint", "AZURE_OPENAI_ENDPOINT"
+        )
+
+        values["openai_api_base"] = get_from_dict_or_env(
+            values, "openai_api_base", "OPENAI_API_BASE"
+        )
+
+        azure_ad_token = get_from_dict_or_env(
+            values, "azure_ad_token", "AZURE_OPENAI_AD_TOKEN")
         values["azure_ad_token"] = (
             convert_to_secret_str(azure_ad_token) if azure_ad_token else None
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values, "openai_proxy", "OPENAI_PROXY", default=""
-        )
+
+        # Check OPENAI_ORGANIZATION for backwards compatibility.
         values["openai_organization"] = (
             values["openai_organization"]
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        values["openai_api_version"] = values["openai_api_version"] or os.getenv(
-            "OPENAI_API_VERSION"
-        )
+
         values["openai_api_type"] = get_from_dict_or_env(
             values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
+        )
+        values["openai_proxy"] = get_from_dict_or_env(
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
         # For backwards compatibility. Before openai v1, no distinction was made
         # between azure_endpoint and base_url (openai_api_base).
