@@ -17,8 +17,11 @@ class FakeMessagesListChatModel(BaseChatModel):
     """Fake ChatModel for testing purposes."""
 
     responses: List[BaseMessage]
+    """List of responses to **cycle** through in order."""
     sleep: Optional[float] = None
+    """Sleep time in seconds between responses."""
     i: int = 0
+    """Internally incremented after every model invocation."""
 
     def _generate(
         self,
@@ -43,10 +46,13 @@ class FakeMessagesListChatModel(BaseChatModel):
 class FakeListChatModel(SimpleChatModel):
     """Fake ChatModel for testing purposes."""
 
-    responses: List
+    responses: List[str]
+    """List of responses to **cycle** through in order."""
     sleep: Optional[float] = None
     i: int = 0
+    """List of responses to **cycle** through in order."""
     error_on_chunk_number: Optional[int] = None
+    """Internally incremented after every model invocation."""
 
     @property
     def _llm_type(self) -> str:

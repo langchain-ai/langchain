@@ -18,10 +18,9 @@ import pytest_asyncio
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.indexing import aindex, index
+from langchain_core.indexing import InMemoryRecordManager, aindex, index
 from langchain_core.indexing.api import _abatch, _HashedDocument
 from langchain_core.vectorstores import VST, VectorStore
-from tests.unit_tests.indexing.in_memory import InMemoryRecordManager
 
 
 class ToyLoader(BaseLoader):

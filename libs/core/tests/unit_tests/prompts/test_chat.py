@@ -655,6 +655,21 @@ def test_messages_placeholder() -> None:
     ]
 
 
+def test_messages_placeholder_with_max() -> None:
+    history = [
+        AIMessage(content="1"),
+        AIMessage(content="2"),
+        AIMessage(content="3"),
+    ]
+    prompt = MessagesPlaceholder("history")
+    assert prompt.format_messages(history=history) == history
+    prompt = MessagesPlaceholder("history", n_messages=2)
+    assert prompt.format_messages(history=history) == [
+        AIMessage(content="2"),
+        AIMessage(content="3"),
+    ]
+
+
 def test_chat_prompt_message_placeholder_partial() -> None:
     prompt = ChatPromptTemplate.from_messages([MessagesPlaceholder("history")])
     prompt = prompt.partial(history=[("system", "foo")])
