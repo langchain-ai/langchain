@@ -29,7 +29,7 @@ class ChatAI21(BaseChatModel, AI21Base):
             from langchain_ai21 import ChatAI21
 
 
-            model = ChatAI21(api_key=&lt;AI21_API_KEY&gt;)
+            model = ChatAI21(api_key=<AI21_API_KEY>)
     """
 
     model: str
