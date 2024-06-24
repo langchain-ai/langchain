@@ -35,6 +35,17 @@ DELETE_TABLE_CQL_TEMPLATE = """DELETE FROM {keyspace}.{table} WHERE row_id IN ?;
 
 
 class CassandraByteStore(ByteStore):
+    """A ByteStore implementation using Cassandra as the backend.
+
+    Parameters:
+        table: The name of the table to use.
+        session: A Cassandra session object. If not provided, it will be resolved
+            from the cassio config.
+        keyspace: The keyspace to use. If not provided, it will be resolved
+            from the cassio config.
+        setup_mode: The setup mode to use. Default is SYNC  (SetupMode.SYNC).
+    """
+
     def __init__(
         self,
         table: str,
@@ -75,6 +86,7 @@ class CassandraByteStore(ByteStore):
             self.session.execute(create_cql)
 
     def ensure_db_setup(self) -> None:
+        """Ensure that the DB setup is finished. If not, raise a ValueError."""
         if self.db_setup_task:
             try:
                 self.db_setup_task.result()
@@ -86,10 +98,17 @@ class CassandraByteStore(ByteStore):
                 )
 
     async def aensure_db_setup(self) -> None:
+        """Ensure that the DB setup is finished. If not, wait for it."""
         if self.db_setup_task:
             await self.db_setup_task
 
     def get_select_statement(self) -> PreparedStatement:
+        """Get the prepared select statement for the table.
+        If not available, prepare it.
+
+        Returns:
+            PreparedStatement: The prepared statement.
+        """
         if not self.select_statement:
             self.select_statement = self.session.prepare(
                 SELECT_TABLE_CQL_TEMPLATE.format(
@@ -99,6 +118,12 @@ class CassandraByteStore(ByteStore):
         return self.select_statement
 
     def get_insert_statement(self) -> PreparedStatement:
+        """Get the prepared insert statement for the table.
+        If not available, prepare it.
+
+        Returns:
+            PreparedStatement: The prepared statement.
+        """
         if not self.insert_statement:
             self.insert_statement = self.session.prepare(
                 INSERT_TABLE_CQL_TEMPLATE.format(
@@ -108,6 +133,13 @@ class CassandraByteStore(ByteStore):
         return self.insert_statement
 
     def get_delete_statement(self) -> PreparedStatement:
+        """Get the prepared delete statement for the table.
+        If not available, prepare it.
+
+        Returns:
+            PreparedStatement: The prepared statement.
+        """
+
         if not self.delete_statement:
             self.delete_statement = self.session.prepare(
                 DELETE_TABLE_CQL_TEMPLATE.format(
