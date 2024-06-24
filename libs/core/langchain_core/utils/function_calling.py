@@ -223,7 +223,7 @@ def convert_to_openai_function(
     elif isinstance(function, BaseTool):
         return cast(Dict, format_tool_to_openai_function(function))
     elif callable(function):
-        return convert_python_function_to_openai_function(function)
+        return cast(Dict, convert_python_function_to_openai_function(function))
     else:
         raise ValueError(
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
