@@ -310,24 +310,26 @@ def test_structured_tool_from_function_docstring() -> None:
 
     def foo(bar: int, baz: str) -> str:
         """Docstring
+
         Args:
-            bar: int
-            baz: str
+            bar: the bar value
+            baz: the baz value
         """
         raise NotImplementedError()
 
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
     assert structured_tool.args == {
-        "bar": {"title": "Bar", "type": "integer"},
-        "baz": {"title": "Baz", "type": "string"},
+        "bar": {"title": "Bar", "type": "integer", "description": "the bar value"},
+        "baz": {"title": "Baz", "type": "string", "description": "the baz value"},
     }
 
     assert structured_tool.args_schema.schema() == {
         "properties": {
-            "bar": {"title": "Bar", "type": "integer"},
-            "baz": {"title": "Baz", "type": "string"},
+            "bar": {"title": "Bar", "type": "integer", "description": "the bar value"},
+            "baz": {"title": "Baz", "type": "string", "description": "the baz value"},
         },
+        "description": "Docstring",
         "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
@@ -342,6 +344,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
 
     def foo(bar: int, baz: List[str]) -> str:
         """Docstring
+
         Args:
             bar: int
             baz: List[str]
@@ -351,15 +354,26 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
     assert structured_tool.args == {
-        "bar": {"title": "Bar", "type": "integer"},
-        "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
+        "bar": {"title": "Bar", "type": "integer", "description": "int"},
+        "baz": {
+            "title": "Baz",
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "List[str]",
+        },
     }
 
     assert structured_tool.args_schema.schema() == {
         "properties": {
-            "bar": {"title": "Bar", "type": "integer"},
-            "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
+            "bar": {"title": "Bar", "type": "integer", "description": "int"},
+            "baz": {
+                "title": "Baz",
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "List[str]",
+            },
         },
+        "description": "Docstring",
         "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
@@ -439,6 +453,7 @@ def test_structured_tool_from_function_with_run_manager() -> None:
         bar: int, baz: str, callbacks: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Docstring
+
         Args:
             bar: int
             baz: str
@@ -450,15 +465,16 @@ def test_structured_tool_from_function_with_run_manager() -> None:
     structured_tool = StructuredTool.from_function(foo)
 
     assert structured_tool.args == {
-        "bar": {"title": "Bar", "type": "integer"},
-        "baz": {"title": "Baz", "type": "string"},
+        "bar": {"title": "Bar", "type": "integer", "description": "int"},
+        "baz": {"title": "Baz", "type": "string", "description": "str"},
     }
 
     assert structured_tool.args_schema.schema() == {
         "properties": {
-            "bar": {"title": "Bar", "type": "integer"},
-            "baz": {"title": "Baz", "type": "string"},
+            "bar": {"title": "Bar", "type": "integer", "description": "int"},
+            "baz": {"title": "Baz", "type": "string", "description": "str"},
         },
+        "description": "Docstring",
         "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
@@ -675,26 +691,28 @@ def test_structured_tool_from_function() -> None:
     """Test that structured tools can be created from functions."""
 
     def foo(bar: int, baz: str) -> str:
-        """Docstring
+        """Docstring thing.
+
         Args:
-            bar: int
-            baz: str
+            bar: the bar value
+            baz: the baz value
         """
         raise NotImplementedError()
 
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
     assert structured_tool.args == {
-        "bar": {"title": "Bar", "type": "integer"},
-        "baz": {"title": "Baz", "type": "string"},
+        "bar": {"title": "Bar", "type": "integer", "description": "the bar value"},
+        "baz": {"title": "Baz", "type": "string", "description": "the baz value"},
     }
 
     assert structured_tool.args_schema.schema() == {
         "title": "fooSchema",
         "type": "object",
+        "description": "Docstring thing.",
         "properties": {
-            "bar": {"title": "Bar", "type": "integer"},
-            "baz": {"title": "Baz", "type": "string"},
+            "bar": {"title": "Bar", "type": "integer", "description": "the bar value"},
+            "baz": {"title": "Baz", "type": "string", "description": "the baz value"},
         },
         "required": ["bar", "baz"],
     }
@@ -916,3 +934,27 @@ def test_tool_description() -> None:
 
     foo2 = StructuredTool.from_function(foo)
     assert foo2.description == "The foo."
+
+
+def test_tool_arg_descriptions() -> None:
+    def foo(bar: str, baz: int) -> str:
+        """The foo.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    foo1 = tool(foo)
+    args_schema = foo1.args_schema.schema()
+    assert args_schema == {
+        "title": "fooSchema",
+        "type": "object",
+        "description": "The foo.",
+        "properties": {
+            "bar": {"title": "Bar", "description": "The bar.", "type": "string"},
+            "baz": {"title": "Baz", "description": "The baz.", "type": "integer"},
+        },
+        "required": ["bar", "baz"],
+    }
