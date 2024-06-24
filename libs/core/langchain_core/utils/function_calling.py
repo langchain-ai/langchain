@@ -118,7 +118,7 @@ def convert_pydantic_to_gigachat_function(
     """Converts a Pydantic model to a function description for the GigaChat API."""
     schema = dereference_refs(model.schema())
     schema.pop("definitions", None)
-    title = schema.pop("title", "")
+    title = schema.pop("title", None)
     if "properties" in schema:
         for key in schema["properties"]:
             if "type" not in schema["properties"][key]:
@@ -413,6 +413,8 @@ def flatten_all_of(schema: Any) -> Any:
     if isinstance(schema, dict):
         obj_out: Any = {}
         for k, v in schema.items():
+            if k == "title":
+                continue
             if k == "allOf":
                 obj = flatten_all_of(v[0])
                 obj_out = {**obj_out, **obj}
@@ -446,10 +448,11 @@ def convert_to_gigachat_function(
     if isinstance(function, dict):
         return function
     elif isinstance(function, type) and issubclass(function, BaseModel):
-        function = cast(Dict, convert_pydantic_to_openai_function(function))
+        function = cast(Dict, convert_pydantic_to_gigachat_function(function))
     elif isinstance(function, BaseTool):
-        function = cast(Dict, format_tool_to_openai_function(function))
+        function = cast(Dict, format_tool_to_gigachat_function(function))
     elif callable(function):
+        # Deprecated mode
         function = convert_python_function_to_openai_function(function)
     else:
         raise ValueError(

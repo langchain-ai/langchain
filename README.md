@@ -338,8 +338,6 @@ chat = GigaChat(credentials='<авторизационные_данные>', ver
 
 ### Примеры работы с другими LLM
 
-- [Агент-менеджер по продажам с автоматическим поиском по каталогу и формированием заказа](docs/docs/modules/agents/how_to/add_memory_openai_functions.ipynb)
-- [Поиск ответов в интернете с автоматическими промежуточными вопросами (self-ask)](docs/docs/modules/agents/agent_types/self_ask_with_search.ipynb)
 - [Пример использования YandexGPT](docs/docs/integrations/chat/yandex.ipynb)
 
 ### Примеры приложений для Streamlit
