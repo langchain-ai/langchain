@@ -37,11 +37,9 @@ class BaseStoreSyncTests(ABC, Generic[V]):
         assert isinstance(three_values, tuple)
         assert len(three_values) == 3
 
-    def test_kv_store_is_empty(
-        self, kv_store: BaseStore[str, V], three_values: Tuple[V, V, V]
-    ) -> None:
+    def test_kv_store_is_empty(self, kv_store: BaseStore[str, V]) -> None:
         """Test that the key-value store is empty."""
-        keys = three_values
+        keys = ["foo", "bar", "buzz"]
         assert kv_store.mget(keys) == [None, None, None]
 
     def test_set_and_get_values(
@@ -54,15 +52,13 @@ class BaseStoreSyncTests(ABC, Generic[V]):
         kv_store.mset(key_value_pairs)
         assert kv_store.mget(["foo", "bar"]) == [foo, bar]
 
-    def test_store_still_empty(
-        self, kv_store: BaseStore[str, V], three_values: Tuple[V, V, V]
-    ) -> None:
+    def test_store_still_empty(self, kv_store: BaseStore[str, V]) -> None:
         """This test should follow a test that sets values.
 
         This just verifies that the fixture is set up properly to be empty
         after each test.
         """
-        keys = three_values[:1]
+        keys = ["foo"]
         assert kv_store.mget(keys) == [None]
 
     def test_delete_values(
@@ -172,11 +168,9 @@ class BaseStoreAsyncTests(ABC):
         assert isinstance(three_values, tuple)
         assert len(three_values) == 3
 
-    async def test_kv_store_is_empty(
-        self, kv_store: BaseStore[str, V], three_values: Tuple[V, V, V]
-    ) -> None:
+    async def test_kv_store_is_empty(self, kv_store: BaseStore[str, V]) -> None:
         """Test that the key-value store is empty."""
-        keys = three_values
+        keys = ["foo", "bar", "buzz"]
         assert await kv_store.amget(keys) == [None, None, None]
 
     async def test_set_and_get_values(
@@ -189,15 +183,13 @@ class BaseStoreAsyncTests(ABC):
         await kv_store.amset(key_value_pairs)
         assert await kv_store.amget(["foo", "bar"]) == [foo, bar]
 
-    async def test_store_still_empty(
-        self, kv_store: BaseStore[str, V], three_values: Tuple[V, V, V]
-    ) -> None:
+    async def test_store_still_empty(self, kv_store: BaseStore[str, V]) -> None:
         """This test should follow a test that sets values.
 
         This just verifies that the fixture is set up properly to be empty
         after each test.
         """
-        keys = three_values[:1]
+        keys = ["foo"]
         assert await kv_store.amget(keys) == [None]
 
     async def test_delete_values(

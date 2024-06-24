@@ -1,5 +1,5 @@
 """Tests for the InMemoryStore class."""
-from typing import Any, Tuple
+from typing import Tuple
 
 import pytest
 from langchain_core.stores import InMemoryStore
@@ -7,7 +7,6 @@ from langchain_core.stores import InMemoryStore
 from langchain_standard_tests.integration_tests.base_store import (
     BaseStoreAsyncTests,
     BaseStoreSyncTests,
-    V,
 )
 
 
@@ -23,7 +22,7 @@ class TestInMemoryStore(BaseStoreSyncTests):
 
 class TestInMemoryStoreAsync(BaseStoreAsyncTests):
     @pytest.fixture
-    def three_values(self) -> Tuple[str, str, str]:
+    def three_values(self) -> Tuple[str, str, str]:  # type: ignore
         return "foo", "bar", "buzz"
 
     @pytest.fixture
