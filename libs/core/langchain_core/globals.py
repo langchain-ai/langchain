@@ -3,7 +3,7 @@
 import abc
 import contextlib
 import warnings
-from typing import TYPE_CHECKING, Optional, Any
+from typing import TYPE_CHECKING, Optional, Any, Generator
 
 if TYPE_CHECKING:
     from langchain_core.caches import BaseCache
@@ -20,19 +20,21 @@ _llm_cache: Optional["BaseCache"] = None
 # Renderer
 
 
-class Renderer(abc.ABC):
+class BaseRenderer(abc.ABC):
     def render_html(self, obj: Any) -> str:
         """Render an object as HTML."""
         raise NotImplementedError
 
 
-class DefaultRenderer(Renderer):
+class DefaultRenderer(BaseRenderer):
     def render_html(self, obj: Any) -> str:
         """Render an object as HTML."""
+        if hasattr(obj, "_repr_html_"):
+            return obj._repr_html_()
         return str(obj)
 
 
-_renderer: Optional[Renderer] = None
+_renderer: Optional[BaseRenderer] = None
 
 
 def set_verbose(value: bool) -> None:
@@ -216,20 +218,20 @@ def get_llm_cache() -> "BaseCache":
     return _llm_cache or old_llm_cache
 
 
-def set_renderer(renderer: Renderer) -> None:
+def set_renderer(renderer: BaseRenderer) -> None:
     """Set a new renderer."""
     global _renderer
     _renderer = renderer
 
 
-def get_renderer() -> Renderer:
+def get_renderer() -> BaseRenderer:
     """Get the current renderer."""
     global _renderer
     return _renderer or DefaultRenderer()
 
 
 @contextlib.contextmanager
-def with_renderer(renderer: Renderer):
+def with_renderer(renderer: BaseRenderer) -> Generator[None, None, None]:
     """Context manager for temporarily setting a new renderer."""
     global _renderer
     # Save the current value
