@@ -15,17 +15,20 @@ coverage:
 		--cov-report term-missing:skip-covered \
 		$(TEST_FILE)
 
-test tests integration_tests:
+test tests:
+	poetry run pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+
+integration_tests:
 	poetry run pytest $(TEST_FILE)
 
 test_watch:
-	poetry run ptw --snapshot-update --now . -- -vv -x tests/unit_tests
+	poetry run ptw --disable-socket --allow-unix-socket --snapshot-update --now . -- -vv -x tests/unit_tests
 
 check_imports: $(shell find langchain_community -name '*.py')
 	poetry run python ./scripts/check_imports.py $^
 
 extended_tests:
-	poetry run pytest --only-extended tests/unit_tests
+	poetry run pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests
 
 
 ######################

@@ -15,8 +15,19 @@ class FakeListLLM(LLM):
     """Fake LLM for testing purposes."""
 
     responses: List[str]
+    """List of responses to return in order."""
+    # This parameter should be removed from FakeListLLM since
+    # it's only used by sub-classes.
     sleep: Optional[float] = None
+    """Sleep time in seconds between responses.
+    
+    Ignored by FakeListLLM, but used by sub-classes.
+    """
     i: int = 0
+    """Internally incremented after every model invocation.
+    
+    Useful primarily for testing purposes.
+    """
 
     @property
     def _llm_type(self) -> str:
@@ -59,9 +70,16 @@ class FakeListLLM(LLM):
 
 
 class FakeStreamingListLLM(FakeListLLM):
-    """Fake streaming list LLM for testing purposes."""
+    """Fake streaming list LLM for testing purposes.
+
+    An LLM that will return responses from a list in order.
+
+    This model also supports optionally sleeping between successive
+    chunks in a streaming implementation.
+    """
 
     error_on_chunk_number: Optional[int] = None
+    """If set, will raise an exception on the specified chunk number."""
 
     def stream(
         self,
