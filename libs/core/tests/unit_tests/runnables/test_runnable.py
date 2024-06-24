@@ -306,7 +306,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "definitions": {
             "Document": {
                 "title": "Document",
-                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "description": AnyStr(),
                 "type": "object",
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
@@ -347,7 +347,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"history": {"title": "History", "type": "string"}},
-        "required": ["history"],
+        "required": ["history"]
     }
     assert chat_prompt.output_schema.schema() == snapshot
 

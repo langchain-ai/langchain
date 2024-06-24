@@ -43,10 +43,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         from langchain_openai import AzureChatOpenAI
 
-        AzureChatOpenAI(
-            azure_deployment="35-turbo-dev",
-            openai_api_version="2023-05-15",
-        )
+        AzureChatOpenAI(azure_deployment="35-turbo-dev", openai_api_version="2023-05-15")
 
     Be aware the API version may change.
 
@@ -60,7 +57,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     Any parameters that are valid to be passed to the openai.create call can be passed
     in, even if not explicitly saved on this class.
-    """
+    """  # noqa: E501
 
     azure_endpoint: Union[str, None] = None
     """Your Azure endpoint, including the resource.

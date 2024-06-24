@@ -9,6 +9,8 @@ from .utils import load, prepare
 def create_chat_prompt(
     path: str, input_name_agent_scratchpad: str = "agent_scratchpad"
 ) -> Runnable[Dict[str, Any], ChatPromptTemplate]:
+    """Create a chat prompt from a Langchain schema."""
+
     def runnable_chat_lambda(inputs: Dict[str, Any]) -> ChatPromptTemplate:
         p = load(path)
         parsed = prepare(p, inputs)
