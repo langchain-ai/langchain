@@ -222,38 +222,48 @@ def test_chat_model_inputs() -> None:
 
 
 @pytest.mark.parametrize(
-    "responses, expected_content",
+    "responses, expected_contents",
     [
-        ([AIMessage(content="Hello")], "Hello"),
-        (["Hello"], "Hello"),
+        (
+            [AIMessage(content="Hello"), AIMessage(content="Bye")],
+            ["Hello", "Bye", "Hello"],
+        ),
+        (["Hello", "Bye"], ["Hello", "Bye", "Hello"]),
     ],
 )
-def test_fake_messages_list_chat_model_invoke(
+async def test_fake_messages_list_chat_model_invoke(
     responses: List[Union[BaseMessage, BaseMessageChunk, str]],
-    expected_content: str,
+    expected_contents: list[str],
 ) -> None:
     model = FakeMessagesListChatModel(responses=responses)
-    result = model.invoke("Test input")
-    assert isinstance(result, AIMessage)
-    assert result.content == expected_content
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "responses, expected_content",
-    [
-        ([AIMessage(content="Hello")], "Hello"),
-        (["Hello"], "Hello"),
-    ],
-)
-async def test_fake_messages_list_chat_model_ainvoke(
-    responses: List[Union[BaseMessage, BaseMessageChunk, str]],
-    expected_content: str,
-) -> None:
-    model = FakeMessagesListChatModel(responses=responses)
-    result = await model.ainvoke("Test input")
-    assert isinstance(result, AIMessage)
-    assert result.content == expected_content
+    # invoke
+    for expected in expected_contents:
+        result = model.invoke("Test input")
+        assert isinstance(result, AIMessage)
+        assert result.content == expected
+    # reset the model
+    model.i = 0
+    # ainvoke
+    for expected in expected_contents:
+        result = await model.ainvoke("Test input")
+        assert isinstance(result, AIMessage)
+        assert result.content == expected
+    # reset the model
+    model.i = 0
+    # stream
+    for expected in expected_contents:
+        chunks = list(model.stream("Test input"))
+        assert len(chunks) == 1
+        assert isinstance(chunks[0], AIMessageChunk)
+        assert chunks[0].content == expected
+    # reset the model
+    model.i = 0
+    # astream
+    for expected in expected_contents:
+        chunks = [chunk async for chunk in model.astream("Test input")]
+        assert len(chunks) == 1
+        assert isinstance(chunks[0], AIMessageChunk)
+        assert chunks[0].content == expected
 
 
 @pytest.mark.parametrize(
