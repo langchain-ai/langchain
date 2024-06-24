@@ -28,6 +28,7 @@ embedding_function = FakeEmbeddings()
 # cd [root]/docker
 # docker compose up -d vdms
 @pytest.fixture
+@pytest.mark.enable_socket
 def vdms_client() -> vdms.vdms:
     return VDMS_Client(
         host=os.getenv("VDMS_DBHOST", "localhost"),
@@ -36,6 +37,7 @@ def vdms_client() -> vdms.vdms:
 
 
 @pytest.mark.requires("vdms")
+@pytest.mark.enable_socket
 def test_init_from_client(vdms_client: vdms.vdms) -> None:
     _ = VDMS(  # type: ignore[call-arg]
         embedding=embedding_function,
@@ -44,6 +46,7 @@ def test_init_from_client(vdms_client: vdms.vdms) -> None:
 
 
 @pytest.mark.requires("vdms")
+@pytest.mark.enable_socket
 def test_from_texts_with_metadatas(vdms_client: vdms.vdms) -> None:
     """Test end to end construction and search."""
     collection_name = "test_from_texts_with_metadatas"
@@ -65,6 +68,7 @@ def test_from_texts_with_metadatas(vdms_client: vdms.vdms) -> None:
 
 
 @pytest.mark.requires("vdms")
+@pytest.mark.enable_socket
 def test_from_texts_with_metadatas_with_scores(vdms_client: vdms.vdms) -> None:
     """Test end to end construction and scored search."""
     collection_name = "test_from_texts_with_metadatas_with_scores"
@@ -86,6 +90,7 @@ def test_from_texts_with_metadatas_with_scores(vdms_client: vdms.vdms) -> None:
 
 
 @pytest.mark.requires("vdms")
+@pytest.mark.enable_socket
 def test_from_texts_with_metadatas_with_scores_using_vector(
     vdms_client: vdms.vdms,
 ) -> None:
@@ -109,6 +114,7 @@ def test_from_texts_with_metadatas_with_scores_using_vector(
 
 
 @pytest.mark.requires("vdms")
+@pytest.mark.enable_socket
 def test_search_filter(vdms_client: vdms.vdms) -> None:
     """Test end to end construction and search with metadata filtering."""
     collection_name = "test_search_filter"
@@ -139,6 +145,7 @@ def test_search_filter(vdms_client: vdms.vdms) -> None:
 
 
 @pytest.mark.requires("vdms")
+@pytest.mark.enable_socket
 def test_search_filter_with_scores(vdms_client: vdms.vdms) -> None:
     """Test end to end construction and scored search with metadata filtering."""
     collection_name = "test_search_filter_with_scores"
@@ -179,6 +186,7 @@ def test_search_filter_with_scores(vdms_client: vdms.vdms) -> None:
 
 
 @pytest.mark.requires("vdms")
+@pytest.mark.enable_socket
 def test_mmr(vdms_client: vdms.vdms) -> None:
     """Test end to end construction and search."""
     collection_name = "test_mmr"
@@ -196,6 +204,7 @@ def test_mmr(vdms_client: vdms.vdms) -> None:
 
 
 @pytest.mark.requires("vdms")
+@pytest.mark.enable_socket
 def test_mmr_by_vector(vdms_client: vdms.vdms) -> None:
     """Test end to end construction and search."""
     collection_name = "test_mmr_by_vector"
@@ -214,6 +223,7 @@ def test_mmr_by_vector(vdms_client: vdms.vdms) -> None:
 
 
 @pytest.mark.requires("vdms")
+@pytest.mark.enable_socket
 def test_with_include_parameter(vdms_client: vdms.vdms) -> None:
     """Test end to end construction and include parameter."""
     collection_name = "test_with_include_parameter"
@@ -234,6 +244,7 @@ def test_with_include_parameter(vdms_client: vdms.vdms) -> None:
 
 
 @pytest.mark.requires("vdms")
+@pytest.mark.enable_socket
 def test_update_document(vdms_client: vdms.vdms) -> None:
     """Test the update_document function in the VDMS class."""
     collection_name = "test_update_document"
@@ -302,6 +313,7 @@ def test_update_document(vdms_client: vdms.vdms) -> None:
 
 
 @pytest.mark.requires("vdms")
+@pytest.mark.enable_socket
 def test_with_relevance_score(vdms_client: vdms.vdms) -> None:
     """Test to make sure the relevance score is scaled to 0-1."""
     collection_name = "test_with_relevance_score"
@@ -325,6 +337,7 @@ def test_with_relevance_score(vdms_client: vdms.vdms) -> None:
 
 
 @pytest.mark.requires("vdms")
+@pytest.mark.enable_socket
 def test_add_documents_no_metadata(vdms_client: vdms.vdms) -> None:
     collection_name = "test_add_documents_no_metadata"
     db = VDMS(  # type: ignore[call-arg]
@@ -336,6 +349,7 @@ def test_add_documents_no_metadata(vdms_client: vdms.vdms) -> None:
 
 
 @pytest.mark.requires("vdms")
+@pytest.mark.enable_socket
 def test_add_documents_mixed_metadata(vdms_client: vdms.vdms) -> None:
     collection_name = "test_add_documents_mixed_metadata"
     db = VDMS(  # type: ignore[call-arg]
