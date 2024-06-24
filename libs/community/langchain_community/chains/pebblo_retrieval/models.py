@@ -1,6 +1,6 @@
 """Models for the PebbloRetrievalQA chain."""
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from langchain_core.pydantic_v1 import BaseModel
 
@@ -137,9 +137,10 @@ class Prompt(BaseModel):
 
 class Qa(BaseModel):
     name: str
-    context: List[Optional[Context]]
-    prompt: Prompt
-    response: Prompt
+    context: Union[List[Optional[Context]], Optional[Context]]
+    prompt: Optional[Prompt]
+    response: Optional[Prompt]
     prompt_time: str
     user: str
     user_identities: Optional[List[str]]
+    classifier_location: str
