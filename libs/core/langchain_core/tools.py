@@ -189,7 +189,11 @@ def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
 def _infer_arg_descriptions(fn: Callable) -> Tuple[str, dict]:
     """Infer argument descriptions from a function's docstring."""
     description, arg_descriptions = _parse_python_function_docstring(fn)
-    annotations = inspect.get_annotations(fn)
+    if hasattr(inspect, "get_annotations"):
+        # This is for python < 3.10
+        annotations = inspect.get_annotations(fn)  # type: ignore
+    else:
+        annotations = getattr(fn, "__annotations__", {})
     for arg, arg_type in annotations.items():
         if arg in arg_descriptions:
             continue
@@ -314,9 +318,9 @@ class ChildTool(BaseTool):
     You can use these to eg identify a specific instance of a tool with its use case.
     """
 
-    handle_tool_error: Optional[
-        Union[bool, str, Callable[[ToolException], str]]
-    ] = False
+    handle_tool_error: Optional[Union[bool, str, Callable[[ToolException], str]]] = (
+        False
+    )
     """Handle the content of the ToolException thrown."""
 
     handle_validation_error: Optional[

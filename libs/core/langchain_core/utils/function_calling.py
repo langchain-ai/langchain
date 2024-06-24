@@ -127,7 +127,7 @@ def _get_python_function_name(function: Callable) -> str:
 )
 def convert_python_function_to_openai_function(
     function: Callable,
-) -> Dict[str, Any]:
+) -> FunctionDescription:
     """Convert a Python function to an OpenAI function-calling API compatible dict.
 
     Assumes the Python function has type hints and a docstring with a description. If
@@ -138,12 +138,11 @@ def convert_python_function_to_openai_function(
 
     func_name = _get_python_function_name(function)
     model = tools.create_schema_from_function(func_name, function, filter_args=())
-    res = convert_pydantic_to_openai_function(
+    return convert_pydantic_to_openai_function(
         model,
         name=func_name,
         description=model.__doc__,
     )
-    return res
 
 
 @deprecated(
