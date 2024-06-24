@@ -36,7 +36,9 @@ chat.invoke(messages)
 For a list of the supported models, see [this page](https://docs.ai21.com/reference/python-sdk#chat)
 
 ## LLMs
-You can use AI21's generative AI models as LangChain LLMs:
+You can use AI21's Jurassic generative AI models as LangChain LLMs.
+To use the newer Jamba model, use the [ChatAI21 chat model](#chat-models), which
+supports single-turn instruction/question answering capabilities.
 
 ```python
 from langchain_core.prompts import PromptTemplate
