@@ -13,7 +13,7 @@ os.environ["COHERE_API_KEY"] = "foo"
 
 @pytest.mark.requires("cohere")
 def test_init() -> None:
-    CohereRerank()
+    CohereRerank(model="rerank-english-v3.0")
 
     CohereRerank(
         top_n=5, model="rerank-english_v2.0", cohere_api_key="foo", user_agent="bar"
@@ -38,7 +38,7 @@ def test_rerank(mocker: MockerFixture) -> None:
 
     mocker.patch("cohere.Client", return_value=mock_client)
 
-    reranker = CohereRerank(cohere_api_key="foo")
+    reranker = CohereRerank(cohere_api_key="foo", model="rerank-english-v3.0")
     results = reranker.rerank(test_documents, test_query)
 
     mock_client.rerank.assert_called_once_with(

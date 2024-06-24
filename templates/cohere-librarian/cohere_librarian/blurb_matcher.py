@@ -23,7 +23,7 @@ parsed_data = [
 ]
 parsed_data[1]
 
-embeddings = CohereEmbeddings()
+embeddings = CohereEmbeddings(model="embed-english-v3.0")
 
 docsearch = Chroma.from_texts(
     [x["title"] for x in parsed_data], embeddings, metadatas=parsed_data
