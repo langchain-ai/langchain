@@ -115,7 +115,33 @@ class J2ChatAdapter(ChatAdapter):
     ) -> J2ChatMessage:
         return J2ChatMessage(role=RoleType(role), text=content)
 
-    def call(self, client: Any, **params: Any) -> List[BaseMessage]:
+    @overload
+    def call(
+        self,
+        client: Any,
+        stream: Literal[True],
+        **params: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        ...
+
+    @overload
+    def call(
+        self,
+        client: Any,
+        stream: Literal[False],
+        **params: Any,
+    ) -> List[BaseMessage]:
+        ...
+
+    def call(
+        self,
+        client: Any,
+        stream: Literal[True] | Literal[False],
+        **params: Any,
+    ) -> List[BaseMessage] | Iterator[ChatGenerationChunk]:
+        if stream:
+            raise NotImplementedError("Streaming is not supported for Jurassic models.")
+
         response = client.chat.create(**params)
 
         return [AIMessage(output.text) for output in response.outputs]
