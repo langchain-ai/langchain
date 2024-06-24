@@ -287,6 +287,10 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
     )
 
 
+def _remove_backticks(text: str) -> str:
+    return text.replace("`", "")
+
+
 class Neo4jGraph(GraphStore):
     """Neo4j database wrapper for various graph operations.
 
@@ -571,6 +575,9 @@ class Neo4jGraph(GraphStore):
                     document.source.page_content.encode("utf-8")
                 ).hexdigest()
 
+            # Remove backticks from node types
+            for node in document.nodes:
+                node.type = _remove_backticks(node.type)
             # Import nodes
             self.query(
                 node_import_query,
@@ -586,10 +593,12 @@ class Neo4jGraph(GraphStore):
                     "data": [
                         {
                             "source": el.source.id,
-                            "source_label": el.source.type,
+                            "source_label": _remove_backticks(el.source.type),
                             "target": el.target.id,
-                            "target_label": el.target.type,
-                            "type": el.type.replace(" ", "_").upper(),
+                            "target_label": _remove_backticks(el.target.type),
+                            "type": _remove_backticks(
+                                el.type.replace(" ", "_").upper()
+                            ),
                             "properties": el.properties,
                         }
                         for el in document.relationships
