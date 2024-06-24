@@ -33,7 +33,7 @@ class AscendEmbeddings(Embeddings, BaseModel):
     model: Any
     tokenizer: Any
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         try:
             from transformers import AutoModel, AutoTokenizer
