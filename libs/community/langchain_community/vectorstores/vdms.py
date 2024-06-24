@@ -204,9 +204,9 @@ class VDMS(VectorStore):
             p_str += " to be an Embeddings object"
             raise ValueError(p_str)
 
-    def _embed_video(self, paths: List[str]) -> List[List[float]]:
+    def _embed_video(self, paths: List[str], **kwargs) -> List[List[float]]:
         if self.embedding is not None and hasattr(self.embedding, "embed_video"):
-            return self.embedding.embed_video(paths=paths)
+            return self.embedding.embed_video(paths=paths, **kwargs)
         else:
             raise ValueError(
                 "Must provide `embedding` which has attribute `embed_image`"
@@ -635,7 +635,7 @@ class VDMS(VectorStore):
         ids = ids if ids is not None else [str(uuid.uuid4()) for _ in paths]
 
         # Set embeddings
-        embeddings = self._embed_video(paths=paths)
+        embeddings = self._embed_video(paths=paths, **kwargs)
 
         if metadatas is None:
             metadatas = [{} for _ in paths]
