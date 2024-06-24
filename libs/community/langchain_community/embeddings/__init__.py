@@ -22,6 +22,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.anyscale import (
         AnyscaleEmbeddings,
     )
+    from langchain_community.embeddings.ascend import (
+        AscendEmbeddings,
+    )
     from langchain_community.embeddings.awa import (
         AwaEmbeddings,
     )
@@ -236,6 +239,7 @@ __all__ = [
     "AlephAlphaAsymmetricSemanticEmbedding",
     "AlephAlphaSymmetricSemanticEmbedding",
     "AnyscaleEmbeddings",
+    "AscendEmbeddings",
     "AwaEmbeddings",
     "AzureOpenAIEmbeddings",
     "BaichuanTextEmbeddings",
