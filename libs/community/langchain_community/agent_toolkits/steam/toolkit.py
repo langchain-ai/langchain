@@ -1,4 +1,5 @@
 """Steam Toolkit."""
+
 from typing import List
 
 from langchain_core.tools import BaseToolkit
@@ -13,7 +14,11 @@ from langchain_community.utilities.steam import SteamWebAPIWrapper
 
 
 class SteamToolkit(BaseToolkit):
-    """Steam Toolkit."""
+    """Steam Toolkit.
+
+    Parameters:
+        tools: List[BaseTool]. The tools in the toolkit. Default is an empty list.
+    """
 
     tools: List[BaseTool] = []
 
@@ -21,6 +26,14 @@ class SteamToolkit(BaseToolkit):
     def from_steam_api_wrapper(
         cls, steam_api_wrapper: SteamWebAPIWrapper
     ) -> "SteamToolkit":
+        """Create a Steam Toolkit from a Steam API Wrapper.
+
+        Args:
+            steam_api_wrapper: SteamWebAPIWrapper. The Steam API Wrapper.
+
+        Returns:
+            SteamToolkit. The Steam Toolkit.
+        """
         operations: List[dict] = [
             {
                 "mode": "get_games_details",
