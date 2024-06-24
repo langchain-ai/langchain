@@ -909,7 +909,8 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
 
-    @overload
+    # TODO: Fix typing.
+    @overload  # type: ignore[override]
     def with_structured_output(
         self,
         schema: Optional[_DictOrPydanticClass] = None,
@@ -1139,7 +1140,7 @@ class BaseChatOpenAI(BaseChatModel):
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_format'. Received: '{method}'"
+                f"'json_mode'. Received: '{method}'"
             )
 
         if include_raw:

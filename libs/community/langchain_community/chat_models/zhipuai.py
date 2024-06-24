@@ -42,6 +42,17 @@ ZHIPUAI_API_BASE = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
 @contextmanager
 def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
+    """Context manager for connecting to an SSE stream.
+
+    Args:
+        client: The HTTP client.
+        method: The HTTP method.
+        url: The URL.
+        **kwargs: Additional keyword arguments.
+
+    Yields:
+        The event source.
+    """
     from httpx_sse import EventSource
 
     with client.stream(method, url, **kwargs) as response:
@@ -52,6 +63,17 @@ def connect_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
 async def aconnect_sse(
     client: Any, method: str, url: str, **kwargs: Any
 ) -> AsyncIterator:
+    """Async context manager for connecting to an SSE stream.
+
+    Args:
+        client: The HTTP client.
+        method: The HTTP method.
+        url: The URL.
+        **kwargs: Additional keyword arguments.
+
+    Yields:
+        The event source.
+    """
     from httpx_sse import EventSource
 
     async with client.stream(method, url, **kwargs) as response:
@@ -59,7 +81,9 @@ async def aconnect_sse(
 
 
 def _get_jwt_token(api_key: str) -> str:
-    """Gets JWT token for ZhipuAI API, see 'https://open.bigmodel.cn/dev/api#nosdk'.
+    """Gets JWT token for ZhipuAI API.
+
+    See 'https://open.bigmodel.cn/dev/api#nosdk'.
 
     Args:
         api_key: The API key for ZhipuAI API.
@@ -353,10 +377,10 @@ class ChatZhipuAI(BaseChatModel):
 
         allow_population_by_field_name = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         values["zhipuai_api_key"] = get_from_dict_or_env(
-            values, "zhipuai_api_key", "ZHIPUAI_API_KEY"
+            values, ["zhipuai_api_key", "api_key"], "ZHIPUAI_API_KEY"
         )
         values["zhipuai_api_base"] = get_from_dict_or_env(
             values, "zhipuai_api_base", "ZHIPUAI_API_BASE", default=ZHIPUAI_API_BASE
