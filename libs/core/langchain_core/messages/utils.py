@@ -440,7 +440,7 @@ def merge_message_runs(
 
             [
                 SystemMessage("you're a good assistant."),
-                HumanMessage("what's your favorite color\nwait your favorite food", id="foo",),
+                HumanMessage("what's your favorite color\\nwait your favorite food", id="foo",),
                 AIMessage(
                     [
                         "my favorite colo",
