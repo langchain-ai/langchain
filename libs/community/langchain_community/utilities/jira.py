@@ -38,8 +38,8 @@ class JiraAPIWrapper(BaseModel):
         )
         values["jira_instance_url"] = jira_instance_url
 
-        jira_cloud = get_from_dict_or_env(values, "jira_cloud", "JIRA_CLOUD")
-        jira_cloud = jira_cloud.lower() == "true"
+        jira_cloud_str = get_from_dict_or_env(values, "jira_cloud", "JIRA_CLOUD")
+        jira_cloud = jira_cloud_str.lower() == "true"
         values["jira_cloud"] = jira_cloud
 
         try:
