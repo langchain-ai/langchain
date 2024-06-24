@@ -4,12 +4,15 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import io
 import json
+import logging
 from pathlib import Path
 from typing import IO, Any, Callable, Iterator, Optional, Sequence, Union
 
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
+
+logger = logging.getLogger(__file__)
 
 
 class UnstructuredBaseLoader(BaseLoader, ABC):
@@ -32,6 +35,10 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
             raise ValueError(
                 f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
             )
+        if mode=="paged":
+            logger.warning("`mode='paged'` is deprecated in favor of the 'by_page' chunking strategy. Learn more about chunking here: https://docs.unstructured.io/open-source/core-functionality/chunking")
+        
+        self._check_if_both_mode_and_chunking_strategy_are_by_page()
 
         self.mode = mode
         self.unstructured_kwargs = unstructured_kwargs
@@ -99,18 +106,26 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
         else:
             raise ValueError(f"mode of {self.mode} not supported.")
 
+    def _check_if_both_mode_and_chunking_strategy_are_by_page(self) -> None:
+        if self.mode=="paged" and self.unstructured_kwargs.get("chunking_strategy", None)=="by_page":
+            raise ValueError(
+                "Only one of `chunking_strategy='by_page'` or `mode='paged'` may be set."
+                " `chunking_strategy` is preferred."
+            )
+
 
 class UnstructuredFileLoader(UnstructuredBaseLoader):
     """Load files using `Unstructured`.
 
     The file loader uses the unstructured partition function and will automatically detect the file
-    type. You can run the loader in different modes: "single" and "elements". If you use "single"
-    mode, the document will be returned as a single langchain Document object. If you use "elements"
-    mode, the unstructured library will split the document into elements such as Title and
-    NarrativeText. In addition to these modes (which are specific to the LangChain Loaders)
-    Unstructured has its own "chunking" parameters for post-processing elements into more useful
-    "chunks" for uses cases such as Retrieval Augmented Generation (RAG). You can pass in additional
-    unstructured kwargs to configure different unstructured settings.
+    type. You can run the loader in different modes: "single", "elements", and "paged". The default
+    "single" mode will return a single langchain Document object. If you use "elements" mode, the
+    unstructured library will split the document into elements such as Title and NarrativeText and
+    return those as individual langchain Document objects. In addition to these post-processing modes
+    (which are specific to the LangChain Loaders), Unstructured has its own "chunking" parameters for
+    post-processing elements into more useful chunks for uses cases such as Retrieval Augmented
+    Generation (RAG). You can pass in additional unstructured kwargs to configure different
+    unstructured settings.
 
     Examples
     --------
@@ -189,13 +204,14 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
     initialize the loader. The hosted Unstructured API requires an API key. See the links below to
     learn more about our API offerings and get an API key.
 
-    You can run the loader in one of two modes: "single" and "elements". If you use "single" mode,
-    the document will be returned as a single langchain Document object. If you use "elements" mode,
-    the unstructured library will split the document into elements such as Title and NarrativeText.
-    In addition to these modes (which are specific to the LangChain Loaders) Unstructured has its
-    own "chunking" parameters for post-processing elements into more useful "chunks" for uses cases
-    such as Retrieval Augmented Generation (RAG). You can pass in additional unstructured kwargs to
-    configure different unstructured settings.
+    You can run the loader in different modes: "single", "elements", and "paged". The default
+    "single" mode will return a single langchain Document object. If you use "elements" mode, the
+    unstructured library will split the document into elements such as Title and NarrativeText and
+    return those as individual langchain Document objects. In addition to these post-processing modes
+    (which are specific to the LangChain Loaders), Unstructured has its own "chunking" parameters for
+    post-processing elements into more useful chunks for uses cases such as Retrieval Augmented
+    Generation (RAG). You can pass in additional unstructured kwargs to configure different
+    unstructured settings.
 
     Examples
     ```python
@@ -314,13 +330,14 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     """Load file-like objects opened in read mode using `Unstructured`.
 
     The file loader uses the unstructured partition function and will automatically detect the file
-    type. You can run the loader in one of two modes: "single" and "elements". If you use "single"
-    mode, the document will be returned as a single langchain Document object. If you use "elements"
-    mode, the unstructured library will split the document into elements such as Title and
-    NarrativeText. In addition to these modes (which are specific to the LangChain Loaders)
-    Unstructured has its own "chunking" parameters for post-processing elements into more useful
-    "chunks" for uses cases such as Retrieval Augmented Generation (RAG). You can pass in additional
-    unstructured kwargs to configure different unstructured settings.
+    type. You can run the loader in different modes: "single", "elements", and "paged". The default
+    "single" mode will return a single langchain Document object. If you use "elements" mode, the
+    unstructured library will split the document into elements such as Title and NarrativeText and
+    return those as individual langchain Document objects. In addition to these post-processing modes
+    (which are specific to the LangChain Loaders), Unstructured has its own "chunking" parameters for
+    post-processing elements into more useful chunks for uses cases such as Retrieval Augmented
+    Generation (RAG). You can pass in additional unstructured kwargs to configure different
+    unstructured settings.
 
     Examples
     --------
@@ -394,13 +411,14 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
     initialize the loader. The hosted Unstructured API requires an API key. See the links below to
     learn more about our API offerings and get an API key.
 
-    You can run the loader in one of two modes: "single" and "elements". If you use "single" mode,
-    the document will be returned as a single langchain Document object. If you use "elements" mode,
-    the unstructured library will split the document into elements such as Title and NarrativeText.
-    In addition to these modes (which are specific to the LangChain Loaders) Unstructured has its
-    own "chunking" parameters for post-processing elements into more useful "chunks" for uses cases
-    such as Retrieval Augmented Generation (RAG). You can pass in additional unstructured kwargs to
-    configure different unstructured settings.
+    You can run the loader in different modes: "single", "elements", and "paged". The default
+    "single" mode will return a single langchain Document object. If you use "elements" mode, the
+    unstructured library will split the document into elements such as Title and NarrativeText and
+    return those as individual langchain Document objects. In addition to these post-processing modes
+    (which are specific to the LangChain Loaders), Unstructured has its own "chunking" parameters
+    for post-processing elements into more useful chunks for uses cases such as Retrieval Augmented
+    Generation (RAG). You can pass in additional unstructured kwargs to configure different
+    unstructured settings.
 
     Examples
     --------
