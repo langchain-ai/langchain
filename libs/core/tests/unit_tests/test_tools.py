@@ -947,7 +947,7 @@ def test_tool_arg_descriptions() -> None:
         return bar
 
     foo1 = tool(foo)
-    args_schema = foo1.args_schema.schema()
+    args_schema = foo1.args_schema.schema()  # type: ignore
     assert args_schema == {
         "title": "fooSchema",
         "type": "object",
