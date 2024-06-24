@@ -12,7 +12,7 @@ class ReducedOpenAPISpec:
 
     This is a quick and dirty representation for OpenAPI specs.
 
-    Attributes:
+    Parameters:
         servers: The servers in the spec.
         description: The description of the spec.
         endpoints: The endpoints in the spec.
@@ -30,6 +30,13 @@ def reduce_openapi_spec(spec: dict, dereference: bool = True) -> ReducedOpenAPIS
     I want smaller results from retrieval.
     I was hoping https://openapi.tools/ would have some useful bits
     to this end, but doesn't seem so.
+
+    Args:
+        spec: The OpenAPI spec.
+        dereference: Whether to dereference the spec. Default is True.
+
+    Returns:
+        ReducedOpenAPISpec: The reduced OpenAPI spec.
     """
     # 1. Consider only get, post, patch, put, delete endpoints.
     endpoints = [
