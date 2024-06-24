@@ -38,7 +38,7 @@ from langchain.chains.base import Chain
 @deprecated(
     since="0.1.17",
     alternative="RunnableSequence, e.g., `prompt | llm`",
-    removal="0.3.0",
+    removal="1.0",
 )
 class LLMChain(Chain):
     """Chain to run queries against LLMs.
@@ -48,6 +48,7 @@ class LLMChain(Chain):
 
         .. code-block:: python
 
+            from langchain_core.output_parsers import StrOutputParser
             from langchain_core.prompts import PromptTemplate
             from langchain_openai import OpenAI
 
@@ -56,7 +57,7 @@ class LLMChain(Chain):
                 input_variables=["adjective"], template=prompt_template
             )
             llm = OpenAI()
-            chain = prompt | llm
+            chain = prompt | llm | StrOutputParser()
 
             chain.invoke("your adjective here")
 
