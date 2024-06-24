@@ -1,16 +1,20 @@
 import asyncio
 from functools import partial
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.chat_models import BaseChatModel, LangSmithParams
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    LangSmithParams,
+    generate_from_stream,
+)
 from langchain_core.messages import (
     BaseMessage,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import root_validator
 
 from langchain_ai21.ai21_base import AI21Base
@@ -65,6 +69,7 @@ class ChatAI21(BaseChatModel, AI21Base):
 
     n: int = 1
     """Number of chat completions to generate for each prompt."""
+    streaming: bool = False
 
     _chat_adapter: ChatAdapter
 
@@ -156,13 +161,45 @@ class ChatAI21(BaseChatModel, AI21Base):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        params = self._build_params_for_request(messages=messages, stop=stop, **kwargs)
+        should_stream = stream or self.streaming
+        if should_stream:
+            stream_iter = self._stream(
+                messages=messages,
+                stop=stop,
+                run_manager=run_manager,
+                **kwargs,
+            )
+            return generate_from_stream(stream_iter)
+
+        params = self._build_params_for_request(
+            messages=messages,
+            stop=stop,
+            stream=should_stream,
+            **kwargs,
+        )
         messages = self._chat_adapter.call(self.client, **params)
+
         generations = [ChatGeneration(message=message) for message in messages]
 
         return ChatResult(generations=generations)
+
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        params = self._build_params_for_request(
+            messages=messages,
+            stop=stop,
+            stream=True,
+            **kwargs,
+        )
+        yield from self._chat_adapter.call(self.client, **params)
 
     async def _agenerate(
         self,

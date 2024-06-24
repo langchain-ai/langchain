@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Union, cast
+from typing import Any, Dict, Iterator, List, Literal, Union, cast, overload
 
 from ai21.models import ChatMessage as J2ChatMessage
 from ai21.models import RoleType
-from ai21.models.chat import ChatMessage
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from ai21.models.chat import ChatCompletionChunk, ChatMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+    HumanMessage,
+)
+from langchain_core.messages.ai import UsageMetadata
+from langchain_core.outputs import ChatGenerationChunk
 
 _ChatMessageTypes = Union[ChatMessage, J2ChatMessage]
 _SYSTEM_ERR_MESSAGE = "System message must be at beginning of message list."
@@ -64,7 +72,12 @@ class ChatAdapter(ABC):
         pass
 
     @abstractmethod
-    def call(self, client: Any, **params: Any) -> List[BaseMessage]:
+    def call(
+        self,
+        client: Any,
+        stream: Literal[True] | Literal[False],
+        **params: Any,
+    ) -> List[BaseMessage] | Iterator[ChatGenerationChunk]:
         pass
 
     def _get_system_message_from_message(self, message: BaseMessage) -> str:
@@ -128,7 +141,59 @@ class JambaChatCompletionsAdapter(ChatAdapter):
             content=content,
         )
 
-    def call(self, client: Any, **params: Any) -> List[BaseMessage]:
-        response = client.chat.completions.create(**params)
+    @overload
+    def call(
+        self,
+        client: Any,
+        stream: Literal[True],
+        **params: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        ...
+
+    @overload
+    def call(
+        self,
+        client: Any,
+        stream: Literal[False],
+        **params: Any,
+    ) -> List[BaseMessage]:
+        ...
+
+    def call(
+        self,
+        client: Any,
+        stream: Literal[True] | Literal[False],
+        **params: Any,
+    ) -> List[BaseMessage] | Iterator[ChatGenerationChunk]:
+        response = client.chat.completions.create(stream=stream, **params)
+
+        if stream:
+            return self._stream_response(response)
 
         return [AIMessage(choice.message.content) for choice in response.choices]
+
+    def _stream_response(self, response):
+        for chunk in response:
+            converted_message = self._convert_ai21_chunk_to_chunk(chunk)
+            yield ChatGenerationChunk(message=converted_message)
+
+    def _convert_ai21_chunk_to_chunk(
+        self,
+        chunk: ChatCompletionChunk,
+    ) -> BaseMessageChunk:
+        usage = chunk.usage
+        content = chunk.choices[0].delta.content or ""
+
+        if usage is None:
+            return AIMessageChunk(
+                content=content,
+            )
+
+        return AIMessageChunk(
+            content=content,
+            usage_metadata=UsageMetadata(
+                input_tokens=usage.prompt_tokens,
+                output_tokens=usage.completion_tokens,
+                total_tokens=usage.total_tokens,
+            ),
+        )
