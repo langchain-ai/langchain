@@ -60,6 +60,7 @@ EXPECTED_ALL = [
     "JavelinAIGatewayEmbeddings",
     "OllamaEmbeddings",
     "OracleEmbeddings",
+    "OVHCloudEmbeddings",
     "QianfanEmbeddingsEndpoint",
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
@@ -77,6 +78,8 @@ EXPECTED_ALL = [
     "OpenVINOEmbeddings",
     "OpenVINOBgeEmbeddings",
     "SolarEmbeddings",
+    "AscendEmbeddings",
+    "ZhipuAIEmbeddings",
 ]
 
 
