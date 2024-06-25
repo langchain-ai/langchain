@@ -109,22 +109,195 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
 
 
 class QianfanChatEndpoint(BaseChatModel):
-    """Baidu Qianfan chat models.
+    """Baidu Qianfan chat model integration.
 
-    To use, you should have the ``qianfan`` python package installed, and
-    the environment variable ``qianfan_ak`` and ``qianfan_sk`` set with your
-    API key and Secret Key.
+    Setup:
+        Install ``qianfan`` and set environment variables ``QIANFAN_AK``, ``QIANFAN_SK``.
 
-    ak, sk are required parameters
-    which you could get from  https://cloud.baidu.com/product/wenxinworkshop
+        .. code-block:: bash
 
-    Example:
+            pip install qianfan
+            export QIANFAN_AK="your-api-key"
+            export QIANFAN_SK="your-secret_key"
+
+    Key init args — completion params:
+        model: str
+            Name of Qianfan model to use.
+        temperature: Optional[float]
+            Sampling temperature.
+        endpoint: Optional[str]
+            Endpoint of the Qianfan LLM
+        top_p: Optional[float]
+            What probability mass to use.
+
+    Key init args — client params:
+        timeout: Optional[int]
+            Timeout for requests.
+        api_key: Optional[str]
+            Qianfan API KEY. If not passed in will be read from env var QIANFAN_AK.
+        secret_key: Optional[str]
+            Qianfan SECRET KEY. If not passed in will be read from env var QIANFAN_SK.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.chat_models import QianfanChatEndpoint
-            qianfan_chat = QianfanChatEndpoint(model="ERNIE-Bot",
-                endpoint="your_endpoint", qianfan_ak="your_ak", qianfan_sk="your_sk")
-    """
+
+            qianfan_chat = QianfanChatEndpoint(
+                model="ERNIE-3.5-8K",
+                temperature=0.2,
+                timeout=30,
+                # api_key="...",
+                # secret_key="...",
+                # top_p="...",
+                # other params...
+            )
+
+    Invoke:
+         .. code-block:: python
+
+            messages = [
+                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
+                ("human", "我喜欢编程。"),
+            ]
+            qianfan_chat.invoke(message)
+
+        .. code-block:: python
+
+            AIMessage(content='I enjoy programming.', additional_kwargs={'finish_reason': 'normal', 'request_id': 'as-7848zeqn1c', 'object': 'chat.completion', 'search_info': []}, response_metadata={'token_usage': {'prompt_tokens': 16, 'completion_tokens': 4, 'total_tokens': 20}, 'model_name': 'ERNIE-3.5-8K', 'finish_reason': 'normal', 'id': 'as-7848zeqn1c', 'object': 'chat.completion', 'created': 1719153606, 'result': 'I enjoy programming.', 'is_truncated': False, 'need_clear_history': False, 'usage': {'prompt_tokens': 16, 'completion_tokens': 4, 'total_tokens': 20}}, id='run-4bca0c10-5043-456b-a5be-2f62a980f3f0-0')
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in qianfan_chat.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='I enjoy' response_metadata={'finish_reason': 'normal', 'request_id': 'as-yz0yz1w1rq', 'object': 'chat.completion', 'search_info': []} id='run-0fa9da50-003e-4a26-ba16-dbfe96249b8b' role='assistant'
+            content=' programming.' response_metadata={'finish_reason': 'normal', 'request_id': 'as-yz0yz1w1rq', 'object': 'chat.completion', 'search_info': []} id='run-0fa9da50-003e-4a26-ba16-dbfe96249b8b' role='assistant'
+
+        .. code-block:: python
+
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block::
+
+            AIMessageChunk(content='I enjoy programming.', response_metadata={'finish_reason': 'normalnormal', 'request_id': 'as-p63cnn3ppnas-p63cnn3ppn', 'object': 'chat.completionchat.completion', 'search_info': []}, id='run-09a8cbbd-5ded-4529-981d-5bc9d1206404')
+
+    Async:
+        .. code-block:: python
+
+            await qianfan_chat.ainvoke(messages)
+
+            # stream:
+            # async for chunk in qianfan_chat.astream(messages):
+            #    print(chunk)
+
+            # batch:
+            # await qianfan_chat.abatch([messages])
+
+        .. code-block:: python
+
+            [AIMessage(content='I enjoy programming.', additional_kwargs={'finish_reason': 'normal', 'request_id': 'as-mpqa8qa1qb', 'object': 'chat.completion', 'search_info': []}, response_metadata={'token_usage': {'prompt_tokens': 16, 'completion_tokens': 4, 'total_tokens': 20}, 'model_name': 'ERNIE-3.5-8K', 'finish_reason': 'normal', 'id': 'as-mpqa8qa1qb', 'object': 'chat.completion', 'created': 1719155120, 'result': 'I enjoy programming.', 'is_truncated': False, 'need_clear_history': False, 'usage': {'prompt_tokens': 16, 'completion_tokens': 4, 'total_tokens': 20}}, id='run-443b2231-08f9-4725-b807-b77d0507ad44-0')]
+
+    Tool calling:
+        .. code-block:: python
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+
+            class GetPopulation(BaseModel):
+                '''Get the current population in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+            chat_with_tools = qianfan_chat.bind_tools([GetWeather, GetPopulation])
+            ai_msg = chat_with_tools.invoke(
+                "Which city is hotter today and which is bigger: LA or NY?"
+            )
+            ai_msg.tool_calls
+
+        .. code-block:: python
+
+            [
+                {
+                    'name': 'GetWeather',
+                    'args': {'location': 'Los Angeles, CA'},
+                    'id': '533e5f63-a3dc-40f2-9d9c-22b1feee62e0'
+                }
+            ]
+
+    Structured output:
+        .. code-block:: python
+
+            from typing import Optional
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+            class Joke(BaseModel):
+                '''Joke to tell user.'''
+
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke")
+                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
+
+            structured_chat = qianfan_chat.with_structured_output(Joke)
+            structured_chat.invoke("Tell me a joke about cats")
+
+        .. code-block:: python
+
+            Joke(
+                setup='A cat is sitting in front of a mirror and sees another cat. What does the cat think?',
+                punchline="The cat doesn't think it's another cat, it thinks it's another mirror.",
+                rating=None
+            )
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = qianfan_chat.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+            {
+                'token_usage': {
+                    'prompt_tokens': 16,
+                    'completion_tokens': 4,
+                    'total_tokens': 20},
+                    'model_name': 'ERNIE-3.5-8K',
+                    'finish_reason': 'normal',
+                    'id': 'as-qbzwtydqmi',
+                    'object': 'chat.completion',
+                    'created': 1719158153,
+                    'result': 'I enjoy programming.',
+                    'is_truncated': False,
+                    'need_clear_history': False,
+                    'usage': {
+                        'prompt_tokens': 16,
+                        'completion_tokens': 4,
+                        'total_tokens': 20
+                    }
+            }
+
+    """  # noqa: E501
 
     init_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """init kwargs for qianfan client init, such as `query_per_second` which is 
