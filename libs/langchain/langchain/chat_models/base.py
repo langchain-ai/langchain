@@ -56,7 +56,7 @@ def _runnable_support(initializer: Callable) -> Callable:
                     f"Must specify config_prefix if configure_any=True. Received "
                     f"{config_prefix=} and {configure_any=}."
                 )
-            return initializer(model, **kwargs)
+            return initializer(model, model_provider=model_provider, **kwargs)
         else:
             config_prefix = config_prefix + "_" if config_prefix is not None else ""
             if model:
