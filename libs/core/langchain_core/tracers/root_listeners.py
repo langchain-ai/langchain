@@ -18,6 +18,8 @@ AsyncListener = Union[
 class RootListenersTracer(BaseTracer):
     """Tracer that calls listeners on run start, end, and error."""
 
+    log_missing_parent = False
+
     def __init__(
         self,
         *,
@@ -62,6 +64,8 @@ class RootListenersTracer(BaseTracer):
 
 class AsyncRootListenersTracer(AsyncBaseTracer):
     """Async Tracer that calls listeners on run start, end, and error."""
+
+    log_missing_parent = False
 
     def __init__(
         self,
