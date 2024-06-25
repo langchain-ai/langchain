@@ -123,7 +123,7 @@ Please see [here](https://python.langchain.com) for full documentation, which in
 - [🦜🛠️ LangSmith](https://docs.smith.langchain.com/): Tracing and evaluating your language model applications and intelligent agents to help you move from prototype to production.
 - [🦜🕸️ LangGraph](https://langchain-ai.github.io/langgraph/): Creating stateful, multi-actor applications with LLMs, built on top of (and intended to be used with) LangChain primitives.
 - [🦜🏓 LangServe](https://python.langchain.com/docs/langserve): Deploying LangChain runnables and chains as REST APIs.
-  - [LangChain Templates](https://python.langchain.com/v0.2/docs/templates/): Example applications hosted with LangServe.
+- [LangChain Templates](https://python.langchain.com/v0.2/docs/templates/): Example applications hosted with LangServe.
 
 
 ## 💁 Contributing
