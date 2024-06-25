@@ -1,3 +1,4 @@
+import warnings
 from importlib import util
 from typing import Any, Callable, Literal, Optional, Union, overload
 
@@ -23,32 +24,76 @@ __all__ = [
 
 def _runnable_support(initializer: Callable) -> Callable:
     @overload
-    def wrapped(model: str, **kwargs: Any) -> BaseChatModel:
+    def wrapped(
+        model: str, *, config_prefix: Literal[None] = None, **kwargs: Any
+    ) -> BaseChatModel:
         ...
 
     @overload
-    def wrapped(model: Literal[None] = None, **kwargs: Any) -> Runnable:
+    def wrapped(model: Optional[str], *, config_prefix: str, **kwargs: Any) -> Runnable:
+        ...
+
+    @overload
+    def wrapped(
+        model: Literal[None] = None,
+        *,
+        config_prefix: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Runnable:
         ...
 
     def wrapped(
-        model: Optional[str] = None, **kwargs: Any
+        model: Optional[str] = None,
+        *,
+        model_provider: Optional[str] = None,
+        config_prefix: Optional[str] = None,
+        configure_any: bool = False,
+        **kwargs: Any,
     ) -> Union[BaseChatModel, Runnable]:
-        if model:
+        if model and config_prefix is None:
+            if configure_any:
+                raise ValueError(
+                    f"Must specify config_prefix if configure_any=True. Received "
+                    f"{config_prefix=} and {configure_any=}."
+                )
             return initializer(model, **kwargs)
         else:
+            config_prefix = config_prefix + "_" if config_prefix is not None else ""
+            if model:
+                kwargs["model"] = model
+            if model_provider:
+                kwargs["model_provider"] = model_provider
 
             def from_config(
                 input: LanguageModelInput, config: RunnableConfig
             ) -> BaseChatModel:
-                config_params = {
-                    k: v
-                    for k, v in config["configurable"].items()
-                    if k in ("model", "model_provider")
-                }
-                return initializer(**{**kwargs, **config_params})
+                config_params = {}
+                if configure_any:
+                    for k, v in config.get("configurable", {}).items():
+                        if k.startswith(config_prefix):
+                            config_params[_remove_prefix(k, config_prefix)] = v
+                else:
+                    for k, v in config.get("configurable", {}).items():
+                        if k.startswith(config_prefix):
+                            parsed = _remove_prefix(k, config_prefix)
+                            if parsed in ("model", "model_provider"):
+                                config_params[parsed] = v
+                            elif config_prefix:
+                                warnings.warn(
+                                    f"Received unsupported config param to chat model. "
+                                    f"Only config params {config_prefix + 'model'} and "
+                                    f"{config_prefix + 'model_provider'} are supported."
+                                    f" To support other params specify:"
+                                    f" ``init_chat_model(..., configure_any=True)``."
+                                )
+                            else:
+                                pass
+                all_params = {**kwargs, **config_params}
+                return initializer(**all_params)
 
             return RunnableLambda(from_config, name="configurable_chat_model")
 
+    wrapped.__doc__ = initializer.__doc__
     return wrapped
 
 
@@ -90,6 +135,14 @@ def init_chat_model(
                 - gemini... -> google_vertexai
                 - command... -> cohere
                 - accounts/fireworks... -> fireworks
+        config_prefix: If config_prefix is a non-empty string then model will be
+            configurable at runtime via the
+            ``config["configurable"]["{config_prefix}_model"]`` and
+            ``config["configurable"]["{config_prefix}_model_provider"]`` keys. If
+            config_prefix is an empty string or the model arg is None then model
+            will be configurable via ``config["configurable"]["model"]``
+            and ``config["configurable"]["model_provider"]`` keys. If config_prefix is
+            None and model is not None then model will not be configurable.
         kwargs: Additional keyword args to pass to
             ``<<selected ChatModel>>.__init__(model=model_name, **kwargs)``.
 
@@ -103,6 +156,7 @@ def init_chat_model(
     Example:
         .. code-block:: python
 
+            # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
             from langchain.chat_models import init_chat_model
 
             gpt_4o = init_chat_model("gpt-4o", model_provider="openai", temperature=0)
@@ -112,6 +166,56 @@ def init_chat_model(
             gpt_4o.invoke("what's your name")
             claude_opus.invoke("what's your name")
             gemini_15.invoke("what's your name")
+
+
+    Create a configurable model with no defaults:
+        .. code-block:: python
+
+            # pip install langchain langchain-openai langchain-anthropic
+            from langchain.chat_models import init_chat_model
+
+            configurable_model = init_chat_model(temperature=0)
+
+            configurable_model.invoke(
+                "what's your name",
+                config={"configurable": {"model": "gpt-4o"}}
+            )
+            # GPT-4o response
+
+            configurable_model.invoke(
+                "what's your name",
+                config={"configurable": {"model": "claude-3-5-sonnet-20240620"}}
+            )
+
+    Create a fully configurable model with defaults and a config prefix:
+        .. code-block:: python
+
+            # pip install langchain langchain-openai langchain-anthropic
+            from langchain.chat_models import init_chat_model
+
+            configurable_model_with_default = init_chat_model(
+                "gpt-4o",
+                model_provider="openai",
+                config_prefix="foo",
+                configure_any=True,  # this allows us to configure other params like temperature, max_tokens, etc at runtime.
+                temperature=0
+            )
+
+            configurable_model_with_default.invoke("what's your name")
+            # GPT-4o response with temperature 0
+
+            configurable_model_with_default.invoke(
+                "what's your name",
+                config={
+                    "configurable": {
+                        "foo_model": "claude-3-5-sonnet-20240620",
+                        "foo_model_provider": "anthropic",
+                        "foo_temperature": 0.6
+                    }
+                }
+            )
+            # Claude-3.5 sonnet response with temperature 0.6
+
     """  # noqa: E501
     model_provider = model_provider or _attempt_infer_model_provider(model)
     if not model_provider:
@@ -235,3 +339,9 @@ def _check_pkg(pkg: str) -> None:
             f"Unable to import {pkg_kebab}. Please install with "
             f"`pip install -U {pkg_kebab}`"
         )
+
+
+def _remove_prefix(s: str, prefix: str) -> str:
+    if s.startswith(prefix):
+        s = s[len(prefix) :]
+    return s
