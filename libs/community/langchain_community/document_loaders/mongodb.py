@@ -17,11 +17,11 @@ class MongodbLoader(BaseLoader):
         connection_string: str,
         db_name: str,
         collection_name: str,
-        *,
         filter_criteria: Optional[Dict] = None,
         field_names: Optional[Sequence[str]] = None,
         metadata_names: Optional[Sequence[str]] = None,
         include_db_collection_in_metadata: bool = True,
+        *,
     ) -> None:
         """
         Initializes the MongoDB loader with necessary database connection
