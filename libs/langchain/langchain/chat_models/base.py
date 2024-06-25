@@ -1,18 +1,19 @@
-import warnings
+from __future__ import annotations
+
+import inspect
 from importlib import util
-from typing import Any, Literal, Optional, Protocol, Union, overload
+from typing import Any, Optional, Protocol, cast
 
 from langchain_core._api import beta
 from langchain_core.language_models import (
     BaseChatModel,
-    LanguageModelInput,
     SimpleChatModel,
 )
 from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.runnables import RunnableConfig, RunnableLambda
+from langchain_core.runnables import RunnableConfig
 
 # For backwards compatibility
 __all__ = [
@@ -32,28 +33,6 @@ class _Initializer(Protocol):
 
 
 class _ConfigurableInitializer(Protocol):
-    @overload
-    def __call__(
-        self, model: str, *, config_prefix: Literal[None] = None, **kwargs: Any
-    ) -> BaseChatModel:
-        ...
-
-    @overload
-    def __call__(
-        self, model: Optional[str], *, config_prefix: str, **kwargs: Any
-    ) -> RunnableLambda[LanguageModelInput, BaseChatModel]:
-        ...
-
-    @overload
-    def __call__(
-        self,
-        model: Literal[None] = None,
-        *,
-        config_prefix: Optional[str] = None,
-        **kwargs: Any,
-    ) -> RunnableLambda[LanguageModelInput, BaseChatModel]:
-        ...
-
     def __call__(
         self,
         model: Optional[str] = None,
@@ -62,32 +41,90 @@ class _ConfigurableInitializer(Protocol):
         config_prefix: Optional[str] = None,
         configure_any: bool = False,
         **kwargs: Any,
-    ) -> Union[BaseChatModel, RunnableLambda[LanguageModelInput, BaseChatModel]]:
-        ...
-
-
-def _runnable_support(initializer: _Initializer) -> _ConfigurableInitializer:
-    @overload
-    def wrapped(
-        model: str, *, config_prefix: Literal[None] = None, **kwargs: Any
     ) -> BaseChatModel:
         ...
 
-    @overload
-    def wrapped(
-        model: Optional[str], *, config_prefix: str, **kwargs: Any
-    ) -> RunnableLambda[LanguageModelInput, BaseChatModel]:
-        ...
 
-    @overload
-    def wrapped(
-        model: Literal[None] = None,
+_ACCEPTS_CONFIG = tuple(
+    name
+    for name, func in inspect.getmembers(BaseChatModel, inspect.isfunction)
+    if "config" in inspect.signature(func).parameters
+)
+
+
+class _ConfigurableModel:
+    def __init__(
+        self,
         *,
+        default_config: Optional[dict] = None,
         config_prefix: Optional[str] = None,
-        **kwargs: Any,
-    ) -> RunnableLambda[LanguageModelInput, BaseChatModel]:
-        ...
+        configure_any: bool = False,
+    ) -> None:
+        self._default_config = default_config or {}
+        self._config_prefix = config_prefix
+        self._configure_any = configure_any
+        self._configured_operations = []
 
+    def __getattr__(self, name: str) -> Any:
+        if name in _ACCEPTS_CONFIG:
+
+            def from_config(
+                *args: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+            ) -> Any:
+                return getattr(self._model(config), name)(
+                    *args, config=config, **kwargs
+                )
+
+            return from_config
+        elif self._default_config and hasattr(self._model(), name):
+            return getattr(self._model(), name)
+        else:
+
+            def record(*args: Any, **kwargs: Any) -> _ConfigurableModel:
+                self._configured_operations.append((name, args, kwargs))
+                return self
+
+            return record
+
+    def _model(self, config: Optional[RunnableConfig] = None) -> BaseChatModel:
+        config_prefix = self._config_prefix or ""
+        config = config or {}
+        runtime_config = {
+            _remove_prefix(k, config_prefix): v
+            for k, v in config.get("configurable", {}).items()
+            if k.startswith(config_prefix)
+        }
+        if not self._configure_any:
+            runtime_config = {
+                k: v
+                for k, v in runtime_config.items()
+                if k in ("model", "model_provider")
+            }
+        model = init_chat_model(**{**self._default_config, **runtime_config})
+        for name, args, kwargs in self._configured_operations:
+            model = getattr(model, name)(*args, **kwargs)
+        return model
+
+    def with_config(
+        self,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> _ConfigurableModel:
+        """
+        Bind config to a Runnable, returning a new Runnable.
+        """
+        return _ConfigurableModel(
+            default_config={
+                **self._default_config,
+                **((config or {}).get("configurable", {})),
+                **kwargs,
+            },
+            config_prefix=self._config_prefix,
+            configure_any=self._configure_any,
+        )
+
+
+def _runnable_support(initializer: _Initializer) -> BaseChatModel:
     def wrapped(
         model: Optional[str] = None,
         *,
@@ -95,7 +132,7 @@ def _runnable_support(initializer: _Initializer) -> _ConfigurableInitializer:
         config_prefix: Optional[str] = None,
         configure_any: bool = False,
         **kwargs: Any,
-    ) -> Union[BaseChatModel, RunnableLambda[LanguageModelInput, BaseChatModel]]:
+    ) -> BaseChatModel:
         if model and config_prefix is None:
             if configure_any:
                 raise ValueError(
@@ -104,40 +141,18 @@ def _runnable_support(initializer: _Initializer) -> _ConfigurableInitializer:
                 )
             return initializer(model, model_provider=model_provider, **kwargs)
         else:
-            config_prefix = config_prefix + "_" if config_prefix is not None else ""
             if model:
                 kwargs["model"] = model
             if model_provider:
                 kwargs["model_provider"] = model_provider
-
-            def from_config(
-                input: LanguageModelInput, config: RunnableConfig
-            ) -> BaseChatModel:
-                config_params = {}
-                if configure_any:
-                    for k, v in config.get("configurable", {}).items():
-                        if k.startswith(config_prefix):
-                            config_params[_remove_prefix(k, config_prefix)] = v
-                else:
-                    for k, v in config.get("configurable", {}).items():
-                        if k.startswith(config_prefix):
-                            parsed = _remove_prefix(k, config_prefix)
-                            if parsed in ("model", "model_provider"):
-                                config_params[parsed] = v
-                            elif config_prefix:
-                                warnings.warn(
-                                    f"Received unsupported config param to chat model. "
-                                    f"Only config params {config_prefix + 'model'} and "
-                                    f"{config_prefix + 'model_provider'} are supported."
-                                    f" To support other params specify:"
-                                    f" ``init_chat_model(..., configure_any=True)``."
-                                )
-                            else:
-                                pass
-                all_params = {**kwargs, **config_params}
-                return initializer(**all_params)
-
-            return RunnableLambda(from_config, name="configurable_chat_model")
+            return cast(
+                BaseChatModel,
+                _ConfigurableModel(
+                    default_config=kwargs,
+                    config_prefix=config_prefix,
+                    configure_any=configure_any,
+                ),
+            )
 
     wrapped.__doc__ = initializer.__doc__
     return wrapped
