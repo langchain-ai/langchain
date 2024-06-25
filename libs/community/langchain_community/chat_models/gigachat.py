@@ -318,25 +318,29 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             **kwargs,
         }
 
-        payload = Chat.parse_obj(payload_dict)
-
         # Iterative remove title keys from the payload.
         # It is not needed for the GigaChat API.
-        def _remove_title_keys(payload: gm.Chat) -> None:
-            if isinstance(payload, dict):
-                if "title" in payload:
-                    del payload["title"]
-                for value in payload.values():
+        def _remove_title_keys(payload_dict: dict[str, Any]) -> dict[str, Any]:
+            if isinstance(payload_dict, dict):
+                payload_dict.pop("title", None)
+
+                for value in payload_dict.values():
                     _remove_title_keys(value)
-            elif isinstance(payload, list):
-                for item in payload:
+            elif isinstance(payload_dict, list):
+                for item in payload_dict:
                     _remove_title_keys(item)
 
-        _remove_title_keys(payload)
+            return payload_dict
+
+        payload_dict = _remove_title_keys(payload_dict)
+        payload = Chat.parse_obj(payload_dict)
 
         if self.verbose:
             logger.warning(
-                "Giga request: %s", json.dumps(payload.dict(), ensure_ascii=False)
+                "Giga request: %s",
+                json.dumps(
+                    payload.dict(exclude_none=True, by_alias=True), ensure_ascii=False
+                ),
             )
 
         return payload
