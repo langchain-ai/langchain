@@ -63,4 +63,7 @@ class Document(Serializable):
         #
         # This override will likely be removed in the future in favor of
         # a more general solution of formatting content directly inside the prompts.
-        return f"page_content='{self.page_content}', metadata={self.metadata}"
+        if self.metadata:
+            return f"page_content='{self.page_content}' metadata={self.metadata}"
+        else:
+            return f"page_content='{self.page_content}'"
