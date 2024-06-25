@@ -318,7 +318,7 @@ if TYPE_CHECKING:
         ZapierNLAListActions,
         ZapierNLARunAction,
     )
-    from langchain_community.tools.zenguard.tools import (
+    from langchain_community.tools.zenguard.tool import (
         Detector,
         ZenGuardInput,
         ZenGuardTool,
