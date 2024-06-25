@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-openai"
-version = "0.1.9"
+version = "0.1.10"
 description = "An integration package connecting OpenAI and LangChain"
 authors = []
 readme = "README.md"
