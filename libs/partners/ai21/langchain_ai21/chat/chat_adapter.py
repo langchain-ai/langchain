@@ -72,6 +72,24 @@ class ChatAdapter(ABC):
     ) -> _ChatMessageTypes:
         pass
 
+    @overload
+    def call(
+        self,
+        client: Any,
+        stream: Literal[True],
+        **params: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        pass
+
+    @overload
+    def call(
+        self,
+        client: Any,
+        stream: Literal[False],
+        **params: Any,
+    ) -> List[BaseMessage]:
+        pass
+
     @abstractmethod
     def call(
         self,

@@ -87,7 +87,7 @@ async def test_ageneration(model: str) -> None:
             assert generation.text == generation.message.content
 
 
-def test__chat_stream():
+def test__chat_stream() -> None:
     llm = ChatAI21(model="jamba-instruct")
     message = HumanMessage(content="What is the meaning of life?")
 
@@ -96,7 +96,7 @@ def test__chat_stream():
         assert isinstance(chunk.content, str)
 
 
-def test__j2_chat_stream__should_raise_error():
+def test__j2_chat_stream__should_raise_error() -> None:
     llm = ChatAI21(model="j2-ultra")
     message = HumanMessage(content="What is the meaning of life?")
 
