@@ -26,26 +26,6 @@ class MongodbLoader(BaseLoader):
         """
         Initializes the MongoDB loader with necessary database connection
         details and configurations.
-
-        Args:
-            connection_string (str):
-                MongoDB connection URI.
-            db_name (str):
-                Name of the database to connect to.
-            collection_name (str):
-                Name of the collection to fetch documents from.
-            filter_criteria (Optional[Dict]):
-                MongoDB filter criteria for querying documents.
-            field_names (Optional[Sequence[str]]):
-                List of field names to retrieve from documents.
-            metadata (Optional[Sequence[str]]):
-                Additional metadata fields to extract from documents.
-            include_db_collection_in_metadata (bool):
-                Flag to include database and collection names in metadata.
-
-        Raises:
-            ImportError: If the motor library is not installed.
-            ValueError: If any necessary argument is missing.
         """
         try:
             from motor.motor_asyncio import AsyncIOMotorClient
@@ -101,8 +81,7 @@ class MongodbLoader(BaseLoader):
             # Optionally add database and collection names to metadata
             if self.include_db_collection_in_metadata:
                 metadata.update({
-                    "database": self.db_name,
-                    "collection": self.collection_name
+                    "database": self.db_name, "collection": self.collection_name
                 })
 
              # Extract text content from filtered fields or use the entire document
@@ -123,7 +102,7 @@ class MongodbLoader(BaseLoader):
 
         return result
 
-    def _construct_projection(self):
+    def _construct_projection(self) -> Optional[Dict]:
         """Constructs the projection dictionary for MongoDB query based
         on the specified field names and metadata names."""
         field_names = self.field_names if self.field_names else []
@@ -131,18 +110,8 @@ class MongodbLoader(BaseLoader):
         all_fields = field_names + metadata_names
         return {field: 1 for field in all_fields} if all_fields else None
 
-    def _extract_fields(self, document, fields, default=""):
-        """
-        Extracts and returns values for specified fields from a document.
-        
-        Args:
-            document (Dict): The document from which to extract data.
-            fields (Sequence[str]): Fields to extract from the document.
-            default (str): Default value to use if a field is not found.
-
-        Returns:
-            Dict: A dictionary of extracted fields and their values.
-        """
+    def _extract_fields(self, document: Dict, fields: Sequence[str], default: str) -> Dict:
+        """Extracts and returns values for specified fields from a document."""
         extracted = {}
         for field in fields or []:
             value = document
