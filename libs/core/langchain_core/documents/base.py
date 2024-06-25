@@ -21,14 +21,14 @@ class Document(Serializable):
             )
     """
 
+    # The ID field is optional at the moment.
+    # It will likely become required in a future major release after
+    # it has been adopted by enough vectorstore implementations.
     id: Optional[str] = None
     """An optional identifier for the document.
     
     Ideally this should be unique across the document collection and formatted 
     as a UUID, but this will not be enforced.
-    
-    This field is optional at the moment, but may become a required field 
-    in the future (wil be assigned automatically if not provided).
     """
 
     page_content: str
