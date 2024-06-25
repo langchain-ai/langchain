@@ -143,6 +143,9 @@ def init_chat_model(
             will be configurable via ``config["configurable"]["model"]``
             and ``config["configurable"]["model_provider"]`` keys. If config_prefix is
             None and model is not None then model will not be configurable.
+        configure_any: If True then any parameter can be passed to model initializer as
+            part of the config using the "{config_prefix}_{param}" key if config_prefix
+            is a non-empty string and via "{param}" otherwise.
         kwargs: Additional keyword args to pass to
             ``<<selected ChatModel>>.__init__(model=model_name, **kwargs)``.
 
