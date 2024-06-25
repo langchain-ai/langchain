@@ -119,7 +119,7 @@ class ChatAI21(BaseChatModel, AI21Base):
         return base_params
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+            self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
@@ -136,10 +136,10 @@ class ChatAI21(BaseChatModel, AI21Base):
         return ls_params
 
     def _build_params_for_request(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            **kwargs: Any,
     ) -> Mapping[str, Any]:
         params = {}
         converted_messages = self._chat_adapter.convert_messages(messages)
@@ -157,22 +157,22 @@ class ChatAI21(BaseChatModel, AI21Base):
         }
 
     def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            stream: Optional[bool] = None,
+            **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream or self.streaming
+
         if should_stream:
-            stream_iter = self._stream(
+            return self._handle_stream_from_generate(
                 messages=messages,
                 stop=stop,
                 run_manager=run_manager,
                 **kwargs,
             )
-            return generate_from_stream(stream_iter)
 
         params = self._build_params_for_request(
             messages=messages,
@@ -180,18 +180,32 @@ class ChatAI21(BaseChatModel, AI21Base):
             stream=should_stream,
             **kwargs,
         )
-        messages = self._chat_adapter.call(self.client, **params)
 
+        messages = self._chat_adapter.call(self.client, **params)
         generations = [ChatGeneration(message=message) for message in messages]
 
         return ChatResult(generations=generations)
 
+    def _handle_stream_from_generate(
+            self, messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+    ) -> ChatResult:
+        stream_iter = self._stream(
+            messages=messages,
+            stop=stop,
+            run_manager=run_manager,
+            **kwargs,
+        )
+        return generate_from_stream(stream_iter)
+
     def _stream(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         params = self._build_params_for_request(
             messages=messages,
@@ -202,11 +216,11 @@ class ChatAI21(BaseChatModel, AI21Base):
         yield from self._chat_adapter.call(self.client, **params)
 
     async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
+            self,
+            messages: List[BaseMessage],
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            **kwargs: Any,
     ) -> ChatResult:
         return await asyncio.get_running_loop().run_in_executor(
             None, partial(self._generate, **kwargs), messages, stop, run_manager
