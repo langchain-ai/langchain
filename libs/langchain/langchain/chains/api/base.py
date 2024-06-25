@@ -117,9 +117,11 @@ try:
                 )
             return values
 
-        @root_validator(pre=False, skip_on_failure=True)
+        @root_validator(pre=True)
         def validate_limit_to_domains(cls, values: Dict) -> Dict:
             """Check that allowed domains are valid."""
+            # This check must be a pre=True check, so that a default of None
+            # won't be set to limit_to_domains if it's not provided.
             if "limit_to_domains" not in values:
                 raise ValueError(
                     "You must specify a list of domains to limit access using "
