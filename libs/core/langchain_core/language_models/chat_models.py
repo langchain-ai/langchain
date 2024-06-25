@@ -454,7 +454,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             # json and dict.
             serialized_repr = dumpd(self)
             _cleanup_llm_representation(serialized_repr, 1)
-            llm_string = json.dumps(serialized_repr)
+            llm_string = json.dumps(serialized_repr, sorted=True)
             return llm_string + "---" + param_string
         else:
             params = self._get_invocation_params(stop=stop, **kwargs)
