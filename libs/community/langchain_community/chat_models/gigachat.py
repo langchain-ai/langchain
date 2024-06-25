@@ -295,36 +295,34 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
     def _build_payload(self, messages: List[BaseMessage], **kwargs: Any) -> gm.Chat:
         from gigachat.models import Chat
 
-        payload = Chat(
-            messages=[_convert_message_to_dict(m) for m in messages],
-        )
+        messages_dicts = [_convert_message_to_dict(m) for m in messages]
+        kwargs.pop("messages", None)
 
-        payload.functions = kwargs.get("functions", [])
-        payload.function_call = kwargs.get("function_call", None)
+        functions = kwargs.pop("functions", [])
+        for tool in kwargs.pop("tools", []):
+            if tool.get("type", None) == "function" and isinstance(functions, List):
+                functions.append(tool["function"])
 
-        for tool in kwargs.get("tools", []):
-            if tool.get("type", None) == "function" and isinstance(
-                payload.functions, List
-            ):
-                payload.functions.append(tool["function"])
+        function_call = kwargs.pop("function_call", None)
 
-        if self.profanity_check is not None:
-            payload.profanity_check = self.profanity_check
-        if self.temperature is not None:
-            payload.temperature = self.temperature
-        if self.top_p is not None:
-            payload.top_p = self.top_p
-        max_tokens = kwargs.get("max_tokens", self.max_tokens)
-        if max_tokens is not None:
-            payload.max_tokens = max_tokens
-        if self.repetition_penalty is not None:
-            payload.repetition_penalty = self.repetition_penalty
-        if self.update_interval is not None:
-            payload.update_interval = self.update_interval
+        payload_dict = {
+            "messages": messages_dicts,
+            "functions": functions,
+            "function_call": function_call,
+            "profanity_check": self.profanity_check,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "max_tokens": self.max_tokens,
+            "repetition_penalty": self.repetition_penalty,
+            "update_interval": self.update_interval,
+            **kwargs,
+        }
+
+        payload = Chat.parse_obj(payload_dict)
 
         # Iterative remove title keys from the payload.
         # It is not needed for the GigaChat API.
-        def _remove_title_keys(payload) -> None:
+        def _remove_title_keys(payload: gm.Chat) -> None:
             if isinstance(payload, dict):
                 if "title" in payload:
                     del payload["title"]
@@ -334,7 +332,7 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
                 for item in payload:
                     _remove_title_keys(item)
 
-        _remove_title_keys(payload.functions)
+        _remove_title_keys(payload)
 
         if self.verbose:
             logger.warning(
