@@ -1002,11 +1002,11 @@ class AgentExecutor(Chain):
                     )
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
+    @root_validator(pre=True)
     def validate_runnable_agent(cls, values: Dict) -> Dict:
         """Convert runnable to agent if passed in."""
-        agent = values["agent"]
-        if isinstance(agent, Runnable):
+        agent = values.get("agent")
+        if agent and isinstance(agent, Runnable):
             try:
                 output_type = agent.OutputType
             except Exception as _:
