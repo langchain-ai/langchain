@@ -44,7 +44,7 @@ supports single-turn instruction/question answering capabilities.
 from langchain_core.prompts import PromptTemplate
 from langchain_ai21 import AI21LLM
 
-llm = AI21LLM(model="jamba-instruct-preview")
+llm = AI21LLM(model="j2-chat")
 
 template = """Question: {question}
 
