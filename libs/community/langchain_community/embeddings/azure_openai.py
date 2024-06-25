@@ -8,7 +8,7 @@ from typing import Callable, Dict, Optional, Union
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.utils.openai import is_openai_v1
@@ -69,7 +69,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
         values["openai_api_version"] = get_from_dict_or_env(
-            values,"openai_api_version", "OPENAI_API_VERSION"
+            values,"openai_api_version","OPENAI_API_VERSION"
         )
         values["azure_endpoint"] = get_from_dict_or_env(
             values, "azure_endpoint", "AZURE_OPENAI_ENDPOINT"
