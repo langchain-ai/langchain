@@ -1,18 +1,20 @@
 import warnings
 from importlib import util
-from typing import Any, Callable, Literal, Optional, Union, overload
+from typing import Any, Literal, Optional, Protocol, Union, overload
 
 from langchain_core._api import beta
-from langchain_core.language_models import LanguageModelInput
-from langchain_core.language_models.chat_models import (
+from langchain_core.language_models import (
     BaseChatModel,
+    LanguageModelInput,
     SimpleChatModel,
+)
+from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.runnables import RunnableConfig
-from langchain_core.runnables.base import Runnable, RunnableLambda
+from langchain_core.runnables import RunnableConfig, RunnableLambda
 
+# For backwards compatibility
 __all__ = [
     "BaseChatModel",
     "SimpleChatModel",
@@ -22,7 +24,49 @@ __all__ = [
 ]
 
 
-def _runnable_support(initializer: Callable) -> Callable:
+class _Initializer(Protocol):
+    def __call__(
+        self, model: str, *, model_provider: Optional[str] = None, **kwargs: Any
+    ) -> BaseChatModel:
+        ...
+
+
+class _ConfigurableInitializer(Protocol):
+    @overload
+    def __call__(
+        self, model: str, *, config_prefix: Literal[None] = None, **kwargs: Any
+    ) -> BaseChatModel:
+        ...
+
+    @overload
+    def __call__(
+        self, model: Optional[str], *, config_prefix: str, **kwargs: Any
+    ) -> RunnableLambda[LanguageModelInput, BaseChatModel]:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        model: Literal[None] = None,
+        *,
+        config_prefix: Optional[str] = None,
+        **kwargs: Any,
+    ) -> RunnableLambda[LanguageModelInput, BaseChatModel]:
+        ...
+
+    def __call__(
+        self,
+        model: Optional[str] = None,
+        *,
+        model_provider: Optional[str] = None,
+        config_prefix: Optional[str] = None,
+        configure_any: bool = False,
+        **kwargs: Any,
+    ) -> Union[BaseChatModel, RunnableLambda[LanguageModelInput, BaseChatModel]]:
+        ...
+
+
+def _runnable_support(initializer: _Initializer) -> _ConfigurableInitializer:
     @overload
     def wrapped(
         model: str, *, config_prefix: Literal[None] = None, **kwargs: Any
@@ -30,7 +74,9 @@ def _runnable_support(initializer: Callable) -> Callable:
         ...
 
     @overload
-    def wrapped(model: Optional[str], *, config_prefix: str, **kwargs: Any) -> Runnable:
+    def wrapped(
+        model: Optional[str], *, config_prefix: str, **kwargs: Any
+    ) -> RunnableLambda[LanguageModelInput, BaseChatModel]:
         ...
 
     @overload
@@ -39,7 +85,7 @@ def _runnable_support(initializer: Callable) -> Callable:
         *,
         config_prefix: Optional[str] = None,
         **kwargs: Any,
-    ) -> Runnable:
+    ) -> RunnableLambda[LanguageModelInput, BaseChatModel]:
         ...
 
     def wrapped(
@@ -49,7 +95,7 @@ def _runnable_support(initializer: Callable) -> Callable:
         config_prefix: Optional[str] = None,
         configure_any: bool = False,
         **kwargs: Any,
-    ) -> Union[BaseChatModel, Runnable]:
+    ) -> Union[BaseChatModel, RunnableLambda[LanguageModelInput, BaseChatModel]]:
         if model and config_prefix is None:
             if configure_any:
                 raise ValueError(
