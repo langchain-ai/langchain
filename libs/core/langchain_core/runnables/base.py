@@ -1892,6 +1892,8 @@ class Runnable(Generic[Input, Output], ABC):
                             final_input_supported = False
                 else:
                     final_input = ichunk
+        except GeneratorExit:
+            run_manager.on_chain_end(final_output, inputs=final_input)
         except BaseException as e:
             run_manager.on_chain_error(e, inputs=final_input)
             raise
