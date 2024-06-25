@@ -17,5 +17,5 @@ It includes:
 ## Example Notebooks
 
 For a more detailed examples of using Pebblo, see the following notebooks:
-* [PebbloSafeLoader](/docs/integrations/document_loaders/pebblo.ipynb) shows how to use Pebblo loader to safely load data.
-* [PebbloRetrievalQA](/docs/integrations/providers/pebblo/pebblo_retrieval_qa.ipynb) shows how to use Pebblo retrieval QA chain to safely retrieve data.
+* [PebbloSafeLoader](/docs/integrations/document_loaders/pebblo) shows how to use Pebblo loader to safely load data.
+* [PebbloRetrievalQA](/docs/integrations/providers/pebblo/pebblo_retrieval_qa) shows how to use Pebblo retrieval QA chain to safely retrieve data.
