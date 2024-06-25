@@ -84,3 +84,24 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         ]
         actual = model.get_num_tokens_from_messages([message])
         assert expected == actual
+
+    def test_token_counting(self, model: BaseChatModel) -> None:
+        user_message = HumanMessage("What is the value of magic_function(3)?")
+        assert model.get_num_tokens_from_messages([user_message]) > 0
+        tool_calls = [
+            {
+                "name": "magic_function",
+                "args": {"input": 3},
+                "id": "test_id",
+            },
+        ]
+        ai_message_1 = AIMessage(
+            content="test",
+            tool_calls=tool_calls,
+        )
+        assert model.get_num_tokens_from_messages([ai_message_1]) > 0
+        ai_message_2 = AIMessage(
+            content="",  # blank content
+            tool_calls=tool_calls,
+        )
+        assert model.get_num_tokens_from_messages([ai_message_2]) > 0

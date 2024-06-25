@@ -760,27 +760,30 @@ class BaseChatOpenAI(BaseChatModel):
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():
-                if isinstance(value, list):
-                    for val in value:
-                        if isinstance(val, str) or val["type"] == "text":
-                            text = val["text"] if isinstance(val, dict) else val
-                            num_tokens += len(encoding.encode(text))
-                        elif val["type"] == "image_url":
-                            if val["image_url"].get("detail") == "low":
-                                num_tokens += 85
+                try:
+                    if isinstance(value, list):
+                        for val in value:
+                            if isinstance(val, str) or val["type"] == "text":
+                                text = val["text"] if isinstance(val, dict) else val
+                                num_tokens += len(encoding.encode(text))
+                            elif val["type"] == "image_url":
+                                if val["image_url"].get("detail") == "low":
+                                    num_tokens += 85
+                                else:
+                                    image_size = _url_to_size(val["image_url"]["url"])
+                                    if not image_size:
+                                        continue
+                                    num_tokens += _count_image_tokens(*image_size)
                             else:
-                                image_size = _url_to_size(val["image_url"]["url"])
-                                if not image_size:
-                                    continue
-                                num_tokens += _count_image_tokens(*image_size)
-                        else:
-                            raise ValueError(
-                                f"Unrecognized content block type\n\n{val}"
-                            )
+                                raise ValueError(
+                                    f"Unrecognized content block type\n\n{val}"
+                                )
+                except ValueError:
+                    num_tokens += len(encoding.encode(str(value)))
                 else:
                     # Cast str(value) in case the message value is not a string
                     # This occurs with function messages
-                    num_tokens += len(encoding.encode(value))
+                    num_tokens += len(encoding.encode(str(value)))
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant
