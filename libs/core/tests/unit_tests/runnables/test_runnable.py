@@ -5702,3 +5702,31 @@ async def test_listeners_async() -> None:
     assert len(shared_state) == 2
     assert value1 in shared_state.values(), "Value not found in the dictionary."
     assert value2 in shared_state.values(), "Value not found in the dictionary."
+
+
+async def test_closing_iterator_doesnt_raise_error() -> None:
+    """Test that closing an iterator calls on_chain_end rather than on_chain_error."""
+    import time
+
+    from langchain_core.callbacks import BaseCallbackHandler
+    from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+    from langchain_core.output_parsers import StrOutputParser
+
+    on_chain_error_triggered = False
+
+    class MyHandler(BaseCallbackHandler):
+        def on_chain_error(
+            self, error: BaseException, *, run_id, parent_run_id=None, **kwargs
+        ):
+            nonlocal on_chain_error_triggered
+            on_chain_error_triggered = True
+
+    llm = GenericFakeChatModel(messages=iter(["hi there"]))
+    chain = llm | StrOutputParser()
+    chain = chain.with_config({"callbacks": [MyHandler()]})
+    st = chain.stream("hello")
+    next()
+    st.close()
+    # Wait for a bit to make sure that the callback is called.
+    time.sleep(0.05)
+    assert on_chain_error_triggered is False
