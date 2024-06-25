@@ -24,19 +24,16 @@ class YandexSearchAPIRetriever(BaseRetriever):
             passages = result["passages"]
 
             if passages:
-                if isinstance(passages, str):
-                    text = passages
-                elif isinstance(passages, list):
-                    text = "\n".join(passages)
+                text = "\n".join(passages)
                 text_type = "passages"
             else:
-                text = result["headline"]
+                text = result.get("headline", "")
                 text_type = "headline"
 
             doc = Document(
                 page_content=text,
                 metadata={
-                    "modified_at": result["modified_at"].strftime("%Y-%m-%d %H:%M:%S"),
+                    "modified_at": result["modified_at"],
                     "page_content_type": text_type,
                     "title": result["title"],
                     "url": result["url"],

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 import typing
-from datetime import datetime
 from typing import Any, Dict, List
 
 if typing.TYPE_CHECKING:
@@ -106,12 +105,13 @@ class YandexSearchAPIClient:
         tag_pattern = re.compile(r"</?[a-z]+>")
         docs = []
 
-        errors = selector.xpath("//error")
-        if errors and len(errors) > 0:
-            raise Exception(errors[0].get())
+        error = selector.xpath("//error/text()").get()
+
+        if error:
+            raise RuntimeError(error)
 
         for doc in selector.xpath("//doc"):
-            doc_id = doc.xpath("./@id").get()
+            doc_id = doc.xpath("./@id").get(default="")
 
             # Answer for image search
             if not doc_id:
@@ -126,13 +126,10 @@ class YandexSearchAPIClient:
             passages = doc.xpath("./passages//passage").getall()
             passages = [re.sub(tag_pattern, "", passage) for passage in passages]
 
-            modified_at_str = doc.xpath("./modtime/text()").get(default="")
+            modified_at = doc.xpath("./modtime/text()").get(default="")
 
-            if modified_at_str:
-                modified_at = datetime.strptime(modified_at_str, "%Y%m%dT%H%M%S")
-
-            url = doc.xpath("./url/text()").get()
-            saved_copy_url = doc.xpath("./saved-copy-url/text()").get()
+            url = doc.xpath("./url/text()").get(default="")
+            saved_copy_url = doc.xpath("./saved-copy-url/text()").get(default="")
 
             docs.append(
                 {
