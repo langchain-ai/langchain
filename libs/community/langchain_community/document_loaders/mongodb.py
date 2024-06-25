@@ -105,8 +105,8 @@ class MongodbLoader(BaseLoader):
     def _construct_projection(self) -> Optional[Dict]:
         """Constructs the projection dictionary for MongoDB query based
         on the specified field names and metadata names."""
-        field_names = self.field_names if self.field_names else []
-        metadata_names = self.metadata_names if self.metadata_names else []
+        field_names = list(self.field_names) if self.field_names else []
+        metadata_names = list(self.metadata_names) if self.metadata_names else []
         all_fields = field_names + metadata_names
         return {field: 1 for field in all_fields} if all_fields else None
 
