@@ -40,13 +40,13 @@ class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
             sleep(INTERVAL)
         return ids
 
-    def create_index(
+    def create_vector_search_index(
         self,
         dimensions: int,
         filters: Optional[List[Dict[str, str]]] = None,
         update: bool = False,
     ) -> None:
-        result = super().create_index(
+        result = super().create_vector_search_index(
             dimensions=dimensions, filters=filters, update=update
         )
         start = monotonic()
@@ -269,7 +269,7 @@ class TestMongoDBAtlasVectorSearch:
         vectorstore = PatchedMongoDBAtlasVectorSearch(
             index_collection, embedding_openai, index_name=INDEX_CREATION_NAME
         )
-        vectorstore.create_index(dimensions=1536)
+        vectorstore.create_vector_search_index(dimensions=1536)
 
     def test_index_update(
         self, embedding_openai: Embeddings, index_collection: Any
@@ -277,5 +277,5 @@ class TestMongoDBAtlasVectorSearch:
         vectorstore = PatchedMongoDBAtlasVectorSearch(
             index_collection, embedding_openai, index_name=INDEX_CREATION_NAME
         )
-        vectorstore.create_index(dimensions=1536)
-        vectorstore.create_index(dimensions=1536, update=True)
+        vectorstore.create_vector_search_index(dimensions=1536)
+        vectorstore.create_vector_search_index(dimensions=1536, update=True)

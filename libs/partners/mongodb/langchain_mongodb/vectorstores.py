@@ -495,7 +495,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             **kwargs,
         )
 
-    def create_index(
+    def create_vector_search_index(
         self,
         dimensions: int,
         filters: Optional[List[Dict[str, str]]] = None,
