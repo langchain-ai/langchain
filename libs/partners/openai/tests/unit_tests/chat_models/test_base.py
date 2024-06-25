@@ -334,3 +334,38 @@ def test_with_structured_output(schema: Union[Type[BaseModel], dict]) -> None:
     """Test passing in manually construct tool call message."""
     llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
     llm.with_structured_output(schema)
+
+
+def test_get_num_tokens_from_messages() -> None:
+    llm = ChatOpenAI(model="gpt-4o")
+    messages = [
+        SystemMessage("you're a good assistant"),
+        HumanMessage("how are you"),
+        HumanMessage(
+            [
+                {"type": "text", "text": "what's in this image"},
+                {"type": "image_url", "image_url": {"url": "https://foobar.com"}},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "https://foobar.com", "detail": "low"},
+                },
+            ]
+        ),
+        AIMessage("a nice bird"),
+        AIMessage(
+            "", tool_calls=[ToolCall(id="foo", name="bar", args={"arg1": "arg1"})]
+        ),
+        AIMessage(
+            "",
+            additional_kwargs={
+                "function_call": json.dumps({"arguments": "old", "name": "fun"})
+            },
+        ),
+        AIMessage(
+            "text", tool_calls=[ToolCall(id="foo", name="bar", args={"arg1": "arg1"})]
+        ),
+        ToolMessage("foobar", tool_call_id="foo"),
+    ]
+    expected = 170
+    actual = llm.get_num_tokens_from_messages(messages)
+    assert expected == actual
