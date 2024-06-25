@@ -1,4 +1,5 @@
 import pytest
+from langchain_core.language_models import BaseChatModel
 
 from langchain.chat_models.base import __all__, init_chat_model
 
@@ -34,7 +35,9 @@ def test_all_imports() -> None:
     ],
 )
 def test_init_chat_model(model_name: str, model_provider: str) -> None:
-    init_chat_model(model_name, model_provider=model_provider, api_key="foo")
+    _: BaseChatModel = init_chat_model(
+        model_name, model_provider=model_provider, api_key="foo"
+    )
 
 
 def test_init_missing_dep() -> None:
