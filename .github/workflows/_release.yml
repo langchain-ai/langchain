@@ -202,7 +202,7 @@ jobs:
           poetry run python -c "import $IMPORT_NAME; print(dir($IMPORT_NAME))"
 
       - name: Import test dependencies
-        run: poetry install --with test,test_integration
+        run: poetry install --with test
         working-directory: ${{ inputs.working-directory }}
 
       # Overwrite the local version of the package with the test PyPI version.
@@ -244,6 +244,10 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
+      - name: Import integration test dependencies
+        run: poetry install --with test,test_integration
+        working-directory: ${{ inputs.working-directory }}
 
       - name: Run integration tests
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
