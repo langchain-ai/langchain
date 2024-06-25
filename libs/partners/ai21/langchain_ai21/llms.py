@@ -23,13 +23,18 @@ class AI21LLM(BaseLLM, AI21Base):
     Please read the [AI21 reference documentation](https://docs.ai21.com/reference) for your model
     to understand which parameters are available.
 
+    AI21LLM supports only the older Jurassic models.
+    We recommend using ChatAI21 with the newest models, for better results and more features.
 
     Example:
         .. code-block:: python
 
             from langchain_ai21 import AI21LLM
 
-            model = AI21LLM(api_key=&lt;AI21_API_KEY&gt;)
+            model = AI21LLM(
+               # defaults to os.enviorn.get('AI21_API_KEY')
+                api_key='my_api_key'
+            )
     """
 
     model: str
