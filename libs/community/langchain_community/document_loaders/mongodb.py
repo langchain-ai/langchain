@@ -124,5 +124,6 @@ class MongodbLoader(BaseLoader):
                 value = value.get(key, default)
                 if value == default:
                     break
-            extracted[field] = value
+            new_field_name = field.replace('.', '_')
+            extracted[new_field_name] = value
         return extracted
