@@ -232,7 +232,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
@@ -1240,6 +1240,11 @@ class LLM(BaseLLM):
         `astream` will use `_astream` if provided, otherwise it will implement
         a fallback behavior that will use `_stream` if `_stream` is implemented,
         and use `_acall` if `_stream` is not implemented.
+
+    Please see the following guide for more information on how to
+    implement a custom LLM:
+
+    https://python.langchain.com/v0.2/docs/how_to/custom_llm/
     """
 
     @abstractmethod

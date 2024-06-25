@@ -23,7 +23,7 @@ class MyRunnable(RunnableSerializable[str, str]):
             raise ValueError("Cannot set _my_hidden_property")
         return values
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         values["_my_hidden_property"] = values["my_property"]
         return values
