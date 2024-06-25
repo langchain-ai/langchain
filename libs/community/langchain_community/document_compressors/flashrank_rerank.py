@@ -38,17 +38,20 @@ class FlashrankRerank(BaseDocumentCompressor):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        try:
-            from flashrank import Ranker
-        except ImportError:
-            raise ImportError(
-                "Could not import flashrank python package. "
-                "Please install it with `pip install flashrank`."
-            )
+        if "client" in values:
+            return values
+        else:
+            try:
+                from flashrank import Ranker
+            except ImportError:
+                raise ImportError(
+                    "Could not import flashrank python package. "
+                    "Please install it with `pip install flashrank`."
+                )
 
-        values["model"] = values.get("model", DEFAULT_MODEL_NAME)
-        values["client"] = Ranker(model_name=values["model"])
-        return values
+            values["model"] = values.get("model", DEFAULT_MODEL_NAME)
+            values["client"] = Ranker(model_name=values["model"])
+            return values
 
     def compress_documents(
         self,
