@@ -525,7 +525,7 @@ def _format_nodes(nodes: List[Node]) -> List[Node]:
     return [
         Node(
             id=el.id.title() if isinstance(el.id, str) else el.id,
-            type=el.type.capitalize(),
+            type=el.type.capitalize() if el.type else None,  # handle empty strings
             properties=el.properties,
         )
         for el in nodes
@@ -576,13 +576,17 @@ def _convert_to_graph_document(
     else:  # If there are no validation errors use parsed pydantic object
         parsed_schema: _Graph = raw_schema["parsed"]
         nodes = (
-            [map_to_base_node(node) for node in parsed_schema.nodes]
+            [map_to_base_node(node) for node in parsed_schema.nodes if node.id]
             if parsed_schema.nodes
             else []
         )
 
         relationships = (
-            [map_to_base_relationship(rel) for rel in parsed_schema.relationships]
+            [
+                map_to_base_relationship(rel)
+                for rel in parsed_schema.relationships
+                if rel.type and rel.source_node_id and rel.target_node_id
+            ]
             if parsed_schema.relationships
             else []
         )
