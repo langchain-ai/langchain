@@ -5,10 +5,10 @@
     New agents should be built using the langgraph library
     (https://github.com/langchain-ai/langgraph)), which provides a simpler
     and more flexible way to define agents.
-   
-    Please see the migration guide for information on how to migrate existing 
-    agents to modern langgraph agents: 
-    https://python.langchain.com/v0.2/docs/how_to/migrate_agent/ 
+
+    Please see the migration guide for information on how to migrate existing
+    agents to modern langgraph agents:
+    https://python.langchain.com/v0.2/docs/how_to/migrate_agent/
 
 Agents use language models to choose a sequence of actions to take.
 
@@ -21,6 +21,7 @@ A basic agent works in the following manner:
 
 The schemas for the agents themselves are defined in langchain.agents.agent.
 """  # noqa: E501
+
 from __future__ import annotations
 
 import json

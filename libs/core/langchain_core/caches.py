@@ -19,6 +19,7 @@ Cache directly competes with Memory. See documentation for Pros and Cons.
 
     BaseCache --> <name>Cache  # Examples: InMemoryCache, RedisCache, GPTCache
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -190,7 +191,7 @@ class InMemoryCache(BaseCache):
 
         Returns:
             On a cache miss, return None. On a cache hit, return the cached value.
-            """
+        """
         return self.lookup(prompt, llm_string)
 
     async def aupdate(
