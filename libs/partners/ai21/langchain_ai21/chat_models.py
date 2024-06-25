@@ -213,7 +213,11 @@ class ChatAI21(BaseChatModel, AI21Base):
             stream=True,
             **kwargs,
         )
-        yield from self._chat_adapter.call(self.client, **params)
+
+        for chunk in self._chat_adapter.call(self.client, **params):
+            if run_manager and isinstance(chunk.message.content, str):
+                run_manager.on_llm_new_token(token=chunk.message.content, chunk=chunk)
+            yield chunk
 
     async def _agenerate(
             self,
