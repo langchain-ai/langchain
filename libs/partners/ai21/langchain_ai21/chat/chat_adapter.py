@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterator, List, Literal, Union, cast, overload
 from ai21.models import ChatMessage as J2ChatMessage
 from ai21.models import RoleType
 from ai21.models.chat import ChatCompletionChunk, ChatMessage
+from ai21.stream.stream import Stream as AI21Stream
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -198,7 +199,10 @@ class JambaChatCompletionsAdapter(ChatAdapter):
 
         return [AIMessage(choice.message.content) for choice in response.choices]
 
-    def _stream_response(self, response):
+    def _stream_response(
+        self,
+        response: AI21Stream[ChatCompletionChunk],
+    ) -> Iterator[ChatGenerationChunk]:
         for chunk in response:
             converted_message = self._convert_ai21_chunk_to_chunk(chunk)
             yield ChatGenerationChunk(message=converted_message)
