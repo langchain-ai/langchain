@@ -116,9 +116,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
         """Get default document variable name, if not provided."""
         if "initial_llm_chain" not in values:
-            raise ValueError(
-                "initial_llm_chain must be provided"
-            )
+            raise ValueError("initial_llm_chain must be provided")
 
         llm_chain_variables = values["initial_llm_chain"].prompt.input_variables
         if "document_variable_name" not in values:
