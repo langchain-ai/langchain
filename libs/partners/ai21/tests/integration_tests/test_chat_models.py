@@ -88,7 +88,7 @@ async def test_ageneration(model: str) -> None:
 
 
 def test__chat_stream():
-    llm = ChatAI21(model="jamba-instruct", api_key="FwlPukdfYB6f3cIjkxLyEgJGUhiQSiA6")
+    llm = ChatAI21(model="jamba-instruct")
     message = HumanMessage(content="What is the meaning of life?")
 
     for chunk in llm.stream([message]):
