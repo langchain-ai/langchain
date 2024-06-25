@@ -84,7 +84,7 @@ class MongodbLoader(BaseLoader):
                     {"database": self.db_name, "collection": self.collection_name}
                 )
 
-             # Extract text content from filtered fields or use the entire document
+            # Extract text content from filtered fields or use the entire document
             if self.field_names is not None:
                 fields = self._extract_fields(doc, self.field_names, default="")
                 texts = [str(value) for value in fields.values()]
