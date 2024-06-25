@@ -2,17 +2,17 @@
 
 [[package]]
 name = "ai21"
-version = "2.4.1"
+version = "2.7.0"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "ai21-2.4.1-py3-none-any.whl", hash = "sha256:2d5e341d01343c8e61598f374b37cabb67ba5857abe128cec97c2ba870403def"},
-    {file = "ai21-2.4.1.tar.gz", hash = "sha256:55380eee2d7dae6973522ea68f4d39641cb6058337aaa07746811e3d07e4bd73"},
+    {file = "ai21-2.7.0-py3-none-any.whl", hash = "sha256:9060aa90f0acc21ce1e3ad90c814762ba0914dd5af073c269868dbcdf5ecd108"},
+    {file = "ai21-2.7.0.tar.gz", hash = "sha256:3f86f47af67fa43b086773aa01d89286ec2011dbc1a4a53aaca3a104ac1f958f"},
 ]
 
 [package.dependencies]
-ai21-tokenizer = ">=0.9.1,<1.0.0"
+ai21-tokenizer = ">=0.11.0,<1.0.0"
 dataclasses-json = ">=0.6.3,<0.7.0"
 httpx = ">=0.27.0,<0.28.0"
 tenacity = ">=8.3.0,<9.0.0"
@@ -23,16 +23,17 @@ aws = ["boto3 (>=1.28.82,<2.0.0)"]
 
 [[package]]
 name = "ai21-tokenizer"
-version = "0.9.1"
+version = "0.11.2"
 description = ""
 optional = false
-python-versions = "<4.0,>=3.7"
+python-versions = "<4.0,>=3.8"
 files = [
-    {file = "ai21_tokenizer-0.9.1-py3-none-any.whl", hash = "sha256:53e85ddd74b375e7384e5b5c87ff60e63f60e8615c82ce80f27a062b530798ca"},
-    {file = "ai21_tokenizer-0.9.1.tar.gz", hash = "sha256:28c72122ef1eda6ba03c8ae55916de74a7ee9504c759e9bbae44abe821955df9"},
+    {file = "ai21_tokenizer-0.11.2-py3-none-any.whl", hash = "sha256:a9444ca44ef2bffec7cb9f0c3cfa5501dc973cdde0b740e43e137ce9a2f90eab"},
+    {file = "ai21_tokenizer-0.11.2.tar.gz", hash = "sha256:35579bca375f071ae6365456f02bd5c9445f408723f7b87646a2bdaa3f57925e"},
 ]
 
 [package.dependencies]
+anyio = ">=4.4.0,<5.0.0"
 sentencepiece = ">=0.2.0,<1.0.0"
 tokenizers = ">=0.15.0,<1.0.0"
 
@@ -682,25 +683,6 @@ files = [
 [package.extras]
 dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
-
-[[package]]
-name = "pydantic"
-version = "2.7.3"
-description = "Data validation using Python type hints"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "pydantic-2.7.3-py3-none-any.whl", hash = "sha256:ea91b002777bf643bb20dd717c028ec43216b24a6001a280f83877fd2655d0b4"},
-    {file = "pydantic-2.7.3.tar.gz", hash = "sha256:c46c76a40bb1296728d7a8b99aa73dd70a48c3510111ff290034f860c99c419e"},
-]
-
-[package.dependencies]
-annotated-types = ">=0.4.0"
-pydantic-core = "2.18.4"
-typing-extensions = ">=4.6.1"
-
-[package.extras]
-email = ["email-validator (>=2.0.0)"]
 
 [[package]]
 name = "pydantic"
@@ -1355,4 +1337,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "5817da5e2d48e6cc0a625ac6dea7336bc8088a3de7bea588107b143c253f4bcf"
+content-hash = "610cb0bc2d9093fa742c3fdc6f839a0560a619d1fab1103b44f8155f31ab4045"
