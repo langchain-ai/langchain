@@ -54,15 +54,13 @@ class Document(Serializable):
         return ["langchain", "schema", "document"]
 
     def __str__(self) -> str:
-        """Override __str__ to restrict it to page_content and metadata.
-
-        The format matches pydantic format for __str__.
-
-        The purpose of this change is to make sure that user code that
-        feeds Document objects directly into prompts remains unchanged
-        due to the addition of the id field (or any other fields in the future).
-
-        This override will likely be removed in the future in favor of
-        a more general solution of formatting content directly inside the prompts.
-        """
+        """Override __str__ to restrict it to page_content and metadata."""
+        # The format matches pydantic format for __str__.
+        #
+        # The purpose of this change is to make sure that user code that
+        # feeds Document objects directly into prompts remains unchanged
+        # due to the addition of the id field (or any other fields in the future).
+        #
+        # This override will likely be removed in the future in favor of
+        # a more general solution of formatting content directly inside the prompts.
         return f"page_content='{self.page_content}', metadata={self.metadata}"
