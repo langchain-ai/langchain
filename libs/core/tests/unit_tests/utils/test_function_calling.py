@@ -1,6 +1,10 @@
+# mypy: disable-error-code="annotation-unchecked"
 from typing import Any, Callable, Dict, List, Literal, Optional, Type
 
 import pytest
+from pydantic import BaseModel as BaseModelV2Maybe  #  pydantic: ignore
+from pydantic import Field as FieldV2Maybe  #  pydantic: ignore
+from typing_extensions import Annotated
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -18,6 +22,18 @@ def pydantic() -> Type[BaseModel]:
 
         arg1: int = Field(..., description="foo")
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
+
+    return dummy_function
+
+
+@pytest.fixture()
+def annotated_function() -> Callable:
+    def dummy_function(
+        arg1: Annotated[int, "foo"],
+        arg2: Annotated[Literal["bar", "baz"], "one of 'bar', 'baz'"],
+    ) -> None:
+        """dummy function"""
+        pass
 
     return dummy_function
 
@@ -51,6 +67,30 @@ def dummy_tool() -> BaseTool:
             pass
 
     return DummyFunction()
+
+
+@pytest.fixture()
+def dummy_pydantic() -> Type[BaseModel]:
+    class dummy_function(BaseModel):
+        """dummy function"""
+
+        arg1: int = Field(..., description="foo")
+        arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
+
+    return dummy_function
+
+
+@pytest.fixture()
+def dummy_pydantic_v2() -> Type[BaseModelV2Maybe]:
+    class dummy_function(BaseModelV2Maybe):
+        """dummy function"""
+
+        arg1: int = FieldV2Maybe(..., description="foo")
+        arg2: Literal["bar", "baz"] = FieldV2Maybe(
+            ..., description="one of 'bar', 'baz'"
+        )
+
+    return dummy_function
 
 
 @pytest.fixture()
@@ -99,6 +139,8 @@ def test_convert_to_openai_function(
     function: Callable,
     dummy_tool: BaseTool,
     json_schema: Dict,
+    annotated_function: Callable,
+    dummy_pydantic: Type[BaseModel],
 ) -> None:
     expected = {
         "name": "dummy_function",
@@ -125,8 +167,66 @@ def test_convert_to_openai_function(
         expected,
         Dummy.dummy_function,
         DummyWithClassMethod.dummy_function,
+        annotated_function,
+        dummy_pydantic,
     ):
         actual = convert_to_openai_function(fn)  # type: ignore
+        assert actual == expected
+
+
+def test_convert_to_openai_function_nested() -> None:
+    class Nested(BaseModel):
+        nested_arg1: int = Field(..., description="foo")
+        nested_arg2: Literal["bar", "baz"] = Field(
+            ..., description="one of 'bar', 'baz'"
+        )
+
+    class NestedV2(BaseModelV2Maybe):
+        nested_v2_arg1: int = FieldV2Maybe(..., description="foo")
+        nested_v2_arg2: Literal["bar", "baz"] = FieldV2Maybe(
+            ..., description="one of 'bar', 'baz'"
+        )
+
+    def my_function(arg1: Nested, arg2: NestedV2) -> None:
+        """dummy function"""
+        pass
+
+        expected = {
+            "name": "my_function",
+            "description": "dummy function",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "arg1": {
+                        "type": "object",
+                        "properties": {
+                            "nested_arg1": {"type": "integer", "description": "foo"},
+                            "nested_arg2": {
+                                "type": "string",
+                                "enum": ["bar", "baz"],
+                                "description": "one of 'bar', 'baz'",
+                            },
+                        },
+                        "required": ["nested_arg1", "nested_arg2"],
+                    },
+                    "arg2": {
+                        "type": "object",
+                        "properties": {
+                            "nested_v2_arg1": {"type": "integer", "description": "foo"},
+                            "nested_v2_arg2": {
+                                "type": "string",
+                                "enum": ["bar", "baz"],
+                                "description": "one of 'bar', 'baz'",
+                            },
+                        },
+                        "required": ["nested_v2_arg1", "nested_v2_arg2"],
+                    },
+                },
+                "required": ["arg1", "arg2"],
+            },
+        }
+
+        actual = convert_to_openai_function(my_function)
         assert actual == expected
 
 
