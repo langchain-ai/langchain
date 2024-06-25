@@ -41,7 +41,7 @@ class SequentialChain(Chain):
         """
         return self.output_variables
 
-    @root_validator(pre=False, skip_on_failure=True)
+    @root_validator(pre=True)
     def validate_chains(cls, values: Dict) -> Dict:
         """Validate that the correct inputs exist for all chains."""
         chains = values["chains"]
