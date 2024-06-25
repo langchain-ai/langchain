@@ -560,16 +560,10 @@ async def test_chat_tmpl_from_messages_multipart_text_with_template() -> None:
     assert messages == expected
 
 
-async def test_chat_tmpl_from_messages_multipart_image() -> None:
-    base64_image = "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wgARCAABAAEDAREAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQBAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhADEAAAAX8P/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABBQJ//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPwF//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPwF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQAGPwJ//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPyF//9oADAMBAAIAAwAAABAf/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPxB//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPxB//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxB//9k="  # noqa: E501
-    other_base64_image = "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wgARCAABAAEDAREAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQBAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhADEAAAAX8P/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABBQJ//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPwF//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPwF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQAGPwJ//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPyF//9oADAMBAAIAAwAAABAf/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPxB//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPxB//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxB//9k="  # noqa: E501
-
-    image_data = base64.b64decode(base64_image)
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
-        temp_file.write(image_data)
-        image_temp_file = temp_file.name
-
+async def test_chat_tmpl_from_messages_multipart_image_0() -> None:
+    """Test multipart image URL formatting."""
+    base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
+    other_base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
     template = ChatPromptTemplate.from_messages(
         [
             ("system", "You are an AI assistant named {name}."),
@@ -583,7 +577,7 @@ async def test_chat_tmpl_from_messages_multipart_image() -> None:
                     },
                     {
                         "type": "image_url",
-                        "image_url": {"path": "{my_image_path}"},
+                        "image_url": {"url": "data:image/jpeg;base64,{my_image}"},
                     },
                     {"type": "image_url", "image_url": "{my_other_image}"},
                     {
@@ -640,20 +634,113 @@ async def test_chat_tmpl_from_messages_multipart_image() -> None:
         ),
     ]
     messages = template.format_messages(
-        name="R2D2",
-        my_image=base64_image,
-        my_other_image=other_base64_image,
-        my_image_path=image_temp_file,
+        name="R2D2", my_image=base64_image, my_other_image=other_base64_image
     )
     assert messages == expected
 
     messages = await template.aformat_messages(
-        name="R2D2",
-        my_image=base64_image,
-        my_other_image=other_base64_image,
-        my_image_path=image_temp_file,
+        name="R2D2", my_image=base64_image, my_other_image=other_base64_image
     )
     assert messages == expected
+
+
+async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
+    """Verify that we can pass `path` for an image as a variable."""
+    base64_image = "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAEBAQEBAQEBAQEB"
+    other_base64_image = "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAEBAQEBAQEB"
+
+    image_data = base64.b64decode(base64_image)
+
+    with tempfile.NamedTemporaryFile(delete=True, suffix=".jpg") as temp_file:
+        temp_file.write(image_data)
+
+        template = ChatPromptTemplate.from_messages(
+            [
+                ("system", "You are an AI assistant named {name}."),
+                (
+                    "human",
+                    [
+                        {"type": "text", "text": "What's in this image?"},
+                        {
+                            "type": "image_url",
+                            "image_url": "data:image/jpeg;base64,{my_image}",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"path": "{my_image_path}"},
+                        },
+                        {"type": "image_url", "image_url": "{my_other_image}"},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": "{my_other_image}",
+                                "detail": "medium",
+                            },
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "https://www.langchain.com/image.png"},
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "data:image/jpeg;base64,foobar"},
+                        },
+                    ],
+                ),
+            ]
+        )
+        expected = [
+            SystemMessage(content="You are an AI assistant named R2D2."),
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "What's in this image?"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{other_base64_image}"
+                        },
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"{other_base64_image}"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"{other_base64_image}",
+                            "detail": "medium",
+                        },
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "https://www.langchain.com/image.png"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/jpeg;base64,foobar"},
+                    },
+                ]
+            ),
+        ]
+        messages = template.format_messages(
+            name="R2D2",
+            my_image=base64_image,
+            my_other_image=other_base64_image,
+            my_image_path=temp_file.name,
+        )
+        assert messages == expected
+
+        messages = await template.aformat_messages(
+            name="R2D2",
+            my_image=base64_image,
+            my_other_image=other_base64_image,
+            my_image_path=temp_file.name,
+        )
+        assert messages == expected
 
 
 def test_messages_placeholder() -> None:
