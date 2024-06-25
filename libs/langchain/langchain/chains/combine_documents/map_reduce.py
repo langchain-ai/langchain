@@ -132,7 +132,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @root_validator(pre=False, skip_on_failure=True)
+    @root_validator(pre=True)
     def get_reduce_chain(cls, values: Dict) -> Dict:
         """For backwards compatibility."""
         if "combine_document_chain" in values:
@@ -163,7 +163,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             del values["return_map_steps"]
         return values
 
-    @root_validator(pre=False, skip_on_failure=True)
+    @root_validator(pre=True)
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
         """Get default document variable name, if not provided."""
         if "document_variable_name" not in values:
