@@ -21,12 +21,12 @@ class MongodbLoader(BaseLoader):
         filter_criteria: Optional[Dict] = None,
         field_names: Optional[Sequence[str]] = None,
         metadata_names: Optional[Sequence[str]] = None,
-        include_db_collection_in_metadata: bool = True
+        include_db_collection_in_metadata: bool = True,
     ) -> None:
         """
         Initializes the MongoDB loader with necessary database connection
         details and configurations.
-        
+
         Args:
             connection_string (str):
                 MongoDB connection URI.
@@ -42,7 +42,7 @@ class MongodbLoader(BaseLoader):
                 Additional metadata fields to extract from documents.
             include_db_collection_in_metadata (bool):
                 Flag to include database and collection names in metadata.
-        
+
         Raises:
             ImportError: If the motor library is not installed.
             ValueError: If any necessary argument is missing.
@@ -53,7 +53,7 @@ class MongodbLoader(BaseLoader):
             raise ImportError(
                 "Cannot import from motor, please install with `pip install motor`."
             ) from e
-        
+
         if not connection_string:
             raise ValueError("connection_string must be provided.")
 
@@ -97,7 +97,7 @@ class MongodbLoader(BaseLoader):
 
         async for doc in self.collection.find(self.filter_criteria, projection):
             metadata = self._extract_fields(doc, self.metadata_names, default="")
-            
+
             # Optionally add database and collection names to metadata
             if self.include_db_collection_in_metadata:
                 metadata.update({
@@ -139,7 +139,7 @@ class MongodbLoader(BaseLoader):
             document (Dict): The document from which to extract data.
             fields (Sequence[str]): Fields to extract from the document.
             default (str): Default value to use if a field is not found.
-        
+
         Returns:
             Dict: A dictionary of extracted fields and their values.
         """
