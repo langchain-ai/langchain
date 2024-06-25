@@ -21,7 +21,7 @@ For comprehensive descriptions of every class and function see the [API Referenc
 This highlights functionality that is core to using LangChain.
 
 - [How to: return structured data from a model](/docs/how_to/structured_output/)
-- [How to: use a model to call tools](/docs/how_to/tool_calling/)
+- [How to: use a model to call tools](/docs/how_to/tool_calling)
 - [How to: stream runnables](/docs/how_to/streaming)
 - [How to: debug your LLM apps](/docs/how_to/debugging/)
 
@@ -79,6 +79,12 @@ These are the core building blocks you can use when building applications.
 - [How to: stream a response back](/docs/how_to/chat_streaming)
 - [How to: track token usage](/docs/how_to/chat_token_usage_tracking)
 - [How to: track response metadata across providers](/docs/how_to/response_metadata)
+- [How to: let your end users choose their model](/docs/how_to/chat_models_universal_init/)
+- [How to: use chat model to call tools](/docs/how_to/tool_calling)
+- [How to: stream tool calls](/docs/how_to/tool_streaming)
+- [How to: few shot prompt tool behavior](/docs/how_to/tools_few_shot)
+- [How to: bind model-specific formated tools](/docs/how_to/tools_model_specific)
+- [How to: force specific tool call](/docs/how_to/tool_choice)
 - [How to: init any model in one line](/docs/how_to/chat_models_universal_init/)
 
 ### Messages
@@ -176,15 +182,17 @@ Indexing is the process of keeping your vectorstore in-sync with the underlying 
 
 ### Tools
 
-LangChain [Tools](/docs/concepts/#tools) contain a description of the tool (to pass to the language model) as well as the implementation of the function to call).
+LangChain [Tools](/docs/concepts/#tools) contain a description of the tool (to pass to the language model) as well as the implementation of the function to call.
 
 - [How to: create custom tools](/docs/how_to/custom_tools)
 - [How to: use built-in tools and built-in toolkits](/docs/how_to/tools_builtin)
-- [How to: use a chat model to call tools](/docs/how_to/tool_calling/)
+- [How to: use chat model to call tools](/docs/how_to/tool_calling)
+- [How to: pass tool results back to model](/docs/how_to/tool_results_pass_to_model)
 - [How to: add ad-hoc tool calling capability to LLMs and chat models](/docs/how_to/tools_prompting)
 - [How to: pass run time values to tools](/docs/how_to/tool_runtime)
 - [How to: add a human in the loop to tool usage](/docs/how_to/tools_human)
 - [How to: handle errors when calling tools](/docs/how_to/tools_error)
+- [How to: disable parallel tool calling](/docs/how_to/tool_choice)
 
 ### Multimodal
 

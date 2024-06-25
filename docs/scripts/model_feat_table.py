@@ -232,7 +232,7 @@ def get_chat_model_table() -> str:
     ]
     title = [
         "Model",
-        "[Tool calling](/docs/how_to/tool_calling/)",
+        "[Tool calling](/docs/how_to/tool_calling)",
         "[Structured output](/docs/how_to/structured_output/)",
         "JSON mode",
         "Local",
