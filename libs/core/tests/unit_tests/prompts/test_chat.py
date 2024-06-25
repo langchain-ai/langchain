@@ -560,7 +560,7 @@ async def test_chat_tmpl_from_messages_multipart_text_with_template() -> None:
     assert messages == expected
 
 
-async def test_chat_tmpl_from_messages_multipart_image_0() -> None:
+async def test_chat_tmpl_from_messages_multipart_image() -> None:
     """Test multipart image URL formatting."""
     base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
     other_base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
