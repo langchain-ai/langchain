@@ -110,7 +110,12 @@ class MongodbLoader(BaseLoader):
         all_fields = field_names + metadata_names
         return {field: 1 for field in all_fields} if all_fields else None
 
-    def _extract_fields(self, document: Dict, fields: Sequence[str], default: str) -> Dict:
+    def _extract_fields(
+        self,
+        document: Dict,
+        fields: Sequence[str],
+        default: str,
+        ) -> Dict:
         """Extracts and returns values for specified fields from a document."""
         extracted = {}
         for field in fields or []:
