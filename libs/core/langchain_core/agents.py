@@ -193,9 +193,11 @@ def _create_function_message(
     agent_action: AgentAction, observation: Any
 ) -> FunctionMessage:
     """Convert agent action and observation into a function message.
+
     Args:
         agent_action: the tool invocation request from the agent
         observation: the result of the tool invocation
+
     Returns:
         FunctionMessage that corresponds to the original tool invocation
     """

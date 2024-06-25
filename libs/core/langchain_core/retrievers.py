@@ -119,14 +119,14 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     _new_arg_supported: bool = False
     _expects_other_args: bool = False
     tags: Optional[List[str]] = None
-    """Optional list of tags associated with the retriever. Defaults to None
+    """Optional list of tags associated with the retriever. Defaults to None.
     These tags will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a retriever with its 
     use case.
     """
     metadata: Optional[Dict[str, Any]] = None
-    """Optional metadata associated with the retriever. Defaults to None
+    """Optional metadata associated with the retriever. Defaults to None.
     This metadata will be associated with each call to this retriever,
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a retriever with its 
@@ -289,9 +289,10 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Get documents relevant to a query.
+
         Args:
             query: String to find relevant documents for
-            run_manager: The callbacks handler to use
+            run_manager: The callback handler to use
         Returns:
             List of relevant documents
         """
@@ -300,9 +301,10 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
     ) -> List[Document]:
         """Asynchronously get documents relevant to a query.
+
         Args:
             query: String to find relevant documents for
-            run_manager: The callbacks handler to use
+            run_manager: The callback handler to use
         Returns:
             List of relevant documents
         """
