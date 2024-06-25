@@ -403,6 +403,144 @@ async def test_output_dict_async() -> None:
     assert output == {"output": [AIMessage(content="you said: hello\ngood bye")]}
 
 
+def test_input_messages_filter() -> None:
+    runnable = RunnableLambda(
+        lambda messages: "you said: "
+        + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
+    )
+    store: Dict = {}
+    get_session_history = _get_get_session_history(store=store)
+    with_history = RunnableWithMessageHistory(
+        runnable,
+        get_session_history,
+        input_messages_filter=lambda messages, config: [
+            m for m in messages if m.content == "hello"
+        ],
+    )
+    config: RunnableConfig = {"configurable": {"session_id": "8"}}
+    with_history.invoke([HumanMessage(content="hello")], config)
+    with_history.invoke([HumanMessage(content="good bye")], config)
+    assert store == {
+        "8": ChatMessageHistory(
+            messages=[
+                HumanMessage(content="hello"),
+                AIMessage(content="you said: hello"),
+                AIMessage(content="you said: hello\ngood bye"),
+            ]
+        )
+    }
+
+
+async def test_input_messages_filter_async() -> None:
+    runnable = RunnableLambda(
+        lambda messages: "you said: "
+        + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
+    )
+    store: Dict = {}
+    get_session_history = _get_get_session_history(store=store)
+    with_history = RunnableWithMessageHistory(
+        runnable,
+        get_session_history,
+        input_messages_filter=lambda messages, config: [
+            m for m in messages if m.content == "hello"
+        ],
+    )
+    config: RunnableConfig = {"configurable": {"session_id": "8_async"}}
+    await with_history.ainvoke([HumanMessage(content="hello")], config)
+    await with_history.ainvoke([HumanMessage(content="good bye")], config)
+    assert store == {
+        "8_async": ChatMessageHistory(
+            messages=[
+                HumanMessage(content="hello"),
+                AIMessage(content="you said: hello"),
+                AIMessage(content="you said: hello\ngood bye"),
+            ]
+        )
+    }
+
+
+def test_output_messages_filter() -> None:
+    runnable = RunnableLambda(
+        lambda input: [
+            AIMessage(
+                content="you said: "
+                + "\n".join(
+                    [
+                        str(m.content)
+                        for m in input["history"]
+                        if isinstance(m, HumanMessage)
+                    ]
+                    + [input["input"]]
+                )
+            )
+        ]
+    )
+    store: Dict = {}
+    get_session_history = _get_get_session_history(store=store)
+    with_history = RunnableWithMessageHistory(
+        runnable,  # type: ignore
+        get_session_history,
+        input_messages_key="input",
+        history_messages_key="history",
+        output_messages_filter=lambda messages, config: [
+            m for m in messages if "good bye" not in m.content
+        ],
+    )
+    config: RunnableConfig = {"configurable": {"session_id": "9"}}
+    with_history.invoke({"input": "hello"}, config)
+    with_history.invoke({"input": "good bye"}, config)
+    assert store == {
+        "9": ChatMessageHistory(
+            messages=[
+                HumanMessage(content="hello"),
+                AIMessage(content="you said: hello"),
+                HumanMessage(content="good bye"),
+            ]
+        )
+    }
+
+
+async def test_output_messages_filter_async() -> None:
+    runnable = RunnableLambda(
+        lambda input: [
+            AIMessage(
+                content="you said: "
+                + "\n".join(
+                    [
+                        str(m.content)
+                        for m in input["history"]
+                        if isinstance(m, HumanMessage)
+                    ]
+                    + [input["input"]]
+                )
+            )
+        ]
+    )
+    store: Dict = {}
+    get_session_history = _get_get_session_history(store=store)
+    with_history = RunnableWithMessageHistory(
+        runnable,  # type: ignore
+        get_session_history,
+        input_messages_key="input",
+        history_messages_key="history",
+        output_messages_filter=lambda messages, config: [
+            m for m in messages if "good bye" not in m.content
+        ],
+    )
+    config: RunnableConfig = {"configurable": {"session_id": "9_async"}}
+    await with_history.ainvoke({"input": "hello"}, config)
+    await with_history.ainvoke({"input": "good bye"}, config)
+    assert store == {
+        "9_async": ChatMessageHistory(
+            messages=[
+                HumanMessage(content="hello"),
+                AIMessage(content="you said: hello"),
+                HumanMessage(content="good bye"),
+            ]
+        )
+    }
+
+
 def test_get_input_schema_input_dict() -> None:
     class RunnableWithChatHistoryInput(BaseModel):
         input: Union[str, BaseMessage, Sequence[BaseMessage]]

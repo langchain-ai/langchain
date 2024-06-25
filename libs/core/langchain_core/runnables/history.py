@@ -15,9 +15,11 @@ from typing import (
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
+from langchain_core.messages import BaseMessage
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import RunnableBranch
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
+from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
@@ -27,13 +29,14 @@ from langchain_core.runnables.utils import (
 
 if TYPE_CHECKING:
     from langchain_core.language_models.base import LanguageModelLike
-    from langchain_core.messages.base import BaseMessage
-    from langchain_core.runnables.config import RunnableConfig
     from langchain_core.tracers.schemas import Run
 
 
-MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], Dict[str, Any]]
+MessagesOrDictWithMessages = Union[Sequence[BaseMessage], Dict[str, Any]]
 GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
+HistoryMessagesFilterCallable = Callable[
+    [List[BaseMessage], RunnableConfig], List[BaseMessage]
+]
 
 
 class RunnableWithMessageHistory(RunnableBindingBase):
@@ -221,6 +224,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     input_messages_key: Optional[str] = None
     output_messages_key: Optional[str] = None
     history_messages_key: Optional[str] = None
+    input_messages_filter: Optional[HistoryMessagesFilterCallable] = None
+    output_messages_filter: Optional[HistoryMessagesFilterCallable] = None
     history_factory_config: Sequence[ConfigurableFieldSpec]
 
     @classmethod
@@ -242,6 +247,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         input_messages_key: Optional[str] = None,
         output_messages_key: Optional[str] = None,
         history_messages_key: Optional[str] = None,
+        input_messages_filter: Optional[HistoryMessagesFilterCallable] = None,
+        output_messages_filter: Optional[HistoryMessagesFilterCallable] = None,
         history_factory_config: Optional[Sequence[ConfigurableFieldSpec]] = None,
         **kwargs: Any,
     ) -> None:
@@ -341,6 +348,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             output_messages_key=output_messages_key,
             bound=bound,
             history_messages_key=history_messages_key,
+            input_messages_filter=input_messages_filter,
+            output_messages_filter=output_messages_filter,
             history_factory_config=_config_specs,
             **kwargs,
         )
@@ -358,8 +367,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         if super_schema.__custom_root_type__ or not super_schema.schema().get(
             "properties"
         ):
-            from langchain_core.messages import BaseMessage
-
             fields: Dict = {}
             if self.input_messages_key and self.history_messages_key:
                 fields[self.input_messages_key] = (
@@ -383,11 +390,20 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     async def _is_async(self, *args: Sequence[Any], **kwargs: Dict[str, Any]) -> bool:
         return True
 
+    def _noop_messages_filter(
+        self, messages: List[BaseMessage], config: RunnableConfig
+    ) -> List[BaseMessage]:
+        return messages
+
+    def _get_input_messages_filter(self) -> HistoryMessagesFilterCallable:
+        return self.input_messages_filter or self._noop_messages_filter
+
+    def _get_output_messages_filter(self) -> HistoryMessagesFilterCallable:
+        return self.output_messages_filter or self._noop_messages_filter
+
     def _get_input_messages(
         self, input_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> List[BaseMessage]:
-        from langchain_core.messages import BaseMessage
-
         # If dictionary, try to pluck the single key representing messages
         if isinstance(input_val, dict):
             if self.input_messages_key:
@@ -427,8 +443,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     def _get_output_messages(
         self, output_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> List[BaseMessage]:
-        from langchain_core.messages import BaseMessage
-
         # If dictionary, try to pluck the single key representing messages
         if isinstance(output_val, dict):
             if self.output_messages_key:
@@ -491,12 +505,14 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
         if not self.history_messages_key:
-            historic_messages = config["configurable"]["message_history"].messages
+            historic_messages = hist.messages
             input_messages = input_messages[len(historic_messages) :]
+        input_messages = self._get_input_messages_filter()(input_messages, config)
 
         # Get the output messages
         output_val = load(run.outputs)
         output_messages = self._get_output_messages(output_val)
+        output_messages = self._get_output_messages_filter()(output_messages, config)
         hist.add_messages(input_messages + output_messages)
 
     async def _aexit_history(self, run: Run, config: RunnableConfig) -> None:
@@ -508,12 +524,14 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
         if not self.history_messages_key:
-            historic_messages = config["configurable"]["message_history"].messages
+            historic_messages = hist.messages
             input_messages = input_messages[len(historic_messages) :]
+        input_messages = self._get_input_messages_filter()(input_messages, config)
 
         # Get the output messages
         output_val = load(run.outputs)
         output_messages = self._get_output_messages(output_val)
+        output_messages = self._get_output_messages_filter()(output_messages, config)
         await hist.aadd_messages(input_messages + output_messages)
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
