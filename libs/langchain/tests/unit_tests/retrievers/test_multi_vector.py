@@ -1,4 +1,4 @@
-from typing import Callable, Any, List, Tuple
+from typing import Any, Callable, List, Tuple
 
 from langchain_core.documents import Document
 
@@ -63,6 +63,7 @@ def test_multi_vector_retriever_similarity_search_with_score() -> None:
         vectorstore=vectorstore, docstore=InMemoryStore(), doc_id="doc_id",
         search_kwargs={"score_threshold": 0.9}, search_type="similarity_score_threshold"
     )
+    retriever.vectorstore.add_documents(documents, ids=["1"])
     retriever.docstore.mset(list(zip(["1"], documents)))
     results = retriever.invoke("1")
     assert len(results) == 0
