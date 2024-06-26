@@ -1666,7 +1666,8 @@ class ChatOpenAI(BaseChatOpenAI):
     ) -> Iterator[ChatGenerationChunk]:
         """Set default stream_options."""
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-        kwargs["stream_options"] = {"include_usage": stream_usage}
+        if stream_usage is True:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
 
         return super()._stream(*args, **kwargs)
 
@@ -1675,7 +1676,8 @@ class ChatOpenAI(BaseChatOpenAI):
     ) -> AsyncIterator[ChatGenerationChunk]:
         """Set default stream_options."""
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-        kwargs["stream_options"] = {"include_usage": stream_usage}
+        if stream_usage is True:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
 
         async for chunk in super()._astream(*args, **kwargs):
             yield chunk
