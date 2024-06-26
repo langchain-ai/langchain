@@ -28,7 +28,7 @@ class ConversationChain(LLMChain):
     ``RunnableWithMessageHistory`` offers several benefits, including:
 
     - Stream, batch, and async support;
-    - More flexibile memory handling, including the ability to manage memory
+    - More flexible memory handling, including the ability to manage memory
       outside the chain;
     - Support for multiple threads.
 
