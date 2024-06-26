@@ -131,7 +131,7 @@ class MongodbLoader(BaseLoader):
         self,
         document: Dict,
         fields: Sequence[str],
-        default: str,
+        default: str = "",
     ) -> Dict:
         """Extracts and returns values for specified fields from a document."""
         extracted = {}
