@@ -1,9 +1,11 @@
 """Naver chat models."""
 import logging
-from typing import Any, AsyncIterator, Iterator, List, Optional, Dict, cast, Tuple, AsyncContextManager, Union, Callable
+from typing import (
+    Any, AsyncIterator, Iterator, List, Optional, Dict, cast, Tuple, AsyncContextManager, Union, Callable, Type
+)
 
 import httpx
-from httpx_sse import connect_sse, aconnect_sse, EventSource
+from httpx_sse import connect_sse, aconnect_sse, EventSource, ServerSentEvent
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -11,7 +13,10 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.chat_models import LangSmithParams, BaseChatModel
 from langchain_core.language_models.llms import create_base_retry_decorator
-from langchain_core.messages import BaseMessage, AIMessage, ChatMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    BaseMessage, AIMessage, ChatMessage, HumanMessage, SystemMessage, BaseMessageChunk,
+    AIMessageChunk, HumanMessageChunk, SystemMessageChunk, ChatMessageChunk
+)
 from langchain_core.outputs import ChatGenerationChunk, ChatResult, ChatGeneration
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -43,6 +48,26 @@ async def _aiter_sse(
             if event.data == "[DONE]":
                 return
             yield event.json()
+
+
+def _convert_chunk_to_message_chunk(
+    sse: ServerSentEvent, default_class: Type[BaseMessageChunk]
+) -> BaseMessageChunk:
+    sse_data = sse.json()
+    message = sse_data.get("message")
+    role = message.get("role")
+    content = message.get("content") or ""
+
+    if role == "user" or default_class == HumanMessageChunk:
+        return HumanMessageChunk(content=content)
+    elif role == "assistant" or default_class == AIMessageChunk:
+        return AIMessageChunk(content=content)
+    elif role == "system" or default_class == SystemMessageChunk:
+        return SystemMessageChunk(content=content)
+    elif role or default_class == ChatMessageChunk:
+        return ChatMessageChunk(content=content, role=role)
+    else:
+        return default_class(content=content)
 
 
 def _convert_message_to_naver_chat_message(
@@ -263,15 +288,16 @@ class ChatNaver(BaseChatModel):
         stream = kwargs["stream"]
         if stream:
 
-            def iter_sse() -> Iterator[Dict]:
+            def iter_sse() -> Iterator[ServerSentEvent]:
                 with connect_sse(
                     self.client, "POST", f"/v1/chat-completions/{self.model_name}", json=kwargs
                 ) as event_source:
                     _raise_on_error(event_source.response)
-                    for event in event_source.iter_sse():
-                        if event.data == "[DONE]":
+                    for sse in event_source.iter_sse():
+                        event_data = sse.json()
+                        if sse.event == "signal" and event_data.get("data", {}) == "[DONE]":
                             return
-                        yield event.json()
+                        yield sse
 
             return iter_sse()
         else:
@@ -337,7 +363,6 @@ class ChatNaver(BaseChatModel):
         )
         return self._create_chat_result(response)
 
-    # TODO: Implement if ChatNaver supports streaming. Otherwise delete method.
     def _stream(
         self,
         messages: List[BaseMessage],
@@ -345,7 +370,22 @@ class ChatNaver(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        raise NotImplementedError
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs, "stream": True}
+
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
+        for sse in self._completion_with_retry(
+            messages=message_dicts, run_manager=run_manager, **params
+        ):
+            new_chunk = _convert_chunk_to_message_chunk(sse, default_chunk_class)
+            # make future chunks same type as first chunk
+            default_chunk_class = new_chunk.__class__
+            gen_chunk = ChatGenerationChunk(message=new_chunk)
+            if run_manager:
+                run_manager.on_llm_new_token(
+                    token=cast(str, new_chunk.content), chunk=gen_chunk
+                )
+            yield gen_chunk
 
     # TODO: Implement if ChatNaver supports async streaming. Otherwise delete.
     async def _astream(
