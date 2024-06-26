@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-community"
-version = "0.2.5"
+version = "0.2.6"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -9,8 +9,8 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.7"
-langchain = "^0.2.5"
+langchain-core = "^0.2.10"
+langchain = "^0.2.6"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
