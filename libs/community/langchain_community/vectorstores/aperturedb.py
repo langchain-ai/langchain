@@ -93,7 +93,7 @@ class ApertureDB(VectorStore):
             raise ValueError("No embedding function provided.")
 
         try:
-            from aperturedb import Utils, create_connector
+            from aperturedb.Utils import Utils, create_connector
         except ImportError:
             self.logger.exception(
                 "ApertureDB is not installed. Please install it using "
@@ -171,15 +171,12 @@ class ApertureDB(VectorStore):
             self.logger.info(
                 f"Descriptor set {descriptor_set} does not exist. Creating it"
             )
-            assert (
-                self.dimensions is not None
-            ), "Dimensions must be set for new descriptorsets"
             if self.engine is None:
                 self.engine = ENGINE
             if self.metric is None:
                 self.metric = METRIC
             if self.dimensions is None:
-                self.dimensions = len(self.embedding_function.embed_query(""))
+                self.dimensions = len(self.embedding_function.embed_query("test"))
 
             properties = (
                 {PROPERTY_PREFIX + k: v for k, v in self.properties.items()}
@@ -299,7 +296,7 @@ class ApertureDB(VectorStore):
     def _similarity_search_with_score_by_vector(
         self, embedding: List[float], k: int = 4, vectors=False
     ) -> List[Tuple[Document, float]]:
-        from aperturedb.Descriptos import Descriptors
+        from aperturedb.Descriptors import Descriptors
 
         descriptors = Descriptors(self.connection)
         start_time = time.time()
@@ -315,7 +312,7 @@ class ApertureDB(VectorStore):
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Document]:
-        from aperturedb.Descriptos import Descriptors
+        from aperturedb.Descriptors import Descriptors
 
         descriptors = Descriptors(self.connection)
         start_time = time.time()
@@ -351,7 +348,7 @@ class ApertureDB(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
-        from aperturedb.Descriptos import Descriptors
+        from aperturedb.Descriptors import Descriptors
 
         descriptors = Descriptors(self.connection)
         start_time = time.time()
