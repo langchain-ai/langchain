@@ -32,7 +32,7 @@ class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
         while len(ids) != self.similarity_search("sandwich") and timeout >= 0:
             sleep(INTERVAL)
             timeout -= INTERVAL
-        return ids
+        return [str(i) for i in ids]
 
 
 def get_collection() -> Collection:

@@ -36,6 +36,13 @@ logger = logging.getLogger(__name__)
 DEFAULT_INSERT_BATCH_SIZE = 100_000
 
 
+class DocumentWithId(Document):
+    """Small extension to base Document inlcudes DB id"""
+    id: Optional[str]
+    """ID within the vector store / collection.
+    If 24-character hex sring, this will be stored as ObjectIds internally"""
+
+
 class MongoDBAtlasVectorSearch(VectorStore):
     """`MongoDB Atlas Vector Search` vector store.
 
@@ -194,7 +201,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         include_embedding: bool = False,
         include_ids: bool = False,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> List[Tuple[DocumentWithId, float]]:
         params = {
             "queryVector": embedding,
             "path": self._embedding_key,
@@ -236,7 +243,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
             # following format used in bson.json_util.loads
             # e.g. loads('{"_id": {"$oid": "664..."}}') == {'_id': ObjectId('664..')} # noqa: E501
             _make_serializable(res)
-            docs.append((Document(page_content=text, metadata=res), score))
+            docs.append((DocumentWithId(page_content=text, metadata=res, id=str(res["_id"])), score))
         return docs
 
     def similarity_search_with_score(
@@ -246,7 +253,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> List[Tuple[DocumentWithId, float]]:
         """Return MongoDB documents most similar to the given query and their scores.
 
         Uses the vectorSearch operator available in MongoDB Atlas Search.
@@ -320,7 +327,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> List[DocumentWithId]:
         """Return documents selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -436,7 +443,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         **kwargs: Any,
-    ) -> List[Document]:  # type: ignore
+    ) -> List[DocumentWithId]:  # type: ignore
         """Return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -481,7 +488,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> List[DocumentWithId]:
         """Return docs selected using the maximal marginal relevance."""
         return await run_in_executor(
             None,
