@@ -1,6 +1,7 @@
 """__ModuleName__ document loader."""
 
 from typing import Iterator
+
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 
