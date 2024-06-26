@@ -77,7 +77,9 @@ def trace_as_chain_group(
     Args:
         group_name (str): The name of the chain group.
         callback_manager (CallbackManager, optional): The callback manager to use.
+            Defaults to None.
         inputs (Dict[str, Any], optional): The inputs to the chain group.
+            Defaults to None.
         project_name (str, optional): The name of the project.
             Defaults to None.
         example_id (str or UUID, optional): The ID of the example.
@@ -155,7 +157,9 @@ async def atrace_as_chain_group(
     Args:
         group_name (str): The name of the chain group.
         callback_manager (AsyncCallbackManager, optional): The async callback manager to use,
-            which manages tracing and other callback behavior.
+            which manages tracing and other callback behavior. Defaults to None.
+        inputs (Dict[str, Any], optional): The inputs to the chain group.
+            Defaults to None.
         project_name (str, optional): The name of the project.
             Defaults to None.
         example_id (str or UUID, optional): The ID of the example.
@@ -218,7 +222,13 @@ Func = TypeVar("Func", bound=Callable)
 
 def shielded(func: Func) -> Func:
     """
-    Makes so an awaitable method is always shielded from cancellation
+    Makes so an awaitable method is always shielded from cancellation.
+
+    Args:
+        func (Callable): The function to shield.
+
+    Returns:
+        Callable: The shielded function
     """
 
     @functools.wraps(func)
@@ -237,14 +247,14 @@ def handle_event(
 ) -> None:
     """Generic event handler for CallbackManager.
 
-    Note: This function is used by langserve to handle events.
+    Note: This function is used by LangServe to handle events.
 
     Args:
-        handlers: The list of handlers that will handle the event
-        event_name: The name of the event (e.g., "on_llm_start")
+        handlers: The list of handlers that will handle the event.
+        event_name: The name of the event (e.g., "on_llm_start").
         ignore_condition_name: Name of the attribute defined on handler
-            that if True will cause the handler to be skipped for the given event
-        *args: The arguments to pass to the event handler
+            that if True will cause the handler to be skipped for the given event.
+        *args: The arguments to pass to the event handler.
         **kwargs: The keyword arguments to pass to the event handler
     """
     coros: List[Coroutine[Any, Any, Any]] = []
@@ -394,17 +404,17 @@ async def ahandle_event(
     *args: Any,
     **kwargs: Any,
 ) -> None:
-    """Generic event handler for AsyncCallbackManager.
+    """Async generic event handler for AsyncCallbackManager.
 
-    Note: This function is used by langserve to handle events.
+    Note: This function is used by LangServe to handle events.
 
     Args:
-        handlers: The list of handlers that will handle the event
-        event_name: The name of the event (e.g., "on_llm_start")
+        handlers: The list of handlers that will handle the event.
+        event_name: The name of the event (e.g., "on_llm_start").
         ignore_condition_name: Name of the attribute defined on handler
-            that if True will cause the handler to be skipped for the given event
-        *args: The arguments to pass to the event handler
-        **kwargs: The keyword arguments to pass to the event handler
+            that if True will cause the handler to be skipped for the given event.
+        *args: The arguments to pass to the event handler.
+        **kwargs: The keyword arguments to pass to the event handler.
     """
     for handler in [h for h in handlers if h.run_inline]:
         await _ahandle_event_for_handler(
@@ -452,10 +462,13 @@ class BaseRunManager(RunManagerMixin):
                 The list of inheritable handlers.
             parent_run_id (UUID, optional): The ID of the parent run.
                 Defaults to None.
-            tags (Optional[List[str]]): The list of tags.
+            tags (Optional[List[str]]): The list of tags. Defaults to None.
             inheritable_tags (Optional[List[str]]): The list of inheritable tags.
+                Defaults to None.
             metadata (Optional[Dict[str, Any]]): The metadata.
+                Defaults to None.
             inheritable_metadata (Optional[Dict[str, Any]]): The inheritable metadata.
+                Defaults to None.
         """
         self.run_id = run_id
         self.handlers = handlers
@@ -492,10 +505,11 @@ class RunManager(BaseRunManager):
         text: str,
         **kwargs: Any,
     ) -> Any:
-        """Run when text is received.
+        """Run when a text is received.
 
         Args:
             text (str): The received text.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             Any: The result of the callback.
@@ -516,6 +530,12 @@ class RunManager(BaseRunManager):
         retry_state: RetryCallState,
         **kwargs: Any,
     ) -> None:
+        """Run when a retry is received.
+
+        Args:
+            retry_state (RetryCallState): The retry state.
+            **kwargs (Any): Additional keyword arguments.
+        """
         handle_event(
             self.handlers,
             "on_retry",
@@ -566,10 +586,11 @@ class AsyncRunManager(BaseRunManager, ABC):
         text: str,
         **kwargs: Any,
     ) -> Any:
-        """Run when text is received.
+        """Run when a text is received.
 
         Args:
             text (str): The received text.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             Any: The result of the callback.
@@ -590,6 +611,12 @@ class AsyncRunManager(BaseRunManager, ABC):
         retry_state: RetryCallState,
         **kwargs: Any,
     ) -> None:
+        """Async run when a retry is received.
+
+        Args:
+            retry_state (RetryCallState): The retry state.
+            **kwargs (Any): Additional keyword arguments.
+        """
         await ahandle_event(
             self.handlers,
             "on_retry",
@@ -638,6 +665,9 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 
         Args:
             token (str): The new token.
+            chunk (Optional[Union[GenerationChunk, ChatGenerationChunk]], optional):
+                The chunk. Defaults to None.
+            **kwargs (Any): Additional keyword arguments.
         """
         handle_event(
             self.handlers,
@@ -656,6 +686,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
 
         Args:
             response (LLMResult): The LLM result.
+            **kwargs (Any): Additional keyword arguments.
         """
         handle_event(
             self.handlers,
@@ -725,6 +756,9 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 
         Args:
             token (str): The new token.
+            chunk (Optional[Union[GenerationChunk, ChatGenerationChunk]], optional):
+                The chunk. Defaults to None.
+            **kwargs (Any): Additional keyword arguments.
         """
         await ahandle_event(
             self.handlers,
@@ -744,6 +778,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 
         Args:
             response (LLMResult): The LLM result.
+            **kwargs (Any): Additional keyword arguments.
         """
         await ahandle_event(
             self.handlers,
@@ -793,6 +828,7 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
 
         Args:
             outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
+            **kwargs (Any): Additional keyword arguments.
         """
         handle_event(
             self.handlers,
@@ -814,6 +850,7 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
 
         Args:
             error (Exception or KeyboardInterrupt): The error.
+            **kwargs (Any): Additional keyword arguments.
         """
         handle_event(
             self.handlers,
@@ -831,6 +868,7 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
 
         Args:
             action (AgentAction): The agent action.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             Any: The result of the callback.
@@ -851,6 +889,7 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
 
         Args:
             finish (AgentFinish): The agent finish.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             Any: The result of the callback.
@@ -891,10 +930,11 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
     async def on_chain_end(
         self, outputs: Union[Dict[str, Any], Any], **kwargs: Any
     ) -> None:
-        """Run when chain ends running.
+        """Run when a chain ends running.
 
         Args:
             outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
+            **kwargs (Any): Additional keyword arguments.
         """
         await ahandle_event(
             self.handlers,
@@ -917,6 +957,7 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
 
         Args:
             error (Exception or KeyboardInterrupt): The error.
+            **kwargs (Any): Additional keyword arguments.
         """
         await ahandle_event(
             self.handlers,
@@ -935,6 +976,7 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
 
         Args:
             action (AgentAction): The agent action.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             Any: The result of the callback.
@@ -956,6 +998,7 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
 
         Args:
             finish (AgentFinish): The agent finish.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             Any: The result of the callback.
@@ -980,10 +1023,11 @@ class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
         output: Any,
         **kwargs: Any,
     ) -> None:
-        """Run when tool ends running.
+        """Run when the tool ends running.
 
         Args:
             output (Any): The output of the tool.
+            **kwargs (Any): Additional keyword arguments.
         """
         handle_event(
             self.handlers,
@@ -1005,6 +1049,7 @@ class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
 
         Args:
             error (Exception or KeyboardInterrupt): The error.
+            **kwargs (Any): Additional keyword arguments.
         """
         handle_event(
             self.handlers,
@@ -1040,10 +1085,11 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
 
     @shielded
     async def on_tool_end(self, output: Any, **kwargs: Any) -> None:
-        """Run when tool ends running.
+        """Async run when the tool ends running.
 
         Args:
             output (Any): The output of the tool.
+            **kwargs (Any): Additional keyword arguments.
         """
         await ahandle_event(
             self.handlers,
@@ -1066,6 +1112,7 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
 
         Args:
             error (Exception or KeyboardInterrupt): The error.
+            **kwargs (Any): Additional keyword arguments.
         """
         await ahandle_event(
             self.handlers,
@@ -1087,7 +1134,12 @@ class CallbackManagerForRetrieverRun(ParentRunManager, RetrieverManagerMixin):
         documents: Sequence[Document],
         **kwargs: Any,
     ) -> None:
-        """Run when retriever ends running."""
+        """Run when retriever ends running.
+
+        Args:
+            documents (Sequence[Document]): The retrieved documents.
+            **kwargs (Any): Additional keyword arguments.
+        """
         handle_event(
             self.handlers,
             "on_retriever_end",
@@ -1104,7 +1156,12 @@ class CallbackManagerForRetrieverRun(ParentRunManager, RetrieverManagerMixin):
         error: BaseException,
         **kwargs: Any,
     ) -> None:
-        """Run when retriever errors."""
+        """Run when retriever errors.
+
+        Args:
+            error (BaseException): The error.
+            **kwargs (Any): Additional keyword arguments.
+        """
         handle_event(
             self.handlers,
             "on_retriever_error",
@@ -1144,7 +1201,12 @@ class AsyncCallbackManagerForRetrieverRun(
     async def on_retriever_end(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> None:
-        """Run when retriever ends running."""
+        """Run when the retriever ends running.
+
+        Args:
+            documents (Sequence[Document]): The retrieved documents.
+            **kwargs (Any): Additional keyword arguments.
+        """
         await ahandle_event(
             self.handlers,
             "on_retriever_end",
@@ -1162,7 +1224,12 @@ class AsyncCallbackManagerForRetrieverRun(
         error: BaseException,
         **kwargs: Any,
     ) -> None:
-        """Run when retriever errors."""
+        """Run when retriever errors.
+
+        Args:
+            error (BaseException): The error.
+            **kwargs (Any): Additional keyword arguments.
+        """
         await ahandle_event(
             self.handlers,
             "on_retriever_error",
@@ -1176,7 +1243,7 @@ class AsyncCallbackManagerForRetrieverRun(
 
 
 class CallbackManager(BaseCallbackManager):
-    """Callback manager that handles callbacks from LangChain."""
+    """Callback manager for LangChain."""
 
     def on_llm_start(
         self,
@@ -1191,6 +1258,7 @@ class CallbackManager(BaseCallbackManager):
             serialized (Dict[str, Any]): The serialized LLM.
             prompts (List[str]): The list of prompts.
             run_id (UUID, optional): The ID of the run. Defaults to None.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             List[CallbackManagerForLLMRun]: A callback manager for each
@@ -1241,6 +1309,7 @@ class CallbackManager(BaseCallbackManager):
             serialized (Dict[str, Any]): The serialized LLM.
             messages (List[List[BaseMessage]]): The list of messages.
             run_id (UUID, optional): The ID of the run. Defaults to None.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             List[CallbackManagerForLLMRun]: A callback manager for each
@@ -1295,6 +1364,7 @@ class CallbackManager(BaseCallbackManager):
             serialized (Dict[str, Any]): The serialized chain.
             inputs (Union[Dict[str, Any], Any]): The inputs to the chain.
             run_id (UUID, optional): The ID of the run. Defaults to None.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             CallbackManagerForChainRun: The callback manager for the chain run.
@@ -1347,6 +1417,7 @@ class CallbackManager(BaseCallbackManager):
                 input is needed.
                 If provided, the inputs are expected to be formatted as a dict.
                 The keys will correspond to the named-arguments in the tool.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             CallbackManagerForToolRun: The callback manager for the tool run.
@@ -1387,7 +1458,15 @@ class CallbackManager(BaseCallbackManager):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> CallbackManagerForRetrieverRun:
-        """Run when retriever starts running."""
+        """Run when the retriever starts running.
+
+        Args:
+            serialized (Dict[str, Any]): The serialized retriever.
+            query (str): The query.
+            run_id (UUID, optional): The ID of the run. Defaults to None.
+            parent_run_id (UUID, optional): The ID of the parent run. Defaults to None.
+            **kwargs (Any): Additional keyword arguments.
+        """
         if run_id is None:
             run_id = uuid.uuid4()
 
@@ -1470,6 +1549,16 @@ class CallbackManagerForChainGroup(CallbackManager):
         parent_run_manager: CallbackManagerForChainRun,
         **kwargs: Any,
     ) -> None:
+        """Initialize the callback manager.
+
+        Args:
+            handlers (List[BaseCallbackHandler]): The list of handlers.
+            inheritable_handlers (Optional[List[BaseCallbackHandler]]): The list of
+                inheritable handlers. Defaults to None.
+            parent_run_id (Optional[UUID]): The ID of the parent run. Defaults to None.
+            parent_run_manager (CallbackManagerForChainRun): The parent run manager.
+            **kwargs (Any): Additional keyword arguments.
+        """
         super().__init__(
             handlers,
             inheritable_handlers,
@@ -1480,6 +1569,7 @@ class CallbackManagerForChainGroup(CallbackManager):
         self.ended = False
 
     def copy(self) -> CallbackManagerForChainGroup:
+        """Copy the callback manager."""
         return self.__class__(
             handlers=self.handlers,
             inheritable_handlers=self.inheritable_handlers,
@@ -1496,6 +1586,7 @@ class CallbackManagerForChainGroup(CallbackManager):
 
         Args:
             outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
+            **kwargs (Any): Additional keyword arguments.
         """
         self.ended = True
         return self.parent_run_manager.on_chain_end(outputs, **kwargs)
@@ -1509,6 +1600,7 @@ class CallbackManagerForChainGroup(CallbackManager):
 
         Args:
             error (Exception or KeyboardInterrupt): The error.
+            **kwargs (Any): Additional keyword arguments.
         """
         self.ended = True
         return self.parent_run_manager.on_chain_error(error, **kwargs)
@@ -1535,6 +1627,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             serialized (Dict[str, Any]): The serialized LLM.
             prompts (List[str]): The list of prompts.
             run_id (UUID, optional): The ID of the run. Defaults to None.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             List[AsyncCallbackManagerForLLMRun]: The list of async
@@ -1591,12 +1684,13 @@ class AsyncCallbackManager(BaseCallbackManager):
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> List[AsyncCallbackManagerForLLMRun]:
-        """Run when LLM starts running.
+        """Async run when LLM starts running.
 
         Args:
             serialized (Dict[str, Any]): The serialized LLM.
             messages (List[List[BaseMessage]]): The list of messages.
             run_id (UUID, optional): The ID of the run. Defaults to None.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             List[AsyncCallbackManagerForLLMRun]: The list of
@@ -1651,12 +1745,13 @@ class AsyncCallbackManager(BaseCallbackManager):
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> AsyncCallbackManagerForChainRun:
-        """Run when chain starts running.
+        """Async run when chain starts running.
 
         Args:
             serialized (Dict[str, Any]): The serialized chain.
             inputs (Union[Dict[str, Any], Any]): The inputs to the chain.
             run_id (UUID, optional): The ID of the run. Defaults to None.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             AsyncCallbackManagerForChainRun: The async callback manager
@@ -1697,7 +1792,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> AsyncCallbackManagerForToolRun:
-        """Run when tool starts running.
+        """Run when the tool starts running.
 
         Args:
             serialized (Dict[str, Any]): The serialized tool.
@@ -1705,6 +1800,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             run_id (UUID, optional): The ID of the run. Defaults to None.
             parent_run_id (UUID, optional): The ID of the parent run.
                 Defaults to None.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             AsyncCallbackManagerForToolRun: The async callback manager
@@ -1745,7 +1841,19 @@ class AsyncCallbackManager(BaseCallbackManager):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> AsyncCallbackManagerForRetrieverRun:
-        """Run when retriever starts running."""
+        """Run when the retriever starts running.
+
+        Args:
+            serialized (Dict[str, Any]): The serialized retriever.
+            query (str): The query.
+            run_id (UUID, optional): The ID of the run. Defaults to None.
+            parent_run_id (UUID, optional): The ID of the parent run. Defaults to None.
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            AsyncCallbackManagerForRetrieverRun: The async callback manager
+                for the retriever run.
+        """
         if run_id is None:
             run_id = uuid.uuid4()
 
@@ -1828,6 +1936,17 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
         parent_run_manager: AsyncCallbackManagerForChainRun,
         **kwargs: Any,
     ) -> None:
+        """Initialize the async callback manager.
+
+        Args:
+            handlers (List[BaseCallbackHandler]): The list of handlers.
+            inheritable_handlers (Optional[List[BaseCallbackHandler]]): The list of
+                inheritable handlers. Defaults to None.
+            parent_run_id (Optional[UUID]): The ID of the parent run. Defaults to None.
+            parent_run_manager (AsyncCallbackManagerForChainRun):
+                The parent run manager.
+            **kwargs (Any): Additional keyword arguments.
+        """
         super().__init__(
             handlers,
             inheritable_handlers,
@@ -1838,6 +1957,7 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
         self.ended = False
 
     def copy(self) -> AsyncCallbackManagerForChainGroup:
+        """Copy the async callback manager."""
         return self.__class__(
             handlers=self.handlers,
             inheritable_handlers=self.inheritable_handlers,
@@ -1856,6 +1976,7 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
 
         Args:
             outputs (Union[Dict[str, Any], Any]): The outputs of the chain.
+            **kwargs (Any): Additional keyword arguments.
         """
         self.ended = True
         await self.parent_run_manager.on_chain_end(outputs, **kwargs)
@@ -1869,6 +1990,7 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
 
         Args:
             error (Exception or KeyboardInterrupt): The error.
+            **kwargs (Any): Additional keyword arguments.
         """
         self.ended = True
         await self.parent_run_manager.on_chain_error(error, **kwargs)
