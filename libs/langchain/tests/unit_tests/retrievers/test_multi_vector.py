@@ -2,7 +2,7 @@ from typing import Any, Callable, List, Tuple
 
 from langchain_core.documents import Document
 
-from langchain.retrievers.multi_vector import MultiVectorRetriever
+from langchain.retrievers.multi_vector import MultiVectorRetriever, SearchType
 from langchain.storage import InMemoryStore
 from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 
@@ -55,7 +55,7 @@ def test_multi_vector_retriever_similarity_search_with_score() -> None:
         docstore=InMemoryStore(),
         doc_id="doc_id",
         search_kwargs={"score_threshold": 0.5},
-        search_type="similarity_score_threshold",
+        search_type=SearchType.similarity_score_threshold,
     )
     retriever.vectorstore.add_documents(documents, ids=["1"])
     retriever.docstore.mset(list(zip(["1"], documents)))
@@ -70,7 +70,7 @@ def test_multi_vector_retriever_similarity_search_with_score() -> None:
         docstore=InMemoryStore(),
         doc_id="doc_id",
         search_kwargs={"score_threshold": 0.9},
-        search_type="similarity_score_threshold",
+        search_type=SearchType.similarity_score_threshold,
     )
     retriever.vectorstore.add_documents(documents, ids=["1"])
     retriever.docstore.mset(list(zip(["1"], documents)))
