@@ -179,8 +179,15 @@ For a full list of LangChain model providers with multimodal models, [check out 
 ### LLMs
 <span data-heading-keywords="llm,llms"></span>
 
+:::caution
+Pure text-in/text-out LLMs tend to be older or lower-level. Many popular models are best used as [chat completion models](/docs/concepts/#chat-models),
+even for non-chat use cases.
+
+You are probably looking for [the section above instead](/docs/concepts/#chat-models).
+:::
+
 Language models that takes a string as input and returns a string.
-These are traditionally older models (newer models generally are [Chat Models](/docs/concepts/#chat-models), see below).
+These are traditionally older models (newer models generally are [Chat Models](/docs/concepts/#chat-models), see above).
 
 Although the underlying models are string in, string out, the LangChain wrappers also allow these models to take messages as input.
 This gives them the same interface as [Chat Models](/docs/concepts/#chat-models).
@@ -868,7 +875,7 @@ The standard interface consists of:
 The following how-to guides are good practical resources for using function/tool calling:
 
 - [How to return structured data from an LLM](/docs/how_to/structured_output/)
-- [How to use a model to call tools](/docs/how_to/tool_calling/)
+- [How to use a model to call tools](/docs/how_to/tool_calling)
 
 For a full list of model providers that support tool calling, [see this table](/docs/integrations/chat/#advanced-features).
 
