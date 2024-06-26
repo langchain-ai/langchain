@@ -102,7 +102,14 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         else:
             # If separators is an iterable, use each separator for the respective positions            
             if len(docs) == 0:
-                return None
+                return None 
+            
+            if len(docs) - 1 != len(separators):
+                raise ValueError(
+                    f"Number of separators ({len(separators)}) should be equal to "
+                    f"number of docs minus 1 ({len(docs) - 1})."
+                )
+
             text = docs[0]
             for doc, sep in zip(docs[1:], separators):
                 text += sep + doc
@@ -120,6 +127,12 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         # chunks to send to the LLM.
         if isinstance(separators, str):
             separators = [separators] * (len(splits) - 1)
+        
+        if len(splits) - 1 != len(separators):
+            raise ValueError(
+                f"Number of separators ({len(separators)}) should be equal to "
+                f"number of splits minus 1 ({len(splits) - 1})."
+            )
         
         separator_lens = [self._length_function(sep) for sep in separators]
 

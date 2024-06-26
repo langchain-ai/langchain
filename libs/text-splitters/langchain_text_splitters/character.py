@@ -29,7 +29,7 @@ class CharacterTextSplitter(TextSplitter):
 
 
 def _split_text_with_regex(
-    text: str, separator: str, keep_separator: bool
+    text: str, separator: str, keep_separator: Union[bool, Literal["start", "end"]]
 ) -> List[str]:
     # Now that we have the separator, split the text
     actual_separators = []
@@ -97,7 +97,6 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         # Now go merging things, recursively splitting longer texts.
         _good_splits = []
         _good_separators = []
-        _separator = "" if self._keep_separator else separator
         for s, sep in zip(splits, actual_separators + [""]):
             if self._length_function(s) < self._chunk_size:
                 _good_splits.append(s)
@@ -105,7 +104,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             else:
                 if _good_splits:
                     # merging using the actual separator instead of the regex
-                    merged_text = self._merge_splits(_good_splits, _good_separators)
+                    # if self._keep_separator is True, the last separator is already included in the splits, thus we pass in ""
+                    merged_text = self._merge_splits(_good_splits, "" if self._keep_separator else _good_separators[:-1])
                     final_chunks.extend(merged_text)
                     _good_splits = []
                     _good_separators = []
@@ -115,7 +115,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                     other_info = self._split_text(s, new_separators)
                     final_chunks.extend(other_info)
         if _good_splits:
-            merged_text = self._merge_splits(_good_splits, _good_separators)
+            # if self._keep_separator is True, the last separator is already included in the splits, thus we pass in ""
+            merged_text = self._merge_splits(_good_splits, "" if self._keep_separator else _good_separators[:-1])
             final_chunks.extend(merged_text)
         return final_chunks
 
