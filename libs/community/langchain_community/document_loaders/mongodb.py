@@ -63,7 +63,7 @@ class MongodbLoader(BaseLoader):
         self.client = AsyncIOMotorClient(connection_string)
         self.db_name = db_name
         self.collection_name = collection_name
-        self.field_names = field_names
+        self.field_names = field_names or []
         self.filter_criteria = filter_criteria or {}
         self.metadata_names = metadata_names or []
         self.include_db_collection_in_metadata = include_db_collection_in_metadata
