@@ -20,7 +20,7 @@ from typing import (
 import numpy as np
 import sqlalchemy
 from langchain_core._api import deprecated, warn_deprecated
-from sqlalchemy import SQLColumnExpression, delete, func
+from sqlalchemy import delete, func
 from sqlalchemy.dialects.postgresql import JSON, JSONB, UUID
 from sqlalchemy.orm import Session, relationship
 
@@ -28,6 +28,12 @@ try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
+
+try:
+    from sqlalchemy import SQLColumnExpression
+except ImportError:
+    # for sqlalchemy < 2
+    SQLColumnExpression = Any  # type: ignore
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings

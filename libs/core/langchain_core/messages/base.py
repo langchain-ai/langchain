@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class BaseMessage(Serializable):
-    """Base abstract Message class.
+    """Base abstract message class.
 
     Messages are the inputs and outputs of ChatModels.
     """
@@ -24,14 +24,28 @@ class BaseMessage(Serializable):
     additional_kwargs: dict = Field(default_factory=dict)
     """Reserved for additional payload data associated with the message.
     
-    For example, for a message from an AI, this could include tool calls."""
+    For example, for a message from an AI, this could include tool calls as
+    encoded by the model provider.
+    """
 
     response_metadata: dict = Field(default_factory=dict)
     """Response metadata. For example: response headers, logprobs, token counts."""
 
     type: str
+    """The type of the message. Must be a string that is unique to the message type.
+    
+    The purpose of this field is to allow for easy identification of the message type
+    when deserializing messages.
+    """
 
     name: Optional[str] = None
+    """An optional name for the message. 
+    
+    This can be used to provide a human-readable name for the message.
+    
+    Usage of this field is optional, and whether it's used or not is up to the
+    model implementation.
+    """
 
     id: Optional[str] = None
     """An optional unique identifier for the message. This should ideally be
@@ -57,6 +71,7 @@ class BaseMessage(Serializable):
         return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
+        """Concatenate this message with another message."""
         from langchain_core.prompts.chat import ChatPromptTemplate
 
         prompt = ChatPromptTemplate(messages=[self])  # type: ignore[call-arg]
@@ -122,6 +137,17 @@ class BaseMessageChunk(BaseMessage):
         return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+        """Message chunks support concatenation with other message chunks.
+
+        This functionality is useful to combine message chunks yielded from
+        a streaming model into a complete message.
+
+        For example,
+
+        `AIMessageChunk(content="Hello") + AIMessageChunk(content=" World")`
+
+        will give `AIMessageChunk(content="Hello World")`
+        """
         if isinstance(other, BaseMessageChunk):
             # If both are (subclasses of) BaseMessageChunk,
             # concat into a single BaseMessageChunk
