@@ -1,10 +1,11 @@
 """MindsDB Endpoint chat wrapper. Relies heavily on ChatOpenAI as the Minds Endpoint is OpenAI API compatible."""
 
+import os
 import requests
 from typing import Text, Dict, Set, Optional
 
 from langchain_community.utils.openai import is_openai_v1
-from langchain_community.chat_models.openai import ChatOpenAI
+from langchain_community.chat_models.anyscale import ChatAnyscale
 
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
@@ -13,7 +14,7 @@ DEFAULT_API_BASE = "https://llm.mdb.ai"
 DEFAULT_MODEL = "gpt-3.5-turbo"
 
 
-class ChatAIMind(ChatOpenAI):
+class ChatAIMind(ChatAnyscale):
     """
     `Minds Endpoint` chat large language models from MindsDB.
 
@@ -49,8 +50,6 @@ class ChatAIMind(ChatOpenAI):
     mindsdb_api_key: SecretStr = Field(default=None)
     mindsdb_api_base: str = Field(default=DEFAULT_API_BASE)
     model_name: str = Field(default=DEFAULT_MODEL, alias="model")
-
-    available_models: Optional[Set[str]] = None
 
     @staticmethod
     def get_available_models(
