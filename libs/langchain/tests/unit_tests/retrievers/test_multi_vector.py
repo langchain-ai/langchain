@@ -46,9 +46,10 @@ def test_multi_vector_retriever_initialization() -> None:
 
 
 def test_multi_vector_retriever_similarity_search_with_score() -> None:
-    vectorstore = InMemoryVectorstoreWithSearch()
     documents = [Document(page_content="test document", metadata={"doc_id": "1"})]
 
+    ## score_threshold = 0.5
+    vectorstore = InMemoryVectorstoreWithSearch()
     retriever = MultiVectorRetriever(  # type: ignore[call-arg]
         vectorstore=vectorstore, docstore=InMemoryStore(), doc_id="doc_id",
         search_kwargs={"score_threshold": 0.5}, search_type="similarity_score_threshold"
@@ -59,6 +60,8 @@ def test_multi_vector_retriever_similarity_search_with_score() -> None:
     assert len(results) > 0
     assert results[0].page_content == "test document"
 
+    ## score_threshold = 0.5
+    vectorstore = InMemoryVectorstoreWithSearch()
     retriever = MultiVectorRetriever(  # type: ignore[call-arg]
         vectorstore=vectorstore, docstore=InMemoryStore(), doc_id="doc_id",
         search_kwargs={"score_threshold": 0.9}, search_type="similarity_score_threshold"
