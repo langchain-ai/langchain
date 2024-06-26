@@ -144,16 +144,14 @@ class ApertureDB(VectorStore):
             if self.engine is None:
                 self.engine = engines[0]
             elif self.engine != engines[0]:
-                self.logger.error(
-                    f"Engine mismatch: {self.engine} != {engines[0]}")
+                self.logger.error(f"Engine mismatch: {self.engine} != {engines[0]}")
 
             metrics = e["_metrics"]
             assert len(metrics) == 1, "Only one metric is supported"
             if self.metric is None:
                 self.metric = metrics[0]
             elif self.metric != metrics[0]:
-                self.logger.error(
-                    f"Metric mismatch: {self.metric} != {metrics[0]}")
+                self.logger.error(f"Metric mismatch: {self.metric} != {metrics[0]}")
 
             dimensions = e["_dimensions"]
             if self.dimensions is None:
@@ -164,7 +162,7 @@ class ApertureDB(VectorStore):
                 )
 
             self.properties = {
-                k[len(PROPERTY_PREFIX):]: v
+                k[len(PROPERTY_PREFIX) :]: v
                 for k, v in e.items()
                 if k.startswith(PROPERTY_PREFIX)
             }
@@ -292,7 +290,7 @@ class ApertureDB(VectorStore):
         metadata["adb_uniqueid"] = d["_uniqueid"]
         for k, v in d.items():
             if k.startswith(PROPERTY_PREFIX):
-                metadata[k[len(PROPERTY_PREFIX):]] = v
+                metadata[k[len(PROPERTY_PREFIX) :]] = v
         text = d[TEXT_PROPERTY]
         metadata["adb_uniqueid"] = d[UNIQUEID_PROPERTY]
         doc = Document(page_content=text, metadata=metadata)
