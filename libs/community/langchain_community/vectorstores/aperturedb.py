@@ -1,9 +1,10 @@
 # System imports
 from __future__ import annotations
-from itertools import cycle, repeat
+
 import logging
-from typing import Any, Iterable, List, Optional, Tuple, Type, Dict
 import time
+from itertools import cycle, repeat
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 # Python 3.12 feature
 try:
@@ -12,8 +13,9 @@ except ImportError:
     from typing_extensions import override
 
 # Third-party imports
-import numpy as np
 import uuid
+
+import numpy as np
 
 # Local imports
 from langchain_core.documents import Document
@@ -70,7 +72,8 @@ class ApertureDB(VectorStore):
             from aperturedb.Utils import Utils, create_connector
         except ImportError:
             raise ImportError(
-                "ApertureDB is not installed. Please install it using 'pip install aperturedb'")
+                "ApertureDB is not installed. Please install it using "
+                "'pip install aperturedb'")
 
         super().__init__(**kwargs)
         self.logger = logging.getLogger(__name__)
@@ -88,7 +91,7 @@ class ApertureDB(VectorStore):
             raise ValueError("No embedding function provided.")
 
         try:
-            import aperturedb
+            from aperturedb import Utils, create_connector
         except ImportError:
             self.logger.exception(
                 "ApertureDB is not installed. Please install it using 'pip install aperturedb'")
@@ -97,7 +100,7 @@ class ApertureDB(VectorStore):
         self.connection = create_connector()
         self.utils = Utils(self.connection)
         try:
-            response = self.utils.status()
+            self.utils.status()
         except Exception:
             self.logger.exception(f"Failed to connect to ApertureDB")
             raise
@@ -105,8 +108,6 @@ class ApertureDB(VectorStore):
         self._find_or_add_descriptor_set()
 
     def _find_or_add_descriptor_set(self):
-        from aperturedb.Descriptors import Descriptors
-
         descriptor_set = self.descriptor_set
         """Checks if the descriptor set exists, if not, creates it"""
         find_ds_query = [{
@@ -115,7 +116,9 @@ class ApertureDB(VectorStore):
                 "engines": True,
                 "metrics": True,
                 "dimensions": True,
-                "results": {"all_properties": True},
+                "results": {
+                    "all_properties": True
+                },
             }
         }]
         r, b = self.connection.query(find_ds_query)
@@ -158,7 +161,8 @@ class ApertureDB(VectorStore):
         else:
             self.logger.info(
                 f"Descriptor set {descriptor_set} does not exist. Creating it")
-            assert self.dimensions is not None, "Dimensions must be set for new descriptorsets"
+            assert self.dimensions is not None, \
+                "Dimensions must be set for new descriptorsets"
             if self.engine is None:
                 self.engine = ENGINE
             if self.metric is None:
@@ -171,7 +175,8 @@ class ApertureDB(VectorStore):
                           } if self.properties is not None else None
 
             self.utils.add_descriptorset(
-                name=descriptor_set, dim=self.dimensions, engine=self.engine, metric=self.metric, properties=properties)
+                name=descriptor_set, dim=self.dimensions, engine=self.engine,
+                metric=self.metric, properties=properties)
 
             # Create indexes
             self.utils.create_entity_index("_Descriptor", "_create_txn")
@@ -239,7 +244,7 @@ class ApertureDB(VectorStore):
             }])
 
         status, responses, blobs = execute_batch(
-            q=commands, blobs=blobs, db=self.connection,
+            q=commands, db=self.connection,
             commands_per_query=2, blobs_per_query=0)
         assert status == 0, responses
         results = [r["DeleteDescriptor"]["results"]
@@ -276,6 +281,7 @@ class ApertureDB(VectorStore):
     def _similarity_search_with_score_by_vector(
         self, embedding: List[float], k: int = 4, vectors=False
     ) -> List[Tuple[Document, float]]:
+        from aperturedb.Descriptos import Descriptors
         descriptors = Descriptors(self.connection)
         start_time = time.time()
         descriptors.find_similar(
@@ -289,6 +295,7 @@ class ApertureDB(VectorStore):
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Document]:
+        from aperturedb.Descriptos import Descriptors
         descriptors = Descriptors(self.connection)
         start_time = time.time()
         descriptors.find_similar(
@@ -320,10 +327,12 @@ class ApertureDB(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
+        from aperturedb.Descriptos import Descriptors
         descriptors = Descriptors(self.connection)
         start_time = time.time()
         descriptors.find_similar_mmr(
-            set=self.descriptor_set, vector=embedding, k_neighbors=k, fetch_k=fetch_k, lambda_mult=lambda_mult)
+            set=self.descriptor_set, vector=embedding, k_neighbors=k, fetch_k=fetch_k,
+            lambda_mult=lambda_mult)
         self.logger.info(
             f"ApertureDB similarity search mmr took {time.time() - start_time} seconds")
         return [self._descriptor_to_document(d) for d in descriptors]
