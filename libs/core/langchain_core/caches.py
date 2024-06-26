@@ -164,7 +164,7 @@ class InMemoryCache(BaseCache):
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
-        if self._maxsize is not None and len(self._cache) >= self._maxsize:
+        if self._maxsize is not None and len(self._cache) == self._maxsize:
             del self._cache[next(iter(self._cache))]
         self._cache[(prompt, llm_string)] = return_val
 
