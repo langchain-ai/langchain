@@ -33,13 +33,3 @@ from langchain_naver import NaverEmbeddings
 embeddings = NaverEmbeddings()
 embeddings.embed_query("What is the meaning of life?")
 ```
-
-## LLMs
-`NaverLLM` class exposes LLMs from Naver.
-
-```python
-from langchain_naver import NaverLLM
-
-llm = NaverLLM()
-llm.invoke("The meaning of life is")
-```

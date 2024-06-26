@@ -1,16 +1,16 @@
 """Naver chat models."""
 import logging
-import os
-from typing import Any, AsyncIterator, Iterator, List, Optional, Dict, cast, Tuple
+from typing import Any, AsyncIterator, Iterator, List, Optional, Dict, cast, Tuple, AsyncContextManager, Union, Callable
 
 import httpx
-from httpx_sse import connect_sse
+from httpx_sse import connect_sse, aconnect_sse, EventSource
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import LangSmithParams, BaseChatModel
+from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import BaseMessage, AIMessage, ChatMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult, ChatGeneration
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
@@ -19,6 +19,30 @@ from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 DEFAULT_BASE_URL = "https://clovastudio.stream.ntruss.com/testapp"
 
 logger = logging.getLogger(__name__)
+
+
+async def _araise_on_error(response: httpx.Response) -> None:
+    """Raise an error if the response is an error."""
+    if httpx.codes.is_error(response.status_code):
+        error_message = (await response.aread()).decode("utf-8")
+        raise httpx.HTTPStatusError(
+            f"Error response {response.status_code} "
+            f"while fetching {response.url}: {error_message}",
+            request=response.request,
+            response=response,
+        )
+
+
+async def _aiter_sse(
+    event_source_mgr: AsyncContextManager[EventSource],
+) -> AsyncIterator[Dict]:
+    """Iterate over the server-sent events."""
+    async with event_source_mgr as event_source:
+        await _araise_on_error(event_source.response)
+        async for event in event_source.aiter_sse():
+            if event.data == "[DONE]":
+                return
+            yield event.json()
 
 
 def _convert_message_to_naver_chat_message(
@@ -111,6 +135,7 @@ class ChatNaver(BaseChatModel):
     include_ai_filters: Optional[bool] = None
     seed: Optional[int] = None
     timeout: int = 60
+    max_retries: int = 3
 
     class Config:
         """Configuration for this pydantic object."""
@@ -254,6 +279,31 @@ class ChatNaver(BaseChatModel):
             _raise_on_error(response)
             return response.json()
 
+    async def acompletion_with_retry(
+            self,
+            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+    ) -> Any:
+        """Use tenacity to retry the async completion call."""
+        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
+
+        @retry_decorator
+        async def _completion_with_retry(**kwargs: Any) -> Any:
+            if "stream" not in kwargs:
+                kwargs["stream"] = False
+            stream = kwargs["stream"]
+            if stream:
+                event_source = aconnect_sse(
+                    self.async_client, "POST", f"/v1/chat-completions/{self.model_name}", json=kwargs
+                )
+                return _aiter_sse(event_source)
+            else:
+                response = await self.async_client.post(url=f"/v1/chat-completions/{self.model_name}", json=kwargs)
+                await _araise_on_error(response)
+                return response.json()
+
+        return await _completion_with_retry(**kwargs)
+
     def _create_chat_result(self, response: Dict) -> ChatResult:
         generations = []
         result = response.get("result", {})
@@ -288,28 +338,56 @@ class ChatNaver(BaseChatModel):
         return self._create_chat_result(response)
 
     # TODO: Implement if ChatNaver supports streaming. Otherwise delete method.
-    # def _stream(
-    #     self,
-    #     messages: List[BaseMessage],
-    #     stop: Optional[List[str]] = None,
-    #     run_manager: Optional[CallbackManagerForLLMRun] = None,
-    #     **kwargs: Any,
-    # ) -> Iterator[ChatGenerationChunk]:
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        raise NotImplementedError
 
     # TODO: Implement if ChatNaver supports async streaming. Otherwise delete.
-    # async def _astream(
-    #     self,
-    #     messages: List[BaseMessage],
-    #     stop: Optional[List[str]] = None,
-    #     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-    #     **kwargs: Any,
-    # ) -> AsyncIterator[ChatGenerationChunk]:
+    async def _astream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        raise NotImplementedError
 
-    # TODO: Implement if ChatNaver supports async generation. Otherwise delete.
-    # async def _agenerate(
-    #     self,
-    #     messages: List[BaseMessage],
-    #     stop: Optional[List[str]] = None,
-    #     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-    #     **kwargs: Any,
-    # ) -> ChatResult:
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        # should_stream = self.stream if self.stream is not None else False
+        # if should_stream:
+        #     stream_iter = self._astream(
+        #         messages=messages, stop=stop, run_manager=run_manager, **kwargs
+        #     )
+        #     return await agenerate_from_stream(stream_iter)
+
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs}
+        response = await self.acompletion_with_retry(
+            messages=message_dicts, run_manager=run_manager, **params
+        )
+        return self._create_chat_result(response)
+
+
+def _create_retry_decorator(
+    llm: ChatNaver,
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
+    ] = None,
+) -> Callable[[Any], Any]:
+    """Returns a tenacity retry decorator, preconfigured to handle exceptions"""
+
+    errors = [httpx.RequestError, httpx.StreamError]
+    return create_base_retry_decorator(
+        error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
+    )
