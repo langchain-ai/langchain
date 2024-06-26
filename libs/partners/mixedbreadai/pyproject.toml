@@ -15,7 +15,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.2.0"
-mixedbread-ai = "^2.2.2"
+mixedbread-ai = "^2.2.6"
 
 [tool.poetry.group.test]
 optional = true
