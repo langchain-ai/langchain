@@ -12,10 +12,6 @@ except ImportError:
     from typing_extensions import override
 
 # Third-party imports
-from aperturedb.Utils import Utils, create_connector
-from aperturedb.Descriptors import Descriptors
-from aperturedb.ParallelLoader import ParallelLoader
-from aperturedb.ParallelQuery import execute_batch
 import numpy as np
 import uuid
 
@@ -59,6 +55,15 @@ class ApertureDB(VectorStore):
             metric (str, optional): Metric to use. Defaults to "L2" for new descriptorsets.
             log_level (int, optional): Logging level. Defaults to logging.WARN.
         """
+        # ApertureDB imports
+        try:
+            from aperturedb.Utils import Utils, create_connector
+            from aperturedb.Descriptors import Descriptors
+            from aperturedb.ParallelLoader import ParallelLoader
+            from aperturedb.ParallelQuery import execute_batch
+        except ImportError:
+            raise ImportError("ApertureDB is not installed. Please install it using 'pip install aperturedb'")
+
         super().__init__(**kwargs)
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(log_level)
