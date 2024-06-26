@@ -1,8 +1,8 @@
 # System imports
 from __future__ import annotations
-from itertools import cycle, islice, repeat
+from itertools import cycle, repeat
 import logging
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Type
+from typing import Any, Iterable, List, Optional, Tuple, Type, Dict
 import time
 
 # Python 3.12 feature
@@ -43,26 +43,33 @@ class ApertureDB(VectorStore):
                  **kwargs):
         """Create a vectorstore backed by ApertureDB
 
-        A single ApertureDB instance can support many vectorstores, distinguished by 'descriptor_set' name.  The descriptor set is created if it does not exist.  Different descriptor sets can use different engines and metrics, be supplied by different embedding models, and have different dimensions.
+        A single ApertureDB instance can support many vectorstores,
+        distinguished by 'descriptor_set' name.  The descriptor set is created
+        if it does not exist.  Different descriptor sets can use different
+        engines and metrics, be supplied by different embedding models, and have
+        different dimensions.
 
-        See [ApertureDB documentation on `AddDescriptorSet`](https://docs.aperturedata.io/query_language/Reference/descriptor_commands/desc_set_commands/AddDescriptorSet) for more information on the engine and metric options.
+        See [ApertureDB documentation on `AddDescriptorSet`](https://docs.aperturedata.io/query_language/Reference/descriptor_commands/desc_set_commands/AddDescriptorSet) 
+        for more information on the engine and metric options.
 
         Args:
             embeddings (Embeddings): Embeddings object
-            descriptor_set (str, optional): Descriptor set name. Defaults to "lamgchain".
-            dimensions (Optional[int], optional): Number of dimensions of the embeddings. Defaults to None.
-            engine (str, optional): Engine to use. Defaults to "HNSW" for new descriptorsets.
-            metric (str, optional): Metric to use. Defaults to "L2" for new descriptorsets.
+            descriptor_set (str, optional): Descriptor set name. Defaults to 
+                "langchain".
+            dimensions (Optional[int], optional): Number of dimensions of the 
+                embeddings. Defaults to None.
+            engine (str, optional): Engine to use. Defaults to "HNSW" for new 
+                descriptorsets.
+            metric (str, optional): Metric to use. Defaults to "L2" for new 
+                descriptorsets.
             log_level (int, optional): Logging level. Defaults to logging.WARN.
         """
         # ApertureDB imports
         try:
             from aperturedb.Utils import Utils, create_connector
-            from aperturedb.Descriptors import Descriptors
-            from aperturedb.ParallelLoader import ParallelLoader
-            from aperturedb.ParallelQuery import execute_batch
         except ImportError:
-            raise ImportError("ApertureDB is not installed. Please install it using 'pip install aperturedb'")
+            raise ImportError(
+                "ApertureDB is not installed. Please install it using 'pip install aperturedb'")
 
         super().__init__(**kwargs)
         self.logger = logging.getLogger(__name__)
@@ -97,6 +104,8 @@ class ApertureDB(VectorStore):
         self._find_or_add_descriptor_set()
 
     def _find_or_add_descriptor_set(self):
+        from aperturedb.Descriptors import Descriptors
+
         descriptor_set = self.descriptor_set
         """Checks if the descriptor set exists, if not, creates it"""
         find_ds_query = [{
@@ -172,6 +181,8 @@ class ApertureDB(VectorStore):
     def add_texts(self, texts: Iterable[str],
                   metadatas: Optional[List[dict]] = None,
                   ) -> List[str]:
+        from aperturedb.ParallelLoader import ParallelLoader
+
         if metadatas is not None:
             assert len(texts) == len(
                 metadatas), "Length of texts and metadatas should be the same"
@@ -206,6 +217,7 @@ class ApertureDB(VectorStore):
 
     @override
     def delete(self, ids: List[str]) -> Optional[bool]:
+        from aperturedb.ParallelQuery import execute_batch
         refs = cycle(range(1, 100000))
         commands = []
         for id, ref in zip(ids, refs):
