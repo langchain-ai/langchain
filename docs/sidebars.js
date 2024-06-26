@@ -384,7 +384,9 @@ module.exports = {
       items: [
         "contributing/index",
         "contributing/repo_structure",
-        "contributing/code",
+        "contributing/code/index",
+        { type: "doc", id: "contributing/code/guidelines", className: "hidden" },
+        { type: "doc", id: "contributing/code/technical_logistics", className: "hidden" },
         "contributing/integrations",
         "contributing/documentation/index",
         { type: "doc", id: "contributing/documentation/style_guide", className: "hidden" },

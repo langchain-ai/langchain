@@ -1,0 +1,33 @@
+# General guidelines
+
+Here are some things to keep in mind for all types of contributions:
+
+- Follow the ["fork and pull request"](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project) workflow. Please do not try to push directly to this repo unless you are a maintainer.
+- Use the checked-in pull request template when opening pull requests. Note related issues and tag relevant maintainers.
+- Ensure your PR passes formatting, linting, and testing checks before requesting a review.
+  - If you would like comments or feedback on your current progress, you can instead mark your PR as a draft.
+  - See the sections on [Testing](/docs/contributing/code/technical_logistics#testing) and [Formatting and Linting](/docs/contributing/code/technical_logistics#formatting-and-linting) for how to run these checks locally.
+- Backwards compatibility is key. Your changes must not be breaking, except in case of critical bug and security fixes.
+- Look for duplicate PRs or issues that have already been opened before opening a new one.
+- Keep scope as isolated as possible. As a general rule, your changes should not affect more than one package at a time.
+
+## Bugfixes
+
+We welcome bugfixes to existing functionality, but ask that you communicate the issue in as much detail as you can to help
+maintainers understand and reproduce the bug.
+
+- Open an accompanying GitHub issue and link to it in the PR.
+- Do not break or modify existing functionality, unless the fix is for a critical security issue.
+- Include unit tests that a maintainer can use to reproduce the issue. This will also provide coverage against future regressions.
+
+## New features
+
+We aim to keep the bar high for new features. We generally don't accept new core abstractions, changes to infra, changes to dependencies,
+or new agents/chains from outside contributors without an existing GitHub discussion or issue that demonstrates an acute need for them.
+
+- New features must come with docs, unit tests, and (if appropriate) integration tests.
+- New integrations must come with docs, unit tests, and (if appropriate) integration tests.
+  - See [this page](/docs/contributing/integrations) for more details on contributing new integrations.
+- New functionality should not inherit from or use a deprecated methods or classes.
+- We will reject features that are likely to lead to security vulnerabilities or reports.
+- Do not add any hard dependencies. Integrations may add optional dependencies.
