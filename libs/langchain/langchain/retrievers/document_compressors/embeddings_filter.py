@@ -70,6 +70,8 @@ class EmbeddingsFilter(BaseDocumentCompressor):
                 "with `pip install langchain-community`."
             )
         stateful_documents = get_stateful_documents(documents)
+        if not stateful_documents:
+            return stateful_documents
         embedded_documents = _get_embeddings_from_stateful_docs(
             self.embeddings, stateful_documents
         )
