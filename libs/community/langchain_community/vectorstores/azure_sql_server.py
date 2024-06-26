@@ -3,7 +3,7 @@ from typing import Any, Iterable, List, Optional
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VST, VectorStore
-from sqlalchemy import Column, Uuid, create_engine, text
+from sqlalchemy import Column, Uuid, bindparam, create_engine, text
 from sqlalchemy.dialects.mssql import JSON, NVARCHAR, VARBINARY
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DBAPIError
@@ -49,7 +49,7 @@ class AzureSQLServer_VectorStore(VectorStore):
         self._create_table_if_not_exists()
 
     def _create_engine(self) -> Engine:
-        return create_engine(url=self.connection_string)
+        return create_engine(url=self.connection_string, echo=True)
 
     def _create_table_if_not_exists(self) -> None:
         logging.info("Creating table %s", self.table_name)
@@ -149,10 +149,13 @@ class AzureSQLServer_VectorStore(VectorStore):
                     ids, texts, embeddings, metadatas
                 ):
                     # Construct text, embedding, metadata as EmbeddingStore model to be inserted into the table.
-                    # TODO: Use parameterized query
                     sqlquery = text(
-                        "select JSON_ARRAY_TO_VECTOR('{}')".format(
-                            json.dumps(embedding)
+                        "select JSON_ARRAY_TO_VECTOR (:embeddingvalues)"
+                    ).bindparams(
+                        bindparam(
+                            "embeddingvalues",
+                            json.dumps(embedding),
+                            literal_execute=True,
                         )
                     )
                     result = session.scalar(sqlquery)
