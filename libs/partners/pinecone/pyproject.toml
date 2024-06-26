@@ -14,7 +14,7 @@ license = "MIT"
 # <3.13 is due to restriction in pinecone-client package
 python = ">=3.8.1,<3.13"
 langchain-core = ">=0.1.52,<0.3"
-pinecone-client = "^3.2.2"
+pinecone-client = ">=3.2.2,<5"
 # Support Python 3.8 and 3.12+.
 numpy = [
     {version = "^1", python = "<3.12"},

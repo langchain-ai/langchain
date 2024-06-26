@@ -239,16 +239,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             "OPENAI_API_BASE"
         )
         values["openai_api_type"] = get_from_dict_or_env(
-            values,
-            "openai_api_type",
-            "OPENAI_API_TYPE",
-            default="",
+            values, "openai_api_type", "OPENAI_API_TYPE", default=""
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
         if values["openai_api_type"] in ("azure", "azure_ad", "azuread"):
             default_api_version = "2023-05-15"
@@ -520,10 +514,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if not self.check_embedding_ctx_length:
             embeddings: List[List[float]] = []
             for text in texts:
-                response = self.client.create(
-                    input=text,
-                    **self._invocation_params,
-                )
+                response = self.client.create(input=text, **self._invocation_params)
                 if not isinstance(response, dict):
                     response = response.dict()
                 embeddings.extend(r["embedding"] for r in response["data"])
@@ -551,8 +542,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             embeddings: List[List[float]] = []
             for text in texts:
                 response = await self.async_client.create(
-                    input=text,
-                    **self._invocation_params,
+                    input=text, **self._invocation_params
                 )
                 if not isinstance(response, dict):
                     response = response.dict()

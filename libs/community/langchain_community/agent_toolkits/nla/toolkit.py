@@ -69,7 +69,18 @@ class NLAToolkit(BaseToolkit):
         verbose: bool = False,
         **kwargs: Any,
     ) -> NLAToolkit:
-        """Instantiate the toolkit by creating tools for each operation."""
+        """Instantiate the toolkit by creating tools for each operation.
+
+        Args:
+            llm: The language model to use.
+            spec: The OpenAPI spec.
+            requests: Optional requests object. Default is None.
+            verbose: Whether to print verbose output. Default is False.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The toolkit.
+        """
         http_operation_tools = cls._get_http_operation_tools(
             llm=llm, spec=spec, requests=requests, verbose=verbose, **kwargs
         )
@@ -84,7 +95,19 @@ class NLAToolkit(BaseToolkit):
         verbose: bool = False,
         **kwargs: Any,
     ) -> NLAToolkit:
-        """Instantiate the toolkit from an OpenAPI Spec URL"""
+        """Instantiate the toolkit from an OpenAPI Spec URL.
+
+        Args:
+            llm: The language model to use.
+            open_api_url: The URL of the OpenAPI spec.
+            requests: Optional requests object. Default is None.
+            verbose: Whether to print verbose output. Default is False.
+            **kwargs: Additional arguments.
+
+        Returns:
+            The toolkit.
+        """
+
         spec = OpenAPISpec.from_url(open_api_url)
         return cls.from_llm_and_spec(
             llm=llm, spec=spec, requests=requests, verbose=verbose, **kwargs
