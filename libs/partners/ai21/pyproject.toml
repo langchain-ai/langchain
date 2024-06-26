@@ -14,7 +14,7 @@ license = "MIT"
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.2.4"
 langchain-text-splitters = "^0.2.0"
-ai21 = "^2.4.1"
+ai21 = "^2.7.0"
 
 [tool.poetry.group.test]
 optional = true
