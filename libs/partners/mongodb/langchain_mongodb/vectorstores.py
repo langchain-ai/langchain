@@ -17,6 +17,7 @@ from typing import (
 
 import numpy as np
 from bson import ObjectId, json_util
+from bson.errors import InvalidId
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
@@ -169,7 +170,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                     size = 0
         if texts_batch:
             result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))  # type: ignore
-        return result_ids
+        return [str(result_ids) for i in result_ids]
 
     def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
         if not texts:
@@ -191,6 +192,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         pre_filter: Optional[Dict] = None,
         post_filter_pipeline: Optional[List[Dict]] = None,
         include_embedding: bool = False,
+        include_ids: bool = False,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         params = {
@@ -358,6 +360,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[Dict]] = None,
         collection: Optional[Collection[MongoDBDocumentType]] = None,
+        ids: List[str] = None,
         **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
         """Construct a `MongoDB Atlas Vector Search` vector store from raw documents.
@@ -489,3 +492,21 @@ class MongoDBAtlasVectorSearch(VectorStore):
             lambda_mult=lambda_mult,
             **kwargs,
         )
+
+
+def str_to_id(str_repr: str) -> ObjectId | str:
+    """Convert string representation to ObjectID.
+
+    If not a 24 character hex string, then return str_repr
+
+    Args:
+        str_repr: 24 character hex string, for performance. Else any string.
+
+    Returns:
+        ObjectID
+    """
+    try:
+        return ObjectId(str_repr)
+    except InvalidId:
+        logger.debug("For performance, ids must 12-byte input or a 24-character hex string")
+        return str_repr
