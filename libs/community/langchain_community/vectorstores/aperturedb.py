@@ -94,7 +94,8 @@ class ApertureDB(VectorStore):
             from aperturedb import Utils, create_connector
         except ImportError:
             self.logger.exception(
-                "ApertureDB is not installed. Please install it using 'pip install aperturedb'")
+                "ApertureDB is not installed. Please install it using "
+                "'pip install aperturedb'")
             raise
 
         self.connection = create_connector()
@@ -102,7 +103,7 @@ class ApertureDB(VectorStore):
         try:
             self.utils.status()
         except Exception:
-            self.logger.exception(f"Failed to connect to ApertureDB")
+            self.logger.exception("Failed to connect to ApertureDB")
             raise
 
         self._find_or_add_descriptor_set()
@@ -155,8 +156,8 @@ class ApertureDB(VectorStore):
                 self.logger.error(
                     f"Dimensions mismatch: {self.dimensions} != {dimensions}")
 
-            self.properties = {k[len(PROPERTY_PREFIX):]: v for k, v in e.items() if k.startswith(
-                PROPERTY_PREFIX)}
+            self.properties = {k[len(PROPERTY_PREFIX):]: v for k, v in e.items()
+                               if k.startswith(PROPERTY_PREFIX)}
 
         else:
             self.logger.info(
@@ -361,7 +362,7 @@ class ApertureDB(VectorStore):
     @classmethod
     def list_vectorstores(class_):
         """Returns a list of all vectorstores in the database"""
-        from aperturedb.Utils import Utils, create_connector
+        from aperturedb.Utils import create_connector
         db = create_connector()
         query = [{
             "FindDescriptorSet": {
