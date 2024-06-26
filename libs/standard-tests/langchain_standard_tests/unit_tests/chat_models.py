@@ -37,7 +37,7 @@ class ChatModelTests(ABC):
             "temperature": 0,
             "max_tokens": 100,
             "timeout": 60,
-            "stop_sequences": [],
+            "stop": [],
             "max_retries": 2,
         }
 
