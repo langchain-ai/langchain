@@ -21,11 +21,31 @@ class MongodbLoader(BaseLoader):
         filter_criteria: Optional[Dict] = None,
         field_names: Optional[Sequence[str]] = None,
         metadata_names: Optional[Sequence[str]] = None,
-        include_db_collection_in_metadata: bool = True,
+        include_db_collection_in_metadata: bool = False,
     ) -> None:
         """
         Initializes the MongoDB loader with necessary database connection
         details and configurations.
++
++        Args:
++            connection_string (str):
++                MongoDB connection URI.
++            db_name (str):
++                Name of the database to connect to.
++            collection_name (str):
++                Name of the collection to fetch documents from.
++            filter_criteria (Optional[Dict]):
++                MongoDB filter criteria for querying documents.
++            field_names (Optional[Sequence[str]]):
++                List of field names to retrieve from documents.
++            metadata (Optional[Sequence[str]]):
++                Additional metadata fields to extract from documents.
++            include_db_collection_in_metadata (bool):
++                Flag to include database and collection names in metadata.
++
++        Raises:
++            ImportError: If the motor library is not installed.
++            ValueError: If any necessary argument is missing.
         """
         try:
             from motor.motor_asyncio import AsyncIOMotorClient
@@ -105,8 +125,8 @@ class MongodbLoader(BaseLoader):
     def _construct_projection(self) -> Optional[Dict]:
         """Constructs the projection dictionary for MongoDB query based
         on the specified field names and metadata names."""
-        field_names = list(self.field_names) if self.field_names else []
-        metadata_names = list(self.metadata_names) if self.metadata_names else []
+        field_names = list(self.field_names) or []
+        metadata_names = list(self.metadata_names) or []
         all_fields = field_names + metadata_names
         return {field: 1 for field in all_fields} if all_fields else None
 
