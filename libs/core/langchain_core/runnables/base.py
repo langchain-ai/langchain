@@ -5021,6 +5021,10 @@ RunnableLike = Union[
     Callable[[Input], Awaitable[Output]],
     Callable[[Iterator[Input]], Iterator[Output]],
     Callable[[AsyncIterator[Input]], AsyncIterator[Output]],
+    Callable[[Input, RunnableConfig], Output],
+    Callable[[Input, RunnableConfig], Awaitable[Output]],
+    Callable[[Iterator[Input], RunnableConfig], Iterator[Output]],
+    Callable[[AsyncIterator[Input], RunnableConfig], AsyncIterator[Output]],
     Mapping[str, Any],
 ]
 
