@@ -127,7 +127,7 @@ class BaseIndex(Generic[T]):
 
     1. Support search queries against the content.
 
-    The types of supported queries seems very dependent on the actual
+    The types of supported queries depends on the implementation (e.g., a vectorstore index)
     """
 
     @abc.abstractmethod
