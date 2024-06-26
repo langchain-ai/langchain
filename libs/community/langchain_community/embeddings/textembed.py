@@ -300,7 +300,7 @@ class AsyncOpenAITextEmbedEmbeddingClient:
         return embeddings
 
     async def _async_request(
-        self, session: aiohttp.ClientSession, kwargs: Dict[str, Any]
+        self, session: aiohttp.ClientSession, **kwargs: Dict[str, Any]
     ) -> List[List[float]]:
         """
         Sends an asynchronous request to the embedding endpoint.
@@ -318,7 +318,7 @@ class AsyncOpenAITextEmbedEmbeddingClient:
         async with session.post(**kwargs) as response:
             if response.status != 200:
                 raise Exception(
-                    f"extEmbed responded with an unexpected status message "
+                    f"TextEmbed responded with an unexpected status message "
                     f"{response.status}: {response.text}"
                 )
             embedding = (await response.json())["embeddings"]
