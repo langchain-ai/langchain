@@ -3,24 +3,18 @@ from __future__ import annotations
 
 import logging
 import time
+import uuid
 from itertools import cycle, repeat
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
-# Python 3.12 feature
-try:
-    from typing import override
-except ImportError:
-    from typing_extensions import override
-
 # Third-party imports
-import uuid
-
 import numpy as np
 
 # Local imports
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
+from typing_extensions import override
 
 # Configure some defaults
 ENGINE = "HNSW"
@@ -39,8 +33,8 @@ class ApertureDB(VectorStore):
         embeddings: Embeddings,
         descriptor_set: str = DESCRIPTOR_SET,
         dimensions: Optional[int] = None,
-        engine: str = None,
-        metric: str = None,
+        engine: Optional[str] = None,
+        metric: Optional[str] = None,
         log_level: int = logging.WARN,
         properties: Optional[Dict] = None,
         **kwargs,
@@ -111,7 +105,7 @@ class ApertureDB(VectorStore):
 
         self._find_or_add_descriptor_set()
 
-    def _find_or_add_descriptor_set(self):
+    def _find_or_add_descriptor_set(self) -> None:
         descriptor_set = self.descriptor_set
         """Checks if the descriptor set exists, if not, creates it"""
         find_ds_query = [
@@ -200,7 +194,7 @@ class ApertureDB(VectorStore):
     @override
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
     ) -> List[str]:
         from aperturedb.ParallelLoader import ParallelLoader
@@ -212,8 +206,7 @@ class ApertureDB(VectorStore):
 
         assert self.embedding_function is not None, "Embedding function is not set"
         embeddings = self.embedding_function.embed_documents(texts)
-        if metadatas is None:
-            metadatas = repeat({})
+        metadatas: Iterable[dict] = metadatas if metadatas is not None else repeat({})
 
         unique_ids = []
         data = []
@@ -239,33 +232,17 @@ class ApertureDB(VectorStore):
 
     @override
     def delete(self, ids: List[str]) -> Optional[bool]:
-        from aperturedb.ParallelQuery import execute_batch
-
-        refs = cycle(range(1, 100000))
-        commands = []
-        for id, ref in zip(ids, refs):
-            commands.extend(
-                [
-                    {
-                        "FindDescriptor": {
-                            "_ref": ref,
-                            "set": self.descriptor_set,
-                            "unique": True,
-                            "constraints": {UNIQUEID_PROPERTY: ["==", id]},
-                        }
-                    },
-                    {"DeleteDescriptor": {"_ref": ref, "id": id}},
-                ]
-            )
-
-        status, responses, blobs = execute_batch(
-            q=commands, db=self.connection, commands_per_query=2, blobs_per_query=0
-        )
-        assert status == 0, responses
-        results = [
-            r["DeleteDescriptor"]["results"]["count"] == 1 for r in responses[1::3]
+        query = [
+            {
+                "DeleteDescriptor": {
+                    "set": self.descriptor_set,
+                    "constraints": {UNIQUEID_PROPERTY: ["in", ids]},
+                }
+            }
         ]
-        return results
+
+        result, _ = self.utils.execute(query)
+        return result
 
     @override
     def similarity_search(
@@ -294,7 +271,7 @@ class ApertureDB(VectorStore):
         return doc
 
     def _similarity_search_with_score_by_vector(
-        self, embedding: List[float], k: int = 4, vectors=False
+        self, embedding: List[float], k: int = 4, vectors: bool = False
     ) -> List[Tuple[Document, float]]:
         from aperturedb.Descriptors import Descriptors
 
@@ -378,7 +355,7 @@ class ApertureDB(VectorStore):
         return store
 
     @classmethod
-    def delete_vectorstore(class_, descriptor_set: str):
+    def delete_vectorstore(class_, descriptor_set: str) -> None:
         """Deletes a vectorstore and all its data from the database"""
         from aperturedb.Utils import Utils, create_connector
 
@@ -387,7 +364,7 @@ class ApertureDB(VectorStore):
         utils.remove_descriptorset(descriptor_set)
 
     @classmethod
-    def list_vectorstores(class_):
+    def list_vectorstores(class_) -> None:
         """Returns a list of all vectorstores in the database"""
         from aperturedb.Utils import create_connector
 
