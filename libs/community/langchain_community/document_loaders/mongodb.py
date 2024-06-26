@@ -26,26 +26,23 @@ class MongodbLoader(BaseLoader):
         """
         Initializes the MongoDB loader with necessary database connection
         details and configurations.
-+
-+        Args:
-+            connection_string (str):
-+                MongoDB connection URI.
-+            db_name (str):
-+                Name of the database to connect to.
-+            collection_name (str):
-+                Name of the collection to fetch documents from.
-+            filter_criteria (Optional[Dict]):
-+                MongoDB filter criteria for querying documents.
-+            field_names (Optional[Sequence[str]]):
-+                List of field names to retrieve from documents.
-+            metadata (Optional[Sequence[str]]):
-+                Additional metadata fields to extract from documents.
-+            include_db_collection_in_metadata (bool):
-+                Flag to include database and collection names in metadata.
-+
-+        Raises:
-+            ImportError: If the motor library is not installed.
-+            ValueError: If any necessary argument is missing.
+
+        Args:
+            connection_string (str): MongoDB connection URI.
+            db_name (str):Name of the database to connect to.
+            collection_name (str): Name of the collection to fetch documents from.
+            filter_criteria (Optional[Dict]): MongoDB filter criteria for querying
+            documents.
+            field_names (Optional[Sequence[str]]): List of field names to retrieve
+            from documents.
+            metadata (Optional[Sequence[str]]): Additional metadata fields to
+            extract from documents.
+            include_db_collection_in_metadata (bool): Flag to include database and
+            collection names in metadata.
+
+        Raises:
+            ImportError: If the motor library is not installed.
+            ValueError: If any necessary argument is missing.
         """
         try:
             from motor.motor_asyncio import AsyncIOMotorClient
