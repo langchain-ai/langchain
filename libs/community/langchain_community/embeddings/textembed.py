@@ -11,7 +11,7 @@ TextEmbed is maintained by Keval Dekivadiya and is licensed under the Apache-2.0
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import aiohttp
 import numpy as np
@@ -28,41 +28,32 @@ class TextEmbedEmbeddings(BaseModel, Embeddings):
     A class to handle embedding requests to the TextEmbed API.
 
     Attributes:
-        model (str): The TextEmbed model ID to use for embeddings.
-        textembed_api_url (str): The base URL for the TextEmbed API.
-        textembed_api_key (str): The API key for authenticating with the TextEmbed API.
-        client (Any): The TextEmbed client instance.
-
-    Methods:
-        validate_environment(cls, values: Dict) -> Dict:
-            Validates the environment configuration.
-        embed_documents(self, texts: List[str]) -> List[List[float]]:
-            Embeds a list of documents.
-        aembed_documents(self, texts: List[str]) -> List[List[float]]:
-            Asynchronously embeds a list of documents.
-        embed_query(self, text: str) -> List[float]:
-            Embeds a single query.
-        aembed_query(self, text: str) -> List[float]:
-            Asynchronously embeds a single query.
+        model : The TextEmbed model ID to use for embeddings.
+        api_url : The base URL for the TextEmbed API.
+        api_key : The API key for authenticating with the TextEmbed API.
+        client : The TextEmbed client instance.
 
     Example:
         .. code-block:: python
 
             from langchain_community.embeddings import TextEmbedEmbeddings
+
             embeddings = TextEmbedEmbeddings(
                 model="sentence-transformers/clip-ViT-B-32",
-                textembed_api_url="http://localhost:8000/v1",
-                textembed_api_key="<API_KEY>"
+                api_url="http://localhost:8000/v1",
+                api_key="<API_KEY>"
             )
+
+    For more information: https://github.com/kevaldekivadiya2415/textembed/blob/main/docs/setup.md
     """
 
     model: str
-    "Underlying TextEmbed model id."
+    """Underlying TextEmbed model id."""
 
-    textembed_api_url: str = "http://localhost:7997"
+    api_url: str = "http://localhost:8000/v1"
     """Endpoint URL to use."""
 
-    textembed_api_key: str = "None"
+    api_key: str = "None"
     """API Key for authentication"""
 
     client: Any = None
@@ -73,7 +64,7 @@ class TextEmbedEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and URL exist in the environment.
 
@@ -83,16 +74,11 @@ class TextEmbedEmbeddings(BaseModel, Embeddings):
         Returns:
             Dict: Validated values.
         """
-        values["textembed_api_url"] = get_from_dict_or_env(
-            values, "textembed_api_url", "TEXTEMBED_API_URL"
-        )
-
-        values["textembed_api_key"] = get_from_dict_or_env(
-            values, "textembed_api_key", "TEXTEMBED_API_KEY"
-        )
+        values["api_url"] = get_from_dict_or_env(values, "api_url", "API_URL")
+        values["api_key"] = get_from_dict_or_env(values, "api_key", "API_KEY")
 
         values["client"] = AsyncOpenAITextEmbedEmbeddingClient(
-            host=values["textembed_api_url"], api_key=values["textembed_api_key"]
+            host=values["api_url"], api_key=values["api_key"]
         )
         return values
 
@@ -150,7 +136,7 @@ class TextEmbedEmbeddings(BaseModel, Embeddings):
         return embeddings[0]
 
 
-class AsyncOpenAITextEmbedEmbeddingClient:  #: :meta private:
+class AsyncOpenAITextEmbedEmbeddingClient:
     """
     A client to handle synchronous and asynchronous requests to the TextEmbed API.
 
@@ -159,30 +145,12 @@ class AsyncOpenAITextEmbedEmbeddingClient:  #: :meta private:
         api_key (str): The API key for authenticating with the TextEmbed API.
         aiosession (Optional[aiohttp.ClientSession]): The aiohttp session for async requests.
         _batch_size (int): Maximum batch size for a single request.
-
-    Methods:
-        _permute(texts: List[str], sorter: Callable = len) -> Tuple[List[str], Callable]:
-            Sorts texts and provides a function to restore the original order.
-        _batch(texts: List[str]) -> List[List[str]]:
-            Splits a list of texts into batches.
-        _unbatch(batch_of_texts: List[List[Any]]) -> List[Any]:
-            Merges batches of texts into a single list.
-        _kwargs_post_request(model: str, texts: List[str]) -> Dict[str, Any]:
-            Builds the kwargs for the POST request.
-        _sync_request_embed(model: str, batch_texts: List[str]) -> List[List[float]]:
-            Sends a synchronous request to the embedding endpoint.
-        embed(model: str, texts: List[str]) -> List[List[float]]:
-            Embeds a list of texts synchronously.
-        _async_request(session: aiohttp.ClientSession, kwargs: Dict[str, Any]) -> List[List[float]]:
-            Sends an asynchronous request to the embedding endpoint.
-        aembed(model: str, texts: List[str]) -> List[List[float]]:
-            Embeds a list of texts asynchronously.
     """
 
     def __init__(
         self,
         host: str = "http://localhost:8000/v1",
-        api_key: str = "None",
+        api_key: Union[str, None] = None,
         aiosession: Optional[aiohttp.ClientSession] = None,
     ) -> None:
         self.host = host
@@ -296,7 +264,7 @@ class AsyncOpenAITextEmbedEmbeddingClient:  #: :meta private:
         )
         if response.status_code != 200:
             raise Exception(
-                f"extEmbed responded with an unexpected status message "
+                f"TextEmbed responded with an unexpected status message "
                 f"{response.status_code}: {response.text}"
             )
         return [e["embedding"] for e in response.json()["data"]]
