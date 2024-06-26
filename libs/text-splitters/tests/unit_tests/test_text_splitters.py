@@ -364,7 +364,8 @@ def test_recursive_text_splitter_regex_not_keep_separator() -> None:
         strip_whitespace=False)
     output = splitter.split_text("Hello world")
 
-    # here we expect that the original space between "Hello" and "world" be retained, rather than replaced by the regular expression "\s"
+    # here we expect that the original space between "Hello" and "world" be retained,
+    #  rather than replaced by the regular expression "\s"
     expected_output = [
         "Hello world",
     ]
