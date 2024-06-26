@@ -1,4 +1,3 @@
-import asyncio
 import contextlib
 import json
 import logging
@@ -252,17 +251,11 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
             await session.commit()
 
     def add_messages(self, messages: Sequence[BaseMessage]) -> None:
-        # The method RunnableWithMessageHistory._exit_history() call
-        #  add_message method by mistake and not aadd_message.
-        # See https://github.com/langchain-ai/langchain/issues/22021
-        if self.async_mode:
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(self.aadd_messages(messages))
-        else:
-            with self._make_sync_session() as session:
-                for message in messages:
-                    session.add(self.converter.to_sql_model(message, self.session_id))
-                session.commit()
+        # Add all messages in one transaction
+        with self._make_sync_session() as session:
+            for message in messages:
+                session.add(self.converter.to_sql_model(message, self.session_id))
+            session.commit()
 
     async def aadd_messages(self, messages: Sequence[BaseMessage]) -> None:
         # Add all messages in one transaction

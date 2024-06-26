@@ -13,7 +13,11 @@ from langchain_community.tools.json.tool import (
 
 
 class JsonToolkit(BaseToolkit):
-    """Toolkit for interacting with a JSON spec."""
+    """Toolkit for interacting with a JSON spec.
+
+    Parameters:
+        spec: The JSON spec.
+    """
 
     spec: JsonSpec
 

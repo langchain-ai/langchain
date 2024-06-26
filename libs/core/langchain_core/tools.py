@@ -827,6 +827,8 @@ class StructuredTool(BaseTool):
             raise ValueError("Function and/or coroutine must be provided")
         name = name or source_function.__name__
         description_ = description or source_function.__doc__
+        if description_ is None and args_schema:
+            description_ = args_schema.__doc__
         if description_ is None:
             raise ValueError(
                 "Function must have a docstring if description not provided."

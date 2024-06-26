@@ -222,18 +222,168 @@ def _create_retry_decorator(llm: ChatTongyi) -> Callable[[Any], Any]:
 
 
 class ChatTongyi(BaseChatModel):
-    """Alibaba Tongyi Qwen chat models API.
+    """Alibaba Tongyi Qwen chat model integration.
 
-    To use, you should have the ``dashscope`` python package installed,
-    and set env ``DASHSCOPE_API_KEY`` with your API key, or pass
-    it as a named parameter to the constructor.
+    Setup:
+        Install ``dashscope`` and set environment variables ``DASHSCOPE_API_KEY``.
 
-    Example:
+        .. code-block:: bash
+
+            pip install dashscope
+            export DASHSCOPE_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: str
+            Name of Qianfan model to use.
+        top_p: float
+            Total probability mass of tokens to consider at each step.
+        streaming: bool
+            Whether to stream the results or not.
+
+    Key init args — client params:
+        api_key: Optional[str]
+            Dashscope API KEY. If not passed in will be read from env var DASHSCOPE_API_KEY.
+        max_retries: int
+            Maximum number of retries to make when generating.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.chat_models import ChatTongyi
-            Tongyi_chat = ChatTongyi()
-    """
+
+            tongyi_chat = ChatTongyi(
+                model="qwen-max",
+                # top_p="...",
+                # api_key="...",
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
+                ("human", "我喜欢编程。"),
+            ]
+            tongyi_chat.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(
+                content='I enjoy programming.',
+                response_metadata={
+                    'model_name': 'qwen-max',
+                    'finish_reason': 'stop',
+                    'request_id': '0bd14853-4abc-9593-8642-8dbb915bd4df',
+                    'token_usage': {
+                        'input_tokens': 30,
+                        'output_tokens': 4,
+                        'total_tokens': 34
+                    }
+                },
+                id='run-533b3688-d12b-40c6-a2f7-52f291f8fa0a-0'
+            )
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in tongyi_chat.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='I' id='run-8fbcce63-42fc-4208-9399-da46ac40c967'
+            content=' enjoy' id='run-8fbcce63-42fc-4208-9399-da46ac40c967'
+            content=' programming' id='run-8fbcce63-42fc-4208-9399-da46ac40c967'
+            content='.' response_metadata={'finish_reason': 'stop', 'request_id': '67aec2b5-72bf-96a4-ae29-5bfebd2e7305', 'token_usage': {'input_tokens': 30, 'output_tokens': 4, 'total_tokens': 34}} id='run-8fbcce63-42fc-4208-9399-da46ac40c967'
+
+    Async:
+        .. code-block:: python
+
+            await tongyi_chat.ainvoke(messages)
+
+            # stream:
+            # async for chunk in tongyi_chat.astream(messages):
+            #    print(chunk)
+
+            # batch:
+            # await tongyi_chat.abatch([messages])
+
+        .. code-block:: python
+
+            AIMessage(
+                content='I enjoy programming.',
+                response_metadata={
+                    'model_name': 'qwen-max',
+                    'finish_reason': 'stop',
+                    'request_id': 'a55a2d6c-a876-9789-9dd9-7b52bf8adde0',
+                    'token_usage': {
+                        'input_tokens': 30,
+                        'output_tokens': 4,
+                        'total_tokens': 34
+                    }
+                },
+                id='run-3bffa3ec-e8d9-4043-b57d-348e047d64de-0'
+            )
+
+    Tool calling:
+        .. code-block:: python
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+
+            class GetPopulation(BaseModel):
+                '''Get the current population in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+            chat_with_tools = tongyi_chat.bind_tools([GetWeather, GetPopulation])
+            ai_msg = chat_with_tools.invoke(
+                "Which city is hotter today and which is bigger: LA or NY?"
+            )
+            ai_msg.tool_calls
+
+        .. code-block:: python
+            [
+                {
+                    'name': 'GetWeather',
+                    'args': {'location': 'Los Angeles, CA'},
+                    'id': ''
+                }
+            ]
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = tongyi_chat.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {
+                'model_name': 'qwen-max',
+                'finish_reason': 'stop',
+                'request_id': '32a13e4c-370e-99cb-8f9b-4c999d98c57d',
+                'token_usage': {
+                    'input_tokens': 30,
+                    'output_tokens': 4,
+                    'total_tokens': 34
+                }
+            }
+
+    """  # noqa: E501
 
     @property
     def lc_secrets(self) -> Dict[str, str]:

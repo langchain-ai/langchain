@@ -27,6 +27,7 @@ EXPECTED_ALL = [
     "ChatMlflow",
     "ChatMLflowAIGateway",
     "ChatMLX",
+    "ChatOCIGenAI",
     "ChatOllama",
     "ChatOpenAI",
     "ChatPerplexity",
@@ -51,6 +52,7 @@ EXPECTED_ALL = [
     "QianfanChatEndpoint",
     "VolcEngineMaasChat",
     "ChatOctoAI",
+    "ChatSnowflakeCortex",
 ]
 
 

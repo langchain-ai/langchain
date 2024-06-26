@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import os
 import sys
+from io import BytesIO
+from math import ceil
 from operator import itemgetter
 from typing import (
     Any,
@@ -26,6 +29,7 @@ from typing import (
     cast,
     overload,
 )
+from urllib.parse import urlparse
 
 import openai
 import tiktoken
@@ -59,10 +63,7 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.messages.ai import UsageMetadata
-from langchain_core.output_parsers import (
-    JsonOutputParser,
-    PydanticOutputParser,
-)
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -178,9 +179,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     Returns:
         The dictionary.
     """
-    message_dict: Dict[str, Any] = {
-        "content": _format_message_content(message.content),
-    }
+    message_dict: Dict[str, Any] = {"content": _format_message_content(message.content)}
     if (name := message.name or message.additional_kwargs.get("name")) is not None:
         message_dict["name"] = name
 
@@ -345,6 +344,11 @@ class BaseChatOpenAI(BaseChatModel):
     http_async_client: Union[Any, None] = None
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
+    stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
+    """Default stop sequences."""
+    extra_body: Optional[Mapping[str, Any]] = None
+    """Optional additional JSON properties to include in the request parameters when
+    making requests to OpenAI compatible APIs, such as vLLM."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -382,10 +386,7 @@ class BaseChatOpenAI(BaseChatModel):
             "OPENAI_API_BASE"
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
 
         client_params = {
@@ -445,6 +446,11 @@ class BaseChatOpenAI(BaseChatModel):
         }
         if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
+        if self.stop:
+            params["stop"] = self.stop
+        if self.extra_body is not None:
+            params["extra_body"] = self.extra_body
+
         return params
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
@@ -478,7 +484,7 @@ class BaseChatOpenAI(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         with self.client.create(messages=message_dicts, **params) as response:
             for chunk in response:
                 if not isinstance(chunk, dict):
@@ -490,35 +496,41 @@ class BaseChatOpenAI(BaseChatModel):
                             output_tokens=token_usage.get("completion_tokens", 0),
                             total_tokens=token_usage.get("total_tokens", 0),
                         )
-                        chunk = ChatGenerationChunk(
+                        generation_chunk = ChatGenerationChunk(
                             message=default_chunk_class(
                                 content="", usage_metadata=usage_metadata
                             )
                         )
+                        logprobs = None
                     else:
                         continue
                 else:
                     choice = chunk["choices"][0]
                     if choice["delta"] is None:
                         continue
-                    chunk = _convert_delta_to_message_chunk(
+                    message_chunk = _convert_delta_to_message_chunk(
                         choice["delta"], default_chunk_class
                     )
                     generation_info = {}
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
+                        if model_name := chunk.get("model"):
+                            generation_info["model_name"] = model_name
+                        if system_fingerprint := chunk.get("system_fingerprint"):
+                            generation_info["system_fingerprint"] = system_fingerprint
+
                     logprobs = choice.get("logprobs")
                     if logprobs:
                         generation_info["logprobs"] = logprobs
-                    default_chunk_class = chunk.__class__
-                    chunk = ChatGenerationChunk(
-                        message=chunk, generation_info=generation_info or None
+                    default_chunk_class = message_chunk.__class__
+                    generation_chunk = ChatGenerationChunk(
+                        message=message_chunk, generation_info=generation_info or None
                     )
                 if run_manager:
                     run_manager.on_llm_new_token(
-                        chunk.text, chunk=chunk, logprobs=logprobs
+                        generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                     )
-                yield chunk
+                yield generation_chunk
 
     def _generate(
         self,
@@ -542,8 +554,6 @@ class BaseChatOpenAI(BaseChatModel):
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = self._default_params
         if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
         message_dicts = [_convert_message_to_dict(m) for m in messages]
         return message_dicts, params
@@ -574,10 +584,7 @@ class BaseChatOpenAI(BaseChatModel):
             generation_info = dict(finish_reason=res.get("finish_reason"))
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
-            gen = ChatGeneration(
-                message=message,
-                generation_info=generation_info,
-            )
+            gen = ChatGeneration(message=message, generation_info=generation_info)
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
@@ -596,7 +603,7 @@ class BaseChatOpenAI(BaseChatModel):
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class = AIMessageChunk
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         response = await self.async_client.create(messages=message_dicts, **params)
         async with response:
             async for chunk in response:
@@ -609,35 +616,43 @@ class BaseChatOpenAI(BaseChatModel):
                             output_tokens=token_usage.get("completion_tokens", 0),
                             total_tokens=token_usage.get("total_tokens", 0),
                         )
-                        chunk = ChatGenerationChunk(
+                        generation_chunk = ChatGenerationChunk(
                             message=default_chunk_class(
                                 content="", usage_metadata=usage_metadata
                             )
                         )
+                        logprobs = None
                     else:
                         continue
                 else:
                     choice = chunk["choices"][0]
                     if choice["delta"] is None:
                         continue
-                    chunk = _convert_delta_to_message_chunk(
+                    message_chunk = _convert_delta_to_message_chunk(
                         choice["delta"], default_chunk_class
                     )
                     generation_info = {}
                     if finish_reason := choice.get("finish_reason"):
                         generation_info["finish_reason"] = finish_reason
+                        if model_name := chunk.get("model"):
+                            generation_info["model_name"] = model_name
+                        if system_fingerprint := chunk.get("system_fingerprint"):
+                            generation_info["system_fingerprint"] = system_fingerprint
+
                     logprobs = choice.get("logprobs")
                     if logprobs:
                         generation_info["logprobs"] = logprobs
-                    default_chunk_class = chunk.__class__
-                    chunk = ChatGenerationChunk(
-                        message=chunk, generation_info=generation_info or None
+                    default_chunk_class = message_chunk.__class__
+                    generation_chunk = ChatGenerationChunk(
+                        message=message_chunk, generation_info=generation_info or None
                     )
                 if run_manager:
                     await run_manager.on_llm_new_token(
-                        token=chunk.text, chunk=chunk, logprobs=logprobs
+                        token=generation_chunk.text,
+                        chunk=generation_chunk,
+                        logprobs=logprobs,
                     )
-                yield chunk
+                yield generation_chunk
 
     async def _agenerate(
         self,
@@ -717,10 +732,17 @@ class BaseChatOpenAI(BaseChatModel):
         _, encoding_model = self._get_encoding_model()
         return encoding_model.encode(text)
 
+    # TODO: Count bound tools as part of input.
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Calculate num tokens for gpt-3.5-turbo and gpt-4 with tiktoken package.
 
-        Official documentation: https://github.com/openai/openai-cookbook/blob/
+        **Requirements**: You must have the ``pillow`` installed if you want to count
+        image tokens if you are specifying the image as a base64 string, and you must
+        have both ``pillow`` and ``httpx`` installed if you are specifying the image
+        as a URL. If these aren't installed image inputs will be ignored in token
+        counting.
+
+        OpenAI reference: https://github.com/openai/openai-cookbook/blob/
         main/examples/How_to_format_inputs_to_ChatGPT_models.ipynb"""
         if sys.version_info[1] <= 7:
             return super().get_num_tokens_from_messages(messages)
@@ -737,7 +759,7 @@ class BaseChatOpenAI(BaseChatModel):
             raise NotImplementedError(
                 f"get_num_tokens_from_messages() is not presently implemented "
                 f"for model {model}. See "
-                "https://platform.openai.com/docs/guides/text-generation/managing-tokens"
+                "https://platform.openai.com/docs/guides/text-generation/managing-tokens"  # noqa: E501
                 " for information on how messages are converted to tokens."
             )
         num_tokens = 0
@@ -745,9 +767,42 @@ class BaseChatOpenAI(BaseChatModel):
         for message in messages_dict:
             num_tokens += tokens_per_message
             for key, value in message.items():
-                # Cast str(value) in case the message value is not a string
-                # This occurs with function messages
-                num_tokens += len(encoding.encode(str(value)))
+                # This is an inferred approximation. OpenAI does not document how to
+                # count tool message tokens.
+                if key == "tool_call_id":
+                    num_tokens += 3
+                    continue
+                if isinstance(value, list):
+                    # content or tool calls
+                    for val in value:
+                        if isinstance(val, str) or val["type"] == "text":
+                            text = val["text"] if isinstance(val, dict) else val
+                            num_tokens += len(encoding.encode(text))
+                        elif val["type"] == "image_url":
+                            if val["image_url"].get("detail") == "low":
+                                num_tokens += 85
+                            else:
+                                image_size = _url_to_size(val["image_url"]["url"])
+                                if not image_size:
+                                    continue
+                                num_tokens += _count_image_tokens(*image_size)
+                        # Tool/function call token counting is not documented by OpenAI.
+                        # This is an approximation.
+                        elif val["type"] == "function":
+                            num_tokens += len(
+                                encoding.encode(val["function"]["arguments"])
+                            )
+                            num_tokens += len(encoding.encode(val["function"]["name"]))
+                        else:
+                            raise ValueError(
+                                f"Unrecognized content block type\n\n{val}"
+                            )
+                elif not value:
+                    continue
+                else:
+                    # Cast str(value) in case the message value is not a string
+                    # This occurs with function messages
+                    num_tokens += len(encoding.encode(value))
                 if key == "name":
                     num_tokens += tokens_per_name
         # every reply is primed with <im_start>assistant
@@ -805,10 +860,7 @@ class BaseChatOpenAI(BaseChatModel):
                     f"provided function was {formatted_functions[0]['name']}."
                 )
             kwargs = {**kwargs, "function_call": function_call}
-        return super().bind(
-            functions=formatted_functions,
-            **kwargs,
-        )
+        return super().bind(functions=formatted_functions, **kwargs)
 
     def bind_tools(
         self,
@@ -857,15 +909,7 @@ class BaseChatOpenAI(BaseChatModel):
                 if tool_choice == "any":
                     tool_choice = "required"
             elif isinstance(tool_choice, bool):
-                if len(tools) > 1:
-                    raise ValueError(
-                        "tool_choice=True can only be used when a single tool is "
-                        f"passed in, received {len(tools)} tools."
-                    )
-                tool_choice = {
-                    "type": "function",
-                    "function": {"name": formatted_tools[0]["function"]["name"]},
-                }
+                tool_choice = "required"
             elif isinstance(tool_choice, dict):
                 tool_names = [
                     formatted_tool["function"]["name"]
@@ -887,7 +931,8 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs["tool_choice"] = tool_choice
         return super().bind(tools=formatted_tools, **kwargs)
 
-    @overload
+    # TODO: Fix typing.
+    @overload  # type: ignore[override]
     def with_structured_output(
         self,
         schema: Optional[_DictOrPydanticClass] = None,
@@ -962,15 +1007,20 @@ class BaseChatOpenAI(BaseChatModel):
                 from langchain_openai import ChatOpenAI
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
 
                 # -> AnswerWithJustification(
                 #     answer='They weigh the same',
@@ -983,15 +1033,22 @@ class BaseChatOpenAI(BaseChatModel):
                 from langchain_openai import ChatOpenAI
                 from langchain_core.pydantic_v1 import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
 
-                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
                 #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
@@ -1005,16 +1062,21 @@ class BaseChatOpenAI(BaseChatModel):
                 from langchain_core.pydantic_v1 import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 dict_schema = convert_to_openai_tool(AnswerWithJustification)
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = llm.with_structured_output(dict_schema)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
@@ -1080,7 +1142,7 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            llm = self.bind_tools([schema], tool_choice=True)
+            llm = self.bind_tools([schema], tool_choice=True, parallel_tool_calls=False)
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema], first_tool_only=True
@@ -1100,7 +1162,7 @@ class BaseChatOpenAI(BaseChatModel):
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_format'. Received: '{method}'"
+                f"'json_mode'. Received: '{method}'"
             )
 
         if include_raw:
@@ -1195,14 +1257,32 @@ class ChatOpenAI(BaseChatOpenAI):
         .. code-block:: python
 
             messages = [
-                ("system", "You are a helpful translator. Translate the user sentence to French."),
+                (
+                    "system",
+                    "You are a helpful translator. Translate the user sentence to French.",
+                ),
                 ("human", "I love programming."),
             ]
             llm.invoke(messages)
 
         .. code-block:: python
 
-            AIMessage(content="J'adore la programmation.", response_metadata={'token_usage': {'completion_tokens': 5, 'prompt_tokens': 31, 'total_tokens': 36}, 'model_name': 'gpt-4o', 'system_fingerprint': 'fp_43dfabdef1', 'finish_reason': 'stop', 'logprobs': None}, id='run-012cffe2-5d3d-424d-83b5-51c6d4a593d1-0', usage_metadata={'input_tokens': 31, 'output_tokens': 5, 'total_tokens': 36})
+            AIMessage(
+                content="J'adore la programmation.",
+                response_metadata={
+                    "token_usage": {
+                        "completion_tokens": 5,
+                        "prompt_tokens": 31,
+                        "total_tokens": 36,
+                    },
+                    "model_name": "gpt-4o",
+                    "system_fingerprint": "fp_43dfabdef1",
+                    "finish_reason": "stop",
+                    "logprobs": None,
+                },
+                id="run-012cffe2-5d3d-424d-83b5-51c6d4a593d1-0",
+                usage_metadata={"input_tokens": 31, "output_tokens": 5, "total_tokens": 36},
+            )
 
     Stream:
         .. code-block:: python
@@ -1212,13 +1292,19 @@ class ChatOpenAI(BaseChatOpenAI):
 
         .. code-block:: python
 
-            AIMessageChunk(content='', id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
-            AIMessageChunk(content='J', id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
-            AIMessageChunk(content="'adore", id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
-            AIMessageChunk(content=' la', id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
-            AIMessageChunk(content=' programmation', id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
-            AIMessageChunk(content='.', id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
-            AIMessageChunk(content='', response_metadata={'finish_reason': 'stop'}, id='run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0')
+            AIMessageChunk(content="", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
+            AIMessageChunk(content="J", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
+            AIMessageChunk(content="'adore", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
+            AIMessageChunk(content=" la", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
+            AIMessageChunk(
+                content=" programmation", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0"
+            )
+            AIMessageChunk(content=".", id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0")
+            AIMessageChunk(
+                content="",
+                response_metadata={"finish_reason": "stop"},
+                id="run-9e1517e3-12bf-48f2-bb1b-2e824f7cd7b0",
+            )
 
         .. code-block:: python
 
@@ -1230,7 +1316,11 @@ class ChatOpenAI(BaseChatOpenAI):
 
         .. code-block:: python
 
-            AIMessageChunk(content="J'adore la programmation.", response_metadata={'finish_reason': 'stop'}, id='run-bf917526-7f58-4683-84f7-36a6b671d140')
+            AIMessageChunk(
+                content="J'adore la programmation.",
+                response_metadata={"finish_reason": "stop"},
+                id="run-bf917526-7f58-4683-84f7-36a6b671d140",
+            )
 
     Async:
         .. code-block:: python
@@ -1245,41 +1335,75 @@ class ChatOpenAI(BaseChatOpenAI):
 
         .. code-block:: python
 
-            AIMessage(content="J'adore la programmation.", response_metadata={'token_usage': {'completion_tokens': 5, 'prompt_tokens': 31, 'total_tokens': 36}, 'model_name': 'gpt-4o', 'system_fingerprint': 'fp_43dfabdef1', 'finish_reason': 'stop', 'logprobs': None}, id='run-012cffe2-5d3d-424d-83b5-51c6d4a593d1-0', usage_metadata={'input_tokens': 31, 'output_tokens': 5, 'total_tokens': 36})
+            AIMessage(
+                content="J'adore la programmation.",
+                response_metadata={
+                    "token_usage": {
+                        "completion_tokens": 5,
+                        "prompt_tokens": 31,
+                        "total_tokens": 36,
+                    },
+                    "model_name": "gpt-4o",
+                    "system_fingerprint": "fp_43dfabdef1",
+                    "finish_reason": "stop",
+                    "logprobs": None,
+                },
+                id="run-012cffe2-5d3d-424d-83b5-51c6d4a593d1-0",
+                usage_metadata={"input_tokens": 31, "output_tokens": 5, "total_tokens": 36},
+            )
 
     Tool calling:
         .. code-block:: python
 
             from langchain_core.pydantic_v1 import BaseModel, Field
 
+
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
 
             class GetPopulation(BaseModel):
                 '''Get the current population in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
 
             llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-            ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
+            ai_msg = llm_with_tools.invoke(
+                "Which city is hotter today and which is bigger: LA or NY?"
+            )
             ai_msg.tool_calls
 
         .. code-block:: python
 
-            [{'name': 'GetWeather',
-              'args': {'location': 'Los Angeles, CA'},
-              'id': 'call_6XswGD5Pqk8Tt5atYr7tfenU'},
-             {'name': 'GetWeather',
-              'args': {'location': 'New York, NY'},
-              'id': 'call_ZVL15vA8Y7kXqOy3dtmQgeCi'},
-             {'name': 'GetPopulation',
-              'args': {'location': 'Los Angeles, CA'},
-              'id': 'call_49CFW8zqC9W7mh7hbMLSIrXw'},
-             {'name': 'GetPopulation',
-              'args': {'location': 'New York, NY'},
-              'id': 'call_6ghfKxV264jEfe1mRIkS3PE7'}]
+            [
+                {
+                    "name": "GetWeather",
+                    "args": {"location": "Los Angeles, CA"},
+                    "id": "call_6XswGD5Pqk8Tt5atYr7tfenU",
+                },
+                {
+                    "name": "GetWeather",
+                    "args": {"location": "New York, NY"},
+                    "id": "call_ZVL15vA8Y7kXqOy3dtmQgeCi",
+                },
+                {
+                    "name": "GetPopulation",
+                    "args": {"location": "Los Angeles, CA"},
+                    "id": "call_49CFW8zqC9W7mh7hbMLSIrXw",
+                },
+                {
+                    "name": "GetPopulation",
+                    "args": {"location": "New York, NY"},
+                    "id": "call_6ghfKxV264jEfe1mRIkS3PE7",
+                },
+            ]
 
         Note that ``openai >= 1.32`` supports a ``parallel_tool_calls`` parameter
         that defaults to ``True``. This parameter can be set to ``False`` to
@@ -1288,16 +1412,19 @@ class ChatOpenAI(BaseChatOpenAI):
         .. code-block:: python
 
             ai_msg = llm_with_tools.invoke(
-                "What is the weather in LA and NY?",
-                parallel_tool_calls=False,
+                "What is the weather in LA and NY?", parallel_tool_calls=False
             )
             ai_msg.tool_calls
 
         .. code-block:: python
 
-            [{'name': 'GetWeather',
-            'args': {'location': 'Los Angeles, CA'},
-            'id': 'call_4OoY0ZR99iEvC7fevsH8Uhtz'}]
+            [
+                {
+                    "name": "GetWeather",
+                    "args": {"location": "Los Angeles, CA"},
+                    "id": "call_4OoY0ZR99iEvC7fevsH8Uhtz",
+                }
+            ]
 
         Like other runtime parameters, ``parallel_tool_calls`` can be bound to a model
         using ``llm.bind(parallel_tool_calls=False)`` or during instantiation by
@@ -1312,6 +1439,7 @@ class ChatOpenAI(BaseChatOpenAI):
 
             from langchain_core.pydantic_v1 import BaseModel, Field
 
+
             class Joke(BaseModel):
                 '''Joke to tell user.'''
 
@@ -1319,12 +1447,17 @@ class ChatOpenAI(BaseChatOpenAI):
                 punchline: str = Field(description="The punchline to the joke")
                 rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
 
+
             structured_llm = llm.with_structured_output(Joke)
             structured_llm.invoke("Tell me a joke about cats")
 
         .. code-block:: python
 
-            Joke(setup='Why was the cat sitting on the computer?', punchline='To keep an eye on the mouse!', rating=None)
+            Joke(
+                setup="Why was the cat sitting on the computer?",
+                punchline="To keep an eye on the mouse!",
+                rating=None,
+            )
 
         See ``ChatOpenAI.with_structured_output()`` for more.
 
@@ -1332,7 +1465,9 @@ class ChatOpenAI(BaseChatOpenAI):
         .. code-block:: python
 
             json_llm = llm.bind(response_format={"type": "json_object"})
-            ai_msg = json_llm.invoke("Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]")
+            ai_msg = json_llm.invoke(
+                "Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]"
+            )
             ai_msg.content
 
         .. code-block:: python
@@ -1355,7 +1490,7 @@ class ChatOpenAI(BaseChatOpenAI):
                         "type": "image_url",
                         "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
                     },
-                ],
+                ]
             )
             ai_msg = llm.invoke([message])
             ai_msg.content
@@ -1372,13 +1507,13 @@ class ChatOpenAI(BaseChatOpenAI):
 
         .. code-block:: python
 
-            {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
+            {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
 
-        When streaming, set the ``stream_options`` model kwarg:
+        When streaming, set the ``stream_usage`` kwarg:
 
         .. code-block:: python
 
-            stream = llm.stream(messages, stream_options={"include_usage": True})
+            stream = llm.stream(messages, stream_usage=True)
             full = next(stream)
             for chunk in stream:
                 full += chunk
@@ -1386,19 +1521,16 @@ class ChatOpenAI(BaseChatOpenAI):
 
         .. code-block:: python
 
-            {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
+            {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
 
-        Alternatively, setting ``stream_options`` when instantiating the model can be
+        Alternatively, setting ``stream_usage`` when instantiating the model can be
         useful when incorporating ``ChatOpenAI`` into LCEL chains-- or when using
         methods like ``.with_structured_output``, which generate chains under the
         hood.
 
         .. code-block:: python
 
-            llm = ChatOpenAI(
-                model="gpt-4o",
-                model_kwargs={"stream_options": {"include_usage": True}},
-            )
+            llm = ChatOpenAI(model="gpt-4o", stream_usage=True)
             structured_llm = llm.with_structured_output(...)
 
     Logprobs:
@@ -1410,11 +1542,55 @@ class ChatOpenAI(BaseChatOpenAI):
 
         .. code-block:: python
 
-            {'content': [{'token': 'J', 'bytes': [74], 'logprob': -4.9617593e-06, 'top_logprobs': []},
-              {'token': "'adore", 'bytes': [39, 97, 100, 111, 114, 101], 'logprob': -0.25202933, 'top_logprobs': []},
-              {'token': ' la', 'bytes': [32, 108, 97], 'logprob': -0.20141791, 'top_logprobs': []},
-              {'token': ' programmation', 'bytes': [32, 112, 114, 111, 103, 114, 97, 109, 109, 97, 116, 105, 111, 110], 'logprob': -1.9361265e-07, 'top_logprobs': []},
-              {'token': '.', 'bytes': [46], 'logprob': -1.2233183e-05, 'top_logprobs': []}]}
+            {
+                "content": [
+                    {
+                        "token": "J",
+                        "bytes": [74],
+                        "logprob": -4.9617593e-06,
+                        "top_logprobs": [],
+                    },
+                    {
+                        "token": "'adore",
+                        "bytes": [39, 97, 100, 111, 114, 101],
+                        "logprob": -0.25202933,
+                        "top_logprobs": [],
+                    },
+                    {
+                        "token": " la",
+                        "bytes": [32, 108, 97],
+                        "logprob": -0.20141791,
+                        "top_logprobs": [],
+                    },
+                    {
+                        "token": " programmation",
+                        "bytes": [
+                            32,
+                            112,
+                            114,
+                            111,
+                            103,
+                            114,
+                            97,
+                            109,
+                            109,
+                            97,
+                            116,
+                            105,
+                            111,
+                            110,
+                        ],
+                        "logprob": -1.9361265e-07,
+                        "top_logprobs": [],
+                    },
+                    {
+                        "token": ".",
+                        "bytes": [46],
+                        "logprob": -1.2233183e-05,
+                        "top_logprobs": [],
+                    },
+                ]
+            }
 
     Response metadata
         .. code-block:: python
@@ -1424,15 +1600,24 @@ class ChatOpenAI(BaseChatOpenAI):
 
         .. code-block:: python
 
-            {'token_usage': {'completion_tokens': 5,
-              'prompt_tokens': 28,
-              'total_tokens': 33},
-             'model_name': 'gpt-4o',
-             'system_fingerprint': 'fp_319be4768e',
-             'finish_reason': 'stop',
-             'logprobs': None}
+            {
+                "token_usage": {
+                    "completion_tokens": 5,
+                    "prompt_tokens": 28,
+                    "total_tokens": 33,
+                },
+                "model_name": "gpt-4o",
+                "system_fingerprint": "fp_319be4768e",
+                "finish_reason": "stop",
+                "logprobs": None,
+            }
 
     """  # noqa: E501
+
+    stream_usage: bool = False
+    """Whether to include usage metadata in streaming output. If True, additional
+    message chunks will be generated during the stream including usage metadata.
+    """
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
@@ -1463,6 +1648,44 @@ class ChatOpenAI(BaseChatOpenAI):
         """Return whether this model can be serialized by Langchain."""
         return True
 
+    def _should_stream_usage(
+        self, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> bool:
+        """Determine whether to include usage metadata in streaming output.
+
+        For backwards compatibility, we check for `stream_options` passed
+        explicitly to kwargs or in the model_kwargs and override self.stream_usage.
+        """
+        stream_usage_sources = [  # order of preference
+            stream_usage,
+            kwargs.get("stream_options", {}).get("include_usage"),
+            self.model_kwargs.get("stream_options", {}).get("include_usage"),
+            self.stream_usage,
+        ]
+        for source in stream_usage_sources:
+            if isinstance(source, bool):
+                return source
+        return self.stream_usage
+
+    def _stream(
+        self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> Iterator[ChatGenerationChunk]:
+        """Set default stream_options."""
+        stream_usage = self._should_stream_usage(stream_usage, **kwargs)
+        kwargs["stream_options"] = {"include_usage": stream_usage}
+
+        return super()._stream(*args, **kwargs)
+
+    async def _astream(
+        self, *args: Any, stream_usage: Optional[bool] = None, **kwargs: Any
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        """Set default stream_options."""
+        stream_usage = self._should_stream_usage(stream_usage, **kwargs)
+        kwargs["stream_options"] = {"include_usage": stream_usage}
+
+        async for chunk in super()._astream(*args, **kwargs):
+            yield chunk
+
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and issubclass(obj, BaseModel)
@@ -1490,3 +1713,75 @@ def _lc_invalid_tool_call_to_openai_tool_call(
             "arguments": invalid_tool_call["args"],
         },
     }
+
+
+def _url_to_size(image_source: str) -> Optional[Tuple[int, int]]:
+    try:
+        from PIL import Image  # type: ignore[import]
+    except ImportError:
+        logger.info(
+            "Unable to count image tokens. To count image tokens please install "
+            "`pip install -U pillow httpx`."
+        )
+        return None
+    if _is_url(image_source):
+        try:
+            import httpx
+        except ImportError:
+            logger.info(
+                "Unable to count image tokens. To count image tokens please install "
+                "`pip install -U httpx`."
+            )
+            return None
+        response = httpx.get(image_source)
+        response.raise_for_status()
+        width, height = Image.open(BytesIO(response.content)).size
+        return width, height
+    elif _is_b64(image_source):
+        _, encoded = image_source.split(",", 1)
+        data = base64.b64decode(encoded)
+        width, height = Image.open(BytesIO(data)).size
+        return width, height
+    else:
+        return None
+
+
+def _count_image_tokens(width: int, height: int) -> int:
+    # Reference: https://platform.openai.com/docs/guides/vision/calculating-costs
+    width, height = _resize(width, height)
+    h = ceil(height / 512)
+    w = ceil(width / 512)
+    return (170 * h * w) + 85
+
+
+def _is_url(s: str) -> bool:
+    try:
+        result = urlparse(s)
+        return all([result.scheme, result.netloc])
+    except Exception as e:
+        logger.debug(f"Unable to parse URL: {e}")
+        return False
+
+
+def _is_b64(s: str) -> bool:
+    return s.startswith("data:image")
+
+
+def _resize(width: int, height: int) -> Tuple[int, int]:
+    # larger side must be <= 2048
+    if width > 2048 or height > 2048:
+        if width > height:
+            height = (height * 2048) // width
+            width = 2048
+        else:
+            width = (width * 2048) // height
+            height = 2048
+    # smaller side must be <= 768
+    if width > 768 and height > 768:
+        if width > height:
+            width = (width * 768) // height
+            height = 768
+        else:
+            height = (width * 768) // height
+            width = 768
+    return width, height
