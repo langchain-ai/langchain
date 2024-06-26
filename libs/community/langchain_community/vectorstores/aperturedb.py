@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from itertools import cycle, repeat
+from itertools import repeat
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 # Third-party imports
