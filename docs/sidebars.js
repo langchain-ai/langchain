@@ -387,9 +387,12 @@ module.exports = {
         "contributing/code",
         "contributing/integrations",
         "contributing/documentation/index",
+        { type: "doc", id: "contributing/documentation/style_guide", className: "hidden" },
+        { type: "doc", id: "contributing/documentation/technical_logistics", className: "hidden" },
         "contributing/testing",
         "contributing/faq",
       ],
+      collapsible: false,
     },
   ],
 };
