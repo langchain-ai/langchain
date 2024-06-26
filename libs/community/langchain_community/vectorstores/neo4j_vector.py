@@ -1441,9 +1441,10 @@ class Neo4jVector(VectorStore):
                 "UNWIND $data AS row "
                 f"MATCH (n:`{node_label}`) "
                 "WHERE elementId(n) = row.id "
-                f"CALL db.create.setVectorProperty(n, "
+                f"CALL db.create.setNodeVectorProperty(n, "
                 f"'{embedding_node_property}', row.embedding) "
-                "YIELD node RETURN count(*)",
+                f"WITH n "
+                f"RETURN count(*)",
                 params=params,
             )
             # If embedding calculation should be stopped
