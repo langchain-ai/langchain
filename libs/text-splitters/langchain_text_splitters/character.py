@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, List, Literal, Optional, Union
+from typing import Any, List, Literal, Optional, Union, Tuple
 
 from langchain_text_splitters.base import Language, TextSplitter
 
@@ -30,7 +30,7 @@ class CharacterTextSplitter(TextSplitter):
 
 def _split_text_with_regex(
     text: str, separator: str, keep_separator: Union[bool, Literal["start", "end"]]
-) -> List[str]:
+) -> Tuple[List[str], List[str]]:
     # Now that we have the separator, split the text
     actual_separators = []
 
@@ -39,21 +39,28 @@ def _split_text_with_regex(
         _splits = re.split(f"({separator})", text)
         # take the elements at odd indexes as the actual separators
         actual_separators = [_splits[i] for i in range(1, len(_splits), 2)]
-        
+
         if keep_separator:            
-            splits = [_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)]
+            splits = (
+                ([_splits[i] + _splits[i + 1] for i in range(0, len(_splits) - 1, 2)])
+                if keep_separator == "end"
+                else ([_splits[i] + _splits[i + 1] for i in range(1, len(_splits), 2)])
+            )
         else:
             # skip the separators
             splits = [_splits[i + 1] for i in range(1, len(_splits), 2)]
         
         if len(_splits) % 2 == 0:
             splits += _splits[-1:]
-        splits = [_splits[0]] + splits
+        
+        splits = (
+            (splits + [_splits[-1]])
+            if keep_separator == "end"
+            else ([_splits[0]] + splits)
+        )
     else:
         splits = list(text)
-        
     return [s for s in splits if s != ""], actual_separators
-
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
