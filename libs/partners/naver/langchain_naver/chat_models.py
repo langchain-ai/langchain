@@ -1,264 +1,278 @@
 """Naver chat models."""
+import logging
+import os
+from typing import Any, AsyncIterator, Iterator, List, Optional, Dict, cast, Tuple
 
-from typing import Any, List, Optional
+import httpx
+from httpx_sse import connect_sse
 
 from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import BaseMessage
-from langchain_core.outputs import ChatResult
+from langchain_core.language_models.chat_models import LangSmithParams, BaseChatModel
+from langchain_core.messages import BaseMessage, AIMessage, ChatMessage, HumanMessage, SystemMessage
+from langchain_core.outputs import ChatGenerationChunk, ChatResult, ChatGeneration
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+
+DEFAULT_BASE_URL = "https://clovastudio.stream.ntruss.com/testapp"
+
+logger = logging.getLogger(__name__)
+
+
+def _convert_message_to_naver_chat_message(
+    message: BaseMessage,
+) -> Dict:
+    if isinstance(message, ChatMessage):
+        return dict(role=message.role, content=message.content)
+    elif isinstance(message, HumanMessage):
+        return dict(role="user", content=message.content)
+    elif isinstance(message, SystemMessage):
+        return dict(role="system", content=message.content)
+    elif isinstance(message, AIMessage):
+        return dict(role="assistant", content=message.content)
+    else:
+        logger.warning(
+            "FunctionMessage, ToolMessage not yet supported "
+            "(https://api.ncloud-docs.com/docs/clovastudio-chatcompletions)"
+        )
+        raise ValueError(f"Got unknown type {message}")
+
+
+def _convert_naver_chat_message_to_message(
+    _message: Dict,
+) -> BaseMessage:
+    role = _message["role"]
+    assert role in ("assistant", "system", "user"), f"Expected role to be 'assistant', 'system', 'user', got {role}"
+    content = cast(str, _message["content"])
+    additional_kwargs: Dict = {}
+
+    if role == "user":
+        return HumanMessage(content=content, additional_kwargs=additional_kwargs,)
+    elif role == "system":
+        return SystemMessage(content=content, additional_kwargs=additional_kwargs,)
+    elif role == "assistant":
+        return AIMessage(content=content, additional_kwargs=additional_kwargs,)
+    else:
+        assert True, f"Expected role to be 'assistant', 'system', 'user', got {role}"
+
+
+def _raise_on_error(response: httpx.Response) -> None:
+    """Raise an error if the response is an error."""
+    if httpx.codes.is_error(response.status_code):
+        error_message = response.read().decode("utf-8")
+        raise httpx.HTTPStatusError(
+            f"Error response {response.status_code} "
+            f"while fetching {response.url}: {error_message}",
+            request=response.request,
+            response=response,
+        )
 
 
 class ChatNaver(BaseChatModel):
-    # TODO: Replace all TODOs in docstring. See example docstring:
-    # https://github.com/langchain-ai/langchain/blob/7ff05357bac6eaedf5058a2af88f23a1817d40fe/libs/partners/openai/langchain_openai/chat_models/base.py#L1120
-    """Naver chat model integration.
+    """`NCP ClovaStudio` Chat Completion API.
 
-    # TODO: Replace with relevant packages, env vars.
-    Setup:
-        Install ``langchain-naver`` and set environment variable ``NAVER_API_KEY``.
-
-        .. code-block:: bash
-
-            pip install -U langchain-naver
-            export NAVER_API_KEY="your-api-key"
-
-    # TODO: Populate with relevant params.
-    Key init args — completion params:
-        model: str
-            Name of Naver model to use.
-        temperature: float
-            Sampling temperature.
-        max_tokens: Optional[int]
-            Max number of tokens to generate.
-
-    # TODO: Populate with relevant params.
-    Key init args — client params:
-        timeout: Optional[float]
-            Timeout for requests.
-        max_retries: int
-            Max number of retries.
-        api_key: Optional[str]
-            Naver API key. If not passed in will be read from env var NAVER_API_KEY.
-
-    See full list of supported init args and their descriptions in the params section.
-
-    # TODO: Replace with relevant init params.
-    Instantiate:
+    following environment variables set or passed in constructor in lower case:
+    - ``NCP_CLOVASTUDIO_API_KEY``
+    - ``NCP_APIGW_API_KEY``
+    
+    Example:
         .. code-block:: python
+
+            from langchain_core.messages import HumanMessage
 
             from langchain_naver import ChatNaver
 
-            llm = ChatNaver(
-                model="...",
-                temperature=0,
-                max_tokens=None,
-                timeout=None,
-                max_retries=2,
-                # api_key="...",
-                # other params...
-            )
-
-    Invoke:
-        .. code-block:: python
-
-            messages = [
-                ("system", "You are a helpful translator. Translate the user sentence to French."),
-                ("human", "I love programming."),
-            ]
-            llm.invoke(messages)
-
-        .. code-block:: python
-
-            # TODO: Example output.
-
-    # TODO: Delete if token-level streaming isn't supported.
-    Stream:
-        .. code-block:: python
-
-            for chunk in llm.stream(messages):
-                print(chunk)
-
-        .. code-block:: python
-
-            # TODO: Example output.
-
-        .. code-block:: python
-
-            stream = llm.stream(messages)
-            full = next(stream)
-            for chunk in stream:
-                full += chunk
-            full
-
-        .. code-block:: python
-
-            # TODO: Example output.
-
-    # TODO: Delete if native async isn't supported.
-    Async:
-        .. code-block:: python
-
-            await llm.ainvoke(messages)
-
-            # stream:
-            # async for chunk in (await llm.astream(messages))
-
-            # batch:
-            # await llm.abatch([messages])
-
-        .. code-block:: python
-
-            # TODO: Example output.
-
-    # TODO: Delete if .bind_tools() isn't supported.
-    Tool calling:
-        .. code-block:: python
-
-            from langchain_core.pydantic_v1 import BaseModel, Field
-
-            class GetWeather(BaseModel):
-                '''Get the current weather in a given location'''
-
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
-
-            class GetPopulation(BaseModel):
-                '''Get the current population in a given location'''
-
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
-
-            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-            ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
-            ai_msg.tool_calls
-
-        .. code-block:: python
-
-              # TODO: Example output.
-
-        See ``ChatNaver.bind_tools()`` method for more.
-
-    # TODO: Delete if .with_structured_output() isn't supported.
-    Structured output:
-        .. code-block:: python
-
-            from typing import Optional
-
-            from langchain_core.pydantic_v1 import BaseModel, Field
-
-            class Joke(BaseModel):
-                '''Joke to tell user.'''
-
-                setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke")
-                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
-
-            structured_llm = llm.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats")
-
-        .. code-block:: python
-
-            # TODO: Example output.
-
-        See ``ChatNaver.with_structured_output()`` for more.
-
-    # TODO: Delete if JSON mode response format isn't supported.
-    JSON mode:
-        .. code-block:: python
-
-            # TODO: Replace with appropriate bind arg.
-            json_llm = llm.bind(response_format={"type": "json_object"})
-            ai_msg = json_llm.invoke("Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]")
-            ai_msg.content
-
-        .. code-block:: python
-
-            # TODO: Example output.
-
-    # TODO: Delete if image inputs aren't supported.
-    Image input:
-        .. code-block:: python
-
-            import base64
-            import httpx
-            from langchain_core.messages import HumanMessage
-
-            image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
-            image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
-            # TODO: Replace with appropriate message content format.
-            message = HumanMessage(
-                content=[
-                    {"type": "text", "text": "describe the weather in this image"},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-                    },
-                ],
-            )
-            ai_msg = llm.invoke([message])
-            ai_msg.content
-
-        .. code-block:: python
-
-            # TODO: Example output.
-
-    # TODO: Delete if audio inputs aren't supported.
-    Audio input:
-        .. code-block:: python
-
-            # TODO: Example input
-
-        .. code-block:: python
-
-            # TODO: Example output
-
-    # TODO: Delete if video inputs aren't supported.
-    Video input:
-        .. code-block:: python
-
-            # TODO: Example input
-
-        .. code-block:: python
-
-            # TODO: Example output
-
-    # TODO: Delete if token usage metadata isn't supported.
-    Token usage:
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.usage_metadata
-
-        .. code-block:: python
-
-            {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
-
-    # TODO: Delete if logprobs aren't supported.
-    Logprobs:
-        .. code-block:: python
-
-            # TODO: Replace with appropriate bind arg.
-            logprobs_llm = llm.bind(logprobs=True)
-            ai_msg = logprobs_llm.invoke(messages)
-            ai_msg.response_metadata["logprobs"]
-
-        .. code-block:: python
-
-              # TODO: Example output.
-
-    Response metadata
-        .. code-block:: python
-
-            ai_msg = llm.invoke(messages)
-            ai_msg.response_metadata
-
-        .. code-block:: python
-
-             # TODO: Example output.
-
+            model = ChatNaver()
+            model.invoke([HumanMessage(content="Come up with 10 names for a song about parrots.")])
     """  # noqa: E501
 
-    # TODO: This method must be implemented to generate chat responses.
+    client: httpx.Client = Field(default=None)  #: :meta private:
+    async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
+
+    model_name: str = Field(default="HCX-003", alias="model")
+
+    ncp_clovastudio_api_key: Optional[SecretStr] = Field(default=None, alias="clovastudio_api_key")
+    """Automatically inferred from env are `NCP_CLOVASTUDIO_API_KEY` if not provided."""
+
+    ncp_apigw_api_key: Optional[SecretStr] = Field(default=None, alias="apigw_api_key")
+    """Automatically inferred from env are `NCP_APIGW_API_KEY` if not provided."""
+
+    base_url: Optional[str] = Field(default=DEFAULT_BASE_URL, alias="ncp_clovastudio_api_base_url")
+    """Automatically inferred from env are `NCP_CLOVASTUDIO_API_BASE_URL` if not provided."""
+
+    temperature: Optional[float] = None
+    top_k: Optional[int] = None
+    top_p: Optional[float] = None
+    repeat_penalty: Optional[float] = None
+    max_tokens: Optional[int] = None
+    stop_before: Optional[str] = None
+    include_ai_filters: Optional[bool] = None
+    seed: Optional[int] = None
+    timeout: int = 60
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        allow_population_by_field_name = True
+
+    @property
+    def _default_params(self) -> Dict[str, Any]:
+        """Get the default parameters for calling the API."""
+        defaults = {
+            "temperature": self.temperature,
+            "topK": self.top_k,
+            "topP": self.top_p,
+            "repeatPenalty": self.repeat_penalty,
+            "maxTokens": self.max_tokens,
+            "stopBefore": self.stop_before,
+            "includeAiFilters": self.include_ai_filters,
+            "seed": self.seed,
+        }
+        filtered = {k: v for k, v in defaults.items() if v is not None}
+        return filtered
+
+    @property
+    def _identifying_params(self) -> Dict[str, Any]:
+        """Get the identifying parameters."""
+        return self._default_params
+
+    @property
+    def lc_secrets(self) -> Dict[str, str]:
+        return {
+            "ncp_clovastudio_api_key": "NCP_CLOVASTUDIO_API_KEY",
+            "ncp_apigw_api_key": "NCP_APIGW_API_KEY",
+        }
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of chat model."""
+        return "chat-naver"
+
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get the parameters used to invoke the model."""
+        params = super()._get_ls_params(stop=stop, **kwargs)
+        params["ls_provider"] = "naver"
+        return params
+
+    @property
+    def _client_params(self) -> Dict[str, Any]:
+        """Get the parameters used for the client."""
+        return self._default_params
+
+    @root_validator()
+    def validate_environment(cls, values: Dict) -> Dict:
+        if values["temperature"] is not None and not 0 < values["temperature"] <= 1:
+            raise ValueError("temperature must be in the range (0.0, 1.0]")
+
+        if values["top_k"] is not None and not 0 <= values["top_k"] <= 128:
+            raise ValueError("top_k must be in the range [0, 128]")
+
+        if values["top_p"] is not None and not 0 <= values["top_p"] <= 1:
+            raise ValueError("top_p must be in the range [0.0, 1.0]")
+
+        if values["repeat_penalty"] is not None and not 0 < values["repeat_penalty"] <= 10:
+            raise ValueError("repeat_penalty must be in the range (0.0, 10]")
+
+        if values["max_tokens"] is not None and not 0 <= values["max_tokens"] <= 4096:
+            raise ValueError("max_tokens must be in the range [0, 4096]")
+
+        if values["seed"] is not None and not 0 <= values["temperature"] <= 4294967295:
+            raise ValueError("temperature must be in the range [0, 4294967295]")
+
+        """Validate that api key and python package exists in environment."""
+        values["ncp_clovastudio_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "ncp_clovastudio_api_key", "NCP_CLOVASTUDIO_API_KEY")
+        )
+        values["ncp_apigw_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(values, "ncp_apigw_api_key", "NCP_APIGW_API_KEY")
+        )
+        values["base_url"] = get_from_dict_or_env(values, "base_url", "NCP_CLOVASTUDIO_API_BASE_URL")
+
+        if not values.get("client"):
+            values["client"] = httpx.Client(
+                base_url=values["base_url"],
+                headers=cls.default_headers(values),
+                timeout=values["timeout"],
+            )
+        if not values.get("async_client"):
+            values["async_client"] = httpx.AsyncClient(
+                base_url=values["base_url"],
+                headers=cls.default_headers(values),
+                timeout=values["timeout"],
+            )
+        return values
+
+    @staticmethod
+    def default_headers(values):
+        clovastudio_api_key = values["ncp_clovastudio_api_key"].get_secret_value() \
+            if values["ncp_clovastudio_api_key"] \
+            else None
+        apigw_api_key = values["ncp_apigw_api_key"].get_secret_value() \
+            if values["ncp_apigw_api_key"] \
+            else None
+        return {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "X-NCP-CLOVASTUDIO-API-KEY": clovastudio_api_key,
+            "X-NCP-APIGW-API-KEY": apigw_api_key,
+        }
+
+    def _create_message_dicts(
+        self, messages: List[BaseMessage], stop: Optional[List[str]]
+    ) -> Tuple[List[Dict], Dict[str, Any]]:
+        params = self._client_params
+        if stop is not None and "stopBefore" in params:
+            params["stopBefore"] = stop
+
+        message_dicts = [_convert_message_to_naver_chat_message(m) for m in messages]
+        return message_dicts, params
+
+    def _completion_with_retry(self, **kwargs: Any) -> Any:
+        if "stream" not in kwargs:
+            kwargs["stream"] = False
+
+        stream = kwargs["stream"]
+        if stream:
+
+            def iter_sse() -> Iterator[Dict]:
+                with connect_sse(
+                    self.client, "POST", f"/v1/chat-completions/{self.model_name}", json=kwargs
+                ) as event_source:
+                    _raise_on_error(event_source.response)
+                    for event in event_source.iter_sse():
+                        if event.data == "[DONE]":
+                            return
+                        yield event.json()
+
+            return iter_sse()
+        else:
+            response = self.client.post(url=f"/v1/chat-completions/{self.model_name}", json=kwargs)
+            _raise_on_error(response)
+            return response.json()
+
+    def _create_chat_result(self, response: Dict) -> ChatResult:
+        generations = []
+        result = response.get("result", {})
+        msg = result.get("message", {})
+        message = _convert_naver_chat_message_to_message(msg)
+        gen = ChatGeneration(
+            message=message,
+        )
+        generations.append(gen)
+
+        llm_output = {
+            "stop_reason": result.get("stopReason"),
+            "input_length": result.get("inputLength"),
+            "output_length": result.get("outputLength"),
+            "seed": result.get("seed"),
+            "ai_filter": result.get("aiFilter"),
+        }
+        return ChatResult(generations=generations, llm_output=llm_output)
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -266,7 +280,12 @@ class ChatNaver(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        raise NotImplementedError()
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs}
+        response = self._completion_with_retry(
+            messages=message_dicts, **params
+        )
+        return self._create_chat_result(response)
 
     # TODO: Implement if ChatNaver supports streaming. Otherwise delete method.
     # def _stream(
@@ -294,8 +313,3 @@ class ChatNaver(BaseChatModel):
     #     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
     #     **kwargs: Any,
     # ) -> ChatResult:
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of chat model."""
-        return "chat-naver"
