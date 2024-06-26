@@ -2,10 +2,10 @@
 
 Here are some things to keep in mind for all types of contributions:
 
-- Follow the ["fork and pull request"](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project) workflow. Please do not try to push directly to this repo unless you are a maintainer.
-- Use the checked-in pull request template when opening pull requests. Note related issues and tag relevant maintainers.
+- Follow the ["fork and pull request"](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project) workflow.
+- Fill out the checked-in pull request template when opening pull requests. Note related issues and tag relevant maintainers.
 - Ensure your PR passes formatting, linting, and testing checks before requesting a review.
-  - If you would like comments or feedback on your current progress, you can instead mark your PR as a draft.
+  - If you would like comments or feedback on your current progress, please open an issue or discussion and tag a maintainer.
   - See the sections on [Testing](/docs/contributing/code/technical_logistics#testing) and [Formatting and Linting](/docs/contributing/code/technical_logistics#formatting-and-linting) for how to run these checks locally.
 - Backwards compatibility is key. Your changes must not be breaking, except in case of critical bug and security fixes.
 - Look for duplicate PRs or issues that have already been opened before opening a new one.
@@ -13,12 +13,14 @@ Here are some things to keep in mind for all types of contributions:
 
 ## Bugfixes
 
-We welcome bugfixes to existing functionality, but ask that you communicate the issue in as much detail as you can to help
-maintainers understand and reproduce the bug.
+We encourage and appreciate bugfixes. We ask that you:
 
-- Open an accompanying GitHub issue and link to it in the PR.
-- Do not break or modify existing functionality, unless the fix is for a critical security issue.
-- Include unit tests that a maintainer can use to reproduce the issue. This will also provide coverage against future regressions.
+- Explain the bug in enough detail for maintainers to be able to reproduce it.
+  - If an accompanying issue exists, link to it. Prefix with `Fixes` so that the issue will close automatically when the PR is merged.
+- Avoid breaking changes if possible.
+- Include unit tests that fail without the bugfix.
+
+If you come across a bug and don't know how to fix it, we ask that you open an issue for it describing in detail the environment in which you encountered the bug.
 
 ## New features
 
@@ -28,6 +30,6 @@ or new agents/chains from outside contributors without an existing GitHub discus
 - New features must come with docs, unit tests, and (if appropriate) integration tests.
 - New integrations must come with docs, unit tests, and (if appropriate) integration tests.
   - See [this page](/docs/contributing/integrations) for more details on contributing new integrations.
-- New functionality should not inherit from or use a deprecated methods or classes.
+- New functionality should not inherit from or use deprecated methods or classes.
 - We will reject features that are likely to lead to security vulnerabilities or reports.
 - Do not add any hard dependencies. Integrations may add optional dependencies.
