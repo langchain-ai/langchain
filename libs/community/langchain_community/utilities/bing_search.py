@@ -5,16 +5,25 @@ import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-# BING_SEARCH_ENDPOINT is the default endpoint for Bing Search API and is normally
-# invariant to users.
+# BING_SEARCH_ENDPOINT is the endpoint for Bing Web Search API.
+# Because Bing Search is a service provided by Microsoft, you need to
+# Currently There are two web-based Bing Search services available on Azure,
+# Bing Web Search and Bing Custom Search. Compared to Bing Custom Search,
+# Bing Web Search is a more general search service that provides a wider range
+# of search results, while Bing Custom Search requires you to provide an additional
+# custom search instance. To facilitate and simply the use of Bing Web Search on
+# Langchain, we pick Bing Web Search as the only option.
+#
+# Reference:
+#  https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/overview
+#  https://learn.microsoft.com/en-us/bing/search-apis/bing-custom-search/overview
 BING_SEARCH_ENDPOINT = "https://api.bing.microsoft.com/v7.0/search"
 
 
 class BingSearchAPIWrapper(BaseModel):
-    """Wrapper for Bing Search API."""
+    """Wrapper for Bing Web Search API."""
 
     bing_subscription_key: str
-    bing_search_url: str
     k: int = 10
     search_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the search request."""
@@ -34,7 +43,7 @@ class BingSearchAPIWrapper(BaseModel):
             **self.search_kwargs,
         }
         response = requests.get(
-            self.bing_search_url,
+            BING_SEARCH_ENDPOINT,
             headers=headers,
             params=params,  # type: ignore
         )
@@ -51,15 +60,6 @@ class BingSearchAPIWrapper(BaseModel):
             values, "bing_subscription_key", "BING_SUBSCRIPTION_KEY"
         )
         values["bing_subscription_key"] = bing_subscription_key
-
-        bing_search_url = get_from_dict_or_env(
-            values,
-            "bing_search_url",
-            "BING_SEARCH_URL",
-            default=BING_SEARCH_ENDPOINT,
-        )
-
-        values["bing_search_url"] = bing_search_url
 
         return values
 
