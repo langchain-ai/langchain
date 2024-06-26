@@ -49,18 +49,19 @@ class ApertureDB(VectorStore):
         engines and metrics, be supplied by different embedding models, and have
         different dimensions.
 
-        See [ApertureDB documentation on `AddDescriptorSet`](https://docs.aperturedata.io/query_language/Reference/descriptor_commands/desc_set_commands/AddDescriptorSet) 
+        See ApertureDB documentation on `AddDescriptorSet`
+        https://docs.aperturedata.io/query_language/Reference/descriptor_commands/desc_set_commands/AddDescriptorSet
         for more information on the engine and metric options.
 
         Args:
             embeddings (Embeddings): Embeddings object
-            descriptor_set (str, optional): Descriptor set name. Defaults to 
+            descriptor_set (str, optional): Descriptor set name. Defaults to
                 "langchain".
-            dimensions (Optional[int], optional): Number of dimensions of the 
+            dimensions (Optional[int], optional): Number of dimensions of the
                 embeddings. Defaults to None.
-            engine (str, optional): Engine to use. Defaults to "HNSW" for new 
+            engine (str, optional): Engine to use. Defaults to "HNSW" for new
                 descriptorsets.
-            metric (str, optional): Metric to use. Defaults to "L2" for new 
+            metric (str, optional): Metric to use. Defaults to "L2" for new
                 descriptorsets.
             log_level (int, optional): Logging level. Defaults to logging.WARN.
         """
@@ -258,7 +259,8 @@ class ApertureDB(VectorStore):
         self, query: str, *args: Any, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         embedding = self.embedding_function.embed_query(query)
-        return self._similarity_search_with_score_by_vector(embedding, *args, **kwargs)
+        return self._similarity_search_with_score_by_vector(
+            embedding, *args, **kwargs)
 
     def _descriptor_to_document(self, d: dict) -> Document:
         metadata = {}
@@ -306,7 +308,8 @@ class ApertureDB(VectorStore):
     ) -> List[Document]:
         self.logger.info(f"Max Marginal Relevance search for query: {query}")
         embedding = self.embedding_function.embed_query(query)
-        return self.max_marginal_relevance_search_by_vector(embedding, k, fetch_k, lambda_mult, **kwargs)
+        return self.max_marginal_relevance_search_by_vector(
+            embedding, k, fetch_k, lambda_mult, **kwargs)
 
     @override
     def max_marginal_relevance_search_by_vector(
@@ -341,6 +344,7 @@ class ApertureDB(VectorStore):
     @classmethod
     def delete_vectorstore(class_, descriptor_set: str):
         """Deletes a vectorstore and all its data from the database"""
+        from aperturedb.Utils import Utils, create_connector
         db = create_connector()
         utils = Utils(db)
         utils.remove_descriptorset(descriptor_set)
@@ -348,6 +352,7 @@ class ApertureDB(VectorStore):
     @classmethod
     def list_vectorstores(class_):
         """Returns a list of all vectorstores in the database"""
+        from aperturedb.Utils import Utils, create_connector
         db = create_connector()
         query = [{
             "FindDescriptorSet": {
