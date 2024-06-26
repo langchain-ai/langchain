@@ -42,35 +42,35 @@ Discussion points:
 import abc
 from abc import ABC
 from typing import (
-    TypeVar,
-    Iterable,
-    TypedDict,
-    Sequence,
-    NotRequired,
-    List,
-    Optional,
-    Generic,
     Any,
-    Literal,
     Dict,
+    Generic,
+    Iterable,
+    List,
+    NotRequired,
+    Optional,
+    Sequence,
+    TypedDict,
+    TypeVar,
+    Union,
 )
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.runnables import RunnableConfig
 
 
-class IndexableData(
+class IndexableContent(
     ABC, Serializable
 ):  # Introduce new base class for content. Name OK?
     id: str
     metadata: Optional[dict]  # In a more extreme form we could remove
 
 
-class Document(IndexableData):  # Re-use existing Document model in langchain_core
+class Document(IndexableContent):  # Re-use existing Document model in langchain_core
     content: str
 
 
-class Blob(IndexableData):  # Re-use existing Blob model in langchain_core
+class Blob(IndexableContent):  # Re-use existing Blob model in langchain_core
     """Use for images / audio / video"""
 
     data: bytes
@@ -85,14 +85,14 @@ class Blob(IndexableData):  # Re-use existing Blob model in langchain_core
 #     metadata: dict
 
 
-T = TypeVar("T", bound=IndexableData)
+T = TypeVar("T", bound=IndexableContent)
 
 
 class UpsertResponse(TypedDict):
     """An indexing result."""
 
+    succeeded: Sequence[str]
     failed: Sequence[str]
-    indexed: Sequence[str]
 
 
 class DeleteResponse(TypedDict):
@@ -100,35 +100,18 @@ class DeleteResponse(TypedDict):
 
     num_deleted: NotRequired[int]
     num_failed: NotRequired[int]
+    succeeded: NotRequired[Sequence[str]]
     failed: NotRequired[Sequence[str]]
-    deleted: NotRequired[Sequence[str]]
 
 
 class Sort(TypedDict):
     """A sort object."""
 
     field: str
-    order: NotRequired[Literal["asc", "desc"]]  # Assume asc by default
-
-
-class FilterQuery(TypedDict):
-    """Query for an item.
-
-    This enables querying for an item using similarity search +
-    standard operations on the relational data associated with the item.
-    """
-
-    filter: Optional[dict]  # We'll need to type this # <-- Could stand for raw filter?
-    limit: Optional[int]  # equivalent to top-k right now
-    offset: Optional[int]  # e.g., interpret as page offset (maybe a better name?)
-    # e.g., browse through documents by publication date
-    sort: Optional[List[Sort]]  # Optional multiple sort fields
+    ascending: NotRequired[bool]  # Assume asc=True
 
 
 C = TypeVar("C")
-
-
-Vector = List[float]
 
 
 class BaseIndex(Generic[T]):
@@ -154,15 +137,15 @@ class BaseIndex(Generic[T]):
     @abc.abstractmethod
     def get_by_ids(
         self,
-        ids: Iterable[str],  # Sequence or Iterable
+        ids: Sequence[str],
         /,
-    ) -> Iterable[T]:
+    ) -> List[T]:
         """Get items by id."""
 
     @abc.abstractmethod
     def delete_by_ids(
         self,
-        ids: Sequence[str],  # Sequence or Iterable
+        ids: Sequence[str],
         /,
         **kwargs: Any,
     ) -> DeleteResponse:
@@ -173,18 +156,32 @@ class BaseIndex(Generic[T]):
     # However, all the indexers ARE assumed to have the capability to index
     # on metadata if they implement the delete_by_query and get_by_query methods.
     @abc.abstractmethod
-    def lazy_get(self, query: FilterQuery, /, **kwargs: Any) -> Iterable[T]:
+    def get_by_query(
+        self,
+        *,
+        filter: Optional[Union[List[Dict[str, Any], Dict[str, Any]]]] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        sort: Optional[Union[Sort, List[Sort]]] = None,
+        **kwargs: Any,
+    ) -> Iterable[T]:
         """Get items by query."""
 
     @abc.abstractmethod
-    def lazy_delete(
-        self, query: FilterQuery, /, **kwargs: Any
+    def delete_by_query(
+        self,
+        *,
+        filter: Optional[Union[List[Dict[str, Any], Dict[str, Any]]]] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        sort: Optional[Union[Sort, List[Sort]]] = None,
+        **kwargs: Any,
     ) -> Iterable[DeleteResponse]:
         """Delete items by query."""
         # Careful with halloween problem
 
 
-class Hit(TypedDict):
+class Hit(Generic[T], TypedDict):
     # Should subclass from content?
     id: str
     score: float
@@ -201,69 +198,38 @@ class QueryResponse(TypedDict):
     hits: List[Hit]
 
 
-class SearchQuery(FilterQuery, Generic[T]):
-    """A query that searches for items according to some criteria.
+class UpsertData(TypedDict):
+    """A structured representation of a data item to upsert.
 
-    This query format is specifically adapted to vectorstores.
-
-    It supports similarity searches together with standard filtering operations.
-
-    We would need to verify that we can accommodate all the existing functionality
-    with it.
+    This allows providing additional information such as the vector.
     """
 
-    query: Optional[T]
-    # Optionally specify the method to use for similarity search
-    method: NotRequired[Optional[str]]  # e.g., "cosine", "euclidean", "jaccard", "mmr"
-
-
-class UpsertData(TypedDict):
-    """Data to upsert."""
-
-    id: str
+    id: str  # An override of the ID for the document
     document: Document
-    vector: Vector
+    vector: List[float]
 
 
 class VectorStore(BaseIndex[Document]):
     @abc.abstractmethod
     def query(
         self,
-        query: SearchQuery[T],
-        /,
+        query: Union[str, List[float]],
         *,
+        filter: Optional[Union[List[Dict[str, Any], Dict[str, Any]]]] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        sort: Optional[Union[Sort, List[Sort]]] = None,
+        search_method: Optional[str] = None,
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> QueryResponse[
-        Document
-    ]:  # kwargs for things that are not captured via the standard query?
+    ) -> QueryResponse[Document]:
         """Query for items."""
 
     @abc.abstractmethod
     def upsert_with_vector(
         self,
-        data: Iterable[UpsertData],
+        data_stream: Iterable[UpsertData],
         /,
         **kwargs: Any,
     ) -> Iterable[UpsertResponse]:
         """Upsert vectors by id."""
-
-    # --------------
-    # TODO: Discuss whether we want this
-    class ContentWithExtras(TypedDict, Generic[T]):
-        content: T
-        metadata: dict
-
-    @abc.abstractmethod
-    def get_with_extras(
-        self,
-        ids: Iterable[str],
-        /,
-    ) -> Iterable[ContentWithExtras]:
-        """Get items by id with any additional information added by the index.
-
-        For example, vectorstores may return the vector associated with the content.
-
-        Currently, there is no way to retrieve this information with vectorstores
-        even though it's really useful for debugging.
-        """
