@@ -23,8 +23,8 @@ class CharacterTextSplitter(TextSplitter):
         separator = (
             self._separator if self._is_separator_regex else re.escape(self._separator)
         )
-        splits, _ = _split_text_with_regex(text, separator, self._keep_separator)
-        _separator = "" if self._keep_separator else self._separator
+        splits, actual_separators = _split_text_with_regex(text, separator, self._keep_separator)
+        _separator = "" if self._keep_separator else actual_separators
         return self._merge_splits(splits, _separator)
 
 
@@ -58,9 +58,22 @@ def _split_text_with_regex(
             if keep_separator == "end"
             else ([_splits[0]] + splits)
         )
-    else:
+    else:        
         splits = list(text)
-    return [s for s in splits if s != ""], actual_separators
+        # in this case, splits is a list of characters, we set the actual_separators to be a list of empty strings
+        actual_separators = [""] * (len(splits)-1)
+    
+    # remove empty string as well as corresponding separators
+    new_splits = []
+    new_actual_separators = []
+    for i, s in enumerate(splits):
+        if s != "":
+            new_splits.append(s)
+            # Only append to actual_separators if we are not at the last split
+            if i < len(actual_separators):
+                new_actual_separators.append(actual_separators[i])
+
+    return new_splits, new_actual_separators
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
