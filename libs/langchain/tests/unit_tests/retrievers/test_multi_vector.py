@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple, Callable
+from typing import Callable, Any, List, Tuple
 
 from langchain_core.documents import Document
 
