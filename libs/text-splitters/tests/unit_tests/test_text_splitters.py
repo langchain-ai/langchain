@@ -361,7 +361,8 @@ def test_recursive_text_splitter_regex_not_keep_separator() -> None:
         is_separator_regex=True,
         chunk_size=15,
         chunk_overlap=0,
-        strip_whitespace=False)
+        strip_whitespace=False,
+    )
     output = splitter.split_text("Hello world")
 
     # here we expect that the original space between "Hello" and "world" be retained,
