@@ -198,7 +198,7 @@ class QueryResponse(TypedDict):
     hits: List[Hit]
 
 
-class UpsertData(TypedDict):
+class UpsertDocument(TypedDict):
     """A structured representation of a data item to upsert.
 
     This allows providing additional information such as the vector.
@@ -228,8 +228,38 @@ class VectorStore(BaseIndex[Document]):
     @abc.abstractmethod
     def upsert_with_vector(
         self,
-        data_stream: Iterable[UpsertData],
+        data_stream: Iterable[UpsertDocument],
         /,
         **kwargs: Any,
+    ) -> Iterable[UpsertResponse]:
+        """Upsert vectors by id."""
+
+
+# -----------------------------
+# Rely a bit on generics for parameterization
+
+Q = TypeVar("Q")
+
+
+class UpsertData(TypedDict, Generic[T]):
+    """A structured representation of a data item to upsert.
+
+    This allows providing additional information such as the vector.
+    """
+
+    content: T
+    vector: List[float]
+
+
+class VectorStoreGeneric(Generic[Q, T], BaseIndex[T]):
+    @abc.abstractmethod
+    def query(
+        self, query: Q, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> QueryResponse[T]:
+        """Query for items."""
+
+    @abc.abstractmethod
+    def upsert_with_vector(
+        self, data_stream: Iterable[UpsertData[T]], /, **kwargs: Any
     ) -> Iterable[UpsertResponse]:
         """Upsert vectors by id."""
