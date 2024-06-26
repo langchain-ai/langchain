@@ -27,7 +27,7 @@ Then initialize
 from langchain_core.messages import HumanMessage
 from langchain_ai21.chat_models import ChatAI21
 
-chat = ChatAI21(model="jamab-instruct")
+chat = ChatAI21(model="jamba-instruct")
 messages = [HumanMessage(content="Hello from AI21")]
 chat.invoke(messages)
 ```
@@ -41,7 +41,7 @@ Streaming is supported by the latest models. To use streaming, set the `streamin
 from langchain_core.messages import HumanMessage
 from langchain_ai21.chat_models import ChatAI21
 
-chat = ChatAI21(model="jamab-instruct", streaming=True)
+chat = ChatAI21(model="jamba-instruct", streaming=True)
 messages = [HumanMessage(content="Hello from AI21")]
 
 response = chat.invoke(messages)
@@ -53,7 +53,7 @@ or use the `stream` method directly
 from langchain_core.messages import HumanMessage
 from langchain_ai21.chat_models import ChatAI21
 
-chat = ChatAI21(model="jamab-instruct")
+chat = ChatAI21(model="jamba-instruct")
 messages = [HumanMessage(content="Hello from AI21")]
 
 for chunk in chat.stream(messages):
