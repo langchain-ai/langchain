@@ -96,18 +96,18 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         return self.create_documents(texts, metadatas=metadatas)
 
     def _join_docs(
-        self, docs: List[str], 
-        separator: Union[str, Iterable[str]]
+        self, docs: List[str], separator: Union[str, Iterable[str]]
     ) -> Optional[str]:
         if isinstance(separator, str):
             # If separators is a single string, join docs using this single separator
             text = separator.join(docs)
         else:
-            # If separators is an iterable, use each separator for the 
-            # respective positions            
+            # If separators is an iterable, use each separator for the
+            # respective positions
             if len(docs) == 0:
-                return None 
-            
+                return None
+            separator = list(separator)
+
             if len(docs) - 1 != len(separator):
                 raise ValueError(
                     f"Number of separators ({len(separator)}) should be equal to "
@@ -117,10 +117,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             text = docs[0]
             for doc, sep in zip(docs[1:], separator):
                 text += sep + doc
-        
+
         if self._strip_whitespace:
             text = text.strip()
-        
+
         if text == "":
             return None
         else:
@@ -129,17 +129,19 @@ class TextSplitter(BaseDocumentTransformer, ABC):
     def _merge_splits(
         self, splits: Iterable[str], separator: Union[str, Iterable[str]]
     ) -> List[str]:
+        splits = list(splits)
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
         if isinstance(separator, str):
-            separator = [separator] * (len(splits) - 1)
-        
+            separator = [separator] * (len(list(splits)) - 1)
+
+        separator = list(separator)
         if len(splits) - 1 != len(separator):
             raise ValueError(
                 f"Number of separators ({len(separator)}) should be equal to "
                 f"number of splits minus 1 ({len(splits) - 1})."
             )
-        
+
         separator_lens = [self._length_function(sep) for sep in separator]
 
         docs = []
@@ -152,9 +154,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             _len = self._length_function(d)
             # separator_len is not applicable when we are adding the 1st elements
             separator_len = (
-                separator_lens[i - 1] 
-                if i > 0 and i - 1 < len(separator_lens) 
-                else 0
+                separator_lens[i - 1] if i > 0 and i - 1 < len(separator_lens) else 0
             )
 
             if (
@@ -167,8 +167,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                         f"which is longer than the specified {self._chunk_size}"
                     )
                 if len(current_doc) > 0:
-                    doc = self._join_docs(current_doc, 
-                                          separator[current_doc_start:current_doc_end-1])
+                    doc = self._join_docs(
+                        current_doc, separator[current_doc_start : current_doc_end - 1]
+                    )
                     if doc is not None:
                         docs.append(doc)
                     # Keep on popping if:
@@ -179,21 +180,23 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                         > self._chunk_size
                         and total > 0
                     ):
-                        
                         total -= self._length_function(current_doc[0]) + (
-                            separator_lens[current_doc_start] 
-                            if len(current_doc) > 1 else 0
+                            separator_lens[current_doc_start]
+                            if len(current_doc) > 1
+                            else 0
                         )
                         current_doc = current_doc[1:]
                         current_doc_start += 1
             current_doc.append(d)
             current_doc_end += 1
             total += _len + (separator_len if len(current_doc) > 1 else 0)
-        doc = self._join_docs(current_doc, 
-                              separator[current_doc_start:current_doc_end-1])
+        doc = self._join_docs(
+            current_doc, separator[current_doc_start : current_doc_end - 1]
+        )
         if doc is not None:
             docs.append(doc)
         return docs
+
     @classmethod
     def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
         """Text splitter that uses HuggingFace tokenizer to count length."""
