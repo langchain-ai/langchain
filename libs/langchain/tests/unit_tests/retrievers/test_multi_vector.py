@@ -24,7 +24,7 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
         return [res]
 
     def similarity_search_with_score(
-        self, query: str, k: int = 4,  **kwargs: Any
+        self, query: str, k: int = 4, **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         res = self.store.get(query)
         if res is None:
@@ -55,7 +55,7 @@ def test_multi_vector_retriever_similarity_search_with_score() -> None:
         docstore=InMemoryStore(),
         doc_id="doc_id",
         search_kwargs={"score_threshold": 0.5},
-        search_type="similarity_score_threshold"
+        search_type="similarity_score_threshold",
     )
     retriever.vectorstore.add_documents(documents, ids=["1"])
     retriever.docstore.mset(list(zip(["1"], documents)))
@@ -70,7 +70,7 @@ def test_multi_vector_retriever_similarity_search_with_score() -> None:
         docstore=InMemoryStore(),
         doc_id="doc_id",
         search_kwargs={"score_threshold": 0.9},
-        search_type="similarity_score_threshold"
+        search_type="similarity_score_threshold",
     )
     retriever.vectorstore.add_documents(documents, ids=["1"])
     retriever.docstore.mset(list(zip(["1"], documents)))
