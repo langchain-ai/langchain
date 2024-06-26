@@ -1,10 +1,8 @@
 ---
-sidebar_label: "Style guide"
+sidebar_class_name: "hidden"
 ---
 
-# LangChain Documentation Style Guide
-
-## Introduction
+# Documentation Style Guide
 
 As LangChain continues to grow, the surface area of documentation required to cover it continues to grow too.
 This page provides guidelines for anyone writing documentation for LangChain, as well as some of our philosophies around
@@ -12,116 +10,136 @@ organization and structure.
 
 ## Philosophy
 
-LangChain's documentation aspires to follow the [Diataxis framework](https://diataxis.fr).
-Under this framework, all documentation falls under one of four categories:
+LangChain's documentation follows the [Diataxis framework](https://diataxis.fr).
+Under this framework, all documentation falls under one of four categories: [Tutorials](/docs/contributing/documentation/style_guide/#tutorials),
+[How-to guides](/docs/contributing/documentation/style_guide/#how-to-guides),
+[References]/docs/contributing/documentation/style_guide/#references, and [Explanations](/docs/contributing/documentation/style_guide/#conceptual-guide).
 
-- **Tutorials**: Lessons that take the reader by the hand through a series of conceptual steps to complete a project.
-  - An example of this is our [LCEL streaming guide](/docs/how_to/streaming).
-  - Our guides on [custom components](/docs/how_to/custom_chat_model) is another one.
-- **How-to guides**: Guides that take the reader through the steps required to solve a real-world problem.
-  - The clearest examples of this are our [Use case](/docs/how_to#use-cases) quickstart pages.
-- **Reference**: Technical descriptions of the machinery and how to operate it.
-  - Our [Runnable interface](/docs/concepts#interface) page is an example of this.
-  - The [API reference pages](https://api.python.langchain.com/) are another.
-- **Explanation**: Explanations that clarify and illuminate a particular topic.
-  - The [LCEL primitives pages](/docs/how_to/sequence) are an example of this.
+### Tutorials
+
+Tutorials are lessons that take the reader through a practical activity. Their purpose is to help the user
+gain understanding of concepts and how they interact by showing one way to achieve some goal in a hands-on way. They should not cover
+multiple permutations of ways to achieve that goal in-depth, and the end result of a tutorial does not need to
+be completely production-ready against all cases. Information on how to address additional scenarios
+can occur in how-to guides.
+
+To quote the Diataxis website:
+
+> A tutorial serves the user’s *acquisition* of skills and knowledge - their study. Its purpose is not to help the user get something done, but to help them learn.
+
+In LangChain, these are often higher level guides that show off end-to-end use cases.
+
+Some examples include:
+
+- [Build a Simple LLM Application with LCEL](/docs/tutorials/llm_chain/)
+- [Build a Retrieval Augmented Generation (RAG) App](/docs/tutorials/rag/)
+  
+Here are some high-level tips on writing a good tutorial:
+
+- Focus on guiding the user to get something done, but keep in mind the end-goal is more to impart principles than to create a perfect production system
+- Be specific, not abstract and follow one path
+  - No need to go deeply into alternative approaches, but it’s ok to reference them, ideally with a link to an appropriate how-to guide
+- Get "a point on the board" as soon as possible - something the user can run that outputs something
+  - You can iterate and expand afterwards
+  - Try to frequently checkpoint at given steps where the user can run code and see progress
+- Focus on results, not technical explanation
+  - Crosslink heavily to appropriate conceptual/reference pages
+- The first time you mention a LangChain concept, use its full name (e.g. "LangChain Expression Language (LCEL)"), and link to its conceptual/other documentation page
+  - It's also helpful to add a prerequisite callout that links to any pages with necessary background information
+- End with a recap/next steps section summarizing what the tutorial covered and future reading, such as related how-to guides
+  
+### How-to guides
+
+A how-to guide, as the name implies, demonstrates how to do something discrete and specific.
+It should assume that the user is already familiar with underlying concepts, and is trying to solve an immediate problem, but
+should still give some background or list the scenarios where the information contained within can be relevant.
+They can and should discuss alternatives if one approach may be better than another in certain cases.
+
+To quote the Diataxis website:
+
+> A how-to guide serves the work of the already-competent user, whom you can assume to know what they want to do, and to be able to follow your instructions correctly.
+
+Some examples include:
+
+- [How to: return structured data from a model](/docs/how_to/structured_output/)
+- [How to: write a custom chat model](/docs/how_to/custom_chat_model/)
+
+Here are some high-level tips on writing a good how-to guide:
+
+- Clearly explain what you are guiding the user through at the start
+- Assume higher intent than a tutorial and show what the user needs to do to get that task done
+- Assume familiarity of concepts, but explain why suggested actions are helpful
+  - Crosslink heavily to conceptual/reference pages
+- Discuss alternatives and responses to real-world tradeoffs that may arise when solving a problem
+- Use lots of example code
+- End with a recap/next steps section summarizing what the tutorial covered and future reading, such as other related how-to guides
+
+### Conceptual guide
+
+LangChain's conceptual guide falls under the **Explanation** quadrant of Diataxis. They should cover LangChain terms and concepts
+in a more abstract way than how-to guides or tutorials, and should be geared towards curious users interested in
+gaining a deeper understanding of the framework. There should be few, if any, concrete code examples. The goal here is to
+impart perspective to the user rather than to finish a practical project.
+
+This guide on documentation style is meant to fall under this category.
+
+To quote the Diataxis website:
+
+> The perspective of explanation is higher and wider than that of the other types. It does not take the user’s eye-level view, as in a how-to guide, or a close-up view of the machinery, like reference material. Its scope in each case is a topic - “an area of knowledge”, that somehow has to be bounded in a reasonable, meaningful way.
+
+Some examples include:
+
+- [Retrieval conceptual docs](/docs/concepts/#retrieval)
+- [Chat model conceptual docs](/docs/concepts/#chat-models)
+
+Here are some high-level tips on writing a good conceptual guide:
+
+- Explain design decisions. Why does concept X exist and why was it designed this way?
+- Use analogies and reference other concepts and alternatives
+- Avoid blending in too much reference content
+- You can and should reference content covered in other guides, but make sure to link to them
+
+### References
+
+References contain detailed, low-level information that describes exactly what functionality exists and how to use it.
+In LangChain, this is mainly our API reference pages, which are populated from docstrings within code.
+References pages are generally not read end-to-end, but are consulted as necessary when a user needs to know
+how to use something specific.
+
+To quote the Diataxis website:
+
+> The only purpose of a reference guide is to describe, as succinctly as possible, and in an orderly way. Whereas the content of tutorials and how-to guides are led by needs of the user, reference material is led by the product it describes.
+
+Many of the reference pages in LangChain are automatically generated from code,
+but here are some high-level tips on writing a good docstring:
+
+- Be concise
+- Discuss special cases and deviations from a user's expectations
+- Go into detail on required inputs and outputs
+- Light details on when one might use the feature are fine, but in-depth details belong in other sections.
 
 Each category serves a distinct purpose and requires a specific approach to writing and structuring the content.
 
-## Taxonomy
-
-Keeping the above in mind, we have sorted LangChain's docs into categories. It is helpful to think in these terms
-when contributing new documentation:
-
-### Getting started
-
-The [getting started section](/docs/introduction) includes a high-level introduction to LangChain, a quickstart that
-tours LangChain's various features, and logistical instructions around installation and project setup.
-
-It contains elements of **How-to guides** and **Explanations**.
-
-### Use cases
-
-[Use cases](/docs/how_to#use-cases) are guides that are meant to show how to use LangChain to accomplish a specific task (RAG, information extraction, etc.).
-The quickstarts should be good entrypoints for first-time LangChain developers who prefer to learn by getting something practical prototyped,
-then taking the pieces apart retrospectively. These should mirror what LangChain is good at.
-
-The quickstart pages here should fit the **How-to guide** category, with the other pages intended to be **Explanations** of more
-in-depth concepts and strategies that accompany the main happy paths.
-
-:::note
-The below sections are listed roughly in order of increasing level of abstraction.
-:::
-
-### Expression Language
-
-[LangChain Expression Language (LCEL)](/docs/concepts#langchain-expression-language-lcel) is the fundamental way that most LangChain components fit together, and this section is designed to teach
-developers how to use it to build with LangChain's primitives effectively.
-
-This section should contains **Tutorials** that teach how to stream and use LCEL primitives for more abstract tasks, **Explanations** of specific behaviors,
-and some **References** for how to use different methods in the Runnable interface.
-
-### Components
-
-The [components section](/docs/concepts) covers concepts one level of abstraction higher than LCEL.
-Abstract base classes like `BaseChatModel` and `BaseRetriever` should be covered here, as well as core implementations of these base classes,
-such as `ChatPromptTemplate` and `RecursiveCharacterTextSplitter`. Customization guides belong here too.
-
-This section should contain mostly conceptual **Tutorials**, **References**, and **Explanations** of the components they cover.
-
-:::note
-As a general rule of thumb, everything covered in the `Expression Language` and `Components` sections (with the exception of the `Composition` section of components) should
-cover only components that exist in `langchain_core`.
-:::
-
-### Integrations
-
-The [integrations](/docs/integrations/platforms/) are specific implementations of components. These often involve third-party APIs and services.
-If this is the case, as a general rule, these are maintained by the third-party partner.
-
-This section should contain mostly **Explanations** and **References**, though the actual content here is more flexible than other sections and more at the
-discretion of the third-party provider.
-
-:::note
-Concepts covered in `Integrations` should generally exist in `langchain_community` or specific partner packages.
-:::
-
-### Guides and Ecosystem
-
-The [Guides](/docs/tutorials) and [Ecosystem](https://docs.smith.langchain.com/) sections should contain guides that address higher-level problems than the sections above.
-This includes, but is not limited to, considerations around productionization and development workflows.
-
-These should contain mostly **How-to guides**, **Explanations**, and **Tutorials**.
-
-### API references
-
-LangChain's API references. Should act as **References** (as the name implies) with some **Explanation**-focused content as well. 
-
-## Sample developer journey
-
-We have set up our docs to assist a new developer to LangChain. Let's walk through the intended path:
-
-- The developer lands on https://python.langchain.com, and reads through the introduction and the diagram.
-- If they are just curious, they may be drawn to the [Quickstart](/docs/tutorials/llm_chain) to get a high-level tour of what LangChain contains.
-- If they have a specific task in mind that they want to accomplish, they will be drawn to the Use-Case section. The use-case should provide a good, concrete hook that shows the value LangChain can provide them and be a good entrypoint to the framework.
-- They can then move to learn more about the fundamentals of LangChain through the Expression Language sections.
-- Next, they can learn about LangChain's various components and integrations.
-- Finally, they can get additional knowledge through the Guides.
-
-This is only an ideal of course - sections will inevitably reference lower or higher-level concepts that are documented in other sections.
-
-## Guidelines
+## General guidelines
 
 Here are some other guidelines you should think about when writing and organizing documentation.
 
-### Linking to other sections
+We generally do not merge new tutorials from outside contributors without an actue need.
+We welcome updates as well as new integration docs, how-tos, and references.
+
+### Avoid duplication
+
+Multiple pages that cover the same material in depth are difficult to maintain and cause confusion. There should
+be only one (very rarely two), canonical pages for a given concept or feature. Instead, you should link to other guides.
+
+### Link to other sections
 
 Because sections of the docs do not exist in a vacuum, it is important to link to other sections as often as possible
 to allow a developer to learn more about an unfamiliar topic inline.
 
 This includes linking to the API references as well as conceptual sections!
 
-### Conciseness
+### Be concise
 
 In general, take a less-is-more approach. If a section with a good explanation of a concept already exists, you should link to it rather than
 re-explain it, unless the concept you are documenting presents some new wrinkle.
@@ -130,9 +148,10 @@ Be concise, including in code samples.
 
 ### General style
 
-- Use active voice and present tense whenever possible.
-- Use examples and code snippets to illustrate concepts and usage.
-- Use appropriate header levels (`#`, `##`, `###`, etc.) to organize the content hierarchically.
-- Use bullet points and numbered lists to break down information into easily digestible chunks.
-- Use tables (especially for **Reference** sections) and diagrams often to present information visually.
-- Include the table of contents for longer documentation pages to help readers navigate the content, but hide it for shorter pages.
+- Use active voice and present tense whenever possible
+- Use examples and code snippets to illustrate concepts and usage
+- Use appropriate header levels (`#`, `##`, `###`, etc.) to organize the content hierarchically
+- Use fewer cells with more code to make copy/paste easier
+- Use bullet points and numbered lists to break down information into easily digestible chunks
+- Use tables (especially for **Reference** sections) and diagrams often to present information visually
+- Include the table of contents for longer documentation pages to help readers navigate the content, but hide it for shorter pages
