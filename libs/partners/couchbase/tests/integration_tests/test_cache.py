@@ -8,7 +8,7 @@ import pytest
 from couchbase.auth import PasswordAuthenticator
 from couchbase.cluster import Cluster
 from couchbase.options import ClusterOptions
-from langchain.globals import get_llm_cache, set_llm_cache
+from langchain_core.globals import get_llm_cache, set_llm_cache
 from langchain_core.outputs import Generation
 
 from langchain_couchbase.cache import CouchbaseCache, CouchbaseSemanticCache
