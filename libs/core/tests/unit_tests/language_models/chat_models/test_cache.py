@@ -389,13 +389,11 @@ def test_cleanup_serialized() -> None:
                     "InMemoryCache",
                 ],
                 "lc": 1,
-                "repr": "",
                 "type": "not_implemented",
             },
             "messages": {
                 "id": ["builtins", "list_iterator"],
                 "lc": 1,
-                "repr": "",
                 "type": "not_implemented",
             },
         },
