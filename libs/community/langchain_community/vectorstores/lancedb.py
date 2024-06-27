@@ -371,10 +371,12 @@ class LanceDB(VectorStore):
 
         prefilter = kwargs.get("prefilter", False)
         query_type = kwargs.get("query_type", "vector")
+        metrics = kwargs.get("metrics", "l2")
 
         lance_query = (
             tbl.search(query=query, vector_column_name=self._vector_key)
             .limit(k)
+            .metric(metrics)
             .where(filter, prefilter=prefilter)
         )
         if query_type == "hybrid" and self._reranker is not None:
