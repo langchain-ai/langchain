@@ -65,14 +65,14 @@ def test_extra_kwargs() -> None:
 
 
 async def test_chat_baichuan_agenerate() -> None:
-    chat = ChatBaichuan()
-    response = await chat.ainvoke("你好呀")  # type: ignore[call-arg]
+    chat = ChatBaichuan()  # type: ignore[call-arg]
+    response = await chat.ainvoke("你好呀")
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, str)
 
 
 async def test_chat_baichuan_astream() -> None:
-    chat = ChatBaichuan()
-    async for chunk in chat.astream("今天天气如何？"):  # type: ignore[call-arg]
+    chat = ChatBaichuan()  # type: ignore[call-arg]
+    async for chunk in chat.astream("今天天气如何？"):
         assert isinstance(chunk, AIMessage)
         assert isinstance(chunk.content, str)
