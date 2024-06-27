@@ -17,28 +17,24 @@ CHAT_MODEL_IGNORE = ("FakeListChatModel", "HumanInputChatModel")
 CHAT_MODEL_FEAT_TABLE = {
     "ChatAnthropic": {
         "tool_calling": True,
-        "structured_output": True,
         "multimodal": True,
         "package": "langchain-anthropic",
         "link": "/docs/integrations/chat/anthropic/",
     },
     "ChatMistralAI": {
         "tool_calling": True,
-        "structured_output": True,
         "json_model": True,
         "package": "langchain-mistralai",
         "link": "/docs/integrations/chat/mistralai/",
     },
     "ChatFireworks": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
         "package": "langchain-fireworks",
         "link": "/docs/integrations/chat/fireworks/",
     },
     "AzureChatOpenAI": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
         "multimodal": True,
         "package": "langchain-openai",
@@ -46,7 +42,6 @@ CHAT_MODEL_FEAT_TABLE = {
     },
     "ChatOpenAI": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
         "multimodal": True,
         "package": "langchain-openai",
@@ -54,14 +49,12 @@ CHAT_MODEL_FEAT_TABLE = {
     },
     "ChatTogether": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
         "package": "langchain-together",
         "link": "/docs/integrations/chat/together/",
     },
     "ChatVertexAI": {
         "tool_calling": True,
-        "structured_output": True,
         "multimodal": True,
         "package": "langchain-google-vertexai",
         "link": "/docs/integrations/chat/google_vertex_ai_palm/",
@@ -74,14 +67,12 @@ CHAT_MODEL_FEAT_TABLE = {
     },
     "ChatGroq": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
         "package": "langchain-groq",
         "link": "/docs/integrations/chat/groq/",
     },
     "ChatCohere": {
         "tool_calling": True,
-        "structured_output": True,
         "package": "langchain-cohere",
         "link": "/docs/integrations/chat/cohere/",
     },
@@ -109,18 +100,19 @@ CHAT_MODEL_FEAT_TABLE = {
     },
     "ChatEdenAI": {
         "tool_calling": True,
-        "structured_output": True,
         "package": "langchain-community",
         "link": "/docs/integrations/chat/edenai/",
     },
     "ChatLlamaCpp": {
         "tool_calling": True,
-        "structured_output": True,
         "local": True,
         "package": "langchain-community",
         "link": "/docs/integrations/chat/llamacpp",
     },
 }
+
+for feats in CHAT_MODEL_FEAT_TABLE.values():
+    feats["structured_output"] = feats.get("tool_calling", False)
 
 
 LLM_TEMPLATE = """\
