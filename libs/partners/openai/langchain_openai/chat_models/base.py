@@ -219,7 +219,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict["role"] = "tool"
         message_dict["tool_call_id"] = message.tool_call_id
 
-        supported_props = {"content", "role", "tool_call_id"}
+        supported_props = {"content", "role", "tool_call_id", "name"}
         message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
     else:
         raise TypeError(f"Got unknown type {message}")
