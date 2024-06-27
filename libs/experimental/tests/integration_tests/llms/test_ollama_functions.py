@@ -135,6 +135,7 @@ class TestOllamaFunctions(unittest.TestCase):
         structured_llm = model.with_structured_output(Joke, include_raw=True)
 
         res = structured_llm.invoke("Tell me a joke about cars")
+        assert isinstance(res, dict)
         assert "raw" in res
         assert "parsed" in res
         assert isinstance(res["raw"], AIMessage)

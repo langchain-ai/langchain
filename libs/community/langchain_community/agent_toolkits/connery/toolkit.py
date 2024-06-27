@@ -9,6 +9,9 @@ from langchain_community.tools.connery import ConneryService
 class ConneryToolkit(BaseToolkit):
     """
     Toolkit with a list of Connery Actions as tools.
+
+    Parameters:
+        tools (List[BaseTool]): The list of Connery Actions.
     """
 
     tools: List[BaseTool]
@@ -23,6 +26,7 @@ class ConneryToolkit(BaseToolkit):
     def validate_attributes(cls, values: dict) -> dict:
         """
         Validate the attributes of the ConneryToolkit class.
+
         Parameters:
             values (dict): The arguments to validate.
         Returns:
@@ -38,9 +42,10 @@ class ConneryToolkit(BaseToolkit):
     def create_instance(cls, connery_service: ConneryService) -> "ConneryToolkit":
         """
         Creates a Connery Toolkit using a Connery Service.
+
         Parameters:
             connery_service (ConneryService): The Connery Service
-            to to get the list of Connery Actions.
+                to to get the list of Connery Actions.
         Returns:
             ConneryToolkit: The Connery Toolkit.
         """

@@ -1357,6 +1357,7 @@ class Runnable(Generic[Input, Output], ABC):
         Example:
 
         .. code-block:: python
+
             from langchain_core.runnables import RunnableLambda
             import time
 
@@ -1891,6 +1892,8 @@ class Runnable(Generic[Input, Output], ABC):
                             final_input_supported = False
                 else:
                     final_input = ichunk
+        except GeneratorExit:
+            run_manager.on_chain_end(final_output, inputs=final_input)
         except BaseException as e:
             run_manager.on_chain_error(e, inputs=final_input)
             raise
@@ -3388,6 +3391,7 @@ class RunnableGenerator(Runnable[Input, Output]):
 
     RunnableGenerator makes it easy to implement custom behavior within a streaming
     context. Below we show an example:
+
         .. code-block:: python
 
             from langchain_core.prompts import ChatPromptTemplate
@@ -3575,6 +3579,11 @@ class RunnableLambda(Runnable[Input, Output]):
 
     RunnableLambda can be composed as any other Runnable and provides
     seamless integration with LangChain tracing.
+
+    `RunnableLambda` is best suited for code that does not need to support
+    streaming. If you need to support streaming (i.e., be able to operate
+    on chunks of inputs and yield chunks of outputs), use `RunnableGenerator`
+    instead.
 
     Examples:
 
@@ -4379,12 +4388,15 @@ class RunnableEach(RunnableEachBase[Input, Output]):
             Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
         ] = None,
     ) -> RunnableEach[Input, Output]:
-        """
-        Bind lifecycle listeners to a Runnable, returning a new Runnable.
+        """Bind lifecycle listeners to a Runnable, returning a new Runnable.
 
-        on_start: Called before the runnable starts running, with the Run object.
-        on_end: Called after the runnable finishes running, with the Run object.
-        on_error: Called if the runnable throws an error, with the Run object.
+        Args:
+            on_start: Called before the runnable starts running, with the Run object.
+            on_end: Called after the runnable finishes running, with the Run object.
+            on_error: Called if the runnable throws an error, with the Run object.
+
+        Returns:
+            A new Runnable with the listeners bound.
 
         The Run object contains information about the run, including its id,
         type, input, output, error, start_time, end_time, and any tags or metadata
@@ -4403,15 +4415,18 @@ class RunnableEach(RunnableEachBase[Input, Output]):
         on_end: Optional[AsyncListener] = None,
         on_error: Optional[AsyncListener] = None,
     ) -> RunnableEach[Input, Output]:
-        """
-        Bind async lifecycle listeners to a Runnable, returning a new Runnable.
+        """Bind async lifecycle listeners to a Runnable, returning a new Runnable.
 
-        on_start: Called asynchronously before the runnable starts running,
-                  with the Run object.
-        on_end: Called asynchronously after the runnable finishes running,
-                with the Run object.
-        on_error: Called asynchronously if the runnable throws an error,
-                with the Run object.
+        Args:
+            on_start: Called asynchronously before the runnable starts running,
+                      with the Run object.
+            on_end: Called asynchronously after the runnable finishes running,
+                    with the Run object.
+            on_error: Called asynchronously if the runnable throws an error,
+                    with the Run object.
+
+        Returns:
+            A new Runnable with the listeners bound.
 
         The Run object contains information about the run, including its id,
         type, input, output, error, start_time, end_time, and any tags or metadata

@@ -173,6 +173,16 @@ def create_index(
     vector_store: OracleVS,
     params: Optional[dict[str, Any]] = None,
 ) -> None:
+    """Create an index on the vector store.
+
+    Args:
+        client: The OracleDB connection object.
+        vector_store: The vector store object.
+        params: Optional parameters for the index creation.
+
+    Raises:
+        ValueError: If an invalid parameter is provided.
+    """
     if params:
         if params["idx_type"] == "HNSW":
             _create_hnsw_index(
@@ -351,6 +361,15 @@ def _create_ivf_index(
 
 @_handle_exceptions
 def drop_table_purge(client: Connection, table_name: str) -> None:
+    """Drop a table and purge it from the database.
+
+    Args:
+        client: The OracleDB connection object.
+        table_name: The name of the table to drop.
+
+    Raises:
+        RuntimeError: If an error occurs while dropping the table.
+    """
     if _table_exists(client, table_name):
         cursor = client.cursor()
         with cursor:
@@ -364,6 +383,15 @@ def drop_table_purge(client: Connection, table_name: str) -> None:
 
 @_handle_exceptions
 def drop_index_if_exists(client: Connection, index_name: str) -> None:
+    """Drop an index if it exists.
+
+    Args:
+        client: The OracleDB connection object.
+        index_name: The name of the index to drop.
+
+    Raises:
+        RuntimeError: If an error occurs while dropping the index.
+    """
     if _index_exists(client, index_name):
         drop_query = f"DROP INDEX {index_name}"
         with client.cursor() as cursor:
