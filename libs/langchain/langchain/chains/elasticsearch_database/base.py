@@ -56,7 +56,7 @@ class ElasticsearchDatabaseChain(Chain):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_indices(cls, values: dict) -> dict:
         if values["include_indices"] and values["ignore_indices"]:
             raise ValueError(
