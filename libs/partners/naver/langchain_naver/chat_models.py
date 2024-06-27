@@ -5,11 +5,12 @@ from typing import (
 )
 
 import httpx
-from httpx_sse import connect_sse, aconnect_sse, EventSource, ServerSentEvent
+from httpx_sse import (
+    connect_sse, aconnect_sse, EventSource, ServerSentEvent,
+)
 
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
+    AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import LangSmithParams, BaseChatModel
 from langchain_core.language_models.llms import create_base_retry_decorator
@@ -24,31 +25,6 @@ from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 DEFAULT_BASE_URL = "https://clovastudio.stream.ntruss.com/testapp"
 
 logger = logging.getLogger(__name__)
-
-
-async def _araise_on_error(response: httpx.Response) -> None:
-    """Raise an error if the response is an error."""
-    if httpx.codes.is_error(response.status_code):
-        error_message = (await response.aread()).decode("utf-8")
-        raise httpx.HTTPStatusError(
-            f"Error response {response.status_code} "
-            f"while fetching {response.url}: {error_message}",
-            request=response.request,
-            response=response,
-        )
-
-
-async def _aiter_sse(
-    event_source_mgr: AsyncContextManager[EventSource],
-) -> AsyncIterator[Dict]:
-    """Iterate over the server-sent events."""
-    async with event_source_mgr as event_source:
-        await _araise_on_error(event_source.response)
-        async for sse in event_source.aiter_sse():
-            event_data = sse.json()
-            if sse.event == "signal" and event_data.get("data", {}) == "[DONE]":
-                return
-            yield sse
 
 
 def _convert_chunk_to_message_chunk(
@@ -108,10 +84,35 @@ def _convert_naver_chat_message_to_message(
         assert True, f"Expected role to be 'assistant', 'system', 'user', got {role}"
 
 
+async def _aiter_sse(
+    event_source_mgr: AsyncContextManager[EventSource],
+) -> AsyncIterator[Dict]:
+    """Iterate over the server-sent events."""
+    async with event_source_mgr as event_source:
+        await _araise_on_error(event_source.response)
+        async for sse in event_source.aiter_sse():
+            event_data = sse.json()
+            if sse.event == "signal" and event_data.get("data", {}) == "[DONE]":
+                return
+            yield sse
+
+
 def _raise_on_error(response: httpx.Response) -> None:
     """Raise an error if the response is an error."""
     if httpx.codes.is_error(response.status_code):
         error_message = response.read().decode("utf-8")
+        raise httpx.HTTPStatusError(
+            f"Error response {response.status_code} "
+            f"while fetching {response.url}: {error_message}",
+            request=response.request,
+            response=response,
+        )
+
+
+async def _araise_on_error(response: httpx.Response) -> None:
+    """Raise an error if the response is an error."""
+    if httpx.codes.is_error(response.status_code):
+        error_message = (await response.aread()).decode("utf-8")
         raise httpx.HTTPStatusError(
             f"Error response {response.status_code} "
             f"while fetching {response.url}: {error_message}",
@@ -160,6 +161,7 @@ class ChatNaver(BaseChatModel):
     stop_before: Optional[str] = None
     include_ai_filters: Optional[bool] = None
     seed: Optional[int] = None
+
     timeout: int = 60
     max_retries: int = 3
 
@@ -187,6 +189,7 @@ class ChatNaver(BaseChatModel):
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
+        self._default_params["model_name"] = self.model_name
         return self._default_params
 
     @property
@@ -306,7 +309,7 @@ class ChatNaver(BaseChatModel):
             _raise_on_error(response)
             return response.json()
 
-    async def acompletion_with_retry(
+    async def _acompletion_with_retry(
             self,
             run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
             **kwargs: Any,
@@ -359,9 +362,9 @@ class ChatNaver(BaseChatModel):
     ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
-        response = self._completion_with_retry(
-            messages=message_dicts, **params
-        )
+
+        response = self._completion_with_retry(messages=message_dicts, **params)
+
         return self._create_chat_result(response)
 
     def _stream(
@@ -379,14 +382,27 @@ class ChatNaver(BaseChatModel):
             messages=message_dicts, run_manager=run_manager, **params
         ):
             new_chunk = _convert_chunk_to_message_chunk(sse, default_chunk_class)
-            # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
             gen_chunk = ChatGenerationChunk(message=new_chunk)
+
             if run_manager:
-                run_manager.on_llm_new_token(
-                    token=cast(str, new_chunk.content), chunk=gen_chunk
-                )
+                run_manager.on_llm_new_token(token=cast(str, new_chunk.content), chunk=gen_chunk)
+
             yield gen_chunk
+
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs}
+
+        response = await self._acompletion_with_retry(messages=message_dicts, run_manager=run_manager, **params)
+
+        return self._create_chat_result(response)
 
     async def _astream(
         self,
@@ -399,37 +415,17 @@ class ChatNaver(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
-        async for chunk in await self.acompletion_with_retry(messages=message_dicts, run_manager=run_manager, **params):
+        async for chunk in await self._acompletion_with_retry(
+            messages=message_dicts, run_manager=run_manager, **params
+        ):
             new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
-            # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
             gen_chunk = ChatGenerationChunk(message=new_chunk)
+
             if run_manager:
-                await run_manager.on_llm_new_token(
-                    token=cast(str, new_chunk.content), chunk=gen_chunk
-                )
+                await run_manager.on_llm_new_token(token=cast(str, new_chunk.content), chunk=gen_chunk)
+
             yield gen_chunk
-
-    async def _agenerate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        # should_stream = self.stream if self.stream is not None else False
-        # if should_stream:
-        #     stream_iter = self._astream(
-        #         messages=messages, stop=stop, run_manager=run_manager, **kwargs
-        #     )
-        #     return await agenerate_from_stream(stream_iter)
-
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
-        response = await self.acompletion_with_retry(
-            messages=message_dicts, run_manager=run_manager, **params
-        )
-        return self._create_chat_result(response)
 
 
 def _create_retry_decorator(
