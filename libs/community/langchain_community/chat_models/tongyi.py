@@ -32,6 +32,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
+    FunctionMessage,
     HumanMessage,
     HumanMessageChunk,
     SystemMessage,
@@ -199,6 +200,13 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {
             "role": "tool",
             "tool_call_id": message.tool_call_id,
+            "content": message.content,
+            "name": message.name,
+        }
+    elif isinstance(message, FunctionMessage):
+        message_dict = {
+            "role": "tool",
+            "tool_call_id": "",
             "content": message.content,
             "name": message.name,
         }
