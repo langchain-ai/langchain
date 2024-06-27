@@ -99,11 +99,12 @@ class AzureSQLServer_VectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Compute the embeddings for the input texts and store embeddings in the vectorstore.
+        """Compute the embeddings for the input texts and store embeddings
+        in the vectorstore.
 
         Args:
             texts: Iterable of strings to add into the vectorstore.
-            metadatas: List of metadatas (as python dictionaries) associated with the input texts.
+            metadatas: List of metadatas (python dicts) associated with the input texts.
             ids: List of IDs for the input texts.
             kwargs: vectorstore specific parameters.
 
@@ -132,7 +133,7 @@ class AzureSQLServer_VectorStore(VectorStore):
         Args:
             texts: Iterable of strings to add into the vectorstore.
             embeddings: List of list of embeddings.
-            metadatas: List of metadatas (as python dictionaries) associated with the input texts.
+            metadatas: List of metadatas (python dicts) associated with the input texts.
             ids: List of IDs for the input texts.
             kwargs: vectorstore specific parameters.
 
@@ -152,7 +153,8 @@ class AzureSQLServer_VectorStore(VectorStore):
                 for id, query, embedding, metadata in zip(
                     ids, texts, embeddings, metadatas
                 ):
-                    # Construct text, embedding, metadata as EmbeddingStore model to be inserted into the table.
+                    # Construct text, embedding, metadata as EmbeddingStore model
+                    # to be inserted into the table.
                     sqlquery = text(
                         "select JSON_ARRAY_TO_VECTOR (:embeddingvalues)"
                     ).bindparams(
