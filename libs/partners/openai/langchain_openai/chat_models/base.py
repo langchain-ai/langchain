@@ -219,12 +219,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict["role"] = "tool"
         message_dict["tool_call_id"] = message.tool_call_id
 
-        # Note: "name" is not documented in OpenAI's API Reference
-        # https://platform.openai.com/docs/api-reference/chat/create
-        # but is referenced in cookbooks
-        # https://cookbook.openai.com/examples/how_to_call_functions_with_chat_models
-        # and is required for some proxys (e.g., Google Gemini).
-        supported_props = {"content", "role", "tool_call_id", "name"}
+        supported_props = {"content", "role", "tool_call_id"}
         message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
     else:
         raise TypeError(f"Got unknown type {message}")
