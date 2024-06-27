@@ -34,10 +34,10 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
-    Sequence,
 )
 
 from langchain_core.embeddings import Embeddings
