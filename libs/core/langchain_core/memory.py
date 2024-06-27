@@ -7,6 +7,7 @@
     BaseMemory --> <name>Memory --> <name>Memory  # Examples: BaseChatMemory -> MotorheadMemory
 
 """  # noqa: E501
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -58,20 +59,37 @@ class BaseMemory(Serializable, ABC):
 
     @abstractmethod
     def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        """Return key-value pairs given the text input to the chain."""
+        """Return key-value pairs given the text input to the chain.
+
+        Args:
+            inputs: The inputs to the chain."""
 
     async def aload_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        """Return key-value pairs given the text input to the chain."""
+        """Async return key-value pairs given the text input to the chain.
+
+        Args:
+            inputs: The inputs to the chain.
+        """
         return await run_in_executor(None, self.load_memory_variables, inputs)
 
     @abstractmethod
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
-        """Save the context of this chain run to memory."""
+        """Save the context of this chain run to memory.
+
+        Args:
+            inputs: The inputs to the chain.
+            outputs: The outputs of the chain.
+        """
 
     async def asave_context(
         self, inputs: Dict[str, Any], outputs: Dict[str, str]
     ) -> None:
-        """Save the context of this chain run to memory."""
+        """Async save the context of this chain run to memory.
+
+        Args:
+            inputs: The inputs to the chain.
+            outputs: The outputs of the chain.
+        """
         await run_in_executor(None, self.save_context, inputs, outputs)
 
     @abstractmethod
@@ -79,5 +97,5 @@ class BaseMemory(Serializable, ABC):
         """Clear memory contents."""
 
     async def aclear(self) -> None:
-        """Clear memory contents."""
+        """Async clear memory contents."""
         await run_in_executor(None, self.clear)
