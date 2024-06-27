@@ -1,9 +1,65 @@
 from enum import Enum
-from typing import List, Union
+from typing import Dict, List, Union
 
 import numpy as np
+from langchain.chains.query_constructor.ir import (
+    Comparator,
+    Operator,
+)
 
 Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
+
+SparseVector = Dict[str, Union[List[int], List[float]]]
+
+
+def check_valid_alpha(a):
+    if a is not None and not (0 <= a <= 1):
+        raise ValueError("Alpha must be between 0 and 1")
+
+
+class FakeEncoder:
+    """Fake sparse encoder for testing."""
+
+    seed: int
+    size: int
+    """The max size of the encoded vector"""
+
+    def __init__(self, seed, size):
+        import numpy as np
+
+        self.size = size  # max width of sparse encodings
+        self.seed = seed
+        self.rng = np.random.default_rng(seed=self.seed)  # seed random number generator
+
+    def _get_encoding(self):
+        vector_size = self.rng.integers(1, self.size + 1)
+
+        idxs = range(0, vector_size)
+        selected_idxs = self.rng.choice(idxs, size=vector_size, replace=False).tolist()
+
+        return {
+            "indices": selected_idxs,
+            "values": self.rng.random(size=vector_size).tolist(),
+        }
+
+    def encode_documents(
+        self, texts: Union[str, List[str]]
+    ) -> Union[SparseVector, List[SparseVector]]:
+        """Return arbitrary sparse vector for text upserts"""
+        if isinstance(texts, str):
+            return self._get_encoding()
+        elif isinstance(texts, list):
+            return [self._get_encoding() for text in texts]
+
+    def encode_queries(
+        self, texts: Union[str, List[str]]
+    ) -> Union[SparseVector, List[SparseVector]]:
+        """Return arbitrary sparse vector for hybrid query testing"""
+
+        if isinstance(texts, str):
+            return self._get_encoding()
+        elif isinstance(texts, list):
+            return [self._get_encoding() for text in texts]
 
 
 class DistanceStrategy(str, Enum):
@@ -76,3 +132,17 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
             similarity = np.dot(X, Y.T) / np.outer(X_norm, Y_norm)
         similarity[np.isnan(similarity) | np.isinf(similarity)] = 0.0
         return similarity
+
+
+allowed_operators = [Operator.AND, Operator.OR]
+
+allowed_comparators = [
+    Comparator.EQ,
+    Comparator.GT,
+    Comparator.GTE,
+    Comparator.IN,
+    Comparator.LT,
+    Comparator.LTE,
+    Comparator.NE,
+    Comparator.NIN,
+]
