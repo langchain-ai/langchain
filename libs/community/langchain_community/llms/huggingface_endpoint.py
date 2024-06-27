@@ -121,6 +121,8 @@ class HuggingFaceEndpoint(LLM):
     task: Optional[str] = None
     """Task to call the model with.
     Should be a task that returns `generated_text` or `summary_text`."""
+    validate_api_token: bool = True
+    """Whether to validate the API token"""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -179,10 +181,12 @@ class HuggingFaceEndpoint(LLM):
             )
             login(token=huggingfacehub_api_token)
         except Exception as e:
-            raise ValueError(
-                "Could not authenticate with huggingface_hub. "
-                "Please check your API token."
-            ) from e
+            if values["validate_api_token"]:
+                raise ValueError(
+                    "Could not authenticate with huggingface_hub. "
+                    "Please check your API token."
+                ) from e
+            huggingfacehub_api_token = None
 
         from huggingface_hub import AsyncInferenceClient, InferenceClient
 
