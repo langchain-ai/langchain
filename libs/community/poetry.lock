@@ -5289,13 +5289,13 @@ tests = ["Werkzeug (==2.0.3)", "aiohttp", "boto3", "httplib2", "httpx", "pytest"
 
 [[package]]
 name = "vdms"
-version = "0.0.20"
+version = "0.0.21"
 description = "VDMS Client Module"
 optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*, <4"
 files = [
-    {file = "vdms-0.0.20-py3-none-any.whl", hash = "sha256:7b81127f2981f2dabdcc5880ad7eb4bc2c7833a25aaf79a7b1a560e86bf7b5ec"},
-    {file = "vdms-0.0.20.tar.gz", hash = "sha256:746c21a96e420b9b034495537b42d70f2326b020a1c6907677f7851a926e8605"},
+    {file = "vdms-0.0.21-py3-none-any.whl", hash = "sha256:18e785cd7ec66c3a6c5921a6a93fe2ca22d97f45f40dccb9ff0c954675139daf"},
+    {file = "vdms-0.0.21.tar.gz", hash = "sha256:bbb62d3f1a5cdab6b6bd41950942880cc431729313742870eb255a23c5f0381f"},
 ]
 
 [package.dependencies]
