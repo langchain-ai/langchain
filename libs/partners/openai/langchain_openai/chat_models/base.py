@@ -1672,7 +1672,12 @@ class ChatOpenAI(BaseChatOpenAI):
     ) -> Iterator[ChatGenerationChunk]:
         """Set default stream_options."""
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-        if stream_usage is True:
+        # Note: stream_options is not a valid parameter for Azure OpenAI.
+        # To support users proxying Azure through ChatOpenAI, here we only specify
+        # stream_options if include_usage is set to True.
+        # See https://learn.microsoft.com/en-us/azure/ai-services/openai/whats-new
+        # for release notes.
+        if stream_usage:
             kwargs["stream_options"] = {"include_usage": stream_usage}
 
         return super()._stream(*args, **kwargs)
@@ -1682,7 +1687,7 @@ class ChatOpenAI(BaseChatOpenAI):
     ) -> AsyncIterator[ChatGenerationChunk]:
         """Set default stream_options."""
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-        if stream_usage is True:
+        if stream_usage:
             kwargs["stream_options"] = {"include_usage": stream_usage}
 
         async for chunk in super()._astream(*args, **kwargs):
