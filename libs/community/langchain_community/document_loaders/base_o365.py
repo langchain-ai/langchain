@@ -124,6 +124,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
                             "created_by": str(file.created_by),
                             "modified_by": str(file.modified_by),
                             "description": file.description,
+                            "id": str(file.object_id),
                         }
 
             loader = FileSystemBlobLoader(path=temp_dir)
@@ -157,6 +158,7 @@ class O365BaseLoader(BaseLoader, BaseModel):
             the files loaded from the drive using the specified object_ids.
         """
         file_mime_types = self._fetch_mime_types
+        metadata_dict: Dict[str, Dict[str, Any]] = {}
         with tempfile.TemporaryDirectory() as temp_dir:
             for object_id in object_ids:
                 file = drive.get_item(object_id)
@@ -169,8 +171,25 @@ class O365BaseLoader(BaseLoader, BaseModel):
                 if file.is_file:
                     if file.mime_type in list(file_mime_types.values()):
                         file.download(to_path=temp_dir, chunk_size=self.chunk_size)
+                        metadata_dict[file.name] = {
+                            "source": file.web_url,
+                            "mime_type": file.mime_type,
+                            "created": file.created,
+                            "modified": file.modified,
+                            "created_by": str(file.created_by),
+                            "modified_by": str(file.modified_by),
+                            "description": file.description,
+                            "id": str(file.object_id),
+                        }
+
             loader = FileSystemBlobLoader(path=temp_dir)
-            yield from loader.yield_blobs()
+            for blob in loader.yield_blobs():
+                if not isinstance(blob.path, PurePath):
+                    raise NotImplementedError("Expected blob path to be a PurePath")
+                if blob.path:
+                    file_metadata_ = metadata_dict.get(str(blob.path.name), {})
+                    blob.metadata.update(file_metadata_)
+                yield blob
 
     def _auth(self) -> Account:
         """Authenticates the OneDrive API client

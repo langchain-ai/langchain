@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-experimental"
-version = "0.0.61"
+version = "0.0.62"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
@@ -10,8 +10,8 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.7"
-langchain-community = "^0.2.5"
+langchain-core = "^0.2.10"
+langchain-community = "^0.2.6"
 
 [tool.poetry.group.lint]
 optional = true
