@@ -12,6 +12,8 @@ from langchain_core.pydantic_v1 import BaseModel, Extra, Field
 
 from langchain_community.tools.office365.base import O365BaseTool
 from langchain_community.tools.office365.utils import UTC_FORMAT, clean_body
+from zoneinfo import ZoneInfo
+import tzlocal
 
 
 class SearchEventsInput(BaseModel):
@@ -38,6 +40,10 @@ class SearchEventsInput(BaseModel):
             " 2023, at 10:30 AM in a time zone with a positive offset of 3 "
             " hours from Coordinated Universal Time (UTC)."
         )
+    )
+    timezone: str = Field(
+        description="The timezone for the event should be provided in the following format: 'America/New_York'. "
+                    "For example, the zoneinfo for a +05:30 timezone offset is 'Asia/Kolkata'."
     )
     max_results: int = Field(
         default=10,
@@ -76,21 +82,22 @@ class O365SearchEvents(O365BaseTool):
         extra = Extra.forbid
 
     def _run(
-        self,
-        start_datetime: str,
-        end_datetime: str,
-        max_results: int = 10,
-        truncate: bool = True,
-        run_manager: Optional[CallbackManagerForToolRun] = None,
-        truncate_limit: int = 150,
+            self,
+            start_datetime: str,
+            end_datetime: str,
+            timezone: str = tzlocal.get_localzone(),
+            max_results: int = 10,
+            truncate: bool = True,
+            run_manager: Optional[CallbackManagerForToolRun] = None,
+            truncate_limit: int = 150,
     ) -> List[Dict[str, Any]]:
         # Get calendar object
         schedule = self.account.schedule()
         calendar = schedule.get_default_calendar()
 
         # Process the date range parameters
-        start_datetime_query = dt.strptime(start_datetime, UTC_FORMAT)
-        end_datetime_query = dt.strptime(end_datetime, UTC_FORMAT)
+        start_datetime_query = dt.strptime(start_datetime, UTC_FORMAT).replace(tzinfo=ZoneInfo(timezone))
+        end_datetime_query = dt.strptime(end_datetime, UTC_FORMAT).replace(tzinfo=ZoneInfo(timezone))
 
         # Run the query
         q = calendar.new_query("start").greater_equal(start_datetime_query)
@@ -122,6 +129,7 @@ class O365SearchEvents(O365BaseTool):
             output_event["modified_date"] = event.modified.astimezone(
                 time_zone
             ).strftime(UTC_FORMAT)
+            output_event["timezone"] = timezone
 
             output_events.append(output_event)
 
