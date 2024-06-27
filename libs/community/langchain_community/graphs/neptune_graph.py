@@ -22,7 +22,7 @@ class NeptuneQueryException(Exception):
 
 
 class BaseNeptuneGraph(ABC):
-    """Abstract base class for Neptune"""
+    """Abstract base class for Neptune."""
 
     @property
     def get_schema(self) -> str:
@@ -142,7 +142,7 @@ class BaseNeptuneGraph(ABC):
 class NeptuneAnalyticsGraph(BaseNeptuneGraph):
     """Neptune Analytics wrapper for graph operations.
 
-    Args:
+    Parameters:
         client: optional boto3 Neptune client
         credentials_profile_name: optional AWS profile name
         region_name: optional AWS region, e.g., us-west-2
@@ -272,7 +272,7 @@ class NeptuneAnalyticsGraph(BaseNeptuneGraph):
 class NeptuneGraph(BaseNeptuneGraph):
     """Neptune wrapper for graph operations.
 
-    Args:
+    Parameters:
         host: endpoint for the database instance
         port: port number for the database instance, default is 8182
         use_https: whether to use secure connection, default is True
@@ -310,6 +310,7 @@ class NeptuneGraph(BaseNeptuneGraph):
         client: Any = None,
         credentials_profile_name: Optional[str] = None,
         region_name: Optional[str] = None,
+        service: str = "neptunedata",
         sign: bool = True,
     ) -> None:
         """Create a new Neptune graph wrapper instance."""
@@ -335,13 +336,13 @@ class NeptuneGraph(BaseNeptuneGraph):
                 client_params["endpoint_url"] = f"{protocol}://{host}:{port}"
 
                 if sign:
-                    self.client = session.client("neptunedata", **client_params)
+                    self.client = session.client(service_name=service, **client_params)
                 else:
                     from botocore import UNSIGNED
                     from botocore.config import Config
 
                     self.client = session.client(
-                        "neptunedata",
+                        service_name=service,
                         **client_params,
                         config=Config(signature_version=UNSIGNED),
                     )
