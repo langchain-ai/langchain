@@ -1,4 +1,4 @@
-"""MindsDB Endpoint chat wrapper. Relies heavily on ChatOpenAI as the Minds Endpoint is OpenAI API compatible."""
+"""MindsDB Endpoint chat wrapper. Relies heavily on ChatAnyscale, which in turn relies on ChatOpenAI."""
 
 import os
 import logging
@@ -77,6 +77,13 @@ class ChatAIMind(ChatAnyscale):
     ) -> Set[Text]:
         """
         Get a list of models supported by the Minds Endpoint API.
+
+        Args:
+            mindsdb_api_key: The API key for the MindsDB Endpoint API.
+                This can also be set in the environment variable MINDSDB_API_KEY.
+            mindsdb_api_base: The base URL for the MindsDB Endpoint API.
+                This can also be set in the environment variable MINDSDB_API_BASE.
+                The default value has been set in the DEFAULT_API_BASE constant.
         """
         try:
             mindsdb_api_key = mindsdb_api_key or os.environ["MINDSDB_API_KEY"]
@@ -105,8 +112,11 @@ class ChatAIMind(ChatAnyscale):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """
-        Validate that the Minds Endpoint API credentials are provided and create an OpenAI client.
+        Validate that the Minds Endpoint API credentials are provided and create an OpenAI client based on the version of the `openai` package that is being used.
         Further, validate that the chosen model is supported by the MindsDB API.
+
+        Args:
+            values: The values passed to the class constructor.
         """
         # Validate that the API key and base URL are available.
         values["mindsdb_api_key"] = convert_to_secret_str(
