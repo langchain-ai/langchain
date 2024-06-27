@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_API_BASE = "https://llm.mdb.ai"
 DEFAULT_MODEL = "gpt-3.5-turbo"
+EMBEDDING_MODELS = ["text-embedding-ada-002"]
 TOOL_CALLING_MODELS = ["gpt-3.5-turbo"]
 
 
@@ -108,7 +109,7 @@ class ChatAIMind(ChatAnyscale):
                 f"{models_response.status_code}",
             )
 
-        return {model["id"] for model in models_response.json()["data"] if 'embedding' not in model["id"]}
+        return {model["id"] for model in models_response.json()["data"] if model["id"] not in EMBEDDING_MODELS}
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -171,6 +172,12 @@ class ChatAIMind(ChatAnyscale):
         # Validate that the chosen model provided is supported.
         if "model_name" not in values.keys():
             values["model_name"] = DEFAULT_MODEL
+        
+        if values["model_name"] in EMBEDDING_MODELS:
+            raise ValueError(
+                f"Model {values['model_name']} is an embedding model and does not support chat completions."
+            )
+
 
         model_name = values["model_name"]
         available_models = cls.get_available_models(
