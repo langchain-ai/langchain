@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from importlib import util
-from typing import Any, Optional, Protocol, cast
+from typing import Any, Optional, Protocol, cast, Dict, List, Tuple
 
 from langchain_core._api import beta
 from langchain_core.language_models import (
@@ -45,10 +45,17 @@ class _ConfigurableInitializer(Protocol):
         ...
 
 
-_ACCEPTS_CONFIG = tuple(
+_CHAT_MODEL_METHODS_TAKE_CONFIG = tuple(
     name
     for name, func in inspect.getmembers(BaseChatModel, inspect.isfunction)
     if "config" in inspect.signature(func).parameters
+)
+_CHAT_MODEL_MEMBERS = tuple(
+    name for name, _ in inspect.getmembers(BaseChatModel)
+)
+
+_CHAT_MODEL_METHODS = tuple(
+    name for name, _ in inspect.getmembers(BaseChatModel, inspect.isfunction)
 )
 
 
@@ -63,10 +70,10 @@ class _ConfigurableModel:
         self._default_config = default_config or {}
         self._config_prefix = config_prefix
         self._configure_any = configure_any
-        self._configured_operations = []
+        self._queued_operations: List[Tuple[str, Optional[Tuple], Optional[Dict]]] = []
 
     def __getattr__(self, name: str) -> Any:
-        if name in _ACCEPTS_CONFIG:
+        if name in _CHAT_MODEL_METHODS_TAKE_CONFIG:
 
             def from_config(
                 *args: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -76,15 +83,24 @@ class _ConfigurableModel:
                 )
 
             return from_config
-        elif self._default_config and hasattr(self._model(), name):
-            return getattr(self._model(), name)
-        else:
+        elif name in _CHAT_MODEL_METHODS:
 
             def record(*args: Any, **kwargs: Any) -> _ConfigurableModel:
-                self._configured_operations.append((name, args, kwargs))
+                self._queued_operations.append((name, args, kwargs))
                 return self
 
             return record
+        elif name in _CHAT_MODEL_MEMBERS:
+            self._queued_operations.append((name, None, None))
+            return record_operation
+        elif self._default_config and hasattr(self._model(), name):
+            return getattr(self._model(), name)
+        else:
+            msg = f"{name} is not a BaseChatModel attribute"
+            if self._default_config:
+                msg += " and is not implemented on the default model"
+            msg += "."
+            raise AttributeError(msg)
 
     def _model(self, config: Optional[RunnableConfig] = None) -> BaseChatModel:
         config_prefix = self._config_prefix or ""
@@ -101,7 +117,7 @@ class _ConfigurableModel:
                 if k in ("model", "model_provider")
             }
         model = init_chat_model(**{**self._default_config, **runtime_config})
-        for name, args, kwargs in self._configured_operations:
+        for name, args, kwargs in self._queued_operations:
             model = getattr(model, name)(*args, **kwargs)
         return model
 
