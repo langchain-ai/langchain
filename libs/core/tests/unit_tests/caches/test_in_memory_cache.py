@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import pytest
 
 from langchain_core.caches import RETURN_VAL_TYPE, InMemoryCache
@@ -10,7 +12,7 @@ def cache() -> InMemoryCache:
     return InMemoryCache()
 
 
-def cache_item(item_id: int) -> tuple[str, str, RETURN_VAL_TYPE]:
+def cache_item(item_id: int) -> Tuple[str, str, RETURN_VAL_TYPE]:
     """Generate a valid cache item."""
     prompt = f"prompt{item_id}"
     llm_string = f"llm_string{item_id}"
