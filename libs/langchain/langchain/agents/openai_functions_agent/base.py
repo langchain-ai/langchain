@@ -50,9 +50,9 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     llm: BaseLanguageModel
     tools: Sequence[BaseTool]
     prompt: BasePromptTemplate
-    output_parser: Type[OpenAIFunctionsAgentOutputParser] = (
+    output_parser: Type[
         OpenAIFunctionsAgentOutputParser
-    )
+    ] = OpenAIFunctionsAgentOutputParser
 
     def get_allowed_tools(self) -> List[str]:
         """Get allowed tools."""
