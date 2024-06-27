@@ -352,7 +352,7 @@ class ChatBaichuan(BaseChatModel):
         }
         return payload
 
-    def _create_headers_parameters(self, **kwargs) -> Dict[str, Any]:
+    def _create_headers_parameters(self, **kwargs) -> Dict[str, Any]:  # type: ignore[no-untyped-def]
         parameters = {**self._default_params, **kwargs}
         default_headers = parameters.pop("headers", {})
         api_key = ""
