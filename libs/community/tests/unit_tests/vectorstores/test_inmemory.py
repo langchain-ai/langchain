@@ -2,14 +2,14 @@ from pathlib import Path
 
 import pytest
 from langchain_core.documents import Document
+from langchain_standard_tests.integration_tests.vectorstores import (
+    AsyncReadWriteTestSuite,
+    ReadWriteTestSuite,
+)
 
 from langchain_community.vectorstores.inmemory import InMemoryVectorStore
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
-)
-from langchain_standard_tests.integration_tests.vectorstores import (
-    ReadWriteTestSuite,
-    AsyncReadWriteTestSuite,
 )
 
 
