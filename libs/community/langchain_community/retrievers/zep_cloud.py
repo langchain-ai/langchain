@@ -89,7 +89,7 @@ class ZepCloudRetriever(BaseRetriever):
         return values
 
     def _messages_search_result_to_doc(
-            self, results: List[SessionSearchResult]
+        self, results: List[SessionSearchResult]
     ) -> List[Document]:
         return [
             Document(
@@ -107,7 +107,7 @@ class ZepCloudRetriever(BaseRetriever):
         ]
 
     def _facts_search_result_to_doc(
-            self, results: List[SessionSearchResult]
+        self, results: List[SessionSearchResult]
     ) -> List[Document]:
         return [
             Document(
@@ -122,7 +122,7 @@ class ZepCloudRetriever(BaseRetriever):
         ]
 
     def _summary_search_result_to_doc(
-            self, results: List[SessionSearchResult]
+        self, results: List[SessionSearchResult]
     ) -> List[Document]:
         return [
             Document(
@@ -139,11 +139,11 @@ class ZepCloudRetriever(BaseRetriever):
         ]
 
     def _get_relevant_documents(
-            self,
-            query: str,
-            *,
-            run_manager: CallbackManagerForRetrieverRun,
-            metadata: Optional[Dict[str, Any]] = None,
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         if not self.zep_client:
             raise RuntimeError("Zep client not initialized.")
@@ -174,11 +174,11 @@ class ZepCloudRetriever(BaseRetriever):
         return self._messages_search_result_to_doc(search_output.results)
 
     async def _aget_relevant_documents(
-            self,
-            query: str,
-            *,
-            run_manager: AsyncCallbackManagerForRetrieverRun,
-            metadata: Optional[Dict[str, Any]] = None,
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         if not self.zep_client_async:
             raise RuntimeError("Zep client not initialized.")
