@@ -38,24 +38,25 @@ conda install langchain -c conda-forge
 
 For these applications, LangChain simplifies the entire application lifecycle:
 
-- **Open-source libraries**: Build your applications using LangChain's [modular building blocks](https://python.langchain.com/v0.2/docs/concepts/#langchain-expression-language-lcel) and [components](https://python.langchain.com/v0.2/docs/concepts/#components). Integrate with hundreds of [third-party providers](https://python.langchain.com/v0.2/docs/integrations/platforms/).
+- **Open-source libraries**:  Build your applications using LangChain's open-source [building blocks](https://python.langchain.com/v0.2/docs/concepts#langchain-expression-language-lcel), [components](https://python.langchain.com/v0.2/docs/concepts), and [third-party integrations](https://python.langchain.com/v0.2/docs/integrations/platforms/).
+Use [LangGraph](/docs/concepts/#langgraph) to build stateful agents with first-class streaming and human-in-the-loop support.
 - **Productionization**: Inspect, monitor, and evaluate your apps with [LangSmith](https://docs.smith.langchain.com/) so that you can constantly optimize and deploy with confidence.
-- **Deployment**: Turn any chain into a REST API with [LangServe](https://python.langchain.com/v0.2/docs/langserve/).
+- **Deployment**: Turn your LangGraph applications into production-ready APIs and Assistants with [LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/).
 
 ### Open-source libraries
 - **`langchain-core`**: Base abstractions and LangChain Expression Language.
 - **`langchain-community`**: Third party integrations.
   - Some integrations have been further split into **partner packages** that only rely on **`langchain-core`**. Examples include **`langchain_openai`** and **`langchain_anthropic`**.
 - **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
-- **[`LangGraph`](https://langchain-ai.github.io/langgraph/)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
+- **[`LangGraph`](https://langchain-ai.github.io/langgraph/)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph. Integrates smoothly with LangChain, but can be used without it.
 
 ### Productionization:
 - **[LangSmith](https://docs.smith.langchain.com/)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
 
 ### Deployment:
-- **[LangServe](https://python.langchain.com/v0.2/docs/langserve/)**: A library for deploying LangChain chains as REST APIs.
+- **[LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/)**: Turn your LangGraph applications into production-ready APIs and Assistants.
 
-![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](docs/static/svg/langchain_stack.svg "LangChain Architecture Overview")
+![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](docs/static/svg/langchain_stack_june_2024.svg "LangChain Architecture Overview")
 
 ## 🧱 What can you build with LangChain?
 
@@ -106,7 +107,7 @@ Retrieval Augmented Generation involves [loading data](https://python.langchain.
 
 **🤖 Agents**
 
-Agents allow an LLM autonomy over how a task is accomplished. Agents make decisions about which Actions to take, then take that Action, observe the result, and repeat until the task is complete. LangChain provides a [standard interface for agents](https://python.langchain.com/v0.2/docs/concepts/#agents) along with the [LangGraph](https://github.com/langchain-ai/langgraph) extension for building custom agents.
+Agents allow an LLM autonomy over how a task is accomplished. Agents make decisions about which Actions to take, then take that Action, observe the result, and repeat until the task is complete. LangChain provides a [standard interface for agents](https://python.langchain.com/v0.2/docs/concepts/#agents), along with [LangGraph](https://github.com/langchain-ai/langgraph) for building custom agents.
 
 ## 📖 Documentation
 
@@ -120,10 +121,9 @@ Please see [here](https://python.langchain.com) for full documentation, which in
 
 ## 🌐 Ecosystem
 
-- [🦜🛠️ LangSmith](https://docs.smith.langchain.com/): Tracing and evaluating your language model applications and intelligent agents to help you move from prototype to production.
-- [🦜🕸️ LangGraph](https://langchain-ai.github.io/langgraph/): Creating stateful, multi-actor applications with LLMs, built on top of (and intended to be used with) LangChain primitives.
-- [🦜🏓 LangServe](https://python.langchain.com/docs/langserve): Deploying LangChain runnables and chains as REST APIs.
-- [LangChain Templates](https://python.langchain.com/v0.2/docs/templates/): Example applications hosted with LangServe.
+- [🦜🛠️ LangSmith](https://docs.smith.langchain.com/): Trace and evaluate your language model applications and intelligent agents to help you move from prototype to production.
+- [🦜🕸️ LangGraph](https://langchain-ai.github.io/langgraph/): Create stateful, multi-actor applications with LLMs. Integrates smoothly with LangChain, but can be used without it.
+- [🦜🏓 LangServe](https://python.langchain.com/docs/langserve): Deploy LangChain runnables and chains as REST APIs.
 
 
 ## 💁 Contributing
