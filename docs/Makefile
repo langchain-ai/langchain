@@ -61,7 +61,7 @@ render:
 	$(PYTHON) scripts/notebook_convert.py $(INTERMEDIATE_DIR) $(OUTPUT_NEW_DOCS_DIR)
 
 md-sync:
-	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --include="*.png" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_NEW_DOCS_DIR)
+	rsync -avm --include="*/" --include="*.mdx" --include="*.md" --include="*.png" --include="*/_category_.yml" --exclude="*" $(INTERMEDIATE_DIR)/ $(OUTPUT_NEW_DOCS_DIR)
 
 generate-references:
 	$(PYTHON) scripts/generate_api_reference_links.py --docs_dir $(OUTPUT_NEW_DOCS_DIR)

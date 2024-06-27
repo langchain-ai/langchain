@@ -346,6 +346,9 @@ class BaseChatOpenAI(BaseChatModel):
         http_client as well if you'd like a custom client for sync invocations."""
     stop: Optional[Union[List[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
+    extra_body: Optional[Mapping[str, Any]] = None
+    """Optional additional JSON properties to include in the request parameters when
+    making requests to OpenAI compatible APIs, such as vLLM."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -445,6 +448,9 @@ class BaseChatOpenAI(BaseChatModel):
             params["max_tokens"] = self.max_tokens
         if self.stop:
             params["stop"] = self.stop
+        if self.extra_body is not None:
+            params["extra_body"] = self.extra_body
+
         return params
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
@@ -1136,7 +1142,7 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            llm = self.bind_tools([schema], tool_choice="any")
+            llm = self.bind_tools([schema], tool_choice=True, parallel_tool_calls=False)
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema], first_tool_only=True
@@ -1666,7 +1672,13 @@ class ChatOpenAI(BaseChatOpenAI):
     ) -> Iterator[ChatGenerationChunk]:
         """Set default stream_options."""
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-        kwargs["stream_options"] = {"include_usage": stream_usage}
+        # Note: stream_options is not a valid parameter for Azure OpenAI.
+        # To support users proxying Azure through ChatOpenAI, here we only specify
+        # stream_options if include_usage is set to True.
+        # See https://learn.microsoft.com/en-us/azure/ai-services/openai/whats-new
+        # for release notes.
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
 
         return super()._stream(*args, **kwargs)
 
@@ -1675,7 +1687,8 @@ class ChatOpenAI(BaseChatOpenAI):
     ) -> AsyncIterator[ChatGenerationChunk]:
         """Set default stream_options."""
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-        kwargs["stream_options"] = {"include_usage": stream_usage}
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
 
         async for chunk in super()._astream(*args, **kwargs):
             yield chunk
