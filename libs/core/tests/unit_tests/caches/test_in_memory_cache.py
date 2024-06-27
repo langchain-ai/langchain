@@ -79,7 +79,6 @@ def test_clear(cache: InMemoryCache) -> None:
     assert cache.lookup(prompt, llm_string) is None
 
 
-@pytest.mark.asyncio
 async def test_alookup(cache: InMemoryCache) -> None:
     """Test the asynchronous lookup method of InMemoryCache."""
     prompt, llm_string, generations = cache_item(1)
@@ -88,7 +87,6 @@ async def test_alookup(cache: InMemoryCache) -> None:
     assert await cache.alookup("prompt2", "llm_string2") is None
 
 
-@pytest.mark.asyncio
 async def test_aupdate_with_no_maxsize(cache: InMemoryCache) -> None:
     """Test the asynchronous update method of InMemoryCache with no maximum size."""
     prompt, llm_string, generations = cache_item(1)
@@ -96,7 +94,6 @@ async def test_aupdate_with_no_maxsize(cache: InMemoryCache) -> None:
     assert await cache.alookup(prompt, llm_string) == generations
 
 
-@pytest.mark.asyncio
 async def test_aupdate_with_maxsize() -> None:
     """Test the asynchronous update method of InMemoryCache with a maximum size."""
     cache = InMemoryCache(maxsize=2)
@@ -116,7 +113,6 @@ async def test_aupdate_with_maxsize() -> None:
     assert await cache.alookup(prompt3, llm_string3) == generations3
 
 
-@pytest.mark.asyncio
 async def test_aclear(cache: InMemoryCache) -> None:
     """Test the asynchronous clear method of InMemoryCache."""
     prompt, llm_string, generations = cache_item(1)
