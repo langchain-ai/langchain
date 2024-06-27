@@ -238,7 +238,7 @@ class JSONLoader(BaseLoader):
 
         sample = data.first()
         if self._metadata_func is not None:
-            sample_metadata = self._metadata_func(sample, {})
+            sample_metadata = self._metadata_func(sample, {"source": ".", "seq_num": 0})
             if not isinstance(sample_metadata, dict):
                 raise ValueError(
                     f"Expected the metadata_func to return a dict but got \
