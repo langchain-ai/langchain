@@ -550,6 +550,28 @@ If you are still using AgentExecutor, do not fear: we still have a guide on [how
 It is recommended, however, that you start to transition to LangGraph.
 In order to assist in this we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent).
 
+#### ReAct agents
+<span data-heading-keywords="react,react agent"></span>
+
+One popular architecture for building agents is [**ReAct**](https://arxiv.org/abs/2210.03629).
+ReAct combines reasoning and acting in an iterative process - in fact the name "ReAct" stands for "Reason" and "Act".
+
+The general flow looks like this:
+
+- The model will "think" about what step to take in response to an input and any previous observations.
+- The model will then choose an action from available tools (or choose to respond to the user).
+- The model will generate arguments to that tool.
+- The agent runtime (executor) will parse out the chosen tool and call it with the generated arguments.
+- The executor will return the results of the tool call back to the model as an observation.
+- This process repeats until the agent chooses to respond.
+
+There are general prompting based implementations that do not require any model-specific features, but the most
+reliable implementations use features like [tool calling](/docs/how_to/tool_calling/) to reliably format outputs
+and reduce variance.
+
+Please see the [LangGraph documentation](https://langchain-ai.github.io/langgraph/) for more information,
+or [this how-to guide](/docs/how_to/migrate_agent/) for specific information on migrating to LangGraph.
+
 ### Callbacks
 
 LangChain provides a callbacks system that allows you to hook into the various stages of your LLM application. This is useful for logging, monitoring, streaming, and other tasks.
