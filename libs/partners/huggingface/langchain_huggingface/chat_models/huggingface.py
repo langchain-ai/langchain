@@ -443,7 +443,6 @@ class ChatHuggingFace(BaseChatModel):
 
         from huggingface_hub import list_inference_endpoints  # type: ignore[import]
 
-        available_endpoints = list_inference_endpoints("*")
         if _is_huggingface_hub(self.llm) or (
             hasattr(self.llm, "repo_id") and self.llm.repo_id
         ):
@@ -456,7 +455,7 @@ class ChatHuggingFace(BaseChatModel):
             return
         else:
             endpoint_url = self.llm.endpoint_url
-
+        available_endpoints = list_inference_endpoints("*")
         for endpoint in available_endpoints:
             if endpoint.url == endpoint_url:
                 self.model_id = endpoint.repository
