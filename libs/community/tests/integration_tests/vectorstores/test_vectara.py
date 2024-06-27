@@ -1,5 +1,6 @@
 import tempfile
 import urllib.request
+from typing import Iterable
 
 import pytest
 from langchain_core.documents import Document
@@ -31,7 +32,7 @@ def get_abbr(s: str) -> str:
 
 
 @pytest.fixture(scope="function")
-def vectara1():  # type: ignore[no-untyped-def]
+def vectara1() -> Iterable[Vectara]:
     # Set up code
     # create a new Vectara instance
     vectara1: Vectara = Vectara()
@@ -59,7 +60,7 @@ def vectara1():  # type: ignore[no-untyped-def]
     vectara1.delete(doc_ids)
 
 
-def test_vectara_add_documents(vectara1: Vectara) -> None:  # type: ignore[no-untyped-def]
+def test_vectara_add_documents(vectara1: Vectara) -> None:
     """Test add_documents."""
 
     # test without filter
@@ -222,7 +223,7 @@ def test_vectara_rag_with_reranking(vectara2: Vectara) -> None:
 
 
 @pytest.fixture(scope="function")
-def vectara3():  # type: ignore[no-untyped-def]
+def vectara3() -> Iterable[Vectara]:
     # Set up code
     vectara3: Vectara = Vectara()
 

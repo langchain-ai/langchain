@@ -13,6 +13,7 @@ from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     AsyncIterator,
     Awaitable,
     Callable,
@@ -79,7 +80,7 @@ from langchain_core.runnables.utils import (
     is_async_callable,
     is_async_generator,
 )
-from langchain_core.utils.aiter import atee, py_anext
+from langchain_core.utils.aiter import aclosing, atee, py_anext
 from langchain_core.utils.iter import safetee
 
 if TYPE_CHECKING:
@@ -95,6 +96,7 @@ if TYPE_CHECKING:
         RunLog,
         RunLogPatch,
     )
+    from langchain_core.tracers.root_listeners import AsyncListener
     from langchain_core.tracers.schemas import Run
 
 
@@ -958,6 +960,11 @@ class Runnable(Generic[Input, Output], ABC):
             the runnable that emitted the event.
             A child runnable that gets invoked as part of the execution of a
             parent runnable is assigned its own unique ID.
+        - ``parent_ids``: **List[str]** - The IDs of the parent runnables that
+            generated the event. The root runnable will have an empty list.
+            The order of the parent IDs is from the root to the immediate parent.
+            Only available for v2 version of the API. The v1 version of the API
+            will return an empty list.
         - ``tags``: **Optional[List[str]]** - The tags of the runnable that generated
             the event.
         - ``metadata``: **Optional[Dict[str, Any]]** - The metadata of the runnable
@@ -1050,7 +1057,8 @@ class Runnable(Generic[Input, Output], ABC):
                 event async for event in chain.astream_events("hello", version="v2")
             ]
 
-            # will produce the following events (run_id has been omitted for brevity):
+            # will produce the following events (run_id, and parent_ids
+            # has been omitted for brevity):
             [
                 {
                     "data": {"input": "hello"},
@@ -1134,8 +1142,9 @@ class Runnable(Generic[Input, Output], ABC):
                 'Only versions "v1" and "v2" of the schema is currently supported.'
             )
 
-        async for event in event_stream:
-            yield event
+        async with aclosing(event_stream):
+            async for event in event_stream:
+                yield event
 
     def transform(
         self,
@@ -1317,6 +1326,87 @@ class Runnable(Generic[Input, Output], ABC):
                 lambda config: {
                     "callbacks": [
                         RootListenersTracer(
+                            config=config,
+                            on_start=on_start,
+                            on_end=on_end,
+                            on_error=on_error,
+                        )
+                    ],
+                }
+            ],
+        )
+
+    def with_alisteners(
+        self,
+        *,
+        on_start: Optional[AsyncListener] = None,
+        on_end: Optional[AsyncListener] = None,
+        on_error: Optional[AsyncListener] = None,
+    ) -> Runnable[Input, Output]:
+        """
+        Bind asynchronous lifecycle listeners to a Runnable, returning a new Runnable.
+
+        on_start: Asynchronously called before the runnable starts running.
+        on_end: Asynchronously called after the runnable finishes running.
+        on_error: Asynchronously called if the runnable throws an error.
+
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+
+        Example:
+
+        .. code-block:: python
+
+            from langchain_core.runnables import RunnableLambda
+            import time
+
+            async def test_runnable(time_to_sleep : int):
+                print(f"Runnable[{time_to_sleep}s]: starts at {format_t(time.time())}")
+                await asyncio.sleep(time_to_sleep)
+                print(f"Runnable[{time_to_sleep}s]: ends at {format_t(time.time())}")
+
+            async def fn_start(run_obj : Runnable):
+                print(f"on start callback starts at {format_t(time.time())}
+                await asyncio.sleep(3)
+                print(f"on start callback ends at {format_t(time.time())}")
+
+            async def fn_end(run_obj : Runnable):
+                print(f"on end callback starts at {format_t(time.time())}
+                await asyncio.sleep(2)
+                print(f"on end callback ends at {format_t(time.time())}")
+
+            runnable = RunnableLambda(test_runnable).with_alisteners(
+                on_start=fn_start,
+                on_end=fn_end
+            )
+            async def concurrent_runs():
+                await asyncio.gather(runnable.ainvoke(2), runnable.ainvoke(3))
+
+            asyncio.run(concurrent_runs())
+            Result:
+            on start callback starts at 2024-05-16T14:20:29.637053+00:00
+            on start callback starts at 2024-05-16T14:20:29.637150+00:00
+            on start callback ends at 2024-05-16T14:20:32.638305+00:00
+            on start callback ends at 2024-05-16T14:20:32.638383+00:00
+            Runnable[3s]: starts at 2024-05-16T14:20:32.638849+00:00
+            Runnable[5s]: starts at 2024-05-16T14:20:32.638999+00:00
+            Runnable[3s]: ends at 2024-05-16T14:20:35.640016+00:00
+            on end callback starts at 2024-05-16T14:20:35.640534+00:00
+            Runnable[5s]: ends at 2024-05-16T14:20:37.640169+00:00
+            on end callback starts at 2024-05-16T14:20:37.640574+00:00
+            on end callback ends at 2024-05-16T14:20:37.640654+00:00
+            on end callback ends at 2024-05-16T14:20:39.641751+00:00
+
+        """
+        from langchain_core.tracers.root_listeners import AsyncRootListenersTracer
+
+        return RunnableBinding(
+            bound=self,
+            config_factories=[
+                lambda config: {
+                    "callbacks": [
+                        AsyncRootListenersTracer(
                             config=config,
                             on_start=on_start,
                             on_end=on_end,
@@ -1802,6 +1892,8 @@ class Runnable(Generic[Input, Output], ABC):
                             final_input_supported = False
                 else:
                     final_input = ichunk
+        except GeneratorExit:
+            run_manager.on_chain_end(final_output, inputs=final_input)
         except BaseException as e:
             run_manager.on_chain_error(e, inputs=final_input)
             raise
@@ -1861,7 +1953,7 @@ class Runnable(Generic[Input, Output], ABC):
                 kwargs["run_manager"] = run_manager
             context = copy_context()
             context.run(_set_config_context, child_config)
-            iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
+            iterator_ = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
 
             if stream_handler := next(
                 (
@@ -1873,7 +1965,11 @@ class Runnable(Generic[Input, Output], ABC):
                 None,
             ):
                 # populates streamed_output in astream_log() output if needed
-                iterator = stream_handler.tap_output_aiter(run_manager.run_id, iterator)
+                iterator = stream_handler.tap_output_aiter(
+                    run_manager.run_id, iterator_
+                )
+            else:
+                iterator = iterator_
             try:
                 while True:
                     if accepts_context(asyncio.create_task):
@@ -1914,6 +2010,9 @@ class Runnable(Generic[Input, Output], ABC):
             raise
         else:
             await run_manager.on_chain_end(final_output, inputs=final_input)
+        finally:
+            if hasattr(iterator_, "aclose"):
+                await iterator_.aclose()
 
 
 class RunnableSerializable(Serializable, Runnable[Input, Output]):
@@ -3292,6 +3391,7 @@ class RunnableGenerator(Runnable[Input, Output]):
 
     RunnableGenerator makes it easy to implement custom behavior within a streaming
     context. Below we show an example:
+
         .. code-block:: python
 
             from langchain_core.prompts import ChatPromptTemplate
@@ -3479,6 +3579,11 @@ class RunnableLambda(Runnable[Input, Output]):
 
     RunnableLambda can be composed as any other Runnable and provides
     seamless integration with LangChain tracing.
+
+    `RunnableLambda` is best suited for code that does not need to support
+    streaming. If you need to support streaming (i.e., be able to operate
+    on chunks of inputs and yield chunks of outputs), use `RunnableGenerator`
+    instead.
 
     Examples:
 
@@ -3820,23 +3925,29 @@ class RunnableLambda(Runnable[Input, Output]):
 
         if is_async_generator(afunc):
             output: Optional[Output] = None
-            async for chunk in cast(
-                AsyncIterator[Output],
-                acall_func_with_variable_args(
-                    cast(Callable, afunc),
-                    input,
-                    config,
-                    run_manager,
-                    **kwargs,
-                ),
-            ):
-                if output is None:
-                    output = chunk
-                else:
-                    try:
-                        output = output + chunk  # type: ignore[operator]
-                    except TypeError:
+            async with aclosing(
+                cast(
+                    AsyncGenerator[Any, Any],
+                    acall_func_with_variable_args(
+                        cast(Callable, afunc),
+                        input,
+                        config,
+                        run_manager,
+                        **kwargs,
+                    ),
+                )
+            ) as stream:
+                async for chunk in cast(
+                    AsyncIterator[Output],
+                    stream,
+                ):
+                    if output is None:
                         output = chunk
+                    else:
+                        try:
+                            output = output + chunk  # type: ignore[operator]
+                        except TypeError:
+                            output = chunk
         else:
             output = await acall_func_with_variable_args(
                 cast(Callable, afunc), input, config, run_manager, **kwargs
@@ -4277,12 +4388,15 @@ class RunnableEach(RunnableEachBase[Input, Output]):
             Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
         ] = None,
     ) -> RunnableEach[Input, Output]:
-        """
-        Bind lifecycle listeners to a Runnable, returning a new Runnable.
+        """Bind lifecycle listeners to a Runnable, returning a new Runnable.
 
-        on_start: Called before the runnable starts running, with the Run object.
-        on_end: Called after the runnable finishes running, with the Run object.
-        on_error: Called if the runnable throws an error, with the Run object.
+        Args:
+            on_start: Called before the runnable starts running, with the Run object.
+            on_end: Called after the runnable finishes running, with the Run object.
+            on_error: Called if the runnable throws an error, with the Run object.
+
+        Returns:
+            A new Runnable with the listeners bound.
 
         The Run object contains information about the run, including its id,
         type, input, output, error, start_time, end_time, and any tags or metadata
@@ -4290,6 +4404,36 @@ class RunnableEach(RunnableEachBase[Input, Output]):
         """
         return RunnableEach(
             bound=self.bound.with_listeners(
+                on_start=on_start, on_end=on_end, on_error=on_error
+            )
+        )
+
+    def with_alisteners(
+        self,
+        *,
+        on_start: Optional[AsyncListener] = None,
+        on_end: Optional[AsyncListener] = None,
+        on_error: Optional[AsyncListener] = None,
+    ) -> RunnableEach[Input, Output]:
+        """Bind async lifecycle listeners to a Runnable, returning a new Runnable.
+
+        Args:
+            on_start: Called asynchronously before the runnable starts running,
+                      with the Run object.
+            on_end: Called asynchronously after the runnable finishes running,
+                    with the Run object.
+            on_error: Called asynchronously if the runnable throws an error,
+                    with the Run object.
+
+        Returns:
+            A new Runnable with the listeners bound.
+
+        The Run object contains information about the run, including its id,
+        type, input, output, error, start_time, end_time, and any tags or metadata
+        added to the run.
+        """
+        return RunnableEach(
+            bound=self.bound.with_alisteners(
                 on_start=on_start, on_end=on_end, on_error=on_error
             )
         )

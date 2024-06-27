@@ -7,7 +7,19 @@ from langchain_core.pydantic_v1 import Field
 
 
 class Document(Serializable):
-    """Class for storing a piece of text and associated metadata."""
+    """Class for storing a piece of text and associated metadata.
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain_core.documents import Document
+
+            document = Document(
+                page_content="Hello, world!",
+                metadata={"source": "https://example.com"}
+            )
+    """
 
     page_content: str
     """String text."""

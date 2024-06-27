@@ -10,6 +10,7 @@ env:
 
 jobs:
   build:
+    if: github.repository_owner == 'langchain-ai'
     name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     runs-on: ubuntu-latest
     strategy:
@@ -30,7 +31,6 @@ jobs:
           - "libs/partners/google-vertexai"
           - "libs/partners/google-genai"
           - "libs/partners/aws"
-          - "libs/partners/nvidia-ai-endpoints"
 
     steps:
       - uses: actions/checkout@v4
@@ -40,10 +40,6 @@ jobs:
         with:
           repository: langchain-ai/langchain-google
           path: langchain-google
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-nvidia
-          path: langchain-nvidia
       - uses: actions/checkout@v4
         with:
           repository: langchain-ai/langchain-cohere
@@ -58,11 +54,9 @@ jobs:
           rm -rf \
             langchain/libs/partners/google-genai \
             langchain/libs/partners/google-vertexai \
-            langchain/libs/partners/nvidia-ai-endpoints \
             langchain/libs/partners/cohere
           mv langchain-google/libs/genai langchain/libs/partners/google-genai
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
-          mv langchain-nvidia/libs/ai-endpoints langchain/libs/partners/nvidia-ai-endpoints
           mv langchain-cohere/libs/cohere langchain/libs/partners/cohere
           mv langchain-aws/libs/aws langchain/libs/partners/aws
 
@@ -122,7 +116,6 @@ jobs:
           rm -rf \
             langchain/libs/partners/google-genai \
             langchain/libs/partners/google-vertexai \
-            langchain/libs/partners/nvidia-ai-endpoints \
             langchain/libs/partners/cohere \
             langchain/libs/partners/aws
 
