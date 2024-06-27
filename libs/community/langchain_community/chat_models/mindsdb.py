@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_API_BASE = "https://llm.mdb.ai"
 DEFAULT_MODEL = "gpt-3.5-turbo"
+TOOL_CALLING_MODELS = ["gpt-3.5-turbo"]
 
 
 class ChatAIMind(ChatAnyscale):
@@ -219,14 +220,15 @@ class ChatAIMind(ChatAnyscale):
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
-
-        if self.model_name != "gpt-3.5-turbo":
+        if self.model_name not in TOOL_CALLING_MODELS:
             logger.warning(
-                """Tool calling is only supported for the gpt-3.5-turbo model currently.
-                Please use the gpt-3.5-turbo model to bind tools."""
+                f"""
+                Tool calling is not supported for the {self.model_name} model.
+                Only the following models support tool calling: {", ".join(TOOL_CALLING_MODELS)}.
+                """
             )
 
-            return
+            raise ValueError("Tool calling is not supported for this model.")
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice:
