@@ -447,7 +447,7 @@ class ChatZhipuAI(BaseChatModel):
         import httpx
 
         with httpx.Client(headers=headers, timeout=60) as client:
-            response = client.post(self.zhipuai_api_base, json=payload)
+            response = client.post(self.zhipuai_api_base, json=payload)  #
             response.raise_for_status()
         return self._create_chat_result(response.json())
 
