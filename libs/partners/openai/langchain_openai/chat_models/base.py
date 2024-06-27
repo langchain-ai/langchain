@@ -219,7 +219,12 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict["role"] = "tool"
         message_dict["tool_call_id"] = message.tool_call_id
 
-        supported_props = {"content", "role", "tool_call_id"}
+        # Note: "name" is not documented in OpenAI's API Reference
+        # https://platform.openai.com/docs/api-reference/chat/create
+        # but is referenced in cookbooks
+        # https://cookbook.openai.com/examples/how_to_call_functions_with_chat_models
+        # and is required for some proxys (e.g., Google Gemini).
+        supported_props = {"content", "role", "tool_call_id", "name"}
         message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
     else:
         raise TypeError(f"Got unknown type {message}")
@@ -1672,7 +1677,13 @@ class ChatOpenAI(BaseChatOpenAI):
     ) -> Iterator[ChatGenerationChunk]:
         """Set default stream_options."""
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-        kwargs["stream_options"] = {"include_usage": stream_usage}
+        # Note: stream_options is not a valid parameter for Azure OpenAI.
+        # To support users proxying Azure through ChatOpenAI, here we only specify
+        # stream_options if include_usage is set to True.
+        # See https://learn.microsoft.com/en-us/azure/ai-services/openai/whats-new
+        # for release notes.
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
 
         return super()._stream(*args, **kwargs)
 
@@ -1681,7 +1692,8 @@ class ChatOpenAI(BaseChatOpenAI):
     ) -> AsyncIterator[ChatGenerationChunk]:
         """Set default stream_options."""
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-        kwargs["stream_options"] = {"include_usage": stream_usage}
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
 
         async for chunk in super()._astream(*args, **kwargs):
             yield chunk

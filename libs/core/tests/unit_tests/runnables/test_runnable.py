@@ -311,6 +311,10 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "id": {
+                        "title": "Id",
+                        "type": "string",
+                    },
                     "type": {
                         "title": "Type",
                         "enum": ["Document"],
