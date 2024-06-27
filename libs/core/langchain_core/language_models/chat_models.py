@@ -1228,7 +1228,7 @@ def _cleanup_llm_representation(serialized: Any, depth: int) -> None:
     if depth > 100:  # Don't cooperate for pathological cases
         return
     if serialized["type"] == "not_implemented" and "repr" in serialized:
-        serialized["repr"] = ""
+        del serialized["repr"]
 
     if "graph" in serialized:
         del serialized["graph"]
