@@ -5,6 +5,7 @@ to a simple key-value interface.
 
 The primary goal of these storages is to support implementation of caching.
 """
+
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -95,7 +96,7 @@ class BaseStore(Generic[K, V], ABC):
         """
 
     async def amget(self, keys: Sequence[K]) -> List[Optional[V]]:
-        """Get the values associated with the given keys.
+        """Async get the values associated with the given keys.
 
         Args:
             keys (Sequence[K]): A sequence of keys.
@@ -115,7 +116,7 @@ class BaseStore(Generic[K, V], ABC):
         """
 
     async def amset(self, key_value_pairs: Sequence[Tuple[K, V]]) -> None:
-        """Set the values for the given keys.
+        """Async set the values for the given keys.
 
         Args:
             key_value_pairs (Sequence[Tuple[K, V]]): A sequence of key-value pairs.
@@ -131,7 +132,7 @@ class BaseStore(Generic[K, V], ABC):
         """
 
     async def amdelete(self, keys: Sequence[K]) -> None:
-        """Delete the given keys and their associated values.
+        """Async delete the given keys and their associated values.
 
         Args:
             keys (Sequence[K]): A sequence of keys to delete.
@@ -147,7 +148,7 @@ class BaseStore(Generic[K, V], ABC):
         Args:
             prefix (str): The prefix to match.
 
-        Returns:
+        Yields:
             Iterator[K | str]: An iterator over keys that match the given prefix.
 
             This method is allowed to return an iterator over either K or str
@@ -157,12 +158,12 @@ class BaseStore(Generic[K, V], ABC):
     async def ayield_keys(
         self, *, prefix: Optional[str] = None
     ) -> Union[AsyncIterator[K], AsyncIterator[str]]:
-        """Get an iterator over keys that match the given prefix.
+        """Async get an iterator over keys that match the given prefix.
 
         Args:
             prefix (str): The prefix to match.
 
-        Returns:
+        Yields:
             Iterator[K | str]: An iterator over keys that match the given prefix.
 
             This method is allowed to return an iterator over either K or str
@@ -200,7 +201,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         return [self.store.get(key) for key in keys]
 
     async def amget(self, keys: Sequence[str]) -> List[Optional[V]]:
-        """Get the values associated with the given keys.
+        """Async get the values associated with the given keys.
 
         Args:
             keys (Sequence[str]): A sequence of keys.
@@ -224,7 +225,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
             self.store[key] = value
 
     async def amset(self, key_value_pairs: Sequence[Tuple[str, V]]) -> None:
-        """Set the values for the given keys.
+        """Async set the values for the given keys.
 
         Args:
             key_value_pairs (Sequence[Tuple[str, V]]): A sequence of key-value pairs.
@@ -245,7 +246,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
                 del self.store[key]
 
     async def amdelete(self, keys: Sequence[str]) -> None:
-        """Delete the given keys and their associated values.
+        """Async delete the given keys and their associated values.
 
         Args:
             keys (Sequence[str]): A sequence of keys to delete.
@@ -258,7 +259,7 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         Args:
             prefix (str, optional): The prefix to match. Defaults to None.
 
-        Returns:
+        Yields:
             Iterator[str]: An iterator over keys that match the given prefix.
         """
         if prefix is None:
@@ -269,12 +270,12 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
                     yield key
 
     async def ayield_keys(self, prefix: Optional[str] = None) -> AsyncIterator[str]:
-        """Get an async iterator over keys that match the given prefix.
+        """Async get an async iterator over keys that match the given prefix.
 
         Args:
             prefix (str, optional): The prefix to match. Defaults to None.
 
-        Returns:
+        Yields:
             AsyncIterator[str]: An async iterator over keys that match the given prefix.
         """
         if prefix is None:
