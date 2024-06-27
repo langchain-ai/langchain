@@ -62,3 +62,17 @@ def test_extra_kwargs() -> None:
     assert chat.temperature == 0.88
     assert chat.top_p == 0.7
     assert chat.with_search_enhance is True
+
+
+async def test_chat_baichuan_agenerate() -> None:
+    chat = ChatBaichuan()
+    response = await chat.ainvoke("你好呀")  # type: ignore[call-arg]
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+
+
+async def test_chat_baichuan_astream() -> None:
+    chat = ChatBaichuan()
+    async for chunk in chat.astream("今天天气如何？"):  # type: ignore[call-arg]
+        assert isinstance(chunk, AIMessage)
+        assert isinstance(chunk.content, str)
