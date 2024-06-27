@@ -27,7 +27,7 @@ With pip:
 pip install langchain
 ```
 
-With conda1:
+With conda:
 ```bash
 conda install langchain -c conda-forge
 ```
