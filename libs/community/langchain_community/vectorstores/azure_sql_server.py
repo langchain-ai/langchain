@@ -42,7 +42,7 @@ class AzureSQLServer_VectorStore(VectorStore):
         """Initialize the Azure SQL Server vector store."""
 
         self.connection_string = connection_string
-        self.embedding = embedding_function
+        self.embedding_function = embedding_function
         self.table_name = table_name
         self._bind = connection if connection else self._create_engine()
         self.EmbeddingStore = self._get_embedding_store(table_name)
@@ -72,6 +72,10 @@ class AzureSQLServer_VectorStore(VectorStore):
 
         _embedding_store = EmbeddingStore
         return _embedding_store
+
+    @property
+    def embeddings(self) -> Embeddings:
+        return self.embedding_function
 
     @classmethod
     def from_texts(
@@ -108,7 +112,7 @@ class AzureSQLServer_VectorStore(VectorStore):
         """
 
         # Embed the texts passed in.
-        embedded_texts = self.embedding.embed_documents(
+        embedded_texts = self.embedding_function.embed_documents(
             list(texts)
         )  # List[List[float]]
 
