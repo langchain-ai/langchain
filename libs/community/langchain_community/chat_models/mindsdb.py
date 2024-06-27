@@ -1,14 +1,33 @@
 """MindsDB Endpoint chat wrapper. Relies heavily on ChatOpenAI as the Minds Endpoint is OpenAI API compatible."""
 
 import os
+import logging
 import requests
-from typing import Text, Dict, Set, Optional
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+    Text,
+    Type,
+    Union,
+)
 
 from langchain_community.utils.openai import is_openai_v1
 from langchain_community.chat_models.anyscale import ChatAnyscale
 
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.tools import BaseTool
+from langchain_core.runnables import Runnable
+from langchain_core.messages import BaseMessage
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_API_BASE = "https://llm.mdb.ai"
 DEFAULT_MODEL = "gpt-3.5-turbo"
@@ -57,7 +76,7 @@ class ChatAIMind(ChatAnyscale):
         mindsdb_api_base: str = DEFAULT_API_BASE,
     ) -> Set[Text]:
         """
-        Get models supported by the MindsDB API.
+        Get a list of models supported by the Minds Endpoint API.
         """
         try:
             mindsdb_api_key = mindsdb_api_key or os.environ["MINDSDB_API_KEY"]
@@ -86,7 +105,7 @@ class ChatAIMind(ChatAnyscale):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """
-        Validate that the MindsDB API credentials are provided and create an OpenAI client.
+        Validate that the Minds Endpoint API credentials are provided and create an OpenAI client.
         Further, validate that the chosen model is supported by the MindsDB API.
         """
         # Validate that the API key and base URL are available.
@@ -158,3 +177,87 @@ class ChatAIMind(ChatAnyscale):
 
         return values
 
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Assumes model is compatible with OpenAI tool-calling API.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Which tool to require the model to call.
+                Options are:
+                name of the tool (str): calls corresponding tool;
+                "auto": automatically selects a tool (including no tool);
+                "none": does not call a tool;
+                "any" or "required": force at least one tool to be called;
+                True: forces tool call (requires `tools` be length 1);
+                False: no effect;
+
+                or a dict of the form:
+                {"type": "function", "function": {"name": <<tool_name>>}}.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+
+        if self.model_name != "gpt-3.5-turbo":
+            logger.warning(
+                """Tool calling is only supported for the gpt-3.5-turbo model currently.
+                Please use the gpt-3.5-turbo model to bind tools."""
+            )
+
+            return
+
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if tool_choice:
+            if isinstance(tool_choice, str):
+                # tool_choice is a tool/function name
+                if tool_choice not in ("auto", "none", "any", "required"):
+                    tool_choice = {
+                        "type": "function",
+                        "function": {"name": tool_choice},
+                    }
+                # 'any' is not natively supported by OpenAI API.
+                # We support 'any' since other models use this instead of 'required'.
+                if tool_choice == "any":
+                    tool_choice = "required"
+            elif isinstance(tool_choice, bool):
+                if len(tools) > 1:
+                    raise ValueError(
+                        "tool_choice=True can only be used when a single tool is "
+                        f"passed in, received {len(tools)} tools."
+                    )
+                tool_choice = {
+                    "type": "function",
+                    "function": {"name": formatted_tools[0]["function"]["name"]},
+                }
+            elif isinstance(tool_choice, dict):
+                tool_names = [
+                    formatted_tool["function"]["name"]
+                    for formatted_tool in formatted_tools
+                ]
+                if not any(
+                    tool_name == tool_choice["function"]["name"]
+                    for tool_name in tool_names
+                ):
+                    raise ValueError(
+                        f"Tool choice {tool_choice} was specified, but the only "
+                        f"provided tools were {tool_names}."
+                    )
+            else:
+                raise ValueError(
+                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
+                    f"Received: {tool_choice}"
+                )
+            kwargs["tool_choice"] = tool_choice
+        return super().bind(tools=formatted_tools, **kwargs)
