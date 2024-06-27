@@ -210,7 +210,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
     as_agent: bool = False
     """Use as a LangChain agent, compatible with the AgentExecutor."""
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_async_client(cls, values: dict) -> dict:
         if values["async_client"] is None:
             import openai
