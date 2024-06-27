@@ -31,9 +31,9 @@ class ChatAI21(BaseChatModel, AI21Base):
 
 
             model = ChatAI21(
-                # defaults to os.enviorn.get('AI21_API_KEY')
-                api_key='my_api_key'
-                )
+                # defaults to os.environ.get("AI21_API_KEY")
+                api_key="my_api_key"
+            )
     """
 
     model: str
