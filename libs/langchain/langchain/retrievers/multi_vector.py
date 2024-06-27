@@ -100,10 +100,19 @@ class MultiVectorRetriever(BaseRetriever):
             sub_docs = await self.vectorstore.amax_marginal_relevance_search(
                 query, **self.search_kwargs
             )
-        else:
+        elif self.search_type == SearchType.similarity:
             sub_docs = await self.vectorstore.asimilarity_search(
                 query, **self.search_kwargs
             )
+        elif self.search_type == SearchType.similarity_score_threshold:
+            sub_docs_and_similarities = (
+                await self.vectorstore.asimilarity_search_with_relevance_scores(
+                    query, **self.search_kwargs
+                )
+            )
+            sub_docs = [sub_doc for sub_doc, _ in sub_docs_and_similarities]
+        else:
+            raise ValueError(f"search_type of {self.search_type} not allowed.")
 
         # We do this to maintain the order of the ids that are returned
         ids = []
