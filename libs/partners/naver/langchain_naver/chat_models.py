@@ -44,10 +44,11 @@ async def _aiter_sse(
     """Iterate over the server-sent events."""
     async with event_source_mgr as event_source:
         await _araise_on_error(event_source.response)
-        async for event in event_source.aiter_sse():
-            if event.data == "[DONE]":
+        async for sse in event_source.aiter_sse():
+            event_data = sse.json()
+            if sse.event == "signal" and event_data.get("data", {}) == "[DONE]":
                 return
-            yield event.json()
+            yield sse
 
 
 def _convert_chunk_to_message_chunk(
@@ -387,7 +388,6 @@ class ChatNaver(BaseChatModel):
                 )
             yield gen_chunk
 
-    # TODO: Implement if ChatNaver supports async streaming. Otherwise delete.
     async def _astream(
         self,
         messages: List[BaseMessage],
@@ -395,7 +395,20 @@ class ChatNaver(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        raise NotImplementedError
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params, **kwargs, "stream": True}
+
+        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
+        async for chunk in await self.acompletion_with_retry(messages=message_dicts, run_manager=run_manager, **params):
+            new_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
+            # make future chunks same type as first chunk
+            default_chunk_class = new_chunk.__class__
+            gen_chunk = ChatGenerationChunk(message=new_chunk)
+            if run_manager:
+                await run_manager.on_llm_new_token(
+                    token=cast(str, new_chunk.content), chunk=gen_chunk
+                )
+            yield gen_chunk
 
     async def _agenerate(
         self,
