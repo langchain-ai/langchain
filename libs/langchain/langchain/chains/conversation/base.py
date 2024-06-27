@@ -45,7 +45,7 @@ class ConversationChain(LLMChain):
         """Use this since so some prompt vars come from history."""
         return [self.input_key]
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_prompt_input_variables(cls, values: Dict) -> Dict:
         """Validate that prompt input variables are consistent."""
         memory_keys = values["memory"].memory_variables
