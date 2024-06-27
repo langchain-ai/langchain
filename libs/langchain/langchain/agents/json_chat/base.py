@@ -36,11 +36,17 @@ def create_json_chat_agent(
             then passed into the LLM. Default is `render_text_description`.
         template_tool_response: Template prompt that uses the tool response (observation)
             to make the LLM generate the next action to take.
+            Default is TEMPLATE_TOOL_RESPONSE.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
         variables as the prompt passed in does. It returns as output either an
         AgentAction or AgentFinish.
+        
+    Raises:
+        ValueError: If the prompt is missing required variables.
+        ValueError: If the template_tool_response is missing
+            the required variable 'observation'.
 
     Example:
 
