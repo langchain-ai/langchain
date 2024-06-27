@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-chroma"
-version = "0.1.1"
+version = "0.1.2"
 description = "An integration package connecting Chroma and LangChain"
 authors = []
 readme = "README.md"
