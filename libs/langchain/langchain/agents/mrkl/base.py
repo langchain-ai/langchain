@@ -23,7 +23,7 @@ from langchain.tools.render import render_text_description
 class ChainConfig(NamedTuple):
     """Configuration for a chain to use in MRKL system.
 
-    Parameters
+    Parameters:
         action_name: Name of the action.
         action: Action function to call.
         action_description: Description of the action.
