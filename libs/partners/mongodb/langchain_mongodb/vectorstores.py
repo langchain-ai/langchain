@@ -24,7 +24,12 @@ from langchain_core.vectorstores import VectorStore
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.driver_info import DriverInfo
+from pymongo.errors import CollectionInvalid
 
+from langchain_mongodb.index import (
+    create_vector_search_index,
+    update_vector_search_index,
+)
 from langchain_mongodb.utils import maximal_marginal_relevance
 
 MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
@@ -488,4 +493,43 @@ class MongoDBAtlasVectorSearch(VectorStore):
             fetch_k=fetch_k,
             lambda_mult=lambda_mult,
             **kwargs,
+        )
+
+    def create_vector_search_index(
+        self,
+        dimensions: int,
+        filters: Optional[List[Dict[str, str]]] = None,
+        update: bool = False,
+    ) -> None:
+        """Creates a MongoDB Atlas vectorSearch index for the VectorStore
+
+        Note**: This method may fail as it requires a MongoDB Atlas with
+        these pre-requisites:
+            - M10 cluster or higher
+            - https://www.mongodb.com/docs/atlas/atlas-vector-search/create-index/#prerequisites
+
+        Args:
+            dimensions (int): Number of dimensions in embedding
+            filters (Optional[List[Dict[str, str]]], optional): additional filters
+            for index definition.
+                Defaults to None.
+            update (bool, optional): Updates existing vectorSearch index.
+                Defaults to False.
+        """
+        try:
+            self._collection.database.create_collection(self._collection.name)
+        except CollectionInvalid:
+            pass
+
+        index_operation = (
+            update_vector_search_index if update else create_vector_search_index
+        )
+
+        index_operation(
+            collection=self._collection,
+            index_name=self._index_name,
+            dimensions=dimensions,
+            path=self._embedding_key,
+            similarity=self._relevance_score_fn,
+            filters=filters or [],
         )
