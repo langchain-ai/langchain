@@ -12,7 +12,6 @@ from langchain_core.retrievers import BaseRetriever
 
 if TYPE_CHECKING:
     from zep_cloud import SessionSearchResult
-    from zep_cloud.client import AsyncZep, Zep
 
 
 class ZepCloudRetriever(BaseRetriever):
@@ -24,7 +23,8 @@ class ZepCloudRetriever(BaseRetriever):
     reranking of search results.
 
     Provide the session_ids or user_id you'd like to retrieve from.
-    Note: if you don't provide either, Zep will search across all records in your account.
+    Note: if you don't provide either,
+    Zep will search across all records in your account.
 
     Args:
         api_key: Your Zep API key
@@ -35,7 +35,8 @@ class ZepCloudRetriever(BaseRetriever):
         min_score: Minimum score to return (optional)
         search_type: Type of search to perform (similarity / mmr)
             (default: similarity, optional)
-        search_scope: Type of documents to search (messages / facts / summary). Defaults to facts
+        search_scope: Type of documents to search (messages / facts / summary).
+         Defaults to facts
         mmr_lambda: Lambda value for MMR search. Defaults to 0.5 (optional)
 
     Zep - Recall, understand, and extract data from chat histories.
