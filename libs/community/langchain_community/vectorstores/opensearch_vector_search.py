@@ -1067,7 +1067,7 @@ class OpenSearchVectorSearch(VectorStore):
             search_query = {
                 "size": k,
                 "query": {
-                    "function_score": {
+                    "script_score": {
                         "query": {
                             "bool": {
                                 "should": [
@@ -1087,15 +1087,19 @@ class OpenSearchVectorSearch(VectorStore):
                                 ]
                             }
                         },
-                        "functions": [
-                            {
-                                "weight": keyword_weight
-                            },
-                            {
-                                "weight": vector_weight
+                        "script": {
+                            "source": """
+                            double keyword_score = _score;
+                            double vector_score = cosineSimilarity(params.query_vector, doc[params.vector_field]) + 1.0;
+                            return params.keyword_weight * keyword_score + params.vector_weight * vector_score;
+                            """,
+                            "params": {
+                                "query_vector": embedding,
+                                "vector_field": vector_field,
+                                "keyword_weight": keyword_weight,
+                                "vector_weight": vector_weight
                             }
-                        ],
-                        "score_mode": "sum"
+                        }
                     }
                 }
             }
