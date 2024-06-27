@@ -5715,18 +5715,26 @@ async def test_closing_iterator_doesnt_raise_error() -> None:
     on_chain_error_triggered = False
 
     class MyHandler(BaseCallbackHandler):
-        def on_chain_error(
-            self, error: BaseException, *, run_id, parent_run_id=None, **kwargs
-        ):
+        async def on_chain_error(
+            self,
+            error: BaseException,
+            *,
+            run_id: UUID,
+            parent_run_id: Optional[UUID] = None,
+            tags: Optional[List[str]] = None,
+            **kwargs: Any,
+        ) -> None:
+            """Run when chain errors."""
             nonlocal on_chain_error_triggered
             on_chain_error_triggered = True
 
     llm = GenericFakeChatModel(messages=iter(["hi there"]))
     chain = llm | StrOutputParser()
-    chain = chain.with_config({"callbacks": [MyHandler()]})
-    st = chain.stream("hello")
+    chain_ = chain.with_config({"callbacks": [MyHandler()]})
+    st = chain_.stream("hello")
     next(st)
-    st.close()
+    # This is a generator so close is defined on it.
+    st.close()  # type: ignore
     # Wait for a bit to make sure that the callback is called.
     time.sleep(0.05)
     assert on_chain_error_triggered is False
