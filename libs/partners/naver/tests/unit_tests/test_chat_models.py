@@ -1,12 +1,14 @@
 """Test chat model integration."""
 import json
 import os
-from typing import Any, cast
+from typing import Any, cast, Generator, AsyncGenerator, Dict
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from httpx_sse import ServerSentEvent
 from pydantic.v1 import SecretStr
 
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
@@ -128,3 +130,59 @@ async def test_naver_ainvoke(mock_chat_completion_response: dict) -> None:
         assert res.content == \
                "Phrases: Record what happened today and prepare for tomorrow. The diary will make your life richer."
     assert completed
+
+
+def _make_completion_response_from_token(token: str) -> ServerSentEvent:
+    return ServerSentEvent(
+        event="token",
+        data=json.dumps(
+            dict(
+                index=0,
+                inputLength=89,
+                outputLength=1,
+                message=dict(
+                    content=token,
+                    role="assistant",
+                )
+            )
+        )
+    )
+
+
+def mock_chat_stream(*args: Any, **kwargs: Any) -> Generator:
+    def it() -> Generator:
+        for token in ["Hello", " how", " can", " I", " help", "?"]:
+            yield _make_completion_response_from_token(token)
+
+    return it()
+
+
+async def mock_chat_astream(*args: Any, **kwargs: Any) -> AsyncGenerator:
+    async def it() -> AsyncGenerator:
+        for token in ["Hello", " how", " can", " I", " help", "?"]:
+            yield _make_completion_response_from_token(token)
+
+    return it()
+
+
+class MyCustomHandler(BaseCallbackHandler):
+    last_token: str = ""
+
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        self.last_token = token
+
+
+@patch("langchain_naver.chat_models.ChatNaver._completion_with_retry", new=mock_chat_stream)
+def test_stream_with_callback() -> None:
+    callback = MyCustomHandler()
+    chat = ChatNaver(callbacks=[callback])
+    for token in chat.stream("Hello"):
+        assert callback.last_token == token.content
+
+
+@patch("langchain_naver.chat_models.ChatNaver._acompletion_with_retry", new=mock_chat_astream)
+async def test_astream_with_callback() -> None:
+    callback = MyCustomHandler()
+    chat = ChatNaver(callbacks=[callback])
+    async for token in chat.astream("Hello"):
+        assert callback.last_token == token.content
