@@ -48,7 +48,7 @@ Use [LangGraph](/docs/concepts/#langgraph) to build stateful agents with first-c
 - **`langchain-community`**: Third party integrations.
   - Some integrations have been further split into **partner packages** that only rely on **`langchain-core`**. Examples include **`langchain_openai`** and **`langchain_anthropic`**.
 - **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
-- **[`LangGraph`](https://langchain-ai.github.io/langgraph/)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
+- **[`LangGraph`](https://langchain-ai.github.io/langgraph/)**: A library for building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph. Integrates smoothly with LangChain, but can be used without it.
 
 ### Productionization:
 - **[LangSmith](https://docs.smith.langchain.com/)**: A developer platform that lets you debug, test, evaluate, and monitor chains built on any LLM framework and seamlessly integrates with LangChain.
@@ -121,9 +121,9 @@ Please see [here](https://python.langchain.com) for full documentation, which in
 
 ## 🌐 Ecosystem
 
-- [🦜🛠️ LangSmith](https://docs.smith.langchain.com/): Tracing and evaluating your language model applications and intelligent agents to help you move from prototype to production.
-- [🦜🕸️ LangGraph](https://langchain-ai.github.io/langgraph/): Creating stateful, multi-actor applications with LLMs, built on top of (and intended to be used with) LangChain primitives.
-- [🦜🏓 LangServe](https://python.langchain.com/docs/langserve): Deploying LangChain runnables and chains as REST APIs.
+- [🦜🛠️ LangSmith](https://docs.smith.langchain.com/): Trace and evaluate your language model applications and intelligent agents to help you move from prototype to production.
+- [🦜🕸️ LangGraph](https://langchain-ai.github.io/langgraph/): Create stateful, multi-actor applications with LLMs. Integrates smoothly with LangChain, but can be used without it.
+- [🦜🏓 LangServe](https://python.langchain.com/docs/langserve): Deploy LangChain runnables and chains as REST APIs.
 
 
 ## 💁 Contributing
