@@ -4,6 +4,8 @@ from typing import Iterable, List, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.graph_stores.base import METADATA_CONTENT_ID_KEY
+from langchain_core.graph_stores.links import METADATA_LINKS_KEY, Link
 
 from langchain_community.graph_stores import CassandraGraphStore
 
@@ -50,7 +52,7 @@ def _get_graph_store(
         session=session,
         keyspace=keyspace,
         node_table=node_table,
-        edge_table=edge_table,
+        targets_table=edge_table,
     )
     return store
 
@@ -104,59 +106,7 @@ class AngularTwoDimensionalEmbeddings(Embeddings):
 
 
 def _result_ids(docs: Iterable[Document]) -> List[str]:
-    from ragstack_knowledge_store.graph_store import CONTENT_ID
-
-    return list(map(lambda d: d.metadata[CONTENT_ID], docs))
-
-
-def test_link_directed() -> None:
-    from ragstack_knowledge_store.link_tag import IncomingLinkTag, OutgoingLinkTag
-
-    a = Document(
-        page_content="A",
-        metadata={
-            "content_id": "a",
-            "link_tags": {
-                IncomingLinkTag(kind="hyperlink", tag="http://a"),
-            },
-        },
-    )
-    b = Document(
-        page_content="B",
-        metadata={
-            "content_id": "b",
-            "link_tags": {
-                IncomingLinkTag(kind="hyperlink", tag="http://b"),
-                OutgoingLinkTag(kind="hyperlink", tag="http://a"),
-            },
-        },
-    )
-    c = Document(
-        page_content="C",
-        metadata={
-            "content_id": "c",
-            "link_tags": {
-                OutgoingLinkTag(kind="hyperlink", tag="http://a"),
-            },
-        },
-    )
-    d = Document(
-        page_content="D",
-        metadata={
-            "content_id": "d",
-            "link_tags": {
-                OutgoingLinkTag(kind="hyperlink", tag="http://a"),
-                OutgoingLinkTag(kind="hyperlink", tag="http://b"),
-            },
-        },
-    )
-
-    store = _get_graph_store(FakeEmbeddings, [a, b, c, d])
-
-    assert list(store.store._linked_ids("a")) == []
-    assert list(store.store._linked_ids("b")) == ["a"]
-    assert list(store.store._linked_ids("c")) == ["a"]
-    assert sorted(store.store._linked_ids("d")) == ["a", "b"]
+    return list(map(lambda d: d.metadata[METADATA_CONTENT_ID_KEY], docs))
 
 
 def test_mmr_traversal() -> None:
@@ -179,16 +129,14 @@ def test_mmr_traversal() -> None:
     Both v2 and v3 are reachable via edges from v0, so once it is
     selected, those are both considered.
     """
-    from ragstack_knowledge_store.link_tag import IncomingLinkTag, OutgoingLinkTag
-
     store = _get_graph_store(AngularTwoDimensionalEmbeddings)
 
     v0 = Document(
         page_content="-0.124",
         metadata={
             "content_id": "v0",
-            "link_tags": {
-                OutgoingLinkTag(kind="explicit", tag="link"),
+            METADATA_LINKS_KEY: {
+                Link.outgoing(kind="explicit", tag="link"),
             },
         },
     )
@@ -202,8 +150,8 @@ def test_mmr_traversal() -> None:
         page_content="+0.25",
         metadata={
             "content_id": "v2",
-            "link_tags": {
-                IncomingLinkTag(kind="explicit", tag="link"),
+            METADATA_LINKS_KEY: {
+                Link.incoming(kind="explicit", tag="link"),
             },
         },
     )
@@ -211,8 +159,8 @@ def test_mmr_traversal() -> None:
         page_content="+1.0",
         metadata={
             "content_id": "v3",
-            "link_tags": {
-                IncomingLinkTag(kind="explicit", tag="link"),
+            METADATA_LINKS_KEY: {
+                Link.incoming(kind="explicit", tag="link"),
             },
         },
     )
@@ -241,18 +189,13 @@ def test_mmr_traversal() -> None:
 
 def test_write_retrieve_keywords() -> None:
     from langchain_openai import OpenAIEmbeddings
-    from ragstack_knowledge_store.link_tag import (
-        BidirLinkTag,
-        IncomingLinkTag,
-        OutgoingLinkTag,
-    )
 
     greetings = Document(
         page_content="Typical Greetings",
         metadata={
             "content_id": "greetings",
-            "link_tags": {
-                IncomingLinkTag(kind="parent", tag="parent"),
+            METADATA_LINKS_KEY: {
+                Link.incoming(kind="parent", tag="parent"),
             },
         },
     )
@@ -260,10 +203,10 @@ def test_write_retrieve_keywords() -> None:
         page_content="Hello World",
         metadata={
             "content_id": "doc1",
-            "link_tags": {
-                OutgoingLinkTag(kind="parent", tag="parent"),
-                BidirLinkTag(kind="kw", tag="greeting"),
-                BidirLinkTag(kind="kw", tag="world"),
+            METADATA_LINKS_KEY: {
+                Link.outgoing(kind="parent", tag="parent"),
+                Link.bidir(kind="kw", tag="greeting"),
+                Link.bidir(kind="kw", tag="world"),
             },
         },
     )
@@ -271,10 +214,10 @@ def test_write_retrieve_keywords() -> None:
         page_content="Hello Earth",
         metadata={
             "content_id": "doc2",
-            "link_tags": {
-                OutgoingLinkTag(kind="parent", tag="parent"),
-                BidirLinkTag(kind="kw", tag="greeting"),
-                BidirLinkTag(kind="kw", tag="earth"),
+            METADATA_LINKS_KEY: {
+                Link.outgoing(kind="parent", tag="parent"),
+                Link.bidir(kind="kw", tag="greeting"),
+                Link.bidir(kind="kw", tag="earth"),
             },
         },
     )
@@ -302,3 +245,31 @@ def test_write_retrieve_keywords() -> None:
     # keyword edge.
     results = store.traversal_search("Earth", k=1, depth=1)
     assert set(_result_ids(results)) == {"doc2", "doc1", "greetings"}
+
+
+def test_metadata() -> None:
+    store = _get_graph_store(FakeEmbeddings)
+    store.add_documents(
+        [
+            Document(
+                page_content="A",
+                metadata={
+                    METADATA_CONTENT_ID_KEY: "a",
+                    METADATA_LINKS_KEY: {
+                        Link.incoming(kind="hyperlink", tag="http://a"),
+                        Link.bidir(kind="other", tag="foo"),
+                    },
+                    "other": "some other field",
+                },
+            )
+        ]
+    )
+    results = store.similarity_search("A")
+    assert len(results) == 1
+    metadata = results[0].metadata
+    assert metadata["other"] == "some other field"
+    assert metadata[METADATA_CONTENT_ID_KEY] == "a"
+    assert set(metadata[METADATA_LINKS_KEY]) == {
+        Link.incoming(kind="hyperlink", tag="http://a"),
+        Link.bidir(kind="other", tag="foo"),
+    }
