@@ -54,7 +54,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         """Get allowed tools."""
         return [t.name for t in self.tools]
 
-    @root_validator
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_prompt(cls, values: dict) -> dict:
         prompt: BasePromptTemplate = values["prompt"]
         if "agent_scratchpad" not in prompt.input_variables:
