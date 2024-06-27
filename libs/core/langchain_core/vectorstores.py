@@ -37,6 +37,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Sequence,
 )
 
 from langchain_core.embeddings import Embeddings
@@ -98,6 +99,20 @@ class VectorStore(ABC):
         """
 
         raise NotImplementedError("delete method must be implemented by subclass.")
+
+    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+        """Get documents by their IDs.
+
+        Args:
+            ids: List of ids to retrieve.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not yet support get_by_ids."
+        )
+
+    async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+        """Async version of get_by_ids."""
+        return await run_in_executor(None, self.get_by_ids, ids)
 
     async def adelete(
         self, ids: Optional[List[str]] = None, **kwargs: Any
