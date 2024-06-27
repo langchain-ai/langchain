@@ -145,7 +145,7 @@ class BaseCache(ABC):
 class InMemoryCache(BaseCache):
     """Cache that stores things in memory."""
 
-    def __init__(self, maxsize: Optional[int] = None) -> None:
+    def __init__(self, *, maxsize: Optional[int] = None) -> None:
         """Initialize with empty cache.
 
         Args:
