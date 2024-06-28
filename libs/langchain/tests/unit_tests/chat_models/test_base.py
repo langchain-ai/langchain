@@ -93,6 +93,30 @@ def test_configurable() -> None:
     for method in ("get_num_tokens", "get_num_tokens_from_messages", "dict"):
         assert hasattr(model_with_config, method)
 
+    assert model_with_config.dict() == {  # type: ignore[attr-defined]
+        "name": None,
+        "bound": {
+            "model_name": "gpt-4o",
+            "model": "gpt-4o",
+            "stream": False,
+            "n": 1,
+            "temperature": 0.7,
+            "_type": "openai-chat",
+        },
+        "kwargs": {
+            "tools": [
+                {
+                    "type": "function",
+                    "function": {"name": "foo", "description": "foo", "parameters": {}},
+                }
+            ]
+        },
+        "config": {"tags": ["foo"], "configurable": {}},
+        "config_factories": [],
+        "custom_input_type": None,
+        "custom_output_type": None,
+    }
+
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
 def test_configurable_with_default() -> None:
