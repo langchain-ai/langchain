@@ -12,14 +12,16 @@ from langchain_core.pydantic_v1 import Field, root_validator
 PathLike = Union[str, PurePath]
 
 
-class BaseContent(Serializable):
-    """Base class to represent content.
+class BaseMedia(Serializable):
+    """Use to represent media content.
 
-    LangChain content objects are used to represent raw data, such as text or
-    binary data.
+    Media objets can be used to represent raw data, such as text or binary data.
 
-    All such objects are expected to allow specifying metadata and an
-    optional identifier.
+    LangChain Media objects allow associating metadata and an optional identifier
+    with the content.
+
+    The presence of an ID and metadata make it easier to store, index, and search
+    over the content in a structured way.
     """
 
     # The ID field is optional at the moment.
@@ -30,13 +32,15 @@ class BaseContent(Serializable):
 
     Ideally this should be unique across the document collection and formatted 
     as a UUID, but this will not be enforced.
+    
+    .. versionadded:: 0.2.11
     """
 
     metadata: dict = Field(default_factory=dict)
     """Arbitrary metadata associated with the content."""
 
 
-class Blob(BaseContent):
+class Blob(BaseMedia):
     """Blob represents raw data by either reference or value.
 
     Provides an interface to materialize the blob in different representations, and
@@ -240,7 +244,7 @@ class Blob(BaseContent):
         return str_repr
 
 
-class Document(BaseContent):
+class Document(BaseMedia):
     """Class for storing a piece of text and associated metadata.
 
     Example:
