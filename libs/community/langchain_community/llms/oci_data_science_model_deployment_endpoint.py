@@ -1,9 +1,9 @@
 import logging
-from typing import Any, Dict, List, Optional, Iterator, AsyncIterator
+from typing import Any, Dict, List, Optional, Iterator, AsyncIterator, Union, Callable
 
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models.llms import LLM
+from langchain_core.language_models.llms import BaseLLM
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 from langchain_core.outputs import GenerationChunk
@@ -12,9 +12,11 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_community.llms.utils import enforce_stop_tokens
+from langchain_core.language_models.llms import create_base_retry_decorator
 import json
-import sseclient
 from langchain_community.utilities.requests import Requests
+import aiohttp
+from langchain_core.outputs import Generation, LLMResult
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,24 @@ DEFAULT_CONTENT_TYPE_JSON = "application/json"
 DEFAULT_MODEL_NAME = "odsc-llm"
 
 
-class OCIModelDeploymentLLM(LLM):
+def _create_retry_decorator(
+    llm,
+    *,
+    max_retries: int = 1,
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
+    ] = None,
+) -> Callable[[Any], Any]:
+    """Create a retry decorator."""
+    # retry when hitting 401
+    errors = [requests.exceptions.ConnectTimeout]
+    decorator = create_base_retry_decorator(
+        error_types=errors, max_retries=max_retries, run_manager=run_manager
+    )
+    return decorator
+
+
+class OCIModelDeploymentLLM(BaseLLM):
     """Base class for LLM deployed on OCI Data Science Model Deployment."""
 
     auth: dict = Field(default_factory=dict, exclude=True)
@@ -60,6 +79,9 @@ class OCIModelDeploymentLLM(LLM):
     streaming: bool = False
     """Whether to stream the results or not."""
 
+    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    """Keyword arguments to pass to the model."""
+
     @root_validator()
     def validate_environment(  # pylint: disable=no-self-argument
         cls, values: Dict
@@ -73,8 +95,13 @@ class OCIModelDeploymentLLM(LLM):
                 "Could not import ads python package. "
                 "Please install it with `pip install oracle_ads`."
             ) from ex
+
+        if values["streaming"] and values["best_of"] > 1:
+            raise ValueError("Cannot stream results when best_of > 1.")
+
         if not values.get("auth", None):
             values["auth"] = ads.common.auth.default_signer()
+
         values["endpoint"] = get_from_dict_or_env(
             values,
             "endpoint",
@@ -124,52 +151,214 @@ class OCIModelDeploymentLLM(LLM):
     def _process_response(self, response_json: dict) -> str:
         raise NotImplementedError
 
-    def _call(
+    def _headers(self, is_async=False, body=None) -> Dict:
+        if is_async:
+            signer = self.auth["signer"]
+            req = requests.Request("POST", self.endpoint, json=body)
+            req = req.prepare()
+            req = signer(req)
+            headers = {}
+            for key, value in req.headers.items():
+                headers[key] = value
+
+            if self.streaming:
+                headers.update(
+                    {"enable-streaming": "true", "Accept": "text/event-stream"}
+                )
+            return headers
+
+        return (
+            {
+                "Content-Type": DEFAULT_CONTENT_TYPE_JSON,
+                "enable-streaming": "true",
+                "Accept": "text/event-stream",
+            }
+            if self.streaming
+            else {
+                "Content-Type": DEFAULT_CONTENT_TYPE_JSON,
+            }
+        )
+
+    def completion_with_retry(
+        self, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any
+    ) -> Any:
+        """Use tenacity to retry the completion call."""
+        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
+
+        @retry_decorator
+        def _completion_with_retry(**kwargs: Any) -> Any:
+            try:
+                request_timeout = kwargs.pop("request_timeout", DEFAULT_TIME_OUT)
+                data = kwargs.pop("data")
+                stream = kwargs.pop("stream", self.streaming)
+
+                request = Requests(
+                    headers=self._headers(), auth=self.auth.get("signer")
+                )
+                response = request.post(
+                    url=self.endpoint,
+                    data=data,
+                    timeout=request_timeout,
+                    stream=stream,
+                    **kwargs,
+                )
+                response.raise_for_status()
+                return response
+            except Exception as e:
+                try:
+                    error_resp = response.json()
+                except:
+                    error_resp = response.text
+
+                raise ValueError(
+                    f"Error occurs by inference endpoint " f"{str(e)}: {error_resp}"
+                )
+
+        return _completion_with_retry(**kwargs)
+
+    async def acompletion_with_retry(
         self,
-        prompt: str,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Use tenacity to retry the async completion call."""
+        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
+
+        @retry_decorator
+        async def _completion_with_retry(**kwargs: Any) -> Any:
+            try:
+                request_timeout = kwargs.pop("request_timeout", DEFAULT_TIME_OUT)
+                data = kwargs.pop("data")
+                stream = kwargs.pop("stream", self.streaming)
+
+                request = Requests(headers=self._headers(is_async=True, body=data))
+                if stream:
+                    response = request.apost(
+                        url=self.endpoint,
+                        data=data,
+                        timeout=request_timeout,
+                    )
+                    return self._aiter_sse(response)
+                else:
+                    async with request.apost(
+                        url=self.endpoint,
+                        data=data,
+                        timeout=request_timeout,
+                    ) as resp:
+                        resp.raise_for_status()
+                        data = await resp.json()
+                        return data
+            except Exception as e:
+                raise ValueError(f"Error occurs by inference endpoint " f"{str(e)}")
+
+        return await _completion_with_retry(**kwargs)
+
+    def _generate(
+        self,
+        prompts: List[str],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
-    ) -> str:
-        """Call out to OCI Data Science Model Deployment endpoint.
+    ) -> LLMResult:
+        """Call out to OCI Data Science Model Deployment endpoint with k unique prompts.
 
         Args:
-            prompt (str):
-                The prompt to pass into the model.
-            stop (List[str], Optional):
-                List of stop words to use when generating.
-            kwargs:
-                requests_kwargs:
-                    Additional ``**kwargs`` to pass to requests.post
+            prompts: The prompts to pass into the service.
+            stop: Optional list of stop words to use when generating.
 
         Returns:
-            The string generated by the model.
+            The full LLM output.
 
         Example:
             .. code-block:: python
 
-                response = oci_md("Tell me a joke.")
-
+                response = oci_md.invoke("Tell me a joke.")
+                response = oci_md.generate(["Tell me a joke."])
         """
-        requests_kwargs = kwargs.pop("requests_kwargs", {})
-
-        if self.streaming:
-            text = ""
-            for chunk in self._stream(prompt, stop, run_manager, **kwargs):
-                text += chunk.text
-            if stop is not None:
-                text = enforce_stop_tokens(text, stop)
-            return text
-
+        generations: List[List[Generation]] = []
         params = self._invocation_params(stop, **kwargs)
-        body = self._construct_json_body(prompt, params)
-        logger.info(f"LLM API Request:\n{prompt}")
-        response = self._send_request(
-            data=body, endpoint=self.endpoint, **requests_kwargs
-        ).json()
-        completion = self._process_response(response)
-        logger.info(f"LLM API Completion:\n{completion}")
-        return completion
+        for prompt in prompts:
+            body = self._construct_json_body(prompt, params)
+            if self.streaming:
+                generation = GenerationChunk(text="")
+                for chunk in self._stream(
+                    prompt, stop=stop, run_manager=run_manager, **kwargs
+                ):
+                    generation += chunk
+                generations.append([generation])
+            else:
+                res = self.completion_with_retry(
+                    data=body,
+                    run_manager=run_manager,
+                    **kwargs,
+                )
+                generations.append(self._create_generation(res.json()))
+        return LLMResult(generations=generations)
+
+    def _generate_info(self, choice) -> dict:
+        finish_reason = choice.get("finish_reason")
+        logprobs = choice.get("logprobs")
+        index = choice.get("index")
+        return {
+            "finish_reason": finish_reason,
+            "logprobs": logprobs,
+            "index": index,
+        }
+
+    # can be overwrite by user based on need
+    def _create_generation(self, response_json: dict) -> List[Generation]:
+        """Create the LLMResult from the response json."""
+        generations = []
+        choices = response_json.get("choices", [])
+        for choice in choices:
+            gen = Generation(
+                text=choice.get("text"),
+                generation_info=self._generate_info(choice),
+            )
+            generations.append(gen)
+        return generations
+
+    async def _agenerate(
+        self,
+        prompts: List[str],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> LLMResult:
+        """Call out to OCI Data Science Model Deployment endpoint async with k unique prompts.
+
+        Args:
+            prompts: The prompts to pass into the service.
+            stop: Optional list of stop words to use when generating.
+
+        Returns:
+            The full LLM output.
+
+        Example:
+            .. code-block:: python
+
+                response = await oci_md.ainvoke("Tell me a joke.")
+                response = await oci_md.agenerate(["Tell me a joke."])
+        """
+        generations: List[List[Generation]] = []
+        params = self._invocation_params(stop, **kwargs)
+        for prompt in prompts:
+            body = self._construct_json_body(prompt, params)
+            if self.streaming:
+                generation = GenerationChunk(text="")
+                async for chunk in self._astream(
+                    prompt, stop=stop, run_manager=run_manager, **kwargs
+                ):
+                    generation += chunk
+                generations.append([generation])
+            else:
+                res = await self.acompletion_with_retry(
+                    data=body,
+                    run_manager=run_manager,
+                    **kwargs,
+                )
+                generations.append(self._create_generation(res))
+        return LLMResult(generations=generations)
 
     def _stream(
         self,
@@ -204,72 +393,19 @@ class OCIModelDeploymentLLM(LLM):
         requests_kwargs = kwargs.pop("requests_kwargs", {})
         self.streaming = True
         params = self._invocation_params(stop, **kwargs)
-        body = self._construct_json_body(prompt, params)
-        response = self._send_request(
-            data=body, endpoint=self.endpoint, **requests_kwargs
+        body = self._construct_json_body(prompt, params)  # request json body
+
+        response = self.completion_with_retry(
+            data=body, run_manager=run_manager, stream=True, **requests_kwargs
         )
 
-        client = sseclient.SSEClient(response)
-        for event in client.events():
-            if not event or event.data == "[DONE]":
-                continue
-
-            try:
-                chunk = GenerationChunk(
-                    text=json.loads(event.data)["choices"][0]["text"]
-                )
-            except Exception as e:
-                raise RuntimeError(
-                    f"Error raised during inferencing. Response data={event.data}. {e}"
-                )
-
-            if run_manager:
-                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
-            yield chunk
-
-    async def _acall(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> str:
-        """Async call the OCI Data Science Model Deployment endpoint and return the output.
-
-        Args:
-            prompt: The prompt to pass into the model.
-            stop: Optional list of stop words to use when generating.
-
-        Returns:
-            The string generated by the model.
-
-        Example:
-
-            .. code-block:: python
-
-                response = await oci_md("Tell me a joke.")
-
-        """
-        requests_kwargs = kwargs.pop("requests_kwargs", {})
-        params = self._invocation_params(stop, **kwargs)
-        body = self._construct_json_body(prompt, params)
-        # print(prompt)
-
-        signer = self.auth["signer"]
-        req = requests.Request("POST", self.endpoint, json=body)
-        req = req.prepare()
-        req = signer(req)
-        headers = {}
-        for key, value in req.headers.items():
-            headers[key] = value
-
-        request = Requests(headers=headers)
-        async with request.apost(
-            self.endpoint,
-            data=body,
-        ) as response:
-            data = await response.json()
-            return self._process_response(data)
+        for line in self._parse_stream(response.iter_lines()):
+            text = self._handle_sse_line(line)
+            if text:
+                chunk = GenerationChunk(text=text)
+                if run_manager:
+                    run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                yield chunk
 
     async def _astream(
         self,
@@ -278,80 +414,93 @@ class OCIModelDeploymentLLM(LLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
-        pass
+        """Stream OCI Data Science Model Deployment endpoint async on given prompt.
 
-    def _send_request(
-        self,
-        data: Any,
-        endpoint: str,
-        header: Optional[dict] = {},
-        **kwargs: Any,
-    ) -> requests.Response:
-        """Sends request to the oci data science model deployment endpoint.
 
         Args:
-            data (Json serializable):
-                data need to be sent to the endpoint.
-            endpoint (str):
-                The model HTTP endpoint.
-            header (dict, optional):
-                A dictionary of HTTP headers to send to the specified url.
-                Defaults to {}.
+            prompt (str):
+                The prompt to pass into the model.
+            stop (List[str], Optional):
+                List of stop words to use when generating.
             kwargs:
-                Additional ``**kwargs`` to pass to requests.post.
-
-        Raises:
-            Exception:
-                Raise when invoking fails.
+                requests_kwargs:
+                    Additional ``**kwargs`` to pass to requests.post
 
         Returns:
-            A requests.Response object.
+            An iterator of GenerationChunks.
+
+
+        Example:
+
+            .. code-block:: python
+
+            async for chunk in oci_md.astream(("Tell me a joke."):
+                print(chunk, end="", flush=True)
+
         """
-        if not header:
-            header = {}
-        header["Content-Type"] = (
-            header.pop("content_type", DEFAULT_CONTENT_TYPE_JSON)
-            or DEFAULT_CONTENT_TYPE_JSON
-        )
-        request_kwargs = {"json": data}
-        request_kwargs["headers"] = header
-        timeout = kwargs.pop("timeout", DEFAULT_TIME_OUT)
+        requests_kwargs = kwargs.pop("requests_kwargs", {})
+        self.streaming = True
+        params = self._invocation_params(stop, **kwargs)
+        body = self._construct_json_body(prompt, params)
 
-        if self.streaming:
-            header.update({"enable-streaming": "true", "Accept": "text/event-stream"})
-            request_kwargs["stream"] = True
-
-        attempts = 0
-        while attempts < 2:
-            request_kwargs["auth"] = self.auth.get("signer")
-            response = requests.post(
-                endpoint, timeout=timeout, **request_kwargs, **kwargs
-            )
-            if response.status_code == 401:
-                self._refresh_signer()
-                attempts += 1
-                continue
-            break
-
-        try:
-            response.raise_for_status()
-
-        except Exception as e:
-            logger.error(
-                "DEBUG INFO: request_kwargs=%s, status_code=%s, content=%s",
-                request_kwargs,
-                response.status_code,
-                response.content,
-            )
-            raise ValueError(f"Error raised by inference endpoint: {e}")
-
-        return response
+        async for line in await self.acompletion_with_retry(
+            data=body, run_manager=run_manager, stream=True, **requests_kwargs
+        ):
+            text = self._handle_sse_line(line)
+            if text:
+                chunk = GenerationChunk(text=text)
+                if run_manager:
+                    run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                yield chunk
 
     def _refresh_signer(self) -> None:
         if self.auth.get("signer", None) and hasattr(
             self.auth["signer"], "refresh_security_token"
         ):
             self.auth["signer"].refresh_security_token()
+
+    def _parse_stream(self, lines: Iterator[bytes]) -> Iterator[str]:
+        for line in lines:
+            _line = self._parse_stream_line(line)
+            if _line is not None:
+                yield _line
+
+    async def _parse_stream_async(
+        self,
+        lines: aiohttp.StreamReader,
+    ) -> AsyncIterator[str]:
+        async for line in lines:
+            _line = self._parse_stream_line(line)
+            if _line is not None:
+                yield _line
+
+    def _parse_stream_line(self, line: bytes) -> Optional[str]:
+        line = line.strip()
+        if line:
+            line = line.decode("utf-8")
+            if "[DONE]" in line:
+                return None
+
+            if line.startswith("data:"):
+                return line[6:] if line.startswith("data: ") else line[5:]
+        return None
+
+    def _handle_sse_line(self, line: str) -> str:
+        try:
+            obj = json.loads(line)
+            return self._process_response(obj)
+        except Exception:
+            return None
+
+    async def _aiter_sse(
+        self,
+        async_cntx_mgr,
+    ) -> AsyncIterator[Dict]:
+        """Iterate over the server-sent events."""
+        async with async_cntx_mgr as client_resp:
+            client_resp.raise_for_status()
+            async for line in self._parse_stream_async(client_resp.content):
+                yield line
 
 
 class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
@@ -409,10 +558,11 @@ class OCIModelDeploymentTGI(OCIModelDeploymentLLM):
             "do_sample": self.do_sample,
             "return_full_text": self.return_full_text,
             "watermark": self.watermark,
+            **self.model_kwargs,
         }
 
     def _process_response(self, response_json: dict) -> str:
-        return str(response_json.get("generated_text", response_json)) + "\n"
+        return response_json.get("choices", [{}])[0].get("text", {})
 
 
 class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
@@ -487,14 +637,8 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
             "top_k": self.k,
             "top_p": self.p,
             "use_beam_search": self.use_beam_search,
+            **self.model_kwargs,
         }
 
     def _process_response(self, response_json: dict) -> str:
-        print(response_json)
-        return response_json["choices"][0]["text"]
-
-
-## Langchain
-
-
-#### ADS
+        return response_json.get("choices", [{}])[0].get("text", {})
