@@ -58,18 +58,18 @@ def _is_pydantic_class(obj: Any) -> bool:
 
 class AzureChatOpenAI(BaseChatOpenAI):
     """Azure OpenAI chat model integration.
-    
+
     Setup:
         Head to the https://learn.microsoft.com/en-us/azure/ai-services/openai/chatgpt-quickstart?tabs=command-line%2Cpython-new&pivots=programming-language-python
         to create your Azure OpenAI deployment.
-        
-        Then install ``langchain-openai`` and set environment variables 
+
+        Then install ``langchain-openai`` and set environment variables
         ``AZURE_OPENAI_API_KEY`` and ``AZURE_OPENAI_ENDPOINT``:
 
         .. code-block:: bash
 
             pip install -U langchain-openai
-            
+
             export AZURE_OPENAI_API_KEY="your-api-key"
             export AZURE_OPENAI_ENDPOINT="https://your-endpoint.openai.azure.com/"
 
@@ -85,7 +85,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     Key init args — client params:
         api_version: str
-            Azure OpenAI API version to use. See more on the different versions here: 
+            Azure OpenAI API version to use. See more on the different versions here:
             https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning
         timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
@@ -144,12 +144,39 @@ class AzureChatOpenAI(BaseChatOpenAI):
             llm.invoke(messages)
 
         .. code-block:: python
-            
+
             AIMessage(
-                content="J'adore programmer.", 
-                usage_metadata={'input_tokens': 28, 'output_tokens': 6, 'total_tokens': 34},
-                response_metadata={'token_usage': {'completion_tokens': 6, 'prompt_tokens': 28, 'total_tokens': 34}, 'model_name': 'gpt-4', 'system_fingerprint': 'fp_7ec89fabc6', 'prompt_filter_results': [{'prompt_index': 0, 'content_filter_results': {'hate': {'filtered': False, 'severity': 'safe'}, 'self_harm': {'filtered': False, 'severity': 'safe'}, 'sexual': {'filtered': False, 'severity': 'safe'}, 'violence': {'filtered': False, 'severity': 'safe'}}}], 'finish_reason': 'stop', 'logprobs': None, 'content_filter_results': {'hate': {'filtered': False, 'severity': 'safe'}, 'self_harm': {'filtered': False, 'severity': 'safe'}, 'sexual': {'filtered': False, 'severity': 'safe'}, 'violence': {'filtered': False, 'severity': 'safe'}}}, 
-                id='run-6d7a5282-0de0-4f27-9cc0-82a9db9a3ce9-0', 
+                content="J'adore programmer.",
+                usage_metadata={"input_tokens": 28, "output_tokens": 6, "total_tokens": 34},
+                response_metadata={
+                    "token_usage": {
+                        "completion_tokens": 6,
+                        "prompt_tokens": 28,
+                        "total_tokens": 34,
+                    },
+                    "model_name": "gpt-4",
+                    "system_fingerprint": "fp_7ec89fabc6",
+                    "prompt_filter_results": [
+                        {
+                            "prompt_index": 0,
+                            "content_filter_results": {
+                                "hate": {"filtered": False, "severity": "safe"},
+                                "self_harm": {"filtered": False, "severity": "safe"},
+                                "sexual": {"filtered": False, "severity": "safe"},
+                                "violence": {"filtered": False, "severity": "safe"},
+                            },
+                        }
+                    ],
+                    "finish_reason": "stop",
+                    "logprobs": None,
+                    "content_filter_results": {
+                        "hate": {"filtered": False, "severity": "safe"},
+                        "self_harm": {"filtered": False, "severity": "safe"},
+                        "sexual": {"filtered": False, "severity": "safe"},
+                        "violence": {"filtered": False, "severity": "safe"},
+                    },
+                },
+                id="run-6d7a5282-0de0-4f27-9cc0-82a9db9a3ce9-0",
             )
 
     Stream:
@@ -160,17 +187,25 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         .. code-block:: python
 
-            AIMessageChunk(content='', id='run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f')
-            AIMessageChunk(content='J', id='run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f')
-            AIMessageChunk(content="'", id='run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f')
-            AIMessageChunk(content='ad', id='run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f')
-            AIMessageChunk(content='ore', id='run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f')
-            AIMessageChunk(content=' la', id='run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f')
-            AIMessageChunk(content=' programm', id='run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f')
-            AIMessageChunk(content='ation', id='run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f')
-            AIMessageChunk(content='.', id='run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f')
-            AIMessageChunk(content='', response_metadata={'finish_reason': 'stop', 'model_name': 'gpt-4', 'system_fingerprint': 'fp_811936bd4f'}, id='run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f')
-            
+            AIMessageChunk(content="", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content="J", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content="'", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content="ad", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content="ore", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content=" la", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content=" programm", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content="ation", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content=".", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(
+                content="",
+                response_metadata={
+                    "finish_reason": "stop",
+                    "model_name": "gpt-4",
+                    "system_fingerprint": "fp_811936bd4f",
+                },
+                id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f",
+            )
+
         .. code-block:: python
 
             stream = llm.stream(messages)
@@ -182,9 +217,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
         .. code-block:: python
 
             AIMessageChunk(
-                content="J'adore la programmation.", 
-                response_metadata={'finish_reason': 'stop', 'model_name': 'gpt-4', 'system_fingerprint': 'fp_811936bd4f'}, 
-                id='run-ba60e41c-9258-44b8-8f3a-2f10599643b3'
+                content="J'adore la programmation.",
+                response_metadata={
+                    "finish_reason": "stop",
+                    "model_name": "gpt-4",
+                    "system_fingerprint": "fp_811936bd4f",
+                },
+                id="run-ba60e41c-9258-44b8-8f3a-2f10599643b3",
             )
 
     Async:
@@ -316,7 +355,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         .. code-block:: python
 
-            'The weather in the image appears to be quite pleasant. The sky is mostly clear'
+            "The weather in the image appears to be quite pleasant. The sky is mostly clear"
 
     Token usage:
         .. code-block:: python
@@ -394,12 +433,34 @@ class AzureChatOpenAI(BaseChatOpenAI):
             ai_msg.response_metadata
 
         .. code-block:: python
-        
+
             {
-                'token_usage': {'completion_tokens': 6, 'prompt_tokens': 28, 'total_tokens': 34}, 
-                'model_name': 'gpt-35-turbo', 
-                'system_fingerprint': None, 
-                'prompt_filter_results': [{'prompt_index': 0, 'content_filter_results': {'hate': {'filtered': False, 'severity': 'safe'}, 'self_harm': {'filtered': False, 'severity': 'safe'}, 'sexual': {'filtered': False, 'severity': 'safe'}, 'violence': {'filtered': False, 'severity': 'safe'}}}], 'finish_reason': 'stop', 'logprobs': None, 'content_filter_results': {'hate': {'filtered': False, 'severity': 'safe'}, 'self_harm': {'filtered': False, 'severity': 'safe'}, 'sexual': {'filtered': False, 'severity': 'safe'}, 'violence': {'filtered': False, 'severity': 'safe'}}
+                "token_usage": {
+                    "completion_tokens": 6,
+                    "prompt_tokens": 28,
+                    "total_tokens": 34,
+                },
+                "model_name": "gpt-35-turbo",
+                "system_fingerprint": None,
+                "prompt_filter_results": [
+                    {
+                        "prompt_index": 0,
+                        "content_filter_results": {
+                            "hate": {"filtered": False, "severity": "safe"},
+                            "self_harm": {"filtered": False, "severity": "safe"},
+                            "sexual": {"filtered": False, "severity": "safe"},
+                            "violence": {"filtered": False, "severity": "safe"},
+                        },
+                    }
+                ],
+                "finish_reason": "stop",
+                "logprobs": None,
+                "content_filter_results": {
+                    "hate": {"filtered": False, "severity": "safe"},
+                    "self_harm": {"filtered": False, "severity": "safe"},
+                    "sexual": {"filtered": False, "severity": "safe"},
+                    "violence": {"filtered": False, "severity": "safe"},
+                },
             }
     """  # noqa: E501
 
@@ -439,9 +500,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
     be manually specified if you want to use this information downstream, e.g. when
     calculating costs.
 
-    When you specify the version, it will be appended to the model name in the response. 
-    Setting correct version will help you to calculate the cost properly. Model version 
-    is not validated, so make sure you set it correctly to get the correct cost.
+    When you specify the version, it will be appended to the model name in the 
+    response. Setting correct version will help you to calculate the cost properly. 
+    Model version is not validated, so make sure you set it correctly to get the 
+    correct cost.
     """
 
     openai_api_type: str = ""
