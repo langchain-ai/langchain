@@ -57,48 +57,417 @@ def _is_pydantic_class(obj: Any) -> bool:
 
 
 class AzureChatOpenAI(BaseChatOpenAI):
-    """`Azure OpenAI` Chat Completion API.
+    """Azure OpenAI chat model integration.
 
-    To use this class you
-    must have a deployed model on Azure OpenAI. Use `deployment_name` in the
-    constructor to refer to the "Model deployment name" in the Azure portal.
+    Setup:
+        Head to the https://learn.microsoft.com/en-us/azure/ai-services/openai/chatgpt-quickstart?tabs=command-line%2Cpython-new&pivots=programming-language-python
+        to create your Azure OpenAI deployment.
 
-    In addition, you should have the
-    following environment variables set or passed in constructor in lower case:
-    - ``AZURE_OPENAI_API_KEY``
-    - ``AZURE_OPENAI_ENDPOINT``
-    - ``AZURE_OPENAI_AD_TOKEN``
-    - ``OPENAI_API_VERSION``
-    - ``OPENAI_PROXY``
+        Then install ``langchain-openai`` and set environment variables
+        ``AZURE_OPENAI_API_KEY`` and ``AZURE_OPENAI_ENDPOINT``:
 
-    For example, if you have `gpt-3.5-turbo` deployed, with the deployment name
-    `35-turbo-dev`, the constructor should look like:
+        .. code-block:: bash
 
-    .. code-block:: python
+            pip install -U langchain-openai
 
-        from langchain_openai import AzureChatOpenAI
+            export AZURE_OPENAI_API_KEY="your-api-key"
+            export AZURE_OPENAI_ENDPOINT="https://your-endpoint.openai.azure.com/"
 
-        AzureChatOpenAI(azure_deployment="35-turbo-dev", openai_api_version="2023-05-15")
+    Key init args — completion params:
+        azure_deployment: str
+            Name of Azure OpenAI deployment to use.
+        temperature: float
+            Sampling temperature.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
+        logprobs: Optional[bool]
+            Whether to return logprobs.
 
-    Be aware the API version may change.
+    Key init args — client params:
+        api_version: str
+            Azure OpenAI API version to use. See more on the different versions here:
+            https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning
+        timeout: Union[float, Tuple[float, float], Any, None]
+            Timeout for requests.
+        max_retries: int
+            Max number of retries.
+        organization: Optional[str]
+            OpenAI organization ID. If not passed in will be read from env
+            var OPENAI_ORG_ID.
 
-    You can also specify the version of the model using ``model_version`` constructor
-    parameter, as Azure OpenAI doesn't return model version with the response.
+    See full list of supported init args and their descriptions in the params section.
 
-    Default is empty. When you specify the version, it will be appended to the
-    model name in the response. Setting correct version will help you to calculate the
-    cost properly. Model version is not validated, so make sure you set it correctly
-    to get the correct cost.
+    Instantiate:
+        .. code-block:: python
 
-    Any parameters that are valid to be passed to the openai.create call can be passed
-    in, even if not explicitly saved on this class.
+            from langchain_openai import AzureChatOpenAI
+
+            llm = AzureChatOpenAI(
+                azure_deployment="your-deployment",
+                api_version="2024-05-01-preview",
+                temperature=0,
+                max_tokens=None,
+                timeout=None,
+                max_retries=2,
+                # organization="...",
+                # other params...
+            )
+
+    **NOTE**: Any param which is not explicitly supported will be passed directly to the
+    ``openai.AzureOpenAI.chat.completions.create(...)`` API every time to the model is
+    invoked. For example:
+        .. code-block:: python
+
+            from langchain_openai import AzureChatOpenAI
+            import openai
+
+            AzureChatOpenAI(..., logprobs=True).invoke(...)
+
+            # results in underlying API call of:
+
+            openai.AzureOpenAI(..).chat.completions.create(..., logprobs=True)
+
+            # which is also equivalent to:
+
+            AzureChatOpenAI(...).invoke(..., logprobs=True)
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                (
+                    "system",
+                    "You are a helpful translator. Translate the user sentence to French.",
+                ),
+                ("human", "I love programming."),
+            ]
+            llm.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(
+                content="J'adore programmer.",
+                usage_metadata={"input_tokens": 28, "output_tokens": 6, "total_tokens": 34},
+                response_metadata={
+                    "token_usage": {
+                        "completion_tokens": 6,
+                        "prompt_tokens": 28,
+                        "total_tokens": 34,
+                    },
+                    "model_name": "gpt-4",
+                    "system_fingerprint": "fp_7ec89fabc6",
+                    "prompt_filter_results": [
+                        {
+                            "prompt_index": 0,
+                            "content_filter_results": {
+                                "hate": {"filtered": False, "severity": "safe"},
+                                "self_harm": {"filtered": False, "severity": "safe"},
+                                "sexual": {"filtered": False, "severity": "safe"},
+                                "violence": {"filtered": False, "severity": "safe"},
+                            },
+                        }
+                    ],
+                    "finish_reason": "stop",
+                    "logprobs": None,
+                    "content_filter_results": {
+                        "hate": {"filtered": False, "severity": "safe"},
+                        "self_harm": {"filtered": False, "severity": "safe"},
+                        "sexual": {"filtered": False, "severity": "safe"},
+                        "violence": {"filtered": False, "severity": "safe"},
+                    },
+                },
+                id="run-6d7a5282-0de0-4f27-9cc0-82a9db9a3ce9-0",
+            )
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in llm.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            AIMessageChunk(content="", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content="J", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content="'", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content="ad", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content="ore", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content=" la", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content=" programm", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content="ation", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(content=".", id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f")
+            AIMessageChunk(
+                content="",
+                response_metadata={
+                    "finish_reason": "stop",
+                    "model_name": "gpt-4",
+                    "system_fingerprint": "fp_811936bd4f",
+                },
+                id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f",
+            )
+
+        .. code-block:: python
+
+            stream = llm.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block:: python
+
+            AIMessageChunk(
+                content="J'adore la programmation.",
+                response_metadata={
+                    "finish_reason": "stop",
+                    "model_name": "gpt-4",
+                    "system_fingerprint": "fp_811936bd4f",
+                },
+                id="run-ba60e41c-9258-44b8-8f3a-2f10599643b3",
+            )
+
+    Async:
+        .. code-block:: python
+
+            await llm.ainvoke(messages)
+
+            # stream:
+            # async for chunk in (await llm.astream(messages))
+
+            # batch:
+            # await llm.abatch([messages])
+
+    Tool calling:
+        .. code-block:: python
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+
+            class GetPopulation(BaseModel):
+                '''Get the current population in a given location'''
+
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
+
+            llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
+            ai_msg = llm_with_tools.invoke(
+                "Which city is hotter today and which is bigger: LA or NY?"
+            )
+            ai_msg.tool_calls
+
+        .. code-block:: python
+
+            [
+                {
+                    "name": "GetWeather",
+                    "args": {"location": "Los Angeles, CA"},
+                    "id": "call_6XswGD5Pqk8Tt5atYr7tfenU",
+                },
+                {
+                    "name": "GetWeather",
+                    "args": {"location": "New York, NY"},
+                    "id": "call_ZVL15vA8Y7kXqOy3dtmQgeCi",
+                },
+                {
+                    "name": "GetPopulation",
+                    "args": {"location": "Los Angeles, CA"},
+                    "id": "call_49CFW8zqC9W7mh7hbMLSIrXw",
+                },
+                {
+                    "name": "GetPopulation",
+                    "args": {"location": "New York, NY"},
+                    "id": "call_6ghfKxV264jEfe1mRIkS3PE7",
+                },
+            ]
+
+    Structured output:
+        .. code-block:: python
+
+            from typing import Optional
+
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+            class Joke(BaseModel):
+                '''Joke to tell user.'''
+
+                setup: str = Field(description="The setup of the joke")
+                punchline: str = Field(description="The punchline to the joke")
+                rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
+
+            structured_llm = llm.with_structured_output(Joke)
+            structured_llm.invoke("Tell me a joke about cats")
+
+        .. code-block:: python
+
+            Joke(
+                setup="Why was the cat sitting on the computer?",
+                punchline="To keep an eye on the mouse!",
+                rating=None,
+            )
+
+        See ``AzureChatOpenAI.with_structured_output()`` for more.
+
+    JSON mode:
+        .. code-block:: python
+
+            json_llm = llm.bind(response_format={"type": "json_object"})
+            ai_msg = json_llm.invoke(
+                "Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]"
+            )
+            ai_msg.content
+
+        .. code-block:: python
+
+            '\\n{\\n  "random_ints": [23, 87, 45, 12, 78, 34, 56, 90, 11, 67]\\n}'
+
+    Image input:
+        .. code-block:: python
+
+            import base64
+            import httpx
+            from langchain_core.messages import HumanMessage
+
+            image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+            image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+            message = HumanMessage(
+                content=[
+                    {"type": "text", "text": "describe the weather in this image"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                    },
+                ]
+            )
+            ai_msg = llm.invoke([message])
+            ai_msg.content
+
+        .. code-block:: python
+
+            "The weather in the image appears to be quite pleasant. The sky is mostly clear"
+
+    Token usage:
+        .. code-block:: python
+
+            ai_msg = llm.invoke(messages)
+            ai_msg.usage_metadata
+
+        .. code-block:: python
+
+            {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
+
+    Logprobs:
+        .. code-block:: python
+
+            logprobs_llm = llm.bind(logprobs=True)
+            ai_msg = logprobs_llm.invoke(messages)
+            ai_msg.response_metadata["logprobs"]
+
+        .. code-block:: python
+
+            {
+                "content": [
+                    {
+                        "token": "J",
+                        "bytes": [74],
+                        "logprob": -4.9617593e-06,
+                        "top_logprobs": [],
+                    },
+                    {
+                        "token": "'adore",
+                        "bytes": [39, 97, 100, 111, 114, 101],
+                        "logprob": -0.25202933,
+                        "top_logprobs": [],
+                    },
+                    {
+                        "token": " la",
+                        "bytes": [32, 108, 97],
+                        "logprob": -0.20141791,
+                        "top_logprobs": [],
+                    },
+                    {
+                        "token": " programmation",
+                        "bytes": [
+                            32,
+                            112,
+                            114,
+                            111,
+                            103,
+                            114,
+                            97,
+                            109,
+                            109,
+                            97,
+                            116,
+                            105,
+                            111,
+                            110,
+                        ],
+                        "logprob": -1.9361265e-07,
+                        "top_logprobs": [],
+                    },
+                    {
+                        "token": ".",
+                        "bytes": [46],
+                        "logprob": -1.2233183e-05,
+                        "top_logprobs": [],
+                    },
+                ]
+            }
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = llm.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+
+            {
+                "token_usage": {
+                    "completion_tokens": 6,
+                    "prompt_tokens": 28,
+                    "total_tokens": 34,
+                },
+                "model_name": "gpt-35-turbo",
+                "system_fingerprint": None,
+                "prompt_filter_results": [
+                    {
+                        "prompt_index": 0,
+                        "content_filter_results": {
+                            "hate": {"filtered": False, "severity": "safe"},
+                            "self_harm": {"filtered": False, "severity": "safe"},
+                            "sexual": {"filtered": False, "severity": "safe"},
+                            "violence": {"filtered": False, "severity": "safe"},
+                        },
+                    }
+                ],
+                "finish_reason": "stop",
+                "logprobs": None,
+                "content_filter_results": {
+                    "hate": {"filtered": False, "severity": "safe"},
+                    "self_harm": {"filtered": False, "severity": "safe"},
+                    "sexual": {"filtered": False, "severity": "safe"},
+                    "violence": {"filtered": False, "severity": "safe"},
+                },
+            }
     """  # noqa: E501
 
     azure_endpoint: Union[str, None] = None
     """Your Azure endpoint, including the resource.
     
         Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
-    
         Example: `https://example-resource.azure.openai.com/`
     """
     deployment_name: Union[str, None] = Field(default=None, alias="azure_deployment")
@@ -115,7 +484,6 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """Your Azure Active Directory token.
     
         Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
-        
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
     """
@@ -124,13 +492,25 @@ class AzureChatOpenAI(BaseChatOpenAI):
         
         Will be invoked on every request.
     """
+
     model_version: str = ""
-    """Legacy, for openai<1.0.0 support."""
+    """The version of the model (e.g. "0125" for gpt-3.5-0125).
+
+    Azure OpenAI doesn't return model version with the response by default so it must 
+    be manually specified if you want to use this information downstream, e.g. when
+    calculating costs.
+
+    When you specify the version, it will be appended to the model name in the 
+    response. Setting correct version will help you to calculate the cost properly. 
+    Model version is not validated, so make sure you set it correctly to get the 
+    correct cost.
+    """
+
     openai_api_type: str = ""
     """Legacy, for openai<1.0.0 support."""
     validate_base_url: bool = True
-    """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
-        infer if it is a base_url or azure_endpoint and update accordingly.
+    """If legacy arg openai_api_base is passed in, try to infer if it is a base_url or 
+        azure_endpoint and update client params accordingly.
     """
 
     @classmethod
