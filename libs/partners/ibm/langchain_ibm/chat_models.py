@@ -85,13 +85,6 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         invalid_tool_calls = []
         try:
             content = ""
-            function_call = _dict.get("generated_text")
-            if function_call:
-                json_parts = re.split(r"\n\n(?:<blank line>\n\n)?", function_call)
-                parsed_objects = [
-                    json.loads(part) for part in json_parts if part.strip()
-                ]
-                additional_kwargs["function_call"] = dict(parsed_objects)
 
             raw_tool_calls = _dict.get("generated_text")
             if raw_tool_calls:
@@ -100,6 +93,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     json.loads(part) for part in json_parts if part.strip()
                 ]
                 additional_kwargs["tool_calls"] = parsed_raw_tool_calls
+                additional_kwargs["function_call"] = dict(parsed_raw_tool_calls)
 
                 for obj in parsed_raw_tool_calls:
                     b = json.dumps(obj["function"]["arguments"])
@@ -716,7 +710,7 @@ Remember, even when answering to the user, you must still use this only JSON for
         Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
             .. code-block:: python
 
-                from langchain_mistralai import ChatMistralAI
+                from langchain_ibm import ChatWatsonx
                 from langchain_core.pydantic_v1 import BaseModel
 
                 class AnswerWithJustification(BaseModel):
@@ -724,7 +718,7 @@ Remember, even when answering to the user, you must still use this only JSON for
                     answer: str
                     justification: str
 
-                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+                llm = ChatWatsonx(...)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -737,7 +731,7 @@ Remember, even when answering to the user, you must still use this only JSON for
         Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
             .. code-block:: python
 
-                from langchain_mistralai import ChatMistralAI
+                from langchain_ibm import ChatWatsonx
                 from langchain_core.pydantic_v1 import BaseModel
 
                 class AnswerWithJustification(BaseModel):
@@ -745,7 +739,7 @@ Remember, even when answering to the user, you must still use this only JSON for
                     answer: str
                     justification: str
 
-                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+                llm = ChatWatsonx(...)
                 structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -758,7 +752,7 @@ Remember, even when answering to the user, you must still use this only JSON for
         Example: Function-calling, dict schema (method="function_calling", include_raw=False):
             .. code-block:: python
 
-                from langchain_mistralai import ChatMistralAI
+                from langchain_ibm import ChatWatsonx
                 from langchain_core.pydantic_v1 import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
@@ -768,7 +762,7 @@ Remember, even when answering to the user, you must still use this only JSON for
                     justification: str
 
                 dict_schema = convert_to_openai_tool(AnswerWithJustification)
-                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+                llm = ChatWatsonx(...)
                 structured_llm = llm.with_structured_output(dict_schema)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -780,14 +774,14 @@ Remember, even when answering to the user, you must still use this only JSON for
         Example: JSON mode, Pydantic schema (method="json_mode", include_raw=True):
             .. code-block::
 
-                from langchain_mistralai import ChatMistralAI
+                from langchain_ibm import ChatWatsonx
                 from langchain_core.pydantic_v1 import BaseModel
 
                 class AnswerWithJustification(BaseModel):
                     answer: str
                     justification: str
 
-                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+                llm = ChatWatsonx(...)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification,
                     method="json_mode",
@@ -808,7 +802,7 @@ Remember, even when answering to the user, you must still use this only JSON for
         Example: JSON mode, no schema (schema=None, method="json_mode", include_raw=True):
             .. code-block::
 
-                from langchain_mistralai import ChatMistralAI
+                from langchain_ibm import ChatWatsonx
 
                 structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
 
