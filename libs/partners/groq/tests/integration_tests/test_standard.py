@@ -20,7 +20,6 @@ class BaseTestGroq(ChatModelIntegrationTests):
 
 
 class TestGroqMixtral(BaseTestGroq):
-
     @property
     def chat_model_params(self) -> dict:
         return {
@@ -28,16 +27,13 @@ class TestGroqMixtral(BaseTestGroq):
         }
 
     @pytest.mark.xfail(
-            reason=(
-                "Fails with 'Failed to call a function. Please adjust your prompt.'"
-            )
-        )
+        reason=("Fails with 'Failed to call a function. Please adjust your prompt.'")
+    )
     def test_structured_output(self, model: BaseChatModel) -> None:
         super().test_structured_output(model)
 
 
 class TestGroqLlama(BaseTestGroq):
-
     @property
     def chat_model_params(self) -> dict:
         return {
