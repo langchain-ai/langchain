@@ -914,7 +914,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         else:
             values["input_variables"] = sorted(input_vars)
         if optional_variables:
-            values["optional_variables"] = optional_variables
+            values["optional_variables"] = sorted(optional_variables)
+        values["input_types"] = input_types
         return values
 
     @classmethod
