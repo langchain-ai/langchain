@@ -97,11 +97,6 @@ class HuggingFacePipeline(BaseLLM):
                 "Please install it with `pip install transformers`."
             )
         if device_map is not None:
-            if "device_map" in model_kwargs:
-                raise ValueError(
-                    'You cannot use both `pipeline(... device_map=..., model_kwargs={"device_map":...})` as those'
-                    " arguments might conflict, use only one.)"
-                )
             if device is not None:
                 logger.warning(
                     "Both `device` and `device_map` are specified. `device` will override `device_map`. You"
