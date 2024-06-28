@@ -162,6 +162,247 @@ class PebbloSafeLoader(BaseLoader):
     def set_discover_sent(cls) -> None:
         cls._discover_sent = True
 
+    @classmethod
+    def set_loader_sent(cls) -> None:
+        cls._loader_sent = True
+
+    def _classify_doc(self, loaded_docs: list, loading_end: bool = False) -> list:
+        """Send documents fetched from loader to pebblo-server. Then send
+        classified documents to Daxa cloud(If api_key is present). Internal method.
+
+        Args:
+
+            loaded_docs (list): List of documents fetched from loader's load operation.
+            loading_end (bool, optional): Flag indicating the halt of data
+                                          loading by loader. Defaults to False.
+        """
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        if loading_end is True:
+            PebbloSafeLoader.set_loader_sent()
+        doc_content = [doc.dict() for doc in loaded_docs]
+        docs = []
+        classified_docs = []
+        for doc in doc_content:
+            doc_metadata = doc.get("metadata", {})
+            doc_authorized_identities = doc_metadata.get("authorized_identities", [])
+            doc_source_path = get_full_path(
+                doc_metadata.get(
+                    "full_path", doc_metadata.get("source", self.source_path)
+                )
+            )
+            doc_source_owner = doc_metadata.get(
+                "owner", PebbloSafeLoader.get_file_owner_from_path(doc_source_path)
+            )
+            doc_source_size = doc_metadata.get(
+                "size", self.get_source_size(doc_source_path)
+            )
+            page_content = str(doc.get("page_content"))
+            page_content_size = self.calculate_content_size(page_content)
+            self.source_aggregate_size += page_content_size
+            doc_id = doc.get("id", None) or 0
+            docs.append(
+                {
+                    "doc": page_content,
+                    "source_path": doc_source_path,
+                    "id": doc_id,
+                    "last_modified": doc.get("metadata", {}).get("last_modified"),
+                    "file_owner": doc_source_owner,
+                    **(
+                        {"authorized_identities": doc_authorized_identities}
+                        if doc_authorized_identities
+                        else {}
+                    ),
+                    **(
+                        {"source_path_size": doc_source_size}
+                        if doc_source_size is not None
+                        else {}
+                    ),
+                }
+            )
+        payload: Dict[str, Any] = {
+            "name": self.app_name,
+            "owner": self.owner,
+            "docs": docs,
+            "plugin_version": PLUGIN_VERSION,
+            "load_id": self.load_id,
+            "loader_details": self.loader_details,
+            "loading_end": "false",
+            "source_owner": self.source_owner,
+            "classifier_location": self.classifier_location,
+        }
+        if loading_end is True:
+            payload["loading_end"] = "true"
+            if "loader_details" in payload:
+                payload["loader_details"]["source_aggregate_size"] = (
+                    self.source_aggregate_size
+                )
+        payload = Doc(**payload).dict(exclude_unset=True)
+        # Raw payload to be sent to classifier
+        if self.classifier_location == "local":
+            load_doc_url = f"{self.classifier_url}{LOADER_DOC_URL}"
+            try:
+                pebblo_resp = requests.post(
+                    load_doc_url, headers=headers, json=payload, timeout=300
+                )
+                classified_docs = json.loads(pebblo_resp.text).get("docs", None)
+                if pebblo_resp.status_code not in [
+                    HTTPStatus.OK,
+                    HTTPStatus.BAD_GATEWAY,
+                ]:
+                    logger.warning(
+                        "Received unexpected HTTP response code: %s",
+                        pebblo_resp.status_code,
+                    )
+                logger.debug(
+                    "send_loader_doc[local]: request url %s, body %s len %s\
+                        response status %s body %s",
+                    pebblo_resp.request.url,
+                    str(pebblo_resp.request.body),
+                    str(
+                        len(
+                            pebblo_resp.request.body if pebblo_resp.request.body else []
+                        )
+                    ),
+                    str(pebblo_resp.status_code),
+                    pebblo_resp.json(),
+                )
+            except requests.exceptions.RequestException:
+                logger.warning("Unable to reach pebblo server.")
+            except Exception as e:
+                logger.warning("An Exception caught in _send_loader_doc: local %s", e)
+
+        if self.api_key:
+            if self.classifier_location == "local":
+                payload["docs"] = classified_docs
+            headers.update({"x-api-key": self.api_key})
+            pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}{LOADER_DOC_URL}"
+            try:
+                pebblo_cloud_response = requests.post(
+                    pebblo_cloud_url, headers=headers, json=payload, timeout=20
+                )
+                logger.debug(
+                    "send_loader_doc[cloud]: request url %s, body %s len %s\
+                        response status %s body %s",
+                    pebblo_cloud_response.request.url,
+                    str(pebblo_cloud_response.request.body),
+                    str(
+                        len(
+                            pebblo_cloud_response.request.body
+                            if pebblo_cloud_response.request.body
+                            else []
+                        )
+                    ),
+                    str(pebblo_cloud_response.status_code),
+                    pebblo_cloud_response.json(),
+                )
+            except requests.exceptions.RequestException:
+                logger.warning("Unable to reach Pebblo cloud server.")
+            except Exception as e:
+                logger.warning("An Exception caught in _send_loader_doc: cloud %s", e)
+        elif self.classifier_location == "pebblo-cloud":
+            logger.warning("API key is missing for sending docs to Pebblo cloud.")
+            raise NameError("API key is missing for sending docs to Pebblo cloud.")
+
+        return classified_docs
+
+    @staticmethod
+    def calculate_content_size(page_content: str) -> int:
+        """Calculate the content size in bytes:
+        - Encode the string to bytes using a specific encoding (e.g., UTF-8)
+        - Get the length of the encoded bytes.
+
+        Args:
+            page_content (str): Data string.
+
+        Returns:
+            int: Size of string in bytes.
+        """
+
+        # Encode the content to bytes using UTF-8
+        encoded_content = page_content.encode("utf-8")
+        size = len(encoded_content)
+        return size
+
+    def _send_discover(self) -> None:
+        """Send app discovery payload to pebblo-server. Internal method."""
+        pebblo_resp = None
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
+        payload = self.app.dict(exclude_unset=True)
+        # Raw discover payload to be sent to classifier
+        if self.classifier_location == "local":
+            app_discover_url = f"{self.classifier_url}{APP_DISCOVER_URL}"
+            try:
+                pebblo_resp = requests.post(
+                    app_discover_url, headers=headers, json=payload, timeout=20
+                )
+                logger.debug(
+                    "send_discover[local]: request url %s, body %s len %s\
+                        response status %s body %s",
+                    pebblo_resp.request.url,
+                    str(pebblo_resp.request.body),
+                    str(
+                        len(
+                            pebblo_resp.request.body if pebblo_resp.request.body else []
+                        )
+                    ),
+                    str(pebblo_resp.status_code),
+                    pebblo_resp.json(),
+                )
+                if pebblo_resp.status_code in [HTTPStatus.OK, HTTPStatus.BAD_GATEWAY]:
+                    PebbloSafeLoader.set_discover_sent()
+                else:
+                    logger.warning(
+                        f"Received unexpected HTTP response code:\
+                            {pebblo_resp.status_code}"
+                    )
+            except requests.exceptions.RequestException:
+                logger.warning("Unable to reach pebblo server.")
+            except Exception as e:
+                logger.warning("An Exception caught in _send_discover: local %s", e)
+
+        if self.api_key:
+            try:
+                headers.update({"x-api-key": self.api_key})
+                # If the pebblo_resp is None,
+                # then the pebblo server version is not available
+                if pebblo_resp:
+                    pebblo_server_version = json.loads(pebblo_resp.text).get(
+                        "pebblo_server_version"
+                    )
+                    payload.update({"pebblo_server_version": pebblo_server_version})
+
+                payload.update({"pebblo_client_version": PLUGIN_VERSION})
+                pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}{APP_DISCOVER_URL}"
+                pebblo_cloud_response = requests.post(
+                    pebblo_cloud_url, headers=headers, json=payload, timeout=20
+                )
+
+                logger.debug(
+                    "send_discover[cloud]: request url %s, body %s len %s\
+                        response status %s body %s",
+                    pebblo_cloud_response.request.url,
+                    str(pebblo_cloud_response.request.body),
+                    str(
+                        len(
+                            pebblo_cloud_response.request.body
+                            if pebblo_cloud_response.request.body
+                            else []
+                        )
+                    ),
+                    str(pebblo_cloud_response.status_code),
+                    pebblo_cloud_response.json(),
+                )
+            except requests.exceptions.RequestException:
+                logger.warning("Unable to reach Pebblo cloud server.")
+            except Exception as e:
+                logger.warning("An Exception caught in _send_discover: cloud %s", e)
+
     def _get_app_details(self) -> App:
         """Fetch app details. Internal method.
 

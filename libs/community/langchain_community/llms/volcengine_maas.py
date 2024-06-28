@@ -1,13 +1,16 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.language_models.llms import LLM
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain_core.language_models.llms import LLM, Generation, LLMResult
 from langchain_core.outputs import GenerationChunk
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.language_models.llms import Generation, LLMResult
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class VolcEngineMaasBase(BaseModel):
@@ -56,12 +59,10 @@ class VolcEngineMaasBase(BaseModel):
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         volc_engine_maas_ak = convert_to_secret_str(
-            get_from_dict_or_env(
-                values, "volc_engine_maas_ak", "VOLC_ACCESSKEY")
+            get_from_dict_or_env(values, "volc_engine_maas_ak", "VOLC_ACCESSKEY")
         )
         volc_engine_maas_sk = convert_to_secret_str(
-            get_from_dict_or_env(
-                values, "volc_engine_maas_sk", "VOLC_SECRETKEY")
+            get_from_dict_or_env(values, "volc_engine_maas_sk", "VOLC_SECRETKEY")
         )
         endpoint = values["endpoint"]
         if values["endpoint"] is not None and values["endpoint"] != "":
@@ -176,8 +177,7 @@ class VolcEngineMaasLLM(LLM, VolcEngineMaasBase):
         for res in self.client.stream_chat(params):
             if res:
                 chunk = GenerationChunk(
-                    text=res.get("choice", {}).get(
-                        "message", {}).get("content", "")
+                    text=res.get("choice", {}).get("message", {}).get("content", "")
                 )
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text, chunk=chunk)
@@ -214,12 +214,10 @@ class VolcEngineMaasBaseV3(BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         volc_engine_maas_ak = convert_to_secret_str(
-            get_from_dict_or_env(
-                values, "volc_engine_maas_ak", "VOLC_ACCESSKEY")
+            get_from_dict_or_env(values, "volc_engine_maas_ak", "VOLC_ACCESSKEY")
         )
         volc_engine_maas_sk = convert_to_secret_str(
-            get_from_dict_or_env(
-                values, "volc_engine_maas_sk", "VOLC_SECRETKEY")
+            get_from_dict_or_env(values, "volc_engine_maas_sk", "VOLC_SECRETKEY")
         )
         try:
             from volcenginesdkarkruntime import Ark
@@ -254,9 +252,9 @@ class VolcEngineMaasLLMV3(LLM, VolcEngineMaasBaseV3):
     access key, secret key are required parameters which you could get help
     https://www.volcengine.com/docs/82379/1263482
 
-    In order to use them, it is necessary to install the 'volcengine-python-sdk' Python package.
-    The access key and secret key must be set either via environment variables or
-    passed directly to this class.
+    In order to use them, it is necessary to install the 'volcengine-python-sdk'
+    Python package. The access key and secret key must be set either via environment
+    variables or passed directly to this class.
     access key and secret key are mandatory parameters for which assistance can be
     sought at https://www.volcengine.com/docs/82379/1263482.
 
@@ -279,13 +277,14 @@ class VolcEngineMaasLLMV3(LLM, VolcEngineMaasBaseV3):
         prompts: List[Dict[str, str]],
         **kwargs: Any,
     ) -> dict:
-        messages = [{"role": item["role"], "content": item["content"]}
-                    for item in prompts]
+        messages = [
+            {"role": item["role"], "content": item["content"]} for item in prompts
+        ]
         return {
             "model": self.model,
             "messages": messages,
             "stream": self.streaming,
-            **kwargs
+            **kwargs,
         }
 
     def invoke(self, inputs: List[Dict[str, str]], **kwargs: Any) -> List[str]:
@@ -357,9 +356,7 @@ class VolcEngineMaasLLMV3(LLM, VolcEngineMaasBaseV3):
         stream = await self.client.chat.completions.create(**params)
         async for res in stream:
             if res:
-                chunk = GenerationChunk(
-                    text=res.choices[0].delta.content
-                )
+                chunk = GenerationChunk(text=res.choices[0].delta.content)
                 if run_manager:
                     await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
                 yield chunk
