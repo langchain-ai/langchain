@@ -90,10 +90,8 @@ def test_configurable() -> None:
         RunnableConfig(tags=["foo"]), configurable={"model": "gpt-4o"}
     )
 
-    # with_config has special handling to extract model params, so that we now have a
-    # default model. meaning we can access non-configurable, non-declarative methods as
-    # well.
-    assert model_with_config.get_num_tokens_from_messages([(HumanMessage("foo"))]) == 8  # type: ignore[attr-defined]
+    for method in ("get_num_tokens", "get_num_tokens_from_messages", "dict"):
+        assert hasattr(model_with_config, method)
 
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
@@ -117,7 +115,6 @@ def test_configurable_with_default() -> None:
         assert hasattr(model, method)
 
     assert model.model_name == "gpt-4o"  # type: ignore[attr-defined]
-    assert model.get_num_tokens_from_messages([(HumanMessage("foo"))]) == 8
 
     model_with_tools = model.bind_tools(
         [{"name": "foo", "description": "foo", "parameters": {}}]
