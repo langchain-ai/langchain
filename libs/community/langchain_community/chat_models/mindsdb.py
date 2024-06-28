@@ -191,8 +191,8 @@ class ChatAIMind(ChatAnyscale):
 
         if model_name not in available_models:
             raise ValueError(
-                f"Model name {model_name} is not supported."
-                f"Only the following models are supported: {", ".join(available_models)}."
+                f"Model {model_name} is not supported. "
+                f"Only the following models are supported: {', '.join(available_models)}."
             )
 
         values["available_models"] = available_models
@@ -205,11 +205,10 @@ class ChatAIMind(ChatAnyscale):
         """
         if self.model_name not in TOOL_CALLING_MODELS:
             logger.warning(
-                f"Tool/function calling is not supported for the {self.model_name} model."
-                f"Only the following models support tool/function calling: {", ".join(TOOL_CALLING_MODELS)}."
+                f"Tool/Function calling is not supported for model {self.model_name}. "
+                f"Only the following models support tool/function calling: {', '.join(TOOL_CALLING_MODELS)}.\n"
+                f"Requests can still be made to the model, but tools/functions will not be called."
             )
-
-            raise ValueError("Tool calling is not supported for this model.")
     
     def bind_functions(
         self,
