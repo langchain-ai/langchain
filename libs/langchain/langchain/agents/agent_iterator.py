@@ -62,6 +62,22 @@ class AgentExecutorIterator:
         """
         Initialize the AgentExecutorIterator with the given AgentExecutor,
         inputs, and optional callbacks.
+
+        Args:
+            agent_executor (AgentExecutor): The AgentExecutor to iterate over.
+            inputs (Any): The inputs to the AgentExecutor.
+            callbacks (Callbacks, optional): The callbacks to use during iteration.
+                Defaults to None.
+            tags (Optional[list[str]], optional): The tags to use during iteration.
+                Defaults to None.
+            metadata (Optional[Dict[str, Any]], optional): The metadata to use
+                during iteration. Defaults to None.
+            run_name (Optional[str], optional): The name of the run. Defaults to None.
+            run_id (Optional[UUID], optional): The ID of the run. Defaults to None.
+            include_run_info (bool, optional): Whether to include run info
+                in the output. Defaults to False.
+            yield_actions (bool, optional): Whether to yield actions as they
+                are generated. Defaults to False.
         """
         self._agent_executor = agent_executor
         self.inputs = inputs
@@ -85,6 +101,7 @@ class AgentExecutorIterator:
 
     @property
     def inputs(self) -> Dict[str, str]:
+        """The inputs to the AgentExecutor."""
         return self._inputs
 
     @inputs.setter
@@ -93,6 +110,7 @@ class AgentExecutorIterator:
 
     @property
     def agent_executor(self) -> AgentExecutor:
+        """The AgentExecutor to iterate over."""
         return self._agent_executor
 
     @agent_executor.setter
@@ -103,10 +121,12 @@ class AgentExecutorIterator:
 
     @property
     def name_to_tool_map(self) -> Dict[str, BaseTool]:
+        """A mapping of tool names to tools."""
         return {tool.name: tool for tool in self.agent_executor.tools}
 
     @property
     def color_mapping(self) -> Dict[str, str]:
+        """A mapping of tool names to colors."""
         return get_color_mapping(
             [tool.name for tool in self.agent_executor.tools],
             excluded_colors=["green", "red"],
