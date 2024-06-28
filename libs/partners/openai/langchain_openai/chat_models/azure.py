@@ -59,17 +59,17 @@ def _is_pydantic_class(obj: Any) -> bool:
 class AzureChatOpenAI(BaseChatOpenAI):
     """`Azure OpenAI` Chat Completion API.
 
-    To use this class you
-    must have a deployed model on Azure OpenAI. Use `deployment_name` in the
-    constructor to refer to the "Model deployment name" in the Azure portal.
+    To use this class you must have a deployed model on Azure OpenAI. Use 
+    `deployment_name` in the constructor to refer to the "Model deployment name" in 
+    the Azure portal.
 
-    In addition, you should have the
-    following environment variables set or passed in constructor in lower case:
-    - ``AZURE_OPENAI_API_KEY``
-    - ``AZURE_OPENAI_ENDPOINT``
-    - ``AZURE_OPENAI_AD_TOKEN``
-    - ``OPENAI_API_VERSION``
-    - ``OPENAI_PROXY``
+    In addition, you should have the following environment variables set or passed in 
+    constructor in lower case:
+        - ``AZURE_OPENAI_API_KEY``
+        - ``AZURE_OPENAI_ENDPOINT``
+        - ``AZURE_OPENAI_AD_TOKEN``
+        - ``OPENAI_API_VERSION``
+        - ``OPENAI_PROXY``
 
     For example, if you have `gpt-3.5-turbo` deployed, with the deployment name
     `35-turbo-dev`, the constructor should look like:
@@ -83,8 +83,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     Be aware the API version may change.
 
     You can also specify the version of the model using ``model_version`` constructor
-    parameter, as Azure OpenAI doesn't return model version with the response.
-
+    parameter, as Azure OpenAI doesn't return model version with the response. 
     Default is empty. When you specify the version, it will be appended to the
     model name in the response. Setting correct version will help you to calculate the
     cost properly. Model version is not validated, so make sure you set it correctly
@@ -98,7 +97,6 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """Your Azure endpoint, including the resource.
     
         Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
-    
         Example: `https://example-resource.azure.openai.com/`
     """
     deployment_name: Union[str, None] = Field(default=None, alias="azure_deployment")
@@ -115,7 +113,6 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """Your Azure Active Directory token.
     
         Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
-        
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
     """
@@ -124,13 +121,15 @@ class AzureChatOpenAI(BaseChatOpenAI):
         
         Will be invoked on every request.
     """
+
+    # For backwards compatibility
     model_version: str = ""
     """Legacy, for openai<1.0.0 support."""
     openai_api_type: str = ""
     """Legacy, for openai<1.0.0 support."""
     validate_base_url: bool = True
-    """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
-        infer if it is a base_url or azure_endpoint and update accordingly.
+    """If legacy arg openai_api_base is passed in, try to infer if it is a base_url or 
+        azure_endpoint and update client params accordingly.
     """
 
     @classmethod
