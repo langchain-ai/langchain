@@ -65,7 +65,7 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {
             "role": "function",
             "content": message.content,
-            "name": message.name,
+            "name": message.name or message.additional_kwargs.get("name"),
         }
     else:
         raise TypeError(f"Got unknown type {message}")
