@@ -8,9 +8,10 @@ sidebar_class_name: hidden
 **LangChain** is a framework for developing applications powered by large language models (LLMs).
 
 LangChain simplifies every stage of the LLM application lifecycle:
-- **Development**: Build your applications using LangChain's open-source [building blocks](/docs/concepts#langchain-expression-language-lcel) and [components](/docs/concepts). Hit the ground running using [third-party integrations](/docs/integrations/platforms/) and [Templates](/docs/templates).
+- **Development**: Build your applications using LangChain's open-source [building blocks](/docs/concepts#langchain-expression-language-lcel), [components](/docs/concepts), and [third-party integrations](/docs/integrations/platforms/).
+Use [LangGraph](/docs/concepts/#langgraph) to build stateful agents with first-class streaming and human-in-the-loop support.
 - **Productionization**: Use [LangSmith](https://docs.smith.langchain.com/) to inspect, monitor and evaluate your chains, so that you can continuously optimize and deploy with confidence.
-- **Deployment**: Turn any chain into an API with [LangServe](/docs/langserve).
+- **Deployment**: Turn your LangGraph applications into production-ready APIs and Assistants with [LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/).
 
 import ThemedImage from '@theme/ThemedImage';
 import useBaseUrl from '@docusaurus/useBaseUrl';
@@ -18,8 +19,8 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 <ThemedImage
   alt="Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers."
   sources={{
-    light: useBaseUrl('/svg/langchain_stack.svg'),
-    dark: useBaseUrl('/svg/langchain_stack_dark.svg'),
+    light: useBaseUrl('/svg/langchain_stack_june_2024.svg'),
+    dark: useBaseUrl('/svg/langchain_stack_june_2024_dark.svg'),
   }}
   title="LangChain Framework Overview"
 />
@@ -30,7 +31,7 @@ Concretely, the framework consists of the following open-source libraries:
 - **`langchain-community`**: Third party integrations.
   - Partner packages (e.g. **`langchain-openai`**, **`langchain-anthropic`**, etc.): Some integrations have been further split into their own lightweight packages that only depend on **`langchain-core`**.
 - **`langchain`**: Chains, agents, and retrieval strategies that make up an application's cognitive architecture.
-- **[LangGraph](https://langchain-ai.github.io/langgraph)**: Build robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
+- **[LangGraph](https://langchain-ai.github.io/langgraph)**: Build robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph. Integrates smoothly with LangChain, but can be used without it.
 - **[LangServe](/docs/langserve)**: Deploy LangChain chains as REST APIs.
 - **[LangSmith](https://docs.smith.langchain.com)**: A developer platform that lets you debug, test, evaluate, and monitor LLM applications.
 
@@ -43,15 +44,17 @@ These docs focus on the Python LangChain library. [Head here](https://js.langcha
 
 ## [Tutorials](/docs/tutorials)
 
-If you're looking to build something specific or are more of a hands-on learner, check out our [tutorials](/docs/tutorials).
+If you're looking to build something specific or are more of a hands-on learner, check out our [tutorials section](/docs/tutorials).
 This is the best place to get started.
 
 These are the best ones to get started with:
+
 - [Build a Simple LLM Application](/docs/tutorials/llm_chain)
 - [Build a Chatbot](/docs/tutorials/chatbot)
 - [Build an Agent](/docs/tutorials/agents)
+- [Introduction to LangGraph](https://langchain-ai.github.io/langgraph/tutorials/introduction/)
 
-Explore the full list of tutorials [here](/docs/tutorials).
+Explore the full list of LangChain tutorials [here](/docs/tutorials), and check out other [LangGraph tutorials here](https://langchain-ai.github.io/langgraph/tutorials/).
 
 
 ## [How-to guides](/docs/how_to)
@@ -60,9 +63,13 @@ Explore the full list of tutorials [here](/docs/tutorials).
 These how-to guides don’t cover topics in depth – you’ll find that material in the [Tutorials](/docs/tutorials) and the [API Reference](https://api.python.langchain.com/en/latest/).
 However, these guides will help you quickly accomplish common tasks.
 
+Check out [LangGraph-specific how-tos here](https://langchain-ai.github.io/langgraph/how-tos/).
+
 ## [Conceptual guide](/docs/concepts)
 
 Introductions to all the key parts of LangChain you’ll need to know! [Here](/docs/concepts) you'll find high level explanations of all LangChain concepts.
+
+For a deeper dive into LangGraph concepts, check out [this page](https://langchain-ai.github.io/langgraph/concepts/).
 
 ## [API reference](https://api.python.langchain.com)
 Head to the reference section for full documentation of all classes and methods in the LangChain Python packages.
@@ -73,10 +80,7 @@ Head to the reference section for full documentation of all classes and methods 
 Trace and evaluate your language model applications and intelligent agents to help you move from prototype to production.
 
 ### [🦜🕸️ LangGraph](https://langchain-ai.github.io/langgraph)
-Build stateful, multi-actor applications with LLMs, built on top of (and intended to be used with) LangChain primitives.
-
-### [🦜🏓 LangServe](/docs/langserve)
-Deploy LangChain runnables and chains as REST APIs.
+Build stateful, multi-actor applications with LLMs. Integrates smoothly with LangChain, but can be used without it.
 
 
 ## Additional resources
