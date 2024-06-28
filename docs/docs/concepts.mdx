@@ -51,8 +51,8 @@ A developer platform that lets you debug, test, evaluate, and monitor LLM applic
 <ThemedImage
   alt="Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers."
   sources={{
-    light: useBaseUrl('/svg/langchain_stack.svg'),
-    dark: useBaseUrl('/svg/langchain_stack_dark.svg'),
+    light: useBaseUrl('/svg/langchain_stack_june_2024.svg'),
+    dark: useBaseUrl('/svg/langchain_stack_june_2024_dark.svg'),
   }}
   title="LangChain Framework Overview"
 />
@@ -89,7 +89,7 @@ With LCEL, **all** steps are automatically logged to [LangSmith](https://docs.sm
 Any chain created with LCEL can be easily deployed using [LangServe](/docs/langserve).
 
 ### Runnable interface
-<span data-heading-keywords="invoke"></span>
+<span data-heading-keywords="invoke,runnable"></span>
 
 To make it as easy as possible to create custom chains, we've implemented a ["Runnable"](https://api.python.langchain.com/en/stable/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) protocol. Many LangChain components implement the `Runnable` protocol, including chat models, LLMs, output parsers, retrievers, prompt templates, and more. There are also several useful primitives for working with runnables, which you can read about below.
 
@@ -549,6 +549,28 @@ In order to solve that we built LangGraph to be this flexible, highly-controllab
 If you are still using AgentExecutor, do not fear: we still have a guide on [how to use AgentExecutor](/docs/how_to/agent_executor).
 It is recommended, however, that you start to transition to LangGraph.
 In order to assist in this we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent).
+
+#### ReAct agents
+<span data-heading-keywords="react,react agent"></span>
+
+One popular architecture for building agents is [**ReAct**](https://arxiv.org/abs/2210.03629).
+ReAct combines reasoning and acting in an iterative process - in fact the name "ReAct" stands for "Reason" and "Act".
+
+The general flow looks like this:
+
+- The model will "think" about what step to take in response to an input and any previous observations.
+- The model will then choose an action from available tools (or choose to respond to the user).
+- The model will generate arguments to that tool.
+- The agent runtime (executor) will parse out the chosen tool and call it with the generated arguments.
+- The executor will return the results of the tool call back to the model as an observation.
+- This process repeats until the agent chooses to respond.
+
+There are general prompting based implementations that do not require any model-specific features, but the most
+reliable implementations use features like [tool calling](/docs/how_to/tool_calling/) to reliably format outputs
+and reduce variance.
+
+Please see the [LangGraph documentation](https://langchain-ai.github.io/langgraph/) for more information,
+or [this how-to guide](/docs/how_to/migrate_agent/) for specific information on migrating to LangGraph.
 
 ### Callbacks
 
