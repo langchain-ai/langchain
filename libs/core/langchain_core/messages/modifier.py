@@ -9,7 +9,7 @@ class RemoveMessage(BaseMessage):
     type: Literal["remove"] = "remove"
 
     def __init__(self, id: str, **kwargs: Any) -> None:
-        if "content" in kwargs:
+        if kwargs.pop("content", None):
             raise ValueError("RemoveMessage does not support 'content' field.")
 
         return super().__init__("", id=id, **kwargs)
