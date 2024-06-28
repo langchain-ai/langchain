@@ -68,9 +68,9 @@ class ChatPerplexity(BaseChatModel):
     """Base URL path for API requests, 
     leave blank if not using a proxy or service emulator."""
     request_timeout: Optional[Union[float, Tuple[float, float]]] = Field(
-        600, alias="timeout"
+        None, alias="timeout"
     )
-    """Timeout for requests to PerplexityChat completion API. Default is 600 seconds."""
+    """Timeout for requests to PerplexityChat completion API. Default is None."""
     max_retries: int = 6
     """Maximum number of retries to make when generating."""
     streaming: bool = False
