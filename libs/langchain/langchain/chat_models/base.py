@@ -34,7 +34,7 @@ def init_chat_model(
     *,
     model_provider: Optional[str] = None,
     configurable: Optional[bool] = None,
-    config_prefix: str = "",
+    config_prefix: Optional[str] = None,
     configure_any: bool = False,
     **kwargs: Any,
 ) -> BaseChatModel:
@@ -194,6 +194,7 @@ def init_chat_model(
     configurable = bool(
         (model is None) or configurable or (config_prefix is not None) or configure_any
     )
+    config_prefix = config_prefix or ""
     if not configurable:
         return _init_chat_model_helper(
             cast(str, model), model_provider=model_provider, **kwargs
