@@ -14,6 +14,7 @@ from typing import (
     Text,
     Type,
     Union,
+    TypedDict
 )
 
 from langchain_community.utils.openai import is_openai_v1
@@ -23,9 +24,9 @@ from langchain_core.tools import BaseTool
 from langchain_core.runnables import Runnable
 from langchain_core.messages import BaseMessage
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.utils.function_calling import convert_to_openai_function, convert_to_openai_tool
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +36,13 @@ EMBEDDING_MODELS = ["text-embedding-ada-002"]
 TOOL_CALLING_MODELS = ["gpt-3.5-turbo"]
 
 
+class _FunctionCall(TypedDict):
+    name: str
+
+
 class ChatAIMind(ChatAnyscale):
     """
-    `Minds Endpoint` chat large language models from MindsDB.
+    `Minds Endpoint` large language models for chat completion from MindsDB.
 
     See https://docs.mdb.ai/ for information about MindsDB and the MindsDB Endpoint.
 
@@ -178,7 +183,6 @@ class ChatAIMind(ChatAnyscale):
                 f"Model {values['model_name']} is an embedding model and does not support chat completions."
             )
 
-
         model_name = values["model_name"]
         available_models = cls.get_available_models(
             values["mindsdb_api_key"].get_secret_value(),
@@ -187,13 +191,79 @@ class ChatAIMind(ChatAnyscale):
 
         if model_name not in available_models:
             raise ValueError(
-                f"Model name {model_name} not found in available models: "
-                f"{available_models}.",
+                f"Model name {model_name} is not supported."
+                f"Only the following models are supported: {", ".join(available_models)}."
             )
 
         values["available_models"] = available_models
 
         return values
+    
+    def validate_support_for_tool_calling(self) -> None:
+        if self.model_name not in TOOL_CALLING_MODELS:
+            logger.warning(
+                f"Tool/function calling is not supported for the {self.model_name} model."
+                f"Only the following models support tool/function calling: {", ".join(TOOL_CALLING_MODELS)}."
+            )
+
+            raise ValueError("Tool calling is not supported for this model.")
+    
+    def bind_functions(
+        self,
+        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        function_call: Optional[
+            Union[_FunctionCall, str, Literal["auto", "none"]]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind functions (and other objects) to this chat model.
+
+        Assumes model is compatible with OpenAI function-calling API.
+
+        NOTE: Using bind_tools is recommended instead, as the `functions` and
+            `function_call` request parameters are officially marked as deprecated by
+            OpenAI.
+
+        Args:
+            functions: A list of function definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, or callable. Pydantic
+                models and callables will be automatically converted to
+                their schema dictionary representation.
+            function_call: Which function to require the model to call.
+                Must be the name of the single provided function or
+                "auto" to automatically determine which function to call
+                (if any).
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+        self.validate_support_for_tool_calling()
+
+        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
+        if function_call is not None:
+            function_call = (
+                {"name": function_call}
+                if isinstance(function_call, str)
+                and function_call not in ("auto", "none")
+                else function_call
+            )
+            if isinstance(function_call, dict) and len(formatted_functions) != 1:
+                raise ValueError(
+                    "When specifying `function_call`, you must provide exactly one "
+                    "function."
+                )
+            if (
+                isinstance(function_call, dict)
+                and formatted_functions[0]["name"] != function_call["name"]
+            ):
+                raise ValueError(
+                    f"Function call {function_call} was specified, but the only "
+                    f"provided function was {formatted_functions[0]['name']}."
+                )
+            kwargs = {**kwargs, "function_call": function_call}
+        return super().bind(
+            functions=formatted_functions,
+            **kwargs,
+        )
 
     def bind_tools(
         self,
@@ -227,15 +297,7 @@ class ChatAIMind(ChatAnyscale):
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
-        if self.model_name not in TOOL_CALLING_MODELS:
-            logger.warning(
-                f"""
-                Tool calling is not supported for the {self.model_name} model.
-                Only the following models support tool calling: {", ".join(TOOL_CALLING_MODELS)}.
-                """
-            )
-
-            raise ValueError("Tool calling is not supported for this model.")
+        self.validate_support_for_tool_calling()
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice:
