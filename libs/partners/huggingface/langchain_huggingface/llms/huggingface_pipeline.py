@@ -99,8 +99,11 @@ class HuggingFacePipeline(BaseLLM):
         if device_map is not None:
             if device is not None:
                 logger.warning(
-                    "Both `device` and `device_map` are specified. `device` will override `device_map`. You"
-                    " will most likely encounter unexpected behavior. Please remove `device` and keep `device_map`."
+                    "Both `device` and `device_map` are specified. "
+                    "`device` will override `device_map`. "
+                    "You will most likely encounter unexpected behavior." 
+                    "Please remove `device` and keep "
+                    "`device_map`."
                 )
             model_kwargs["device_map"] = device_map
             device = None
