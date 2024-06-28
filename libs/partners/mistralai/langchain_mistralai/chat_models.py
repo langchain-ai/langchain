@@ -794,6 +794,8 @@ class ChatMistralAI(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
+            # TODO: Update to pass in tool name as tool_choice if/when Mistral supports
+            # specifying a tool.
             llm = self.bind_tools([schema], tool_choice="any")
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
