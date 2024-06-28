@@ -12,8 +12,15 @@ from langchain_core.pydantic_v1 import Field, root_validator
 PathLike = Union[str, PurePath]
 
 
-class IndexableContent(Serializable):
-    """Base class for content that can be indexed."""
+class BaseContent(Serializable):
+    """Base class to represent content.
+
+    LangChain content objects are used to represent raw data, such as text or
+    binary data.
+
+    All such objects are expected to allow specifying metadata and an
+    optional identifier.
+    """
 
     # The ID field is optional at the moment.
     # It will likely become required in a future major release after
@@ -29,7 +36,7 @@ class IndexableContent(Serializable):
     """Arbitrary metadata associated with the content."""
 
 
-class Blob(IndexableContent):
+class Blob(BaseContent):
     """Blob represents raw data by either reference or value.
 
     Provides an interface to materialize the blob in different representations, and
@@ -233,7 +240,7 @@ class Blob(IndexableContent):
         return str_repr
 
 
-class Document(IndexableContent):
+class Document(BaseContent):
     """Class for storing a piece of text and associated metadata.
 
     Example:
