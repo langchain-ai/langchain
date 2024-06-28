@@ -231,6 +231,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 )
             else:
                 tool_choice = convert_to_openai_tool(tools[0])["function"]["name"]
+        # As of 06/2024 Azure OpenAI does not support parallel_tool_calls flag.
+        if "parallel_tool_calls" in kwargs:
+            _ = kwargs.pop("parallel_tool_calls")
         return super().bind_tools(tools, tool_choice=tool_choice, **kwargs)
 
     @property
