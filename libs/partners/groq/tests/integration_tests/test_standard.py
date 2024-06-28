@@ -40,3 +40,9 @@ class TestGroqLlama(BaseTestGroq):
             "model": "llama3-8b-8192",
             "temperature": 0,
         }
+
+    @pytest.mark.xfail(
+        reason=("Fails with 'Failed to call a function. Please adjust your prompt.'")
+    )
+    def test_tool_message_histories_string_content(self, model: BaseChatModel) -> None:
+        super().test_tool_message_histories_string_content(model)
