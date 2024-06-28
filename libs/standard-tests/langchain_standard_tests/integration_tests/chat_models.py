@@ -12,6 +12,7 @@ from langchain_core.messages import (
     HumanMessage,
     ToolMessage,
 )
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
 
 from langchain_standard_tests.unit_tests.chat_models import (
@@ -138,6 +139,20 @@ class ChatModelIntegrationTests(ChatModelTests):
             full = chunk if full is None else full + chunk  # type: ignore
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
+
+    def test_structured_output(self, model: BaseChatModel) -> None:
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        class Joke(BaseModel):
+            """Joke to tell user."""
+
+            setup: str = Field(description="question to set up a joke")
+            punchline: str = Field(description="answer to resolve the joke")
+
+        chat = model.with_structured_output(Joke)
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, Joke)
 
     def test_tool_message_histories_string_content(
         self,
