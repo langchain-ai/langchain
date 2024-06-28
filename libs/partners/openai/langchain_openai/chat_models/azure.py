@@ -145,7 +145,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
         )
 
         azure_ad_token = get_from_dict_or_env(
-            values, "azure_ad_token", "AZURE_OPENAI_AD_TOKEN")
+            values, "azure_ad_token", "AZURE_OPENAI_AD_TOKEN"
+        )
         values["azure_ad_token"] = (
             convert_to_secret_str(azure_ad_token) if azure_ad_token else None
         )
