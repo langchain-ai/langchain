@@ -1113,8 +1113,6 @@ class BaseChatOpenAI(BaseChatModel):
         Example: JSON mode, no schema (schema=None, method="json_mode", include_raw=True):
             .. code-block::
 
-                from langchain_openai import ChatOpenAI
-
                 structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
 
                 structured_llm.invoke(
