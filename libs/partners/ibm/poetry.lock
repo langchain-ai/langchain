@@ -223,13 +223,13 @@ ibm-cos-sdk-core = "2.13.5"
 
 [[package]]
 name = "ibm-watsonx-ai"
-version = "1.0.8"
+version = "1.0.9"
 description = "IBM watsonx.ai API Client"
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "ibm_watsonx_ai-1.0.8-py3-none-any.whl", hash = "sha256:b33c21e69befb06368820566529f9075ce6333c1b94767330c4e7d5843d6fa7c"},
-    {file = "ibm_watsonx_ai-1.0.8.tar.gz", hash = "sha256:e483d2eab358c16688280d4034a6188bb26c149f34654db012ca310908435b5a"},
+    {file = "ibm_watsonx_ai-1.0.9-py3-none-any.whl", hash = "sha256:3b9d42a60418430ddb37b1f9d7e98ade241089518903ebd937d77ff16b07e20b"},
+    {file = "ibm_watsonx_ai-1.0.9.tar.gz", hash = "sha256:c0733a028d34ac75904812a6e3d213feffa401498a9e02a3e3d8d4d2d6d83d32"},
 ]
 
 [package.dependencies]
@@ -245,7 +245,9 @@ urllib3 = "*"
 
 [package.extras]
 fl-crypto = ["pyhelayers (==1.5.0.3)"]
-fl-rt23-1-py3-10 = ["GPUtil", "cryptography (==39.0.1)", "ddsketch (==2.0.4)", "diffprivlib (==0.5.1)", "environs (==9.5.0)", "gym", "image (==1.5.33)", "joblib (==1.1.1)", "lz4", "msgpack (==1.0.7)", "msgpack-numpy (==0.4.8)", "numcompress (==0.1.2)", "numpy (==1.23.5)", "pandas (==1.5.3)", "parse (==1.19.0)", "pathlib2 (==2.3.6)", "protobuf (==4.22.1)", "psutil", "pyYAML (==6.0.1)", "pytest (==6.2.5)", "requests (==2.31.0)", "scikit-learn (==1.1.1)", "scipy (==1.10.1)", "setproctitle", "skops (==0.9.0)", "skorch (==0.12.0)", "tabulate (==0.8.9)", "tensorflow (==2.12.0)", "torch (==2.0.0)", "websockets (==10.1)"]
+fl-crypto-rt24-1 = ["pyhelayers (==1.5.3.1)"]
+fl-rt23-1-py3-10 = ["GPUtil", "cryptography (==42.0.5)", "ddsketch (==2.0.4)", "diffprivlib (==0.5.1)", "environs (==9.5.0)", "gym", "image (==1.5.33)", "joblib (==1.1.1)", "lz4", "msgpack (==1.0.7)", "msgpack-numpy (==0.4.8)", "numcompress (==0.1.2)", "numpy (==1.23.5)", "pandas (==1.5.3)", "parse (==1.19.0)", "pathlib2 (==2.3.6)", "protobuf (==4.22.1)", "psutil", "pyYAML (==6.0.1)", "pytest (==6.2.5)", "requests (==2.31.0)", "scikit-learn (==1.1.1)", "scipy (==1.10.1)", "setproctitle", "skops (==0.9.0)", "skorch (==0.12.0)", "tabulate (==0.8.9)", "tensorflow (==2.12.0)", "torch (==2.0.1)", "websockets (==10.1)"]
+fl-rt24-1-py3-11 = ["GPUtil", "cryptography (==42.0.5)", "ddsketch (==2.0.4)", "diffprivlib (==0.5.1)", "environs (==9.5.0)", "gym", "image (==1.5.33)", "joblib (==1.3.2)", "lz4", "msgpack (==1.0.7)", "msgpack-numpy (==0.4.8)", "numcompress (==0.1.2)", "numpy (==1.26.4)", "pandas (==2.1.4)", "parse (==1.19.0)", "pathlib2 (==2.3.6)", "protobuf (==4.22.1)", "psutil", "pyYAML (==6.0.1)", "pytest (==6.2.5)", "requests (==2.31.0)", "scikit-learn (==1.3.2)", "scipy (==1.11.4)", "setproctitle", "skops (==0.9.0)", "skorch (==0.12.0)", "tabulate (==0.8.9)", "tensorflow (==2.14.1)", "torch (==2.1.2)", "websockets (==10.1)"]
 
 [[package]]
 name = "idna"
@@ -260,22 +262,22 @@ files = [
 
 [[package]]
 name = "importlib-metadata"
-version = "7.1.0"
+version = "8.0.0"
 description = "Read metadata from Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "importlib_metadata-7.1.0-py3-none-any.whl", hash = "sha256:30962b96c0c223483ed6cc7280e7f0199feb01a0e40cfae4d4450fc6fab1f570"},
-    {file = "importlib_metadata-7.1.0.tar.gz", hash = "sha256:b78938b926ee8d5f020fc4772d487045805a55ddbad2ecf21c6d60938dc7fcd2"},
+    {file = "importlib_metadata-8.0.0-py3-none-any.whl", hash = "sha256:15584cf2b1bf449d98ff8a6ff1abef57bf20f3ac6454f431736cd3e660921b2f"},
+    {file = "importlib_metadata-8.0.0.tar.gz", hash = "sha256:188bd24e4c346d3f0a933f275c2fec67050326a856b9a359881d7c2a697e8812"},
 ]
 
 [package.dependencies]
 zipp = ">=0.5"
 
 [package.extras]
-docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
+doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
 perf = ["ipython"]
-testing = ["flufl.flake8", "importlib-resources (>=1.3)", "jaraco.test (>=5.4)", "packaging", "pyfakefs", "pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-mypy", "pytest-perf (>=0.9.2)", "pytest-ruff (>=0.2.1)"]
+test = ["flufl.flake8", "importlib-resources (>=1.3)", "jaraco.test (>=5.4)", "packaging", "pyfakefs", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-mypy", "pytest-perf (>=0.9.2)", "pytest-ruff (>=0.2.1)"]
 
 [[package]]
 name = "iniconfig"
@@ -326,7 +328,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.2.7"
+version = "0.2.8"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -347,18 +349,21 @@ url = "../../core"
 
 [[package]]
 name = "langsmith"
-version = "0.1.79"
+version = "0.1.82"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.79-py3-none-any.whl", hash = "sha256:c7f2c23981917713b5515b773f37c84ff68a7adf803476e2ebb5adcb36a04202"},
-    {file = "langsmith-0.1.79.tar.gz", hash = "sha256:d215718cfdcdf4a011126b7a3d4a37eee96d887e59ac1e628a57e24b2bfa3163"},
+    {file = "langsmith-0.1.82-py3-none-any.whl", hash = "sha256:9b3653e7d316036b0c60bf0bc3e280662d660f485a4ebd8e5c9d84f9831ae79c"},
+    {file = "langsmith-0.1.82.tar.gz", hash = "sha256:c02e2bbc488c10c13b52c69d271eb40bd38da078d37b6ae7ae04a18bd48140be"},
 ]
 
 [package.dependencies]
 orjson = ">=3.9.14,<4.0.0"
-pydantic = ">=1,<3"
+pydantic = [
+    {version = ">=1,<3", markers = "python_full_version < \"3.12.4\""},
+    {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
+]
 requests = ">=2,<3"
 
 [[package]]
@@ -984,13 +989,13 @@ widechars = ["wcwidth"]
 
 [[package]]
 name = "tenacity"
-version = "8.4.1"
+version = "8.4.2"
 description = "Retry code until it succeeds"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "tenacity-8.4.1-py3-none-any.whl", hash = "sha256:28522e692eda3e1b8f5e99c51464efcc0b9fc86933da92415168bc1c4e2308fa"},
-    {file = "tenacity-8.4.1.tar.gz", hash = "sha256:54b1412b878ddf7e1f1577cd49527bad8cdef32421bd599beac0c6c3f10582fd"},
+    {file = "tenacity-8.4.2-py3-none-any.whl", hash = "sha256:9e6f7cf7da729125c7437222f8a522279751cdfbe6b67bfe64f75d3a348661b2"},
+    {file = "tenacity-8.4.2.tar.gz", hash = "sha256:cd80a53a79336edba8489e767f729e4f391c896956b57140b5d7511a64bbd3ef"},
 ]
 
 [package.extras]
@@ -1010,13 +1015,13 @@ files = [
 
 [[package]]
 name = "types-requests"
-version = "2.32.0.20240602"
+version = "2.32.0.20240622"
 description = "Typing stubs for requests"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-requests-2.32.0.20240602.tar.gz", hash = "sha256:3f98d7bbd0dd94ebd10ff43a7fbe20c3b8528acace6d8efafef0b6a184793f06"},
-    {file = "types_requests-2.32.0.20240602-py3-none-any.whl", hash = "sha256:ed3946063ea9fbc6b5fc0c44fa279188bae42d582cb63760be6cb4b9d06c3de8"},
+    {file = "types-requests-2.32.0.20240622.tar.gz", hash = "sha256:ed5e8a412fcc39159d6319385c009d642845f250c63902718f605cd90faade31"},
+    {file = "types_requests-2.32.0.20240622-py3-none-any.whl", hash = "sha256:97bac6b54b5bd4cf91d407e62f0932a74821bc2211f22116d9ee1dd643826caf"},
 ]
 
 [package.dependencies]
@@ -1122,4 +1127,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "06ef2a73b263ac7a91d4b73d87eb6ce33700d35166bcbc586d7a966c01f4296c"
+content-hash = "5bf04f8c06b3c50718829f57e6fad0d54da2bf3a334605ad8c3c004f0abc2ace"

@@ -1,14 +1,21 @@
+import json
 import logging
 import os
+import re
+from operator import itemgetter
 from typing import (
     Any,
+    Callable,
     Dict,
     Iterator,
     List,
+    Literal,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
+    TypedDict,
     Union,
     cast,
 )
@@ -16,6 +23,7 @@ from typing import (
 from ibm_watsonx_ai import Credentials  # type: ignore
 from ibm_watsonx_ai.foundation_models import ModelInference  # type: ignore
 from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     generate_from_stream,
@@ -37,14 +45,24 @@ from langchain_core.messages import (
     ToolMessageChunk,
     convert_to_messages,
 )
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
+from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
     make_invalid_tool_call,
     parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.prompt_values import ChatPromptValue
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.tools import BaseTool
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils.function_calling import (
+    convert_to_openai_function,
+    convert_to_openai_tool,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -62,21 +80,44 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     if role == "user":
         return HumanMessage(content=_dict.get("generated_text", ""))
     else:
-        content = _dict.get("generated_text", "") or ""
         additional_kwargs: Dict = {}
-        if function_call := _dict.get("function_call"):
-            additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
         invalid_tool_calls = []
-        if raw_tool_calls := _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = raw_tool_calls
-            for raw_tool_call in raw_tool_calls:
-                try:
-                    tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
-                except Exception as e:
-                    invalid_tool_calls.append(
-                        dict(make_invalid_tool_call(raw_tool_call, str(e)))
-                    )
+        try:
+            content = ""
+            function_call = _dict.get("generated_text")
+            if function_call:
+                json_parts = re.split(r"\n\n(?:<blank line>\n\n)?", function_call)
+                parsed_objects = [
+                    json.loads(part) for part in json_parts if part.strip()
+                ]
+                additional_kwargs["function_call"] = dict(parsed_objects)
+
+            raw_tool_calls = _dict.get("generated_text")
+            if raw_tool_calls:
+                json_parts = re.split(r"\n\n(?:<blank line>\n\n)?", raw_tool_calls)
+                parsed_raw_tool_calls = [
+                    json.loads(part) for part in json_parts if part.strip()
+                ]
+                additional_kwargs["tool_calls"] = parsed_raw_tool_calls
+
+                for obj in parsed_raw_tool_calls:
+                    b = json.dumps(obj["function"]["arguments"])
+                    obj["function"]["arguments"] = b
+
+                for raw_tool_call in parsed_raw_tool_calls:
+                    try:
+                        raw_tool_call["id"] = "sample_id"
+                        tool_calls.append(
+                            parse_tool_call(raw_tool_call, return_id=True)
+                        )
+                    except Exception as e:
+                        invalid_tool_calls.append(
+                            dict(make_invalid_tool_call(raw_tool_call, str(e)))
+                        )
+        except:  # noqa: E722
+            content = _dict.get("generated_text", "") or ""
+
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -123,7 +164,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {
             "role": "tool",
             "content": message.content,
-            "tool_call_id": message.tool_call_id,
+            "tool_call_id": "123",
         }
     else:
         raise TypeError(f"Got unknown type {message}")
@@ -178,6 +219,10 @@ def _convert_delta_to_message_chunk(
         return ChatMessageChunk(content=content, role=role)
     else:
         return default_class(content=content)  # type: ignore
+
+
+class _FunctionCall(TypedDict):
+    name: str
 
 
 class ChatWatsonx(BaseChatModel):
@@ -389,8 +434,37 @@ class ChatWatsonx(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
 
-        message_dicts, params = self._create_message_dicts(messages, stop)
+        message_dicts, params = self._create_message_dicts(messages, stop, **kwargs)
         chat_prompt = self._create_chat_prompt(message_dicts)
+
+        tools = kwargs.get("tools")
+
+        if tools:
+            chat_prompt = f"""[AVAILABLE_TOOLS]
+{json.dumps(tools[0], indent=2)}
+[/AVAILABLE_TOOLS]
+[INST]<<SYS>>You are Mixtral Chat function calling, an AI language model developed by 
+Mistral AI. You are a cautious assistant. You carefully follow instructions. You are 
+helpful and harmless and you follow ethical guidelines and promote positive behavior.
+<</SYS>>
+
+To use these tools you must always respond in JSON format containing `"type"` and 
+`"function"` key-value pairs. Also `"function"` key-value pair always containing 
+`"name"` and `"arguments"` key-value pairs.
+
+Between subsequent JSONs should be one blank line.
+
+Remember, even when answering to the user, you must still use this only JSON format!
+
+{chat_prompt}[/INST]"""
+
+            if "tools" in kwargs:
+                del kwargs["tools"]
+            if "tool_choice" in kwargs:
+                del kwargs["tool_choice"]
+
+        if "params" in kwargs:
+            del kwargs["params"]
 
         response = self.watsonx_model.generate(
             prompt=chat_prompt, params=params, **kwargs
@@ -469,9 +543,10 @@ class ChatWatsonx(BaseChatModel):
         return prompt
 
     def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]]
+        self, messages: List[BaseMessage], stop: Optional[List[str]], **kwargs: Any
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         params = {**self.params} if self.params else {}
+        params = params | {**kwargs.get("params", {})}
         if stop is not None:
             if params and "stop_sequences" in params:
                 raise ValueError(
@@ -513,3 +588,288 @@ class ChatWatsonx(BaseChatModel):
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         return ChatResult(generations=generations, llm_output=llm_output)
+
+    def bind_functions(
+        self,
+        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        function_call: Optional[
+            Union[_FunctionCall, str, Literal["auto", "none"]]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind functions (and other objects) to this chat model.
+
+        Assumes model is compatible with IBM watsonx.ai function-calling API.
+
+        Args:
+            functions: A list of function definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, or callable. Pydantic
+                models and callables will be automatically converted to
+                their schema dictionary representation.
+            function_call: Which function to require the model to call.
+                Must be the name of the single provided function or
+                "auto" to automatically determine which function to call
+                (if any).
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+
+        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
+        if function_call is not None:
+            function_call = (
+                {"name": function_call}
+                if isinstance(function_call, str)
+                and function_call not in ("auto", "none")
+                else function_call
+            )
+            if isinstance(function_call, dict) and len(formatted_functions) != 1:
+                raise ValueError(
+                    "When specifying `function_call`, you must provide exactly one "
+                    "function."
+                )
+            if (
+                isinstance(function_call, dict)
+                and formatted_functions[0]["name"] != function_call["name"]
+            ):
+                raise ValueError(
+                    f"Function call {function_call} was specified, but the only "
+                    f"provided function was {formatted_functions[0]['name']}."
+                )
+            kwargs = {**kwargs, "function_call": function_call}
+        return super().bind(
+            functions=formatted_functions,
+            **kwargs,
+        )
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+        bind_tools_supported_models = ["mistralai/mixtral-8x7b-instruct-v01"]
+        if self.model_id not in bind_tools_supported_models:
+            raise Warning(
+                f"bind_tools() method for ChatWatsonx support only "
+                f"following models: {bind_tools_supported_models}"
+            )
+
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+
+        return super().bind(tools=formatted_tools, **kwargs)
+
+    def with_structured_output(
+        self,
+        schema: Optional[Union[Dict, Type[BaseModel]]] = None,
+        *,
+        method: Literal["function_calling", "json_mode"] = "function_calling",
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
+                then the model output will be an object of that class. If a dict then
+                the model output will be a dict. With a Pydantic class the returned
+                attributes will be validated, whereas with a dict they will not be. If
+                `method` is "function_calling" and `schema` is a dict, then the dict
+                must match the IBM watsonx.ai function-calling spec.
+            method: The method for steering model generation, either "function_calling"
+                or "json_mode". If "function_calling" then the schema will be converted
+                to an IBM watsonx.ai function and the returned model will make use of the
+                function-calling API. If "json_mode" then IBM watsonx.ai's JSON mode will be
+                used. Note that if using "json_mode" then you must include instructions
+                for formatting the output into the desired schema into the model call.
+            include_raw: If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+        Returns:
+            A Runnable that takes any ChatModel input and returns as output:
+
+                If include_raw is True then a dict with keys:
+                    raw: BaseMessage
+                    parsed: Optional[_DictOrPydantic]
+                    parsing_error: Optional[BaseException]
+
+                If include_raw is False then just _DictOrPydantic is returned,
+                where _DictOrPydantic depends on the schema:
+
+                If schema is a Pydantic class then _DictOrPydantic is the Pydantic
+                    class.
+
+                If schema is a dict then _DictOrPydantic is a dict.
+
+        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=False):
+            .. code-block:: python
+
+                from langchain_mistralai import ChatMistralAI
+                from langchain_core.pydantic_v1 import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+
+                # -> AnswerWithJustification(
+                #     answer='They weigh the same',
+                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+                # )
+
+        Example: Function-calling, Pydantic schema (method="function_calling", include_raw=True):
+            .. code-block:: python
+
+                from langchain_mistralai import ChatMistralAI
+                from langchain_core.pydantic_v1 import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> {
+                #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
+                #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
+                #     'parsing_error': None
+                # }
+
+        Example: Function-calling, dict schema (method="function_calling", include_raw=False):
+            .. code-block:: python
+
+                from langchain_mistralai import ChatMistralAI
+                from langchain_core.pydantic_v1 import BaseModel
+                from langchain_core.utils.function_calling import convert_to_openai_tool
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+                    answer: str
+                    justification: str
+
+                dict_schema = convert_to_openai_tool(AnswerWithJustification)
+                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+                structured_llm = llm.with_structured_output(dict_schema)
+
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                # -> {
+                #     'answer': 'They weigh the same',
+                #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
+                # }
+
+        Example: JSON mode, Pydantic schema (method="json_mode", include_raw=True):
+            .. code-block::
+
+                from langchain_mistralai import ChatMistralAI
+                from langchain_core.pydantic_v1 import BaseModel
+
+                class AnswerWithJustification(BaseModel):
+                    answer: str
+                    justification: str
+
+                llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification,
+                    method="json_mode",
+                    include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "Answer the following question. "
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "What's heavier a pound of bricks or a pound of feathers?"
+                )
+                # -> {
+                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+                #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
+                #     'parsing_error': None
+                # }
+
+        Example: JSON mode, no schema (schema=None, method="json_mode", include_raw=True):
+            .. code-block::
+
+                from langchain_mistralai import ChatMistralAI
+
+                structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
+
+                structured_llm.invoke(
+                    "Answer the following question. "
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "What's heavier a pound of bricks or a pound of feathers?"
+                )
+                # -> {
+                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+                #     'parsed': {
+                #         'answer': 'They are both the same weight.',
+                #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
+                #     },
+                #     'parsing_error': None
+                # }
+        """  # noqa: E501
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = _is_pydantic_class(schema)
+        if method == "function_calling":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is 'function_calling'. "
+                    "Received None."
+                )
+            llm = self.bind_tools([schema], tool_choice=True)
+            if is_pydantic_schema:
+                output_parser: OutputParserLike = PydanticToolsParser(
+                    tools=[schema], first_tool_only=True
+                )
+            else:
+                key_name = convert_to_openai_tool(schema)["function"]["name"]
+                output_parser = JsonOutputKeyToolsParser(
+                    key_name=key_name, first_tool_only=True
+                )
+        elif method == "json_mode":
+            llm = self.bind(response_format={"type": "json_object"})
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+        else:
+            raise ValueError(
+                f"Unrecognized method argument. Expected one of 'function_calling' or "
+                f"'json_format'. Received: '{method}'"
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser
+
+
+def _is_pydantic_class(obj: Any) -> bool:
+    return isinstance(obj, type) and issubclass(obj, BaseModel)
