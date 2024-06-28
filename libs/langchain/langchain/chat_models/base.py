@@ -33,7 +33,8 @@ def init_chat_model(
     model: Optional[str] = None,
     *,
     model_provider: Optional[str] = None,
-    config_prefix: Optional[str] = None,
+    configurable: Optional[bool] = None,
+    config_prefix: str = "",
     configure_any: bool = False,
     **kwargs: Any,
 ) -> BaseChatModel:
@@ -67,17 +68,19 @@ def init_chat_model(
                 - gemini... -> google_vertexai
                 - command... -> cohere
                 - accounts/fireworks... -> fireworks
+        configurable: Whether model parameters are configurable. Defaults to True if
+            model is None or config_prefix is non-null or configure_any is True.
         config_prefix: If config_prefix is a non-empty string then model will be
             configurable at runtime via the
             ``config["configurable"]["{config_prefix}_model"]`` and
             ``config["configurable"]["{config_prefix}_model_provider"]`` keys. If
-            config_prefix is an empty string or the model arg is None then model
-            will be configurable via ``config["configurable"]["model"]``
-            and ``config["configurable"]["model_provider"]`` keys. If config_prefix is
-            None and model is not None then model will not be configurable.
+            config_prefix is an empty string then model will be configurable via
+            ``config["configurable"]["model"]`` and
+            ``config["configurable"]["model_provider"]`` keys.
         configure_any: If True then any parameter can be passed to model initializer as
             part of the config using the "{config_prefix}_{param}" key if config_prefix
-            is a non-empty string and via "{param}" otherwise.
+            is a non-empty string and via "{param}" otherwise. If False then only
+            model and model_provider can be configured.
         kwargs: Additional keyword args to pass to
             ``<<selected ChatModel>>.__init__(model=model_name, **kwargs)``.
 
@@ -88,7 +91,7 @@ def init_chat_model(
         ValueError: If model_provider cannot be inferred or isn't supported.
         ImportError: If the model provider integration package is not installed.
 
-    Example:
+    Initialize non-configurable models:
         .. code-block:: python
 
             # pip install langchain langchain-openai langchain-anthropic langchain-google-vertexai
@@ -103,12 +106,13 @@ def init_chat_model(
             gemini_15.invoke("what's your name")
 
 
-    Create a configurable model with no defaults:
+    Create a partially configurable model with no default model:
         .. code-block:: python
 
             # pip install langchain langchain-openai langchain-anthropic
             from langchain.chat_models import init_chat_model
 
+            # We don't need to specify configurable=True if a model isn't specified.
             configurable_model = init_chat_model(temperature=0)
 
             configurable_model.invoke(
@@ -121,13 +125,15 @@ def init_chat_model(
                 "what's your name",
                 config={"configurable": {"model": "claude-3-5-sonnet-20240620"}}
             )
+            # claude-3.5 sonnet response
 
-    Create a fully configurable model with defaults and a config prefix:
+    Create a fully configurable model with a default model and a config prefix:
         .. code-block:: python
 
             # pip install langchain langchain-openai langchain-anthropic
             from langchain.chat_models import init_chat_model
 
+            # We don't need to specify if config_prefix or configure_any is specified.
             configurable_model_with_default = init_chat_model(
                 "gpt-4o",
                 model_provider="openai",
@@ -151,13 +157,44 @@ def init_chat_model(
             )
             # Claude-3.5 sonnet response with temperature 0.6
 
-    """  # noqa: E501
-    if model and config_prefix is None:
-        if configure_any:
-            raise ValueError(
-                f"Must specify config_prefix if configure_any=True. Received "
-                f"{config_prefix=} and {configure_any=}."
+    Bind tools to a configurable model:
+        You can call any ChatModel declarative methods on a configurable model in the
+        same way that you would with a normal model.
+
+        .. code-block:: python
+
+            # pip install langchain langchain-openai langchain-anthropic
+            from langchain.chat_models import init_chat_model
+            from langchain_core.pydantic_v1 import BaseModel, Field
+
+            class GetWeather(BaseModel):
+                '''Get the current weather in a given location'''
+
+                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+            class GetPopulation(BaseModel):
+                '''Get the current population in a given location'''
+
+                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
+            configurable_model = init_chat_model("gpt-4o", configurable=True, temperature=0)
+
+            configurable_model_with_tools = configurable_model.bind_tools([GetWeather, GetPopulation])
+            configurable_model_with_tools.invoke(
+                "Which city is hotter today and which is bigger: LA or NY?"
             )
+            # GPT-4o response with tool calls
+
+            configurable_model_with_tools.invoke(
+                "Which city is hotter today and which is bigger: LA or NY?",
+                config={"configurable": {"model": "claude-3-5-sonnet-20240620"}}
+            )
+            # Claude-3.5 sonnet response with tools
+    """  # noqa: E501
+    configurable = bool(
+        not model or configurable or (config_prefix is not None) or configure_any
+    )
+    if not configurable:
         return _init_chat_model_helper(model, model_provider=model_provider, **kwargs)
     else:
         if model:
@@ -336,7 +373,7 @@ class _ConfigurableModel:
         self,
         *,
         default_config: Optional[dict] = None,
-        config_prefix: Optional[str] = None,
+        config_prefix: str = "",
         configure_any: bool = False,
         queued_operations: Sequence[Tuple[str, Tuple, Dict]] = (),
     ) -> None:
@@ -380,12 +417,11 @@ class _ConfigurableModel:
         return model
 
     def _model_params(self, config: Optional[RunnableConfig]) -> dict:
-        config_prefix = self._config_prefix or ""
         config = config or {}
         model_params = {
-            _remove_prefix(k, config_prefix): v
+            _remove_prefix(k, self._config_prefix): v
             for k, v in config.get("configurable", {}).items()
-            if k.startswith(config_prefix)
+            if k.startswith(self._config_prefix)
         }
         if not self._configure_any:
             model_params = {
