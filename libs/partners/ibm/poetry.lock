@@ -328,7 +328,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.2.8"
+version = "0.2.10"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -339,9 +339,12 @@ develop = true
 jsonpatch = "^1.33"
 langsmith = "^0.1.75"
 packaging = ">=23.2,<25"
-pydantic = ">=1,<3"
+pydantic = [
+    {version = ">=1,<3", markers = "python_full_version < \"3.12.4\""},
+    {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
+]
 PyYAML = ">=5.3"
-tenacity = "^8.1.0"
+tenacity = "^8.1.0,!=8.4.0"
 
 [package.source]
 type = "directory"
