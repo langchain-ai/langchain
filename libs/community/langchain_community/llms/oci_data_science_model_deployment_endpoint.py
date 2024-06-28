@@ -34,7 +34,6 @@ def _create_retry_decorator(
     ] = None,
 ) -> Callable[[Any], Any]:
     """Create a retry decorator."""
-    # retry when hitting 401
     errors = [requests.exceptions.ConnectTimeout]
     decorator = create_base_retry_decorator(
         error_types=errors, max_retries=max_retries, run_manager=run_manager
@@ -58,7 +57,7 @@ class OCIModelDeploymentLLM(BaseLLM):
     temperature: float = 0.2
     """A non-negative float that tunes the degree of randomness in generation."""
 
-    k: int = 0
+    k: int = -1
     """Number of most likely tokens to consider at each step."""
 
     p: float = 0.75
@@ -81,6 +80,19 @@ class OCIModelDeploymentLLM(BaseLLM):
 
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass to the model."""
+
+    model: str = DEFAULT_MODEL_NAME
+    """The name of the model."""
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "oci_model_deployment_endpoint"
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by Langchain."""
+        return True
 
     @root_validator()
     def validate_environment(  # pylint: disable=no-self-argument
@@ -111,8 +123,17 @@ class OCIModelDeploymentLLM(BaseLLM):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Default parameters for the model."""
-        raise NotImplementedError
+        """Get the default parameters."""
+        return {
+            "best_of": self.best_of,
+            "max_tokens": self.max_tokens,
+            "model": self.model,
+            "stop": self.stop,
+            "temperature": self.temperature,
+            "top_k": self.k,
+            "top_p": self.p,
+            **self.model_kwargs,
+        }
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
@@ -149,7 +170,7 @@ class OCIModelDeploymentLLM(BaseLLM):
         return {**params, **kwargs}
 
     def _process_response(self, response_json: dict) -> str:
-        raise NotImplementedError
+        return response_json.get("choices", [{}])[0].get("text", {})
 
     def _headers(self, is_async=False, body=None) -> Dict:
         if is_async:
@@ -639,6 +660,3 @@ class OCIModelDeploymentVLLM(OCIModelDeploymentLLM):
             "use_beam_search": self.use_beam_search,
             **self.model_kwargs,
         }
-
-    def _process_response(self, response_json: dict) -> str:
-        return response_json.get("choices", [{}])[0].get("text", {})
