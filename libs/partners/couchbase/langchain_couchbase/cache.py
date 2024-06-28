@@ -210,8 +210,8 @@ class CouchbaseCache(BaseCache):
             self._collection.upsert(
                 key=self._generate_key(prompt, llm_string), value=doc
             )
-        except Exception as e:
-            raise Exception("Error updating cache") from e
+        except Exception:
+            logger.error("Error updating cache")
 
     def clear(self, **kwargs: Any) -> None:
         """Clear the cache.
@@ -222,10 +222,7 @@ class CouchbaseCache(BaseCache):
             query = f"DELETE FROM `{self._collection_name}`"
             self._scope.query(query).execute()
         except Exception:
-            raise Exception(
-                "Error clearing cache. "
-                "Please check if you have an index on the collection"
-            )
+            logger.error("Error clearing cache. Please check if you have an index.")
 
 
 class CouchbaseSemanticCache(BaseCache, CouchbaseVectorStore):
