@@ -304,7 +304,7 @@ class CouchbaseSemanticCache(BaseCache, CouchbaseVectorStore):
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up from cache based on the semantic similarity of the prompt"""
         search_results = self.similarity_search_with_score(
-            prompt, k=1, search_options={"metadata.llm_string": llm_string}
+            prompt, k=1, search_options={f"metadata.{self.LLM}": llm_string}
         )
         if search_results:
             selected_doc, score = search_results[0]
