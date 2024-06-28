@@ -200,6 +200,9 @@ class ChatAIMind(ChatAnyscale):
         return values
     
     def validate_support_for_tool_calling(self) -> None:
+        """
+        Validate that the chosen model supports tool/function calling.
+        """
         if self.model_name not in TOOL_CALLING_MODELS:
             logger.warning(
                 f"Tool/function calling is not supported for the {self.model_name} model."
@@ -216,7 +219,8 @@ class ChatAIMind(ChatAnyscale):
         ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """Bind functions (and other objects) to this chat model.
+        """
+        Bind functions (and other objects) to this chat model.
 
         Assumes model is compatible with OpenAI function-calling API.
 
@@ -274,7 +278,8 @@ class ChatAIMind(ChatAnyscale):
         ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """Bind tool-like objects to this chat model.
+        """
+        Bind tool-like objects to this chat model.
 
         Assumes model is compatible with OpenAI tool-calling API.
 
