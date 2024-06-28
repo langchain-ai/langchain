@@ -6,7 +6,7 @@ from typing import (
 
 import httpx
 from httpx_sse import (
-    connect_sse, aconnect_sse, EventSource, ServerSentEvent,
+    connect_sse, aconnect_sse, EventSource, ServerSentEvent, SSEError,
 )
 
 from langchain_core.callbacks import (
@@ -22,7 +22,7 @@ from langchain_core.outputs import ChatGenerationChunk, ChatResult, ChatGenerati
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
-DEFAULT_BASE_URL = "https://clovastudio.stream.ntruss.com/testapp"
+DEFAULT_BASE_URL = "https://clovastudio.stream.ntruss.com"
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +142,9 @@ class ChatNaver(BaseChatModel):
     client: httpx.Client = Field(default=None)  #: :meta private:
     async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
 
-    model_name: str = Field(default="HCX-003", alias="model")
+    model_name: str = Field(default="HCX-003", alias="model", description="NCP ClovaStudio chat model name")
+    task_id: Optional[str] = Field(default=None, description="NCP Clova Studio chat model tuning task ID")
+    service_app: bool = Field(default=False, description="false: use testapp, true: use service app on NCP Clova Studio")
 
     ncp_clovastudio_api_key: Optional[SecretStr] = Field(default=None, alias="clovastudio_api_key")
     """Automatically inferred from env are `NCP_CLOVASTUDIO_API_KEY` if not provided."""
@@ -217,6 +219,16 @@ class ChatNaver(BaseChatModel):
         """Get the parameters used for the client."""
         return self._default_params
 
+    @property
+    def _api_url(self) -> str:
+        """GET chat completion api url"""
+        app_type = "serviceapp" if self.service_app else "testapp"
+
+        if self.task_id:
+            return f"{self.base_url}/{app_type}/v2/tasks/{self.task_id}/chat-completions"
+        else:
+            return f"{self.base_url}/{app_type}/v1/chat-completions/{self.model_name}"
+
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         if values["temperature"] is not None and not 0 < values["temperature"] <= 1:
@@ -236,6 +248,9 @@ class ChatNaver(BaseChatModel):
 
         if values["seed"] is not None and not 0 <= values["temperature"] <= 4294967295:
             raise ValueError("temperature must be in the range [0, 4294967295]")
+
+        if not (values["model_name"] or values["task_id"]):
+            raise ValueError("either model_name or task_id must be assigned a value.")
 
         """Validate that api key and python package exists in environment."""
         values["ncp_clovastudio_api_key"] = convert_to_secret_str(
@@ -294,18 +309,20 @@ class ChatNaver(BaseChatModel):
 
             def iter_sse() -> Iterator[ServerSentEvent]:
                 with connect_sse(
-                    self.client, "POST", f"/v1/chat-completions/{self.model_name}", json=kwargs
+                    self.client, "POST", self._api_url, json=kwargs
                 ) as event_source:
                     _raise_on_error(event_source.response)
                     for sse in event_source.iter_sse():
                         event_data = sse.json()
                         if sse.event == "signal" and event_data.get("data", {}) == "[DONE]":
                             return
+                        if sse.event == "error":
+                            raise SSEError(message=sse.data)
                         yield sse
 
             return iter_sse()
         else:
-            response = self.client.post(url=f"/v1/chat-completions/{self.model_name}", json=kwargs)
+            response = self.client.post(url=self._api_url, json=kwargs)
             _raise_on_error(response)
             return response.json()
 
@@ -324,11 +341,11 @@ class ChatNaver(BaseChatModel):
             stream = kwargs["stream"]
             if stream:
                 event_source = aconnect_sse(
-                    self.async_client, "POST", f"/v1/chat-completions/{self.model_name}", json=kwargs
+                    self.async_client, "POST", self._api_url, json=kwargs
                 )
                 return _aiter_sse(event_source)
             else:
-                response = await self.async_client.post(url=f"/v1/chat-completions/{self.model_name}", json=kwargs)
+                response = await self.async_client.post(url=self._api_url, json=kwargs)
                 await _araise_on_error(response)
                 return response.json()
 
