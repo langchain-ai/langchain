@@ -2,15 +2,15 @@
 
 from typing import Generator
 
+from langchain_core.language_models.llms import Generation
 from langchain_core.outputs import LLMResult
 from langchain_core.pydantic_v1 import SecretStr
 from pytest import CaptureFixture
-from langchain_core.language_models.llms import Generation, LLMResult
 
 from langchain_community.llms.volcengine_maas import (
     VolcEngineMaasBase,
-    VolcEngineMaasLLM,
     VolcEngineMaasBaseV3,
+    VolcEngineMaasLLM,
     VolcEngineMaasLLMV3,
 )
 
@@ -70,15 +70,20 @@ def test_default_call_v3() -> None:
     output = llm.invoke(
         [
             {"role": "user", "content": "tell me a joke"},
-        ])
+        ]
+    )
     assert len(output) == 1
     assert isinstance(output[0], str)
 
     output = llm.invoke(
         [
-            {"role": "system", "content": "You are Doubao, an AI assistant developed by ByteDance."},
+            {
+                "role": "system",
+                "content": "You are Doubao, an AI assistant developed by ByteDance.",
+            },
             {"role": "user", "content": "tell me a joke"},
-        ])
+        ]
+    )
     assert len(output) == 1
     assert isinstance(output[0], str)
 
@@ -115,6 +120,6 @@ def test_generate_stream_v3() -> None:
     llm = VolcEngineMaasLLMV3(stream=True)  # type: ignore[call-arg]
     output = llm.stream([{"role": "user", "content": "tell me a joke"}])
     assert isinstance(output, Generator)
-    result = ''.join(output)
+    result = "".join(output)
     assert isinstance(result, str)
     assert len(result) > 0

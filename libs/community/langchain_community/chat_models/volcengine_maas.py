@@ -14,7 +14,10 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
-from langchain_community.llms.volcengine_maas import VolcEngineMaasBase, VolcEngineMaasBaseV3
+from langchain_community.llms.volcengine_maas import (
+    VolcEngineMaasBase,
+    VolcEngineMaasBaseV3,
+)
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
@@ -40,7 +43,7 @@ def convert_dict_to_message(_dict: Mapping[str, Any]) -> AIMessage:
 
 def convert_dict_to_messageV3(response) -> AIMessage:
     """Convert a response object to a message."""
-    if not hasattr(response, 'choices') or not response.choices:
+    if not hasattr(response, "choices") or not response.choices:
         raise ValueError("Invalid response format")
 
     content = response.choices[0].message.content if response.choices[0].message else ""
@@ -127,11 +130,9 @@ class VolcEngineMaasChat(BaseChatModel, VolcEngineMaasBase):
         for res in self.client.stream_chat(params):
             if res:
                 msg = convert_dict_to_message(res)
-                chunk = ChatGenerationChunk(
-                    message=AIMessageChunk(content=msg.content))
+                chunk = ChatGenerationChunk(message=AIMessageChunk(content=msg.content))
                 if run_manager:
-                    run_manager.on_llm_new_token(
-                        cast(str, msg.content), chunk=chunk)
+                    run_manager.on_llm_new_token(cast(str, msg.content), chunk=chunk)
                 yield chunk
 
     def _generate(
@@ -168,9 +169,9 @@ class VolcEngineMaasChatV3(BaseChatModel, VolcEngineMaasBaseV3):
     access key, secret key are required parameters which you could get help
     https://www.volcengine.com/docs/82379/1263482
 
-    In order to use them, it is necessary to install the 'volcengine-python-sdk' Python package.
-    The access key and secret key must be set either via environment variables or
-    passed directly to this class.
+    In order to use them, it is necessary to install the 'volcengine-python-sdk'
+    Python package. The access key and secret key must be set either via environment
+    variables or passed directly to this class.
     access key and secret key are mandatory parameters for which assistance can be
     sought at https://www.volcengine.com/docs/82379/1263482.
 
@@ -232,16 +233,20 @@ class VolcEngineMaasChatV3(BaseChatModel, VolcEngineMaasBaseV3):
                 for choice in res.choices:
                     delta_content = choice.delta.content if choice.delta else ""
                     chunk = ChatGenerationChunk(
-                        message=AIMessageChunk(content=delta_content))
+                        message=AIMessageChunk(content=delta_content)
+                    )
                     if run_manager:
                         run_manager.on_llm_new_token(
-                            cast(str, delta_content), chunk=chunk)
+                            cast(str, delta_content), chunk=chunk
+                        )
                     if stop and any(s in delta_content for s in stop):
                         # Trim the delta_content up to the stop word
                         delta_content = delta_content.split(
-                            next(s for s in stop if s in delta_content))[0]
+                            next(s for s in stop if s in delta_content)
+                        )[0]
                         chunk = ChatGenerationChunk(
-                            message=AIMessageChunk(content=delta_content))
+                            message=AIMessageChunk(content=delta_content)
+                        )
                         yield chunk
                         return
                     yield chunk
