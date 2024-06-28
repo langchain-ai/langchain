@@ -35,14 +35,24 @@ class ChatTogether(BaseChatOpenAI):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
+        """A map of constructor argument names to secret ids.
+
+        For example,
+            {"together_api_key": "TOGETHER_API_KEY"}
+        """
         return {"together_api_key": "TOGETHER_API_KEY"}
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "together"]
 
     @property
     def lc_attributes(self) -> Dict[str, Any]:
+        """List of attribute names that should be included in the serialized kwargs.
+
+        These attributes must be accepted by the constructor.
+        """
         attributes: Dict[str, Any] = {}
 
         if self.together_api_base:
