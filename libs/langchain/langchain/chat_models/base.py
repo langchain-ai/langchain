@@ -85,7 +85,9 @@ def init_chat_model(
             ``<<selected ChatModel>>.__init__(model=model_name, **kwargs)``.
 
     Returns:
-        The BaseChatModel corresponding to the model_name and model_provider specified.
+        A BaseChatModel corresponding to the model_name and model_provider specified if
+        configurability is inferred to be False. If configurable, a chat model emulator
+        that initializes the underlying model at runtime once a config is passed in.
 
     Raises:
         ValueError: If model_provider cannot be inferred or isn't supported.
@@ -191,9 +193,13 @@ def init_chat_model(
             )
             # Claude-3.5 sonnet response with tools
     """  # noqa: E501
-    configurable = bool(
-        (model is None) or configurable or (config_prefix is not None) or configure_any
-    )
+    if configurable is not False:
+        configurable = bool(
+            (model is None)
+            or configurable
+            or (config_prefix is not None)
+            or configure_any
+        )
     config_prefix = config_prefix or ""
     if not configurable:
         return _init_chat_model_helper(

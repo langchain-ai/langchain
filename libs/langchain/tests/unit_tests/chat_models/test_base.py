@@ -1,9 +1,15 @@
+import os
+
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 
 from langchain.chat_models.base import __all__, init_chat_model
+
+os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "dummy")
+os.environ["ANTHROPIC_API_KEY"] = os.environ.get("ANTHROPIC_API_KEY", "dummy")
+
 
 EXPECTED_ALL = [
     "BaseChatModel",
