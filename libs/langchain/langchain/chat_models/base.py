@@ -193,12 +193,9 @@ def init_chat_model(
             )
             # Claude-3.5 sonnet response with tools
     """  # noqa: E501
-    if configurable is not False:
+    if configurable is None:
         configurable = bool(
-            (model is None)
-            or configurable
-            or (config_prefix is not None)
-            or configure_any
+            (model is None) or (config_prefix is not None) or configure_any
         )
     config_prefix = config_prefix or ""
     if not configurable:
