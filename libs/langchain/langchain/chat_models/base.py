@@ -192,10 +192,12 @@ def init_chat_model(
             # Claude-3.5 sonnet response with tools
     """  # noqa: E501
     configurable = bool(
-        not model or configurable or (config_prefix is not None) or configure_any
+        (model is None) or configurable or (config_prefix is not None) or configure_any
     )
     if not configurable:
-        return _init_chat_model_helper(model, model_provider=model_provider, **kwargs)
+        return _init_chat_model_helper(
+            cast(str, model), model_provider=model_provider, **kwargs
+        )
     else:
         if model:
             kwargs["model"] = model
