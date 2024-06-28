@@ -9,7 +9,10 @@ class RemoveMessage(BaseMessage):
     type: Literal["remove"] = "remove"
 
     def __init__(self, id: str, **kwargs: Any) -> None:
-        return super().__init__("", id=id)
+        if "content" in kwargs:
+            raise ValueError("RemoveMessage does not support 'content' field.")
+
+        return super().__init__("", id=id, **kwargs)
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
