@@ -125,14 +125,14 @@ class AzureChatOpenAI(ChatOpenAI):
             convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
         values["openai_api_version"] = get_from_dict_or_env(
-            values,"openai_api_version","OPENAI_API_VERSION"
+            values, "openai_api_version", "OPENAI_API_VERSION"
         )
         values["azure_endpoint"] = get_from_dict_or_env(
-            values,"azure_endpoint","AZURE_OPENAI_ENDPOINT"
+            values, "azure_endpoint", "AZURE_OPENAI_ENDPOINT"
         )
 
         values["openai_api_base"] = get_from_dict_or_env(
-            values,"openai_api_base","OPENAI_API_BASE"
+            values, "openai_api_base", "OPENAI_API_BASE"
         )
 
         azure_ad_token = get_from_dict_or_env(

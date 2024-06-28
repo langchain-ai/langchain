@@ -76,7 +76,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
         values["openai_api_version"] = get_from_dict_or_env(
-            values,"openai_api_version","OPENAI_API_VERSION"
+            values, "openai_api_version", "OPENAI_API_VERSION"
         )
         values["azure_endpoint"] = get_from_dict_or_env(
             values, "azure_endpoint", "AZURE_OPENAI_ENDPOINT"
