@@ -587,13 +587,17 @@ def load_huggingface_tool(
 
     Args:
         task_or_repo_id: Task or model repo id.
-        model_repo_id: Optional model repo id.
-        token: Optional token.
+        model_repo_id: Optional model repo id. Defaults to None.
+        token: Optional token. Defaults to None.
         remote: Optional remote. Defaults to False.
-        **kwargs:
+        **kwargs: Additional keyword arguments.
 
     Returns:
         A tool.
+
+    Raises:
+        ImportError: If the required libraries are not installed.
+        NotImplementedError: If multimodal outputs or inputs are not supported.
     """
     try:
         from transformers import load_tool
@@ -649,7 +653,8 @@ def load_tools(
 
     Args:
         tool_names: name of tools to load.
-        llm: An optional language model, may be needed to initialize certain tools.
+        llm: An optional language model may be needed to initialize certain tools.
+            Defaults to None.
         callbacks: Optional callback manager or list of callback handlers.
             If not provided, default global callback manager will be used.
         allow_dangerous_tools: Optional flag to allow dangerous tools.
@@ -661,9 +666,17 @@ def load_tools(
             Please note that this list may not be fully exhaustive.
             It is your responsibility to understand which tools
             you're using and the risks associated with them.
+            Defaults to False.
+        **kwargs: Additional keyword arguments.
 
     Returns:
         List of tools.
+
+    Raises:
+        ValueError: If the tool name is unknown.
+        ValueError: If the tool requires an LLM to be provided.
+        ValueError: If the tool requires some parameters that were not provided.
+        ValueError: If the tool is a dangerous tool and allow_dangerous_tools is False.
     """
     tools = []
     callbacks = _handle_callbacks(
