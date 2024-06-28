@@ -66,8 +66,8 @@ class ZepCloudRetriever(BaseRetriever):
     """Number of items to return."""
     min_score: Optional[float]
     """Minimum score to return."""
-    search_scope: str = "facts"
-    """Which documents to search. Messages or Summaries?"""
+    search_scope: str = "messages"
+    """Which documents to search. Messages, Facts or Summaries?"""
     search_type: str = "similarity"
     """Type of search to perform (similarity / mmr)"""
     mmr_lambda: Optional[float] = None
