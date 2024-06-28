@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 from importlib import util
-from typing import Any, Optional, Protocol, cast, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 from langchain_core._api import beta
 from langchain_core.language_models import (
@@ -15,172 +15,27 @@ from langchain_core.language_models.chat_models import (
 )
 from langchain_core.runnables import RunnableConfig
 
-# For backwards compatibility
 __all__ = [
+    "init_chat_model",
+    # For backwards compatibility
     "BaseChatModel",
     "SimpleChatModel",
     "generate_from_stream",
     "agenerate_from_stream",
-    "init_chat_model",
 ]
-
-
-class _Initializer(Protocol):
-    def __call__(
-        self, model: str, *, model_provider: Optional[str] = None, **kwargs: Any
-    ) -> BaseChatModel:
-        ...
-
-
-class _ConfigurableInitializer(Protocol):
-    def __call__(
-        self,
-        model: Optional[str] = None,
-        *,
-        model_provider: Optional[str] = None,
-        config_prefix: Optional[str] = None,
-        configure_any: bool = False,
-        **kwargs: Any,
-    ) -> BaseChatModel:
-        ...
-
-
-_CHAT_MODEL_METHODS_TAKE_CONFIG = tuple(
-    name
-    for name, func in inspect.getmembers(BaseChatModel, inspect.isfunction)
-    if "config" in inspect.signature(func).parameters
-)
-_CHAT_MODEL_MEMBERS = tuple(
-    name for name, _ in inspect.getmembers(BaseChatModel)
-)
-
-_CHAT_MODEL_METHODS = tuple(
-    name for name, _ in inspect.getmembers(BaseChatModel, inspect.isfunction)
-)
-
-
-class _ConfigurableModel:
-    def __init__(
-        self,
-        *,
-        default_config: Optional[dict] = None,
-        config_prefix: Optional[str] = None,
-        configure_any: bool = False,
-    ) -> None:
-        self._default_config = default_config or {}
-        self._config_prefix = config_prefix
-        self._configure_any = configure_any
-        self._queued_operations: List[Tuple[str, Optional[Tuple], Optional[Dict]]] = []
-
-    def __getattr__(self, name: str) -> Any:
-        if name in _CHAT_MODEL_METHODS_TAKE_CONFIG:
-
-            def from_config(
-                *args: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
-            ) -> Any:
-                return getattr(self._model(config), name)(
-                    *args, config=config, **kwargs
-                )
-
-            return from_config
-        elif name in _CHAT_MODEL_METHODS:
-
-            def record(*args: Any, **kwargs: Any) -> _ConfigurableModel:
-                self._queued_operations.append((name, args, kwargs))
-                return self
-
-            return record
-        elif name in _CHAT_MODEL_MEMBERS:
-            self._queued_operations.append((name, None, None))
-            return record_operation
-        elif self._default_config and hasattr(self._model(), name):
-            return getattr(self._model(), name)
-        else:
-            msg = f"{name} is not a BaseChatModel attribute"
-            if self._default_config:
-                msg += " and is not implemented on the default model"
-            msg += "."
-            raise AttributeError(msg)
-
-    def _model(self, config: Optional[RunnableConfig] = None) -> BaseChatModel:
-        config_prefix = self._config_prefix or ""
-        config = config or {}
-        runtime_config = {
-            _remove_prefix(k, config_prefix): v
-            for k, v in config.get("configurable", {}).items()
-            if k.startswith(config_prefix)
-        }
-        if not self._configure_any:
-            runtime_config = {
-                k: v
-                for k, v in runtime_config.items()
-                if k in ("model", "model_provider")
-            }
-        model = init_chat_model(**{**self._default_config, **runtime_config})
-        for name, args, kwargs in self._queued_operations:
-            model = getattr(model, name)(*args, **kwargs)
-        return model
-
-    def with_config(
-        self,
-        config: Optional[RunnableConfig] = None,
-        **kwargs: Any,
-    ) -> _ConfigurableModel:
-        """
-        Bind config to a Runnable, returning a new Runnable.
-        """
-        return _ConfigurableModel(
-            default_config={
-                **self._default_config,
-                **((config or {}).get("configurable", {})),
-                **kwargs,
-            },
-            config_prefix=self._config_prefix,
-            configure_any=self._configure_any,
-        )
-
-
-def _runnable_support(initializer: _Initializer) -> BaseChatModel:
-    def wrapped(
-        model: Optional[str] = None,
-        *,
-        model_provider: Optional[str] = None,
-        config_prefix: Optional[str] = None,
-        configure_any: bool = False,
-        **kwargs: Any,
-    ) -> BaseChatModel:
-        if model and config_prefix is None:
-            if configure_any:
-                raise ValueError(
-                    f"Must specify config_prefix if configure_any=True. Received "
-                    f"{config_prefix=} and {configure_any=}."
-                )
-            return initializer(model, model_provider=model_provider, **kwargs)
-        else:
-            if model:
-                kwargs["model"] = model
-            if model_provider:
-                kwargs["model_provider"] = model_provider
-            return cast(
-                BaseChatModel,
-                _ConfigurableModel(
-                    default_config=kwargs,
-                    config_prefix=config_prefix,
-                    configure_any=configure_any,
-                ),
-            )
-
-    wrapped.__doc__ = initializer.__doc__
-    return wrapped
 
 
 # FOR CONTRIBUTORS: If adding support for a new provider, please append the provider
 # name to the supported list in the docstring below. Do *not* change the order of the
 # existing providers.
 @beta()
-@_runnable_support
 def init_chat_model(
-    model: str, *, model_provider: Optional[str] = None, **kwargs: Any
+    model: Optional[str] = None,
+    *,
+    model_provider: Optional[str] = None,
+    config_prefix: Optional[str] = None,
+    configure_any: bool = False,
+    **kwargs: Any,
 ) -> BaseChatModel:
     """Initialize a ChatModel from the model name and provider.
 
@@ -297,6 +152,31 @@ def init_chat_model(
             # Claude-3.5 sonnet response with temperature 0.6
 
     """  # noqa: E501
+    if model and config_prefix is None:
+        if configure_any:
+            raise ValueError(
+                f"Must specify config_prefix if configure_any=True. Received "
+                f"{config_prefix=} and {configure_any=}."
+            )
+        return _init_chat_model_helper(model, model_provider=model_provider, **kwargs)
+    else:
+        if model:
+            kwargs["model"] = model
+        if model_provider:
+            kwargs["model_provider"] = model_provider
+        return cast(
+            BaseChatModel,
+            _ConfigurableModel(
+                default_config=kwargs,
+                config_prefix=config_prefix,
+                configure_any=configure_any,
+            ),
+        )
+
+
+def _init_chat_model_helper(
+    model: str, *, model_provider: Optional[str] = None, **kwargs: Any
+) -> BaseChatModel:
     model_provider = model_provider or _attempt_infer_model_provider(model)
     if not model_provider:
         raise ValueError(
@@ -425,3 +305,119 @@ def _remove_prefix(s: str, prefix: str) -> str:
     if s.startswith(prefix):
         s = s[len(prefix) :]
     return s
+
+
+_CHAT_MODEL_METHODS_TAKE_CONFIG = tuple(
+    name
+    for name, func in inspect.getmembers(BaseChatModel, inspect.isfunction)
+    if "config" in inspect.signature(func).parameters
+)
+
+_DECLARATIVE_METHODS = (
+    "assign",
+    "bind",
+    "map",
+    "pick",
+    "pipe",
+    "with_alisteners",
+    "with_fallbacks",
+    "with_listeners",
+    "with_retry",
+    "with_types",
+    "bind_tools",
+    "with_structured_output",
+    "configurable_fields",
+    "configurable_alternatives",
+)
+
+
+class _ConfigurableModel:
+    def __init__(
+        self,
+        *,
+        default_config: Optional[dict] = None,
+        config_prefix: Optional[str] = None,
+        configure_any: bool = False,
+        queued_operations: Sequence[Tuple[str, Tuple, Dict]] = (),
+    ) -> None:
+        self._default_config = default_config or {}
+        self._config_prefix = config_prefix
+        self._configure_any = configure_any
+        self._queued_operations: List[Tuple[str, Tuple, Dict]] = list(queued_operations)
+
+    def __getattr__(self, name: str) -> Any:
+        if name in _CHAT_MODEL_METHODS_TAKE_CONFIG:
+
+            def from_config(
+                *args: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+            ) -> Any:
+                return getattr(self._model(config), name)(
+                    *args, config=config, **kwargs
+                )
+
+            return from_config
+        elif name in _DECLARATIVE_METHODS:
+
+            def queue(*args: Any, **kwargs: Any) -> _ConfigurableModel:
+                self._queued_operations.append((name, args, kwargs))
+                return self
+
+            return queue
+        elif self._default_config and hasattr(self._model(), name):
+            return getattr(self._model(), name)
+        else:
+            msg = f"{name} is not a BaseChatModel attribute"
+            if self._default_config:
+                msg += " and is not implemented on the default model"
+            msg += "."
+            raise AttributeError(msg)
+
+    def _model(self, config: Optional[RunnableConfig] = None) -> Any:
+        params = {**self._default_config, **self._model_params(config)}
+        model = _init_chat_model_helper(**params)
+        for name, args, kwargs in self._queued_operations:
+            model = getattr(model, name)(*args, **kwargs)
+        return model
+
+    def _model_params(self, config: Optional[RunnableConfig]) -> dict:
+        config_prefix = self._config_prefix or ""
+        config = config or {}
+        model_params = {
+            _remove_prefix(k, config_prefix): v
+            for k, v in config.get("configurable", {}).items()
+            if k.startswith(config_prefix)
+        }
+        if not self._configure_any:
+            model_params = {
+                k: v
+                for k, v in model_params.items()
+                if k in ("model", "model_provider")
+            }
+        return model_params
+
+    def with_config(
+        self,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> _ConfigurableModel:
+        """Bind config to a Runnable, returning a new Runnable."""
+        config = RunnableConfig(**(config or {}), **cast(RunnableConfig, kwargs))
+        model_params = self._model_params(config)
+        remaining_config = {k: v for k, v in config.items() if k != "configurable"}
+        remaining_config["configurable"] = {
+            k: v
+            for k, v in config.get("configurable", {}).items()
+            if k not in model_params
+        }
+        if remaining_config:
+            queued_operations = self._queued_operations + [
+                ("with_config", (), {"config": remaining_config})
+            ]
+        else:
+            queued_operations = []
+        return _ConfigurableModel(
+            default_config={**self._default_config, **model_params},
+            config_prefix=self._config_prefix,
+            configure_any=self._configure_any,
+            queued_operations=queued_operations,
+        )
