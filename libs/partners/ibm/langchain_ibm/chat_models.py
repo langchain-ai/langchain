@@ -107,7 +107,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 
                 for raw_tool_call in parsed_raw_tool_calls:
                     try:
-                        raw_tool_call["id"] = None
+                        raw_tool_call["id"] = "None"
                         tool_calls.append(
                             parse_tool_call(raw_tool_call, return_id=True)
                         )
@@ -164,7 +164,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict = {
             "role": "tool",
             "content": message.content,
-            "tool_call_id": message.id,
+            "tool_call_id": "None",
         }
     else:
         raise TypeError(f"Got unknown type {message}")
