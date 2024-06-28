@@ -87,7 +87,7 @@ def test_configurable() -> None:
     # with_config has special handling to extract model params, so that we now have a
     # default model. meaning we can access non-configurable, non-declarative methods as
     # well.
-    assert model_with_config.get_num_tokens_from_messages([(HumanMessage("foo"))]) == 8
+    assert model_with_config.get_num_tokens_from_messages([(HumanMessage("foo"))]) == 8  # type: ignore[attr-defined]
 
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
@@ -110,7 +110,7 @@ def test_configurable_with_default() -> None:
     for method in ("get_num_tokens", "get_num_tokens_from_messages", "dict"):
         assert hasattr(model, method)
 
-    assert model.model_name == "gpt-4o"
+    assert model.model_name == "gpt-4o"  # type: ignore[attr-defined]
     assert model.get_num_tokens_from_messages([(HumanMessage("foo"))]) == 8
 
     model_with_tools = model.bind_tools(
@@ -121,7 +121,7 @@ def test_configurable_with_default() -> None:
         RunnableConfig(tags=["foo"]), configurable={"model": "claude-3-sonnet-20240229"}
     )
 
-    assert model_with_config.model == "claude-3-sonnet-20240229"
+    assert model_with_config.model == "claude-3-sonnet-20240229"  # type: ignore[attr-defined]
     # Anthropic defaults to using `transformers` for token counting.
     with pytest.raises(ImportError):
-        model_with_config.get_num_tokens_from_messages([(HumanMessage("foo"))])
+        model_with_config.get_num_tokens_from_messages([(HumanMessage("foo"))])  # type: ignore[attr-defined]
