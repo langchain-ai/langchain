@@ -72,7 +72,7 @@ class GooglePalm(BaseLLM, BaseModel):
     model_name: str = "models/text-bison-001"
     """Model name to use."""
     temperature: float = 0.7
-    """Run inference with this temperature. Must by in the closed interval
+    """Run inference with this temperature. Must be in the closed interval
        [0.0, 1.0]."""
     top_p: Optional[float] = None
     """Decode using nucleus sampling: consider the smallest set of tokens whose
