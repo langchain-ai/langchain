@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_API_BASE = "https://llm.mdb.ai"
 DEFAULT_MODEL = "gpt-3.5-turbo"
 EMBEDDING_MODELS = ["text-embedding-ada-002"]
-TOOL_CALLING_MODELS = ["gpt-3.5-turbo"]
+TOOL_CALLING_MODELS = ["gpt-3.5-turbo", "claude-3-haiku", "firefunction-v1", "hermes-2-pro", "mistral-7b", "mixtral-8x7b", "gemini-1.5-pro"]
 
 
 class _FunctionCall(TypedDict):
