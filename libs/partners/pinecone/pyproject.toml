@@ -75,7 +75,7 @@ select = [
 
 [tool.mypy]
 disallow_untyped_defs = "True"
-# ignore_missing_imports = true
+ignore_missing_imports = true
 
 [tool.coverage.run]
 omit = ["tests/*"]
