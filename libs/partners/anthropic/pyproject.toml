@@ -1,23 +1,23 @@
 
 [tool.poetry]
 name = "gigachain-anthropic"
-version = "0.1.13"
-description = "An integration package connecting AnthropicMessages and LangChain"
+version = "0.1.16"
+description = "An integration package connecting AnthropicMessages and GigaChain"
 authors = []
 readme = "README.md"
-repository = "https://github.com/gigachain-ai/gigachain"
+repository = "https://github.com/ai-forever/gigachain"
 license = "MIT"
 packages = [
     {include = "langchain_anthropic"}
 ]
 
 [tool.poetry.urls]
-"Source Code" = "https://github.com/gigachain-ai/gigachain/tree/master/libs/partners/anthropic"
+"Source Code" = "https://github.com/ai-forever/gigachain/tree/master/libs/partners/anthropic"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = ">=0.1.43,<0.3"
-anthropic = ">=0.26.0,<1"
+gigachain-core = { version = ">=0.2.10,<0.3" }
+anthropic = ">=0.28.0,<1"
 defusedxml = { version = "^0.7.1", optional = true }
 
 [tool.poetry.group.test]
@@ -45,10 +45,9 @@ optional = true
 
 [tool.poetry.group.lint.dependencies]
 ruff = ">=0.2.2,<1"
-mypy = "^0.991"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
+mypy = "^1"
 gigachain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]

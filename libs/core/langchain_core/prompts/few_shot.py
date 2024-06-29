@@ -121,7 +121,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
     template_format: Literal["f-string", "jinja2"] = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix, and input variables are consistent."""
         if values["validate_template"]:
@@ -305,7 +305,7 @@ class FewShotChatMessagePromptTemplate(
 
             # Use within an LLM
             from langchain_core.chat_models import ChatAnthropic
-            chain = final_prompt | ChatAnthropic()
+            chain = final_prompt | ChatAnthropic(model="claude-3-haiku-20240307")
             chain.invoke({"input": "What's 3+3?"})
     """
 

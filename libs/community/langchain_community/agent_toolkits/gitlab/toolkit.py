@@ -30,6 +30,9 @@ class GitLabToolkit(BaseToolkit):
         and comments on GitLab.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        tools: List[BaseTool]. The tools in the toolkit. Default is an empty list.
     """
 
     tools: List[BaseTool] = []

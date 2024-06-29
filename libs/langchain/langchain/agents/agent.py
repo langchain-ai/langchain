@@ -770,7 +770,7 @@ class Agent(BaseSingleActionAgent):
         """
         return list(set(self.llm_chain.input_keys) - {"agent_scratchpad"})
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_prompt(cls, values: Dict) -> Dict:
         """Validate that prompt matches format."""
         prompt = values["llm_chain"].prompt
@@ -974,7 +974,7 @@ class AgentExecutor(Chain):
             **kwargs,
         )
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_tools(cls, values: Dict) -> Dict:
         """Validate that tools are compatible with agent."""
         agent = values["agent"]
@@ -988,7 +988,7 @@ class AgentExecutor(Chain):
                 )
         return values
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_return_direct_tool(cls, values: Dict) -> Dict:
         """Validate that tools are compatible with agent."""
         agent = values["agent"]
@@ -1005,8 +1005,8 @@ class AgentExecutor(Chain):
     @root_validator(pre=True)
     def validate_runnable_agent(cls, values: Dict) -> Dict:
         """Convert runnable to agent if passed in."""
-        agent = values["agent"]
-        if isinstance(agent, Runnable):
+        agent = values.get("agent")
+        if agent and isinstance(agent, Runnable):
             try:
                 output_type = agent.OutputType
             except Exception as _:

@@ -90,7 +90,7 @@ def _signature(secret_key: SecretStr, url: str, payload: Dict[str, Any]) -> str:
         value = payload[key]
 
         if isinstance(value, list) or isinstance(value, dict):
-            value = json.dumps(value, separators=(",", ":"))
+            value = json.dumps(value, separators=(",", ":"), ensure_ascii=False)
         elif isinstance(value, float):
             value = "%g" % value
 
@@ -266,6 +266,11 @@ class ChatHunyuan(BaseChatModel):
 
         default_chunk_class = AIMessageChunk
         for chunk in res.iter_lines():
+            chunk = chunk.decode(encoding="UTF-8", errors="strict").replace(
+                "data: ", ""
+            )
+            if len(chunk) == 0:
+                continue
             response = json.loads(chunk)
             if "error" in response:
                 raise ValueError(f"Error from Hunyuan api response: {response}")

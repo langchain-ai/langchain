@@ -27,7 +27,6 @@ from langchain_core.messages import (
     get_buffer_string,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.runnables import run_in_executor
 
 
 class BaseChatMessageHistory(ABC):
@@ -103,6 +102,8 @@ class BaseChatMessageHistory(ABC):
         In general, fetching messages may involve IO to the underlying
         persistence layer.
         """
+        from langchain_core.runnables.config import run_in_executor
+
         return await run_in_executor(None, lambda: self.messages)
 
     def add_user_message(self, message: Union[HumanMessage, str]) -> None:
@@ -173,6 +174,8 @@ class BaseChatMessageHistory(ABC):
         Args:
             messages: A list of BaseMessage objects to store.
         """
+        from langchain_core.runnables.config import run_in_executor
+
         await run_in_executor(None, self.add_messages, messages)
 
     @abstractmethod
@@ -181,6 +184,8 @@ class BaseChatMessageHistory(ABC):
 
     async def aclear(self) -> None:
         """Remove all messages from the store"""
+        from langchain_core.runnables.config import run_in_executor
+
         await run_in_executor(None, self.clear)
 
     def __str__(self) -> str:

@@ -1,3 +1,9 @@
+"""This is the Azure Dynamic Sessions module.
+
+This module provides the SessionsPythonREPLTool class for
+managing dynamic sessions in Azure.
+"""
+
 import importlib.metadata
 import json
 import os
@@ -27,7 +33,6 @@ def _access_token_provider_factory() -> Callable[[], Optional[str]]:
     Returns:
         Callable[[], Optional[str]]: The access token provider function
     """
-
     access_token: Optional[AccessToken] = None
 
     def access_token_provider() -> Optional[str]:
@@ -52,7 +57,6 @@ def _sanitize_input(query: str) -> str:
     Returns:
         str: The sanitized query
     """
-
     # Removes `, whitespace & python from start
     query = re.sub(r"^(\s|`)*(?i:python)?\s*", "", query)
     # Removes whitespace & ` from end
@@ -86,11 +90,11 @@ class RemoteFileMetadata:
 
 
 class SessionsPythonREPLTool(BaseTool):
-    """A tool for running Python code in an Azure Container Apps dynamic sessions
-    code interpreter.
+    """A tool for running Python code.
+
+     Run python code in an Azure Container Apps dynamic sessions code interpreter.
 
     Example:
-
         .. code-block:: python
 
             from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
@@ -113,9 +117,9 @@ class SessionsPythonREPLTool(BaseTool):
     pool_management_endpoint: str
     """The management endpoint of the session pool. Should end with a '/'."""
 
-    access_token_provider: Callable[
-        [], Optional[str]
-    ] = _access_token_provider_factory()
+    access_token_provider: Callable[[], Optional[str]] = (
+        _access_token_provider_factory()
+    )
     """A function that returns the access token to use for the session pool."""
 
     session_id: str = str(uuid4())
@@ -135,7 +139,6 @@ class SessionsPythonREPLTool(BaseTool):
 
     def execute(self, python_code: str) -> Any:
         """Execute Python code in the session."""
-
         if self.sanitize_input:
             python_code = _sanitize_input(python_code)
 
@@ -197,7 +200,6 @@ class SessionsPythonREPLTool(BaseTool):
         Returns:
             RemoteFileMetadata: The metadata for the uploaded file
         """
-
         if data and local_file_path:
             raise ValueError("data and local_file_path cannot be provided together")
 

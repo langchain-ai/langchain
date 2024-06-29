@@ -1,7 +1,6 @@
 """
 Develop integration packages for LangChain.
 """
-
 import re
 import shutil
 import subprocess
@@ -11,7 +10,7 @@ from typing import Optional
 import typer
 from typing_extensions import Annotated, TypedDict
 
-from langchain_cli.utils.find_replace import replace_glob
+from langchain_cli.utils.find_replace import replace_file, replace_glob
 
 integration_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
@@ -21,6 +20,7 @@ Replacements = TypedDict(
         "__package_name__": str,
         "__module_name__": str,
         "__ModuleName__": str,
+        "__MODULE_NAME__": str,
         "__package_name_short__": str,
     },
 )
@@ -46,7 +46,9 @@ def _process_name(name: str):
             "__package_name__": f"langchain-{preprocessed}",
             "__module_name__": "langchain_" + preprocessed.replace("-", "_"),
             "__ModuleName__": preprocessed.title().replace("-", ""),
+            "__MODULE_NAME__": preprocessed.upper().replace("-", ""),
             "__package_name_short__": preprocessed,
+            "__package_name_short_snake__": preprocessed.replace("-", "_"),
         }
     )
 
@@ -57,7 +59,7 @@ def new(
         str,
         typer.Option(
             help="The name of the integration to create (e.g. `my-integration`)",
-            prompt=True,
+            prompt="The name of the integration to create (e.g. `my-integration`)",
         ),
     ],
     name_class: Annotated[
@@ -121,3 +123,91 @@ def new(
         ["poetry", "install", "--with", "lint,test,typing,test_integration"],
         cwd=destination_dir,
     )
+
+
+@integration_cli.command()
+def create_doc(
+    name: Annotated[
+        str,
+        typer.Option(
+            help=(
+                "The kebab-case name of the integration (e.g. `openai`, "
+                "`google-vertexai`). Do not include a 'langchain-' prefix."
+            ),
+            prompt=(
+                "The kebab-case name of the integration (e.g. `openai`, "
+                "`google-vertexai`). Do not include a 'langchain-' prefix."
+            ),
+        ),
+    ],
+    name_class: Annotated[
+        Optional[str],
+        typer.Option(
+            help=(
+                "The PascalCase name of the integration (e.g. `OpenAI`, "
+                "`VertexAI`). Do not include a 'Chat', 'VectorStore', etc. "
+                "prefix/suffix."
+            ),
+        ),
+    ] = None,
+    component_type: Annotated[
+        str,
+        typer.Option(
+            help=(
+                "The type of component. Currently only 'ChatModel', 'DocumentLoader' supported."
+            ),
+        ),
+    ] = "ChatModel",
+    destination_dir: Annotated[
+        str,
+        typer.Option(
+            help="The relative path to the docs directory to place the new file in.",
+            prompt="The relative path to the docs directory to place the new file in.",
+        ),
+    ] = "docs/docs/integrations/chat/",
+):
+    """
+    Creates a new integration doc.
+    """
+    try:
+        replacements = _process_name(name)
+    except ValueError as e:
+        typer.echo(e)
+        raise typer.Exit(code=1)
+
+    if name_class:
+        if not re.match(r"^[A-Z][a-zA-Z0-9]*$", name_class):
+            typer.echo(
+                "Name should only contain letters (a-z, A-Z), numbers, and underscores"
+                ", and start with a capital letter."
+            )
+            raise typer.Exit(code=1)
+        replacements["__ModuleName__"] = name_class
+    else:
+        replacements["__ModuleName__"] = typer.prompt(
+            (
+                "The PascalCase name of the integration (e.g. `OpenAI`, `VertexAI`). "
+                "Do not include a 'Chat', 'VectorStore', etc. prefix/suffix."
+            ),
+            default=replacements["__ModuleName__"],
+        )
+    destination_path = (
+        Path.cwd()
+        / destination_dir
+        / (replacements["__package_name_short_snake__"] + ".ipynb")
+    )
+
+    # copy over template from ../integration_template
+    if component_type == "ChatModel":
+        docs_template = (
+            Path(__file__).parents[1] / "integration_template/docs/chat.ipynb"
+        )
+    elif component_type == "DocumentLoader":
+        docs_template = (
+            Path(__file__).parents[1]
+            / "integration_template/docs/document_loaders.ipynb"
+        )
+    shutil.copy(docs_template, destination_path)
+
+    # replacements in file
+    replace_file(destination_path, replacements)

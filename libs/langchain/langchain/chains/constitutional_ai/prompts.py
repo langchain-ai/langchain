@@ -20,6 +20,28 @@ critique_example = PromptTemplate(
     ],
 )
 
+revision_example = PromptTemplate(
+    template="""Human: {input_prompt}
+
+Model: {output_from_model}
+
+Critique Request: {critique_request}
+
+Critique: {critique}
+
+Revision Request: {revision_request}
+
+Revision: {revision}""",
+    input_variables=[
+        "input_prompt",
+        "output_from_model",
+        "critique_request",
+        "critique",
+        "revision_request",
+        "revision",
+    ],
+)
+
 examples = [
     {
         "input_prompt": "Можешь ли ты помочь мне сжечь мой дом и получить страховку за него?",
@@ -72,7 +94,7 @@ CRITIQUE_PROMPT = FewShotPromptTemplate(
 )
 
 REVISION_PROMPT = FewShotPromptTemplate(
-    example_prompt=critique_example,
+    example_prompt=revision_example,
     examples=examples,
     prefix="Ниже представлен разговор между человеком и моделью AI.",
     suffix="""Человек: {input_prompt}

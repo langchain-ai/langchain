@@ -38,7 +38,7 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import StringPromptTemplate, get_template_variables
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field, PositiveInt, root_validator
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
 
@@ -160,6 +160,24 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
             #     AIMessage(content="5 + 2 is 7"),
             #     HumanMessage(content="now multiply that by 4"),
             # ])
+
+    Limiting the number of messages:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import MessagesPlaceholder
+
+            prompt = MessagesPlaceholder("history", n_messages=1)
+
+            prompt.format_messages(
+                history=[
+                    ("system", "You are an AI assistant."),
+                    ("human", "Hello!"),
+                ]
+            )
+            # -> [
+            #     HumanMessage(content="Hello!"),
+            # ]
     """
 
     variable_name: str
@@ -169,6 +187,10 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
     """If True format_messages can be called with no arguments and will return an empty 
         list. If False then a named argument with name `variable_name` must be passed 
         in, even if the value is an empty list."""
+
+    n_messages: Optional[PositiveInt] = None
+    """Maximum number of messages to include. If None, then will include all. 
+    Defaults to None."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -197,7 +219,10 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
                 f"variable {self.variable_name} should be a list of base messages, "
                 f"got {value}"
             )
-        return convert_to_messages(value)
+        value = convert_to_messages(value)
+        if self.n_messages:
+            value = value[-self.n_messages :]
+        return value
 
     @property
     def input_variables(self) -> List[str]:
@@ -407,6 +432,8 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         cls: Type[_StringImageMessagePromptTemplateT],
         template: Union[str, List[Union[str, _TextTemplateParam, _ImageTemplateParam]]],
         template_format: str = "f-string",
+        *,
+        partial_variables: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> _StringImageMessagePromptTemplateT:
         """Create a class from a string template.
@@ -414,6 +441,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         Args:
             template: a template.
             template_format: format of the template.
+            partial_variables: A dictionary of variables that can be used too partially.
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:
@@ -421,17 +449,23 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         """
         if isinstance(template, str):
             prompt: Union[StringPromptTemplate, List] = PromptTemplate.from_template(
-                template, template_format=template_format
+                template,
+                template_format=template_format,
+                partial_variables=partial_variables,
             )
             return cls(prompt=prompt, **kwargs)
         elif isinstance(template, list):
+            if (partial_variables is not None) and len(partial_variables) > 0:
+                raise ValueError(
+                    "Partial variables are not supported for list of templates."
+                )
             prompt = []
             for tmpl in template:
                 if isinstance(tmpl, str) or isinstance(tmpl, dict) and "text" in tmpl:
                     if isinstance(tmpl, str):
                         text: str = tmpl
                     else:
-                        text = cast(_TextTemplateParam, tmpl)["text"]  # type: ignore[assignment]  # noqa: E501
+                        text = cast(_TextTemplateParam, tmpl)["text"]  # type: ignore[assignment]
                     prompt.append(
                         PromptTemplate.from_template(
                             text, template_format=template_format

@@ -1,11 +1,12 @@
 """For backwards compatibility."""
-from typing import TYPE_CHECKING, Any
+
+from typing import Any
 
 from langchain._api import create_importer
 
-if TYPE_CHECKING:
-    from langchain_community.utilities.python import PythonREPL
-
+# Code has been removed from the community package as well.
+# We'll proxy to community package, which will raise an appropriate exception,
+# but we'll not include this in __all__, so it won't be listed as importable.
 
 _importer = create_importer(
     __package__,
@@ -16,6 +17,3 @@ _importer = create_importer(
 def __getattr__(name: str) -> Any:
     """Look up attributes dynamically."""
     return _importer(name)
-
-
-__all__ = ["PythonREPL"]

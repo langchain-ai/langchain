@@ -41,6 +41,7 @@ class RequestsToolkit(BaseToolkit):
     """
 
     requests_wrapper: TextRequestsWrapper
+    """The requests wrapper."""
     allow_dangerous_requests: bool = False
     """Allow dangerous requests. See documentation for details."""
 
@@ -82,7 +83,9 @@ class OpenAPIToolkit(BaseToolkit):
     """
 
     json_agent: Any
+    """The JSON agent."""
     requests_wrapper: TextRequestsWrapper
+    """The requests wrapper."""
     allow_dangerous_requests: bool = False
     """Allow dangerous requests. See documentation for details."""
 
