@@ -23,14 +23,12 @@ from typing import (
 )
 
 import numpy as np
-from grpc import RpcError  # type: ignore
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.vectorstores import VectorStore
 from qdrant_client import AsyncQdrantClient, QdrantClient
 from qdrant_client.http import models
-from qdrant_client.http.exceptions import UnexpectedResponse
 from qdrant_client.local.async_qdrant_local import AsyncQdrantLocal
 
 from langchain_qdrant._utils import maximal_marginal_relevance
@@ -1353,8 +1351,8 @@ class Qdrant(VectorStore):
     def from_existing_collection(
         cls: Type[Qdrant],
         embedding: Embeddings,
-        path: str,
-        collection_name: str,
+        path: Optional[str] = None,
+        collection_name: Optional[str] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
@@ -1376,6 +1374,10 @@ class Qdrant(VectorStore):
         This method will return the instance of the store without inserting any new
         embeddings
         """
+
+        if collection_name is None:
+            raise ValueError("Must specify collection_name. Received None.")
+
         client, async_client = cls._generate_clients(
             location=location,
             url=url,
@@ -1632,14 +1634,16 @@ class Qdrant(VectorStore):
             path=path,
             **kwargs,
         )
-        try:
-            # Skip any validation in case of forced collection recreate.
-            if force_recreate:
-                raise ValueError
+        collection_exists = client.collection_exists(collection_name)
 
+        if collection_exists and force_recreate:
+            client.delete_collection(collection_name)
+            collection_exists = False
+
+        if collection_exists:
             # Get the vector configuration of the existing collection and vector, if it
             # was specified. If the old configuration does not match the current one,
-            # an exception is being thrown.
+            # an exception is raised.
             collection_info = client.get_collection(collection_name=collection_name)
             current_vector_config = collection_info.config.params.vectors
             if isinstance(current_vector_config, dict) and vector_name is not None:
@@ -1657,7 +1661,7 @@ class Qdrant(VectorStore):
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
                     f"If you want to reuse it, please set `vector_name` to any of the "
                     f"existing named vectors: "
-                    f"{', '.join(current_vector_config.keys())}."  # noqa
+                    f"{', '.join(current_vector_config.keys())}."
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
@@ -1696,7 +1700,7 @@ class Qdrant(VectorStore):
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
-        except (UnexpectedResponse, RpcError, ValueError):
+        else:
             vectors_config = models.VectorParams(
                 size=vector_size,
                 distance=models.Distance[distance_func],
@@ -1710,8 +1714,6 @@ class Qdrant(VectorStore):
                     vector_name: vectors_config,
                 }
 
-            if client.collection_exists(collection_name):
-                client.delete_collection(collection_name)
             client.create_collection(
                 collection_name=collection_name,
                 vectors_config=vectors_config,
@@ -1791,14 +1793,17 @@ class Qdrant(VectorStore):
             path=path,
             **kwargs,
         )
-        try:
-            # Skip any validation in case of forced collection recreate.
-            if force_recreate:
-                raise ValueError
 
+        collection_exists = client.collection_exists(collection_name)
+
+        if collection_exists and force_recreate:
+            client.delete_collection(collection_name)
+            collection_exists = False
+
+        if collection_exists:
             # Get the vector configuration of the existing collection and vector, if it
             # was specified. If the old configuration does not match the current one,
-            # an exception is being thrown.
+            # an exception is raised.
             collection_info = client.get_collection(collection_name=collection_name)
             current_vector_config = collection_info.config.params.vectors
             if isinstance(current_vector_config, dict) and vector_name is not None:
@@ -1816,7 +1821,7 @@ class Qdrant(VectorStore):
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
                     f"If you want to reuse it, please set `vector_name` to any of the "
                     f"existing named vectors: "
-                    f"{', '.join(current_vector_config.keys())}."  # noqa
+                    f"{', '.join(current_vector_config.keys())}."
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
@@ -1857,7 +1862,7 @@ class Qdrant(VectorStore):
                     f"recreate the collection, set `force_recreate` parameter to "
                     f"`True`."
                 )
-        except (UnexpectedResponse, RpcError, ValueError):
+        else:
             vectors_config = models.VectorParams(
                 size=vector_size,
                 distance=models.Distance[distance_func],
@@ -1871,7 +1876,7 @@ class Qdrant(VectorStore):
                     vector_name: vectors_config,
                 }
 
-            client.recreate_collection(
+            client.create_collection(
                 collection_name=collection_name,
                 vectors_config=vectors_config,
                 shard_number=shard_number,

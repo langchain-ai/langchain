@@ -81,7 +81,7 @@ _module_lookup = {
     "GoogleTranslateTransformer": "langchain_community.document_transformers.google_translate",  # noqa: E501
     "Html2TextTransformer": "langchain_community.document_transformers.html2text",
     "LongContextReorder": "langchain_community.document_transformers.long_context_reorder",  # noqa: E501
-    "MarkdownifyTransformer": "langchain_community.document_transformers.markdownify",  # noqa: E501
+    "MarkdownifyTransformer": "langchain_community.document_transformers.markdownify",
     "NucliaTextTransformer": "langchain_community.document_transformers.nuclia_text_transform",  # noqa: E501
     "OpenAIMetadataTagger": "langchain_community.document_transformers.openai_functions",  # noqa: E501
     "get_stateful_documents": "langchain_community.document_transformers.embeddings_redundant_filter",  # noqa: E501

@@ -5216,7 +5216,15 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'Message from an AI.',
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -5285,6 +5293,9 @@
             ]),
             'title': 'Type',
             'type': 'string',
+          }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
           }),
         }),
         'required': list([
@@ -5401,7 +5412,16 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'Message for passing the result of executing a function back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -5457,7 +5477,30 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'Message from a human.',
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -5568,8 +5611,28 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
           of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -5648,7 +5711,24 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'Message for passing the result of executing a tool back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A TooMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -5705,6 +5785,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),
@@ -5751,7 +5854,15 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'Message from an AI.',
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -5820,6 +5931,9 @@
             ]),
             'title': 'Type',
             'type': 'string',
+          }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
           }),
         }),
         'required': list([
@@ -5936,7 +6050,16 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'Message for passing the result of executing a function back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -5992,7 +6115,30 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'Message from a human.',
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6103,8 +6249,28 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
           of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -6183,7 +6349,24 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'Message for passing the result of executing a tool back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A TooMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6240,6 +6423,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),
@@ -6270,7 +6476,15 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'Message from an AI.',
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6340,6 +6554,9 @@
             'title': 'Type',
             'type': 'string',
           }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
+          }),
         }),
         'required': list([
           'content',
@@ -6408,7 +6625,16 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'Message for passing the result of executing a function back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6464,7 +6690,30 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'Message from a human.',
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6553,8 +6802,28 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
           of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -6633,7 +6902,24 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'Message for passing the result of executing a tool back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A TooMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6690,6 +6976,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),
@@ -6708,7 +7017,15 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'Message from an AI.',
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6777,6 +7094,9 @@
             ]),
             'title': 'Type',
             'type': 'string',
+          }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
           }),
         }),
         'required': list([
@@ -6893,7 +7213,16 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'Message for passing the result of executing a function back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -6949,7 +7278,30 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'Message from a human.',
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7060,8 +7412,28 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
           of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -7140,7 +7512,24 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'Message for passing the result of executing a tool back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A TooMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7197,6 +7586,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),
@@ -7215,7 +7627,15 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'Message from an AI.',
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7284,6 +7704,9 @@
             ]),
             'title': 'Type',
             'type': 'string',
+          }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
           }),
         }),
         'required': list([
@@ -7400,7 +7823,16 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'Message for passing the result of executing a function back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7456,7 +7888,30 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'Message from a human.',
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7567,8 +8022,28 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
           of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -7647,7 +8122,24 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'Message for passing the result of executing a tool back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A TooMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7706,6 +8198,29 @@
         'title': 'ToolMessage',
         'type': 'object',
       }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
+        'type': 'object',
+      }),
     }),
     'title': 'PromptTemplateOutput',
   })
@@ -7714,7 +8229,15 @@
   dict({
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'Message from an AI.',
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7783,6 +8306,9 @@
             ]),
             'title': 'Type',
             'type': 'string',
+          }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
           }),
         }),
         'required': list([
@@ -7899,7 +8425,16 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'Message for passing the result of executing a function back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -7955,7 +8490,30 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'Message from a human.',
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -8077,8 +8635,28 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
           of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -8157,7 +8735,24 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'Message for passing the result of executing a tool back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A TooMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -8216,6 +8811,29 @@
         'title': 'ToolMessage',
         'type': 'object',
       }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
+        'type': 'object',
+      }),
     }),
     'items': dict({
       '$ref': '#/definitions/PromptTemplateOutput',
@@ -8251,7 +8869,15 @@
     ]),
     'definitions': dict({
       'AIMessage': dict({
-        'description': 'Message from an AI.',
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -8321,6 +8947,9 @@
             'title': 'Type',
             'type': 'string',
           }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
+          }),
         }),
         'required': list([
           'content',
@@ -8389,7 +9018,16 @@
         'type': 'object',
       }),
       'FunctionMessage': dict({
-        'description': 'Message for passing the result of executing a function back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -8445,7 +9083,30 @@
         'type': 'object',
       }),
       'HumanMessage': dict({
-        'description': 'Message from a human.',
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -8534,8 +9195,28 @@
       }),
       'SystemMessage': dict({
         'description': '''
-          Message for priming AI behavior, usually passed in as the first of a sequence
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
           of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
         ''',
         'properties': dict({
           'additional_kwargs': dict({
@@ -8614,7 +9295,24 @@
         'type': 'object',
       }),
       'ToolMessage': dict({
-        'description': 'Message for passing the result of executing a tool back to a model.',
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A TooMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
         'properties': dict({
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
@@ -8671,6 +9369,29 @@
           'tool_call_id',
         ]),
         'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
         'type': 'object',
       }),
     }),

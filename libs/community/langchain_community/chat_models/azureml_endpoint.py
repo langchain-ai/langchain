@@ -233,7 +233,7 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
                 endpoint_api_key="my-api-key",
                 content_formatter=chat_content_formatter,
             )
-    """  # noqa: E501
+    """
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

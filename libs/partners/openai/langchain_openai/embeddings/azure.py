@@ -49,7 +49,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
 
         For more:
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """  # noqa: E501
+    """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
@@ -90,10 +90,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             or os.getenv("OPENAI_ORGANIZATION")
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
         values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
             "AZURE_OPENAI_ENDPOINT"
