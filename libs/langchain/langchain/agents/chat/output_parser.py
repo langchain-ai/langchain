@@ -25,6 +25,20 @@ class ChatOutputParser(AgentOutputParser):
         return self.format_instructions
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+        """Parse the output from the agent into
+        an AgentAction or AgentFinish object.
+
+        Args:
+            text: The text to parse.
+
+        Returns:
+            An AgentAction or AgentFinish object.
+
+        Raises:
+            OutputParserException: If the output could not be parsed.
+            ValueError: If the action could not be found.
+        """
+
         includes_answer = FINAL_ANSWER_ACTION in text
         try:
             found = self.pattern.search(text)
