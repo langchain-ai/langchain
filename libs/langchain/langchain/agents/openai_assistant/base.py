@@ -219,8 +219,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[Dict, OutputType]):
             next_response = execute_agent(agent, tools, {"content": "now add 17.241", "thread_id": response.thread_id})
 
     """  # noqa: E501
-
-    client: Any = Field(default_factory=_get_openai_client)
+    # fix: https://github.com/langchain-ai/langchain/issues/20436
+    client: Any = None
     """OpenAI or AzureOpenAI client."""
     async_client: Any = None
     """OpenAI or AzureOpenAI async client."""
