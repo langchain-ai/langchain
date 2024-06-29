@@ -288,6 +288,9 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
                 Union[List[OpenAIAssistantAction], OpenAIAssistantFinish]. Otherwise,
                 will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
+
+        Raises:
+            BaseException: If an error occurs during the invocation.
         """
 
         config = ensure_config(config)

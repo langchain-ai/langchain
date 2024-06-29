@@ -201,7 +201,7 @@ def convert_message_to_dict(message: BaseMessage) -> dict:
             "role": "tool",
             "tool_call_id": message.tool_call_id,
             "content": message.content,
-            "name": message.name,
+            "name": message.name or message.additional_kwargs.get("name"),
         }
     elif isinstance(message, FunctionMessage):
         message_dict = {
