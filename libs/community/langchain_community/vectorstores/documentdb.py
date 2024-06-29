@@ -328,8 +328,8 @@ class DocumentDBVectorSearch(VectorStore):
             A list of documents closest to the query vector
         """
         pipeline: List[dict[str, Any]] = [
+            {"$match": filter},
             {
-                "$match": filter,
                 "$search": {
                     "vectorSearch": {
                         "vector": embeddings,
@@ -339,7 +339,7 @@ class DocumentDBVectorSearch(VectorStore):
                         "efSearch": ef_search,
                     }
                 },
-            }
+            },
         ]
 
         cursor = self._collection.aggregate(pipeline)

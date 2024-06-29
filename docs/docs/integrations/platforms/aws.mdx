@@ -18,16 +18,6 @@ pip install langchain-community boto3
 
 ### Bedrock Chat
 
-See a [usage example](/docs/integrations/chat/bedrock).
-
-```python
-from langchain_aws import ChatBedrock
-```
-
-## LLMs
-
-### Bedrock
-
 >[Amazon Bedrock](https://aws.amazon.com/bedrock/) is a fully managed service that offers a choice of 
 > high-performing foundation models (FMs) from leading AI companies like `AI21 Labs`, `Anthropic`, `Cohere`, 
 > `Meta`, `Stability AI`, and `Amazon` via a single API, along with a broad set of capabilities you need to 
@@ -38,6 +28,15 @@ from langchain_aws import ChatBedrock
 > serverless, you don't have to manage any infrastructure, and you can securely integrate and deploy 
 > generative AI capabilities into your applications using the AWS services you are already familiar with.
 
+See a [usage example](/docs/integrations/chat/bedrock).
+
+```python
+from langchain_aws import ChatBedrock
+```
+
+## LLMs
+
+### Bedrock
  
 See a [usage example](/docs/integrations/llms/bedrock).
 
@@ -132,6 +131,20 @@ See a [usage example](/docs/integrations/document_loaders/athena).
 
 ```python
 from langchain_community.document_loaders.athena import AthenaLoader
+```
+
+### AWS Glue
+
+>The [AWS Glue Data Catalog](https://docs.aws.amazon.com/en_en/glue/latest/dg/catalog-and-crawler.html) is a centralized metadata 
+> repository that allows you to manage, access, and share metadata about 
+> your data stored in AWS. It acts as a metadata store for your data assets, 
+> enabling various AWS services and your applications to query and connect 
+> to the data they need efficiently.
+
+See a [usage example](/docs/integrations/document_loaders/glue_catalog).
+
+```python
+from langchain_community.document_loaders.glue_catalog import GlueCatalogLoader
 ```
 
 ## Vector stores
