@@ -1,24 +1,22 @@
 import unittest
+
 from langchain_experimental.tools.cpp.tool import CppSubprocessTool, sanitize_cpp_input
 
+
 class TestCppTool(unittest.TestCase):
-
-    def test_sanitize_cpp_input(self):
+    def test_sanitize_cpp_input(self) -> None:
         sanitized_code = sanitize_cpp_input("   `int main() { return 0; }`   ")
-        print(f"Sanitized code: '{sanitized_code}'")
         self.assertEqual(sanitized_code, "int main() { return 0; }")
 
-    def test_sanitize_cpp_input_no_backticks(self):
+    def test_sanitize_cpp_input_no_backticks(self) -> None:
         sanitized_code = sanitize_cpp_input("   int main() { return 0; }   ")
-        print(f"Sanitized code: '{sanitized_code}'")
         self.assertEqual(sanitized_code, "int main() { return 0; }")
 
-    def test_sanitize_cpp_input_empty_string(self):
+    def test_sanitize_cpp_input_empty_string(self) -> None:
         sanitized_code = sanitize_cpp_input("      ")
-        print(f"Sanitized code: '{sanitized_code}'")
         self.assertEqual(sanitized_code, "")
 
-    def test_cpp_tool_successful_compilation_and_execution(self):
+    def test_cpp_tool_successful_compilation_and_execution(self) -> None:
         tool = CppSubprocessTool()
         code = """
         #include <iostream>
@@ -28,10 +26,9 @@ class TestCppTool(unittest.TestCase):
         }
         """
         output = tool._run(code)
-        print(f"Output: '{output}'")
         self.assertEqual(output.strip(), "Hello, world!")
 
-    def test_cpp_tool_successful_complex_code(self):
+    def test_cpp_tool_successful_complex_code(self) -> None:
         tool = CppSubprocessTool()
         code = """
         #include <iostream>
@@ -46,10 +43,9 @@ class TestCppTool(unittest.TestCase):
         }
         """
         output = tool._run(code)
-        print(f"Output: '{output}'")
         self.assertEqual(output.strip(), "1 2 3 4 5")
 
-    def test_cpp_tool_large_output(self):
+    def test_cpp_tool_large_output(self) -> None:
         tool = CppSubprocessTool()
         code = """
         #include <iostream>
@@ -62,10 +58,9 @@ class TestCppTool(unittest.TestCase):
         }
         """
         output = tool._run(code)
-        print(f"Output length: {len(output.strip())}")
         self.assertTrue(len(output.strip()) > 10000)
 
-    def test_cpp_tool_compilation_error(self):
+    def test_cpp_tool_compilation_error(self) -> None:
         tool = CppSubprocessTool()
         code = """
         #include <iostream>
@@ -75,10 +70,9 @@ class TestCppTool(unittest.TestCase):
         }
         """
         output = tool._run(code)
-        print(f"Output: '{output}'")
         self.assertIn("Compilation failed:", output)
 
-    def test_cpp_tool_execution_error(self):
+    def test_cpp_tool_execution_error(self) -> None:
         tool = CppSubprocessTool()
         code = """
         #include <iostream>
@@ -89,10 +83,9 @@ class TestCppTool(unittest.TestCase):
         }
         """
         output = tool._run(code)
-        print(f"Output: '{output}'")
         self.assertIn("Execution failed:", output)
 
-    def test_cpp_tool_with_cpu_limit(self):
+    def test_cpp_tool_with_cpu_limit(self) -> None:
         tool = CppSubprocessTool()
         code = """
         #include <iostream>
@@ -103,10 +96,9 @@ class TestCppTool(unittest.TestCase):
         }
         """
         output = tool._run(code, cpu_limit=1)
-        print(f"Output: '{output}'")
         self.assertIn("Execution failed:", output)
 
-    def test_cpp_tool_with_c_language(self):
+    def test_cpp_tool_with_c_language(self) -> None:
         tool = CppSubprocessTool()
         code = """
         #include <stdio.h>
@@ -116,10 +108,9 @@ class TestCppTool(unittest.TestCase):
         }
         """
         output = tool._run(code, language="c")
-        print(f"Output: '{output}'")
         self.assertEqual(output.strip(), "Hello, C language!")
 
-    def test_cpp_tool_invalid_standard(self):
+    def test_cpp_tool_invalid_standard(self) -> None:
         tool = CppSubprocessTool()
         code = """
         #include <iostream>
@@ -129,8 +120,8 @@ class TestCppTool(unittest.TestCase):
         }
         """
         output = tool._run(code, std="invalid_standard")
-        print(f"Output: '{output}'")
         self.assertIn("Compilation failed:", output)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

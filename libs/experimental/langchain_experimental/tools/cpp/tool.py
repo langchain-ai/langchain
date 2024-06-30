@@ -1,15 +1,17 @@
-import subprocess
-import tempfile
 import os
 import re
+import subprocess
+import tempfile
 from typing import Any, Optional, Type
-from pydantic import BaseModel, Field
+
 from langchain.tools.base import BaseTool
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain_core.runnables.config import run_in_executor
+from pydantic import BaseModel, Field
+
 
 def sanitize_cpp_input(code: str) -> str:
     """Sanitize input for subprocess
@@ -27,23 +29,35 @@ def sanitize_cpp_input(code: str) -> str:
     code = code.strip()
     return code
 
+
 class CppInputs(BaseModel):
     """C/C++ inputs"""
+
     code: str = Field(description="C/C++ code snippet to run")
-    std: str = Field(default="c++14", description="C++ standard to use (e.g., c++11, c++14, c++17, c++20)")
-    language: str = Field(default="cpp", description="Programming language (either 'c' or 'cpp')")
-    cpu_limit: Optional[int] = Field(default=None, description="Optional CPU time limit in seconds")
+    std: str = Field(
+        default="c++14",
+        description="C++ standard to use (e.g., c++11, c++14, c++17, c++20)",
+    )
+    language: str = Field(
+        default="cpp", description="Programming language (either 'c' or 'cpp')"
+    )
+    cpu_limit: Optional[int] = Field(
+        default=None, description="Optional CPU time limit in seconds"
+    )
+
 
 class CppSubprocessTool(BaseTool):
     """Tool for running C/C++ code using subprocess and g++/gcc"""
+
     name: str = "SubprocessCpp"
     description: str = (
-        "A C/C++ interpreter using subprocess and g++/gcc. Use this to execute C/C++ commands."
-        "Input should be a valid C/C++ code snippet."
+        "A C/C++ interpreter using subprocess and g++/gcc. "
+        "Use this to execute C/C++ commands. "
+        "Input should be a valid C/C++ code snippet. "
         "If you want to see the output of a value, you should print it out"
         "with `std::cout << ...` or `printf(...)`."
     )
-    args_schema: Type[BaseModel] = CppInputs
+    args_schema: Type[BaseModel] = CppInputs  # type: ignore
     sanitize_input: bool = True
 
     def _run(
@@ -61,7 +75,7 @@ class CppSubprocessTool(BaseTool):
 
             if language not in ["c", "cpp"]:
                 raise ValueError(f"Invalid language specified: {language}")
-                
+
             with tempfile.TemporaryDirectory() as temp_dir:
                 if language == "c":
                     source_file_path = os.path.join(temp_dir, "temp_code.c")
@@ -74,22 +88,23 @@ class CppSubprocessTool(BaseTool):
                     compiler = "g++"
                     std_flag = f"-std={std}"
 
-                with open(source_file_path, 'w') as source_file:
+                with open(source_file_path, "w") as source_file:
                     source_file.write(code)
 
                 compile_result = subprocess.run(
                     [compiler, std_flag, source_file_path, "-o", binary_file_path],
                     capture_output=True,
                     text=True,
-                    cwd=temp_dir
+                    cwd=temp_dir,
                 )
 
                 if compile_result.returncode != 0:
                     return f"Compilation failed: {compile_result.stderr}"
 
-                def limit_resources():
+                def limit_resources() -> None:
                     if cpu_limit is not None:
                         import resource
+
                         resource.setrlimit(resource.RLIMIT_CPU, (cpu_limit, cpu_limit))
 
                 run_result = subprocess.run(
@@ -97,7 +112,7 @@ class CppSubprocessTool(BaseTool):
                     capture_output=True,
                     text=True,
                     cwd=temp_dir,
-                    preexec_fn=limit_resources if cpu_limit is not None else None
+                    preexec_fn=limit_resources if cpu_limit is not None else None,
                 )
 
                 if run_result.returncode != 0:
