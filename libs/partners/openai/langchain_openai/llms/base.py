@@ -171,9 +171,10 @@ class BaseOpenAI(BaseLLM):
         if values["streaming"] and values["best_of"] > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
         for penalty in ["frequency_penalty", "presence_penalty"]:
-            if values[penalty] is not None and (values[penalty] < -2.0 or values[penalty] > 2.0):
+            if values[penalty] is not None and (
+                values[penalty] < -2.0 or values[penalty] > 2.0
+            ):
                 raise ValueError(f"`{penalty}` must be between -2.0 and 2.0")
-
 
         openai_api_key = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"

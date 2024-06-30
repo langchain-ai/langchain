@@ -394,7 +394,9 @@ class BaseChatOpenAI(BaseChatModel):
             if 0 > values["top_logprobs"] or values["top_logprobs"] < 20:
                 raise ValueError("top_logprobs must be between 0 and 20")
         for penalty in ["frequency_penalty", "presence_penalty"]:
-            if values[penalty] is not None and (values[penalty] < -2.0 or values[penalty] > 2.0):
+            if values[penalty] is not None and (
+                values[penalty] < -2.0 or values[penalty] > 2.0
+            ):
                 raise ValueError(f"`{penalty}` must be between -2.0 and 2.0")
 
         values["openai_api_key"] = convert_to_secret_str(
