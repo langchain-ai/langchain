@@ -16,6 +16,7 @@ from langchain_core.messages import (
 )
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import ConfigurableField
+
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
@@ -370,12 +371,15 @@ def test_get_num_tokens_from_messages() -> None:
     actual = llm.get_num_tokens_from_messages(messages)
     assert expected == actual
 
+
 def test_client_configurable_parameters_change() -> None:
     """Test change in client configurable parameters"""
-    llm = ChatOpenAI(openai_api_key="api_key_1").configurable_fields(openai_api_key=ConfigurableField(id="openai_api_key"))
+    llm = ChatOpenAI(openai_api_key="api_key_1").configurable_fields(
+        openai_api_key=ConfigurableField(id="openai_api_key")
+    )
     inital_client = llm.client
-    _llm = llm.with_config(configurable={"openai_api_key": "api_key_2"})    
+    _llm = llm.with_config(configurable={"openai_api_key": "api_key_2"})
     # create a client with new configuration within ChatOpenAI
     llm, config = _llm.prepare(_llm.config)
-    final_client=llm.client
-    assert inital_client!=final_client
+    final_client = llm.client
+    assert inital_client != final_client
