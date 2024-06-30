@@ -442,14 +442,13 @@ class BaseChatOpenAI(BaseChatModel):
             "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
+            "extra_body": self._extra_body,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
         if self.stop:
             params["stop"] = self.stop
-        if self.extra_body is not None:
-            params["extra_body"] = self.extra_body
 
         return params
 

@@ -7,6 +7,8 @@ EXPECTED_ALL = [
     "AzureOpenAI",
     "AzureChatOpenAI",
     "AzureOpenAIEmbeddings",
+    "VLLMOpenAI",
+    "VLLMChatOpenAI",
 ]
 
 
