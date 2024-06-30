@@ -377,7 +377,7 @@ def test_client_configurable_parameters_change() -> None:
     llm = ChatOpenAI(openai_api_key="api_key_1").configurable_fields(
         openai_api_key=ConfigurableField(id="openai_api_key")
     )
-    inital_client = llm.client
+    inital_client = llm.__dict__["default"].client
     _llm = llm.with_config(configurable={"openai_api_key": "api_key_2"})
     # create a client with new configuration within ChatOpenAI
     llm, config = _llm.prepare(_llm.config)
@@ -390,7 +390,7 @@ def test_async_client_configurable_parameters_change() -> None:
     llm = ChatOpenAI(openai_api_key="api_key_1").configurable_fields(
         openai_api_key=ConfigurableField(id="openai_api_key")
     )
-    inital_async_client = llm.async_client
+    inital_async_client = llm.__dict__["default"].async_client
     _llm = llm.with_config(configurable={"openai_api_key": "api_key_2"})
     # create a client with new configuration within ChatOpenAI
     llm, config = _llm.prepare(_llm.config)
