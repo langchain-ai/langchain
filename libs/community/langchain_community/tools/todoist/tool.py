@@ -1,17 +1,18 @@
 from typing import Any
 
 from langchain_core.tools import BaseTool
+from langchain_core.pydantic_v1 import Field
 
 from langchain_community.utilities.todoist import TodoistAPIWrapper
 
 
 class TodoistAction(BaseTool):
-    def __init__(
-        self, name: str, description: str, mode: str, api_wrapper: TodoistAPIWrapper
-    ):
-        super().__init__(name=name, description=description)
-        self.mode = mode
-        self.api_wrapper = api_wrapper
+    """A tool for interacting with Todoist."""
+
+    mode: str
+    name: str = "todoist"
+    description: str = "A wrapper around Todoist API."
+    api_wrapper: TodoistAPIWrapper = Field(default_factory=TodoistAPIWrapper)
 
     def _run(self, *args, **kwargs) -> Any:
         if self.mode == "get_projects":
@@ -26,8 +27,8 @@ class TodoistAction(BaseTool):
         elif self.mode == "add_task":
             content = kwargs.get("content")
             project_id = kwargs.get("project_id")
-            if not content or not project_id:
-                raise ValueError("Content and Project ID must be provided")
+            if not content:
+                raise ValueError("Content must be provided")
             return self.api_wrapper.add_task(content, project_id)
         elif self.mode == "close_task":
             task_id = kwargs.get("task_id")

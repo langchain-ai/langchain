@@ -2,6 +2,7 @@
 
 from datetime import datetime
 
+from langchain_community.tools.todoist.tool import TodoistAction
 import pytest
 
 from langchain_community.utilities.todoist import TodoistAPIWrapper
@@ -211,3 +212,12 @@ def test_task_related(todoist_wrapper: TodoistAPIWrapper) -> None:
     finally:
         if task_id:
             todoist_wrapper.api.delete_task(task_id)
+
+
+def test_call_as_action(todoist_wrapper: TodoistAPIWrapper) -> None:
+    res = TodoistAction(api_wrapper=todoist_wrapper, mode="get_projects")._run()
+
+    res = TodoistAction(
+        api_wrapper=todoist_wrapper,
+        mode="add_task",
+    )._run(content="test action task")
