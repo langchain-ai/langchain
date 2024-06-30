@@ -5,9 +5,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from langchain_community.document_loaders.parsers import (
-    AdobePDFExtractionParser,
+    AdobePDFExtractParser,
 )
-from langchain_community.document_loaders import AdobePDFExtractionLoader
+from langchain_community.document_loaders import AdobePDFExtractLoader
 
 
 @pytest.mark.requires("adobe.pdfservices")
@@ -17,7 +17,7 @@ def test_adobe_pdf_services(mock_pdf_services: MagicMock, mock_credentials: Magi
     client_id = "client_id"
     client_secret = "client_secret"
 
-    parser = AdobePDFExtractionParser(client_id=client_id, client_secret=client_secret)
+    parser = AdobePDFExtractParser(client_id=client_id, client_secret=client_secret)
     mock_credentials.assert_called_once_with(client_id=client_id, client_secret=client_secret)
     mock_pdf_services.assert_called_once_with(credentials=mock_credentials())
 
@@ -31,7 +31,7 @@ def test_adobe_pdf_services(mock_pdf_services: MagicMock, mock_credentials: Magi
 @patch("adobe.pdfservices.operation.auth.service_principal_credentials.ServicePrincipalCredentials")
 @patch("adobe.pdfservices.operation.pdf_services.PDFServices")
 def test_adobe_pdf_services_loader_modes(mock_pdf_services: MagicMock, mock_credentials: MagicMock, mode: str) -> None:
-    loader = AdobePDFExtractionLoader(
+    loader = AdobePDFExtractLoader(
         client_id="client_id",
         client_secret="client_secret",
         file_path="path/to/file.pdf",
@@ -45,7 +45,7 @@ def test_adobe_pdf_services_loader_modes(mock_pdf_services: MagicMock, mock_cred
 
 def test_adobe_pdf_services_loader_invalid_file_path() -> None:
     with pytest.raises(AssertionError):
-        AdobePDFExtractionLoader(
+        AdobePDFExtractLoader(
             client_id="client_id",
             client_secret="client_secret",
             file_path=None,  # type: ignore[arg-type]

@@ -9,7 +9,7 @@ from langchain_community.document_loaders.base import BaseBlobParser
 from langchain_community.document_loaders.blob_loaders import Blob
 
 
-class AdobePDFExtractionParser(BaseBlobParser):
+class AdobePDFExtractParser(BaseBlobParser):
     """Loads a document using the Adobe PDF Services API."""
 
     def __init__(

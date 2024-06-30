@@ -4,11 +4,11 @@ from langchain_core.documents import Document
 
 from langchain_community.document_loaders.blob_loaders import Blob
 from langchain_community.document_loaders.parsers import (
-    AdobePDFExtractionParser,
+    AdobePDFExtractParser,
 )
 
 
-class AdobePDFExtractionLoader:
+class AdobePDFExtractLoader:
     """Loads a PDF with Adobe PDF Extraction."""
 
     def __init__(
@@ -57,7 +57,7 @@ class AdobePDFExtractionLoader:
         assert file_path is not None, "file_path must be provided"
         self.file_path = file_path
 
-        self.parser = AdobePDFExtractionParser(  # type: ignore[misc]
+        self.parser = AdobePDFExtractParser(  # type: ignore[misc]
             client_id=client_id,
             client_secret=client_secret,
             mode=mode,

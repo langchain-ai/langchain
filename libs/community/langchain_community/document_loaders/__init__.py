@@ -22,8 +22,8 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.acreom import (
         AcreomLoader,
     )
-    from langchain_community.document_loaders.adobe_pdf_services import (
-        AdobePDFExtractionLoader,
+    from langchain_community.document_loaders.adobe_pdf_extract import (
+        AdobePDFExtractLoader,
     )
     from langchain_community.document_loaders.airbyte import (
         AirbyteCDKLoader,
@@ -729,7 +729,7 @@ def __getattr__(name: str) -> Any:
 __all__ = [
     "AZLyricsLoader",
     "AcreomLoader",
-    "AdobePDFExtractionLoader",
+    "AdobePDFExtractLoader",
     "AirbyteCDKLoader",
     "AirbyteGongLoader",
     "AirbyteHubspotLoader",
