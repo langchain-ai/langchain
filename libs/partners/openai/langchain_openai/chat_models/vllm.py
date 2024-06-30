@@ -49,7 +49,7 @@ class VLLMChatOpenAI(BaseChatOpenAI):
     echo: bool = False
     """If true, the new message will be prepended with the last message
     if they belong to the same role."""
-    add_generation_prompt: bool = (True,)
+    add_generation_prompt: bool = True
     """If true, the generation prompt will be added to the chat template. 
     This is a parameter used by chat template in tokenizer config of the model."""
     add_special_tokens: bool = False
@@ -59,13 +59,13 @@ class VLLMChatOpenAI(BaseChatOpenAI):
     include_stop_str_in_output: Optional[bool] = False
     """Whether to include the stop string in the output. This is only applied when
     the stop or stop_token_ids is set."""
-    guided_json: Optional[Union[str, Dict]] = (None,)
+    guided_json: Optional[Union[str, Dict]] = None
     """If specified, the output will follow the JSON schema."""
     guided_regex: Optional[str] = None
     """If specified, the output will follow the regex pattern."""
     guided_choice: Optional[List[str]] = None
     """If specified, the output will be exactly one of the choices."""
-    guided_grammar: Optional[str] = (None,)
+    guided_grammar: Optional[str] = None
     """If specified, the output will follow the context free grammar."""
     guided_decoding_backend: Optional[Literal["outlines", "lm-format-enforcer"]] = None
     """If specified, will override the default guided decoding backend 

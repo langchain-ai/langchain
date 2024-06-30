@@ -213,7 +213,7 @@ class BaseOpenAI(BaseLLM):
     @property
     def _extra_body(self) -> Dict[str, Any]:
         if self.extra_body is not None:
-            return self.extra_body
+            return dict(self.extra_body)
         return {}
 
     @property
