@@ -12,7 +12,13 @@ from langchain_community.document_loaders.blob_loaders import Blob
 class AdobePDFExtractionParser(BaseBlobParser):
     """Loads a document using the Adobe PDF Services API."""
 
-    def __init__(self, client_id: str, client_secret: str, mode: str = "chunks", embed_figures: bool = True):
+    def __init__(
+        self,
+        client_id: str,
+        client_secret: str,
+        mode: str = "chunks",
+        embed_figures: bool = True,
+    ):
         from adobe.pdfservices.operation.auth.service_principal_credentials import ServicePrincipalCredentials
         from adobe.pdfservices.operation.pdf_services import PDFServices
 
