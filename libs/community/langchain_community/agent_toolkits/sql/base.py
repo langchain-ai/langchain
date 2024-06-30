@@ -25,6 +25,7 @@ from langchain_core.prompts.chat import (
 from langchain_community.agent_toolkits.sql.prompt import (
     SQL_FUNCTIONS_SUFFIX,
     SQL_PREFIX,
+    SQL_SUFFIX
 )
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.tools.sql_database.tool import (
@@ -170,10 +171,10 @@ def create_sql_agent(
             )
             template = "\n\n".join(
                 [
-                    react_prompt.PREFIX,
+                    prefix,
                     "{tools}",
                     format_instructions,
-                    react_prompt.SUFFIX,
+                    suffix or SQL_SUFFIX,
                 ]
             )
             prompt = PromptTemplate.from_template(template)
@@ -235,5 +236,6 @@ def create_sql_agent(
         max_iterations=max_iterations,
         max_execution_time=max_execution_time,
         early_stopping_method=early_stopping_method,
+        handle_parsing_errors = True,
         **(agent_executor_kwargs or {}),
     )
