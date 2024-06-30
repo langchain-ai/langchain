@@ -383,7 +383,7 @@ def test_client_configurable_parameters_change() -> None:
     llm, config = _llm.prepare(_llm.config)
     final_client = llm.client
     assert inital_client != final_client
-    
+
 
 def test_async_client_configurable_parameters_change() -> None:
     """Test change in async client configurable parameters"""
