@@ -403,7 +403,7 @@ class BaseChatOpenAI(BaseChatModel):
             "default_query": values["default_query"],
         }
 
-        openai_proxy = values["openai_proxy"]       
+        openai_proxy = values["openai_proxy"]
         if openai_proxy and not values["http_client"]:
             try:
                 import httpx
