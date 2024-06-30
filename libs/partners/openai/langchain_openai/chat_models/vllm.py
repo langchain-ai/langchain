@@ -1,8 +1,8 @@
-from typing import List, Optional, Union, Dict, Literal, Any, Iterator, AsyncIterator
-
-from langchain_core.pydantic_v1 import Field, root_validator
+from typing import Any, AsyncIterator, Dict, Iterator, List, Literal, Optional, Union
 
 from langchain_core.outputs import ChatGenerationChunk
+from langchain_core.pydantic_v1 import Field, root_validator
+
 from langchain_openai.chat_models.base import BaseChatOpenAI
 
 
@@ -14,43 +14,51 @@ class VLLMChatOpenAI(BaseChatOpenAI):
     use_beam_search: Optional[bool] = False
     """Whether to use beam search instead of sampling."""
     top_k: int = -1
-    """Integer that controls the number of top tokens to consider. Set to -1 to consider all tokens"""
+    """Integer that controls the number of top tokens to consider.
+    Set to -1 to consider all tokens"""
     min_p: float = 0.0
-    """Float that represents the minimum probability for a token to be considered, relative to the probability 
-    of the most likely token. Must be in [0, 1]. Set to 0 to disable this."""
+    """Float that represents the minimum probability for a token to be considered,
+    relative to the probability of the most likely token."""
     repetition_penalty: float = 1.0
-    """Float that penalizes new tokens based on whether they appear in the prompt and the generated text so far. 
-    Values > 1 encourage the model to use new tokens, while values < 1 encourage the model to repeat tokens."""
+    """Float that penalizes new tokens based on whether they appear in the prompt
+    and the generated text so far. Values > 1 encourage the model to use new tokens,
+    while values < 1 encourage the model to repeat tokens."""
     length_penalty: Optional[float] = 1.0
     """Float that penalizes sequences based on their length. Used in beam search"""
     early_stopping: Optional[bool] = False
-    """Controls the stopping condition for beam search. It accepts the following values: `True`,
-    where the generation stops as soon as there are `best_of` complete candidates; `False`, where an
-    heuristic is applied and the generation stops when is it very unlikely to find better candidates;
-    `"never"`, where the beam search procedure only stops when there cannot be better candidates 
-    (canonical beam search algorithm)."""
+    """Controls the stopping condition for beam search. 
+    It accepts the following values: `True`, where the generation stops as soon 
+    as there are `best_of` complete candidates; `False`, where an heuristic is applied
+    and the generation stops when is it very unlikely to find better candidates;
+    `"never"`, where the beam search procedure only stops when there cannot be better
+    candidates (canonical beam search algorithm)."""
     stop_token_ids: Optional[List[int]] = Field(default_factory=list)
     """List of tokens that stop the generation when they are generated. 
-    The returned output will contain the stop tokens unless the stop tokens are special tokens."""
+    The returned output will contain the stop tokens unless
+    the stop tokens are special tokens."""
     ignore_eos: Optional[bool] = False
-    """Whether to ignore the EOS token and continue generating tokens after the EOS token is generated."""
+    """Whether to ignore the EOS token and continue generating tokens 
+    after the EOS token is generated."""
     min_tokens: int = 0
     """Minimum number of tokens to generate per output sequence."""
     skip_special_tokens: Optional[bool] = True
-    """Minimum number of tokens to generate per output sequence before EOS or stop_token_ids can be generated."""
+    """Minimum number of tokens to generate per output sequence before EOS
+    or stop_token_ids can be generated."""
     spaces_between_special_tokens: Optional[bool] = True
-    """Whether to add spaces between special tokens in the output. Defaults to True."""
+    """Whether to add spaces between special tokens in the output."""
     echo: bool = False
-    """If true, the new message will be prepended with the last message if they belong to the same role."""
+    """If true, the new message will be prepended with the last message
+    if they belong to the same role."""
     add_generation_prompt: bool = (True,)
     """If true, the generation prompt will be added to the chat template. 
     This is a parameter used by chat template in tokenizer config of the model."""
     add_special_tokens: bool = False
-    """If true, special tokens (e.g. BOS) will be added to the prompt kon top of what is added by the chat template. 
-    For most models, the chat template takes care of adding the special tokens
-     so this should be set to False (as is the default)."""
+    """If true, special tokens (e.g. BOS) will be added to the prompt kon top of 
+    what is added by the chat template. For most models, the chat template takes 
+    care of adding the special tokens so this should be set to False."""
     include_stop_str_in_output: Optional[bool] = False
-    """Whether to include the stop string in the output. This is only applied when the stop or stop_token_ids is set."""
+    """Whether to include the stop string in the output. This is only applied when
+    the stop or stop_token_ids is set."""
     guided_json: Optional[Union[str, Dict]] = (None,)
     """If specified, the output will follow the JSON schema."""
     guided_regex: Optional[str] = None
@@ -64,7 +72,8 @@ class VLLMChatOpenAI(BaseChatOpenAI):
     of the server for this specific request. 
     If set, must be either 'outlines' / 'lm-format-enforcer'"""
     guided_whitespace_pattern: Optional[str] = None
-    """If specified, will override the default whitespace pattern for guided json decoding."""
+    """If specified, will override the default 
+    whitespace pattern for guided json decoding."""
 
     @root_validator(pre=True)
     def check_params(cls, values: Dict) -> Dict:
@@ -115,7 +124,7 @@ class VLLMChatOpenAI(BaseChatOpenAI):
             "guided_decoding_backend": self.guided_decoding_backend,
             "guided_whitespace_pattern": self.guided_whitespace_pattern,
             "echo": self.echo,
-            **super()._extra_body,
+            **(self.extra_body or {}),
         }
 
     stream_usage: bool = False

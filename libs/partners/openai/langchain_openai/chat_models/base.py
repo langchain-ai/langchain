@@ -435,6 +435,12 @@ class BaseChatOpenAI(BaseChatModel):
         return values
 
     @property
+    def _extra_body(self) -> Dict[str, Any]:
+        if self.extra_body is not None:
+            return self.extra_body
+        return {}
+
+    @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
         params = {
@@ -939,8 +945,7 @@ class BaseChatOpenAI(BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[True] = True,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]:
-        ...
+    ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
 
     @overload
     def with_structured_output(
@@ -950,8 +955,7 @@ class BaseChatOpenAI(BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[False] = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        ...
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
 
     def with_structured_output(
         self,

@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional, Literal, List, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from langchain_core.pydantic_v1 import Field, root_validator
 
@@ -123,7 +123,7 @@ class VLLMOpenAI(BaseOpenAI):
             "guided_grammar": self.guided_grammar,
             "guided_decoding_backend": self.guided_decoding_backend,
             "guided_whitespace_pattern": self.guided_whitespace_pattern,
-            **super()._extra_body,
+            **(self.extra_body or {}),
         }
 
     @classmethod
