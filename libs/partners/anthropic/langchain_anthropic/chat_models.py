@@ -518,7 +518,7 @@ class ChatAnthropic(BaseChatModel):
 
     anthropic_api_url: Optional[str] = Field(None, alias="base_url")
     """Base URL for API requests. Only specify if using a proxy or service emulator.
-    
+
     If a value isn't passed in and environment variable ANTHROPIC_BASE_URL is set, value
     will be read from there.
     """
@@ -1139,6 +1139,10 @@ def _make_message_chunk_from_anthropic_event(
                 output_tokens=output_tokens,
                 total_tokens=output_tokens,
             ),
+            response_metadata={
+                "stop_reason": event.delta.stop_reason,
+                "stop_sequence": event.delta.stop_sequence,
+            },
         )
     else:
         pass
