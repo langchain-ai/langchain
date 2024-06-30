@@ -14,21 +14,6 @@ pip install -U langchain-anthropic
 You need to set the `ANTHROPIC_API_KEY` environment variable.
 You can get an Anthropic API key [here](https://console.anthropic.com/settings/keys)
 
-## LLMs
-
-### [Legacy] AnthropicLLM
-
-**NOTE**: `AnthropicLLM` only supports legacy `Claude 2` models. 
-To use the newest `Claude 3` models, please use `ChatAnthropic` instead.
-
-See a [usage example](/docs/integrations/llms/anthropic).
-
-```python
-from langchain_anthropic import AnthropicLLM
-
-model = AnthropicLLM(model='claude-2.1')
-```
-
 ## Chat Models
 
 ### ChatAnthropic
@@ -41,4 +26,21 @@ from langchain_anthropic import ChatAnthropic
 model = ChatAnthropic(model='claude-3-opus-20240229')
 ```
 
+## LLMs
 
+### [Legacy] AnthropicLLM
+
+**NOTE**: `AnthropicLLM` only supports legacy `Claude 2` models. 
+To use the newest `Claude 3` models, please use `ChatAnthropic` instead.
+
+See a [usage example](/docs/integrations/llms/anthropic).
+
+```python
+from langchain_anthropic import ChatAnthropic
+
+model = ChatAnthropic(model='claude-3-opus-20240229')
+```
+
+
+model = AnthropicLLM(model='claude-2.1')
+```

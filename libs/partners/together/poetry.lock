@@ -501,7 +501,7 @@ url = "../../core"
 
 [[package]]
 name = "gigachain-openai"
-version = "0.1.10"
+version = "0.1.13"
 description = "An integration package connecting OpenAI and GigaChain"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -510,7 +510,7 @@ develop = true
 
 [package.dependencies]
 gigachain-core = ">=0.2.2,<0.3"
-openai = "^1.26.0"
+openai = "^1.32.0"
 tiktoken = ">=0.7,<1"
 
 [package.source]

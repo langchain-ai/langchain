@@ -1,20 +1,20 @@
 [tool.poetry]
 name = "gigachain-chroma"
-version = "0.1.1"
+version = "0.1.2"
 description = "An integration package connecting Chroma and GigaChain"
 authors = []
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
+repository = "https://github.com/ai-forever/gigachain"
 license = "MIT"
 packages = [
     {include = "langchain_chroma"}
 ]
 
 [tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/chroma"
+"Source Code" = "https://github.com/ai-forever/gigachain/tree/master/libs/partners/chroma"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<3.13"
+python = ">=3.8.1,<4"
 gigachain-core = ">=0.1.40,<0.3"
 chromadb = { version = ">=0.4.0,<0.6.0" }
 # Support Python 3.8 and 3.12+.

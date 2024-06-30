@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gigachain-ibm"
-version = "0.1.7"
+version = "0.1.8"
 description = "An integration package connecting IBM watsonx.ai and GigaChain"
 authors = ["IBM"]
 readme = "README.md"
@@ -15,8 +15,8 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-gigachain-core = ">=0.1.50,<0.3"
-ibm-watsonx-ai = "^1.0.1"
+gigachain-core = ">=0.2.2,<0.3"
+ibm-watsonx-ai = "^1.0.8"
 
 [tool.poetry.group.test]
 optional = true

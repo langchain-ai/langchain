@@ -19,11 +19,12 @@ import requests
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders.base import BaseLoader
+from langchain_community.utils.user_agent import get_user_agent
 
 logger = logging.getLogger(__name__)
 
 default_header_template = {
-    "User-Agent": "",
+    "User-Agent": get_user_agent(),
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*"
     ";q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
@@ -64,6 +65,7 @@ class AsyncHtmlLoader(BaseLoader):
         ignore_load_errors: bool = False,
         *,
         preserve_order: bool = True,
+        trust_env: bool = False,
     ):
         """Initialize with a webpage path."""
 
@@ -105,6 +107,8 @@ class AsyncHtmlLoader(BaseLoader):
         self.ignore_load_errors = ignore_load_errors
         self.preserve_order = preserve_order
 
+        self.trust_env = trust_env
+
     def _fetch_valid_connection_docs(self, url: str) -> Any:
         if self.ignore_load_errors:
             try:
@@ -125,14 +129,9 @@ class AsyncHtmlLoader(BaseLoader):
             )
 
     async def _fetch(
-        self,
-        url: str,
-        retries: int = 2,
-        cooldown: int = 2,
-        backoff: float = 1.5,
-        timeout: aiohttp.ClientTimeout = aiohttp.ClientTimeout(total=3),
+        self, url: str, retries: int = 3, cooldown: int = 2, backoff: float = 1.5
     ) -> str:
-        async with aiohttp.ClientSession(timeout=timeout) as session:
+        async with aiohttp.ClientSession(trust_env=self.trust_env) as session:
             for i in range(retries):
                 try:
                     proxy = None
@@ -143,6 +142,7 @@ class AsyncHtmlLoader(BaseLoader):
                         headers=self.session.headers,
                         ssl=None if self.session.verify else False,
                         proxy=proxy,
+                        **self.requests_kwargs,
                     ) as response:
                         try:
                             text = await response.text()
@@ -150,7 +150,7 @@ class AsyncHtmlLoader(BaseLoader):
                             logger.error(f"Failed to decode content from {url}")
                             text = ""
                         return text
-                except Exception as e:
+                except (aiohttp.ClientConnectionError, TimeoutError) as e:
                     if i == retries - 1 and self.ignore_load_errors:
                         logger.warning(f"Error fetching {url} after {retries} retries.")
                         return ""

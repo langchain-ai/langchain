@@ -33,6 +33,7 @@ from langchain_core.messages.function_in_progress import (
     FunctionInProgressMessageChunk,
 )
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
+from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import (
     InvalidToolCall,
@@ -76,6 +77,7 @@ __all__ = [
     "ToolCallChunk",
     "ToolMessage",
     "ToolMessageChunk",
+    "RemoveMessage",
     "_message_from_dict",
     "convert_to_messages",
     "get_buffer_string",

@@ -12,14 +12,3 @@ class TestMistralStandard(ChatModelUnitTests):
     @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatMistralAI
-
-    @pytest.mark.xfail(reason="Not implemented.")
-    def test_standard_params(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-    ) -> None:
-        super().test_standard_params(
-            chat_model_class,
-            chat_model_params,
-        )

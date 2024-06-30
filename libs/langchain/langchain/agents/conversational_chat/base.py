@@ -36,7 +36,9 @@ class ConversationalChatAgent(Agent):
     """An agent designed to hold a conversation in addition to using tools."""
 
     output_parser: AgentOutputParser = Field(default_factory=ConvoOutputParser)
+    """Output parser for the agent."""
     template_tool_response: str = TEMPLATE_TOOL_RESPONSE
+    """Template for the tool response."""
 
     @classmethod
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
@@ -48,13 +50,21 @@ class ConversationalChatAgent(Agent):
 
     @property
     def observation_prefix(self) -> str:
-        """Prefix to append the observation with."""
+        """Prefix to append the observation with.
+
+        Returns:
+            "Observation: "
+        """
         return "Observation: "
 
     @property
     def llm_prefix(self) -> str:
-        """Prefix to append the llm call with."""
-        return ""
+        """Prefix to append the llm call with.
+
+        Returns:
+            "Thought: "
+        """
+        return "Thought:"
 
     @classmethod
     def _validate_tools(cls, tools: Sequence[BaseTool]) -> None:
@@ -70,6 +80,20 @@ class ConversationalChatAgent(Agent):
         input_variables: Optional[List[str]] = None,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> BasePromptTemplate:
+        """Create a prompt for the agent.
+
+        Args:
+            tools: The tools to use.
+            system_message: The system message to use.
+                Defaults to the PREFIX.
+            human_message: The human message to use.
+                Defaults to the SUFFIX.
+            input_variables: The input variables to use. Defaults to None.
+            output_parser: The output parser to use. Defaults to None.
+
+        Returns:
+            A PromptTemplate.
+        """
         tool_strings = "\n".join(
             [
                 f"{index + 1}: {tool.name}\n {tool.description}"
@@ -119,7 +143,21 @@ class ConversationalChatAgent(Agent):
         input_variables: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Agent:
-        """Construct an agent from an LLM and tools."""
+        """Construct an agent from an LLM and tools.
+
+        Args:
+            llm: The language model to use.
+            tools: A list of tools to use.
+            callback_manager: The callback manager to use. Default is None.
+            output_parser: The output parser to use. Default is None.
+            system_message: The system message to use. Default is PREFIX.
+            human_message: The human message to use. Default is SUFFIX.
+            input_variables: The input variables to use. Default is None.
+            **kwargs: Any additional arguments.
+
+        Returns:
+            An agent.
+        """
         cls._validate_tools(tools)
         _output_parser = output_parser or cls._get_default_output_parser()
         prompt = cls.create_prompt(
