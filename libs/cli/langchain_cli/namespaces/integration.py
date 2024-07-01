@@ -155,7 +155,8 @@ def create_doc(
         str,
         typer.Option(
             help=(
-                "The type of component. Currently only 'ChatModel', 'DocumentLoader' supported."
+                "The type of component. Currently only 'ChatModel', 'DocumentLoader' "
+                "supported."
             ),
         ),
     ] = "ChatModel",

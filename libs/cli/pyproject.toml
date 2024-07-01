@@ -69,7 +69,6 @@ ruff = "^0.5"
 [tool.poetry.group.test.dependencies]
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^1.10"
 
 [tool.poetry.group.test_integration.dependencies]
 
