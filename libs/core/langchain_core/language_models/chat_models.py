@@ -316,7 +316,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 options=options,
                 name=config.get("run_name"),
                 run_id=config.pop("run_id", None),
-                batch_size=1,
             )
             generation: Optional[ChatGenerationChunk] = None
             try:
@@ -387,7 +386,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             options=options,
             name=config.get("run_name"),
             run_id=config.pop("run_id", None),
-            batch_size=1,
         )
 
         generation: Optional[ChatGenerationChunk] = None
@@ -519,7 +517,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             options=options,
             name=run_name,
             run_id=run_id,
-            batch_size=len(messages),
         )
         results = []
         for i, m in enumerate(messages):
@@ -610,7 +607,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             invocation_params=params,
             options=options,
             name=run_name,
-            batch_size=len(messages),
             run_id=run_id,
         )
 
