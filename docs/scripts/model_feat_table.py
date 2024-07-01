@@ -95,7 +95,7 @@ CHAT_MODEL_FEAT_TABLE = {
     },
     "vLLM Chat (via ChatOpenAI)": {
         "local": True,
-        "package": "langchain-community",
+        "package": "langchain-openai",
         "link": "/docs/integrations/chat/vllm/",
     },
     "ChatEdenAI": {
