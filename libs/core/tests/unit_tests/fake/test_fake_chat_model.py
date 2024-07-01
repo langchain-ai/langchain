@@ -1,11 +1,23 @@
 """Tests for verifying that testing utility code works as expected."""
+
 from itertools import cycle
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
+import pytest
+
 from langchain_core.callbacks.base import AsyncCallbackHandler
-from langchain_core.language_models import GenericFakeChatModel, ParrotFakeChatModel
-from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.language_models import (
+    FakeMessagesListChatModel,
+    GenericFakeChatModel,
+    ParrotFakeChatModel,
+)
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    BaseMessageChunk,
+)
 from langchain_core.messages.human import HumanMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from tests.unit_tests.stubs import AnyStr
@@ -207,3 +219,93 @@ def test_chat_model_inputs() -> None:
     assert fake.invoke([AIMessage(content="blah")]) == AIMessage(
         content="blah", id=AnyStr()
     )
+
+
+@pytest.mark.parametrize(
+    "responses, expected_contents",
+    [
+        (
+            [AIMessage(content="Hello"), AIMessage(content="Bye")],
+            ["Hello", "Bye", "Hello"],
+        ),
+        (["Hello", "Bye"], ["Hello", "Bye", "Hello"]),
+    ],
+)
+async def test_fake_messages_list_chat_model_invoke(
+    responses: List[Union[BaseMessage, BaseMessageChunk, str]],
+    expected_contents: list[str],
+) -> None:
+    model = FakeMessagesListChatModel(responses=responses)
+    # invoke
+    for expected in expected_contents:
+        result = model.invoke("Test input")
+        assert isinstance(result, AIMessage)
+        assert result.content == expected
+    # reset the model
+    model.i = 0
+    # ainvoke
+    for expected in expected_contents:
+        result = await model.ainvoke("Test input")
+        assert isinstance(result, AIMessage)
+        assert result.content == expected
+    # reset the model
+    model.i = 0
+    # stream
+    for expected in expected_contents:
+        chunks = list(model.stream("Test input"))
+        assert len(chunks) == 1
+        assert isinstance(chunks[0], AIMessageChunk)
+        assert chunks[0].content == expected
+    # reset the model
+    model.i = 0
+    # astream
+    for expected in expected_contents:
+        chunks = [chunk async for chunk in model.astream("Test input")]
+        assert len(chunks) == 1
+        assert isinstance(chunks[0], AIMessageChunk)
+        assert chunks[0].content == expected
+
+
+@pytest.mark.parametrize(
+    "responses, expected_chunks",
+    [
+        ([["Hello", "World"]], ["Hello", "World"]),
+        (
+            [[AIMessageChunk(content="Hello"), AIMessageChunk(content="World")]],
+            ["Hello", "World"],
+        ),
+    ],
+)
+def test_fake_messages_list_chat_model_stream(
+    responses: List[List[Union[BaseMessage, BaseMessageChunk, str]]],
+    expected_chunks: List[str],
+) -> None:
+    model = FakeMessagesListChatModel(responses=responses)
+    chunks = list(model.stream("Test input"))
+    assert len(chunks) == len(expected_chunks)
+    for chunk, expected_content in zip(chunks, expected_chunks):
+        assert isinstance(chunk, AIMessageChunk)
+        assert chunk.content == expected_content
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "responses, expected_chunks",
+    [
+        ([["Hello", "World"]], ["Hello", "World"]),
+        (
+            [[AIMessageChunk(content="Hello"), AIMessageChunk(content="World")]],
+            ["Hello", "World"],
+        ),
+    ],
+)
+async def test_fake_messages_list_chat_model_astream(
+    responses: List[List[Union[BaseMessage, BaseMessageChunk, str]]],
+    expected_chunks: List[str],
+) -> None:
+    model = FakeMessagesListChatModel(responses=responses)
+    chunks = [chunk async for chunk in model.astream("Test input")]
+    assert len(chunks) == len(expected_chunks)
+    for chunk, expected_chunk in zip(chunks, expected_chunks):
+        assert isinstance(chunk, AIMessageChunk)
+        assert chunk.content == expected_chunk
