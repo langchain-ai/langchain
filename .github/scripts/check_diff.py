@@ -34,11 +34,11 @@ def dependents_graph() -> dict:
     return dependents
 
 
-def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
+def add_dependents(dirs_to_eval: Set[str], dependents: dict, *, skip_core: bool = True) -> List[str]:
     updated = set()
     for dir_ in dirs_to_eval:
         # handle core manually because it has so many dependents
-        if "core" in dir_:
+        if skip_core and "core" in dir_:
             updated.add(dir_)
             continue
         pkg = "langchain-" + dir_.split("/")[-1]
@@ -122,7 +122,7 @@ if __name__ == "__main__":
 
     outputs = {
         "dirs-to-lint": add_dependents(
-            dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
+            dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"], dependents, skip_core=False
         ),
         "dirs-to-test": add_dependents(dirs_to_run["test"] | dirs_to_run["extended-test"], dependents),
         "dirs-to-extended-test": list(dirs_to_run["extended-test"]),
