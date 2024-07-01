@@ -885,7 +885,6 @@ def test_neo4jvector_relationship_embeddings() -> None:
             f"CREATE "
             f"(:Chunk {{text: '{texts[1]}'}})-[:REL {{id: 'rel1', text: '{texts[0]}'}}]"
             f"->(:Chunk {{text: '{texts[2]}'}}), "
-
             f"(:Chunk {{text: '{texts[2]}'}})-[:REL {{id: 'rel2', text: '{texts[1]}'}}]"
             f"->(:Chunk {{text: '{texts[1]}'}})"
         )
