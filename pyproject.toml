@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "gigachain-monorepo"
 version = "0.0.1"
-description = "LangChain mono-repo"
+description = "GigaChain mono-repo"
 authors = []
 license = "MIT"
 readme = "README.md"
