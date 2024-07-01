@@ -203,6 +203,9 @@ def _get_question(messages: List[BaseMessage]) -> HumanMessage:
     return question
 
 
+_DEFAULT_MODEL_NAME = "chat-bison"
+
+
 @deprecated(
     since="0.0.12",
     removal="0.3.0",
@@ -211,7 +214,7 @@ def _get_question(messages: List[BaseMessage]) -> HumanMessage:
 class ChatVertexAI(_VertexAICommon, BaseChatModel):
     """`Vertex AI` Chat large language models API."""
 
-    model_name: str = "chat-bison"
+    model_name: str = _DEFAULT_MODEL_NAME
     "Underlying model name."
     examples: Optional[List[BaseMessage]] = None
 
@@ -227,7 +230,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
-        is_gemini = is_gemini_model(values["model_name"])
+        is_gemini = is_gemini_model(values.get("model_name", _DEFAULT_MODEL_NAME))
         cls._try_init_vertexai(values)
         try:
             from vertexai.language_models import ChatModel, CodeChatModel

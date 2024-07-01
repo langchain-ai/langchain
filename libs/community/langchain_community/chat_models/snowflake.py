@@ -135,7 +135,7 @@ class ChatSnowflakeCortex(BaseChatModel):
         )
         return values
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         try:
             from snowflake.snowpark import Session
