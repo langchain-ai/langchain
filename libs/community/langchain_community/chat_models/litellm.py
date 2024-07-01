@@ -239,7 +239,7 @@ class ChatLiteLLM(BaseChatModel):
 
         return _completion_with_retry(**kwargs)
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
         try:
@@ -275,6 +275,11 @@ class ChatLiteLLM(BaseChatModel):
             values, "together_ai_api_key", "TOGETHERAI_API_KEY", default=""
         )
         values["client"] = litellm
+        return values
+
+    @root_validator(pre=False, skip_on_failure=True)
+    def validate_environment(cls, values: Dict) -> Dict:
+        """Validate api key, python package exists, temperature, top_p, and top_k."""
 
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
             raise ValueError("temperature must be in the range [0.0, 1.0]")

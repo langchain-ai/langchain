@@ -47,7 +47,7 @@ class ChatOctoAI(ChatOpenAI):
     def is_lc_serializable(cls) -> bool:
         return False
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["octoai_api_base"] = get_from_dict_or_env(

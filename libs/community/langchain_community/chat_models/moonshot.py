@@ -28,7 +28,7 @@ class MoonshotChat(MoonshotCommon, ChatOpenAI):  # type: ignore[misc]
             moonshot = MoonshotChat(model="moonshot-v1-8k")
     """
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the environment is set up correctly."""
         values["moonshot_api_key"] = convert_to_secret_str(

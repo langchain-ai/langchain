@@ -84,8 +84,8 @@ class ChatKonko(ChatOpenAI):
     max_tokens: int = 20
     """Maximum number of tokens to generate."""
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @root_validator(pre=True)
+    def pre_init(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["konko_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "konko_api_key", "KONKO_API_KEY")
@@ -116,6 +116,8 @@ class ChatKonko(ChatOpenAI):
                 "Please consider upgrading to access new features."
             )
 
+    @root_validator(pre=False, skip_on_failure=True)
+    def validate(cls, values: Dict) -> Dict:
         if values["n"] < 1:
             raise ValueError("n must be at least 1.")
         if values["n"] > 1 and values["streaming"]:
