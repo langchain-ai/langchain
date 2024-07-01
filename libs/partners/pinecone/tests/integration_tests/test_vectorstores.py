@@ -58,15 +58,6 @@ class TestPinecone:
         for _namespace_name in index_stats["namespaces"].keys():
             cls.index.delete(delete_all=True, namespace=_namespace_name)
 
-    @pytest.mark.usefixtures("fake_encoder_model", "alpha", "distance_strategy")
-    @classmethod
-    def initialize_fixture_inports(
-        cls, alpha, distance_strategy, fake_encoder_model
-    ) -> None:
-        cls.alpha = alpha()
-        cls.distance_strategy = distance_strategy()
-        cls.fake_encoder_model = fake_encoder_model()
-
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         # delete all the vectors in the index
@@ -83,12 +74,21 @@ class TestPinecone:
         return OpenAIEmbeddings()
 
     @pytest.fixture
+    def fake_encoder_model(self, fake_encoder_model: FakeEncoder) -> FakeEncoder:
+        """Initialize fake embedding model within integration test class"""
+        return fake_encoder_model
+
+    @pytest.fixture
     def texts(self) -> List[str]:
         return ["foo", "bar", "baz"]
 
     @pytest.fixture
     def alpha(self) -> float:
-        return 1
+        return 1.0
+
+    @pytest.fixture
+    def distance_strategy(self) -> str:
+        return DistanceStrategy.MAX_INNER_PRODUCT
 
     def test_from_texts(
         self,

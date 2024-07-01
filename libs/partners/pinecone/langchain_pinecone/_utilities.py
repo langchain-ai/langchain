@@ -1,19 +1,14 @@
 from enum import Enum
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
-from langchain.chains.query_constructor.ir import (
-    Comparator,
-    Operator,
-)
+from langchain_core.structured_query import Comparator, Operator
 
 Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
 
-SparseVector = Dict[str, Union[List[int], List[float]]]
 
-
-def check_valid_alpha(a):
-    if a is not None and not (0 <= a <= 1):
+def check_valid_alpha(alpha: float) -> None:
+    if alpha is not None and not (0 <= alpha <= 1):
         raise ValueError("Alpha must be between 0 and 1")
 
 
@@ -22,16 +17,15 @@ class FakeEncoder:
 
     seed: int
     size: int
-    """The max size of the encoded vector"""
 
-    def __init__(self, seed, size):
+    def __init__(self, seed: int, size: int):
         import numpy as np
 
         self.size = size  # max width of sparse encodings
         self.seed = seed
         self.rng = np.random.default_rng(seed=self.seed)  # seed random number generator
 
-    def _get_encoding(self):
+    def _get_encoding(self) -> Dict:
         vector_size = self.rng.integers(1, self.size + 1)
 
         idxs = range(0, vector_size)
@@ -42,18 +36,16 @@ class FakeEncoder:
             "values": self.rng.random(size=vector_size).tolist(),
         }
 
-    def encode_documents(
-        self, texts: Union[str, List[str]]
-    ) -> Union[SparseVector, List[SparseVector]]:
+    def encode_documents(self, texts: Union[str, List[str]]) -> Any:
         """Return arbitrary sparse vector for text upserts"""
+
         if isinstance(texts, str):
             return self._get_encoding()
+
         elif isinstance(texts, list):
             return [self._get_encoding() for text in texts]
 
-    def encode_queries(
-        self, texts: Union[str, List[str]]
-    ) -> Union[SparseVector, List[SparseVector]]:
+    def encode_queries(self, texts: Union[str, List[str]]) -> Optional[Any]:
         """Return arbitrary sparse vector for hybrid query testing"""
 
         if isinstance(texts, str):

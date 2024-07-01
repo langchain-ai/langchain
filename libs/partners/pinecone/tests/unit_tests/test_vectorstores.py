@@ -36,7 +36,7 @@ def test_from_text_initialization(
     fake_encoder_model: FakeEncoder,
     distance_strategy: DistanceStrategy,
 ) -> None:
-    texts = []
+    texts = ["foobar"]
     assert PineconeVectorStore.from_texts(
         texts=texts,
         embedding=fake_embedding_model,
@@ -158,12 +158,14 @@ def test_from_existing_index(
         pytest.param(1.1, False, marks=pytest.mark.xfail),
     ],
 )
-def test_invalid_alphas(hybrid_vector_store, alpha, expected):
+def test_invalid_alphas(
+    hybrid_vector_store: PineconeVectorStore, alpha: float, expected: bool
+) -> None:
     hybrid_vector_store._alpha = alpha
 
 
 @pytest.mark.parametrize(("alpha"), [(0, 0.5, 1)])
-def test_valid_alphas(hybrid_vector_store, alpha):
+def test_valid_alphas(hybrid_vector_store: PineconeVectorStore, alpha: float) -> None:
     hybrid_vector_store._alpha = alpha
 
 

@@ -7,6 +7,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Iterable,
     List,
     Optional,
@@ -136,7 +137,7 @@ class PineconeVectorStore(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[List[Dict]] = None,
         ids: Optional[List[str]] = None,
         namespace: Optional[str] = None,
         batch_size: int = 32,
@@ -299,7 +300,7 @@ class PineconeVectorStore(VectorStore):
         k: int = 4,
         filter: Optional[dict] = None,
         namespace: Optional[str] = None,
-        encoding: Optional[dict] = None,
+        encoding: Optional[Any] = None,
         alpha: Optional[float] = None,
     ) -> List[Tuple[Document, float]]:
         if namespace is None:
