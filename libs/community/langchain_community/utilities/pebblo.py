@@ -4,7 +4,7 @@ import logging
 import os
 import pathlib
 import platform
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.env import get_runtime_environment
@@ -300,3 +300,98 @@ def get_ip() -> str:
     except Exception:
         public_ip = socket.gethostbyname("localhost")
     return public_ip
+
+
+def get_file_owner_from_path(file_path: str) -> str:
+    """Fetch owner of local file path.
+
+    Args:
+        file_path (str): Local file path.
+
+    Returns:
+        str: Name of owner.
+    """
+    try:
+        import pwd
+
+        file_owner_uid = os.stat(file_path).st_uid
+        file_owner_name = pwd.getpwuid(file_owner_uid).pw_name
+    except Exception:
+        file_owner_name = "unknown"
+    return file_owner_name
+
+
+def calculate_content_size(page_content: str) -> int:
+    """Calculate the content size in bytes:
+    - Encode the string to bytes using a specific encoding (e.g., UTF-8)
+    - Get the length of the encoded bytes.
+
+    Args:
+        page_content (str): Data string.
+
+    Returns:
+        int: Size of string in bytes.
+    """
+
+    # Encode the content to bytes using UTF-8
+    encoded_content = page_content.encode("utf-8")
+    size = len(encoded_content)
+    return size
+
+
+def get_source_size(source_path: str) -> int:
+    """Fetch size of source path. Source can be a directory or a file.
+
+    Args:
+        source_path (str): Local path of data source.
+
+    Returns:
+        int: Source size in bytes.
+    """
+    if not source_path:
+        return 0
+    size = 0
+    if os.path.isfile(source_path):
+        size = os.path.getsize(source_path)
+    elif os.path.isdir(source_path):
+        total_size = 0
+        for dirpath, _, filenames in os.walk(source_path):
+            for f in filenames:
+                fp = os.path.join(dirpath, f)
+                if not os.path.islink(fp):
+                    total_size += os.path.getsize(fp)
+        size = total_size
+    return size
+
+
+def index_docs(docs: List[Document]) -> List[IndexedDocument]:
+    """
+    Indexes the documents and returns a list of IndexedDocument objects.
+
+    Args:
+        docs (List[Document]): A list of Document objects to be indexed.
+
+    Returns:
+        List[IndexedDocument]: A list of IndexedDocument objects with unique IDs.
+    """
+    docs_with_id = [
+        IndexedDocument(id=hex(i)[2:], **doc.dict()) for i, doc in enumerate(docs)
+    ]
+    return docs_with_id
+
+
+def unindex_docs(docs_with_id: List[IndexedDocument]) -> List[Document]:
+    """
+    Converts a list of IndexedDocument objects to a list of Document objects.
+
+    Args:
+        docs_with_id (List[IndexedDocument]): A list of IndexedDocument objects.
+
+    Returns:
+        List[Document]: A list of Document objects.
+    """
+    docs = [
+        Document(page_content=doc.page_content, metadata=doc.metadata)
+        for doc in docs_with_id
+    ]
+    return docs
