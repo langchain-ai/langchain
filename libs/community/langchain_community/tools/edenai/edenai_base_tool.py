@@ -6,19 +6,14 @@ from typing import Any, Dict, List, Optional
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
 
 logger = logging.getLogger(__name__)
 
 
-class Input(BaseModel):
-    query: str = Field(description="should be a search query")
-
-
 class EdenaiTool(BaseTool):
-
     """
     the base tool for all the EdenAI Tools .
     you should have
