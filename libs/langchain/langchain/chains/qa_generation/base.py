@@ -57,7 +57,9 @@ class QAGenerationChain(Chain):
 
             chain = RunnableParallel(
                 text=RunnablePassthrough(),
-                questions=split_text | RunnableEach(bound=prompt | llm | JsonOutputParser())
+                questions=(
+                    split_text | RunnableEach(bound=prompt | llm | JsonOutputParser())
+                )
             )
     """
 
