@@ -1,4 +1,4 @@
-import json
+import json  # type: ignore[import-not-found]
 import os
 from typing import Any, Dict, List, Optional
 

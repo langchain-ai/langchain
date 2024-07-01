@@ -1,5 +1,6 @@
 """Test __ModuleName__ Chat API wrapper."""
-from __module_name__ import __ModuleName__LLM
+
+from __module_name__ import __ModuleName__LLM  # type: ignore[import-not-found]
 
 
 def test_initialization() -> None:

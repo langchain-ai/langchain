@@ -66,7 +66,7 @@ class __ModuleName__LLM(BaseLLM):
 
     # TODO: Implement if __ModuleName__LLM supports async streaming. Otherwise delete
     # method.
-    async def _astream(
+    async def _astream(  # type: ignore[override]
         self,
         prompt: str,
         stop: Optional[List[str]] = None,

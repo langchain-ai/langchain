@@ -1,4 +1,5 @@
 """Migrate LangChain to the most recent version."""
+
 # Adapted from bump-pydantic
 # https://github.com/pydantic/bump-pydantic
 import difflib
@@ -202,7 +203,7 @@ def _rewrite_notebook(
     context: CodemodContext,
 ) -> Tuple[Optional[str], Optional[List[str]]]:
     """Try to rewrite a Jupyter Notebook file."""
-    import nbformat
+    import nbformat  # type: ignore[import-not-found]
 
     file_path = Path(filename)
     if file_path.suffix != ".ipynb":

@@ -1,4 +1,6 @@
-from __module_name__.vectorstores import __ModuleName__VectorStore
+from __module_name__.vectorstores import (  # type: ignore[import-not-found]
+    __ModuleName__VectorStore,  # type: ignore[import-not-found]
+)
 
 
 def test_initialization() -> None:

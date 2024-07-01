@@ -2,8 +2,10 @@ import json
 import os
 from typing import List, Tuple
 
-from langchain.agents.format_scratchpad import format_to_openai_function_messages
-from langchain.tools import tool
+from langchain.agents.format_scratchpad import (
+    format_to_openai_function_messages,  # type: ignore[import-not-found]
+)
+from langchain.tools import tool  # type: ignore[import-not-found]
 from langchain_core.language_models import FakeListLLM
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -107,7 +109,7 @@ def test_prompty_used_in_agent() -> None:
         | FakeOutputParser()
     )
 
-    from langchain.agents import AgentExecutor
+    from langchain.agents import AgentExecutor  # type: ignore[import-not-found]
 
     class AgentInput(BaseModel):
         input: str

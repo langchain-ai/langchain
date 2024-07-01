@@ -1,4 +1,4 @@
-from __module_name__ import __all__
+from __module_name__ import __all__  # type: ignore[import-not-found]
 
 EXPECTED_ALL = [
     "__ModuleName__LLM",

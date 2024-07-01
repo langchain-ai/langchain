@@ -1,5 +1,8 @@
 """Test Chat__ModuleName__ chat model."""
-from __module_name__.chat_models import Chat__ModuleName__
+
+from __module_name__.chat_models import (  # type: ignore[import-not-found]
+    Chat__ModuleName__,  # type: ignore[import-not-found]
+)
 
 
 def test_stream() -> None:

@@ -1,8 +1,12 @@
 """Generate migrations for partner packages."""
+
 import importlib
 from typing import List, Tuple
 
-from langchain_core.documents import BaseDocumentCompressor, BaseDocumentTransformer
+from langchain_core.documents import (  # type: ignore[attr-defined]
+    BaseDocumentCompressor,
+    BaseDocumentTransformer,
+)
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.retrievers import BaseRetriever
