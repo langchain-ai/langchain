@@ -626,7 +626,7 @@ def load_huggingface_tool(
     )
 
 
-def raise_dangerous_tools_exception(name: str):
+def raise_dangerous_tools_exception(name: str) -> None:
     raise ValueError(
         f"{name} is a dangerous tool. You cannot use it without opting in "
         "by setting allow_dangerous_tools to True. "
