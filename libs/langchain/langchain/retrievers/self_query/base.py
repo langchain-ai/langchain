@@ -43,6 +43,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     from langchain_community.query_constructors.elasticsearch import (
         ElasticsearchTranslator,
     )
+    from langchain_community.query_constructors.hanavector import HANATranslator
     from langchain_community.query_constructors.milvus import MilvusTranslator
     from langchain_community.query_constructors.mongodb_atlas import (
         MongoDBAtlasTranslator,
@@ -68,6 +69,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         DatabricksVectorSearch,
         DeepLake,
         Dingo,
+        HanaDB,
         Milvus,
         MyScale,
         OpenSearchVectorSearch,
@@ -103,6 +105,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Weaviate: WeaviateTranslator,
         Vectara: VectaraTranslator,
         Qdrant: QdrantTranslator,
+        HanaDB: HANATranslator,
         MyScale: MyScaleTranslator,
         DeepLake: DeepLakeTranslator,
         ElasticsearchStoreCommunity: ElasticsearchTranslator,
