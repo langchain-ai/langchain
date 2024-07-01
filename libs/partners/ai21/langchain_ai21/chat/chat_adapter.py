@@ -14,8 +14,8 @@ _ROLE_TYPE = Union[str, RoleType]
 
 
 class ChatAdapter(ABC):
-    """
-    Provides a common interface for the different Chat models available in AI21.
+    """Common interface for the different Chat models available in AI21.
+
     It converts LangChain messages to AI21 messages.
     Calls the appropriate AI21 model API with the converted messages.
     """
@@ -77,6 +77,8 @@ class ChatAdapter(ABC):
 
 
 class J2ChatAdapter(ChatAdapter):
+    """Adapter for J2Chat models."""
+
     def convert_messages(self, messages: List[BaseMessage]) -> Dict[str, Any]:
         system_message = ""
         converted_messages = []  # type: ignore
@@ -107,6 +109,8 @@ class J2ChatAdapter(ChatAdapter):
 
 
 class JambaChatCompletionsAdapter(ChatAdapter):
+    """Adapter for Jamba Chat Completions."""
+
     def convert_messages(self, messages: List[BaseMessage]) -> Dict[str, Any]:
         return {
             "messages": [

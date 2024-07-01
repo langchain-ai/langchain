@@ -27,6 +27,15 @@ pytest-asyncio = "^0.21.1"
 langchain-core = { path = "../../core", develop = true }
 langchain-standard-tests = { path = "../../standard-tests", develop = true }
 langchain-community = { path = "../../community", develop = true }
+# Support Python 3.8 and 3.12+.
+scipy = [
+    {version = "^1", python = "<3.12"},
+    {version = "^1.7.0", python = ">=3.12"}
+]
+numpy = [
+    {version = "^1", python = "<3.12"},
+    {version = "^1.26.0", python = ">=3.12"}
+]
 
 [tool.poetry.group.codespell]
 optional = true

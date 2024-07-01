@@ -15,6 +15,10 @@ LANGCHAIN_DIRS = [
     "libs/experimental",
 ]
 
+def all_package_dirs() -> Set[str]:
+    return {"/".join(path.split("/")[:-1]) for path in glob.glob("./libs/**/pyproject.toml", recursive=True)}
+
+
 def dependents_graph() -> dict:
     dependents = defaultdict(set)
 
@@ -53,10 +57,11 @@ if __name__ == "__main__":
     }
     docs_edited = False
 
-    if len(files) == 300:
+    if len(files) >= 300:
         # max diff length is 300 files - there are likely files missing
-        raise ValueError("Max diff reached. Please manually run CI on changed libs.")
-
+        dirs_to_run["lint"] = all_package_dirs()
+        dirs_to_run["test"] = all_package_dirs()
+        dirs_to_run["extended-test"] = set(LANGCHAIN_DIRS)
     for file in files:
         if any(
             file.startswith(dir_)

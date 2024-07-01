@@ -64,12 +64,20 @@ ipykernel = "^6.29.4"
 langchain-openai = { path = "../openai", develop = true }
 langchainhub = "^0.1.15"
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E", # pycodestyle
   "F", # pyflakes
   "I", # isort
+  "D", # pydocstyle
+
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]  # ignore docstring checks for tests
 
 [tool.mypy]
 disallow_untyped_defs = "True"
