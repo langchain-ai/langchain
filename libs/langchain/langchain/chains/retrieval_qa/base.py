@@ -272,6 +272,7 @@ class RetrievalQA(BaseRetrievalQA):
         return "retrieval_qa"
 
 
+@deprecated(since="0.2.7", alternative="create_retrieval_chain", removal="0.4.0")
 class VectorDBQA(BaseRetrievalQA):
     """Chain for question-answering against a vector database."""
 
