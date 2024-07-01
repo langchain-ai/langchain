@@ -65,11 +65,11 @@ codespell = "^2.2.0"
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
 
-[tool.poetry.group.typing.dependencies]
-mypy = "^1.10"
-
 [tool.poetry.group.dev.dependencies]
 types-pyyaml = "^6.0.12.20240311"
+
+[tool.poetry.group.typing.dependencies]
+mypy = "^1.10"
 
 [tool.poetry.group.test.dependencies.langchain-core]
 path = "../../core"
@@ -83,10 +83,10 @@ develop = true
 path = "../../text-splitters"
 develop = true
 
-[tool.poetry.group.typing.dependencies.langchain-core]
+[tool.poetry.group.dev.dependencies.langchain-core]
 path = "../../core"
 develop = true
 
-[tool.poetry.group.dev.dependencies.langchain-core]
+[tool.poetry.group.typing.dependencies.langchain-core]
 path = "../../core"
 develop = true

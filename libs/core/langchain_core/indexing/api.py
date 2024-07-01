@@ -1,4 +1,5 @@
 """Module contains logic for indexing documents into vector stores."""
+
 from __future__ import annotations
 
 import hashlib

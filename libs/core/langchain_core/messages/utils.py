@@ -6,6 +6,7 @@ Some examples of what you can do with these functions include:
 * Convert messages from dicts to Message objects (deserialization)
 * Filter messages from a list of messages based on name, type or id etc.
 """
+
 from __future__ import annotations
 
 import inspect
@@ -272,14 +273,12 @@ def _runnable_support(func: Callable) -> Callable:
     @overload
     def wrapped(
         messages: Literal[None] = None, **kwargs: Any
-    ) -> Runnable[Sequence[MessageLikeRepresentation], List[BaseMessage]]:
-        ...
+    ) -> Runnable[Sequence[MessageLikeRepresentation], List[BaseMessage]]: ...
 
     @overload
     def wrapped(
         messages: Sequence[MessageLikeRepresentation], **kwargs: Any
-    ) -> List[BaseMessage]:
-        ...
+    ) -> List[BaseMessage]: ...
 
     def wrapped(
         messages: Optional[Sequence[MessageLikeRepresentation]] = None, **kwargs: Any

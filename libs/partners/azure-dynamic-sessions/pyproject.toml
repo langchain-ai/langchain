@@ -76,19 +76,15 @@ ruff = "^0.5"
 python-dotenv = "^1.0.1"
 pytest = "^7.3.0"
 
-[tool.poetry.group.typing.dependencies]
-mypy = "^1.10"
-types-requests = "^2.31.0.20240406"
-
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.4"
 langchainhub = "^0.1.15"
 
-[tool.poetry.group.test.dependencies.langchain-core]
-path = "../../core"
-develop = true
+[tool.poetry.group.typing.dependencies]
+mypy = "^1.10"
+types-requests = "^2.31.0.20240406"
 
-[tool.poetry.group.typing.dependencies.langchain-core]
+[tool.poetry.group.test.dependencies.langchain-core]
 path = "../../core"
 develop = true
 
@@ -98,4 +94,8 @@ develop = true
 
 [tool.poetry.group.dev.dependencies.langchain-openai]
 path = "../openai"
+develop = true
+
+[tool.poetry.group.typing.dependencies.langchain-core]
+path = "../../core"
 develop = true

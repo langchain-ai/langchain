@@ -104,6 +104,10 @@ exllamav2 = "^0.0.18"
 [tool.poetry.group.lint.dependencies]
 ruff = "^0.5"
 
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
+setuptools = "^67.6.1"
+
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.10"
 types-pyyaml = "^6.0.12.2"
@@ -113,10 +117,6 @@ types-pytz = "^2023.3.0.0"
 types-chardet = "^5.0.4.6"
 types-redis = "^4.3.21.6"
 mypy-protobuf = "^3.0.0"
-
-[tool.poetry.group.dev.dependencies]
-jupyter = "^1.0.0"
-setuptools = "^67.6.1"
 
 [tool.poetry.group.test.dependencies.langchain-core]
 path = "../core"
@@ -138,6 +138,10 @@ develop = true
 path = "../langchain"
 develop = true
 
+[tool.poetry.group.dev.dependencies.langchain-core]
+path = "../core"
+develop = true
+
 [tool.poetry.group.typing.dependencies.langchain-core]
 path = "../core"
 develop = true
@@ -148,8 +152,4 @@ develop = true
 
 [tool.poetry.group.typing.dependencies.langchain]
 path = "../langchain"
-develop = true
-
-[tool.poetry.group.dev.dependencies.langchain-core]
-path = "../core"
 develop = true

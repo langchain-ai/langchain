@@ -76,10 +76,10 @@ types-requests = "^2"
 path = "../../core"
 develop = true
 
-[tool.poetry.group.typing.dependencies.langchain-core]
+[tool.poetry.group.dev.dependencies.langchain-core]
 path = "../../core"
 develop = true
 
-[tool.poetry.group.dev.dependencies.langchain-core]
+[tool.poetry.group.typing.dependencies.langchain-core]
 path = "../../core"
 develop = true

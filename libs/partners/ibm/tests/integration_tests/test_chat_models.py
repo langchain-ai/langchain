@@ -107,7 +107,7 @@ def test_11_chaining_with_params() -> None:
     }
     chat = ChatWatsonx(
         model_id=MODEL_ID,
-        url=URL,
+        url=URL,  # type: ignore[arg-type]
         project_id=WX_PROJECT_ID,
         params=parameters,  # type: ignore[arg-type]
     )
@@ -140,7 +140,7 @@ def test_20_tool_choice() -> None:
     params = {GenTextParamsMetaNames.MAX_NEW_TOKENS: 500}
     chat = ChatWatsonx(
         model_id=MODEL_ID,
-        url=URL,
+        url=URL,  # type: ignore[arg-type]
         project_id=WX_PROJECT_ID,
         params=params,  # type: ignore[arg-type]
     )
@@ -177,7 +177,7 @@ def test_21_tool_choice_bool() -> None:
     params = {GenTextParamsMetaNames.MAX_NEW_TOKENS: 500}
     chat = ChatWatsonx(
         model_id=MODEL_ID,
-        url=URL,
+        url=URL,  # type: ignore[arg-type]
         project_id=WX_PROJECT_ID,
         params=params,  # type: ignore[arg-type]
     )

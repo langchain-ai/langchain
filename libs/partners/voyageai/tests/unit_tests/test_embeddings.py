@@ -28,7 +28,7 @@ def test_initialization_voyage_1() -> None:
 def test_initialization_voyage_1_batch_size() -> None:
     """Test embedding model initialization."""
     emb = VoyageAIEmbeddings(  # type: ignore[call-arg, call-arg]
-        voyage_api_key="NOT_A_VALID_KEY",
+        voyage_api_key="NOT_A_VALID_KEY",  # type: ignore[arg-type]
         model="voyage-01",
         batch_size=15,  # type: ignore[arg-type]
     )

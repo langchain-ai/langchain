@@ -1,4 +1,5 @@
 """Test ChatOpenAI chat model."""
+
 from typing import Any, AsyncIterator, List, Optional, cast
 
 import pytest

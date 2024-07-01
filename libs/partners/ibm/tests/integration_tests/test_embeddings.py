@@ -22,7 +22,7 @@ DOCUMENTS = ["What is a generative ai?", "What is a loan and how does it works?"
 def test_01_generate_embed_documents() -> None:
     watsonx_embedding = WatsonxEmbeddings(
         model_id=MODEL_ID,
-        url=URL,
+        url=URL,  # type: ignore[arg-type]
         project_id=WX_PROJECT_ID,  # type: ignore[arg-type]
     )
     generate_embedding = watsonx_embedding.embed_documents(texts=DOCUMENTS)
@@ -48,7 +48,7 @@ def test_03_generate_embed_documents_with_param() -> None:
     }
     watsonx_embedding = WatsonxEmbeddings(
         model_id=MODEL_ID,
-        url=URL,
+        url=URL,  # type: ignore[arg-type]
         project_id=WX_PROJECT_ID,
         params=embed_params,  # type: ignore[arg-type]
     )

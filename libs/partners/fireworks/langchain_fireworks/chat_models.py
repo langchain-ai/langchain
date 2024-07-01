@@ -888,7 +888,7 @@ class ChatFireworks(BaseChatModel):
             llm = self.bind_tools([schema], tool_choice=tool_name)
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema],
+                    tools=[schema],  # type: ignore[list-item]
                     first_tool_only=True,  # type: ignore[list-item]
                 )
             else:

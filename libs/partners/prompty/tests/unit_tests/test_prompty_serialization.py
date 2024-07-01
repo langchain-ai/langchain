@@ -2,7 +2,7 @@ import json
 import os
 from typing import List, Tuple
 
-from langchain.agents.format_scratchpad import (
+from langchain.agents.format_scratchpad import (  # type: ignore[import-not-found]
     format_to_openai_function_messages,  # type: ignore[import-not-found]
 )
 from langchain.tools import tool  # type: ignore[import-not-found]

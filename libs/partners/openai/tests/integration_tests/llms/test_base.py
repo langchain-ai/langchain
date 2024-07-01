@@ -1,4 +1,5 @@
 """Test OpenAI llm."""
+
 from typing import Generator
 
 import pytest

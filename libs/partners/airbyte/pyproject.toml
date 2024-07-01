@@ -68,6 +68,10 @@ mypy = "^1.10"
 path = "../../core"
 develop = true
 
+[tool.poetry.group.dev.dependencies.langchain-core]
+path = "../../core"
+develop = true
+
 [tool.poetry.group.typing.dependencies.langchain-core]
 path = "../../core"
 develop = true
@@ -78,8 +82,4 @@ develop = true
 
 [tool.poetry.group.typing.dependencies.langchain]
 path = "../../langchain"
-develop = true
-
-[tool.poetry.group.dev.dependencies.langchain-core]
-path = "../../core"
 develop = true
