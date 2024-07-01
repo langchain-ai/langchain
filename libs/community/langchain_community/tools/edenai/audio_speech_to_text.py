@@ -3,15 +3,19 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import List, Optional
+from typing import List, Optional, Type
 
 import requests
 from langchain_core.callbacks import CallbackManagerForToolRun
-from langchain_core.pydantic_v1 import validator
+from langchain_core.pydantic_v1 import BaseModel, Field, HttpUrl, validator
 
 from langchain_community.tools.edenai.edenai_base_tool import EdenaiTool
 
 logger = logging.getLogger(__name__)
+
+
+class SpeechToTextInput(BaseModel):
+    query: HttpUrl = Field(description="url of the audio to analyze")
 
 
 class EdenAiSpeechToTextTool(EdenaiTool):
@@ -23,7 +27,6 @@ class EdenAiSpeechToTextTool(EdenaiTool):
     To use, you should have
     the environment variable ``EDENAI_API_KEY`` set with your API token.
     You can find your token here: https://app.edenai.run/admin/account/settings
-
     """
 
     edenai_api_key: Optional[str] = None
@@ -34,6 +37,7 @@ class EdenAiSpeechToTextTool(EdenaiTool):
         "Useful for when you have to convert audio to text."
         "Input should be a url to an audio file."
     )
+    args_schema: Type[BaseModel] = SpeechToTextInput
     is_async: bool = True
 
     language: Optional[str] = "en"
