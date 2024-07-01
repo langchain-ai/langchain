@@ -76,6 +76,12 @@ SERIALIZABLE_MAPPING: Dict[Tuple[str, ...], Tuple[str, ...]] = {
         "tool",
         "ToolMessage",
     ),
+    ("langchain", "schema", "messages", "RemoveMessage"): (
+        "langchain_core",
+        "messages",
+        "modifier",
+        "RemoveMessage",
+    ),
     ("langchain", "schema", "agent", "AgentAction"): (
         "langchain_core",
         "agents",
