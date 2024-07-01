@@ -164,48 +164,79 @@ class ChatVLLMOpenAI(ChatOpenAI):
         instructions: Optional[str] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _StructuredOutput]:
-        """Use guided generation to ensure structured output.
+        """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema: The `schema` specifies the expected output structure.It can be a
-            Pydantic class, a JSON schema, a regex, a list of choices, or a grammar.
-            include_raw: Whether to include the raw output in the structured output.
+            schema: The `schema` specifies the expected output structure. It can be a
+                Pydantic class, a JSON schema, a regex, a list of choices, or a grammar.
+                If a Pydantic class then the model output will be an object of that
+                class. If a dict then the model output will be a dict. With a Pydantic
+                class the returned attributes will be validated, whereas with a dict
+                they will not be. If a dict, then it must be a valid JSON schema. If a
+                list of choices, then the model output will be one of the choices. If a
+                grammar, then the model output will be a string that conforms to the
+                grammar.
+            include_raw: If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
             guided_mode: The `guided_mode` specifies how to guide the model. It can be
-            one of `guided_json`, `guided_regex`, `guided_choice`, or `guided_grammar`.
-            Defaults to `guided_json`.
+                one of `guided_json`, `guided_regex`, `guided_choice`, or
+                `guided_grammar`. Defaults to `guided_json`.
             guided_decoding_backend: The `guided_decoding_backend` specifies the backend
-            to use for decoding the structured output. It can be one of `outlines` or
-            `lm-format-enforcer`. Defaults to `outlines`.
+                to use for decoding the structured output. It can be one of `outlines`
+                or `lm-format-enforcer`. Defaults to `outlines`.
             instructions: The `instructions` specifies the instructions to insert into
-            the input. If not provided, it is automatically generated based on the
-            `schema`.
+                the input. If not provided, it is automatically generated based on the
+                `schema`.
 
         Returns:
-            A Runnable that takes any `LanguageModelInput` and returns structured output
+            A Runnable that takes any ChatModel input and returns as output:
 
-        Example:
-        from langchain_core.pydantic_v1 import BaseModel, Field
+                If include_raw is True then a dict with keys:
+                    raw: BaseMessage
+                    parsed: Optional[_StructuredOutput]
+                    parsing_error: Optional[BaseException]
 
-        class CityModel(BaseModel):
-            name: str = Field(..., description="Name of the city")
-            population: int = Field(
-                ..., description="Number of inhabitants"
-            )
-            country: str = Field(..., description="Country of the city")
-            population_category: Literal[">1M", "<1M"] = Field(
-                ..., description="Population category of the city"
-            )
+                If include_raw is False then just _StructuredOutput is returned,
+                where _StructuredOutput depends on the schema and guided_mode.:
 
-        llm = VLLM(
-            model="meta-llama/Meta-Llama-3-8B-Instruct",
-        )
-        structured_llm = llm.with_structured_output(CityModel)
+                If guided_mode is "guided_choice", "guided_regex", or "guided_grammar"
+                then _StructuredOutput is a str.
 
-        structured_llm.invoke("What is the capital of France?")
-        # Out:
-        # name='Paris' population=2141000 country='France' population_category='>1M'
+                If guided_mode is "guided_json" and schema is a Pydantic class then
+                _StructuredOutput is an instance of that Pydantic class.
 
-        """
+                If guided_mode is "guided_json" and schema is a dict or str then
+                _StructuredOutput is a dict.
+
+        Example: guided_json, Pydantic schema (guided_mode="guided_json", include_raw=False):
+            .. code-block:: python
+
+                from langchain_core.pydantic_v1 import BaseModel, Field
+
+                class CityModel(BaseModel):
+                    name: str = Field(..., description="Name of the city")
+                    population: int = Field(
+                        ..., description="Number of inhabitants"
+                    )
+                    country: str = Field(..., description="Country of the city")
+                    population_category: Literal[">1M", "<1M"] = Field(
+                        ..., description="Population category of the city"
+                    )
+
+                llm = VLLM(
+                    model="meta-llama/Meta-Llama-3-8B-Instruct",
+                )
+                structured_llm = llm.with_structured_output(CityModel)
+
+                structured_llm.invoke("What is the capital of France?")
+                # Out:
+                # name='Paris' population=2141000 country='France' population_category='>1M'
+
+        """  # noqa E501
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
 
