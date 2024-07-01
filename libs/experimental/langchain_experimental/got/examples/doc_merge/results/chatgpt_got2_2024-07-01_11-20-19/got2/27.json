@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "AMENDMENT TO CONTRACT\n\nThis Amendment (the \"Amendment\") is entered into on [Date], between [Party One Name], hereinafter referred to as the \"First Party', and [Party Two Name], hereinafter referred to as the \"Second Party'', collectively referred to as the \"Parties\".\n\nWHEREAS, the Parties entered into a contract dated [Original Contract Date], hereinafter referred to as the \"Original Contract', for [Brief Description of the Original Contract, e.g., \"provision of IT services to First Party\"];\n\nWHEREAS, the Parties now wish to amend the Original Contract to add additional responsibilities pertaining to the maintenance of existing IT systems;\n\nNOW, THEREFORE, in consideration of the mutual covenants contained herein and for other good and valuable consideration, the receipt and sufficiency of which is hereby acknowledged, the Parties agree as follows:\n\n    Additional Responsibility:\n\n    The Second Party shall assume the responsibility of maintaining and ensuring the smooth functioning of the existing IT systems of the First Party. This responsibility includes, but is not limited to:\n\n    a. Regular monitoring of the IT systems for any anomalies or issues.\n\n    b. Prompt troubleshooting and rectification of any issues identified.\n\n    c. Routine updates and patches to ensure the systems are secure and up-to-date.\n\n    d. Any other related tasks as deemed necessary by the First Party.\n\n    Compensation:\n\n    As a result of this additional responsibility, the Parties agree to a revised compensation of [New Compensation Details, e.g., \"$XXX per month\"]. All other payment terms as outlined in the Original Contract shall remain unchanged.\n\n    Duration and Termination:\n\n    The duration and termination clauses from the Original Contract shall remain applicable to this Amendment unless otherwise agreed upon in writing by the Parties.\n\n    Miscellaneous:\n\n    All other terms and conditions of the Original Contract, which are not specifically amended by this Amendment, shall remain in full force and effect. In the event of a conflict between this Amendment and the Original Contract, the terms of this Amendment shall prevail.\n\n    Entire Agreement:\n\n    This Amendment, along with the Original Contract, constitutes the entire agreement between the Parties and supersedes any prior understandings, written or oral, relating to the subject matter of this Amendment.\n\n    Governing Law:\n\n    This Amendment shall be governed by the laws of [Jurisdiction, e.g., \"State of New York\"].",
+          "BUSINESS COOPERATION AGREEMENT\n\nThis Agreement is between [Business A Name], at [Business A Address] (\"Business A\"), and [Business B Name], at [Business B Address] (\"Business B\"), effective [Day, Month, Year].\n\n1. Purpose:\nBoth businesses will cooperate in [brief description, e.g., \"joint marketing\"].\n\n2. Responsibilities:\n\n    Business A will: [Key obligation, e.g., \"Promote Business B in newsletters.\"]\n    Business B will: [Key obligation, e.g., \"Display Business A products.\"]\n\n3. Term:\nEffective from the above date for [e.g., \"12 months\"]. Either party can terminate with [e.g., \"30 days\"] notice.\n\n4. Confidentiality:\nConfidential information remains private, during and post-agreement.\n\n5. Governing Law:\nGoverning laws of [State/Country, e.g., \"California\"].\n\n6. Amendments:\nChanges must be written and signed by both parties.",
+          "APPENDIX TO BUSINESS COOPERATION AGREEMENT\n\nEXTENSION OF CONFIDENTIALITY CONDITIONS\n\nThis Appendix is made as of [Day, Month, Year], and is appended to the Business Cooperation Agreement dated [Original Agreement Date] (\"Original Agreement\") between [Business A Name], located at [Business A Address] (\"Business A\") and [Business B Name], located at [Business B Address] (\"Business B\").\n\n1. Extension of Confidentiality Period:\nThe confidentiality period stipulated in Section 4 (or the appropriate section number) of the Original Agreement is hereby extended. Previously set to expire [Original Expiry Date], it will now extend to [New Expiry Date].\n\n2. Continued Obligations:\nAll other confidentiality obligations and conditions outlined in the Original Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the Original Agreement, constitutes the entire agreement between the parties regarding the subject matter herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"].\n\nIN WITNESS WHEREOF, both parties hereto have executed this Appendix as of the date first above written.",
+          "APPENDIX: LOYALTY CLAUSE\n\nEffective [Day, Month, Year], attached to the Agreement dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Loyalty Commitment:\nFor one year from the Effective Date, both parties pledge loyalty by refraining from activities harmful or competitive to the other within the context of the Agreement.\n\n2. Consequences:\nBreaches may result in Agreement termination and legal action as per the original terms.\n\n3. Governing Law:\nGoverned by the laws of [State/Country, e.g., \"California\"]."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "AMENDMENT TO CONTRACT\n\nThis Amendment (the \"Amendment\") is entered into on [Date], between [Party One Name], hereinafter referred to as the \"First Party', and [Party Two Name], hereinafter referred to as the \"Second Party'', collectively referred to as the \"Parties\".\n\nWHEREAS, the Parties entered into a contract dated [Original Contract Date], hereinafter referred to as the \"Original Contract', for [Brief Description of the Original Contract, e.g., \"provision of IT services to First Party\"];\n\nWHEREAS, the Parties now wish to amend the Original Contract to add additional responsibilities pertaining to the maintenance of existing IT systems;\n\nNOW, THEREFORE, in consideration of the mutual covenants contained herein and for other good and valuable consideration, the receipt and sufficiency of which is hereby acknowledged, the Parties agree as follows:\n\n    Additional Responsibility:\n\n    The Second Party shall assume the responsibility of maintaining and ensuring the smooth functioning of the existing IT systems of the First Party. This responsibility includes, but is not limited to:\n\n    a. Regular monitoring of the IT systems for any anomalies or issues.\n\n    b. Prompt troubleshooting and rectification of any issues identified.\n\n    c. Routine updates and patches to ensure the systems are secure and up-to-date.\n\n    d. Any other related tasks as deemed necessary by the First Party.\n\n    Compensation:\n\n    As a result of this additional responsibility, the Parties agree to a revised compensation of [New Compensation Details, e.g., \"$XXX per month\"]. All other payment terms as outlined in the Original Contract shall remain unchanged.\n\n    Duration and Termination:\n\n    The duration and termination clauses from the Original Contract shall remain applicable to this Amendment unless otherwise agreed upon in writing by the Parties.\n\n    Miscellaneous:\n\n    All other terms and conditions of the Original Contract, which are not specifically amended by this Amendment, shall remain in full force and effect. In the event of a conflict between this Amendment and the Original Contract, the terms of this Amendment shall prevail.\n\n    Entire Agreement:\n\n    This Amendment, along with the Original Contract, constitutes the entire agreement between the Parties and supersedes any prior understandings, written or oral, relating to the subject matter of this Amendment.\n\n    Governing Law:\n\n    This Amendment shall be governed by the laws of [Jurisdiction, e.g., \"State of New York\"].",
+          "BUSINESS COOPERATION AGREEMENT\n\nThis Agreement is between [Business A Name], at [Business A Address] (\"Business A\"), and [Business B Name], at [Business B Address] (\"Business B\"), effective [Day, Month, Year].\n\n1. Purpose:\nBoth businesses will cooperate in [brief description, e.g., \"joint marketing\"].\n\n2. Responsibilities:\n\n    Business A will: [Key obligation, e.g., \"Promote Business B in newsletters.\"]\n    Business B will: [Key obligation, e.g., \"Display Business A products.\"]\n\n3. Term:\nEffective from the above date for [e.g., \"12 months\"]. Either party can terminate with [e.g., \"30 days\"] notice.\n\n4. Confidentiality:\nConfidential information remains private, during and post-agreement.\n\n5. Governing Law:\nGoverning laws of [State/Country, e.g., \"California\"].\n\n6. Amendments:\nChanges must be written and signed by both parties.",
+          "APPENDIX TO BUSINESS COOPERATION AGREEMENT\n\nEXTENSION OF CONFIDENTIALITY CONDITIONS\n\nThis Appendix is made as of [Day, Month, Year], and is appended to the Business Cooperation Agreement dated [Original Agreement Date] (\"Original Agreement\") between [Business A Name], located at [Business A Address] (\"Business A\") and [Business B Name], located at [Business B Address] (\"Business B\").\n\n1. Extension of Confidentiality Period:\nThe confidentiality period stipulated in Section 4 (or the appropriate section number) of the Original Agreement is hereby extended. Previously set to expire [Original Expiry Date], it will now extend to [New Expiry Date].\n\n2. Continued Obligations:\nAll other confidentiality obligations and conditions outlined in the Original Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the Original Agreement, constitutes the entire agreement between the parties regarding the subject matter herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"].\n\nIN WITNESS WHEREOF, both parties hereto have executed this Appendix as of the date first above written.",
+          "APPENDIX: LOYALTY CLAUSE\n\nEffective [Day, Month, Year], attached to the Agreement dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Loyalty Commitment:\nFor one year from the Effective Date, both parties pledge loyalty by refraining from activities harmful or competitive to the other within the context of the Agreement.\n\n2. Consequences:\nBreaches may result in Agreement termination and legal action as per the original terms.\n\n3. Governing Law:\nGoverned by the laws of [State/Country, e.g., \"California\"]."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

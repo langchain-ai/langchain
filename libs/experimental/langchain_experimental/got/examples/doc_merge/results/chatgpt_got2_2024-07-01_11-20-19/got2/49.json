@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "This appendix, part of the Contract between Party One and Party Two, sets milestones and deadlines for Party Two. \n\nMilestone 1 involves tasks such as gathering requirements, designing user interface etc. with the objective of developing initial prototype of a software application. Delivery Deadline: September 15, 2023. \n\nMilestone 2 involves tasks like incorporating feedback and conducting beta testing, aiming at finalizing and testing the software application. Delivery Deadline: October 15, 2023. \n\nEach milestone's completion will be reviewed by Party One; if requirements aren't met, Party Two may correct and resubmit. Payment terms and penalties are outlined in the main Contract. This appendix is executed adhering to main Contract's terms and conditions.",
+          "APPENDIX: LOYALTY CLAUSE\n\nEffective [Day, Month, Year], attached to the Agreement dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Loyalty Commitment:\nFor one year from the Effective Date, both parties pledge loyalty by refraining from activities harmful or competitive to the other within the context of the Agreement.\n\n2. Consequences:\nBreaches may result in Agreement termination and legal action as per the original terms.\n\n3. Governing Law:\nGoverned by the laws of [State/Country, e.g., \"California\"].",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Date, e.g., \"August 15, 2023\"], between [Client Name], (\"Client\") and [Business Name], (\"Business\").\n\nPurpose:\nProtection of confidential information exchanged due to potential collaboration.\n\n1. Confidentiality:\nBusiness agrees to keep secret all Confidential Information shared by Client.\n\n2. Definition:\n\"Confidential Information\" is non-public data shared by either party, excluding info that's publicly available, already known, or received without confidentiality constraints.\n\n3. Duration:\nObligations last [e.g., \"two years\"] from the date of disclosure.\n\n4. Return/Destruction:\nUpon Client's request, Business will return or destroy all Confidential Information.\n\n5. Remedies:\nUnauthorized disclosures may lead to legal action by Client, including damages.\n\n6. Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX A: CONFIDENTIALITY BREACH FEES\n\nThis Appendix is attached to and made part of the Contract (\"Original Contract\") dated [Original Contract Date], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Purpose:\nThis Appendix defines the fees and penalties associated with any breach of confidentiality as stipulated in the Original Contract.\n\n2. Confidentiality Breach Fee:\nIn the event of a breach of the confidentiality provisions in the Original Contract by either party:\n\na) The breaching party will be liable for an immediate penalty of [specific amount, e.g., \"$10,000\"].\n\nb) If the breach results in any direct financial loss to the non-breaching party, the breaching party shall additionally reimburse the non-breaching party for the full amount of such loss.\n\nc) The breaching party will also bear all costs, including legal fees, that the non-breaching party incurs while addressing or remedying the breach.\n\n3. Payment Terms:\nPayment of any penalty or reimbursement as defined above shall be made within [e.g., \"30 days\"] of written notification of the breach.\n\n4. Disputes:\nAny disputes related to this Appendix shall be resolved as stipulated in the dispute resolution clause of the Original Contract.\n\n5. Continuation of Original Contract:\nExcept as modified by this Appendix, the Original Contract remains in full force and effect.\n\n6. Governing Law:\nThis Appendix, consistent with the Original Contract, is governed by the laws of [State/Country, e.g., \"California\"]."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "This appendix, part of the Contract between Party One and Party Two, sets milestones and deadlines for Party Two. \n\nMilestone 1 involves tasks such as gathering requirements, designing user interface etc. with the objective of developing initial prototype of a software application. Delivery Deadline: September 15, 2023. \n\nMilestone 2 involves tasks like incorporating feedback and conducting beta testing, aiming at finalizing and testing the software application. Delivery Deadline: October 15, 2023. \n\nEach milestone's completion will be reviewed by Party One; if requirements aren't met, Party Two may correct and resubmit. Payment terms and penalties are outlined in the main Contract. This appendix is executed adhering to main Contract's terms and conditions.",
+          "APPENDIX: LOYALTY CLAUSE\n\nEffective [Day, Month, Year], attached to the Agreement dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Loyalty Commitment:\nFor one year from the Effective Date, both parties pledge loyalty by refraining from activities harmful or competitive to the other within the context of the Agreement.\n\n2. Consequences:\nBreaches may result in Agreement termination and legal action as per the original terms.\n\n3. Governing Law:\nGoverned by the laws of [State/Country, e.g., \"California\"].",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Date, e.g., \"August 15, 2023\"], between [Client Name], (\"Client\") and [Business Name], (\"Business\").\n\nPurpose:\nProtection of confidential information exchanged due to potential collaboration.\n\n1. Confidentiality:\nBusiness agrees to keep secret all Confidential Information shared by Client.\n\n2. Definition:\n\"Confidential Information\" is non-public data shared by either party, excluding info that's publicly available, already known, or received without confidentiality constraints.\n\n3. Duration:\nObligations last [e.g., \"two years\"] from the date of disclosure.\n\n4. Return/Destruction:\nUpon Client's request, Business will return or destroy all Confidential Information.\n\n5. Remedies:\nUnauthorized disclosures may lead to legal action by Client, including damages.\n\n6. Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX A: CONFIDENTIALITY BREACH FEES\n\nThis Appendix is attached to and made part of the Contract (\"Original Contract\") dated [Original Contract Date], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Purpose:\nThis Appendix defines the fees and penalties associated with any breach of confidentiality as stipulated in the Original Contract.\n\n2. Confidentiality Breach Fee:\nIn the event of a breach of the confidentiality provisions in the Original Contract by either party:\n\na) The breaching party will be liable for an immediate penalty of [specific amount, e.g., \"$10,000\"].\n\nb) If the breach results in any direct financial loss to the non-breaching party, the breaching party shall additionally reimburse the non-breaching party for the full amount of such loss.\n\nc) The breaching party will also bear all costs, including legal fees, that the non-breaching party incurs while addressing or remedying the breach.\n\n3. Payment Terms:\nPayment of any penalty or reimbursement as defined above shall be made within [e.g., \"30 days\"] of written notification of the breach.\n\n4. Disputes:\nAny disputes related to this Appendix shall be resolved as stipulated in the dispute resolution clause of the Original Contract.\n\n5. Continuation of Original Contract:\nExcept as modified by this Appendix, the Original Contract remains in full force and effect.\n\n6. Governing Law:\nThis Appendix, consistent with the Original Contract, is governed by the laws of [State/Country, e.g., \"California\"]."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

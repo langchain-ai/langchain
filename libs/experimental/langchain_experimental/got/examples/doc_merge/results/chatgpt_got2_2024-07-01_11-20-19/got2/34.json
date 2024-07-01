@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "APPENDIX: LOYALTY CLAUSE\n\nEffective [Day, Month, Year], attached to the Agreement dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Loyalty Commitment:\nFor one year from the Effective Date, both parties pledge loyalty by refraining from activities harmful or competitive to the other within the context of the Agreement.\n\n2. Consequences:\nBreaches may result in Agreement termination and legal action as per the original terms.\n\n3. Governing Law:\nGoverned by the laws of [State/Country, e.g., \"California\"].",
+          "CONFIDENTIALITY AGREEMENT\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Company Name], located at [Company Address] (\"Company\"), and [Supplier Name], located at [Supplier Address] (\"Supplier\").\n\n1. Definition:\n\"Confidential Information\" means proprietary data of the Company, excluding:\n\n    Pre-disclosed or publicly known data.\n    Info from third parties without confidentiality bounds.\n\n2. Obligations:\nSupplier will:\n\n    Use Confidential Information solely for business purposes with the Company.\n    Protect its secrecy and prevent unauthorized disclosure.\n    Return or destroy all Confidential Information upon request or business completion.\n\n3. Duration:\nObligations last for [e.g., \"two years\"] from disclosure date.\n\n4. Remedies:\nBreaches may result in legal actions, damages, and costs by the Company.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: BREACH CONSEQUENCES\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Notification:\nSuspected breaches must be reported in writing by the non-breaching party.\n\n2. Rectification:\nThe breaching party has [e.g., \"14 days\"] from notification to rectify, unless irreparable.\n\n3. Fees:\nBreaches incur a penalty of [e.g., \"$10,000\"], aside from claimed damages.\n\n4. Legal Actions:\nUnresolved or damaging breaches may lead to legal actions, including injunctive relief, damages, and legal fees.\n\n5. Termination:\nRepeated or severe breaches can cause Agreement termination by the non-breaching party.\n\n6. Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: TERMS OF CONTRACT TERMINATION\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Termination for Breach:\nIf either party breaches any conditions of the Agreement, the non-breaching party may terminate the Agreement immediately upon written notice to the breaching party.\n\n2. Termination by Notice:\nEither party may terminate the Agreement for any reason by providing a written notice to the other party. The termination will become effective 30 days after the receipt of such notice.\n\n3. Obligations Upon Termination:\nUpon termination, all rights and obligations under the Agreement will cease, except for those which by their nature should survive termination (e.g., confidentiality, liability for prior breaches, etc.).\n\n4. Governing Law:\nThis Appendix, and any disputes arising from it, will be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "APPENDIX: LOYALTY CLAUSE\n\nEffective [Day, Month, Year], attached to the Agreement dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Loyalty Commitment:\nFor one year from the Effective Date, both parties pledge loyalty by refraining from activities harmful or competitive to the other within the context of the Agreement.\n\n2. Consequences:\nBreaches may result in Agreement termination and legal action as per the original terms.\n\n3. Governing Law:\nGoverned by the laws of [State/Country, e.g., \"California\"].",
+          "CONFIDENTIALITY AGREEMENT\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Company Name], located at [Company Address] (\"Company\"), and [Supplier Name], located at [Supplier Address] (\"Supplier\").\n\n1. Definition:\n\"Confidential Information\" means proprietary data of the Company, excluding:\n\n    Pre-disclosed or publicly known data.\n    Info from third parties without confidentiality bounds.\n\n2. Obligations:\nSupplier will:\n\n    Use Confidential Information solely for business purposes with the Company.\n    Protect its secrecy and prevent unauthorized disclosure.\n    Return or destroy all Confidential Information upon request or business completion.\n\n3. Duration:\nObligations last for [e.g., \"two years\"] from disclosure date.\n\n4. Remedies:\nBreaches may result in legal actions, damages, and costs by the Company.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: BREACH CONSEQUENCES\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Notification:\nSuspected breaches must be reported in writing by the non-breaching party.\n\n2. Rectification:\nThe breaching party has [e.g., \"14 days\"] from notification to rectify, unless irreparable.\n\n3. Fees:\nBreaches incur a penalty of [e.g., \"$10,000\"], aside from claimed damages.\n\n4. Legal Actions:\nUnresolved or damaging breaches may lead to legal actions, including injunctive relief, damages, and legal fees.\n\n5. Termination:\nRepeated or severe breaches can cause Agreement termination by the non-breaching party.\n\n6. Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: TERMS OF CONTRACT TERMINATION\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Termination for Breach:\nIf either party breaches any conditions of the Agreement, the non-breaching party may terminate the Agreement immediately upon written notice to the breaching party.\n\n2. Termination by Notice:\nEither party may terminate the Agreement for any reason by providing a written notice to the other party. The termination will become effective 30 days after the receipt of such notice.\n\n3. Obligations Upon Termination:\nUpon termination, all rights and obligations under the Agreement will cease, except for those which by their nature should survive termination (e.g., confidentiality, liability for prior breaches, etc.).\n\n4. Governing Law:\nThis Appendix, and any disputes arising from it, will be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

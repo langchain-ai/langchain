@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "The Non-Disclosure Agreement (NDA) dated [Date] is between [Company], based in [Country/State], and [Supplier], also incorporated in [Country/State]. The Company intends to disclose confidential information to the Supplier for [purpose]. This confidential data can include business strategies, financial data, customer information, and product designs. The Supplier agrees to refrain from sharing this information, barring any legal requirements. Exceptions to this confidentiality are in cases where the information becomes public or was already known by the Supplier before the Company's disclosure. If the Supplier breaches this agreement, they face a financial penalty of [$]. The NDA is valid for [X years], unless the Company provides written termination. Upon the Company's request, the Supplier must return or destroy all copies of Confidential Information. This agreement supersedes previous agreements and can only be altered by a written document approved by both parties. The NDA is governed by the laws of [specific country/state].",
+          "NON-DISCLOSURE AND NON-COMPETE AGREEMENT\n\nEffective Date: [Date]\n\nPARTIES:\n\n    Company: [Full Legal Name of Company], located at [Company Address].\n    Supplier: [Full Legal Name of Supplier], located at [Supplier Address].\n\n1. CONFIDENTIALITY:\n\nSupplier shall not disclose Company's confidential information, which includes business strategies, financial data, and customer details, to any third party. This confidentiality obligation lasts for [X years, e.g., \"5 years\"] from the date of disclosure.\n\n2. NON-COMPETITION:\n\nFor [X years, e.g., \"3 years\"] following the termination of their business relationship, Supplier agrees not to engage in or start any business that directly competes with Company within a [X mile/km radius, e.g., \"50-mile radius\"] of Company's primary business location.\n\n3. PENALTY FOR BREACH:\n\nShould Supplier breach this Agreement, they shall pay Company a penalty of [specific amount, e.g., \"$50,000\"], in addition to any other legal remedies available to Company.\n\n4. RETURN OF INFORMATION:\n\nUpon request, Supplier shall return or destroy all of Company's confidential information and confirm its deletion in writing.\n\n5. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\nAGREEMENT ACKNOWLEDGEMENT:\n\n__________ [Company] __________ [Supplier]",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nDate: [Insert Date]\n\nParties: [University Name], [University Address] (\"Disclosing Party\") and [Researcher's Full Name], [Researcher's Address] (\"Receiving Party\").\n\n1. Purpose: For the research of [Briefly Describe the Research or Project].\n\n2. Confidential Information: Includes data, studies, reports, patents, and other valuable business-related material.\n\n3. Obligations:\na. Confidential Information must remain secret.\nb. It's for the specified purpose only.\nc. No third-party disclosure without consent.\n\n4. Exceptions: Public knowledge, third-party shared info, or independently developed.\n\n5. Duration: Confidentiality lasts [X years, e.g., 2 years] from disclosure.\n\n6. Return: All Confidential Information must be returned or destroyed upon request.\n\n7. No Transfer: This doesn't grant property rights or licenses.\n\n8. Law: Governed by [State/Country] laws.\n\n9. Amendments: Only in writing and signed.\n\nAgreement: By signing, parties agree to the terms.",
+          "SUPPLY AGREEMENT FOR UNIVERSITY LABORATORY\n\nThis Supply Agreement (the \"Agreement\"), made as of [Insert Date], is entered into by and between [Supplier Name], a [business entity type, e.g., \"corporation\"] having its principal office at [Supplier Address], hereinafter referred to as the \"Supplier', and [University Name], a higher education institution located at [University Address], acting through its [specific department or laboratory, e.g., \"Department of Chemistry\"], hereinafter referred to as the \"University\".\n\n1. Purpose:\n\nThe Supplier agrees to provide specific products/materials/equipment, as detailed in Annex A, to the University for use in its laboratory.\n\n2. Terms of Supply:\n\na. Description of Goods: The goods to be supplied are detailed in Annex A attached herewith.\n\nb. Delivery: Goods will be delivered to [University Address or specific lab address] within [specific timeframe].\n\nc. Pricing: The price for the goods is set out in Annex A and includes all packaging, transportation, and delivery costs unless otherwise specified.\n\n3. Payment Terms:\n\nPayments will be made by the University within [e.g., \"30 days\"] of receiving the invoice from the Supplier.\n\n4. Warranty:\n\nThe Supplier warrants that all goods supplied under this Agreement will be free from defects for a period of [specific duration, e.g., \"12 months\"] from the date of delivery.\n\n5. No Disclosure Clause:\n\na. The University agrees not to disclose, reproduce, or distribute any proprietary information, trade secrets, or other confidential details related to the products/materials/equipment provided by the Supplier without the Supplier's prior written consent.\n\nb. This clause remains effective for a period of [e.g., \"5 years\"] from the date of the last delivery of the goods under this Agreement.\n\n6. Termination:\n\nEither party may terminate this Agreement with [e.g., \"30 days\"] written notice if the other party breaches any term of this Agreement and fails to remedy such breach within the notice period.\n\n7. Governing Law:\n\nThis Agreement shall be governed by and interpreted in accordance with the laws of [State/Country].\n\n8. Amendments:\n\nModifications to this Agreement must be in writing and signed by both parties.\n\nIN WITNESS WHEREOF, the parties hereto have executed this Supply Agreement as of the date first above written."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "The Non-Disclosure Agreement (NDA) dated [Date] is between [Company], based in [Country/State], and [Supplier], also incorporated in [Country/State]. The Company intends to disclose confidential information to the Supplier for [purpose]. This confidential data can include business strategies, financial data, customer information, and product designs. The Supplier agrees to refrain from sharing this information, barring any legal requirements. Exceptions to this confidentiality are in cases where the information becomes public or was already known by the Supplier before the Company's disclosure. If the Supplier breaches this agreement, they face a financial penalty of [$]. The NDA is valid for [X years], unless the Company provides written termination. Upon the Company's request, the Supplier must return or destroy all copies of Confidential Information. This agreement supersedes previous agreements and can only be altered by a written document approved by both parties. The NDA is governed by the laws of [specific country/state].",
+          "NON-DISCLOSURE AND NON-COMPETE AGREEMENT\n\nEffective Date: [Date]\n\nPARTIES:\n\n    Company: [Full Legal Name of Company], located at [Company Address].\n    Supplier: [Full Legal Name of Supplier], located at [Supplier Address].\n\n1. CONFIDENTIALITY:\n\nSupplier shall not disclose Company's confidential information, which includes business strategies, financial data, and customer details, to any third party. This confidentiality obligation lasts for [X years, e.g., \"5 years\"] from the date of disclosure.\n\n2. NON-COMPETITION:\n\nFor [X years, e.g., \"3 years\"] following the termination of their business relationship, Supplier agrees not to engage in or start any business that directly competes with Company within a [X mile/km radius, e.g., \"50-mile radius\"] of Company's primary business location.\n\n3. PENALTY FOR BREACH:\n\nShould Supplier breach this Agreement, they shall pay Company a penalty of [specific amount, e.g., \"$50,000\"], in addition to any other legal remedies available to Company.\n\n4. RETURN OF INFORMATION:\n\nUpon request, Supplier shall return or destroy all of Company's confidential information and confirm its deletion in writing.\n\n5. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\nAGREEMENT ACKNOWLEDGEMENT:\n\n__________ [Company] __________ [Supplier]",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nDate: [Insert Date]\n\nParties: [University Name], [University Address] (\"Disclosing Party\") and [Researcher's Full Name], [Researcher's Address] (\"Receiving Party\").\n\n1. Purpose: For the research of [Briefly Describe the Research or Project].\n\n2. Confidential Information: Includes data, studies, reports, patents, and other valuable business-related material.\n\n3. Obligations:\na. Confidential Information must remain secret.\nb. It's for the specified purpose only.\nc. No third-party disclosure without consent.\n\n4. Exceptions: Public knowledge, third-party shared info, or independently developed.\n\n5. Duration: Confidentiality lasts [X years, e.g., 2 years] from disclosure.\n\n6. Return: All Confidential Information must be returned or destroyed upon request.\n\n7. No Transfer: This doesn't grant property rights or licenses.\n\n8. Law: Governed by [State/Country] laws.\n\n9. Amendments: Only in writing and signed.\n\nAgreement: By signing, parties agree to the terms.",
+          "SUPPLY AGREEMENT FOR UNIVERSITY LABORATORY\n\nThis Supply Agreement (the \"Agreement\"), made as of [Insert Date], is entered into by and between [Supplier Name], a [business entity type, e.g., \"corporation\"] having its principal office at [Supplier Address], hereinafter referred to as the \"Supplier', and [University Name], a higher education institution located at [University Address], acting through its [specific department or laboratory, e.g., \"Department of Chemistry\"], hereinafter referred to as the \"University\".\n\n1. Purpose:\n\nThe Supplier agrees to provide specific products/materials/equipment, as detailed in Annex A, to the University for use in its laboratory.\n\n2. Terms of Supply:\n\na. Description of Goods: The goods to be supplied are detailed in Annex A attached herewith.\n\nb. Delivery: Goods will be delivered to [University Address or specific lab address] within [specific timeframe].\n\nc. Pricing: The price for the goods is set out in Annex A and includes all packaging, transportation, and delivery costs unless otherwise specified.\n\n3. Payment Terms:\n\nPayments will be made by the University within [e.g., \"30 days\"] of receiving the invoice from the Supplier.\n\n4. Warranty:\n\nThe Supplier warrants that all goods supplied under this Agreement will be free from defects for a period of [specific duration, e.g., \"12 months\"] from the date of delivery.\n\n5. No Disclosure Clause:\n\na. The University agrees not to disclose, reproduce, or distribute any proprietary information, trade secrets, or other confidential details related to the products/materials/equipment provided by the Supplier without the Supplier's prior written consent.\n\nb. This clause remains effective for a period of [e.g., \"5 years\"] from the date of the last delivery of the goods under this Agreement.\n\n6. Termination:\n\nEither party may terminate this Agreement with [e.g., \"30 days\"] written notice if the other party breaches any term of this Agreement and fails to remedy such breach within the notice period.\n\n7. Governing Law:\n\nThis Agreement shall be governed by and interpreted in accordance with the laws of [State/Country].\n\n8. Amendments:\n\nModifications to this Agreement must be in writing and signed by both parties.\n\nIN WITNESS WHEREOF, the parties hereto have executed this Supply Agreement as of the date first above written."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "This Loyalty Agreement is between [Company Name] and [Contractor Company Name]. The Agreement ensures the Contractor's loyalty and confidentiality towards the Company during and post engagement. Contractor agrees not to use or disclose the Company's confidential information, or engage in competing business or solicitation for a period of [e.g., \"12\"] months post termination. Contractor must return all Company property upon termination. In case of breach, Company can seek legal remedies including injunction. The Agreement remains valid even if a provision is held invalid. The Agreement follows [State, e.g., \"California\"] laws and replaces all previous understandings. It can be amended only in writing with both parties' signature.",
+          "DATA ANALYSIS SERVICE AGREEMENT\n\nThis Agreement (\"Agreement\") is made and entered into as of [Date], by and between [Company Name], a [legal structure, e.g., \"corporation\"] incorporated under the laws of [State/Country], with its principal place of business at [Company Address], herein referred to as the \"Company,\" and [Contractor Business Name], a [legal structure, e.g., \"limited liability company\"] organized under the laws of [State/Country], with its principal place of business at [Contractor Business Address], herein referred to as the \"Contractor.\"\n\n    Scope of Work:\n    a. The Contractor agrees to provide data analysis services to the Company.\n    b. The specific services will include [specific data analysis tasks, e.g., \"analyzing sales data, forecasting trends, and producing reports for managerial review\"].\n\n    Term: The Contractor's engagement will commence on [Start Date] and will terminate on [End Date].\n\n    Compensation: For the services rendered by the Contractor under this Agreement, the Company will pay the Contractor a total sum of [specific amount, e.g., \"$5,000\"] payable on [payment schedule, e.g., \"a monthly basis\"].\n\n    Confidentiality: The Contractor agrees not to disclose or use, either during or after the term of this Agreement, any proprietary or confidential information or data of the Company without the Company's prior written consent, except as necessary in the course of providing the services.\n\n    Intellectual Property: Any works, developments, or inventions created by the Contractor in the course of providing the services related to the Company's business will remain the sole property of the Company.\n\n    Termination: Either party may terminate this Agreement with [e.g., \"30\"] days written notice. Upon termination, Contractor agrees to return all company data and any other proprietary materials.\n\n    Governing Law: This Agreement shall be governed by and construed under the laws of [State/Country].\n\n    Amendments: This Agreement may only be amended in writing and signed by both parties.\n\n    Entire Agreement: This Agreement contains the entire agreement between the parties and supersedes all prior negotiations, understandings, and agreements between the parties.\n\nThe parties hereto have executed this Agreement as of the date first above written.",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nDate: [Insert Date]\n\nParties: [University Name], [University Address] (\"Disclosing Party\") and [Researcher's Full Name], [Researcher's Address] (\"Receiving Party\").\n\n1. Purpose: For the research of [Briefly Describe the Research or Project].\n\n2. Confidential Information: Includes data, studies, reports, patents, and other valuable business-related material.\n\n3. Obligations:\na. Confidential Information must remain secret.\nb. It's for the specified purpose only.\nc. No third-party disclosure without consent.\n\n4. Exceptions: Public knowledge, third-party shared info, or independently developed.\n\n5. Duration: Confidentiality lasts [X years, e.g., 2 years] from disclosure.\n\n6. Return: All Confidential Information must be returned or destroyed upon request.\n\n7. No Transfer: This doesn't grant property rights or licenses.\n\n8. Law: Governed by [State/Country] laws.\n\n9. Amendments: Only in writing and signed.\n\nAgreement: By signing, parties agree to the terms.",
+          "UNIVERSITY-BUSINESS COOPERATION AGREEMENT\n\nThis Cooperation Agreement (the \"Agreement\") is made and entered into on [Insert Date], by and between [Business Name], a [business type, e.g., \"corporation\"] located at [Business Address], hereinafter referred to as the \"Business', and [University Name], a higher education institution located at [University Address], hereinafter referred to as the \"University\".\n\n1. Objective:\n\nThe purpose of this Agreement is to define the terms under which the Business and the University will cooperate to [Objective e.g., \"jointly conduct research, promote innovation, and facilitate the exchange of knowledge in the field of _________\"].\n\n2. Scope of Cooperation:\n\na. Research Collaborations: Joint research initiatives, sharing of resources, and publications.\n\nb. Internships and Placements: Facilitation of student internships, projects, and job placements.\n\nc. Seminars and Workshops: Organizing joint seminars, conferences, and workshops.\n\nd. Facilities and Resource Sharing: Providing access to labs, equipment, libraries, etc.\n\n3. Intellectual Property:\n\nAll intellectual property developed jointly will be shared, and a separate agreement will detail the rights, ownership, and any revenue distribution.\n\n4. Funding and Resources:\n\nBoth parties agree to jointly contribute [Specify Amount or Percentage], and additional fund sourcing details will be determined on a project-by-project basis.\n\n5. Confidentiality:\n\nBoth parties agree to maintain the confidentiality of shared proprietary information.\n\n6. Duration and Termination:\n\nThis Agreement will remain in effect for [e.g., \"three years\"] from the date of signing, unless terminated earlier by either party with [e.g., \"30 days\"] written notice.\n\n7. Dispute Resolution:\n\nAny disputes arising from this Agreement will first attempt resolution through mediation. If unresolved, disputes will be subject to the jurisdiction of [State/Country].\n\n8. Amendments:\n\nChanges to this Agreement must be in writing and signed by both parties.\n\n9. Liability:\n\nEach party assumes responsibility for its actions and is not liable for the actions of the other party.\n\n10. Governing Law:\n\nThis Agreement is governed by the laws of [State/Country].\n\nIN WITNESS WHEREOF, both parties have executed this Agreement as of the date first mentioned above."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "This Loyalty Agreement is between [Company Name] and [Contractor Company Name]. The Agreement ensures the Contractor's loyalty and confidentiality towards the Company during and post engagement. Contractor agrees not to use or disclose the Company's confidential information, or engage in competing business or solicitation for a period of [e.g., \"12\"] months post termination. Contractor must return all Company property upon termination. In case of breach, Company can seek legal remedies including injunction. The Agreement remains valid even if a provision is held invalid. The Agreement follows [State, e.g., \"California\"] laws and replaces all previous understandings. It can be amended only in writing with both parties' signature.",
+          "DATA ANALYSIS SERVICE AGREEMENT\n\nThis Agreement (\"Agreement\") is made and entered into as of [Date], by and between [Company Name], a [legal structure, e.g., \"corporation\"] incorporated under the laws of [State/Country], with its principal place of business at [Company Address], herein referred to as the \"Company,\" and [Contractor Business Name], a [legal structure, e.g., \"limited liability company\"] organized under the laws of [State/Country], with its principal place of business at [Contractor Business Address], herein referred to as the \"Contractor.\"\n\n    Scope of Work:\n    a. The Contractor agrees to provide data analysis services to the Company.\n    b. The specific services will include [specific data analysis tasks, e.g., \"analyzing sales data, forecasting trends, and producing reports for managerial review\"].\n\n    Term: The Contractor's engagement will commence on [Start Date] and will terminate on [End Date].\n\n    Compensation: For the services rendered by the Contractor under this Agreement, the Company will pay the Contractor a total sum of [specific amount, e.g., \"$5,000\"] payable on [payment schedule, e.g., \"a monthly basis\"].\n\n    Confidentiality: The Contractor agrees not to disclose or use, either during or after the term of this Agreement, any proprietary or confidential information or data of the Company without the Company's prior written consent, except as necessary in the course of providing the services.\n\n    Intellectual Property: Any works, developments, or inventions created by the Contractor in the course of providing the services related to the Company's business will remain the sole property of the Company.\n\n    Termination: Either party may terminate this Agreement with [e.g., \"30\"] days written notice. Upon termination, Contractor agrees to return all company data and any other proprietary materials.\n\n    Governing Law: This Agreement shall be governed by and construed under the laws of [State/Country].\n\n    Amendments: This Agreement may only be amended in writing and signed by both parties.\n\n    Entire Agreement: This Agreement contains the entire agreement between the parties and supersedes all prior negotiations, understandings, and agreements between the parties.\n\nThe parties hereto have executed this Agreement as of the date first above written.",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nDate: [Insert Date]\n\nParties: [University Name], [University Address] (\"Disclosing Party\") and [Researcher's Full Name], [Researcher's Address] (\"Receiving Party\").\n\n1. Purpose: For the research of [Briefly Describe the Research or Project].\n\n2. Confidential Information: Includes data, studies, reports, patents, and other valuable business-related material.\n\n3. Obligations:\na. Confidential Information must remain secret.\nb. It's for the specified purpose only.\nc. No third-party disclosure without consent.\n\n4. Exceptions: Public knowledge, third-party shared info, or independently developed.\n\n5. Duration: Confidentiality lasts [X years, e.g., 2 years] from disclosure.\n\n6. Return: All Confidential Information must be returned or destroyed upon request.\n\n7. No Transfer: This doesn't grant property rights or licenses.\n\n8. Law: Governed by [State/Country] laws.\n\n9. Amendments: Only in writing and signed.\n\nAgreement: By signing, parties agree to the terms.",
+          "UNIVERSITY-BUSINESS COOPERATION AGREEMENT\n\nThis Cooperation Agreement (the \"Agreement\") is made and entered into on [Insert Date], by and between [Business Name], a [business type, e.g., \"corporation\"] located at [Business Address], hereinafter referred to as the \"Business', and [University Name], a higher education institution located at [University Address], hereinafter referred to as the \"University\".\n\n1. Objective:\n\nThe purpose of this Agreement is to define the terms under which the Business and the University will cooperate to [Objective e.g., \"jointly conduct research, promote innovation, and facilitate the exchange of knowledge in the field of _________\"].\n\n2. Scope of Cooperation:\n\na. Research Collaborations: Joint research initiatives, sharing of resources, and publications.\n\nb. Internships and Placements: Facilitation of student internships, projects, and job placements.\n\nc. Seminars and Workshops: Organizing joint seminars, conferences, and workshops.\n\nd. Facilities and Resource Sharing: Providing access to labs, equipment, libraries, etc.\n\n3. Intellectual Property:\n\nAll intellectual property developed jointly will be shared, and a separate agreement will detail the rights, ownership, and any revenue distribution.\n\n4. Funding and Resources:\n\nBoth parties agree to jointly contribute [Specify Amount or Percentage], and additional fund sourcing details will be determined on a project-by-project basis.\n\n5. Confidentiality:\n\nBoth parties agree to maintain the confidentiality of shared proprietary information.\n\n6. Duration and Termination:\n\nThis Agreement will remain in effect for [e.g., \"three years\"] from the date of signing, unless terminated earlier by either party with [e.g., \"30 days\"] written notice.\n\n7. Dispute Resolution:\n\nAny disputes arising from this Agreement will first attempt resolution through mediation. If unresolved, disputes will be subject to the jurisdiction of [State/Country].\n\n8. Amendments:\n\nChanges to this Agreement must be in writing and signed by both parties.\n\n9. Liability:\n\nEach party assumes responsibility for its actions and is not liable for the actions of the other party.\n\n10. Governing Law:\n\nThis Agreement is governed by the laws of [State/Country].\n\nIN WITNESS WHEREOF, both parties have executed this Agreement as of the date first mentioned above."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

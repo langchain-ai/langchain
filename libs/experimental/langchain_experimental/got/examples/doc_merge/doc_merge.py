@@ -15,7 +15,8 @@ import csv
 from statistics import fmean
 from typing import Dict, List, Callable, Set, Union
 from graph_of_thoughts import controller, language_models, operations, prompter, parser
-
+from langchain_core.prompts import PromptTemplate
+from graph_of_thoughts.language_models.openai_gpt_models import GPTmodels
 
 class DocMergePrompter(prompter.Prompter):
     """
@@ -135,31 +136,53 @@ NDA <S{num}>:
         if len(state_dicts[0]["parts"]) > 0 and len(state_dicts[0]["parts"]) < len(
             state_dicts[0]["documents"]
         ):
-            prompt = self.aggregate_sub_prompt_base.format(
-                num_ndas=len(state_dicts),
-            )
-            for i, state_dict in enumerate(state_dicts):
-                prompt += self.aggregate_sub_prompt_generate.format(
-                    nda=state_dict["current"], num=i + 1
-                )
-            return prompt
-        else:
-            prompt = self.aggregate_full_prompt_base.format(
-                num_ndas=len(state_dicts[0]["documents"]),
-                num_ndas_summary=len(state_dicts),
-            )
-            for i, document in enumerate(state_dicts[0]["documents"]):
-                prompt += self.aggregate_full_prompt_block1.format(
-                    document=document, num=i + 1
-                )
-            prompt += self.aggregate_full_prompt_mid.format(
-                num_ndas_summary=len(state_dicts),
-            )
-            for i, state_dict in enumerate(state_dicts):
-                prompt += self.aggregate_full_prompt_block2.format(
-                    summary=state_dict["current"], num=i + 1
-                )
-            return prompt
+
+            prompt = self.aggregate_sub_prompt_base
+            var_dic = {
+            "num_ndas": len(state_dicts),   ##OOOOOOriginal?
+            **{f'nda_{i}': state_dict["current"] for i, state_dict in enumerate(state_dicts)}
+            }
+            prompt_blocks = [self.aggregate_sub_prompt_base.replace('{num}',f'{i+1}').replace('{nda}',f'{{nda_{i}}}')
+                             for i in range(len(state_dicts))
+                             ]
+            prompt += ''.join(prompt_blocks)
+            prompt = PromptTemplate.from_template(prompt) 
+            return prompt, var_dic
+            # prompt = self.aggregate_sub_prompt_base.format(
+            #     num_ndas=len(state_dicts),
+            # )
+            # for i, state_dict in enumerate(state_dicts):
+            #     prompt += self.aggregate_sub_prompt_generate.format(
+            #         nda=state_dict["current"], num=i + 1
+            #     )
+        else:                ###
+            prompt = self.aggregate_full_prompt_base
+            var_dic = {
+            "num_ndas": len(state_dicts),   ##OOOOOOriginal?
+            **{f'document_{i}': document for i, document in enumerate(state_dicts[0]["documents"])},
+            **{f'summary_{i}': state_dict["current"] for i, state_dict in enumerate(state_dicts)}
+            }
+            prompt_blocks = [self.aggregate_full_prompt_base.replace('{num}',f'{i+1}').replace('{document}',f'{{document_{i}}}').replace('{summary}',f'{{summary_{i}}}')
+                             for i in range(len(state_dicts))
+                             ]
+            prompt += ''.join(prompt_blocks)
+            prompt = PromptTemplate.from_template(prompt) 
+            return prompt, var_dic
+            # prompt = self.aggregate_full_prompt_base.format(
+            #     num_ndas=len(state_dicts[0]["documents"]),
+            #     num_ndas_summary=len(state_dicts),
+            # )
+            # for i, document in enumerate(state_dicts[0]["documents"]):
+            #     prompt += self.aggregate_full_prompt_block1.format(
+            #         document=document, num=i + 1
+            #     )
+            # prompt += self.aggregate_full_prompt_mid.format(
+            #     num_ndas_summary=len(state_dicts),
+            # )
+            # for i, state_dict in enumerate(state_dicts):
+            #     prompt += self.aggregate_full_prompt_block2.format(
+            #         summary=state_dict["current"], num=i + 1
+            #     )
 
     def generate_prompt(
         self,
@@ -223,22 +246,48 @@ NDA <S{num}>:
                 sorted(list(parts)) if len(parts) > 0 else list(range(len(documents)))
             )
             if current is None or current == "":
-                prompt += self.merge_doc_prompt_start.format(num=len(parts))
-                for i, part in enumerate(sorted(list(parts))):
-                    prompt += self.merge_doc_prompt_block.format(
-                        document=documents[part], num=i + 1
-                    )
-                return prompt
+            #######
+                
+                prompt = self.merge_doc_prompt_start
+                var_dic = {
+                "num": len(parts),   ##OOOOOOriginal?
+                **{f'document_{i}': documents[part] for i, part in enumerate(sorted(list(parts)))}
+                }
+                prompt_blocks = [self.aggregate_sub_prompt_base.replace('{num}',f'{i+1}').replace('{document}',f'{{document_{i}}}')
+                                for i in range(len(sorted(list(parts))))
+                                ]
+                prompt += ''.join(prompt_blocks)
+                prompt = PromptTemplate.from_template(prompt) 
+
+                return prompt,var_dic
+                # prompt += self.merge_doc_prompt_start.format(num=len(parts))
+                # for i, part in enumerate(sorted(list(parts))):
+                #     prompt += self.merge_doc_prompt_block.format(
+                #         document=documents[part], num=i + 1
+                #     )
+                # return prompt
             else:
-                prompt += self.improve_summary_prompt_start.format(
-                    num=len(parts),
-                )
-                for i, part in enumerate(sorted(list(parts))):
-                    prompt += self.improve_summary_prompt_block.format(
-                        document=documents[part], num=i + 1
-                    )
-                prompt += self.improve_summary_prompt_end.format(summary=current)
-                return prompt
+                prompt = self.improve_summary_prompt_start
+                var_dic = {
+                "num": len(parts),   ##OOOOOOriginal?
+                **{f'document_{i}': documents[part] for i, part in enumerate(sorted(list(parts)))}
+                }
+                prompt_blocks = [self.improve_summary_prompt_start.replace('{num}',f'{i+1}').replace('{document}',f'{{document_{i}}}')
+                                for i in range(len(sorted(list(parts))))
+                                ]
+                prompt += ''.join(prompt_blocks)
+                prompt = PromptTemplate.from_template(prompt) 
+
+                return prompt,var_dic
+                # prompt += self.improve_summary_prompt_start.format(
+                #     num=len(parts),
+                # )
+                # for i, part in enumerate(sorted(list(parts))):
+                #     prompt += self.improve_summary_prompt_block.format(
+                #         document=documents[part], num=i + 1
+                #     )
+                # prompt += self.improve_summary_prompt_end.format(summary=current)
+                # return prompt
         else:
             assert False, "Not implemented yet."
 
@@ -713,7 +762,7 @@ def run(
                     f"Budget has been depleted, stopping. Method {method.__name__} has not been run."
                 )
                 break
-            lm = language_models.ChatGPT(
+            lm = GPTmodels(
                 os.path.join(
                     os.path.dirname(__file__),
                     "../../graph_of_thoughts/language_models/config.json",
@@ -721,6 +770,14 @@ def run(
                 model_name=lm_name,
                 cache=True,
             )
+            # lm = language_models.ChatGPT(
+            #     os.path.join(
+            #         os.path.dirname(__file__),
+            #         "../../graph_of_thoughts/language_models/config.json",
+            #     ),
+            #     model_name=lm_name,
+            #     cache=True,
+            # )
             operations_graph = method()
             executor = controller.Controller(
                 lm,
@@ -759,9 +816,9 @@ if __name__ == "__main__":
     Evaluation: According to information coverage without repetition (scored by the LLM)
     """
     budget = 30
-    samples = [item for item in range(0, 50)]
-    approaches = [io, cot, tot, got, got2]
-
+    samples = [item for item in range(0, 1)]
+    # approaches = [io, cot, tot, got, got2]
+    approaches = [got2]
     spent = run(samples, approaches, budget, "chatgpt")
 
     logging.info(f"Spent {spent} out of {budget} budget.")

@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "FREELANCER AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Client: [Client Full Name or Company Name], located at [Client Address].\n    Freelancer: [Freelancer Full Name], located at [Freelancer Address].\n\n1. SERVICES:\n\nFreelancer agrees to provide the following services: [Brief description of services, e.g., \"web design, content creation, graphic design\"].\n\n2. PAYMENT TERMS:\n\nFor the services rendered, Client agrees to pay Freelancer a total of [Total Amount, e.g., \"$1,000\"]. Payments shall be made as follows: [Payment structure, e.g., \"50% upfront, 50% upon completion\"].\n\n3. DEADLINE:\n\nThe services will be completed by [End Date, e.g., \"December 31, 2023\"].\n\n4. PENALTIES:\n\na. Late Delivery: If Freelancer fails to deliver the completed service by the specified deadline, a penalty of [specific amount, e.g., \"$50\"] per day will be deducted from the final payment until the service is delivered.\n\nb. Confidentiality Breach: Breaching the confidentiality clause will result in a penalty of [specific amount, e.g., \"$2,000\"].\n\n5. CONFIDENTIALITY:\n\nFreelancer agrees to maintain confidentiality regarding all proprietary information of the Client.\n\n6. TERMINATION:\n\nEither party may terminate this agreement with [X days, e.g., \"14 days\"] written notice. Upon termination, payments will be adjusted for work completed.\n\n7. INDEPENDENT CONTRACTOR:\n\nFreelancer is an independent contractor and not an employee of the Client. No benefits, rights, or obligations of employment are conferred by this agreement.\n\n8. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\n9. AMENDMENTS:\n\nAny changes to this agreement must be in writing and signed by both parties.",
+          "NON-COMPETE AND LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\n1. PURPOSE:\n\nThis Agreement is designed to protect the proprietary and business interests of both parties by ensuring loyalty and preventing competition during and after the period of collaboration or engagement.\n\n2. NON-COMPETE:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 24 months following its termination\"], neither party shall:\n\na. Engage in or support any venture that directly competes with the core business of the other party within [specific geographical region, e.g., \"the State of California\"].\nb. Invest in, partner with, or advise any business entity that competes directly with the other party.\n\n3. LOYALTY AND NON-POACHING:\n\nBoth parties pledge their commitment to a loyal business relationship. Specifically:\n\na. Neither party will, without the prior written consent of the other, solicit, induce, or encourage any employees or contractors of the other party to terminate their engagement or to join another business.\nb. Neither party shall disparage or encourage others to disparage the other party, its products, services, or its employees.\n\n4. CONFIDENTIALITY:\n\nBoth parties agree to maintain confidentiality regarding any proprietary or business-sensitive information exchanged during the course of this Agreement, ensuring that such information isn't disclosed without the explicit consent of the party owning that information.\n\n5. BREACH AND REMEDIES:\n\nA violation of any provision in this Agreement will be deemed a significant breach. The aggrieved party shall be entitled to seek injunctive relief, damages, or any other remedies available under the laws of [specific country/state, e.g., \"the State of California\"].\n\n6. GOVERNING LAW:\n\nThis Agreement shall be governed by and interpreted in accordance with the laws of [specific country/state, e.g., \"the State of California\"].\n\n7. AMENDMENTS:\n\nModifications or amendments to this Agreement must be in writing and duly signed by authorized representatives of both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, representatives from both businesses affirm their understanding and acceptance of this Non-Compete and Loyalty Agreement.",
+          "BUSINESS COOPERATION AGREEMENT\n\nThis Agreement is between [Business A Name], at [Business A Address] (\"Business A\"), and [Business B Name], at [Business B Address] (\"Business B\"), effective [Day, Month, Year].\n\n1. Purpose:\nBoth businesses will cooperate in [brief description, e.g., \"joint marketing\"].\n\n2. Responsibilities:\n\n    Business A will: [Key obligation, e.g., \"Promote Business B in newsletters.\"]\n    Business B will: [Key obligation, e.g., \"Display Business A products.\"]\n\n3. Term:\nEffective from the above date for [e.g., \"12 months\"]. Either party can terminate with [e.g., \"30 days\"] notice.\n\n4. Confidentiality:\nConfidential information remains private, during and post-agreement.\n\n5. Governing Law:\nGoverning laws of [State/Country, e.g., \"California\"].\n\n6. Amendments:\nChanges must be written and signed by both parties.",
+          "APPENDIX: TERMS OF CONTRACT TERMINATION\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Termination for Breach:\nIf either party breaches any conditions of the Agreement, the non-breaching party may terminate the Agreement immediately upon written notice to the breaching party.\n\n2. Termination by Notice:\nEither party may terminate the Agreement for any reason by providing a written notice to the other party. The termination will become effective 30 days after the receipt of such notice.\n\n3. Obligations Upon Termination:\nUpon termination, all rights and obligations under the Agreement will cease, except for those which by their nature should survive termination (e.g., confidentiality, liability for prior breaches, etc.).\n\n4. Governing Law:\nThis Appendix, and any disputes arising from it, will be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "FREELANCER AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Client: [Client Full Name or Company Name], located at [Client Address].\n    Freelancer: [Freelancer Full Name], located at [Freelancer Address].\n\n1. SERVICES:\n\nFreelancer agrees to provide the following services: [Brief description of services, e.g., \"web design, content creation, graphic design\"].\n\n2. PAYMENT TERMS:\n\nFor the services rendered, Client agrees to pay Freelancer a total of [Total Amount, e.g., \"$1,000\"]. Payments shall be made as follows: [Payment structure, e.g., \"50% upfront, 50% upon completion\"].\n\n3. DEADLINE:\n\nThe services will be completed by [End Date, e.g., \"December 31, 2023\"].\n\n4. PENALTIES:\n\na. Late Delivery: If Freelancer fails to deliver the completed service by the specified deadline, a penalty of [specific amount, e.g., \"$50\"] per day will be deducted from the final payment until the service is delivered.\n\nb. Confidentiality Breach: Breaching the confidentiality clause will result in a penalty of [specific amount, e.g., \"$2,000\"].\n\n5. CONFIDENTIALITY:\n\nFreelancer agrees to maintain confidentiality regarding all proprietary information of the Client.\n\n6. TERMINATION:\n\nEither party may terminate this agreement with [X days, e.g., \"14 days\"] written notice. Upon termination, payments will be adjusted for work completed.\n\n7. INDEPENDENT CONTRACTOR:\n\nFreelancer is an independent contractor and not an employee of the Client. No benefits, rights, or obligations of employment are conferred by this agreement.\n\n8. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\n9. AMENDMENTS:\n\nAny changes to this agreement must be in writing and signed by both parties.",
+          "NON-COMPETE AND LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\n1. PURPOSE:\n\nThis Agreement is designed to protect the proprietary and business interests of both parties by ensuring loyalty and preventing competition during and after the period of collaboration or engagement.\n\n2. NON-COMPETE:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 24 months following its termination\"], neither party shall:\n\na. Engage in or support any venture that directly competes with the core business of the other party within [specific geographical region, e.g., \"the State of California\"].\nb. Invest in, partner with, or advise any business entity that competes directly with the other party.\n\n3. LOYALTY AND NON-POACHING:\n\nBoth parties pledge their commitment to a loyal business relationship. Specifically:\n\na. Neither party will, without the prior written consent of the other, solicit, induce, or encourage any employees or contractors of the other party to terminate their engagement or to join another business.\nb. Neither party shall disparage or encourage others to disparage the other party, its products, services, or its employees.\n\n4. CONFIDENTIALITY:\n\nBoth parties agree to maintain confidentiality regarding any proprietary or business-sensitive information exchanged during the course of this Agreement, ensuring that such information isn't disclosed without the explicit consent of the party owning that information.\n\n5. BREACH AND REMEDIES:\n\nA violation of any provision in this Agreement will be deemed a significant breach. The aggrieved party shall be entitled to seek injunctive relief, damages, or any other remedies available under the laws of [specific country/state, e.g., \"the State of California\"].\n\n6. GOVERNING LAW:\n\nThis Agreement shall be governed by and interpreted in accordance with the laws of [specific country/state, e.g., \"the State of California\"].\n\n7. AMENDMENTS:\n\nModifications or amendments to this Agreement must be in writing and duly signed by authorized representatives of both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, representatives from both businesses affirm their understanding and acceptance of this Non-Compete and Loyalty Agreement.",
+          "BUSINESS COOPERATION AGREEMENT\n\nThis Agreement is between [Business A Name], at [Business A Address] (\"Business A\"), and [Business B Name], at [Business B Address] (\"Business B\"), effective [Day, Month, Year].\n\n1. Purpose:\nBoth businesses will cooperate in [brief description, e.g., \"joint marketing\"].\n\n2. Responsibilities:\n\n    Business A will: [Key obligation, e.g., \"Promote Business B in newsletters.\"]\n    Business B will: [Key obligation, e.g., \"Display Business A products.\"]\n\n3. Term:\nEffective from the above date for [e.g., \"12 months\"]. Either party can terminate with [e.g., \"30 days\"] notice.\n\n4. Confidentiality:\nConfidential information remains private, during and post-agreement.\n\n5. Governing Law:\nGoverning laws of [State/Country, e.g., \"California\"].\n\n6. Amendments:\nChanges must be written and signed by both parties.",
+          "APPENDIX: TERMS OF CONTRACT TERMINATION\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Termination for Breach:\nIf either party breaches any conditions of the Agreement, the non-breaching party may terminate the Agreement immediately upon written notice to the breaching party.\n\n2. Termination by Notice:\nEither party may terminate the Agreement for any reason by providing a written notice to the other party. The termination will become effective 30 days after the receipt of such notice.\n\n3. Obligations Upon Termination:\nUpon termination, all rights and obligations under the Agreement will cease, except for those which by their nature should survive termination (e.g., confidentiality, liability for prior breaches, etc.).\n\n4. Governing Law:\nThis Appendix, and any disputes arising from it, will be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]
