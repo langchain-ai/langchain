@@ -381,6 +381,17 @@ webencodings = "*"
 css = ["tinycss2 (>=1.1.0,<1.3)"]
 
 [[package]]
+name = "cachetools"
+version = "5.3.3"
+description = "Extensible memoizing collections and decorators"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "cachetools-5.3.3-py3-none-any.whl", hash = "sha256:0abad1021d3f8325b2fc1d2e9c8b9c9d57b04c3932657a72465447332c24d945"},
+    {file = "cachetools-5.3.3.tar.gz", hash = "sha256:ba29e2dfa0b8b556606f097407ed1aa62080ee108ab0dc5ec9d6a723a007d105"},
+]
+
+[[package]]
 name = "cassandra-driver"
 version = "3.29.1"
 description = "DataStax Driver for Apache Cassandra"
@@ -1483,6 +1494,44 @@ httpx = "<1"
 pydantic = ">=1"
 
 [[package]]
+name = "google-auth"
+version = "2.30.0"
+description = "Google Authentication Library"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "google-auth-2.30.0.tar.gz", hash = "sha256:ab630a1320f6720909ad76a7dbdb6841cdf5c66b328d690027e4867bdfb16688"},
+    {file = "google_auth-2.30.0-py2.py3-none-any.whl", hash = "sha256:8df7da660f62757388b8a7f249df13549b3373f24388cb5d2f1dd91cc18180b5"},
+]
+
+[package.dependencies]
+cachetools = ">=2.0.0,<6.0"
+pyasn1-modules = ">=0.2.1"
+rsa = ">=3.1.4,<5"
+
+[package.extras]
+aiohttp = ["aiohttp (>=3.6.2,<4.0.0.dev0)", "requests (>=2.20.0,<3.0.0.dev0)"]
+enterprise-cert = ["cryptography (==36.0.2)", "pyopenssl (==22.0.0)"]
+pyopenssl = ["cryptography (>=38.0.3)", "pyopenssl (>=20.0.0)"]
+reauth = ["pyu2f (>=0.1.5)"]
+requests = ["requests (>=2.20.0,<3.0.0.dev0)"]
+
+[[package]]
+name = "google-auth-httplib2"
+version = "0.2.0"
+description = "Google Authentication Library: httplib2 transport"
+optional = false
+python-versions = "*"
+files = [
+    {file = "google-auth-httplib2-0.2.0.tar.gz", hash = "sha256:38aa7badf48f974f1eb9861794e9c0cb2a0511a4ec0679b1f886d108f5640e05"},
+    {file = "google_auth_httplib2-0.2.0-py2.py3-none-any.whl", hash = "sha256:b65a0a2123300dd71281a7bf6e64d65a0759287df52729bdd1ae2e47dc311a3d"},
+]
+
+[package.dependencies]
+google-auth = "*"
+httplib2 = ">=0.19.0"
+
+[[package]]
 name = "greenlet"
 version = "3.0.3"
 description = "Lightweight in-process concurrent programming"
@@ -1584,6 +1633,20 @@ asyncio = ["anyio (>=4.0,<5.0)"]
 http2 = ["h2 (>=3,<5)"]
 socks = ["socksio (==1.*)"]
 trio = ["trio (>=0.22.0,<0.26.0)"]
+
+[[package]]
+name = "httplib2"
+version = "0.22.0"
+description = "A comprehensive HTTP client library."
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+files = [
+    {file = "httplib2-0.22.0-py3-none-any.whl", hash = "sha256:14ae0a53c1ba8f3d37e9e27cf37eabb0fb9980f435ba405d546948b009dd64dc"},
+    {file = "httplib2-0.22.0.tar.gz", hash = "sha256:d7a10bc5ef5ab08322488bde8c726eeee5c8618723fdb399597ec58f3d82df81"},
+]
+
+[package.dependencies]
+pyparsing = {version = ">=2.4.2,<3.0.0 || >3.0.0,<3.0.1 || >3.0.1,<3.0.2 || >3.0.2,<3.0.3 || >3.0.3,<4", markers = "python_version > \"3.0\""}
 
 [[package]]
 name = "httpx"
@@ -3423,6 +3486,31 @@ files = [
 tests = ["pytest"]
 
 [[package]]
+name = "pyasn1"
+version = "0.6.0"
+description = "Pure-Python implementation of ASN.1 types and DER/BER/CER codecs (X.208)"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pyasn1-0.6.0-py2.py3-none-any.whl", hash = "sha256:cca4bb0f2df5504f02f6f8a775b6e416ff9b0b3b16f7ee80b5a3153d9b804473"},
+    {file = "pyasn1-0.6.0.tar.gz", hash = "sha256:3a35ab2c4b5ef98e17dfdec8ab074046fbda76e281c5a706ccd82328cfc8f64c"},
+]
+
+[[package]]
+name = "pyasn1-modules"
+version = "0.4.0"
+description = "A collection of ASN.1-based protocols modules"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pyasn1_modules-0.4.0-py3-none-any.whl", hash = "sha256:be04f15b66c206eed667e0bb5ab27e2b1855ea54a842e5037738099e8ca4ae0b"},
+    {file = "pyasn1_modules-0.4.0.tar.gz", hash = "sha256:831dbcea1b177b28c9baddf4c6d1013c24c3accd14a1873fffaa6a2e905f17b6"},
+]
+
+[package.dependencies]
+pyasn1 = ">=0.4.6,<0.7.0"
+
+[[package]]
 name = "pycparser"
 version = "2.22"
 description = "C parser in Python"
@@ -3556,6 +3644,20 @@ files = [
 
 [package.extras]
 windows-terminal = ["colorama (>=0.4.6)"]
+
+[[package]]
+name = "pyparsing"
+version = "3.1.2"
+description = "pyparsing module - Classes and methods to define and execute parsing grammars"
+optional = false
+python-versions = ">=3.6.8"
+files = [
+    {file = "pyparsing-3.1.2-py3-none-any.whl", hash = "sha256:f9db75911801ed778fe61bb643079ff86601aca99fcae6345aa67292038fb742"},
+    {file = "pyparsing-3.1.2.tar.gz", hash = "sha256:a1bac0ce561155ecc3ed78ca94d3c9378656ad4c94c1270de543f621420f94ad"},
+]
+
+[package.extras]
+diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
 name = "pytest"
@@ -4273,6 +4375,20 @@ files = [
     {file = "rpds_py-0.18.1-pp39-pypy39_pp73-musllinux_1_2_x86_64.whl", hash = "sha256:636a15acc588f70fda1661234761f9ed9ad79ebed3f2125d44be0862708b666e"},
     {file = "rpds_py-0.18.1.tar.gz", hash = "sha256:dc48b479d540770c811fbd1eb9ba2bb66951863e448efec2e2c102625328e92f"},
 ]
+
+[[package]]
+name = "rsa"
+version = "4.9"
+description = "Pure-Python RSA implementation"
+optional = false
+python-versions = ">=3.6,<4"
+files = [
+    {file = "rsa-4.9-py3-none-any.whl", hash = "sha256:90260d9058e514786967344d0ef75fa8727eed8a7d2e43ce9f4bcf1b536174f7"},
+    {file = "rsa-4.9.tar.gz", hash = "sha256:e38464a49c6c85d7f1351b0126661487a7e0a14a50f1675ec50eb34d4f20ef21"},
+]
+
+[package.dependencies]
+pyasn1 = ">=0.1.3"
 
 [[package]]
 name = "ruff"
@@ -5739,4 +5855,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "dc4a8040e671dd65d8f6b312fd732e409eb0be67f80a8d67f94b51e42f521859"
+content-hash = "c0fcdcebf525f20605730e226be455874672f561bccdf966d2481be3ed4e0150"
