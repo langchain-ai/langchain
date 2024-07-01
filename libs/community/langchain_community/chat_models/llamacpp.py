@@ -531,15 +531,15 @@ class ChatLlamaCpp(BaseChatModel):
                 "schema must be specified when method is 'function_calling'. "
                 "Received None."
             )
-        llm = self.bind_tools([schema], tool_choice=True)
+        tool_name = convert_to_openai_tool(schema)["function"]["name"]
+        llm = self.bind_tools([schema], tool_choice=tool_name)
         if is_pydantic_schema:
             output_parser: OutputParserLike = PydanticToolsParser(
                 tools=[cast(Type, schema)], first_tool_only=True
             )
         else:
-            key_name = convert_to_openai_tool(schema)["function"]["name"]
             output_parser = JsonOutputKeyToolsParser(
-                key_name=key_name, first_tool_only=True
+                key_name=tool_name, first_tool_only=True
             )
 
         if include_raw:
