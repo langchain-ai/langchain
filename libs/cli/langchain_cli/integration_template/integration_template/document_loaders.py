@@ -11,7 +11,7 @@ class __ModuleName__Loader(BaseLoader):
     # https://github.com/langchain-ai/langchain/blob/869523ad728e6b76d77f170cce13925b4ebc3c1e/libs/community/langchain_community/document_loaders/recursive_url_loader.py#L54
     """
     __ModuleName__ document loader integration
-    
+
     # TODO: Replace with relevant packages, env vars.
     Setup:
         Install ``__package_name__`` and set environment variable ``__MODULE_NAME___API_KEY``.
@@ -48,7 +48,7 @@ class __ModuleName__Loader(BaseLoader):
 
         .. code-block:: python
 
-            TODO: Example output  
+            TODO: Example output
 
     # TODO: Delete if async load is not implemented
     Async load:
@@ -67,6 +67,6 @@ class __ModuleName__Loader(BaseLoader):
     # Do not implement load(), a default implementation is already available.
     def lazy_load(self) -> Iterator[Document]:
         raise NotImplementedError()
-    
+
     # TODO: Implement if you would like to change default BaseLoader implementation
     # async def alazy_load(self) -> AsyncIterator[Document]:

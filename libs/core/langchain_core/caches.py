@@ -145,9 +145,18 @@ class BaseCache(ABC):
 class InMemoryCache(BaseCache):
     """Cache that stores things in memory."""
 
-    def __init__(self) -> None:
-        """Initialize with empty cache."""
+    def __init__(self, *, maxsize: Optional[int] = None) -> None:
+        """Initialize with empty cache.
+
+        Args:
+            maxsize: The maximum number of items to store in the cache.
+                If None, the cache has no maximum size.
+                If the cache exceeds the maximum size, the oldest items are removed.
+        """
         self._cache: Dict[Tuple[str, str], RETURN_VAL_TYPE] = {}
+        if maxsize is not None and maxsize <= 0:
+            raise ValueError("maxsize must be greater than 0")
+        self._maxsize = maxsize
 
     def lookup(self, prompt: str, llm_string: str) -> Optional[RETURN_VAL_TYPE]:
         """Look up based on prompt and llm_string.
@@ -174,6 +183,8 @@ class InMemoryCache(BaseCache):
             return_val: The value to be cached. The value is a list of Generations
                 (or subclasses).
         """
+        if self._maxsize is not None and len(self._cache) == self._maxsize:
+            del self._cache[next(iter(self._cache))]
         self._cache[(prompt, llm_string)] = return_val
 
     def clear(self, **kwargs: Any) -> None:
