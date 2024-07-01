@@ -1,19 +1,20 @@
 import json
-from typing import Any, Dict, List, Literal, Optional, Sequence, Union, TypeVar, Type
-from operator import itemgetter
 from copy import deepcopy
 from functools import partial
+from operator import itemgetter
+from typing import Any, Dict, List, Literal, Optional, Sequence, Type, TypeVar, Union
 
-from langchain_core.pydantic_v1 import Field, BaseModel, SecretStr
-from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import MessageLikeRepresentation
-from langchain_core.prompt_values import StringPromptValue, ChatPromptValue
 from langchain_core.output_parsers import (
-    PydanticOutputParser,
     JsonOutputParser,
+    PydanticOutputParser,
     StrOutputParser,
 )
+from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+
 from langchain_community.chat_models.openai import ChatOpenAI
 
 
@@ -32,7 +33,7 @@ the object `{{"foo": ["bar", "baz"]}}` is a well-formatted instance of the schem
 Here is the output schema you must conform to:
 ```
 {schema}
-```"""
+```"""  # noqa E501
 
 REGEX_FORMAT_INSTRUCTIONS = """The output should be formatted as a string that conforms to the regex below.
 
@@ -41,7 +42,7 @@ As an example, for the regex `[a-z]+` the string `abc` is a well-formatted insta
 Here is the output regex you must conform to:
 ```
 {schema}
-```"""
+```"""  # noqa E501
 
 CHOICE_FORMAT_INSTRUCTIONS = """The output should be one of the following choices:
 ```
@@ -69,7 +70,7 @@ the string `2*3` is a well-formatted instance of the grammar. The string "two ti
 Here is the output grammar you must conform to:
 ```
 {schema}
-```"""
+```"""  # noqa E501
 
 
 _BM = TypeVar("_BM", bound=BaseModel)
@@ -120,8 +121,8 @@ class ChatVLLMOpenAI(ChatOpenAI):
     ) -> LanguageModelInput:
         """Insert instructions into the input.
         While `guided_json` ensures structured output by post-processing of the logits,
-        we still need to pass the instructions to the model such that it knows what structure is
-        expected for increased accuracy."""
+        we still need to pass the instructions to the model such that it knows what
+        structure is expected for increased accuracy."""
         _input = deepcopy(input)
         try:
             if isinstance(_input, StringPromptValue):
@@ -154,14 +155,21 @@ class ChatVLLMOpenAI(ChatOpenAI):
         """Use guided generation to ensure structured output.
 
         Args:
-            schema: The `schema` specifies the expected output structure. It can be a Pydantic class, a JSON schema, a regex, a list of choices, or a grammar.
+            schema: The `schema` specifies the expected output structure.It can be a
+            Pydantic class, a JSON schema, a regex, a list of choices, or a grammar.
             include_raw: Whether to include the raw output in the structured output.
-            guided_mode: The `guided_mode` specifies how to guide the model. It can be one of `guided_json`, `guided_regex`, `guided_choice`, or `guided_grammar`. Defaults to `guided_json`.
-            guided_decoding_backend: The `guided_decoding_backend` specifies the backend to use for decoding the structured output. It can be one of `outlines` or `lm-format-enforcer`. Defaults to `outlines`.
-            instructions: The `instructions` specifies the instructions to insert into the input. If not provided, it is automatically generated based on the `schema`.
+            guided_mode: The `guided_mode` specifies how to guide the model. It can be
+            one of `guided_json`, `guided_regex`, `guided_choice`, or `guided_grammar`.
+            Defaults to `guided_json`.
+            guided_decoding_backend: The `guided_decoding_backend` specifies the backend
+            to use for decoding the structured output. It can be one of `outlines` or
+            `lm-format-enforcer`. Defaults to `outlines`.
+            instructions: The `instructions` specifies the instructions to insert into
+            the input. If not provided, it is automatically generated based on the
+            `schema`.
 
         Returns:
-            A Runnable that takes any `LanguageModelInput` and returns structured output.
+            A Runnable that takes any `LanguageModelInput` and returns structured output
 
         Example:
         from langchain_core.pydantic_v1 import BaseModel, Field
@@ -169,7 +177,7 @@ class ChatVLLMOpenAI(ChatOpenAI):
         class CityModel(BaseModel):
             name: str = Field(..., description="Name of the city")
             population: int = Field(
-                ..., description="Population of the city measured in number of inhabitants"
+                ..., description="Number of inhabitants"
             )
             country: str = Field(..., description="Country of the city")
             population_category: Literal[">1M", "<1M"] = Field(
@@ -204,7 +212,8 @@ class ChatVLLMOpenAI(ChatOpenAI):
                 schema_str = json.dumps(schema)
             else:
                 raise ValueError(
-                    f"Only `guided_json` guided_mode is supported for schema=None. Got {guided_mode}."
+                    "Only `guided_json` guided_mode is supported for schema=None. "
+                    f"Got {guided_mode}."
                 )
         else:
             raise ValueError(f"Unsupported schema type {type(schema)}")
@@ -226,7 +235,7 @@ class ChatVLLMOpenAI(ChatOpenAI):
             }
         )
 
-        # Insert instructions into the input so the model knows what structure is expected
+        # Insert instructions into the input so the model knows the expected structure
         if instructions is None:
             instructions = self._get_instructions(schema_str, guided_mode)
         insert_instructions = partial(
