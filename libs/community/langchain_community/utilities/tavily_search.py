@@ -1,6 +1,7 @@
 """Util that calls Tavily Search API.
 
 In order to set this up, follow instructions at:
+https://docs.tavily.com/docs/tavily-api/introduction
 """
 import json
 from typing import Dict, List, Optional

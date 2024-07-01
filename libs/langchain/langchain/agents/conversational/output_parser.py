@@ -22,6 +22,16 @@ class ConvoOutputParser(AgentOutputParser):
         return self.format_instructions
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+        """Parse the output from the agent into
+        an AgentAction or AgentFinish object.
+
+        Args:
+            text: The text to parse.
+
+        Returns:
+            An AgentAction or AgentFinish object.
+        """
+
         if f"{self.ai_prefix}:" in text:
             return AgentFinish(
                 {"output": text.split(f"{self.ai_prefix}:")[-1].strip()}, text
