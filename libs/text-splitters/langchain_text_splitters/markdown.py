@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Tuple, TypedDict, Union
 
+from langchain_core._api import deprecated
 from langchain_core.documents import Document
 
 from langchain_text_splitters.base import Language
@@ -18,6 +19,12 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
         super().__init__(separators=separators, **kwargs)
 
 
+@deprecated(
+    since="0.2.4",
+    message=("This class is deprecated and will be removed in a future version. "),
+    alternative="from langchain_text_splitters import MarkdownTextSplitter;",
+    pending=True,
+)
 class MarkdownHeaderTextSplitter:
     """Splitting markdown files based on specified headers."""
 
