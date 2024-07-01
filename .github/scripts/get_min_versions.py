@@ -9,6 +9,7 @@ MIN_VERSION_LIBS = [
     "langchain-community",
     "langchain",
     "langchain-text-splitters",
+    "SQLAlchemy",
 ]
 
 
@@ -74,6 +75,4 @@ if __name__ == "__main__":
     # Call the function to get the minimum versions
     min_versions = get_min_version_from_toml(toml_file)
 
-    print(
-        " ".join([f"{lib}=={version}" for lib, version in min_versions.items()])
-    )
+    print(" ".join([f"{lib}=={version}" for lib, version in min_versions.items()]))
