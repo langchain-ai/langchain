@@ -23,7 +23,6 @@ from langchain_openai.chat_models.base import (
     _convert_message_to_dict,
     _format_message_content,
 )
-from langchain_core.runnables.configurable import RunnableConfigurableFields
 
 
 def test_openai_model_param() -> None:
