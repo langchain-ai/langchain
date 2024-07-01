@@ -1,4 +1,5 @@
 """python scripts/update_mypy_ruff.py"""
+
 import glob
 import tomllib
 from pathlib import Path
@@ -27,8 +28,17 @@ def main():
         with open(path, "w") as f:
             toml.dump(pyproject, f)
         cwd = "/".join(path.split("/")[:-1])
+
+        subprocess.run(
+            "poetry lock --no-update; poetry install --with lint; poetry run ruff format .; poetry run ruff --select I --fix .",
+            cwd=cwd,
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+
         completed = subprocess.run(
-            "poetry lock --no-update; poetry install --with typing; poetry run mypy . --no-color",
+            "poetry lock --no-update; poetry install --with lint, typing; poetry run mypy . --no-color",
             cwd=cwd,
             shell=True,
             capture_output=True,
@@ -60,14 +70,6 @@ def main():
             )
             with open(full_path, "w") as f:
                 f.write("".join(file_lines))
-
-        subprocess.run(
-            "poetry run ruff format .; poetry run ruff --select I --fix .",
-            cwd=cwd,
-            shell=True,
-            capture_output=True,
-            text=True,
-        )
 
 
 if __name__ == "__main__":
