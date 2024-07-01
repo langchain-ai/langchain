@@ -80,6 +80,18 @@ VIDEO_SEARCH_REGEX = re.compile(
 )
 
 
+def _validate_content(content):
+    """If content is string, but not JSON - convert string to json-string"""
+    if isinstance(content, str):
+        if (
+            not content.startswith("{")
+            and not content.startswith("[")
+            and not content.startswith('"')
+        ):
+            content = json.dumps(content, ensure_ascii=False)
+    return content
+
+
 def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
     from gigachat.models import FunctionCall, MessagesRole
 
@@ -129,7 +141,9 @@ def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
             tool_calls=tool_calls,
         )
     elif message.role == MessagesRole.FUNCTION:
-        return FunctionMessage(name=message.name or "", content=message.content)
+        return FunctionMessage(
+            name=message.name or "", content=_validate_content(message.content)
+        )
     else:
         raise TypeError(f"Got unknown role {message.role} {message}")
 
@@ -168,10 +182,10 @@ def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
     elif isinstance(message, FunctionMessage):
         kwargs["role"] = MessagesRole.FUNCTION
         # TODO Switch to using 'result' field in future GigaChat models
-        kwargs["content"] = message.content
+        kwargs["content"] = _validate_content(message.content)
     elif isinstance(message, ToolMessage):
         kwargs["role"] = MessagesRole.FUNCTION
-        kwargs["content"] = message.content
+        kwargs["content"] = _validate_content(message.content)
     else:
         raise TypeError(f"Got unknown type {message}")
     return Messages(**kwargs)
@@ -229,7 +243,9 @@ def _convert_delta_to_message_chunk(
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:
-        return FunctionMessageChunk(content=content, name=_dict["name"])
+        return FunctionMessageChunk(
+            content=_validate_content(content), name=_dict["name"]
+        )
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
