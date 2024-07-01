@@ -28,7 +28,9 @@ jobs:
         uses: Ana06/get-changed-files@v2.2.0
         with:
           filter: |
-            *.py
+            *.ipynb
+            *.md
+            *.mdx
       - name: Check new docs
         run: |
           python docs/scripts/check_templates.py ${{ steps.files.outputs.added }}
