@@ -1,4 +1,5 @@
 """Test Neo4jVector functionality."""
+
 import os
 from typing import Any, Dict, List, cast
 
@@ -196,7 +197,10 @@ def test_neo4jvector_with_metadatas_with_scores() -> None:
         password=password,
         pre_delete_collection=True,
     )
-    output = docsearch.similarity_search_with_score("foo", k=1)
+    output = [
+        (doc, round(score, 1))
+        for doc, score in docsearch.similarity_search_with_score("foo", k=1)
+    ]
     assert output == [(Document(page_content="foo", metadata={"page": "0"}), 1.0)]
 
     drop_vector_indexes(docsearch)
@@ -856,6 +860,63 @@ OPTIONS {indexConfig: {
     output = relationship_index.similarity_search("foo", k=1)
     assert output == [Document(page_content="foo")]
 
+    drop_vector_indexes(docsearch)
+
+
+def test_neo4jvector_relationship_embeddings() -> None:
+    """Test end to end construction and search."""
+    embeddings = FakeEmbeddingsWithOsDimension()
+    docsearch = Neo4jVector.from_texts(
+        texts=texts[1:],  # Create the nodes with texts after (including) index 1
+        embedding=embeddings,
+        url=url,
+        username=username,
+        password=password,
+        pre_delete_collection=True,
+    )
+    # Ingest data
+    relation_ids = ["rel1", "rel2"]
+    embeddings_list = [
+        embeddings.embed_query(texts[0]),
+        embeddings.embed_query(texts[1]),
+    ]
+    docsearch.query(
+        (  # Creates bidirectional relation between the texts[1] and texts[2] nodes
+            f"CREATE "
+            f"(:Chunk {{text: '{texts[1]}'}})-[:REL {{id: 'rel1', text: '{texts[0]}'}}]"
+            f"->(:Chunk {{text: '{texts[2]}'}}), "
+
+            f"(:Chunk {{text: '{texts[2]}'}})-[:REL {{id: 'rel2', text: '{texts[1]}'}}]"
+            f"->(:Chunk {{text: '{texts[1]}'}})"
+        )
+    )
+
+    # Add relationship embeddings
+    docsearch.add_relation_embeddings(
+        texts=texts,
+        relation_ids=relation_ids,
+        embeddings=embeddings_list,
+        relation_type="REL",
+        embedding_relation_property="embedding",
+        text_relation_property="text",
+    )
+
+    # Create relationship index
+    docsearch.query(
+        """CREATE VECTOR INDEX `relationship`
+FOR ()-[r:REL]-() ON (r.embedding)
+OPTIONS {indexConfig: {
+ `vector.dimensions`: 1536,
+ `vector.similarity_function`: 'cosine'
+}}
+"""
+    )
+    relationship_index = Neo4jVector.from_existing_relationship_index(
+        embeddings, index_name="relationship"
+    )
+
+    output = relationship_index.similarity_search(texts[0], k=1)
+    assert output == [Document(page_content=texts[0])]
     drop_vector_indexes(docsearch)
 
 
