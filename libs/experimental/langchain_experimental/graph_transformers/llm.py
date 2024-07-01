@@ -245,19 +245,23 @@ def create_unstructured_prompt(
     human_string_parts = [
         "Based on the following example, extract entities and "
         "relations from the provided text.\n\n",
-        "Use the following entity types, don't use other entity that is not defined below:"
+        "Use the following entity types, don't use other entity "
+        "that is not defined below:"
         "# ENTITY TYPES:"
         "{node_labels}"
         if node_labels
         else "",
-        "Use the following relation types, don't use other relation that is not defined below:"
+        "Use the following relation types, don't use other relation "
+        "that is not defined below:"
         "# RELATION TYPES:"
         "{rel_types}"
         if rel_types
         else "",
-        "Below are a number of examples of text and their extracted entities and relationships."
+        "Below are a number of examples of text and their extracted "
+        "entities and relationships."
         "{examples}\n"
-        "For the following text, extract entities and relations as in the provided example."
+        "For the following text, extract entities and relations as "
+        "in the provided example."
         "{format_instructions}\nText: {input}",
     ]
     human_prompt_string = "\n".join(filter(None, human_string_parts))
