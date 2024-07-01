@@ -30,9 +30,7 @@ def _get_llm(**kwargs: Any) -> AzureOpenAI:
 
 @pytest.fixture
 def llm() -> AzureOpenAI:
-    return _get_llm(
-        max_tokens=10,
-    )
+    return _get_llm(max_tokens=10)
 
 
 @pytest.mark.scheduled
