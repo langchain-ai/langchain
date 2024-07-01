@@ -103,7 +103,7 @@ class BaseLanguageModel(
     )
     """Optional encoder to use for counting tokens."""
 
-    @validator("verbose", pre=True, always=True)
+    @validator("verbose", pre=True, always=True, allow_reuse=True)
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
         """If verbose is None, set it.
 

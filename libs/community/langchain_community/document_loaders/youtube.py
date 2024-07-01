@@ -282,11 +282,11 @@ class YoutubeLoader(BaseLoader):
                 map(
                     lambda transcript_piece: Document(
                         page_content=transcript_piece["text"].strip(" "),
-                        metadata={
+                        metadata=dict(
                             filter(
                                 lambda item: item[0] != "text", transcript_piece.items()
                             )
-                        },
+                        ),
                     ),
                     transcript_pieces,
                 )

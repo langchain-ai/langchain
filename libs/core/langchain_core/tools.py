@@ -309,7 +309,7 @@ class ChildTool(BaseTool):
                 }
         return tool_input
 
-    @root_validator()
+    @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
@@ -827,6 +827,8 @@ class StructuredTool(BaseTool):
             raise ValueError("Function and/or coroutine must be provided")
         name = name or source_function.__name__
         description_ = description or source_function.__doc__
+        if description_ is None and args_schema:
+            description_ = args_schema.__doc__
         if description_ is None:
             raise ValueError(
                 "Function must have a docstring if description not provided."

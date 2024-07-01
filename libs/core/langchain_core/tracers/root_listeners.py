@@ -18,6 +18,8 @@ AsyncListener = Union[
 class RootListenersTracer(BaseTracer):
     """Tracer that calls listeners on run start, end, and error."""
 
+    log_missing_parent = False
+
     def __init__(
         self,
         *,
@@ -63,6 +65,8 @@ class RootListenersTracer(BaseTracer):
 class AsyncRootListenersTracer(AsyncBaseTracer):
     """Async Tracer that calls listeners on run start, end, and error."""
 
+    log_missing_parent = False
+
     def __init__(
         self,
         *,
@@ -71,7 +75,7 @@ class AsyncRootListenersTracer(AsyncBaseTracer):
         on_end: Optional[AsyncListener],
         on_error: Optional[AsyncListener],
     ) -> None:
-        super().__init__()
+        super().__init__(_schema_format="original+chat")
 
         self.config = config
         self._arg_on_start = on_start
