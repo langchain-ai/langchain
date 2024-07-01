@@ -77,6 +77,13 @@ def _format_image(image_url: str) -> Dict:
     }
 
 
+def _move_system_to_front(messages):
+    """Put 'System' to first item if some agent framework use different message order."""
+    system_messages = [msg for msg in messages if msg.type == "system"]
+    non_system_messages = [msg for msg in messages if msg.type != "system"]
+    return system_messages + non_system_messages
+
+
 def _format_anthropic_messages(
     messages: List[BaseMessage],
 ) -> Tuple[Optional[str], List[Dict]]:
@@ -93,6 +100,7 @@ def _format_anthropic_messages(
     """
     system: Optional[str] = None
     formatted_messages: List[Dict] = []
+    messages = _move_system_to_front(messages)
     for i, message in enumerate(messages):
         if message.type == "system":
             if i != 0:
