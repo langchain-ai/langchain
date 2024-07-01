@@ -17,60 +17,62 @@ CHAT_MODEL_IGNORE = ("FakeListChatModel", "HumanInputChatModel")
 CHAT_MODEL_FEAT_TABLE = {
     "ChatAnthropic": {
         "tool_calling": True,
-        "structured_output": True,
+        "multimodal": True,
         "package": "langchain-anthropic",
         "link": "/docs/integrations/chat/anthropic/",
     },
     "ChatMistralAI": {
         "tool_calling": True,
-        "structured_output": True,
+        "json_model": True,
         "package": "langchain-mistralai",
         "link": "/docs/integrations/chat/mistralai/",
     },
     "ChatFireworks": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
         "package": "langchain-fireworks",
         "link": "/docs/integrations/chat/fireworks/",
     },
     "AzureChatOpenAI": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
+        "multimodal": True,
         "package": "langchain-openai",
         "link": "/docs/integrations/chat/azure_chat_openai/",
     },
     "ChatOpenAI": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
+        "multimodal": True,
         "package": "langchain-openai",
         "link": "/docs/integrations/chat/openai/",
     },
     "ChatTogether": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
         "package": "langchain-together",
         "link": "/docs/integrations/chat/together/",
     },
     "ChatVertexAI": {
         "tool_calling": True,
-        "structured_output": True,
+        "multimodal": True,
         "package": "langchain-google-vertexai",
         "link": "/docs/integrations/chat/google_vertex_ai_palm/",
     },
+    "ChatGoogleGenerativeAI": {
+        "tool_calling": True,
+        "multimodal": True,
+        "package": "langchain-google-genai",
+        "link": "/docs/integrations/chat/google_generative_ai/",
+    },
     "ChatGroq": {
         "tool_calling": True,
-        "structured_output": True,
         "json_mode": True,
         "package": "langchain-groq",
         "link": "/docs/integrations/chat/groq/",
     },
     "ChatCohere": {
         "tool_calling": True,
-        "structured_output": True,
         "package": "langchain-cohere",
         "link": "/docs/integrations/chat/cohere/",
     },
@@ -80,21 +82,37 @@ CHAT_MODEL_FEAT_TABLE = {
         "link": "/docs/integrations/chat/bedrock/",
     },
     "ChatHuggingFace": {
+        "tool_calling": True,
         "local": True,
         "package": "langchain-huggingface",
         "link": "/docs/integrations/chat/huggingface/",
     },
     "ChatOllama": {
         "local": True,
+        "json_mode": True,
         "package": "langchain-community",
         "link": "/docs/integrations/chat/ollama/",
     },
     "vLLM Chat (via ChatOpenAI)": {
         "local": True,
-        "package": "langchain-community",
+        "package": "langchain-openai",
         "link": "/docs/integrations/chat/vllm/",
     },
+    "ChatEdenAI": {
+        "tool_calling": True,
+        "package": "langchain-community",
+        "link": "/docs/integrations/chat/edenai/",
+    },
+    "ChatLlamaCpp": {
+        "tool_calling": True,
+        "local": True,
+        "package": "langchain-community",
+        "link": "/docs/integrations/chat/llamacpp",
+    },
 }
+
+for feats in CHAT_MODEL_FEAT_TABLE.values():
+    feats["structured_output"] = feats.get("tool_calling", False)
 
 
 LLM_TEMPLATE = """\
@@ -102,6 +120,7 @@ LLM_TEMPLATE = """\
 sidebar_position: 1
 sidebar_class_name: hidden
 keywords: [compatibility]
+custom_edit_url:
 ---
 
 # LLMs
@@ -122,7 +141,9 @@ CHAT_MODEL_TEMPLATE = """\
 ---
 sidebar_position: 0
 sidebar_class_name: hidden
-keywords: [compatibility, bind_tools, tool calling, function calling, structured output, with_structured_output, json mode, local model]
+keywords: [compatibility]
+custom_edit_url:
+hide_table_of_contents: true
 ---
 
 # Chat models
@@ -198,14 +219,16 @@ def get_chat_model_table() -> str:
         "structured_output",
         "json_mode",
         "local",
+        "multimodal",
         "package",
     ]
     title = [
         "Model",
-        "[Tool calling](/docs/how_to/tool_calling/)",
+        "[Tool calling](/docs/how_to/tool_calling)",
         "[Structured output](/docs/how_to/structured_output/)",
         "JSON mode",
         "Local",
+        "[Multimodal](/docs/how_to/multimodal_inputs/)",
         "Package",
     ]
     rows = [title, [":-"] + [":-:"] * (len(title) - 1)]
