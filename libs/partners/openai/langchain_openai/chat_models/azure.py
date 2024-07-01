@@ -1,4 +1,5 @@
 """Azure OpenAI chat wrapper."""
+
 from __future__ import annotations
 
 import logging
@@ -512,10 +513,6 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """If legacy arg openai_api_base is passed in, try to infer if it is a base_url or 
         azure_endpoint and update client params accordingly.
     """
-    ignore_openai_api_base: bool = False
-    """For when conflicting packages require `openai_base_url` env var. Setting it,
-        to True will set `openai_api_base` to None if it is found in env vars.
-    """
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -552,14 +549,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
         values["openai_api_key"] = (
             convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
+        values["openai_api_base"] = (
+            values["openai_api_base"]
+            if "openai_api_base" in values
+            else os.getenv("OPENAI_API_BASE")
         )
-        if values["ignore_openai_api_base"] and values["openai_api_base"]:
-            logger.warning(
-                "Ignoring openai_api_base because ignore_openai_api_base is set."
-            )
-            values["openai_api_base"] = None
         values["openai_api_version"] = values["openai_api_version"] or os.getenv(
             "OPENAI_API_VERSION"
         )
@@ -592,9 +586,6 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
                     "the `azure_endpoint` param not `openai_api_base` "
                     "(or alias `base_url`)."
-                    "If you are using a separate package that also requires "
-                    "a `base_url` env, you can use the `ignore_openai_api_base` "
-                    "parameter of this class to bypass this check."
                 )
             if values["deployment_name"]:
                 raise ValueError(
@@ -613,12 +604,16 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "api_version": values["openai_api_version"],
             "azure_endpoint": values["azure_endpoint"],
             "azure_deployment": values["deployment_name"],
-            "api_key": values["openai_api_key"].get_secret_value()
-            if values["openai_api_key"]
-            else None,
-            "azure_ad_token": values["azure_ad_token"].get_secret_value()
-            if values["azure_ad_token"]
-            else None,
+            "api_key": (
+                values["openai_api_key"].get_secret_value()
+                if values["openai_api_key"]
+                else None
+            ),
+            "azure_ad_token": (
+                values["azure_ad_token"].get_secret_value()
+                if values["azure_ad_token"]
+                else None
+            ),
             "azure_ad_token_provider": values["azure_ad_token_provider"],
             "organization": values["openai_organization"],
             "base_url": values["openai_api_base"],
@@ -669,8 +664,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[True] = True,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]:
-        ...
+    ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
 
     @overload
     def with_structured_output(
@@ -680,8 +674,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[False] = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        ...
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
 
     def with_structured_output(
         self,

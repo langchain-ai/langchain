@@ -60,10 +60,6 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     validate_base_url: bool = True
     chunk_size: int = 2048
     """Maximum number of texts to embed in each batch"""
-    ignore_openai_api_base: bool = False
-    """Ignore the `openai_api_base` parameter for if a conflicting
-        package requires it.
-    """
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -79,11 +75,11 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         values["openai_api_key"] = (
             convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
+        values["openai_api_base"] = (
+            values["openai_api_base"]
+            if "openai_api_base" in values
+            else os.getenv("OPENAI_API_BASE")
         )
-        if values["openai_api_base"] and values["ignore_openai_api_base"]:
-            values["openai_api_base"] = None
         values["openai_api_version"] = values["openai_api_version"] or os.getenv(
             "OPENAI_API_VERSION", default="2023-05-15"
         )

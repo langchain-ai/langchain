@@ -44,7 +44,7 @@ def test_initialize_azure_openai_with_openai_api_base_set() -> None:
         azure_deployment="35-turbo-dev",
         openai_api_version="2023-05-15",
         temperature=0,
-        ignore_openai_api_base=True,
+        openai_api_base=None,
     )
     assert llm.openai_api_key is not None
     assert llm.openai_api_key.get_secret_value() == "xyz"

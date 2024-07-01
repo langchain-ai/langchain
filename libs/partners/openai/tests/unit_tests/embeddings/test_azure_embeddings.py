@@ -22,6 +22,6 @@ def test_intialize_azure_openai_with_base_set() -> None:
         azure_endpoint="my-base-url",
         azure_deployment="35-turbo-dev",
         openai_api_version="2023-05-15",
-        ignore_openai_api_base=True,
+        openai_api_base=None,
     )
     assert embeddings.model == "text-embedding-large"
