@@ -1,0 +1,13 @@
+"""Test vLLM Chat wrapper."""
+
+from importlib import import_module
+
+
+def test_import_class() -> None:
+    """Test that the class can be imported."""
+    module_name = "langchain_community.chat_models.vllm"
+    class_name = "ChatVLLMOpenAI"
+
+    module = import_module(module_name)
+    assert hasattr(module, class_name)
+

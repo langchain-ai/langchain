@@ -158,6 +158,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.vertexai import (
         ChatVertexAI,
     )
+    from langchain_community.chat_models.vllm import (
+        ChatVLLMOpenAI,
+    )
     from langchain_community.chat_models.volcengine_maas import (
         VolcEngineMaasChat,
     )
@@ -206,6 +209,7 @@ __all__ = [
     "ChatSnowflakeCortex",
     "ChatTongyi",
     "ChatVertexAI",
+    "ChatVLLMOpenAI",
     "ChatYandexGPT",
     "ChatYuan2",
     "ChatZhipuAI",
@@ -278,6 +282,7 @@ _module_lookup = {
     "VolcEngineMaasChat": "langchain_community.chat_models.volcengine_maas",
     "ChatPremAI": "langchain_community.chat_models.premai",
     "ChatLlamaCpp": "langchain_community.chat_models.llamacpp",
+    "ChatVLLMOpenAI": "langchain_community.chat_models.vllm",
 }
 
 
