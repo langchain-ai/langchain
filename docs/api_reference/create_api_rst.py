@@ -355,6 +355,7 @@ def _package_dir(package_name: str = "langchain") -> Path:
         "core",
         "cli",
         "text-splitters",
+        "standard-tests",
     ):
         return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
     else:
@@ -379,7 +380,7 @@ def _get_package_version(package_dir: Path) -> str:
             "the package is missing a pyproject.toml file which should be added."
             "Aborting the build."
         )
-        exit(1)
+        raise e
     return pyproject["tool"]["poetry"]["version"]
 
 
@@ -416,8 +417,13 @@ def main(dirs: Optional[list] = None) -> None:
             print("Skipping dir:", dir_)
             continue
         else:
-            print("Building package:", dir_)
-            _build_rst_file(package_name=dir_)
+            print("Building API Reference for the package:", dir_)
+            try:
+                _build_rst_file(package_name=dir_)
+            except FileNotFoundError as e:
+                raise FileNotFoundError(
+                    f"Error building API reference" f" for {dir_} package. Error: {e}"
+                )
     print("API reference files built.")
 
 
