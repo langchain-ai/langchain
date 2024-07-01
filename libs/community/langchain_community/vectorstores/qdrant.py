@@ -168,7 +168,7 @@ class Qdrant(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        ids: Optional[Union[Sequence[str], Sequence[int]]] = None,
         batch_size: int = 64,
         **kwargs: Any,
     ) -> List[str]:
@@ -203,7 +203,7 @@ class Qdrant(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        ids: Optional[Union[Sequence[str], Sequence[int]]] = None,
         batch_size: int = 64,
         **kwargs: Any,
     ) -> List[str]:
@@ -1147,6 +1147,388 @@ class Qdrant(VectorStore):
             for i in mmr_selected
         ]
 
+    def chunk_window_retrieval_similarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        window_size: int = 2,
+        filter: Optional[MetadataFilter] = None,
+        search_params: Optional[common_types.SearchParams] = None,
+        offset: int = 0,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[common_types.ReadConsistency] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to query.
+        The result step comprises of documents which are retrieved in 2 steps.
+        The first step is regular similarity search which fetches k documents.
+        The second step retrieves additional documents that are present before
+        and after the documents retrieved in first step.
+        The numnber of additional documents to add to the result set is
+        determined by window_size.
+        Hence, for this method to work as expected, it is required that IDs of
+        the document are integer based
+        and added in sequence via 'Qdrant.add_texts' method.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            window_size:
+                Number of Additional Documents to fetch which surrounds
+                (both before and after) the retrieved similar document.
+                Defaults to 2.
+            filter: Filter by metadata. Defaults to None.
+            search_params: Additional search params
+            offset:
+                Offset of the first result to return.
+                May be used to paginate results.
+                Note: large offset values may cause performance issues.
+            score_threshold:
+                Define a minimal score threshold for the result.
+                If defined, less similar results will not be returned.
+                Score of the returned result might be higher or smaller than the
+                threshold depending on the Distance function used.
+                E.g. for cosine similarity only higher scores will be returned.
+            consistency:
+                Read consistency of the search. Defines how many replicas should be
+                queried before returning the result.
+                Values:
+                - int - number of replicas to query, values should present in all
+                        queried replicas
+                - 'majority' - query all replicas, but return values present in the
+                            majority of replicas
+                - 'quorum' - query the majority of replicas, return values present in
+                            all of them
+                - 'all' - query all replicas, and return values present in all replicas
+            **kwargs:
+                Any other named arguments to pass through to QdrantClient.search()
+
+        Returns:
+            List of Documents most similar to the query along with extra context
+            documents which surround the similarity search results
+        """
+        embedding = self._embed_query(query)
+        return self.chunk_window_retrieval_similarity_search_by_vector(
+            embedding,
+            k,
+            window_size=window_size,
+            filter=filter,
+            search_params=search_params,
+            offset=offset,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
+        )
+
+    @sync_call_fallback
+    async def achunk_window_retrieval_similarity_search(
+        self,
+        query: str,
+        k: int = 4,
+        window_size: int = 2,
+        filter: Optional[MetadataFilter] = None,
+        search_params: Optional[common_types.SearchParams] = None,
+        offset: int = 0,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[common_types.ReadConsistency] = None,
+        **kwargs: Any,
+    ) -> List[Document]:
+        """Return docs most similar to query.
+        The result step comprises of documents which are retrieved in 2 steps.
+        The first step is regular similarity search which fetches k documents.
+        The second step retrieves additional documents that are present before
+        and after the documents retrieved in first step.
+        The numnber of additional documents to add to the result set is
+        determined by window_size.
+        Hence, for this method to work as expected, it is required that IDs of
+        the document are integer based
+        and added in sequence via 'Qdrant.add_texts' method.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            window_size:
+                Number of Additional Documents to fetch which surrounds
+                (both before and after) the retrieved similar document.
+                Defaults to 2.
+            filter: Filter by metadata. Defaults to None.
+            search_params: Additional search params
+            offset:
+                Offset of the first result to return.
+                May be used to paginate results.
+                Note: large offset values may cause performance issues.
+            score_threshold:
+                Define a minimal score threshold for the result.
+                If defined, less similar results will not be returned.
+                Score of the returned result might be higher or smaller than the
+                threshold depending on the Distance function used.
+                E.g. for cosine similarity only higher scores will be returned.
+            consistency:
+                Read consistency of the search. Defines how many replicas should be
+                queried before returning the result.
+                Values:
+                - int - number of replicas to query, values should present in all
+                        queried replicas
+                - 'majority' - query all replicas, but return values present in the
+                            majority of replicas
+                - 'quorum' - query the majority of replicas, return values present in
+                            all of them
+                - 'all' - query all replicas, and return values present in all replicas
+            **kwargs:
+                Any other named arguments to pass through to QdrantClient.search()
+
+        Returns:
+            List of Documents most similar to the query along with extra context
+            documents which surround the similarity search results
+        """
+        embedding = await self._aembed_query(query)
+        return await self.achunk_window_retrieval_similarity_search_by_vector(
+            embedding,
+            k,
+            window_size=window_size,
+            filter=filter,
+            search_params=search_params,
+            offset=offset,
+            score_threshold=score_threshold,
+            consistency=consistency,
+            kwargs=kwargs,
+        )
+
+    def chunk_window_retrieval_similarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        window_size: int = 2,
+        filter: Optional[MetadataFilter] = None,
+        search_params: Optional[common_types.SearchParams] = None,
+        offset: int = 0,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[common_types.ReadConsistency] = None,
+        **kwargs: Any,
+    ):
+        """Return docs most similar to query.
+        The result step comprises of documents which are retrieved in 2 steps.
+        The first step is regular similarity search which fetches k documents.
+        The second step retrieves additional documents that are present before
+        and after the documents retrieved in first step.
+        The numnber of additional documents to add to the result set is
+        determined by window_size.
+        Hence, for this method to work as expected, it is required that IDs of
+        the document are integer based
+        and added in sequence via 'Qdrant.add_texts' method.
+
+        Args:
+            embedding: Embedding vector to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            window_size:
+                Number of Additional Documents to fetch which surrounds
+                (both before and after) the retrieved similar document.
+                Defaults to 2.
+            filter: Filter by metadata. Defaults to None.
+            search_params: Additional search params
+            offset:
+                Offset of the first result to return.
+                May be used to paginate results.
+                Note: large offset values may cause performance issues.
+            score_threshold:
+                Define a minimal score threshold for the result.
+                If defined, less similar results will not be returned.
+                Score of the returned result might be higher or smaller than the
+                threshold depending on the Distance function used.
+                E.g. for cosine similarity only higher scores will be returned.
+            consistency:
+                Read consistency of the search. Defines how many replicas should be
+                queried before returning the result.
+                Values:
+                - int - number of replicas to query, values should present in all
+                        queried replicas
+                - 'majority' - query all replicas, but return values present in the
+                            majority of replicas
+                - 'quorum' - query the majority of replicas, return values present in
+                            all of them
+                - 'all' - query all replicas, and return values present in all replicas
+            **kwargs:
+                Any other named arguments to pass through to QdrantClient.search()
+
+        Returns:
+            List of Documents most similar to the query along with extra context
+            documents which surround the similarity search results
+        """
+        query_vector = embedding
+        if self.vector_name is not None:
+            query_vector = (self.vector_name, embedding)  # type: ignore[assignment]
+
+        results = self.client.search(
+            collection_name=self.collection_name,
+            query_vector=query_vector,
+            query_filter=filter,
+            search_params=search_params,
+            limit=k,
+            offset=offset,
+            with_payload=True,
+            with_vectors=False,  # Langchain does not expect vectors to be returned
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
+        )
+
+        results_ids_list = [obj.id for obj in results]
+        window_point_ids = []
+        for id in results_ids_list:
+            # check the type of PointId, it should be int and not UUID string
+            if not isinstance(id, int):
+                raise QdrantException(
+                    f"'Chunk Window Retrieval needs PointId to be integer. \
+                      PointId found was '{id}'"
+                )
+            for x in range(1, window_size + 1):
+                window_point_ids.append(id - x)
+                window_point_ids.append(id + x)
+
+        # make another call to Qdrant and fetch all the points with Ids built above
+        window_point_results = self.client.retrieve(
+            collection_name=self.collection_name,
+            ids=window_point_ids,
+            with_payload=True,
+            with_vectors=False,
+        )
+        # merge and sort all the chunks
+        merged_list = results + window_point_results
+        sorted_list = sorted(merged_list, key=lambda obj: obj.id)
+        return [
+            (
+                self._document_from_scored_point(
+                    result,
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
+                )
+            )
+            for result in sorted_list
+        ]
+
+    @sync_call_fallback
+    async def achunk_window_retrieval_similarity_search_by_vector(
+        self,
+        embedding: List[float],
+        k: int = 4,
+        window_size: int = 2,
+        filter: Optional[MetadataFilter] = None,
+        search_params: Optional[common_types.SearchParams] = None,
+        offset: int = 0,
+        score_threshold: Optional[float] = None,
+        consistency: Optional[common_types.ReadConsistency] = None,
+        **kwargs: Any,
+    ):
+        """Return docs most similar to query.
+        The result step comprises of documents which are retrieved in 2 steps.
+        The first step is regular similarity search which fetches k documents.
+        The second step retrieves additional documents that are present before
+        and after the documents retrieved in first step.
+        The numnber of additional documents to add to the result set is
+        determined by window_size.
+        Hence, for this method to work as expected, it is required that IDs of
+        the document are integer based
+        and added in sequence via 'Qdrant.add_texts' method.
+
+        Args:
+            embedding: Embedding vector to look up documents similar to.
+            k: Number of Documents to return. Defaults to 4.
+            window_size:
+                Number of Additional Documents to fetch which surrounds
+                (both before and after) the retrieved similar document.
+                Defaults to 2.
+            filter: Filter by metadata. Defaults to None.
+            search_params: Additional search params
+            offset:
+                Offset of the first result to return.
+                May be used to paginate results.
+                Note: large offset values may cause performance issues.
+            score_threshold:
+                Define a minimal score threshold for the result.
+                If defined, less similar results will not be returned.
+                Score of the returned result might be higher or smaller than the
+                threshold depending on the Distance function used.
+                E.g. for cosine similarity only higher scores will be returned.
+            consistency:
+                Read consistency of the search. Defines how many replicas should be
+                queried before returning the result.
+                Values:
+                - int - number of replicas to query, values should present in all
+                        queried replicas
+                - 'majority' - query all replicas, but return values present in the
+                            majority of replicas
+                - 'quorum' - query the majority of replicas, return values present in
+                            all of them
+                - 'all' - query all replicas, and return values present in all replicas
+            **kwargs:
+                Any other named arguments to pass through to QdrantClient.search()
+
+        Returns:
+            List of Documents most similar to the query along with extra context
+            documents which surround the similarity search results
+        """
+        from qdrant_client.local.async_qdrant_local import AsyncQdrantLocal
+
+        if self.async_client is None or isinstance(
+            self.async_client._client, AsyncQdrantLocal
+        ):
+            raise NotImplementedError(
+                "QdrantLocal cannot interoperate with sync and async clients"
+            )
+        query_vector = embedding
+        if self.vector_name is not None:
+            query_vector = (self.vector_name, embedding)  # type: ignore[assignment]
+
+        results = await self.async_client.search(
+            collection_name=self.collection_name,
+            query_vector=query_vector,
+            query_filter=filter,
+            search_params=search_params,
+            limit=k,
+            offset=offset,
+            with_payload=True,
+            with_vectors=False,  # Langchain does not expect vectors to be returned
+            score_threshold=score_threshold,
+            consistency=consistency,
+            **kwargs,
+        )
+
+        results_ids_list = [obj.id for obj in results]
+        window_point_ids = []
+        for id in results_ids_list:
+            # check the type of PointId, it should be int and not UUID string
+            if not isinstance(id, int):
+                raise QdrantException(
+                    f"'Chunk Window Retrieval needs PointId to be integer. \
+                      PointId found was '{id}'"
+                )
+            for x in range(1, window_size + 1):
+                window_point_ids.append(id - x)
+                window_point_ids.append(id + x)
+
+        # make another call to Qdrant and fetch all the points with Ids built above
+        window_point_results = await self.async_client.retrieve(
+            collection_name=self.collection_name,
+            ids=window_point_ids,
+            with_payload=True,
+            with_vectors=False,
+        )
+        # merge and sort all the chunks
+        merged_list = results + window_point_results
+        sorted_list = sorted(merged_list, key=lambda obj: obj.id)
+        return [
+            (
+                self._document_from_scored_point(
+                    result,
+                    self.collection_name,
+                    self.content_payload_key,
+                    self.metadata_payload_key,
+                )
+            )
+            for result in sorted_list
+        ]
+
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete by vector ID or other criteria.
 
@@ -1202,7 +1584,7 @@ class Qdrant(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        ids: Optional[Union[Sequence[str], Sequence[int]]] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
@@ -1423,7 +1805,7 @@ class Qdrant(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        ids: Optional[Union[Sequence[str], Sequence[int]]] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
@@ -2150,7 +2532,7 @@ class Qdrant(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        ids: Optional[Union[Sequence[str], Sequence[int]]] = None,
         batch_size: int = 64,
     ) -> Generator[Tuple[List[str], List[rest.PointStruct]], None, None]:
         from qdrant_client.http import models as rest
@@ -2192,7 +2574,7 @@ class Qdrant(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
+        ids: Optional[Union[Sequence[str], Sequence[int]]] = None,
         batch_size: int = 64,
     ) -> AsyncGenerator[Tuple[List[str], List[rest.PointStruct]], None]:
         from qdrant_client.http import models as rest
