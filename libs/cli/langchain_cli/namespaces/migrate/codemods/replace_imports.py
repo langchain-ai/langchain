@@ -10,7 +10,6 @@ This codemod deals with the following cases:
 4. `from pydantic.settings import BaseSettings as <name>`  # TODO: This is not working.
 5. `import pydantic` -> `pydantic.BaseSettings`
 """
-
 from __future__ import annotations
 
 import json
@@ -47,10 +46,9 @@ T = TypeVar("T")
 
 
 def _deduplicate_in_order(
-    seq: Iterable[T],
-    key: Callable[[T], str] = lambda x: x,  # type: ignore[assignment, return-value]
+    seq: Iterable[T], key: Callable[[T], str] = lambda x: x
 ) -> List[T]:
-    seen = set()  # type: ignore[var-annotated]
+    seen = set()
     seen_add = seen.add
     return [x for x in seq if not (key(x) in seen or seen_add(key(x)))]
 

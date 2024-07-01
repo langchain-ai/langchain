@@ -1,5 +1,5 @@
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI  # type: ignore[import-not-found]
+from langchain_openai import ChatOpenAI
 
 _prompt = ChatPromptTemplate.from_messages(
     [

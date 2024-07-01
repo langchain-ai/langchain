@@ -1,6 +1,5 @@
 """Test __ModuleName__LLM llm."""
-
-from __module_name__.llms import __ModuleName__LLM  # type: ignore[import-not-found]
+from __module_name__.llms import __ModuleName__LLM
 
 
 def test_stream() -> None:

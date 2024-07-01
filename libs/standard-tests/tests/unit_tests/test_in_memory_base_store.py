@@ -1,5 +1,4 @@
 """Tests for the InMemoryStore class."""
-
 from typing import Tuple
 
 import pytest

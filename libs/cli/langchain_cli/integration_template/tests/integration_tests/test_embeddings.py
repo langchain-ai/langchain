@@ -1,8 +1,5 @@
 """Test __ModuleName__ embeddings."""
-
-from __module_name__.embeddings import (  # type: ignore[import-not-found]
-    __ModuleName__Embeddings,  # type: ignore[import-not-found]
-)
+from __module_name__.embeddings import __ModuleName__Embeddings
 
 
 def test___module_name___embedding_documents() -> None:

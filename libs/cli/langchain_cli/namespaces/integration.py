@@ -1,7 +1,6 @@
 """
 Develop integration packages for LangChain.
 """
-
 import re
 import shutil
 import subprocess
@@ -42,7 +41,7 @@ def _process_name(name: str):
         raise ValueError("Name should not end with `-`.")
     if preprocessed.find("--") != -1:
         raise ValueError("Name should not contain consecutive hyphens.")
-    return Replacements(  # type: ignore[typeddict-unknown-key]
+    return Replacements(
         {
             "__package_name__": f"langchain-{preprocessed}",
             "__module_name__": "langchain_" + preprocessed.replace("-", "_"),
@@ -155,8 +154,7 @@ def create_doc(
         str,
         typer.Option(
             help=(
-                "The type of component. Currently only 'ChatModel', 'DocumentLoader' "
-                "supported."
+                "The type of component. Currently only 'ChatModel', 'DocumentLoader' supported."
             ),
         ),
     ] = "ChatModel",

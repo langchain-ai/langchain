@@ -17,7 +17,7 @@ PARTNER_PKGS = PKGS_ROOT / "partners"
 class ImportExtractor(ast.NodeVisitor):
     def __init__(self, *, from_package: Optional[str] = None) -> None:
         """Extract all imports from the given code, optionally filtering by package."""
-        self.imports = []  # type: ignore[var-annotated]
+        self.imports = []
         self.package = from_package
 
     def visit_ImportFrom(self, node):
@@ -113,7 +113,7 @@ def list_classes_by_package(pkg_root: str) -> List[Tuple[str, str]]:
         rel_path = os.path.relpath(file, pkg_root)
         if rel_path.startswith("tests"):
             continue
-        module_classes.extend(_get_all_classnames_from_file(file, pkg_root))  # type: ignore[arg-type]
+        module_classes.extend(_get_all_classnames_from_file(file, pkg_root))
     return module_classes
 
 
@@ -128,7 +128,7 @@ def list_init_imports_by_package(pkg_root: str) -> List[Tuple[str, str]]:
         if not file.name == "__init__.py":
             continue
         import_in_file = identify_all_imports_in_file(str(file))
-        module_name = _get_current_module(file, pkg_root)  # type: ignore[arg-type]
+        module_name = _get_current_module(file, pkg_root)
         imports.extend([(module_name, item) for _, item in import_in_file])
     return imports
 
