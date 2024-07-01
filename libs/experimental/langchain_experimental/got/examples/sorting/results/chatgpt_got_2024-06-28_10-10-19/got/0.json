@@ -1,0 +1,664 @@
+[
+  {
+    "operation": "generate",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 1,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 1"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 1,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 2"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 1,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 3"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 1,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 4"
+      }
+    ]
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 1,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 1"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 1"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 1"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 1"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 1"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 1"
+      }
+    ]
+  },
+  {
+    "operation": "score",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 1"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 1"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 1"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 1"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 1"
+      }
+    ],
+    "scored": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "scores": [
+      300,
+      300,
+      300,
+      300,
+      300
+    ]
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 1"
+      }
+    ],
+    "scored": [
+      true
+    ],
+    "scores": [
+      300
+    ]
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 1,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 2"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 2"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 2"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 2"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 2"
+      }
+    ]
+  },
+  {
+    "operation": "score",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 2"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 2"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 2"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 2"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 2"
+      }
+    ],
+    "scored": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "scores": [
+      300,
+      300,
+      300,
+      300,
+      300
+    ]
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 2"
+      }
+    ],
+    "scored": [
+      true
+    ],
+    "scores": [
+      300
+    ]
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 1,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 3"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 3"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 3"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 3"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 3"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 3"
+      }
+    ]
+  },
+  {
+    "operation": "score",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 3"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 3"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 3"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 3"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 3"
+      }
+    ],
+    "scored": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "scores": [
+      300,
+      300,
+      300,
+      300,
+      300
+    ]
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 3"
+      }
+    ],
+    "scored": [
+      true
+    ],
+    "scores": [
+      300
+    ]
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 1,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 4"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 4"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 4"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 4"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 4"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 4"
+      }
+    ]
+  },
+  {
+    "operation": "score",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 4"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 4"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 4"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 4"
+      },
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 4"
+      }
+    ],
+    "scored": [
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "scores": [
+      300,
+      300,
+      300,
+      300,
+      300
+    ]
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": [
+      {
+        "original": "[5]",
+        "current": "[]",
+        "phase": 2,
+        "method": "got",
+        "unsorted_sublist": "[]",
+        "part": "List 4"
+      }
+    ],
+    "scored": [
+      true
+    ],
+    "scores": [
+      300
+    ]
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "ground_truth_evaluator",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

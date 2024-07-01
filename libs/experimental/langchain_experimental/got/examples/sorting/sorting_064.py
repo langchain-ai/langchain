@@ -13,7 +13,8 @@ import json
 import csv
 from typing import Dict, List, Callable, Union
 from graph_of_thoughts import controller, language_models, operations, prompter, parser
-
+from graph_of_thoughts.language_models.openai_gpt_models import GPTmodels
+from langchain_core.prompts import PromptTemplate
 # This is a hack to also allow execution of this file from the examples directory
 try:
     from . import utils
@@ -179,12 +180,28 @@ Merged list:
         else:
             length = 32
 
-        return self.got_merge_prompt.format(
-            input1=state_dicts[0]["current"],
-            input2=state_dicts[1]["current"],
-            length1=length,
-            length2=length * 2,
-        )
+        prompt = self.got_merge_prompt
+        input1=state_dicts[0]["current"]
+        input2=state_dicts[1]["current"]
+        length1=length
+        length2=length * 2
+
+        var_dic = {
+        "input1": input1,
+        "input2": input2,
+        "length1": length1,
+        "length2": length2,
+        
+    }                  
+
+
+    #     var_dic = {
+    #     "input": input,
+    # }     
+
+        prompt = PromptTemplate.from_template(prompt)  
+
+        return prompt,var_dic
 
     def generate_prompt(
         self, num_branches: int, original: str, current: str, method: str, **kwargs
@@ -212,23 +229,69 @@ Merged list:
         else:
             input = current
         if method.startswith("io"):
-            return self.sort_prompt.format(input=input)
+            prompt = self.sort_prompt
+            var_dic = {
+            "input": input   ##OOOOOOriginal?
+        }                                                
+            prompt = PromptTemplate.from_template(prompt) 
+
+            return prompt,var_dic
+            #return self.sort_prompt.format(input=input)
         elif method.startswith("cot"):
-            return self.sort_prompt_cot.format(input=input)
+
+            prompt = self.sort_prompt_cot
+            var_dic = {
+            "input": input   ##OOOOOOriginal?
+        }
+            # prompt = PromptTemplate.from_template(self.sort_prompt_cot)                                                   
+            prompt = PromptTemplate.from_template(prompt) 
+
+            return prompt,var_dic
+            #return self.sort_prompt_cot.format(input=input)
         elif method.startswith("tot"):
             if current is None or current == "":
-                return self.sort_prompt.format(input=input)
-            return self.tot_improve_prompt.format(
-                input=original,
-                incorrectly_sorted=current,
-                length=len(utils.string_to_list(original)),
-            )
+                prompt = self.sort_prompt
+                var_dic = {
+                "input": input   ##OOOOOOriginal?
+            }
+                #prompt = PromptTemplate.from_template(self.sort_prompt)                                                   
+                prompt = PromptTemplate.from_template(prompt) 
+                return prompt,var_dic
+                # return self.sort_prompt.format(input=input)
+            prompt = self.tot_improve_prompt
+            var_dic = {
+            "input": input,
+            "incorrectly_sorted": current,
+            "length": len(utils.string_to_list(original))    ##OOOOOOriginal?
+        }
+            #prompt = PromptTemplate.from_template(self.tot_improve_prompt)
+            prompt = PromptTemplate.from_template(prompt)                                                                                  
+
+            return prompt,var_dic 
+            # return self.tot_improve_prompt.format(
+            #     input=original,
+            #     incorrectly_sorted=current,
+            #     length=len(utils.string_to_list(original)),
+            # )
         elif method.startswith("got"):
             if current is None or current == "":
-                return self.got_split_prompt.format(input=input)
+                prompt = self.got_split_prompt
+
+                var_dic = {
+                "input": input,
+            }               
+                prompt = PromptTemplate.from_template(prompt)         
+                return prompt,var_dic
+                # return self.got_split_prompt.format(input=input)
             # if current is just a sublist of the original input, return the split prompt
             if kwargs["phase"] == 1:
-                return self.sort_prompt.format(input=current)
+                prompt = self.sort_prompt
+
+                var_dic = {
+                "input": input, ##CCCCCurrent?
+            }               
+                prompt = PromptTemplate.from_template(prompt)         
+                return prompt,var_dic
 
             if (
                 "unsorted_sublist" in kwargs
@@ -237,11 +300,15 @@ Merged list:
             ):
                 original = kwargs["unsorted_sublist"]
 
-            return self.tot_improve_prompt.format(
-                input=original,
-                incorrectly_sorted=current,
-                length=len(utils.string_to_list(original)),
-            )
+            prompt = self.tot_improve_prompt
+            var_dic = {
+            "input": input   ##OOOOOOriginal?
+        }
+            #prompt = PromptTemplate.from_template(self.tot_improve_prompt)                                                   
+            prompt = PromptTemplate.from_template(prompt)                               
+
+            return prompt,var_dic 
+
 
     def improve_prompt(self, **kwargs) -> str:
         """
@@ -678,7 +745,7 @@ def run(
     """
 
     orig_budget = budget
-    data_path = os.path.join(os.path.dirname(__file__), "sorting_064.csv")
+    data_path = os.path.join(os.path.dirname(__file__), "sorting_032.csv")
     data = []
     with open(data_path, "r") as f:
         reader = csv.reader(f)
@@ -735,7 +802,15 @@ def run(
                     f"Budget has been depleted, stopping. Method {method.__name__} has not been run."
                 )
                 break
-            lm = language_models.ChatGPT(
+            # lm = language_models.ChatGPT(
+            #     os.path.join(
+            #         os.path.dirname(__file__),
+            #         "../../graph_of_thoughts/language_models/config.json",
+            #     ),
+            #     model_name=lm_name,
+            #     cache=True,
+            # )
+            lm = GPTmodels(
                 os.path.join(
                     os.path.dirname(__file__),
                     "../../graph_of_thoughts/language_models/config.json",
@@ -743,6 +818,7 @@ def run(
                 model_name=lm_name,
                 cache=True,
             )
+
             operations_graph = method()
             executor = controller.Controller(
                 lm,
@@ -782,8 +858,9 @@ if __name__ == "__main__":
         [0, 0, 0, 0, 1, 1, 1, 1, 2...]
     """
     budget = 30
-    samples = [item for item in range(0, 100)]
-    approaches = [io, cot, tot, tot2, got]
+    samples = [item for item in range(0, 1)]
+    approaches = [io]
+    #approaches = [io, cot, tot, tot2, got]
 
     spent = run(samples, approaches, budget, "chatgpt")
 
