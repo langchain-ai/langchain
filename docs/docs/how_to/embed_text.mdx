@@ -67,15 +67,16 @@ If you'd prefer not to set an environment variable you can pass the key in direc
 ```python
 from langchain_cohere import CohereEmbeddings
 
-embeddings_model = CohereEmbeddings(cohere_api_key="...")
+embeddings_model = CohereEmbeddings(cohere_api_key="...", model='embed-english-v3.0')
 ```
 
-Otherwise you can initialize without any params:
+Otherwise you can initialize simply as shown below:
 ```python
 from langchain_cohere import CohereEmbeddings
 
-embeddings_model = CohereEmbeddings()
+embeddings_model = CohereEmbeddings(model='embed-english-v3.0')
 ```
+Do note that it is mandatory to pass the model parameter while initializing the CohereEmbeddings class.
 
   </TabItem>
   <TabItem value="huggingface" label="Hugging Face">
