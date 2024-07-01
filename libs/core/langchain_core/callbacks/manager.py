@@ -39,6 +39,7 @@ from langchain_core.callbacks.base import (
     RunManagerMixin,
     ToolManagerMixin,
 )
+from langchain_core.callbacks.schema import GenericCallbackHandler
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.tracers.schemas import Run
@@ -353,6 +354,9 @@ async def _ahandle_event_for_handler(
     *args: Any,
     **kwargs: Any,
 ) -> None:
+    if isinstance(handler, GenericCallbackHandler):
+        raise ValueError('here')
+
     try:
         if ignore_condition_name is None or not getattr(handler, ignore_condition_name):
             event = getattr(handler, event_name)
