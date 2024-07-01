@@ -2,7 +2,18 @@ import json
 from copy import deepcopy
 from functools import partial
 from operator import itemgetter
-from typing import Any, Dict, List, Literal, Optional, Sequence, Type, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import MessageLikeRepresentation
@@ -11,6 +22,7 @@ from langchain_core.output_parsers import (
     PydanticOutputParser,
     StrOutputParser,
 )
+from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
@@ -81,7 +93,7 @@ _StructuredOutput = Union[Dict, str, _BM]
 class ChatVLLMOpenAI(ChatOpenAI):
     """vLLM OpenAI-compatible API client"""
 
-    openai_api_key: Optional[SecretStr] = Field(default="dummy", alias="api_key")
+    openai_api_key: Optional[SecretStr] = Field(default="dummy", alias="api_key")  # type: ignore[assignment]
     """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
     openai_api_base: Optional[str] = Field(
         default="http://localhost:8000/v1", alias="base_url"
@@ -129,18 +141,18 @@ class ChatVLLMOpenAI(ChatOpenAI):
                 _input.text = _input.text + instructions
             elif isinstance(_input, ChatPromptValue):
                 last_message = _input.messages[-1]
-                last_message.content = last_message.content + instructions
+                last_message.content = last_message.content + instructions  # type: ignore[operator]
             elif isinstance(_input, str):
                 _input = _input + instructions
-            elif isinstance(_input, Sequence[MessageLikeRepresentation]):
-                _input[-1].content = _input[-1].content + instructions
+            elif isinstance(_input, Sequence[MessageLikeRepresentation]):  # type: ignore[misc]
+                _input[-1].content = _input[-1].content + instructions  # type: ignore[union-attr,operator]
             else:
-                _input = _input + instructions
+                _input = _input + instructions  # type: ignore[operator]
         except Exception as e:
             raise ValueError(f"Unsupported input type {type(_input)}") from e
         return _input
 
-    def with_structured_output(
+    def with_structured_output(  # type: ignore[override]
         self,
         schema: Optional[_StructuredInput] = None,
         *,
@@ -200,7 +212,7 @@ class ChatVLLMOpenAI(ChatOpenAI):
         is_pydantic_class = _is_pydantic_class(schema)
 
         if is_pydantic_class:
-            schema_str = schema.schema_json()
+            schema_str = cast(Type[BaseModel], schema).schema_json()
         elif isinstance(schema, dict) or isinstance(schema, list):
             schema_str = json.dumps(schema)
         elif isinstance(schema, str):
@@ -219,7 +231,9 @@ class ChatVLLMOpenAI(ChatOpenAI):
             raise ValueError(f"Unsupported schema type {type(schema)}")
 
         if is_pydantic_class:
-            output_parser = PydanticOutputParser(pydantic_object=schema)
+            output_parser: OutputParserLike = PydanticOutputParser(
+                pydantic_object=schema  # type: ignore[arg-type]
+            )
         else:
             if guided_mode == "guided_json":
                 output_parser = JsonOutputParser()
@@ -229,7 +243,7 @@ class ChatVLLMOpenAI(ChatOpenAI):
         # Ensure structured output using `guided_json`
         llm = self.bind(
             extra_body={
-                **self.extra_body,
+                **(self.extra_body or {}),
                 guided_mode: schema_str if is_pydantic_class else schema,
                 "guided_decoding_backend": guided_decoding_backend,
             }
