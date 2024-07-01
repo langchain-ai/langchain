@@ -1,0 +1,170 @@
+version: v1
+kind: "Package discovery"
+description: "Meta information of all LangChain packages"
+
+repos:
+  - name: langchain
+    slug: langchain-ai/langchain
+    packages:
+      # Base packages:
+      - name: langchain-core
+        path: libs/core
+      - name: langchain
+        path: libs/langchain
+      - name: langchain-text-splitters
+        path: libs/text-splitters
+      - name: langchain-community
+        path: libs/community
+      - name: langchain-experimental
+        path: libs/experimental
+      - name: langchain-cli
+        path: libs/cli
+      - name: langchain-standard-tests
+        path: libs/standard-tests
+      # Integration packages inside libs/partners/:
+      - name: langchain-ai21
+        path: libs/partners/ai21
+      - name: langchain-airbyte
+        path: libs/partners/airbyte
+      - name: langchain-anthropic
+        path: libs/partners/anthropic
+      - name: langchain-azure-dynamic-sessions
+        path: libs/partners/azure-dynamic-sessions
+      - name: langchain-chroma
+        path: libs/partners/chroma
+      - name: langchain-couchbase
+        path: libs/partners/couchbase
+      - name: langchain-exa
+        path: libs/partners/exa
+      - name: langchain-fireworks
+        path: libs/partners/fireworks
+      - name: langchain-groq
+        path: libs/partners/groq
+      - name: langchain-huggingface
+        path: libs/partners/huggingface
+      - name: langchain-ibm
+        path: libs/partners/ibm
+      - name: langchain-mistralai
+        path: libs/partners/mistralai
+      - name: langchain-mongodb
+        path: libs/partners/mongodb
+      - name: langchain-nomic
+        path: libs/partners/nomic
+      - name: langchain-openai
+        path: libs/partners/openai
+      - name: langchain-pinecone
+        path: libs/partners/pinecone
+      - name: langchain-prompty
+        path: libs/partners/prompty
+      - name: langchain-qdrant
+        path: libs/partners/qdrant
+      - name: langchain-robocorp
+        path: libs/partners/robocorp
+      - name: langchain-together
+        path: libs/partners/together
+      - name: langchain-upstage
+        path: libs/partners/upstage
+      - name: langchain-voyageai
+        path: libs/partners/voyageai
+
+  # Partner integration repositories in the langchain-ai organization:
+  - name: langchain-aws
+    slug: langchain-ai/langchain-aws
+    packages:
+      - name: langchain-aws
+        path: libs/aws
+  - name: langchain-datastax
+    slug: langchain-ai/langchain-datastax
+    packages:
+      - name: langchain-astradb
+        path: libs/astradb
+  - name: langchain-google
+    slug: langchain-ai/langchain-google
+    packages:
+      - name: langchain-google-community
+        path: libs/community
+      - name: langchain-google-genai
+        path: libs/genai
+      - name: langchain-google-vertexai
+        path: libs/vertexai
+  - name: langchain-weaviate
+    slug: langchain-ai/langchain-weaviate
+    packages:
+      - name: langchain-weaviate
+        path: libs/weaviate
+  - name: langchain-cohere
+    slug: langchain-ai/langchain-cohere
+    packages:
+      - name: langchain-cohere
+        path: libs/cohere
+  - name: langchain-elastic
+    slug: langchain-ai/langchain-elastic
+    packages:
+      - name: langchain-elasticsearch
+        path: libs/elasticsearch
+  - name: langchain-nvidia
+    slug: langchain-ai/langchain-nvidia
+    packages:
+      - name: langchain-nvidia-ai-endpoints
+        path: libs/ai-endpoints
+      - name: langchain-nvidia-trt
+        path: libs/trt
+  - name: langchain-postgres
+    slug: langchain-ai/langchain-postgres
+    packages:
+      - name: langchain-postgres
+        # non-standard path!
+        path: .
+
+  # Partner integration repositories NOT in the langchain-ai organization:
+  # Google repositories:
+  - name: langchain-google-alloydb-pg-python
+    slug: googleapis/langchain-google-alloydb-pg-python
+    packages:
+      - name: langchain-google-alloydb-pg-python
+        path: src/langchain_google_alloydb_pg_python
+  - name: langchain-google-bigtable-python
+    slug: googleapis/langchain-google-bigtable-python
+    packages:
+      - name: langchain-google-bigtable
+        path: src/langchain_google_bigtable
+  - name: langchain-google-cloud-sql-mysql-python
+    slug: googleapis/langchain-google-cloud-sql-mysql-python
+    packages:
+      - name: langchain-google-cloud-sql-mysql
+        path: src/langchain_google_cloud_sql_mysql
+  - name: langchain-google-cloud-sql-mssql-python
+    slug: googleapis/langchain-google-cloud-sql-mssql-python
+    packages:
+      - name: langchain-google-cloud-sql-mssql
+        path: src/langchain_google_cloud_sql_mssql
+  - name: langchain-google-cloud-sql-pg-python
+    slug: googleapis/langchain-google-cloud-sql-pg-python
+    packages:
+      - name: langchain-google-cloud-sql-pg
+        path: src/langchain_google_cloud_sql_pg
+  - name: langchain-google-datastore-python
+    slug: googleapis/langchain-google-datastore-python
+    packages:
+      - name: langchain-google-datastore
+        path: src/langchain_google_datastore
+  - name: langchain-google-el-carro-python
+    slug: googleapis/langchain-google-el-carro-python
+    packages:
+      - name: langchain-google-el-carro
+        path: src/langchain_google_el_carro
+  - name: langchain-google-firestore-python
+    slug: googleapis/langchain-google-firestore-python
+    packages:
+      - name: langchain-google-firestore
+        path: src/langchain_google_firestore
+  - name: langchain-google-memorystore-redis-python
+    slug: googleapis/langchain-google-memorystore-redis-python
+    packages:
+      - name: langchain-google-memorystore-redis
+        path: src/langchain_google_memorystore_redis
+  - name: langchain-google-spanner-python
+    slug: googleapis/langchain-google-spanner-python
+    packages:
+      - name: langchain-google-spanner
+        path: src/langchain_google_spanner

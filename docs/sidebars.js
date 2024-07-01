@@ -198,8 +198,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/document_transformers",
+            type: "doc",
+            id: "integrations/document_transformers/index",
           },
         },
         {
@@ -213,8 +213,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/vectorstores",
+            type: "doc",
+            id: "integrations/vectorstores/index",
           },
         },
         {
@@ -228,8 +228,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/retrievers",
+            type: "doc",
+            id: "integrations/retrievers/index",
           },
         },
         {
@@ -243,8 +243,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/tools",
+            type: "doc",
+            id: "integrations/tools/index",
           },
         },
         {
@@ -258,8 +258,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/toolkits",
+            type: "doc",
+            id: "integrations/toolkits/index",
           },
         },
         {
@@ -273,8 +273,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/memory",
+            type: "doc",
+            id: "integrations/memory/index",
           },
         },
         {
@@ -303,8 +303,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/callbacks",
+            type: "doc",
+            id: "integrations/callbacks/index",
           },
         },
         {
@@ -318,8 +318,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "generated-index",
-            slug: "integrations/chat_loaders",
+            type: "doc",
+            id: "integrations/chat_loaders/index",
           },
         },
         {

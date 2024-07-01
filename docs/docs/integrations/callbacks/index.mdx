@@ -1,0 +1,65 @@
+---
+sidebar_position: 0
+sidebar_class_name: hidden
+---
+
+# Callback
+
+**Callback** classes are implemented by inheriting the [BaseCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_core.callbacks.BaseCallbackHandler.html) class.
+
+This table lists all 50 derived classes.
+
+
+| Namespace 🔻 | Class |
+|------------|---------|
+| langchain.callbacks.streaming_aiter | [AsyncIteratorCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain.callbacks.streaming_aiter.AsyncIteratorCallbackHandler.html) |
+| langchain.callbacks.streaming_aiter_final_only | [AsyncFinalIteratorCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain.callbacks.streaming_aiter_final_only.AsyncFinalIteratorCallbackHandler.html) |
+| langchain.callbacks.streaming_stdout_final_only | [FinalStreamingStdOutCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain.callbacks.streaming_stdout_final_only.FinalStreamingStdOutCallbackHandler.html) |
+| langchain.callbacks.tracers.logging | [LoggingCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain.callbacks.tracers.logging.LoggingCallbackHandler.html) |
+| langchain.smith.evaluation.progress | [ProgressBarCallback](https://api.python.langchain.com/en/latest/smith/langchain.smith.evaluation.progress.ProgressBarCallback.html) |
+| langchain_community.callbacks.aim_callback | [AimCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.aim_callback.AimCallbackHandler.html) |
+| langchain_community.callbacks.argilla_callback | [ArgillaCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.argilla_callback.ArgillaCallbackHandler.html) |
+| langchain_community.callbacks.arize_callback | [ArizeCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.arize_callback.ArizeCallbackHandler.html) |
+| langchain_community.callbacks.arthur_callback | [ArthurCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.arthur_callback.ArthurCallbackHandler.html) |
+| langchain_community.callbacks.bedrock_anthropic_callback | [BedrockAnthropicTokenUsageCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.bedrock_anthropic_callback.BedrockAnthropicTokenUsageCallbackHandler.html) |
+| langchain_community.callbacks.clearml_callback | [ClearMLCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.clearml_callback.ClearMLCallbackHandler.html) |
+| langchain_community.callbacks.comet_ml_callback | [CometCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.comet_ml_callback.CometCallbackHandler.html) |
+| langchain_community.callbacks.confident_callback | [DeepEvalCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.confident_callback.DeepEvalCallbackHandler.html) |
+| langchain_community.callbacks.context_callback | [ContextCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.context_callback.ContextCallbackHandler.html) |
+| langchain_community.callbacks.fiddler_callback | [FiddlerCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.fiddler_callback.FiddlerCallbackHandler.html) |
+| langchain_community.callbacks.flyte_callback | [FlyteCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.flyte_callback.FlyteCallbackHandler.html) |
+| langchain_community.callbacks.human | [AsyncHumanApprovalCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.human.AsyncHumanApprovalCallbackHandler.html) |
+| langchain_community.callbacks.human | [HumanApprovalCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.human.HumanApprovalCallbackHandler.html) |
+| langchain_community.callbacks.infino_callback | [InfinoCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.infino_callback.InfinoCallbackHandler.html) |
+| langchain_community.callbacks.labelstudio_callback | [LabelStudioCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.labelstudio_callback.LabelStudioCallbackHandler.html) |
+| langchain_community.callbacks.llmonitor_callback | [LLMonitorCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.llmonitor_callback.LLMonitorCallbackHandler.html) |
+| langchain_community.callbacks.mlflow_callback | [MlflowCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.mlflow_callback.MlflowCallbackHandler.html) |
+| langchain_community.callbacks.openai_info | [OpenAICallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.openai_info.OpenAICallbackHandler.html) |
+| langchain_community.callbacks.promptlayer_callback | [PromptLayerCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.promptlayer_callback.PromptLayerCallbackHandler.html) |
+| langchain_community.callbacks.sagemaker_callback | [SageMakerCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.sagemaker_callback.SageMakerCallbackHandler.html) |
+| langchain_community.callbacks.streamlit.streamlit_callback_handler | [StreamlitCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.streamlit.streamlit_callback_handler.StreamlitCallbackHandler.html) |
+| langchain_community.callbacks.tracers.comet | [CometTracer](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.tracers.comet.CometTracer.html) |
+| langchain_community.callbacks.tracers.wandb | [WandbTracer](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.tracers.wandb.WandbTracer.html) |
+| langchain_community.callbacks.trubrics_callback | [TrubricsCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.trubrics_callback.TrubricsCallbackHandler.html) |
+| langchain_community.callbacks.upstash_ratelimit_callback | [UpstashRatelimitHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.upstash_ratelimit_callback.UpstashRatelimitHandler.html) |
+| langchain_community.callbacks.uptrain_callback | [UpTrainCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.uptrain_callback.UpTrainCallbackHandler.html) |
+| langchain_community.callbacks.wandb_callback | [WandbCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.wandb_callback.WandbCallbackHandler.html) |
+| langchain_community.callbacks.whylabs_callback | [WhyLabsCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_community.callbacks.whylabs_callback.WhyLabsCallbackHandler.html) |
+| langchain_core.callbacks.base | [AsyncCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_core.callbacks.base.AsyncCallbackHandler.html) |
+| langchain_core.callbacks.file | [FileCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_core.callbacks.file.FileCallbackHandler.html) |
+| langchain_core.callbacks.stdout | [StdOutCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_core.callbacks.stdout.StdOutCallbackHandler.html) |
+| langchain_core.callbacks.streaming_stdout | [StreamingStdOutCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_core.callbacks.streaming_stdout.StreamingStdOutCallbackHandler.html) |
+| langchain_core.tracers.base | [AsyncBaseTracer](https://api.python.langchain.com/en/latest/tracers/langchain_core.tracers.base.AsyncBaseTracer.html) |
+| langchain_core.tracers.base | [BaseTracer](https://api.python.langchain.com/en/latest/tracers/langchain_core.tracers.base.BaseTracer.html) |
+| langchain_core.tracers.evaluation | [EvaluatorCallbackHandler](https://api.python.langchain.com/en/latest/tracers/langchain_core.tracers.evaluation.EvaluatorCallbackHandler.html) |
+| langchain_core.tracers.langchain | [LangChainTracer](https://api.python.langchain.com/en/latest/tracers/langchain_core.tracers.langchain.LangChainTracer.html) |
+| langchain_core.tracers.log_stream | [LogStreamCallbackHandler](https://api.python.langchain.com/en/latest/tracers/langchain_core.tracers.log_stream.LogStreamCallbackHandler.html) |
+| langchain_core.tracers.root_listeners | [AsyncRootListenersTracer](https://api.python.langchain.com/en/latest/tracers/langchain_core.tracers.root_listeners.AsyncRootListenersTracer.html) |
+| langchain_core.tracers.root_listeners | [RootListenersTracer](https://api.python.langchain.com/en/latest/tracers/langchain_core.tracers.root_listeners.RootListenersTracer.html) |
+| langchain_core.tracers.run_collector | [RunCollectorCallbackHandler](https://api.python.langchain.com/en/latest/tracers/langchain_core.tracers.run_collector.RunCollectorCallbackHandler.html) |
+| langchain_core.tracers.stdout | [ConsoleCallbackHandler](https://api.python.langchain.com/en/latest/tracers/langchain_core.tracers.stdout.ConsoleCallbackHandler.html) |
+| langchain_core.tracers.stdout | [FunctionCallbackHandler](https://api.python.langchain.com/en/latest/tracers/langchain_core.tracers.stdout.FunctionCallbackHandler.html) |
+| langchain_google_vertexai.callbacks | [VertexAICallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_google_vertexai.callbacks.VertexAICallbackHandler.html) |
+| langchain_nvidia_ai_endpoints.callbacks | [UsageCallbackHandler](https://api.python.langchain.com/en/latest/callbacks/langchain_nvidia_ai_endpoints.callbacks.UsageCallbackHandler.html) |
+| langchain_robocorp.toolkits | [RunDetailsCallbackHandler](https://api.python.langchain.com/en/latest/toolkits/langchain_robocorp.toolkits.RunDetailsCallbackHandler.html) |
+

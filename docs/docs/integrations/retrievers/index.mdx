@@ -1,0 +1,79 @@
+---
+sidebar_position: 0
+sidebar_class_name: hidden
+---
+
+# Retriever
+
+**Retriever** classes are implemented by inheriting the [BaseRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_core.retrievers.BaseRetriever.html) class.
+
+This table lists all 64 derived classes.
+
+
+| Namespace 🔻 | Class |
+|------------|---------|
+| langchain.retrievers.contextual_compression | [ContextualCompressionRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.contextual_compression.ContextualCompressionRetriever.html) |
+| langchain.retrievers.ensemble | [EnsembleRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.ensemble.EnsembleRetriever.html) |
+| langchain.retrievers.merger_retriever | [MergerRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.merger_retriever.MergerRetriever.html) |
+| langchain.retrievers.multi_query | [MultiQueryRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.multi_query.MultiQueryRetriever.html) |
+| langchain.retrievers.multi_vector | [MultiVectorRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.multi_vector.MultiVectorRetriever.html) |
+| langchain.retrievers.parent_document_retriever | [ParentDocumentRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.parent_document_retriever.ParentDocumentRetriever.html) |
+| langchain.retrievers.re_phraser | [RePhraseQueryRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.re_phraser.RePhraseQueryRetriever.html) |
+| langchain.retrievers.self_query.base | [SelfQueryRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.self_query.base.SelfQueryRetriever.html) |
+| langchain.retrievers.time_weighted_retriever | [TimeWeightedVectorStoreRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain.retrievers.time_weighted_retriever.TimeWeightedVectorStoreRetriever.html) |
+| langchain_aws.retrievers.bedrock | [AmazonKnowledgeBasesRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_aws.retrievers.bedrock.AmazonKnowledgeBasesRetriever.html) |
+| langchain_aws.retrievers.kendra | [AmazonKendraRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_aws.retrievers.kendra.AmazonKendraRetriever.html) |
+| langchain_cohere.rag_retrievers | [CohereRagRetriever](https://api.python.langchain.com/en/latest/rag_retrievers/langchain_cohere.rag_retrievers.CohereRagRetriever.html) |
+| langchain_community.retrievers.arcee | [ArceeRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.arcee.ArceeRetriever.html) |
+| langchain_community.retrievers.arxiv | [ArxivRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.arxiv.ArxivRetriever.html) |
+| langchain_community.retrievers.asknews | [AskNewsRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.asknews.AskNewsRetriever.html) |
+| langchain_community.retrievers.azure_ai_search | [AzureAISearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.azure_ai_search.AzureAISearchRetriever.html) |
+| langchain_community.retrievers.azure_ai_search | [AzureCognitiveSearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.azure_ai_search.AzureCognitiveSearchRetriever.html) |
+| langchain_community.retrievers.bedrock | [AmazonKnowledgeBasesRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.bedrock.AmazonKnowledgeBasesRetriever.html) |
+| langchain_community.retrievers.bm25 | [BM25Retriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.bm25.BM25Retriever.html) |
+| langchain_community.retrievers.breebs | [BreebsRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.breebs.BreebsRetriever.html) |
+| langchain_community.retrievers.chaindesk | [ChaindeskRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.chaindesk.ChaindeskRetriever.html) |
+| langchain_community.retrievers.chatgpt_plugin_retriever | [ChatGPTPluginRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.chatgpt_plugin_retriever.ChatGPTPluginRetriever.html) |
+| langchain_community.retrievers.cohere_rag_retriever | [CohereRagRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.cohere_rag_retriever.CohereRagRetriever.html) |
+| langchain_community.retrievers.databerry | [DataberryRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.databerry.DataberryRetriever.html) |
+| langchain_community.retrievers.docarray | [DocArrayRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.docarray.DocArrayRetriever.html) |
+| langchain_community.retrievers.dria_index | [DriaRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.dria_index.DriaRetriever.html) |
+| langchain_community.retrievers.elastic_search_bm25 | [ElasticSearchBM25Retriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.elastic_search_bm25.ElasticSearchBM25Retriever.html) |
+| langchain_community.retrievers.embedchain | [EmbedchainRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.embedchain.EmbedchainRetriever.html) |
+| langchain_community.retrievers.google_cloud_documentai_warehouse | [GoogleDocumentAIWarehouseRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.google_cloud_documentai_warehouse.GoogleDocumentAIWarehouseRetriever.html) |
+| langchain_community.retrievers.google_vertex_ai_search | [GoogleCloudEnterpriseSearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.google_vertex_ai_search.GoogleCloudEnterpriseSearchRetriever.html) |
+| langchain_community.retrievers.google_vertex_ai_search | [GoogleVertexAIMultiTurnSearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.google_vertex_ai_search.GoogleVertexAIMultiTurnSearchRetriever.html) |
+| langchain_community.retrievers.google_vertex_ai_search | [GoogleVertexAISearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.google_vertex_ai_search.GoogleVertexAISearchRetriever.html) |
+| langchain_community.retrievers.kay | [KayAiRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.kay.KayAiRetriever.html) |
+| langchain_community.retrievers.kendra | [AmazonKendraRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.kendra.AmazonKendraRetriever.html) |
+| langchain_community.retrievers.knn | [KNNRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.knn.KNNRetriever.html) |
+| langchain_community.retrievers.llama_index | [LlamaIndexGraphRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.llama_index.LlamaIndexGraphRetriever.html) |
+| langchain_community.retrievers.llama_index | [LlamaIndexRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.llama_index.LlamaIndexRetriever.html) |
+| langchain_community.retrievers.metal | [MetalRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.metal.MetalRetriever.html) |
+| langchain_community.retrievers.milvus | [MilvusRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.milvus.MilvusRetriever.html) |
+| langchain_community.retrievers.outline | [OutlineRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.outline.OutlineRetriever.html) |
+| langchain_community.retrievers.pinecone_hybrid_search | [PineconeHybridSearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.pinecone_hybrid_search.PineconeHybridSearchRetriever.html) |
+| langchain_community.retrievers.pubmed | [PubMedRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.pubmed.PubMedRetriever.html) |
+| langchain_community.retrievers.qdrant_sparse_vector_retriever | [QdrantSparseVectorRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.qdrant_sparse_vector_retriever.QdrantSparseVectorRetriever.html) |
+| langchain_community.retrievers.rememberizer | [RememberizerRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.rememberizer.RememberizerRetriever.html) |
+| langchain_community.retrievers.remote_retriever | [RemoteLangChainRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.remote_retriever.RemoteLangChainRetriever.html) |
+| langchain_community.retrievers.svm | [SVMRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.svm.SVMRetriever.html) |
+| langchain_community.retrievers.tavily_search_api | [TavilySearchAPIRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.tavily_search_api.TavilySearchAPIRetriever.html) |
+| langchain_community.retrievers.tfidf | [TFIDFRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.tfidf.TFIDFRetriever.html) |
+| langchain_community.retrievers.thirdai_neuraldb | [NeuralDBRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.thirdai_neuraldb.NeuralDBRetriever.html) |
+| langchain_community.retrievers.vespa_retriever | [VespaRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.vespa_retriever.VespaRetriever.html) |
+| langchain_community.retrievers.weaviate_hybrid_search | [WeaviateHybridSearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.weaviate_hybrid_search.WeaviateHybridSearchRetriever.html) |
+| langchain_community.retrievers.web_research | [WebResearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.web_research.WebResearchRetriever.html) |
+| langchain_community.retrievers.wikipedia | [WikipediaRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.wikipedia.WikipediaRetriever.html) |
+| langchain_community.retrievers.you | [YouRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.you.YouRetriever.html) |
+| langchain_community.retrievers.zep | [ZepRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.zep.ZepRetriever.html) |
+| langchain_community.retrievers.zep_cloud | [ZepCloudRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.zep_cloud.ZepCloudRetriever.html) |
+| langchain_community.retrievers.zilliz | [ZillizRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_community.retrievers.zilliz.ZillizRetriever.html) |
+| langchain_community.vectorstores.azuresearch | [AzureSearchVectorStoreRetriever](https://api.python.langchain.com/en/latest/vectorstores/langchain_community.vectorstores.azuresearch.AzureSearchVectorStoreRetriever.html) |
+| langchain_community.vectorstores.llm_rails | [LLMRailsRetriever](https://api.python.langchain.com/en/latest/vectorstores/langchain_community.vectorstores.llm_rails.LLMRailsRetriever.html) |
+| langchain_community.vectorstores.redis.base | [RedisVectorStoreRetriever](https://api.python.langchain.com/en/latest/vectorstores/langchain_community.vectorstores.redis.base.RedisVectorStoreRetriever.html) |
+| langchain_community.vectorstores.vectara | [VectaraRetriever](https://api.python.langchain.com/en/latest/vectorstores/langchain_community.vectorstores.vectara.VectaraRetriever.html) |
+| langchain_core.vectorstores | [VectorStoreRetriever](https://api.python.langchain.com/en/latest/vectorstores/langchain_core.vectorstores.VectorStoreRetriever.html) |
+| langchain_elasticsearch.retrievers | [ElasticsearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_elasticsearch.retrievers.ElasticsearchRetriever.html) |
+| langchain_exa.retrievers | [ExaSearchRetriever](https://api.python.langchain.com/en/latest/retrievers/langchain_exa.retrievers.ExaSearchRetriever.html) |
+
