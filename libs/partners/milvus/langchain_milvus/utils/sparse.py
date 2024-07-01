@@ -6,6 +6,7 @@ from scipy.sparse import csr_array  # type: ignore
 
 class BaseSparseEmbedding(ABC):
     """Interface for Sparse embedding models.
+
     You can inherit from it and implement your custom sparse embedding model.
     """
 
@@ -19,8 +20,8 @@ class BaseSparseEmbedding(ABC):
 
 
 class BM25SparseEmbedding(BaseSparseEmbedding):
-    """This is a class that inherits BaseSparseEmbedding
-    and implements a sparse vector embedding model based on BM25.
+    """Sparse embedding model based on BM25.
+
     This class uses the BM25 model in Milvus model to implement sparse vector embedding.
     This model requires pymilvus[model] to be installed.
     `pip install pymilvus[model]`
