@@ -9,7 +9,6 @@ from langchain_community.chat_models.vllm import ChatVLLMOpenAI
 
 
 class TestChatVLLMOpenAI:
-
     def test_import_class(self) -> None:
         """Test that the class can be imported."""
         module_name = "langchain_community.chat_models.vllm"
@@ -52,3 +51,5 @@ class TestChatVLLMOpenAI:
 
         with pytest.raises(ValueError):
             chat.with_structured_output(schema=TestSchema, unsupported_arg=True)
+
+        chat.with_structured_output(schema=TestSchema)
