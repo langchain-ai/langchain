@@ -27,10 +27,13 @@ class ConneryToolkit(BaseToolkit):
         """
         Validate the attributes of the ConneryToolkit class.
 
-        Parameters:
+        Args:
             values (dict): The arguments to validate.
         Returns:
             dict: The validated arguments.
+
+        Raises:
+            ValueError: If the 'tools' attribute is not set
         """
 
         if not values.get("tools"):
@@ -45,7 +48,7 @@ class ConneryToolkit(BaseToolkit):
 
         Parameters:
             connery_service (ConneryService): The Connery Service
-                to to get the list of Connery Actions.
+                to get the list of Connery Actions.
         Returns:
             ConneryToolkit: The Connery Toolkit.
         """
