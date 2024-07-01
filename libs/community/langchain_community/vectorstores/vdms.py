@@ -85,9 +85,9 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
     try:
         responses, blobs = results[0]
         if (
-            len(responses) > 0 and
-            "FindDescriptor" in responses[0] and
-            "entities" in responses[0]["FindDescriptor"]
+            len(responses) > 0
+            and "FindDescriptor" in responses[0]
+            and "entities" in responses[0]["FindDescriptor"]
         ):
             result_entities = responses[0]["FindDescriptor"]["entities"]
             # result_blobs = blobs
@@ -107,7 +107,7 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
                     (Document(page_content=txt_contents, metadata=props), distance)
                 )
     except Exception as e:
-        print(f"Error while parsing results: {e}")
+        print(f"Error while parsing results: {e}")  # noqa: T201
     return final_res
 
 
@@ -208,7 +208,7 @@ class VDMS(VectorStore):
             p_str += " to be an Embeddings object"
             raise ValueError(p_str)
 
-    def _embed_video(self, paths: List[str], **kwargs) -> List[List[float]]:
+    def _embed_video(self, paths: List[str], **kwargs: Any) -> List[List[float]]:
         if self.embedding is not None and hasattr(self.embedding, "embed_video"):
             return self.embedding.embed_video(paths=paths, **kwargs)
         else:
