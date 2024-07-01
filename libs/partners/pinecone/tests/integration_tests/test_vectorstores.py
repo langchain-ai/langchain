@@ -12,10 +12,12 @@ from pinecone import PodSpec
 from pytest_mock import MockerFixture
 
 from langchain_pinecone import PineconeVectorStore
+from langchain_pinecone._utilities import DistanceStrategy, FakeEncoder
 
-INDEX_NAME = "langchain-test-index"  # name of the index
-NAMESPACE_NAME = "langchain-test-namespace"  # name of the namespace
+INDEX_NAME = "langchain-test-index"
+NAMESPACE_NAME = "langchain-test-namespace"
 DIMENSION = 1536  # dimension of the embeddings
+METRIC = "dotproduct"  # required for hybrid  testing
 
 DEFAULT_SLEEP = 20
 
@@ -38,7 +40,7 @@ class TestPinecone:
         client.create_index(
             name=INDEX_NAME,
             dimension=DIMENSION,
-            metric="cosine",
+            metric=METRIC,
             spec=PodSpec(environment="gcp-starter"),
         )
 
@@ -72,11 +74,29 @@ class TestPinecone:
         return OpenAIEmbeddings()
 
     @pytest.fixture
+    def fake_encoder_model(self, fake_encoder_model: FakeEncoder) -> FakeEncoder:
+        """Initialize fake embedding model within integration test class"""
+        return fake_encoder_model
+
+    @pytest.fixture
     def texts(self) -> List[str]:
         return ["foo", "bar", "baz"]
 
+    @pytest.fixture
+    def alpha(self) -> float:
+        return 1.0
+
+    @pytest.fixture
+    def distance_strategy(self) -> str:
+        return DistanceStrategy.MAX_INNER_PRODUCT
+
     def test_from_texts(
-        self, texts: List[str], embedding_openai: OpenAIEmbeddings
+        self,
+        texts: List[str],
+        embedding_openai: OpenAIEmbeddings,
+        fake_encoder_model: FakeEncoder,
+        alpha: float,
+        distance_strategy: DistanceStrategy,
     ) -> None:
         """Test end to end construction and search."""
         unique_id = uuid.uuid4().hex
@@ -86,15 +106,26 @@ class TestPinecone:
         docsearch = PineconeVectorStore.from_texts(
             texts=texts,
             embedding=embedding_openai,
+            sparse_encoder=fake_encoder_model,
             index_name=INDEX_NAME,
             namespace=NAMESPACE_NAME,
+            alpha=alpha,
+            distance_strategy=distance_strategy,
         )
         time.sleep(DEFAULT_SLEEP)  # prevent race condition
-        output = docsearch.similarity_search(unique_id, k=1, namespace=NAMESPACE_NAME)
+        output = docsearch.similarity_search(
+            unique_id, k=1, namespace=NAMESPACE_NAME, alpha=alpha
+        )
+
         assert output == [Document(page_content=needs)]
 
     def test_from_texts_with_metadatas(
-        self, texts: List[str], embedding_openai: OpenAIEmbeddings
+        self,
+        texts: List[str],
+        embedding_openai: OpenAIEmbeddings,
+        fake_encoder_model: FakeEncoder,
+        alpha: float,
+        distance_strategy: DistanceStrategy,
     ) -> None:
         """Test end to end construction and search."""
 
@@ -108,32 +139,46 @@ class TestPinecone:
         docsearch = PineconeVectorStore.from_texts(
             texts,
             embedding_openai,
+            sparse_encoder=fake_encoder_model,
             index_name=INDEX_NAME,
             metadatas=metadatas,
             namespace=namespace,
+            distance_strategy=distance_strategy,
+            alpha=alpha,
         )
         time.sleep(DEFAULT_SLEEP)  # prevent race condition
-        output = docsearch.similarity_search(needs, k=1, namespace=namespace)
+        output = docsearch.similarity_search(
+            needs, k=1, namespace=namespace, alpha=alpha
+        )
 
         # TODO: why metadata={"page": 0.0}) instead of {"page": 0}?
         assert output == [Document(page_content=needs, metadata={"page": 0.0})]
 
-    def test_from_texts_with_scores(self, embedding_openai: OpenAIEmbeddings) -> None:
+    def test_from_texts_with_scores(
+        self,
+        embedding_openai: OpenAIEmbeddings,
+        fake_encoder_model: FakeEncoder,
+        alpha: float,
+        distance_strategy: DistanceStrategy,
+    ) -> None:
         """Test end to end construction and search with scores and IDs."""
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
         print("metadatas", metadatas)  # noqa: T201
         docsearch = PineconeVectorStore.from_texts(
             texts,
-            embedding_openai,
+            embedding=embedding_openai,
+            sparse_encoder=fake_encoder_model,
             index_name=INDEX_NAME,
             metadatas=metadatas,
             namespace=NAMESPACE_NAME,
+            distance_strategy=distance_strategy,
+            alpha=alpha,
         )
         print(texts)  # noqa: T201
         time.sleep(DEFAULT_SLEEP)  # prevent race condition
         output = docsearch.similarity_search_with_score(
-            "foo", k=3, namespace=NAMESPACE_NAME
+            "foo", k=3, namespace=NAMESPACE_NAME, alpha=alpha
         )
         docs = [o[0] for o in output]
         scores = [o[1] for o in output]
@@ -149,7 +194,11 @@ class TestPinecone:
         assert scores[0] > scores[1] > scores[2]
 
     def test_from_existing_index_with_namespaces(
-        self, embedding_openai: OpenAIEmbeddings
+        self,
+        embedding_openai: OpenAIEmbeddings,
+        fake_encoder_model: FakeEncoder,
+        alpha: float,
+        distance_strategy: DistanceStrategy,
     ) -> None:
         """Test that namespaces are properly handled."""
         # Create two indexes with the same name but different namespaces
@@ -157,10 +206,13 @@ class TestPinecone:
         metadatas = [{"page": i} for i in range(len(texts_1))]
         PineconeVectorStore.from_texts(
             texts_1,
-            embedding_openai,
+            embedding=embedding_openai,
+            sparse_encoder=fake_encoder_model,
             index_name=INDEX_NAME,
             metadatas=metadatas,
             namespace=f"{INDEX_NAME}-1",
+            alpha=alpha,
+            distance_strategy=distance_strategy,
         )
 
         texts_2 = ["foo2", "bar2", "baz2"]
@@ -168,10 +220,13 @@ class TestPinecone:
 
         PineconeVectorStore.from_texts(
             texts_2,
-            embedding_openai,
+            embedding=embedding_openai,
+            sparse_encoder=fake_encoder_model,
             index_name=INDEX_NAME,
             metadatas=metadatas,
             namespace=f"{INDEX_NAME}-2",
+            alpha=alpha,
+            distance_strategy=distance_strategy,
         )
 
         time.sleep(DEFAULT_SLEEP)  # prevent race condition
@@ -189,15 +244,23 @@ class TestPinecone:
         assert all(content not in ["foo2", "bar2", "baz2"] for content in page_contents)
 
     def test_add_documents_with_ids(
-        self, texts: List[str], embedding_openai: OpenAIEmbeddings
+        self,
+        texts: List[str],
+        embedding_openai: OpenAIEmbeddings,
+        fake_encoder_model: FakeEncoder,
+        alpha: float,
+        distance_strategy: DistanceStrategy,
     ) -> None:
         ids = [uuid.uuid4().hex for _ in range(len(texts))]
         PineconeVectorStore.from_texts(
             texts=texts,
             ids=ids,
             embedding=embedding_openai,
+            sparse_encoder=fake_encoder_model,
             index_name=INDEX_NAME,
             namespace=NAMESPACE_NAME,
+            alpha=alpha,
+            distance_strategy=distance_strategy,
         )
         time.sleep(DEFAULT_SLEEP)  # prevent race condition
         index_stats = self.index.describe_index_stats()
@@ -208,8 +271,11 @@ class TestPinecone:
             texts=[t + "-1" for t in texts],
             ids=ids_1,
             embedding=embedding_openai,
+            sparse_encoder=fake_encoder_model,
             index_name=INDEX_NAME,
             namespace=NAMESPACE_NAME,
+            alpha=alpha,
+            distance_strategy=distance_strategy,
         )
         time.sleep(DEFAULT_SLEEP)  # prevent race condition
         index_stats = self.index.describe_index_stats()
@@ -220,15 +286,24 @@ class TestPinecone:
         # assert index_stats["total_vector_count"] == len(texts) * 2
 
     @pytest.mark.xfail(reason="relevance score just over 1")
-    def test_relevance_score_bound(self, embedding_openai: OpenAIEmbeddings) -> None:
+    def test_relevance_score_bound(
+        self,
+        embedding_openai: OpenAIEmbeddings,
+        fake_encoder_model: FakeEncoder,
+        alpha: float,
+        distance_strategy: DistanceStrategy,
+    ) -> None:
         """Ensures all relevance scores are between 0 and 1."""
         texts = ["foo", "bar", "baz"]
         metadatas = [{"page": i} for i in range(len(texts))]
         docsearch = PineconeVectorStore.from_texts(
             texts,
-            embedding_openai,
+            embedding=embedding_openai,
+            sparse_encoder=fake_encoder_model,
             index_name=INDEX_NAME,
             metadatas=metadatas,
+            alpha=alpha,
+            distance_strategy=distance_strategy,
         )
         # wait for the index to be ready
         time.sleep(DEFAULT_SLEEP)
@@ -271,6 +346,9 @@ class TestPinecone:
         data_multiplier: int,
         documents: List[Document],
         embedding_openai: OpenAIEmbeddings,
+        fake_encoder_model: FakeEncoder,
+        alpha: float,
+        distance_strategy: DistanceStrategy,
     ) -> None:
         """Test end to end construction and search."""
 
@@ -279,7 +357,8 @@ class TestPinecone:
         metadatas = [{"page": i} for i in range(len(texts))]
         docsearch = PineconeVectorStore.from_texts(
             texts,
-            embedding_openai,
+            embedding=embedding_openai,
+            sparse_encoder=fake_encoder_model,
             ids=uuids,
             metadatas=metadatas,
             index_name=INDEX_NAME,
@@ -287,6 +366,8 @@ class TestPinecone:
             pool_threads=pool_threads,
             batch_size=batch_size,
             embeddings_chunk_size=embeddings_chunk_size,
+            alpha=alpha,
+            distance_strategy=distance_strategy,
         )
 
         query = "What did the president say about Ketanji Brown Jackson"

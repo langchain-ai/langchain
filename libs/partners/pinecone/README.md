@@ -21,6 +21,9 @@ The `PineconeVectorStore` class exposes the connection to the Pinecone vector st
 from langchain_pinecone import PineconeVectorStore
 
 embeddings = ... # use a LangChain Embeddings class
+sparse_encoder = ... # use a pinecone_text BaseSparseEncoder class
 
-vectorstore = PineconeVectorStore(embeddings=embeddings)
+vectorstore = PineconeVectorStore(
+    embeddings=embeddings, 
+    sparse_encoder=sparse_encoder)
 ```

@@ -39,6 +39,9 @@ optional = true
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
+[tool.codespell]
+ignore-words-list = 'nin'
+
 [tool.poetry.group.test_integration]
 optional = true
 
@@ -72,6 +75,7 @@ select = [
 
 [tool.mypy]
 disallow_untyped_defs = "True"
+ignore_missing_imports = true
 
 [tool.coverage.run]
 omit = ["tests/*"]
