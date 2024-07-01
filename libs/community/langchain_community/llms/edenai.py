@@ -1,4 +1,5 @@
 """Wrapper around EdenAI's Generation API."""
+
 import logging
 from typing import Any, Dict, List, Literal, Optional
 

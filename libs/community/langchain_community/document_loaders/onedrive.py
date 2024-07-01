@@ -1,4 +1,5 @@
 """Loads data from OneDrive"""
+
 from __future__ import annotations
 
 import logging

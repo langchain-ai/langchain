@@ -228,15 +228,15 @@ def _convert_chunk_to_message_chunk(
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
-            tool_call_chunks=tool_call_chunks,
-            usage_metadata=usage_metadata,
+            tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
+            usage_metadata=usage_metadata,  # type: ignore[arg-type]
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
     else:
-        return default_class(content=content)
+        return default_class(content=content)  # type: ignore[call-arg]
 
 
 def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
@@ -799,7 +799,8 @@ class ChatMistralAI(BaseChatModel):
             llm = self.bind_tools([schema], tool_choice="any")
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], first_tool_only=True
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,  # type: ignore[list-item]
                 )
             else:
                 key_name = convert_to_openai_tool(schema)["function"]["name"]
@@ -809,7 +810,7 @@ class ChatMistralAI(BaseChatModel):
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )

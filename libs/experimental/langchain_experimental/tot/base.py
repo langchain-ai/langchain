@@ -108,7 +108,7 @@ class ToTChain(Chain):
         problem_description = inputs["problem_description"]
         checker_inputs = {"problem_description": problem_description}
         thoughts_path: tuple[str, ...] = ()
-        thought_generator = self.tot_strategy_class(
+        thought_generator = self.tot_strategy_class(  # type: ignore[call-arg]
             llm=self.llm, c=self.c, verbose=self.verbose_llm
         )
 

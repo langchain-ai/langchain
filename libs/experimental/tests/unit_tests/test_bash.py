@@ -1,4 +1,5 @@
 """Test the bash utility."""
+
 import re
 import subprocess
 import sys

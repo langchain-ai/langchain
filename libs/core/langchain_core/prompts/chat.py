@@ -1118,12 +1118,10 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         self.messages.extend([_convert_to_message(message) for message in messages])
 
     @overload
-    def __getitem__(self, index: int) -> MessageLike:
-        ...
+    def __getitem__(self, index: int) -> MessageLike: ...
 
     @overload
-    def __getitem__(self, index: slice) -> ChatPromptTemplate:
-        ...
+    def __getitem__(self, index: slice) -> ChatPromptTemplate: ...
 
     def __getitem__(
         self, index: Union[int, slice]

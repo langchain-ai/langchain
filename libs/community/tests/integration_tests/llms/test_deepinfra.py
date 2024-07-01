@@ -1,4 +1,5 @@
 """Test DeepInfra API wrapper."""
+
 from langchain_community.llms.deepinfra import DeepInfra
 
 

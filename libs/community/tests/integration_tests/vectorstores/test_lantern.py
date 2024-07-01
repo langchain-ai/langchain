@@ -1,4 +1,5 @@
 """Test Lantern functionality."""
+
 import os
 from typing import List, Tuple
 

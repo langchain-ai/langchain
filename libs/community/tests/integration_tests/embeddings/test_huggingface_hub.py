@@ -1,4 +1,5 @@
 """Test HuggingFaceHub embeddings."""
+
 import pytest
 
 from langchain_community.embeddings import HuggingFaceHubEmbeddings

@@ -2,6 +2,7 @@
 Ensemble retriever that ensemble the results of
 multiple retrievers by using weighted  Reciprocal Rank Fusion
 """
+
 import asyncio
 from collections import defaultdict
 from collections.abc import Hashable

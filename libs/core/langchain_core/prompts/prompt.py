@@ -1,4 +1,5 @@
 """Prompt schema definition."""
+
 from __future__ import annotations
 
 import warnings

@@ -427,9 +427,9 @@ class AmazonKendraRetriever(BaseRetriever):
         if self.attribute_filter is not None:
             kendra_kwargs["AttributeFilter"] = self.attribute_filter
         if self.document_relevance_override_configurations is not None:
-            kendra_kwargs[
-                "DocumentRelevanceOverrideConfigurations"
-            ] = self.document_relevance_override_configurations
+            kendra_kwargs["DocumentRelevanceOverrideConfigurations"] = (
+                self.document_relevance_override_configurations
+            )
         if self.user_context is not None:
             kendra_kwargs["UserContext"] = self.user_context
 

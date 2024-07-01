@@ -1,3 +1,7 @@
+[build-system]
+requires = [ "poetry-core>=1.0.0",]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "langchain-chroma"
 version = "0.1.2"
@@ -7,22 +11,60 @@ readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 license = "MIT"
 
+[tool.mypy]
+disallow_untyped_defs = "True"
+
 [tool.poetry.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/chroma"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4"
 langchain-core = ">=0.1.40,<0.3"
-chromadb = { version = ">=0.4.0,<0.6.0" }
-# Support Python 3.8 and 3.12+.
-numpy = [
-    {version = "^1", python = "<3.12"},
-    {version = "^1.26.0", python = ">=3.12"}
-]
-fastapi = { version = ">=0.95.2,<1", optional = true }
+[[tool.poetry.dependencies.numpy]]
+version = "^1"
+python = "<3.12"
+
+[[tool.poetry.dependencies.numpy]]
+version = "^1.26.0"
+python = ">=3.12"
+
+[tool.ruff.lint]
+select = [ "E", "F", "I", "T201", "D",]
+
+[tool.coverage.run]
+omit = [ "tests/*",]
+
+[tool.pytest.ini_options]
+addopts = " --strict-markers --strict-config --durations=5"
+markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
+
+[tool.poetry.dependencies.chromadb]
+version = ">=0.4.0,<0.6.0"
+
+[tool.poetry.dependencies.fastapi]
+version = ">=0.95.2,<1"
+optional = true
 
 [tool.poetry.group.test]
 optional = true
+
+[tool.poetry.group.codespell]
+optional = true
+
+[tool.poetry.group.test_integration]
+optional = true
+
+[tool.poetry.group.lint]
+optional = true
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [ "D",]
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
@@ -31,84 +73,49 @@ pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-langchain-core = { path = "../../core", develop = true }
-langchain-community = { path = "../../community", develop = true }
-
-[tool.poetry.group.codespell]
-optional = true
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.test_integration.dependencies]
-langchain-openai = { path = "../openai", develop = true }
-
-[tool.poetry.group.lint]
-optional = true
-
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
+ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^1.10.0"
-langchain-core = { path = "../../core", develop = true }
-langchain-community = { path = "../../community", develop = true }
+mypy = "^1.10"
 types-requests = "^2.31.0.20240406"
-langchain-text-splitters = { path = "../../text-splitters", develop = true }
-langchain = { path = "../../langchain", develop = true }
 
-[tool.poetry.group.dev]
-optional = true
+[tool.poetry.group.test.dependencies.langchain-core]
+path = "../../core"
+develop = true
 
-[tool.poetry.group.dev.dependencies]
-langchain-core = { path = "../../core", develop = true }
-langchain-community = { path = "../../community", develop = true }
+[tool.poetry.group.test.dependencies.langchain-community]
+path = "../../community"
+develop = true
 
-[tool.ruff.lint]
-select = [
-  "E",    # pycodestyle
-  "F",    # pyflakes
-  "I",    # isort
-  "T201", # print
-  "D",    # pydocstyle
+[tool.poetry.group.test_integration.dependencies.langchain-openai]
+path = "../openai"
+develop = true
 
-]
+[tool.poetry.group.dev.dependencies.langchain-core]
+path = "../../core"
+develop = true
 
-[tool.ruff.lint.pydocstyle]
-convention = "google"
+[tool.poetry.group.dev.dependencies.langchain-community]
+path = "../../community"
+develop = true
 
-[tool.ruff.lint.per-file-ignores]
-"tests/**" = ["D"]  # ignore docstring checks for tests
+[tool.poetry.group.typing.dependencies.langchain-core]
+path = "../../core"
+develop = true
 
-[tool.mypy]
-disallow_untyped_defs = "True"
+[tool.poetry.group.typing.dependencies.langchain-community]
+path = "../../community"
+develop = true
 
-[tool.coverage.run]
-omit = ["tests/*"]
+[tool.poetry.group.typing.dependencies.langchain-text-splitters]
+path = "../../text-splitters"
+develop = true
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.pytest.ini_options]
-# --strict-markers will raise errors on unknown marks.
-# https://docs.pytest.org/en/7.1.x/how-to/mark.html#raising-errors-on-unknown-marks
-#
-# https://docs.pytest.org/en/7.1.x/reference/reference.html
-# --strict-config       any warnings encountered while parsing the `pytest`
-#                       section of the configuration file raise errors.
-#
-# https://github.com/tophat/syrupy
-# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
-addopts = " --strict-markers --strict-config --durations=5"
-# Registering custom markers.
-# https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
-markers = [
-  "requires: mark tests as requiring a specific library",
-  "asyncio: mark tests as requiring asyncio",
-  "compile: mark placeholder test used to compile integration tests without running them",
-]
-#asyncio_mode = "auto"
+[tool.poetry.group.typing.dependencies.langchain]
+path = "../../langchain"
+develop = true

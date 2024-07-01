@@ -1,4 +1,5 @@
 """Chain that makes API calls and summarizes the responses to answer a question."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple

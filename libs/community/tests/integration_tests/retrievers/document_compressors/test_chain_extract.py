@@ -1,4 +1,5 @@
 """Integration test for LLMChainExtractor."""
+
 from langchain.retrievers.document_compressors import LLMChainExtractor
 from langchain_core.documents import Document
 

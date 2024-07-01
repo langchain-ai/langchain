@@ -21,7 +21,7 @@ MODEL_ID = "mistralai/mixtral-8x7b-instruct-v01"
 
 
 def test_01_generate_chat() -> None:
-    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)
+    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)  # type: ignore[arg-type]
     messages = [
         ("system", "You are a helpful assistant that translates English to French."),
         (
@@ -40,7 +40,7 @@ def test_01a_generate_chat_with_invoke_params() -> None:
         GenTextParamsMetaNames.MIN_NEW_TOKENS: 1,
         GenTextParamsMetaNames.MAX_NEW_TOKENS: 10,
     }
-    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)
+    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)  # type: ignore[arg-type]
     messages = [
         ("system", "You are a helpful assistant that translates English to French."),
         (
@@ -53,14 +53,14 @@ def test_01a_generate_chat_with_invoke_params() -> None:
 
 
 def test_02_generate_chat_with_few_inputs() -> None:
-    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)
+    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)  # type: ignore[arg-type]
     message = HumanMessage(content="Hello")
     response = chat.generate([[message], [message]])
     assert response
 
 
 def test_03_generate_chat_with_few_various_inputs() -> None:
-    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)
+    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)  # type: ignore[arg-type]
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
     response = chat.invoke([system_message, human_message])
@@ -69,14 +69,14 @@ def test_03_generate_chat_with_few_various_inputs() -> None:
 
 
 def test_05_generate_chat_with_stream() -> None:
-    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)
+    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)  # type: ignore[arg-type]
     response = chat.stream("What's the weather in san francisco")
     for chunk in response:
         assert isinstance(chunk.content, str)
 
 
 def test_10_chaining() -> None:
-    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)
+    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)  # type: ignore[arg-type]
     prompt = ChatPromptTemplate.from_messages(
         [
             (
@@ -106,7 +106,10 @@ def test_11_chaining_with_params() -> None:
         GenTextParamsMetaNames.MAX_NEW_TOKENS: 10,
     }
     chat = ChatWatsonx(
-        model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID, params=parameters
+        model_id=MODEL_ID,
+        url=URL,  # type: ignore[arg-type]
+        project_id=WX_PROJECT_ID,
+        params=parameters,  # type: ignore[arg-type]
     )
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -136,7 +139,10 @@ def test_20_tool_choice() -> None:
 
     params = {GenTextParamsMetaNames.MAX_NEW_TOKENS: 500}
     chat = ChatWatsonx(
-        model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID, params=params
+        model_id=MODEL_ID,
+        url=URL,  # type: ignore[arg-type]
+        project_id=WX_PROJECT_ID,
+        params=params,  # type: ignore[arg-type]
     )
 
     class MyTool(BaseModel):
@@ -170,7 +176,10 @@ def test_21_tool_choice_bool() -> None:
 
     params = {GenTextParamsMetaNames.MAX_NEW_TOKENS: 500}
     chat = ChatWatsonx(
-        model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID, params=params
+        model_id=MODEL_ID,
+        url=URL,  # type: ignore[arg-type]
+        project_id=WX_PROJECT_ID,
+        params=params,  # type: ignore[arg-type]
     )
 
     class MyTool(BaseModel):

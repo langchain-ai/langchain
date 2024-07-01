@@ -1,4 +1,5 @@
 """Functionality for loading chains."""
+
 from __future__ import annotations
 
 import json
@@ -408,7 +409,7 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
         chain = load_chain_from_config(llm_chain_config, **kwargs)
-        return SQLDatabaseChain(llm_chain=chain, database=database, **config)
+        return SQLDatabaseChain(llm_chain=chain, database=database, **config)  # type: ignore[arg-type]
     if "llm" in config:
         llm_config = config.pop("llm")
         llm = load_llm_from_config(llm_config, **kwargs)

@@ -5,6 +5,7 @@ The Tree of Thought (ToT) chain uses a tree structure to explore the space of
 possible solutions to a problem.
 
 """
+
 from langchain_experimental.tot.base import ToTChain
 from langchain_experimental.tot.checker import ToTChecker
 

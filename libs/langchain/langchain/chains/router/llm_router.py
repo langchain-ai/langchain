@@ -1,4 +1,5 @@
 """Base classes for LLM-powered router chains."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Type, cast

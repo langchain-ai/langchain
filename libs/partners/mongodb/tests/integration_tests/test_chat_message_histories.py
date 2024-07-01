@@ -1,7 +1,7 @@
 import json
 import os
 
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferMemory  # type: ignore[import-not-found]
 from langchain_core.messages import message_to_dict
 
 from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory

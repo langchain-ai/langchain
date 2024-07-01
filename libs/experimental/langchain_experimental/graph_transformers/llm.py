@@ -534,7 +534,9 @@ def _format_nodes(nodes: List[Node]) -> List[Node]:
     return [
         Node(
             id=el.id.title() if isinstance(el.id, str) else el.id,
-            type=el.type.capitalize() if el.type else None,  # handle empty strings
+            type=el.type.capitalize()  # type: ignore[arg-type]
+            if el.type
+            else None,  # handle empty strings  # type: ignore[arg-type]
             properties=el.properties,
         )
         for el in nodes

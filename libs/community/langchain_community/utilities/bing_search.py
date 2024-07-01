@@ -1,4 +1,5 @@
 """Util that calls Bing Search."""
+
 from typing import Dict, List
 
 import requests

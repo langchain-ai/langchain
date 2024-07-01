@@ -1,4 +1,5 @@
 """Wrapper around the Baidu vector database."""
+
 from __future__ import annotations
 
 import json

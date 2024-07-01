@@ -1,4 +1,4 @@
-import os
+import os  # type: ignore[import-not-found]
 from typing import Dict
 
 from exa_py import Exa  # type: ignore

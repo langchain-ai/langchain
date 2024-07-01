@@ -10,7 +10,7 @@ from langchain_fireworks import Fireworks
 
 def test_fireworks_api_key_is_secret_string() -> None:
     """Test that the API key is stored as a SecretStr."""
-    llm = Fireworks(
+    llm = Fireworks(  # type: ignore[call-arg]
         fireworks_api_key="secret-api-key",
         model="accounts/fireworks/models/mixtral-8x7b-instruct",
         temperature=0.2,
@@ -20,7 +20,7 @@ def test_fireworks_api_key_is_secret_string() -> None:
 
     # Test api_key alias
     llm = Fireworks(
-        api_key="secret-api-key",
+        api_key="secret-api-key",  # type: ignore[arg-type]
         model="accounts/fireworks/models/mixtral-8x7b-instruct",
         temperature=0.2,
         max_tokens=250,
@@ -48,7 +48,7 @@ def test_fireworks_api_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
     """Test that the API key is masked when passed via the constructor."""
-    llm = Fireworks(
+    llm = Fireworks(  # type: ignore[call-arg]
         fireworks_api_key="secret-api-key",
         model="accounts/fireworks/models/mixtral-8x7b-instruct",
         temperature=0.2,
@@ -62,7 +62,7 @@ def test_fireworks_api_key_masked_when_passed_via_constructor(
 
 def test_fireworks_uses_actual_secret_value_from_secretstr() -> None:
     """Test that the actual secret value is correctly retrieved."""
-    llm = Fireworks(
+    llm = Fireworks(  # type: ignore[call-arg]
         fireworks_api_key="secret-api-key",
         model="accounts/fireworks/models/mixtral-8x7b-instruct",
         temperature=0.2,

@@ -1,4 +1,5 @@
 """Test Baseten API wrapper."""
+
 import os
 
 from langchain_community.llms.baseten import Baseten

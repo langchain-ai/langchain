@@ -1,4 +1,4 @@
-"""Tool for the Exa Search API."""
+"""Tool for the Exa Search API."""  # type: ignore[import-not-found, import-not-found]
 
 from typing import Dict, List, Optional, Union
 

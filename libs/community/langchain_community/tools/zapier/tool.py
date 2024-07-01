@@ -67,6 +67,7 @@ toolkit = ZapierToolkit.from_zapier_nla_wrapper(zapier)
 ```
 
 """
+
 from typing import Any, Dict, Optional
 
 from langchain_core._api import warn_deprecated

@@ -1,4 +1,5 @@
 """Test Marqo functionality."""
+
 from typing import Dict
 
 import pytest

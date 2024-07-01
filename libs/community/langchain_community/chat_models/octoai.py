@@ -1,4 +1,5 @@
 """OctoAI Endpoints chat wrapper. Relies heavily on ChatOpenAI."""
+
 from typing import Dict
 
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator

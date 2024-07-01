@@ -1,4 +1,5 @@
 """Wrapper around Minimax APIs."""
+
 from __future__ import annotations
 
 import logging

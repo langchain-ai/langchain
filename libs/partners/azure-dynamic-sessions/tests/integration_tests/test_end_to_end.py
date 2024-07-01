@@ -2,7 +2,7 @@ import json
 import os
 from io import BytesIO
 
-import dotenv
+import dotenv  # type: ignore[import-not-found]
 
 from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
 
@@ -14,7 +14,7 @@ TEST_DATA_CONTENT = open(TEST_DATA_PATH, "rb").read()
 
 
 def test_end_to_end() -> None:
-    tool = SessionsPythonREPLTool(pool_management_endpoint=POOL_MANAGEMENT_ENDPOINT)
+    tool = SessionsPythonREPLTool(pool_management_endpoint=POOL_MANAGEMENT_ENDPOINT)  # type: ignore[arg-type]
     result = tool.run("print('hello world')\n1 + 1")
     assert json.loads(result) == {
         "result": 2,

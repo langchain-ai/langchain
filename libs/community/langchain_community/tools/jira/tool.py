@@ -18,6 +18,7 @@ jira = JiraAPIWrapper()
 toolkit = JiraToolkit.from_jira_api_wrapper(jira)
 ```
 """
+
 from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForToolRun

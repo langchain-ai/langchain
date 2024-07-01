@@ -1,4 +1,5 @@
 """Evaluate ChatKonko Interface."""
+
 from typing import Any
 
 import pytest

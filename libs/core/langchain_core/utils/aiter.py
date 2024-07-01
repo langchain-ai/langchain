@@ -182,12 +182,10 @@ class Tee(Generic[T]):
         return len(self._children)
 
     @overload
-    def __getitem__(self, item: int) -> AsyncIterator[T]:
-        ...
+    def __getitem__(self, item: int) -> AsyncIterator[T]: ...
 
     @overload
-    def __getitem__(self, item: slice) -> Tuple[AsyncIterator[T], ...]:
-        ...
+    def __getitem__(self, item: slice) -> Tuple[AsyncIterator[T], ...]: ...
 
     def __getitem__(
         self, item: Union[int, slice]

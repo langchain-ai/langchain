@@ -20,7 +20,7 @@ IMPORTANT: the output in your response should be 'Result:text', where text is th
 Here is the data for you to work with in order to formulate your response:
 """
 
-JOIN_SIMILAR_VIDEO_MODELS_PROMPT = ChatPromptTemplate(
+JOIN_SIMILAR_VIDEO_MODELS_PROMPT = ChatPromptTemplate(  # type: ignore[call-arg]
     messages=[
         SystemMessage(content=JOIN_SIMILAR_VIDEO_MODELS_TEMPLATE),
         HumanMessagePromptTemplate.from_template("{descriptions}"),
@@ -44,7 +44,7 @@ Result: people enjoying a picnic
 Below is the input for you to generate the result from:
 """
 
-REMOVE_VIDEO_MODEL_DESCRIPTION_PROMPT = ChatPromptTemplate(
+REMOVE_VIDEO_MODEL_DESCRIPTION_PROMPT = ChatPromptTemplate(  # type: ignore[call-arg]
     messages=[
         SystemMessage(content=REMOVE_VIDEO_MODEL_DESCRIPTION_TEMPLATE),
         HumanMessagePromptTemplate.from_template("Input: {description}"),
@@ -80,7 +80,7 @@ Result: Text
 Below is the data provided, generate a response using this data:
 """
 
-VALIDATE_AND_ADJUST_DESCRIPTION_PROMPT = ChatPromptTemplate(
+VALIDATE_AND_ADJUST_DESCRIPTION_PROMPT = ChatPromptTemplate(  # type: ignore[call-arg]
     messages=[
         SystemMessage(content=VALIDATE_AND_ADJUST_DESCRIPTION_TEMPLATE),
         HumanMessagePromptTemplate.from_template(

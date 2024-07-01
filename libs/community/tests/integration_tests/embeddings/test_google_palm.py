@@ -3,6 +3,7 @@
 Note: This test must be run with the GOOGLE_API_KEY environment variable set to a
       valid API key.
 """
+
 from langchain_community.embeddings.google_palm import GooglePalmEmbeddings
 
 

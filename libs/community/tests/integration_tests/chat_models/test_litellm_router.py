@@ -1,4 +1,5 @@
 """Test LiteLLM Router API wrapper."""
+
 import asyncio
 from copy import deepcopy
 from typing import Any, AsyncGenerator, Coroutine, Dict, List, Tuple, Union, cast

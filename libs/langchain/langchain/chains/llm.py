@@ -1,4 +1,5 @@
 """Chain that just formats a prompt and calls an LLM."""
+
 from __future__ import annotations
 
 import warnings

@@ -1,6 +1,6 @@
 from typing import Optional, Tuple, Union
 
-from langchain.agents import AgentOutputParser
+from langchain.agents import AgentOutputParser  # type: ignore[import-not-found]
 from langchain_core.agents import AgentAction, AgentFinish
 
 

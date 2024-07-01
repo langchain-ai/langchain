@@ -1,4 +1,5 @@
 """Test LLM-generated structured query parsing."""
+
 from typing import Any, cast
 
 import lark

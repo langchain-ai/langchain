@@ -1,4 +1,5 @@
 """Test SmartLLM."""
+
 from langchain_community.chat_models import FakeListChatModel
 from langchain_community.llms import FakeListLLM
 from langchain_core.prompts.prompt import PromptTemplate

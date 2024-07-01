@@ -1,4 +1,5 @@
 """Test AliCloud Pai Eas Chat Model."""
+
 import os
 
 from langchain_core.callbacks import CallbackManager

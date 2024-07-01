@@ -1,4 +1,5 @@
 """Test Cassandra caches. Requires a running vector-capable Cassandra cluster."""
+
 import asyncio
 import os
 import time

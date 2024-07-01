@@ -1,4 +1,5 @@
 """Test Bedrock chat model."""
+
 from typing import Any, cast
 
 import pytest

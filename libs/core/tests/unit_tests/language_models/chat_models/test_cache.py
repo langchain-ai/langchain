@@ -1,4 +1,5 @@
 """Module tests interaction of chat model with caching abstraction.."""
+
 from typing import Any, Dict, Optional, Tuple
 
 import pytest

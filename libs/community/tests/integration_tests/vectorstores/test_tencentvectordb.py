@@ -1,4 +1,5 @@
 """Test TencentVectorDB functionality."""
+
 import time
 from typing import List, Optional
 

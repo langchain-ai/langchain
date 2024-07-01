@@ -1,5 +1,6 @@
 # flake8: noqa
 """Tools for interacting with Spark SQL."""
+
 from typing import Any, Dict, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator

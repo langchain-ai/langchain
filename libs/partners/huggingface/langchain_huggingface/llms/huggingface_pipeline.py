@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations  # type: ignore[import-not-found]
 
 import importlib.util
 import logging

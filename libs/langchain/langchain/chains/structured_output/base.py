@@ -466,9 +466,9 @@ def _get_openai_tool_output_parser(
     first_tool_only: bool = False,
 ) -> Union[BaseOutputParser, BaseGenerationOutputParser]:
     if isinstance(tool, type) and issubclass(tool, BaseModel):
-        output_parser: Union[
-            BaseOutputParser, BaseGenerationOutputParser
-        ] = PydanticToolsParser(tools=[tool], first_tool_only=first_tool_only)
+        output_parser: Union[BaseOutputParser, BaseGenerationOutputParser] = (
+            PydanticToolsParser(tools=[tool], first_tool_only=first_tool_only)
+        )
     else:
         key_name = convert_to_openai_tool(tool)["function"]["name"]
         output_parser = JsonOutputKeyToolsParser(
@@ -500,9 +500,9 @@ def get_openai_output_parser(
             }
         else:
             pydantic_schema = functions[0]
-        output_parser: Union[
-            BaseOutputParser, BaseGenerationOutputParser
-        ] = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
+        output_parser: Union[BaseOutputParser, BaseGenerationOutputParser] = (
+            PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
+        )
     else:
         output_parser = JsonOutputFunctionsParser(args_only=len(functions) <= 1)
     return output_parser

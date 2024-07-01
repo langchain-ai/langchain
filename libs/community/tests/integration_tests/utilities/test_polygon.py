@@ -1,4 +1,5 @@
 """Integration test for Polygon API Wrapper."""
+
 from langchain_community.utilities.polygon import PolygonAPIWrapper
 
 

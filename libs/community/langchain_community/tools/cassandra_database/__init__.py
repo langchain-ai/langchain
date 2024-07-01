@@ -1,1 +1,1 @@
-""" Cassandra Tool """
+"""Cassandra Tool"""

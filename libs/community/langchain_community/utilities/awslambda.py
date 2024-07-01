@@ -1,4 +1,5 @@
 """Util that calls Lambda."""
+
 import json
 from typing import Any, Dict, Optional
 

@@ -1,4 +1,5 @@
 """Tool for the SearxNG search API."""
+
 from typing import Optional, Type
 
 from langchain_core.callbacks import (

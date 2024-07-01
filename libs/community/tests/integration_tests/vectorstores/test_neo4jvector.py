@@ -1,4 +1,5 @@
 """Test Neo4jVector functionality."""
+
 import os
 from typing import Any, Dict, List, cast
 
