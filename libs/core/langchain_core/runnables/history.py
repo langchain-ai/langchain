@@ -508,7 +508,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
         if not self.history_messages_key:
-            historic_messages = config["configurable"]["message_history"].messages
+            historic_messages = await hist.aget_messages()
             input_messages = input_messages[len(historic_messages) :]
 
         # Get the output messages
