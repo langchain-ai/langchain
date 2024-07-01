@@ -1,4 +1,5 @@
 """Test chat model integration."""
+
 from typing import cast
 from unittest.mock import Mock, call
 

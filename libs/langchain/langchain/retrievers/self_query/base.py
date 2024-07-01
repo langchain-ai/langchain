@@ -310,16 +310,16 @@ class SelfQueryRetriever(BaseRetriever):
             "allowed_comparators" not in chain_kwargs
             and structured_query_translator.allowed_comparators is not None
         ):
-            chain_kwargs[
-                "allowed_comparators"
-            ] = structured_query_translator.allowed_comparators
+            chain_kwargs["allowed_comparators"] = (
+                structured_query_translator.allowed_comparators
+            )
         if (
             "allowed_operators" not in chain_kwargs
             and structured_query_translator.allowed_operators is not None
         ):
-            chain_kwargs[
-                "allowed_operators"
-            ] = structured_query_translator.allowed_operators
+            chain_kwargs["allowed_operators"] = (
+                structured_query_translator.allowed_operators
+            )
         query_constructor = load_query_constructor_runnable(
             llm,
             document_contents,

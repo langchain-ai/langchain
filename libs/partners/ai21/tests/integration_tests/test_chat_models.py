@@ -1,4 +1,5 @@
 """Test ChatAI21 chat model."""
+
 import pytest
 from langchain_core.messages import HumanMessage
 from langchain_core.outputs import ChatGeneration

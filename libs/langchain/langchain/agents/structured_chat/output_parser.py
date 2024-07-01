@@ -69,9 +69,9 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         try:
             if self.output_fixing_parser is not None:
-                parsed_obj: Union[
-                    AgentAction, AgentFinish
-                ] = self.output_fixing_parser.parse(text)
+                parsed_obj: Union[AgentAction, AgentFinish] = (
+                    self.output_fixing_parser.parse(text)
+                )
             else:
                 parsed_obj = self.base_parser.parse(text)
             return parsed_obj

@@ -13,6 +13,8 @@ ROOT_DIR = Path(__file__).parents[1]
 
 def main():
     for path in glob.glob(str(ROOT_DIR / "libs/**/pyproject.toml"), recursive=True):
+        if "libs/cli/" in path:
+            continue
         print(path)
         with open(path, "rb") as f:
             pyproject = tomllib.load(f)
@@ -71,6 +73,13 @@ def main():
             with open(full_path, "w") as f:
                 f.write("".join(file_lines))
 
+        subprocess.run(
+            "poetry lock --no-update; poetry install --with lint; poetry run ruff format .; poetry run ruff --select I --fix .",
+            cwd=cwd,
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
 
 if __name__ == "__main__":
     main()
