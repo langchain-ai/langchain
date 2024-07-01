@@ -101,7 +101,7 @@ class ChatAnyscale(ChatOpenAI):
 
         return {model["id"] for model in models_response.json()["data"]}
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: dict) -> dict:
         """Validate that api key and python package exists in environment."""
         values["anyscale_api_key"] = convert_to_secret_str(

@@ -34,6 +34,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -98,6 +99,61 @@ class VectorStore(ABC):
         """
 
         raise NotImplementedError("delete method must be implemented by subclass.")
+
+    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+        """Get documents by their IDs.
+
+        The returned documents are expected to have the ID field set to the ID of the
+        document in the vector store.
+
+        Fewer documents may be returned than requested if some IDs are not found or
+        if there are duplicated IDs.
+
+        Users should not assume that the order of the returned documents matches
+        the order of the input IDs. Instead, users should rely on the ID field of the
+        returned documents.
+
+        This method should **NOT** raise exceptions if no documents are found for
+        some IDs.
+
+        Args:
+            ids: List of ids to retrieve.
+
+        Returns:
+            List of Documents.
+
+        .. versionadded:: 0.2.11
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not yet support get_by_ids."
+        )
+
+    # Implementations should override this method to provide an async native version.
+    async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+        """Get documents by their IDs.
+
+        The returned documents are expected to have the ID field set to the ID of the
+        document in the vector store.
+
+        Fewer documents may be returned than requested if some IDs are not found or
+        if there are duplicated IDs.
+
+        Users should not assume that the order of the returned documents matches
+        the order of the input IDs. Instead, users should rely on the ID field of the
+        returned documents.
+
+        This method should **NOT** raise exceptions if no documents are found for
+        some IDs.
+
+        Args:
+            ids: List of ids to retrieve.
+
+        Returns:
+            List of Documents.
+
+        .. versionadded:: 0.2.11
+        """
+        return await run_in_executor(None, self.get_by_ids, ids)
 
     async def adelete(
         self, ids: Optional[List[str]] = None, **kwargs: Any
@@ -772,17 +828,17 @@ class VectorStoreRetriever(BaseRetriever):
 
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_search_type(cls, values: Dict) -> Dict:
         """Validate search type."""
-        search_type = values["search_type"]
+        search_type = values.get("search_type", "similarity")
         if search_type not in cls.allowed_search_types:
             raise ValueError(
                 f"search_type of {search_type} not allowed. Valid values are: "
                 f"{cls.allowed_search_types}"
             )
         if search_type == "similarity_score_threshold":
-            score_threshold = values["search_kwargs"].get("score_threshold")
+            score_threshold = values.get("search_kwargs", {}).get("score_threshold")
             if (score_threshold is None) or (not isinstance(score_threshold, float)):
                 raise ValueError(
                     "`score_threshold` is not specified with a float value(0~1) "

@@ -44,6 +44,8 @@ def test_unnamed_decorator() -> None:
 
 
 class _MockSchema(BaseModel):
+    """Return the arguments directly."""
+
     arg1: int
     arg2: bool
     arg3: Optional[dict] = None
@@ -133,7 +135,6 @@ def test_decorator_with_specified_schema() -> None:
 
     @tool(args_schema=_MockSchema)
     def tool_func(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
-        """Return the arguments directly."""
         return f"{arg1} {arg2} {arg3}"
 
     assert isinstance(tool_func, BaseTool)
