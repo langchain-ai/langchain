@@ -854,7 +854,7 @@ class Neo4jVector(VectorStore):
             "CALL { WITH row "
             f"MERGE (c:`{self.node_label}` {{id: row.id}}) "
             "WITH c, row "
-            f"CALL db.create.setVectorProperty(c, "
+            f"CALL db.create.setNodeVectorProperty(c, "
             f"'{self.embedding_node_property}', row.embedding) "
             "YIELD node "
             f"SET c.`{self.text_node_property}` = row.text "
@@ -1441,7 +1441,7 @@ class Neo4jVector(VectorStore):
                 "UNWIND $data AS row "
                 f"MATCH (n:`{node_label}`) "
                 "WHERE elementId(n) = row.id "
-                f"CALL db.create.setVectorProperty(n, "
+                f"CALL db.create.setNodeVectorProperty(n, "
                 f"'{embedding_node_property}', row.embedding) "
                 "YIELD node RETURN count(*)",
                 params=params,
