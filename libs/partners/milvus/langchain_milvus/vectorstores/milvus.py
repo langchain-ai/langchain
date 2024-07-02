@@ -403,6 +403,15 @@ class Milvus(VectorStore):
                         fields.append(
                             FieldSchema(key, DataType.VARCHAR, max_length=65_535)
                         )
+                    elif dtype == DataType.ARRAY:
+                        kwargs = {
+                            "element_type": DataType.VARCHAR,
+                            "max_capacity": 5,
+                            "max_length": 512,
+                        }
+                        fields.append(
+                            FieldSchema(name=key, dtype=DataType.ARRAY, **kwargs)
+                        )
                     else:
                         fields.append(FieldSchema(key, dtype))
 
