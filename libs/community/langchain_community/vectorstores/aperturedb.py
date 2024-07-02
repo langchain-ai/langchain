@@ -59,7 +59,7 @@ class ApertureDB(VectorStore):
                 embeddings. Defaults to None.
             engine (str, optional): Engine to use. Defaults to "HNSW" for new
                 descriptorsets.
-            metric (str, optional): Metric to use. Defaults to "L2" for new
+            metric (str, optional): Metric to use. Defaults to "CS" for new
                 descriptorsets.
             log_level (int, optional): Logging level. Defaults to logging.WARN.
         """
@@ -197,6 +197,16 @@ class ApertureDB(VectorStore):
         texts: List[str],
         metadatas: Optional[List[dict]] = None,
     ) -> List[str]:
+        """Creates embeddings of texts, then adds each text object, its embedding and associated 
+        metadata to aperturedb
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+"""
         from aperturedb.ParallelLoader import ParallelLoader
 
         if metadatas is not None:
