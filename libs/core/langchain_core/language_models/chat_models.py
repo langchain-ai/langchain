@@ -432,6 +432,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     ) -> dict:
         params = self.dict()
         params["stop"] = stop
+        params["type"] = "chat"
         return {**params, **kwargs}
 
     def _get_ls_params(
@@ -447,7 +448,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     def _get_llm_string(self, stop: Optional[List[str]] = None, **kwargs: Any) -> str:
         if self.is_lc_serializable():
-            params = {**kwargs, **{"stop": stop}}
+            params = {**kwargs, **{"stop": stop, "type": "chat"}}
             param_string = str(sorted([(k, v) for k, v in params.items()]))
             # This code is not super efficient as it goes back and forth between
             # json and dict.

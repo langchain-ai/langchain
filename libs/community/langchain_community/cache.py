@@ -23,6 +23,7 @@ Cache directly competes with Memory. See documentation for Pros and Cons.
 from __future__ import annotations
 
 import hashlib
+import importlib
 import inspect
 import json
 import logging
@@ -272,6 +273,18 @@ class SQLAlchemyCache(BaseCache):
                     )
                     # In a previous life we stored the raw text directly
                     # in the table, so assume it's in that format.
+                    if "('type', 'chat')" in llm_string:
+                        chat_generation = []
+                        for row in rows:
+                            message = json.loads(row[0]).get("kwargs").get("message")
+                            path = message.get("id")
+                            import_dir, import_obj = path[:-1], path[-1]
+                            mod = importlib.import_module(".".join(import_dir))
+                            cls = getattr(mod, import_obj)
+                            chat_generation.append(
+                                ChatGeneration(message=cls(**message.get("kwargs")))
+                            )
+                        return chat_generation
                     return [Generation(text=row[0]) for row in rows]
         return None
 

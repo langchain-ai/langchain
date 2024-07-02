@@ -1182,6 +1182,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
+        starter_dict["type"] = "llm"
         return starter_dict
 
     def save(self, file_path: Union[Path, str]) -> None:
