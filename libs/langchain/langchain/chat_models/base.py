@@ -14,7 +14,7 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import Runnable, RunnableConfig
 
 __all__ = [
     "init_chat_model",
@@ -401,6 +401,8 @@ class _ConfigurableModel:
         self._queued_declarative_operations: List[Tuple[str, Tuple, Dict]] = list(
             queued_declarative_operations
         )
+        self._cached_model: Optional[Runnable] = None
+        self._cached_model_config: Optional[RunnableConfig] = None
 
     def __getattr__(self, name: str) -> Any:
         if name in _CHAT_MODEL_METHODS_TAKE_CONFIG:
@@ -414,11 +416,16 @@ class _ConfigurableModel:
 
             return from_config
         elif name in _DECLARATIVE_METHODS:
-
+            # Declarative operations cannot be applied until after an actual model
+            # object is instantiated. So instead of returning the actual operation,
+            # we record the operation and its arguments in a queue. This queue is
+            # then applied in order whenever we actually instantiate the model (in
+            # self._model()).
             def queue(*args: Any, **kwargs: Any) -> _ConfigurableModel:
                 self._queued_declarative_operations.append((name, args, kwargs))
                 return self
 
+            self._clear_cached_model()
             return queue
         elif self._default_config and (model := self._model()) and hasattr(model, name):
             return getattr(model, name)
@@ -429,11 +436,15 @@ class _ConfigurableModel:
             msg += "."
             raise AttributeError(msg)
 
-    def _model(self, config: Optional[RunnableConfig] = None) -> Any:
+    def _model(self, config: Optional[RunnableConfig] = None) -> Runnable:
+        if cached_model := self._get_cached_model(config):
+            return cached_model
+
         params = {**self._default_config, **self._model_params(config)}
         model = _init_chat_model_helper(**params)
         for name, args, kwargs in self._queued_declarative_operations:
             model = getattr(model, name)(*args, **kwargs)
+        self._set_cached_model(model, config)
         return model
 
     def _model_params(self, config: Optional[RunnableConfig]) -> dict:
@@ -474,3 +485,18 @@ class _ConfigurableModel:
             config_prefix=self._config_prefix,
             queued_declarative_operations=queued_declarative_operations,
         )
+
+    def _clear_cached_model(self) -> None:
+        self._cached_model_config = None
+        self._cached_model = None
+
+    def _set_cached_model(
+        self, model: Runnable, config: Optional[RunnableConfig]
+    ) -> None:
+        self._cached_model = model
+        self._cached_model_config = config
+
+    def _get_cached_model(self, config: Optional[RunnableConfig]) -> Optional[Runnable]:
+        if config == self._cached_model_config:
+            return self._cached_model
+        return None

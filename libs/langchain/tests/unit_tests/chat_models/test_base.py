@@ -153,7 +153,7 @@ def test_configurable_with_default() -> None:
     with pytest.raises(ImportError):
         model_with_config.get_num_tokens_from_messages([(HumanMessage("foo"))])  # type: ignore[attr-defined]
 
-    assert model_with_config.dict() == {
+    assert model_with_config.dict() == {  # type: ignore[attr-defined]
         "name": None,
         "bound": {
             "model": "claude-3-sonnet-20240229",
