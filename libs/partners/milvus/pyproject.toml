@@ -14,6 +14,10 @@ license = "MIT"
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.2.0"
 pymilvus = "^2.4.4"
+numpy = [
+    {version = "1.25.0", python = "<3.12"},
+    {version = "^1.26.0", python = ">=3.12"}
+]
 
 [tool.poetry.group.test]
 optional = true
