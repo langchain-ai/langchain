@@ -14,9 +14,9 @@ from langchain_mixedbreadai.client import MixedBreadAIClient
 
 class MixedbreadAIRerank(MixedBreadAIClient, BaseDocumentCompressor):
     """
-    Document compressor that uses `mixedbread ai Rerank API`.
+    Document compressor that uses `Mixedbread AI Rerank API`.
 
-    This class utilizes the mixedbread ai rerank API to reorder documents based
+    This class utilizes the Mixedbread AI rerank API to reorder documents based
     on their relevance to a given query. It supports both synchronous and
     asynchronous operations.
 
@@ -42,7 +42,7 @@ class MixedbreadAIRerank(MixedBreadAIClient, BaseDocumentCompressor):
     ) -> Sequence[RankedDocument]:
         """
         Rerank documents based on their relevance to the provided query
-        using mixedbread ai's rerank API.
+        using Mixedbread AI's rerank API.
 
         Args:
             documents (Sequence[Union[str, Document, dict]]):
@@ -79,7 +79,7 @@ class MixedbreadAIRerank(MixedBreadAIClient, BaseDocumentCompressor):
     ) -> Sequence[RankedDocument]:
         """
         Asynchronously rerank documents based on their relevance
-        to the provided query using mixedbread ai's rerank API.
+        to the provided query using Mixedbread AI's rerank API.
 
         Args:
             documents (Sequence[Union[str, Document, dict]]):
@@ -130,7 +130,7 @@ class MixedbreadAIRerank(MixedBreadAIClient, BaseDocumentCompressor):
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """
-        Compress documents using mixedbread ai's rerank API.
+        Compress documents using Mixedbread AI's rerank API.
 
         Args:
             documents (Sequence[Document]): A sequence of documents to compress.
@@ -152,7 +152,7 @@ class MixedbreadAIRerank(MixedBreadAIClient, BaseDocumentCompressor):
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
         """
-        Compress documents using mixedbread ai's rerank API asynchronously.
+        Compress documents using Mixedbread AI's rerank API asynchronously.
 
         Args:
             documents (Sequence[Document]): A sequence of documents to compress.

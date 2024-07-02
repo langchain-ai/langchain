@@ -5,7 +5,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field, validator
 from mixedbread_ai.client import AsyncMixedbreadAI, MixedbreadAI  # type: ignore
 from mixedbread_ai.core import RequestOptions  # type: ignore
 
-USER_AGENT = "mixedbread-ai@langchain/0.1.0"
+USER_AGENT = "@mixedbread-ai/langchain"
 
 
 class MixedBreadAIClient(BaseModel):
@@ -16,25 +16,25 @@ class MixedBreadAIClient(BaseModel):
     api_key: str = Field(
         alias="mxbai_api_key",
         default_factory=lambda: os.environ.get("MXBAI_API_KEY", None),
-        description="mixedbread ai API key. Must be specified directly or "
+        description="Mixedbread AI API key. Must be specified directly or "
         "via environment variable 'MXBAI_API_KEY'",
         min_length=1,
     )
     base_url: Optional[str] = Field(
         alias="mxbai_api_base",
         default=None,
-        description="Base URL for the mixedbread ai API. "
+        description="Base URL for the Mixedbread AI API. "
         "Leave blank if not using a proxy or service emulator.",
         min_length=1,
     )
     timeout: Optional[float] = Field(
         default=None,
-        description="Timeout for the mixedbread ai API",
+        description="Timeout for the Mixedbread AI API",
         ge=0,
     )
     max_retries: Optional[int] = Field(
         default=3,
-        description="Max retries for the mixedbread ai API",
+        description="Max retries for the Mixedbread AI API",
         ge=0,
     )
 
@@ -74,7 +74,7 @@ class MixedBreadAIClient(BaseModel):
     def validate_api_key(cls, value: str) -> str:
         if not value:
             raise ValueError(
-                "The mixedbread ai API key must be specified."
+                "The Mixedbread AI API key must be specified."
                 + "You either pass it in the constructor using 'mxbai_api_key'"
                 + "or via the 'MXBAI_API_KEY' environment variable."
             )

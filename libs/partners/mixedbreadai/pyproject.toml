@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "langchain-mixedbreadai"
 version = "0.1.0"
-description = "An integration package connecting mixedbread ai and LangChain"
+description = "An integration package connecting Mixedbread AI and LangChain"
 authors = [
   "mixedbreadai <support@mixedbread.ai>",
 ]

@@ -13,13 +13,13 @@ logger = logging.getLogger(__name__)
 
 class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
     """
-    Implements the Embeddings interface with mixedbread ai's embedding API.
+    Implements the Embeddings interface with Mixedbread AI's embedding API.
 
     Find out more at https://mixedbread.ai/docs
 
     This implementation uses the embeddings API.
 
-    To use this you'll need a mixedbread ai API key - either pass it to
+    To use this you'll need a Mixedbread AI API key - either pass it to
     the api_key parameter or set the MXBAI_API_KEY environment variable.
 
     API keys are available on https://mixedbread.ai - it's free to sign up and trial API
@@ -124,7 +124,7 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """
-        Embed a list of document texts using mixedbread ai's embedding API endpoint.
+        Embed a list of document texts using Mixedbread AI's embedding API endpoint.
 
         Args:
             texts: The list of texts to embed.
@@ -137,7 +137,7 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """
         Asynchronously embed a list of document texts
-        using mixedbread ai's embedding API endpoint.
+        using Mixedbread AI's embedding API endpoint.
 
         Args:
             texts: The list of texts to embed.
@@ -149,7 +149,7 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
 
     def embed_query(self, text: str) -> List[float]:
         """
-        Create embeddings using a call out to mixedbread ai's embedding API endpoint.
+        Create embeddings using a call out to Mixedbread AI's embedding API endpoint.
 
         Args:
             text: The text to embed.
@@ -162,7 +162,7 @@ class MixedbreadAIEmbeddings(MixedBreadAIClient, Embeddings):
     async def aembed_query(self, text: str) -> List[float]:
         """
         Create embeddings using an async call out to
-        mixedbread ai's embedding API endpoint.
+        Mixedbread AI's embedding API endpoint.
 
         Args:
             text: The text to embed.
