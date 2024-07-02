@@ -9,8 +9,8 @@ from langchain_core.utils import get_from_dict_or_env
 # Currently There are two web-based Bing Search services available on Azure,
 # i.e. Bing Web Search[1] and Bing Custom Search[2]. Compared to Bing Custom Search,
 # Both services that provides a wide range of search results, while Bing Custom
-# Search requires you to provide an additional custom search instance. Both services
-# are available for BingSearchAPIWrapper.
+# Search requires you to provide an additional custom search instance, `customConfig`.
+# Both services are available for BingSearchAPIWrapper.
 # History of Azure Bing Search API:
 # Before shown in Azure Marketplace as a separate service, Bing Search APIs were
 # part of Azure Cognitive Services, the endpoint of which is unique, and the user
@@ -28,6 +28,7 @@ class BingSearchAPIWrapper(BaseModel):
     """Wrapper for Bing Web Search API."""
 
     bing_subscription_key: str
+    bing_search_url: str
     k: int = 10
     search_kwargs: dict = Field(default_factory=dict)
     """Additional keyword arguments to pass to the search request."""

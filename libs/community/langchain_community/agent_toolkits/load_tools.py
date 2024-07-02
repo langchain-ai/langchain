@@ -488,7 +488,7 @@ _EXTRA_OPTIONAL_TOOLS: Dict[str, Tuple[Callable[[KwArg(Any)], BaseTool], List[st
         _get_searx_search_results_json,
         ["searx_host", "engines", "num_results", "aiosession"],
     ),
-    "bing-search": (_get_bing_search, ["bing_subscription_key"]),
+    "bing-search": (_get_bing_search, ["bing_subscription_key", "bing_search_url"]),
     "metaphor-search": (_get_metaphor_search, ["metaphor_api_key"]),
     "ddg-search": (_get_ddg_search, []),
     "google-lens": (_get_google_lens, ["serp_api_key"]),
