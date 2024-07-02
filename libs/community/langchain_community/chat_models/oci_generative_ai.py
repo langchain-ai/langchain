@@ -45,6 +45,15 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_community.llms.oci_generative_ai import OCIGenAIBase
 from langchain_community.llms.utils import enforce_stop_tokens
 
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.language_models import LanguageModelInput
+from langchain_cohere.cohere_agent import (
+    _convert_to_cohere_tool,
+    _format_to_cohere_tools,
+)
+from langchain_cohere.chat_models import _format_cohere_tool_calls, _convert_cohere_tool_call_to_langchain
+
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
 JSON_TO_PYTHON_TYPES = {
@@ -677,6 +686,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             ],
             llm_output=llm_output,
         )
+        
 
     def _stream(
         self,
