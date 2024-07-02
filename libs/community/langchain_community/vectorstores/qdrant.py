@@ -100,6 +100,7 @@ class Qdrant(VectorStore):
         vector_name: Optional[str] = VECTOR_NAME,
         async_client: Optional[Any] = None,
         embedding_function: Optional[Callable] = None,  # deprecated
+        **kwargs,
     ):
         """Initialize with necessary components."""
         try:
