@@ -393,12 +393,14 @@ class _ConfigurableModel:
         default_config: Optional[dict] = None,
         configurable_fields: Union[Literal["any"], List[str], Tuple[str, ...]] = "any",
         config_prefix: str = "",
-        queued_operations: Sequence[Tuple[str, Tuple, Dict]] = (),
+        queued_declarative_operations: Sequence[Tuple[str, Tuple, Dict]] = (),
     ) -> None:
         self._default_config = default_config or {}
         self._configurable_fields = configurable_fields
         self._config_prefix = config_prefix
-        self._queued_operations: List[Tuple[str, Tuple, Dict]] = list(queued_operations)
+        self._queued_declarative_operations: List[Tuple[str, Tuple, Dict]] = list(
+            queued_declarative_operations
+        )
 
     def __getattr__(self, name: str) -> Any:
         if name in _CHAT_MODEL_METHODS_TAKE_CONFIG:
@@ -414,12 +416,12 @@ class _ConfigurableModel:
         elif name in _DECLARATIVE_METHODS:
 
             def queue(*args: Any, **kwargs: Any) -> _ConfigurableModel:
-                self._queued_operations.append((name, args, kwargs))
+                self._queued_declarative_operations.append((name, args, kwargs))
                 return self
 
             return queue
-        elif self._default_config and hasattr(self._model(), name):
-            return getattr(self._model(), name)
+        elif self._default_config and (model := self._model()) and hasattr(model, name):
+            return getattr(model, name)
         else:
             msg = f"{name} is not a BaseChatModel attribute"
             if self._default_config:
@@ -430,7 +432,7 @@ class _ConfigurableModel:
     def _model(self, config: Optional[RunnableConfig] = None) -> Any:
         params = {**self._default_config, **self._model_params(config)}
         model = _init_chat_model_helper(**params)
-        for name, args, kwargs in self._queued_operations:
+        for name, args, kwargs in self._queued_declarative_operations:
             model = getattr(model, name)(*args, **kwargs)
         return model
 
@@ -461,15 +463,14 @@ class _ConfigurableModel:
             for k, v in config.get("configurable", {}).items()
             if k not in model_params
         }
+        queued_declarative_operations = list(self._queued_declarative_operations)
         if remaining_config:
-            queued_operations = self._queued_operations + [
+            queued_declarative_operations.append(
                 ("with_config", (), {"config": remaining_config})
-            ]
-        else:
-            queued_operations = []
+            )
         return _ConfigurableModel(
             default_config={**self._default_config, **model_params},
             configurable_fields=self._configurable_fields,
             config_prefix=self._config_prefix,
-            queued_operations=queued_operations,
+            queued_declarative_operations=queued_declarative_operations,
         )
