@@ -2,11 +2,13 @@
 from langchain_core.outputs import Generation, LLMResult
 
 from langchain_nexa_ai import NexaAILLM
+from tests import temporary_api_key
 
 
 def test_invoke() -> None:
     """Test invoke tokens from NexaAILLM."""
-    llm = NexaAILLM()
+    with temporary_api_key():
+        llm = NexaAILLM()
 
     result = llm.invoke(
         "Show recommended products for electronics.", category="shopping"
@@ -21,7 +23,8 @@ def test_invoke() -> None:
 
 def test_generate() -> None:
     """Test sync generate."""
-    llm = NexaAILLM()
+    with temporary_api_key():
+        llm = NexaAILLM()
     response = llm.generate(
         prompts=["Show recommended products for electronics.", "Hotels near me."],
         categories=["shopping", "travel"],
