@@ -96,8 +96,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
         values["chunk_size"] = min(values["chunk_size"], 16)
         try:
-            import openai
-
+            import openai  # noqa: F401
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
