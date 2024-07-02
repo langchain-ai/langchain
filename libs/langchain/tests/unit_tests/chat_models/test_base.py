@@ -1,4 +1,5 @@
 import os
+from unittest import mock
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -6,10 +7,6 @@ from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 
 from langchain.chat_models.base import __all__, init_chat_model
-
-os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "dummy")
-os.environ["ANTHROPIC_API_KEY"] = os.environ.get("ANTHROPIC_API_KEY", "dummy")
-
 
 EXPECTED_ALL = [
     "BaseChatModel",
@@ -59,6 +56,9 @@ def test_init_unknown_provider() -> None:
 
 
 @pytest.mark.requires("langchain_openai")
+@mock.patch.dict(
+    os.environ, {"OPENAI_API_KEY": "foo", "ANTHROPIC_API_KEY": "foo"}, clear=True
+)
 def test_configurable() -> None:
     model = init_chat_model()
 
@@ -119,6 +119,9 @@ def test_configurable() -> None:
 
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
+@mock.patch.dict(
+    os.environ, {"OPENAI_API_KEY": "foo", "ANTHROPIC_API_KEY": "foo"}, clear=True
+)
 def test_configurable_with_default() -> None:
     model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
     for method in (
