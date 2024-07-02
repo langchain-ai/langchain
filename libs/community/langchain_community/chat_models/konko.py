@@ -115,6 +115,7 @@ class ChatKonko(ChatOpenAI):
                 "You are using an older version of the 'konko' package. "
                 "Please consider upgrading to access new features."
             )
+        return values
 
     @root_validator(pre=False, skip_on_failure=True)
     def validate_n(cls, values: Dict) -> Dict:
