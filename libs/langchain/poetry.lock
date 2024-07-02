@@ -2229,13 +2229,13 @@ url = "../text-splitters"
 
 [[package]]
 name = "gigachat"
-version = "0.1.29"
+version = "0.1.31"
 description = "GigaChat. Python-library for GigaChain and LangChain"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "gigachat-0.1.29-py3-none-any.whl", hash = "sha256:0d12c6b1e056cf5b4f663cdcf6925d99e78d7933a3146b7476360319c9f9a1bb"},
-    {file = "gigachat-0.1.29.tar.gz", hash = "sha256:8cb267d28bbae9c941354f11f1d2430e7723b5999b569e5d0c9f43f0077dd561"},
+    {file = "gigachat-0.1.31-py3-none-any.whl", hash = "sha256:5e1f8e2f9f166be6d72faffed6f543044b1763fc7e7f0ec775b4472cfa3dec94"},
+    {file = "gigachat-0.1.31.tar.gz", hash = "sha256:cb547d9a0fd546d311c58a99d3f9fdd99fbc93f069b75f98dab602a2f35c6f20"},
 ]
 
 [package.dependencies]
@@ -9399,4 +9399,4 @@ text-helpers = ["chardet"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "06777397cb4043576965a15919f83ff5b9838aa09a6e34dd68a0bfdd7c9df463"
+content-hash = "775f2799b988dd870ddea3b7af8ca6a2ffa21ad6d96246c76993dc36f0515b50"
