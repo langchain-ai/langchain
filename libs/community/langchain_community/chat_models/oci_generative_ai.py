@@ -1,6 +1,7 @@
 import json
+import uuid
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union, Type, Callable
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import (
@@ -16,10 +17,19 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Extra
+from langchain_core.pydantic_v1 import Extra, BaseModel
 
 from langchain_community.llms.oci_generative_ai import OCIGenAIBase
 from langchain_community.llms.utils import enforce_stop_tokens
+
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.language_models import LanguageModelInput
+from langchain_cohere.cohere_agent import (
+    _convert_to_cohere_tool,
+    _format_to_cohere_tools,
+)
+from langchain_cohere.chat_models import _format_cohere_tool_calls, _convert_cohere_tool_call_to_langchain
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
@@ -44,6 +54,10 @@ class Provider(ABC):
     @abstractmethod
     def messages_to_oci_params(self, messages: Any) -> Dict[str, Any]: ...
 
+    @abstractmethod
+    def tools_to_oci_params(self, tools: Sequence[Dict]) -> Dict[str, Any]:
+        ...
+
 
 class CohereProvider(Provider):
     stop_sequence_key = "stop_sequences"
@@ -52,6 +66,8 @@ class CohereProvider(Provider):
         from oci.generative_ai_inference import models
 
         self.oci_chat_request = models.CohereChatRequest
+        self.oci_tool = models.CohereTool
+        self.oci_tool_param = models.CohereParameterDefinition
         self.oci_chat_message = {
             "USER": models.CohereUserMessage,
             "CHATBOT": models.CohereChatBotMessage,
@@ -69,9 +85,19 @@ class CohereProvider(Provider):
             return ""
 
     def chat_generation_info(self, response: Any) -> Dict[str, Any]:
-        return {
+        generation_info: Dict[str, Any] = {
+            "documents": response.data.chat_response.documents,
+            "citations": response.data.chat_response.citations,
+            "search_queries": response.data.chat_response.search_queries,
+            "is_search_required": response.data.chat_response.is_search_required,
             "finish_reason": response.data.chat_response.finish_reason,
         }
+        if response.data.chat_response.tool_calls:
+            # Only populate tool_calls when 1) present on the response and
+            #  2) has one or more calls.
+            generation_info["tool_calls"] = _format_cohere_tool_calls(response.data.chat_response.tool_calls)
+
+        return generation_info
 
     def get_role(self, message: BaseMessage) -> str:
         if isinstance(message, HumanMessage):
@@ -95,6 +121,25 @@ class CohereProvider(Provider):
         }
 
         return oci_params
+
+    def tools_to_oci_params(self, tools: Sequence[Dict]) -> Dict[str, Any]:
+        oci_tools = []
+        for tool in tools:
+            oci_tool = self.oci_tool()
+            oci_tool.name = tool['name']
+            oci_tool.description = tool['description']
+            oci_tool.parameter_definitions = {}
+            for p_name, p_def in tool['parameter_definitions'].items():
+                oci_tool.parameter_definitions[p_name] = self.oci_tool_param(**{
+                    'description': p_def['description'],
+                    'type': p_def['type'],
+                    'is_required': p_def['required'],
+                })
+            
+            oci_tools.append(oci_tool)
+            
+        return oci_tools
+        
 
 
 class MetaProvider(Provider):
@@ -152,6 +197,9 @@ class MetaProvider(Provider):
         }
 
         return oci_params
+
+    def tools_to_oci_params(self, tools: Sequence[Dict]) -> Dict[str, Any]:
+        raise NotImplementedError("Tools not supported for Meta models")
 
 
 class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
@@ -259,6 +307,12 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
                 "Please make sure you have the oci package installed."
             ) from ex
         oci_params = self._provider.messages_to_oci_params(messages)
+        
+        if "tools" in kwargs:
+            oci_params['tools'] = self._provider.tools_to_oci_params(kwargs['tools'])
+            oci_params['is_force_single_step'] = True
+            kwargs.pop("tools")
+        
         oci_params["is_stream"] = stream  # self.is_stream
         _model_kwargs = self.model_kwargs or {}
 
@@ -280,6 +334,14 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
 
         return request
 
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        formatted_tools = _format_to_cohere_tools(tools)
+        return super().bind(tools=formatted_tools, **kwargs)
+        
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -330,14 +392,26 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             "content-length": response.headers["content-length"],
         }
 
+        if "tool_calls" in generation_info:
+            tool_calls = [
+                _convert_cohere_tool_call_to_langchain(tool_call)
+                for tool_call in response.data.chat_response.tool_calls
+            ]
+        else:
+            tool_calls = []
+
+        message = AIMessage(
+            content=content,
+            additional_kwargs=generation_info,
+            tool_calls=tool_calls,
+        )
         return ChatResult(
             generations=[
-                ChatGeneration(
-                    message=AIMessage(content=content), generation_info=generation_info
-                )
+                ChatGeneration(message=message, generation_info=generation_info)
             ],
             llm_output=llm_output,
         )
+        
 
     def _stream(
         self,
@@ -355,3 +429,4 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             if run_manager:
                 run_manager.on_llm_new_token(delta, chunk=chunk)
             yield chunk
+
