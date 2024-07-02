@@ -37,7 +37,7 @@ class SolarChat(SolarCommon, ChatOpenAI):
         arbitrary_types_allowed = True
         extra = "ignore"
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the environment is set up correctly."""
         values["solar_api_key"] = get_from_dict_or_env(
