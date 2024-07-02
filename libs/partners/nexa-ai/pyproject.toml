@@ -1,8 +1,14 @@
 [tool.poetry]
 name = "langchain-nexa-ai"
-version = "0.1.3"
+version = "0.1.4"
 description = "An integration package connecting NexaAI and LangChain"
-authors = []
+authors = [
+  "Ethan Wang <ethan@nexa4ai.com>",
+  "Lingyan Hao <lingyan@nexa4ai.com>",
+  "Zee Huang <zhe@nexa4ai.com>",
+  "Zack Li <zack@nexa4ai.com>",
+  "Alex Chen <alexchen@nexa4ai.com>"
+]
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 license = "MIT"

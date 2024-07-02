@@ -5,7 +5,7 @@ This package contains the LangChain integration with [Nexa AI](https://www.nexa4
 ## Installation
 
 ```bash
-pip install -U langchain-core langchain-nexa-ai
+pip install -U langchain-nexa-ai
 ```
 
 And you should get an api key from [Nexa Hub](https://hub.nexa4ai.com/api_keys) and set it as an environment variable (`NEXA_API_KEY`)
