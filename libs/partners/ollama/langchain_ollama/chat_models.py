@@ -4,8 +4,9 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Mapping,
     Optional,
-    Union,
+    Sequence,
     cast,
 )
 
@@ -22,6 +23,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from ollama import Message, Options
 
 
 class ChatOllama(BaseChatModel):
@@ -226,7 +228,7 @@ class ChatOllama(BaseChatModel):
 
     def _convert_messages_to_ollama_messages(
         self, messages: List[BaseMessage]
-    ) -> List[Dict[str, Union[str, List[str]]]]:
+    ) -> Sequence[Message]:
         ollama_messages: List = []
         for message in messages:
             role = ""
@@ -292,22 +294,22 @@ class ChatOllama(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> Iterator[str]:
+    ) -> Iterator[Mapping[str, Any] | str]:
         ollama_messages = self._convert_messages_to_ollama_messages(messages)
         """
         if 'tool_prompt' in kwargs:
             ollama_messages[-1]['content'] = kwargs['tool_prompt'] + "[INST]" + ollama_messages[-1]['content'] + "[/INST]"
         """  # noqa: E501
+        options_data = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ["keep_alive", "format"] and k in Options.__annotations__
+        }
         yield from ollama.chat(
             model=self.model,
             messages=ollama_messages,
             stream=True,
-            options={
-                "stop": stop,
-                **{
-                    k: v for k, v in kwargs.items() if k not in ["keep_alive", "format"]
-                },
-            },
+            options=Options(dict(stop=stop, **options_data)),
             keep_alive=kwargs.get("keep_alive", None),
             format=kwargs.get("format", None),
         )
@@ -322,14 +324,14 @@ class ChatOllama(BaseChatModel):
     ) -> ChatGenerationChunk:
         final_chunk = None
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
-            if stream_resp:
+            if not isinstance(stream_resp, str):
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=stream_resp["message"]["content"]
                         if "message" in stream_resp
                         else ""
                     ),
-                    generation_info=stream_resp
+                    generation_info=dict(stream_resp)
                     if stream_resp.get("done") is True
                     else None,
                 )
@@ -343,8 +345,8 @@ class ChatOllama(BaseChatModel):
                         chunk=chunk,
                         verbose=verbose,
                     )
-            if final_chunk is None:
-                raise ValueError("No data received from Ollama stream.")
+        if final_chunk is None:
+            raise ValueError("No data received from Ollama stream.")
 
         return final_chunk
 
@@ -372,14 +374,14 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
-            if stream_resp:
+            if not isinstance(stream_resp, str):
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=stream_resp["message"]["content"]
                         if "message" in stream_resp
                         else ""
                     ),
-                    generation_info=stream_resp
+                    generation_info=dict(stream_resp)
                     if stream_resp.get("done") is True
                     else None,
                 )

@@ -12,6 +12,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
+ollama = ">=0.2.1"
 langchain-core = "^0.2.0"
 
 [tool.poetry.group.test]
