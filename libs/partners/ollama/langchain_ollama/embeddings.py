@@ -1,8 +1,9 @@
 from typing import List
 
-from langchain_core.embeddings import Embeddings
 import ollama
+from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra
+
 
 class OllamaEmbeddings(BaseModel, Embeddings):
     """OllamaEmbeddings embedding model.
@@ -14,6 +15,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
             model = OllamaEmbeddings()
     """
+
     model: str = "llama2"
     """Model name to use."""
 
@@ -26,7 +28,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
         """Embed search docs."""
         embedded_docs = []
         for doc in texts:
-            embedded_docs.append(ollama.embeddings(self.model,doc)['embedding'])
+            embedded_docs.append(list(ollama.embeddings(self.model, doc)["embedding"]))
         return embedded_docs
 
     def embed_query(self, text: str) -> List[float]:

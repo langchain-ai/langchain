@@ -17,8 +17,9 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models import BaseLLM
 from langchain_core.outputs import GenerationChunk, LLMResult
+from langchain_core.pydantic_v1 import Extra
 from ollama import Options
-from langchain_core.pydantic_v1 import BaseModel, Extra
+
 
 class OllamaLLM(BaseLLM):
     """OllamaLLM large language models.
@@ -78,9 +79,7 @@ class OllamaLLM(BaseLLM):
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 chunk = GenerationChunk(
-                    text=stream_resp["response"]
-                    if "response" in stream_resp
-                    else "",
+                    text=stream_resp["response"] if "response" in stream_resp else "",
                     generation_info=dict(stream_resp)
                     if stream_resp.get("done") is True
                     else None,
