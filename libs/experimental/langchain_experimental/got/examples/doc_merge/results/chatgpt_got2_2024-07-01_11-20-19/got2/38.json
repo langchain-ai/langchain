@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "APPENDIX: EXTENSION OF CONTRACT DURATION\n\nThis Appendix is a part of the Agreement initially dated [Original Agreement Date, e.g., \"August 15, 2021\"], between [Party A Name], located at [Party A Address] (\"Party A\") and [Party B Name], located at [Party B Address] (\"Party B\").\n\n1. Duration Extension:\nThe duration of the Agreement referenced above is hereby extended for an additional two (2) years from the original expiration date. With this extension, the new expiration date of the Agreement will be [New Expiration Date, e.g., \"August 15, 2025\"].\n\n2. All Other Terms Remain Unchanged:\nExcept for the extension of the contract duration as described herein, all other terms and conditions of the Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the original Agreement, constitutes the entire agreement between Party A and Party B. Any previous understandings, written or oral, relating to the subject of this Appendix are superseded by the terms herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "APPENDIX: TERMS OF CONTRACT TERMINATION\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Termination for Breach:\nIf either party breaches any conditions of the Agreement, the non-breaching party may terminate the Agreement immediately upon written notice to the breaching party.\n\n2. Termination by Notice:\nEither party may terminate the Agreement for any reason by providing a written notice to the other party. The termination will become effective 30 days after the receipt of such notice.\n\n3. Obligations Upon Termination:\nUpon termination, all rights and obligations under the Agreement will cease, except for those which by their nature should survive termination (e.g., confidentiality, liability for prior breaches, etc.).\n\n4. Governing Law:\nThis Appendix, and any disputes arising from it, will be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "IT SERVICES AGREEMENT\n\nEffective Date: [Date, e.g., \"August 15, 2023\"]\n\nParties:\n\n    [Client Name], located at [Client Address] (\"Client\")\n    [Service Provider Name], located at [Service Provider Address] (\"Provider\")\n\nScope of Work:\nProvider agrees to offer IT services, including [e.g., \"network setup, software installation, and routine maintenance\"], as detailed in Attachment A.\n\nPayment:\nClient shall pay Provider [e.g., \"$1,000\"] per month. Invoices will be sent monthly and are due within [e.g., \"30 days\"].\n\nDuration:\nThis Agreement starts on [Start Date] and ends on [End Date], unless terminated earlier.\n\nTermination:\nEither party may terminate with [e.g., \"30 days\"] written notice. Upon termination, any unpaid fees for services rendered become immediately due.\n\nConfidentiality:\nBoth parties agree to keep all business and technical information confidential.\n\nLimitation of Liability:\nProvider's liability is limited to the amount paid by the Client for the specific service causing damage.\n\nGoverning Law:\nThis Agreement is governed by the laws of [State/Country, e.g., \"California\"].\n\nEntire Agreement:\nThis constitutes the full agreement between both parties.",
+          "CONFIDENTIALITY AMENDMENT TO NDA\n\nThis Amendment, effective [Date, e.g., \"August 15, 2023\"], modifies the NDA dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Responsibilities:\n\na) Protection: Parties must safeguard Confidential Information at least as they do their own.\n\nb) Access: Access is limited to those needing it who are also bound by confidentiality.\n\nc) Breach Notification: Parties must immediately inform the other of any breaches.\n\nd) Return/Destruction: Upon request or agreement end, parties must return or certify the destruction of Confidential Information.\n\ne) No Reverse Engineering: Receiving party shall not reverse engineer any provided items.\n\n2. Remedies:\nUnauthorized disclosures permit injunctive relief and other legal remedies.\n\n3. Original Agreement:\nExcept for this Amendment, the NDA remains unchanged.\n\nGoverning Law:\nAs per the NDA."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "APPENDIX: EXTENSION OF CONTRACT DURATION\n\nThis Appendix is a part of the Agreement initially dated [Original Agreement Date, e.g., \"August 15, 2021\"], between [Party A Name], located at [Party A Address] (\"Party A\") and [Party B Name], located at [Party B Address] (\"Party B\").\n\n1. Duration Extension:\nThe duration of the Agreement referenced above is hereby extended for an additional two (2) years from the original expiration date. With this extension, the new expiration date of the Agreement will be [New Expiration Date, e.g., \"August 15, 2025\"].\n\n2. All Other Terms Remain Unchanged:\nExcept for the extension of the contract duration as described herein, all other terms and conditions of the Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the original Agreement, constitutes the entire agreement between Party A and Party B. Any previous understandings, written or oral, relating to the subject of this Appendix are superseded by the terms herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "APPENDIX: TERMS OF CONTRACT TERMINATION\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Termination for Breach:\nIf either party breaches any conditions of the Agreement, the non-breaching party may terminate the Agreement immediately upon written notice to the breaching party.\n\n2. Termination by Notice:\nEither party may terminate the Agreement for any reason by providing a written notice to the other party. The termination will become effective 30 days after the receipt of such notice.\n\n3. Obligations Upon Termination:\nUpon termination, all rights and obligations under the Agreement will cease, except for those which by their nature should survive termination (e.g., confidentiality, liability for prior breaches, etc.).\n\n4. Governing Law:\nThis Appendix, and any disputes arising from it, will be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "IT SERVICES AGREEMENT\n\nEffective Date: [Date, e.g., \"August 15, 2023\"]\n\nParties:\n\n    [Client Name], located at [Client Address] (\"Client\")\n    [Service Provider Name], located at [Service Provider Address] (\"Provider\")\n\nScope of Work:\nProvider agrees to offer IT services, including [e.g., \"network setup, software installation, and routine maintenance\"], as detailed in Attachment A.\n\nPayment:\nClient shall pay Provider [e.g., \"$1,000\"] per month. Invoices will be sent monthly and are due within [e.g., \"30 days\"].\n\nDuration:\nThis Agreement starts on [Start Date] and ends on [End Date], unless terminated earlier.\n\nTermination:\nEither party may terminate with [e.g., \"30 days\"] written notice. Upon termination, any unpaid fees for services rendered become immediately due.\n\nConfidentiality:\nBoth parties agree to keep all business and technical information confidential.\n\nLimitation of Liability:\nProvider's liability is limited to the amount paid by the Client for the specific service causing damage.\n\nGoverning Law:\nThis Agreement is governed by the laws of [State/Country, e.g., \"California\"].\n\nEntire Agreement:\nThis constitutes the full agreement between both parties.",
+          "CONFIDENTIALITY AMENDMENT TO NDA\n\nThis Amendment, effective [Date, e.g., \"August 15, 2023\"], modifies the NDA dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Responsibilities:\n\na) Protection: Parties must safeguard Confidential Information at least as they do their own.\n\nb) Access: Access is limited to those needing it who are also bound by confidentiality.\n\nc) Breach Notification: Parties must immediately inform the other of any breaches.\n\nd) Return/Destruction: Upon request or agreement end, parties must return or certify the destruction of Confidential Information.\n\ne) No Reverse Engineering: Receiving party shall not reverse engineer any provided items.\n\n2. Remedies:\nUnauthorized disclosures permit injunctive relief and other legal remedies.\n\n3. Original Agreement:\nExcept for this Amendment, the NDA remains unchanged.\n\nGoverning Law:\nAs per the NDA."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

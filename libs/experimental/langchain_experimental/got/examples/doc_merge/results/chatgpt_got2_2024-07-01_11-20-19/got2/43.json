@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "CONFIDENTIALITY:\n\n4.1. Confidential Information: For the purposes of this Agreement, \"Confidential Information\" refers to any data or information, regardless of its form, proprietary to or maintained as confidential by either party, which is not publicly known and which is disclosed during the term of this Agreement or in relation to the collaboration/project/service.\n\n4.2. Protection and Non-Disclosure: Both parties agree to use the Confidential Information solely for the purposes of the Agreement and will exert reasonable efforts to prevent the unauthorized disclosure or use of the Confidential Information. Neither party shall disclose, reproduce, or distribute any portion of the Confidential Information without the disclosing party's prior written consent.\n\n4.3. Exclusions: Confidential Information shall not include any data or information which:\n\n    Is or becomes publicly known through no wrongful act of the receiving party;\n    Is independently developed by the receiving party without the use of the Confidential Information;\n    Is rightfully received from a third party without any obligation of confidentiality;\n    Is disclosed under legal requirement or order.\n\n4.4. Return or Destruction: Upon the termination of this Agreement, or at the request of the disclosing party, the receiving party shall return all copies of the Confidential Information to the disclosing party or certify in writing that it has destroyed all such copies.\n\n4.5. Duration: The obligations set forth in this Confidentiality section shall survive the termination or expiration of this Agreement for a period of [specific time, e.g., \"five years\"].",
+          "AMENDMENT TO NON-DISCLOSURE AGREEMENT\n\nThis Amendment (the \u201cAmendment\u201d) is made and entered into as of [Amendment Date], by and between [Party A Name], having an address at [Party A Address] (\u201cParty A\u201d), and [Party B Name], having an address at [Party B Address] (\u201cParty B\u201d), collectively referred to as the \u201cParties.\u201d\n\nRECITALS\n\nWHEREAS, the Parties entered into a Non-Disclosure Agreement dated [Original NDA Date] (the \u201cOriginal Agreement\u201d);\n\nWHEREAS, the Parties desire to amend the Original Agreement to extend the duration of certain restrictions therein;\n\nNOW, THEREFORE, in consideration of the mutual covenants and promises made by the Parties hereto, the Parties agree as follows:\n\n    Extension of Time Restrictions: The time restriction set forth in Section [X] of the Original Agreement, currently stating a period of [Original Time, e.g., \"two (2) years\"], is hereby amended and extended to [New Time, e.g., \"five (5) years\"] from the date of disclosure of the Confidential Information.\n\n    Full Force and Effect: Except as expressly modified by this Amendment, all terms, conditions, and provisions of the Original Agreement shall remain in full force and effect. In the event of any conflict between the terms of this Amendment and the Original Agreement, the terms of this Amendment shall govern.\n\n    Counterparts: This Amendment may be executed in counterparts, each of which shall be deemed an original and all of which together shall constitute one and the same instrument.\n\n    Governing Law: This Amendment shall be governed by and construed in accordance with the laws of [Governing State or Country, e.g., \"the State of California\"], without regard to its conflict of laws principles.\n\nIN WITNESS WHEREOF, the Parties hereto have executed this Amendment as of the date first above written.",
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is part of the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name] (\"Company\") and [Contractor Name] (\"Contractor\").\n\n1. Confidential Information:\nBoth parties may access or receive the other's confidential information (\"Confidential Information\") during the Agreement term. Confidential Information excludes publicly known details, data known prior, or information obtained from third parties without confidentiality obligations.\n\n2. Obligations:\nThe recipient shall:\n\n    Use the Confidential Information solely for the Agreement's purpose.\n    Prevent unauthorized disclosures.\n    Not disclose without prior written consent.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] post Agreement termination or expiration.\n\n4. Return/Destruction:\nUpon Agreement conclusion, or on request, all Confidential Information copies should be returned or destroyed.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "LOYALTY AGREEMENT\n\nThis Agreement (\"Agreement\") is made as of [Date, e.g., \"August 15, 2023\"], between:\n\n    [Party A Name], with its principal office at [Party A Address] (\"Party A\"),\n    [Party B Name], with its principal office at [Party B Address] (\"Party B\").\n\nPurpose:\nThe parties wish to collaborate and establish a loyal relationship in their joint business endeavors.\n\n1. Loyalty Commitment:\n\na) Both parties commit to act in good faith and refrain from engaging in any activity or partnership that might conflict with the interests of the other party during the term of this Agreement.\n\nb) Neither party shall assist, collaborate, or engage with third parties that may cause harm or disrepute to the other party.\n\nc) Each party shall prioritize the other's interests in situations where opportunities arise from their collaboration.\n\n2. Non-Solicitation:\nDuring the term of this Agreement, and for [e.g., \"one year\"] thereafter, neither party shall solicit or attempt to entice away any clients, customers, or employees of the other party.\n\n3. Duration:\nThis Agreement will begin on the Effective Date and remain in effect for [e.g., \"two years\"] unless terminated earlier by mutual consent.\n\n4. Termination:\nEither party may terminate this Agreement with [e.g., \"30 days\"] written notice if the other party breaches any term herein.\n\n5. Confidentiality:\nBoth parties agree to maintain the confidentiality of all proprietary or non-public information obtained during the collaboration.\n\n6. Governing Law:\nThis Agreement is governed by the laws of [State/Country, e.g., \"California\"].\n\n7. Entire Agreement:\nThis document constitutes the full understanding between both parties, superseding all prior discussions, agreements, or understandings."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "CONFIDENTIALITY:\n\n4.1. Confidential Information: For the purposes of this Agreement, \"Confidential Information\" refers to any data or information, regardless of its form, proprietary to or maintained as confidential by either party, which is not publicly known and which is disclosed during the term of this Agreement or in relation to the collaboration/project/service.\n\n4.2. Protection and Non-Disclosure: Both parties agree to use the Confidential Information solely for the purposes of the Agreement and will exert reasonable efforts to prevent the unauthorized disclosure or use of the Confidential Information. Neither party shall disclose, reproduce, or distribute any portion of the Confidential Information without the disclosing party's prior written consent.\n\n4.3. Exclusions: Confidential Information shall not include any data or information which:\n\n    Is or becomes publicly known through no wrongful act of the receiving party;\n    Is independently developed by the receiving party without the use of the Confidential Information;\n    Is rightfully received from a third party without any obligation of confidentiality;\n    Is disclosed under legal requirement or order.\n\n4.4. Return or Destruction: Upon the termination of this Agreement, or at the request of the disclosing party, the receiving party shall return all copies of the Confidential Information to the disclosing party or certify in writing that it has destroyed all such copies.\n\n4.5. Duration: The obligations set forth in this Confidentiality section shall survive the termination or expiration of this Agreement for a period of [specific time, e.g., \"five years\"].",
+          "AMENDMENT TO NON-DISCLOSURE AGREEMENT\n\nThis Amendment (the \u201cAmendment\u201d) is made and entered into as of [Amendment Date], by and between [Party A Name], having an address at [Party A Address] (\u201cParty A\u201d), and [Party B Name], having an address at [Party B Address] (\u201cParty B\u201d), collectively referred to as the \u201cParties.\u201d\n\nRECITALS\n\nWHEREAS, the Parties entered into a Non-Disclosure Agreement dated [Original NDA Date] (the \u201cOriginal Agreement\u201d);\n\nWHEREAS, the Parties desire to amend the Original Agreement to extend the duration of certain restrictions therein;\n\nNOW, THEREFORE, in consideration of the mutual covenants and promises made by the Parties hereto, the Parties agree as follows:\n\n    Extension of Time Restrictions: The time restriction set forth in Section [X] of the Original Agreement, currently stating a period of [Original Time, e.g., \"two (2) years\"], is hereby amended and extended to [New Time, e.g., \"five (5) years\"] from the date of disclosure of the Confidential Information.\n\n    Full Force and Effect: Except as expressly modified by this Amendment, all terms, conditions, and provisions of the Original Agreement shall remain in full force and effect. In the event of any conflict between the terms of this Amendment and the Original Agreement, the terms of this Amendment shall govern.\n\n    Counterparts: This Amendment may be executed in counterparts, each of which shall be deemed an original and all of which together shall constitute one and the same instrument.\n\n    Governing Law: This Amendment shall be governed by and construed in accordance with the laws of [Governing State or Country, e.g., \"the State of California\"], without regard to its conflict of laws principles.\n\nIN WITNESS WHEREOF, the Parties hereto have executed this Amendment as of the date first above written.",
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is part of the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name] (\"Company\") and [Contractor Name] (\"Contractor\").\n\n1. Confidential Information:\nBoth parties may access or receive the other's confidential information (\"Confidential Information\") during the Agreement term. Confidential Information excludes publicly known details, data known prior, or information obtained from third parties without confidentiality obligations.\n\n2. Obligations:\nThe recipient shall:\n\n    Use the Confidential Information solely for the Agreement's purpose.\n    Prevent unauthorized disclosures.\n    Not disclose without prior written consent.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] post Agreement termination or expiration.\n\n4. Return/Destruction:\nUpon Agreement conclusion, or on request, all Confidential Information copies should be returned or destroyed.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "LOYALTY AGREEMENT\n\nThis Agreement (\"Agreement\") is made as of [Date, e.g., \"August 15, 2023\"], between:\n\n    [Party A Name], with its principal office at [Party A Address] (\"Party A\"),\n    [Party B Name], with its principal office at [Party B Address] (\"Party B\").\n\nPurpose:\nThe parties wish to collaborate and establish a loyal relationship in their joint business endeavors.\n\n1. Loyalty Commitment:\n\na) Both parties commit to act in good faith and refrain from engaging in any activity or partnership that might conflict with the interests of the other party during the term of this Agreement.\n\nb) Neither party shall assist, collaborate, or engage with third parties that may cause harm or disrepute to the other party.\n\nc) Each party shall prioritize the other's interests in situations where opportunities arise from their collaboration.\n\n2. Non-Solicitation:\nDuring the term of this Agreement, and for [e.g., \"one year\"] thereafter, neither party shall solicit or attempt to entice away any clients, customers, or employees of the other party.\n\n3. Duration:\nThis Agreement will begin on the Effective Date and remain in effect for [e.g., \"two years\"] unless terminated earlier by mutual consent.\n\n4. Termination:\nEither party may terminate this Agreement with [e.g., \"30 days\"] written notice if the other party breaches any term herein.\n\n5. Confidentiality:\nBoth parties agree to maintain the confidentiality of all proprietary or non-public information obtained during the collaboration.\n\n6. Governing Law:\nThis Agreement is governed by the laws of [State/Country, e.g., \"California\"].\n\n7. Entire Agreement:\nThis document constitutes the full understanding between both parties, superseding all prior discussions, agreements, or understandings."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

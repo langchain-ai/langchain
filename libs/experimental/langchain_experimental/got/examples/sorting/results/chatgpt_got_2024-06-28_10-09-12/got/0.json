@@ -1,0 +1,151 @@
+[
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "ground_truth_evaluator",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

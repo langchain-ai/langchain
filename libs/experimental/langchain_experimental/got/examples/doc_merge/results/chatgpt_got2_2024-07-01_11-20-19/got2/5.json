@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "This Loyalty Agreement is between [Company Name] and [Employee Full Name], where the company agrees to provide specialized training at no cost to the employee, who in turn commits to work for the company for a specified period. If the employee leaves the company within two years after completing training, they must pay $50,000 as compensation for training costs, payable within 30 days of termination. Exceptions to this repayment include termination without cause, resignation due to breach of agreement by the company, or other agreed upon circumstances. Any changes to this agreement must be in writing and signed by both parties, and the agreement will be governed by the laws of [State/Country]. This agreement is binding to all involved parties and their successors. Both the company and the employee sign to attest to these terms.",
+          "This Loyalty Agreement is between [Company Name] and [Contractor Company Name]. The Agreement ensures the Contractor's loyalty and confidentiality towards the Company during and post engagement. Contractor agrees not to use or disclose the Company's confidential information, or engage in competing business or solicitation for a period of [e.g., \"12\"] months post termination. Contractor must return all Company property upon termination. In case of breach, Company can seek legal remedies including injunction. The Agreement remains valid even if a provision is held invalid. The Agreement follows [State, e.g., \"California\"] laws and replaces all previous understandings. It can be amended only in writing with both parties' signature.",
+          "B2B CONTRACTOR LOYALTY AGREEMENT\n\nThis Agreement is made on _____ day of ______, 20, between [Company Name], located at [Company Address] (\"Company\"), and [Contractor Company Name], located at [Contractor Address] (\"Contractor\").\n\n1. DEFINITION OF CONFIDENTIAL INFORMATION\n\nFor the purposes of this Agreement, \"confidential information\" shall refer to research results, software created, devices produced by the Company, and any other information deemed proprietary or not generally known to the public.\n\n2. CONFIDENTIALITY\n\nContractor agrees not to disclose, use, or allow the use of the Company's confidential information, as defined herein, during or after the relationship, except as required for their services to the Company.\n\n3. NON-COMPETITION\n\nFor 12 months post-relationship, the Contractor won't provide similar services to any entity competing with the Company within a 50-mile radius of any Company location.\n\n4. NON-SOLICITATION\n\nFor 12 months post-relationship, the Contractor won't solicit or induce any entity or individual connected to the Company to cease or reduce their relationship with the Company.\n\n5. RETURN OF PROPERTY\n\nUpon relationship termination or on Company's request, the Contractor will immediately return all Company property, including all items containing or pertaining to confidential information.\n\n6. PENALTY FOR BREACH\n\nIn the event of a breach of this Agreement, the Contractor shall pay the Company a penalty of $50,000.\n\n7. GOVERNING LAW\n\nThis Agreement is governed by [State, e.g., \"California\"] laws.\n\n8. ENTIRE AGREEMENT\n\nThis Agreement supersedes prior discussions and agreements between the parties.\n\nBy signing below, the parties agree to these terms.\n\n[Company Name] - Signatory [Contractor Company Name] - Signatory",
+          "NON-DISCLOSURE AND NON-COMPETE AGREEMENT\n\nEffective Date: [Date]\n\nPARTIES:\n\n    Company: [Full Legal Name of Company], located at [Company Address].\n    Supplier: [Full Legal Name of Supplier], located at [Supplier Address].\n\n1. CONFIDENTIALITY:\n\nSupplier shall not disclose Company's confidential information, which includes business strategies, financial data, and customer details, to any third party. This confidentiality obligation lasts for [X years, e.g., \"5 years\"] from the date of disclosure.\n\n2. NON-COMPETITION:\n\nFor [X years, e.g., \"3 years\"] following the termination of their business relationship, Supplier agrees not to engage in or start any business that directly competes with Company within a [X mile/km radius, e.g., \"50-mile radius\"] of Company's primary business location.\n\n3. PENALTY FOR BREACH:\n\nShould Supplier breach this Agreement, they shall pay Company a penalty of [specific amount, e.g., \"$50,000\"], in addition to any other legal remedies available to Company.\n\n4. RETURN OF INFORMATION:\n\nUpon request, Supplier shall return or destroy all of Company's confidential information and confirm its deletion in writing.\n\n5. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\nAGREEMENT ACKNOWLEDGEMENT:\n\n__________ [Company] __________ [Supplier]"
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "This Loyalty Agreement is between [Company Name] and [Employee Full Name], where the company agrees to provide specialized training at no cost to the employee, who in turn commits to work for the company for a specified period. If the employee leaves the company within two years after completing training, they must pay $50,000 as compensation for training costs, payable within 30 days of termination. Exceptions to this repayment include termination without cause, resignation due to breach of agreement by the company, or other agreed upon circumstances. Any changes to this agreement must be in writing and signed by both parties, and the agreement will be governed by the laws of [State/Country]. This agreement is binding to all involved parties and their successors. Both the company and the employee sign to attest to these terms.",
+          "This Loyalty Agreement is between [Company Name] and [Contractor Company Name]. The Agreement ensures the Contractor's loyalty and confidentiality towards the Company during and post engagement. Contractor agrees not to use or disclose the Company's confidential information, or engage in competing business or solicitation for a period of [e.g., \"12\"] months post termination. Contractor must return all Company property upon termination. In case of breach, Company can seek legal remedies including injunction. The Agreement remains valid even if a provision is held invalid. The Agreement follows [State, e.g., \"California\"] laws and replaces all previous understandings. It can be amended only in writing with both parties' signature.",
+          "B2B CONTRACTOR LOYALTY AGREEMENT\n\nThis Agreement is made on _____ day of ______, 20, between [Company Name], located at [Company Address] (\"Company\"), and [Contractor Company Name], located at [Contractor Address] (\"Contractor\").\n\n1. DEFINITION OF CONFIDENTIAL INFORMATION\n\nFor the purposes of this Agreement, \"confidential information\" shall refer to research results, software created, devices produced by the Company, and any other information deemed proprietary or not generally known to the public.\n\n2. CONFIDENTIALITY\n\nContractor agrees not to disclose, use, or allow the use of the Company's confidential information, as defined herein, during or after the relationship, except as required for their services to the Company.\n\n3. NON-COMPETITION\n\nFor 12 months post-relationship, the Contractor won't provide similar services to any entity competing with the Company within a 50-mile radius of any Company location.\n\n4. NON-SOLICITATION\n\nFor 12 months post-relationship, the Contractor won't solicit or induce any entity or individual connected to the Company to cease or reduce their relationship with the Company.\n\n5. RETURN OF PROPERTY\n\nUpon relationship termination or on Company's request, the Contractor will immediately return all Company property, including all items containing or pertaining to confidential information.\n\n6. PENALTY FOR BREACH\n\nIn the event of a breach of this Agreement, the Contractor shall pay the Company a penalty of $50,000.\n\n7. GOVERNING LAW\n\nThis Agreement is governed by [State, e.g., \"California\"] laws.\n\n8. ENTIRE AGREEMENT\n\nThis Agreement supersedes prior discussions and agreements between the parties.\n\nBy signing below, the parties agree to these terms.\n\n[Company Name] - Signatory [Contractor Company Name] - Signatory",
+          "NON-DISCLOSURE AND NON-COMPETE AGREEMENT\n\nEffective Date: [Date]\n\nPARTIES:\n\n    Company: [Full Legal Name of Company], located at [Company Address].\n    Supplier: [Full Legal Name of Supplier], located at [Supplier Address].\n\n1. CONFIDENTIALITY:\n\nSupplier shall not disclose Company's confidential information, which includes business strategies, financial data, and customer details, to any third party. This confidentiality obligation lasts for [X years, e.g., \"5 years\"] from the date of disclosure.\n\n2. NON-COMPETITION:\n\nFor [X years, e.g., \"3 years\"] following the termination of their business relationship, Supplier agrees not to engage in or start any business that directly competes with Company within a [X mile/km radius, e.g., \"50-mile radius\"] of Company's primary business location.\n\n3. PENALTY FOR BREACH:\n\nShould Supplier breach this Agreement, they shall pay Company a penalty of [specific amount, e.g., \"$50,000\"], in addition to any other legal remedies available to Company.\n\n4. RETURN OF INFORMATION:\n\nUpon request, Supplier shall return or destroy all of Company's confidential information and confirm its deletion in writing.\n\n5. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\nAGREEMENT ACKNOWLEDGEMENT:\n\n__________ [Company] __________ [Supplier]"
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

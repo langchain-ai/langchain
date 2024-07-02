@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "AMENDMENT TO CONTRACT: FEES FOR LATE DELIVERY\n\nThis Amendment is made on [Date], and amends the Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Agreement as follows:\n\nSection [Specific Section Number, e.g., \"3\"] - Fees for Late Delivery\n\na. If Business A/B fails to deliver the products/services by the agreed-upon deadline, a late fee of [Specific Amount or Percentage, e.g., \"$100\" or \"5% of the total contract value\"] shall be applied for each [time period, e.g., \"day\"] of delay.\n\nb. The total late fees shall not exceed [Specific Maximum Amount or Percentage, e.g., \"$1,000\" or \"20% of the total contract value\"].\n\nc. The fees will be deducted from the final payment or invoiced separately, as deemed appropriate by the non-defaulting party.\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment.",
+          "APPENDIX B \u2013 CHANGE IN TIME OF DELIVERY\n\nThis Appendix is an addendum to the contract (the \"Contract\") dated [Original Contract Date], entered into between [Party One Name], hereinafter referred to as the \"First Party', and [Party Two Name], hereinafter referred to as the \"Second Party\". The purpose of this Appendix is to amend and modify the delivery time as specified in the original Contract.\n\n    Original Delivery Time: As per the terms of the original Contract, the delivery time was set for [Original Delivery Date, e.g., \"September 15, 2023\"].\n\n    Revised Delivery Time: The Parties, through mutual agreement, have now decided to amend the delivery time. The new delivery date shall be [Revised Delivery Date, e.g., \"October 10, 2023\"].\n\n    Reason for Change: [Provide a brief explanation for the change in delivery time, e.g., \"Due to unforeseen challenges in the production process, additional time is required to ensure that the deliverables meet the agreed-upon quality standards.\"]\n\n    Consequences of Delay: Unless otherwise stated in the main body of the Contract:\n\n    a. If the Second Party fails to meet the revised delivery time, penalties or consequences as outlined in the original Contract for late delivery will apply from the revised delivery date.\n\n    b. All other terms related to late delivery, including but not limited to penalties, refunds, or rights to terminate, remain effective and unchanged by this Appendix.\n\n    Prevailing Terms: All other terms and conditions of the original Contract not specifically amended by this Appendix shall remain in full force and effect. In the event of any inconsistency or conflict between the original Contract and this Appendix, the terms of this Appendix shall prevail with respect to the change in the delivery time.\n\n    Acknowledgment: By signing this Appendix, the Parties acknowledge and agree to the revised delivery time and any associated consequences of delays.\n\nThis Appendix is executed as an acknowledgment and agreement to the revised delivery time and shall be considered an integral part of the original Contract.",
+          "APPENDIX C \u2013 ADDITIONAL CONFIDENTIAL INFORMATION\n\nThis Appendix is an extension of the contract (the \"Contract\") dated [Original Contract Date], between [Party One Name] (\"First Party\") and [Party Two Name] (\"Second Party\"). It outlines additional categories of confidential information beyond those detailed in the Contract.\n\n    Additional Confidential Information Includes:\n\n    a. Non-public financial data.\n\n    b. Unpublished marketing strategies and materials.\n\n    c. Upcoming product or service details.\n\n    d. Proprietary software codes and processes.\n\n    e. Personnel records.\n\n    f. Any data labeled as \"Confidential\" or \"Proprietary\" after the Contract\u2019s execution.\n\n    Protection & Exclusions:\n\nBoth Parties shall extend the same protection to this Additional Confidential Information as previously agreed upon in the Contract. Information that becomes public, is received rightfully from a third party, is independently developed, or gets written release authorization is excluded from confidentiality obligations.\n\n    Duration:\n\nThe confidentiality obligations for this Appendix shall persist as defined in the Contract or, if unspecified, for [e.g., \"five years\"] from the disclosure date.\n\n    Prevailing Terms:\n\nIf there\u2019s any conflict between this Appendix and the Contract concerning confidentiality, this Appendix takes precedence concerning Additional Confidential Information.\n\nExecuted as an integral part of the Contract.",
+          "APPENDIX TO BUSINESS COOPERATION AGREEMENT\n\nEXTENSION OF CONFIDENTIALITY CONDITIONS\n\nThis Appendix is made as of [Day, Month, Year], and is appended to the Business Cooperation Agreement dated [Original Agreement Date] (\"Original Agreement\") between [Business A Name], located at [Business A Address] (\"Business A\") and [Business B Name], located at [Business B Address] (\"Business B\").\n\n1. Extension of Confidentiality Period:\nThe confidentiality period stipulated in Section 4 (or the appropriate section number) of the Original Agreement is hereby extended. Previously set to expire [Original Expiry Date], it will now extend to [New Expiry Date].\n\n2. Continued Obligations:\nAll other confidentiality obligations and conditions outlined in the Original Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the Original Agreement, constitutes the entire agreement between the parties regarding the subject matter herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"].\n\nIN WITNESS WHEREOF, both parties hereto have executed this Appendix as of the date first above written."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "AMENDMENT TO CONTRACT: FEES FOR LATE DELIVERY\n\nThis Amendment is made on [Date], and amends the Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Agreement as follows:\n\nSection [Specific Section Number, e.g., \"3\"] - Fees for Late Delivery\n\na. If Business A/B fails to deliver the products/services by the agreed-upon deadline, a late fee of [Specific Amount or Percentage, e.g., \"$100\" or \"5% of the total contract value\"] shall be applied for each [time period, e.g., \"day\"] of delay.\n\nb. The total late fees shall not exceed [Specific Maximum Amount or Percentage, e.g., \"$1,000\" or \"20% of the total contract value\"].\n\nc. The fees will be deducted from the final payment or invoiced separately, as deemed appropriate by the non-defaulting party.\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment.",
+          "APPENDIX B \u2013 CHANGE IN TIME OF DELIVERY\n\nThis Appendix is an addendum to the contract (the \"Contract\") dated [Original Contract Date], entered into between [Party One Name], hereinafter referred to as the \"First Party', and [Party Two Name], hereinafter referred to as the \"Second Party\". The purpose of this Appendix is to amend and modify the delivery time as specified in the original Contract.\n\n    Original Delivery Time: As per the terms of the original Contract, the delivery time was set for [Original Delivery Date, e.g., \"September 15, 2023\"].\n\n    Revised Delivery Time: The Parties, through mutual agreement, have now decided to amend the delivery time. The new delivery date shall be [Revised Delivery Date, e.g., \"October 10, 2023\"].\n\n    Reason for Change: [Provide a brief explanation for the change in delivery time, e.g., \"Due to unforeseen challenges in the production process, additional time is required to ensure that the deliverables meet the agreed-upon quality standards.\"]\n\n    Consequences of Delay: Unless otherwise stated in the main body of the Contract:\n\n    a. If the Second Party fails to meet the revised delivery time, penalties or consequences as outlined in the original Contract for late delivery will apply from the revised delivery date.\n\n    b. All other terms related to late delivery, including but not limited to penalties, refunds, or rights to terminate, remain effective and unchanged by this Appendix.\n\n    Prevailing Terms: All other terms and conditions of the original Contract not specifically amended by this Appendix shall remain in full force and effect. In the event of any inconsistency or conflict between the original Contract and this Appendix, the terms of this Appendix shall prevail with respect to the change in the delivery time.\n\n    Acknowledgment: By signing this Appendix, the Parties acknowledge and agree to the revised delivery time and any associated consequences of delays.\n\nThis Appendix is executed as an acknowledgment and agreement to the revised delivery time and shall be considered an integral part of the original Contract.",
+          "APPENDIX C \u2013 ADDITIONAL CONFIDENTIAL INFORMATION\n\nThis Appendix is an extension of the contract (the \"Contract\") dated [Original Contract Date], between [Party One Name] (\"First Party\") and [Party Two Name] (\"Second Party\"). It outlines additional categories of confidential information beyond those detailed in the Contract.\n\n    Additional Confidential Information Includes:\n\n    a. Non-public financial data.\n\n    b. Unpublished marketing strategies and materials.\n\n    c. Upcoming product or service details.\n\n    d. Proprietary software codes and processes.\n\n    e. Personnel records.\n\n    f. Any data labeled as \"Confidential\" or \"Proprietary\" after the Contract\u2019s execution.\n\n    Protection & Exclusions:\n\nBoth Parties shall extend the same protection to this Additional Confidential Information as previously agreed upon in the Contract. Information that becomes public, is received rightfully from a third party, is independently developed, or gets written release authorization is excluded from confidentiality obligations.\n\n    Duration:\n\nThe confidentiality obligations for this Appendix shall persist as defined in the Contract or, if unspecified, for [e.g., \"five years\"] from the disclosure date.\n\n    Prevailing Terms:\n\nIf there\u2019s any conflict between this Appendix and the Contract concerning confidentiality, this Appendix takes precedence concerning Additional Confidential Information.\n\nExecuted as an integral part of the Contract.",
+          "APPENDIX TO BUSINESS COOPERATION AGREEMENT\n\nEXTENSION OF CONFIDENTIALITY CONDITIONS\n\nThis Appendix is made as of [Day, Month, Year], and is appended to the Business Cooperation Agreement dated [Original Agreement Date] (\"Original Agreement\") between [Business A Name], located at [Business A Address] (\"Business A\") and [Business B Name], located at [Business B Address] (\"Business B\").\n\n1. Extension of Confidentiality Period:\nThe confidentiality period stipulated in Section 4 (or the appropriate section number) of the Original Agreement is hereby extended. Previously set to expire [Original Expiry Date], it will now extend to [New Expiry Date].\n\n2. Continued Obligations:\nAll other confidentiality obligations and conditions outlined in the Original Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the Original Agreement, constitutes the entire agreement between the parties regarding the subject matter herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"].\n\nIN WITNESS WHEREOF, both parties hereto have executed this Appendix as of the date first above written."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "AMENDMENT TO NON-DISCLOSURE AGREEMENT\n\nThis Amendment (the \u201cAmendment\u201d) is made and entered into as of [Amendment Date], by and between [Party A Name], having an address at [Party A Address] (\u201cParty A\u201d), and [Party B Name], having an address at [Party B Address] (\u201cParty B\u201d), collectively referred to as the \u201cParties.\u201d\n\nRECITALS\n\nWHEREAS, the Parties entered into a Non-Disclosure Agreement dated [Original NDA Date] (the \u201cOriginal Agreement\u201d);\n\nWHEREAS, the Parties desire to amend the Original Agreement to extend the duration of certain restrictions therein;\n\nNOW, THEREFORE, in consideration of the mutual covenants and promises made by the Parties hereto, the Parties agree as follows:\n\n    Extension of Time Restrictions: The time restriction set forth in Section [X] of the Original Agreement, currently stating a period of [Original Time, e.g., \"two (2) years\"], is hereby amended and extended to [New Time, e.g., \"five (5) years\"] from the date of disclosure of the Confidential Information.\n\n    Full Force and Effect: Except as expressly modified by this Amendment, all terms, conditions, and provisions of the Original Agreement shall remain in full force and effect. In the event of any conflict between the terms of this Amendment and the Original Agreement, the terms of this Amendment shall govern.\n\n    Counterparts: This Amendment may be executed in counterparts, each of which shall be deemed an original and all of which together shall constitute one and the same instrument.\n\n    Governing Law: This Amendment shall be governed by and construed in accordance with the laws of [Governing State or Country, e.g., \"the State of California\"], without regard to its conflict of laws principles.\n\nIN WITNESS WHEREOF, the Parties hereto have executed this Amendment as of the date first above written.",
+          "APPENDIX: LOYALTY CLAUSE\n\nEffective [Day, Month, Year], attached to the Agreement dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Loyalty Commitment:\nFor one year from the Effective Date, both parties pledge loyalty by refraining from activities harmful or competitive to the other within the context of the Agreement.\n\n2. Consequences:\nBreaches may result in Agreement termination and legal action as per the original terms.\n\n3. Governing Law:\nGoverned by the laws of [State/Country, e.g., \"California\"].",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Tech Company Name], located at [Tech Company Address], (\"Company\") and [Contractor's Full Name], located at [Contractor Address], (\"Contractor\").\n\nPurpose:\nContractor will access Company's confidential information during their engagement.\n\n1. Definition:\n\"Confidential Information\" means proprietary data related to the Company\u2019s business, excluding publicly known details, prior known information, or data from third parties without confidentiality bounds.\n\n2. Obligation:\nContractor shall:\n\n    Use Confidential Information solely for engagement purposes.\n    Prevent unauthorized disclosure.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] from disclosure date.\n\n4. Return:\nContractor shall return all Confidential Information items upon engagement completion or Company's request, retaining no copies.\n\n5. Remedies:\nBreach may result in legal actions, damages, and costs.\n\n6. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: EXTENSION OF CONTRACT DURATION\n\nThis Appendix is a part of the Agreement initially dated [Original Agreement Date, e.g., \"August 15, 2021\"], between [Party A Name], located at [Party A Address] (\"Party A\") and [Party B Name], located at [Party B Address] (\"Party B\").\n\n1. Duration Extension:\nThe duration of the Agreement referenced above is hereby extended for an additional two (2) years from the original expiration date. With this extension, the new expiration date of the Agreement will be [New Expiration Date, e.g., \"August 15, 2025\"].\n\n2. All Other Terms Remain Unchanged:\nExcept for the extension of the contract duration as described herein, all other terms and conditions of the Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the original Agreement, constitutes the entire agreement between Party A and Party B. Any previous understandings, written or oral, relating to the subject of this Appendix are superseded by the terms herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "AMENDMENT TO NON-DISCLOSURE AGREEMENT\n\nThis Amendment (the \u201cAmendment\u201d) is made and entered into as of [Amendment Date], by and between [Party A Name], having an address at [Party A Address] (\u201cParty A\u201d), and [Party B Name], having an address at [Party B Address] (\u201cParty B\u201d), collectively referred to as the \u201cParties.\u201d\n\nRECITALS\n\nWHEREAS, the Parties entered into a Non-Disclosure Agreement dated [Original NDA Date] (the \u201cOriginal Agreement\u201d);\n\nWHEREAS, the Parties desire to amend the Original Agreement to extend the duration of certain restrictions therein;\n\nNOW, THEREFORE, in consideration of the mutual covenants and promises made by the Parties hereto, the Parties agree as follows:\n\n    Extension of Time Restrictions: The time restriction set forth in Section [X] of the Original Agreement, currently stating a period of [Original Time, e.g., \"two (2) years\"], is hereby amended and extended to [New Time, e.g., \"five (5) years\"] from the date of disclosure of the Confidential Information.\n\n    Full Force and Effect: Except as expressly modified by this Amendment, all terms, conditions, and provisions of the Original Agreement shall remain in full force and effect. In the event of any conflict between the terms of this Amendment and the Original Agreement, the terms of this Amendment shall govern.\n\n    Counterparts: This Amendment may be executed in counterparts, each of which shall be deemed an original and all of which together shall constitute one and the same instrument.\n\n    Governing Law: This Amendment shall be governed by and construed in accordance with the laws of [Governing State or Country, e.g., \"the State of California\"], without regard to its conflict of laws principles.\n\nIN WITNESS WHEREOF, the Parties hereto have executed this Amendment as of the date first above written.",
+          "APPENDIX: LOYALTY CLAUSE\n\nEffective [Day, Month, Year], attached to the Agreement dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Loyalty Commitment:\nFor one year from the Effective Date, both parties pledge loyalty by refraining from activities harmful or competitive to the other within the context of the Agreement.\n\n2. Consequences:\nBreaches may result in Agreement termination and legal action as per the original terms.\n\n3. Governing Law:\nGoverned by the laws of [State/Country, e.g., \"California\"].",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Tech Company Name], located at [Tech Company Address], (\"Company\") and [Contractor's Full Name], located at [Contractor Address], (\"Contractor\").\n\nPurpose:\nContractor will access Company's confidential information during their engagement.\n\n1. Definition:\n\"Confidential Information\" means proprietary data related to the Company\u2019s business, excluding publicly known details, prior known information, or data from third parties without confidentiality bounds.\n\n2. Obligation:\nContractor shall:\n\n    Use Confidential Information solely for engagement purposes.\n    Prevent unauthorized disclosure.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] from disclosure date.\n\n4. Return:\nContractor shall return all Confidential Information items upon engagement completion or Company's request, retaining no copies.\n\n5. Remedies:\nBreach may result in legal actions, damages, and costs.\n\n6. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: EXTENSION OF CONTRACT DURATION\n\nThis Appendix is a part of the Agreement initially dated [Original Agreement Date, e.g., \"August 15, 2021\"], between [Party A Name], located at [Party A Address] (\"Party A\") and [Party B Name], located at [Party B Address] (\"Party B\").\n\n1. Duration Extension:\nThe duration of the Agreement referenced above is hereby extended for an additional two (2) years from the original expiration date. With this extension, the new expiration date of the Agreement will be [New Expiration Date, e.g., \"August 15, 2025\"].\n\n2. All Other Terms Remain Unchanged:\nExcept for the extension of the contract duration as described herein, all other terms and conditions of the Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the original Agreement, constitutes the entire agreement between Party A and Party B. Any previous understandings, written or oral, relating to the subject of this Appendix are superseded by the terms herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

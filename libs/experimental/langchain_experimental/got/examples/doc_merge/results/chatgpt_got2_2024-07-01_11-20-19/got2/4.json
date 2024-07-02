@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "This Non-Disclosure and Non-Competition Agreement is made between [Your Company Name] and [Contractor Name/Company].\n\n1. Confidentiality: The Contractor acknowledges access to the Company's confidential information during their relationship.\n\n2. Non-Disclosure: The Contractor agrees not to disclose, use, reproduce, or distribute this confidential information unless necessary for their obligations.\n\n3. Non-Competition: The Contractor agrees not to compete with the company or assist others in doing so for one year after the termination of their relationship. They also agree not to solicit the company's clients or customers for the benefit of a competitor for one year.\n\n4. Return of Confidential Information: At the end of the relationship or upon the company's request, the Contractor will return all confidential information and copies thereof.\n\n5. Remedies: For any breach, the Company may seek specific performance and injunctive relief, in addition to other remedies.\n\n6. Governing Law: The Agreement is governed by the laws of [Your State].\n\n7. Entire Agreement: This document replaces all previous agreements and understandings on the subject.\n\nBoth parties acknowledge understanding and voluntarily accepting the Agreement.\n\nSignatures required from [Your Company Name] and [Contractor Name/Company].",
+          "NON-DISCLOSURE AND NON-COMPETE AGREEMENT\n\nEffective Date: [Date]\n\nPARTIES:\n\n    Company: [Full Legal Name of Company], located at [Company Address].\n    Supplier: [Full Legal Name of Supplier], located at [Supplier Address].\n\n1. CONFIDENTIALITY:\n\nSupplier shall not disclose Company's confidential information, which includes business strategies, financial data, and customer details, to any third party. This confidentiality obligation lasts for [X years, e.g., \"5 years\"] from the date of disclosure.\n\n2. NON-COMPETITION:\n\nFor [X years, e.g., \"3 years\"] following the termination of their business relationship, Supplier agrees not to engage in or start any business that directly competes with Company within a [X mile/km radius, e.g., \"50-mile radius\"] of Company's primary business location.\n\n3. PENALTY FOR BREACH:\n\nShould Supplier breach this Agreement, they shall pay Company a penalty of [specific amount, e.g., \"$50,000\"], in addition to any other legal remedies available to Company.\n\n4. RETURN OF INFORMATION:\n\nUpon request, Supplier shall return or destroy all of Company's confidential information and confirm its deletion in writing.\n\n5. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\nAGREEMENT ACKNOWLEDGEMENT:\n\n__________ [Company] __________ [Supplier]",
+          "DATA ANALYSIS EMPLOYEE AGREEMENT\n\nThis Agreement (\"Agreement\") is made and entered into as of [Date], by and between [Company Name], a [legal structure, e.g., \"corporation\"] incorporated under the laws of [State/Country], with its principal place of business at [Company Address], herein referred to as the \"Company,\" and [Employee Name], an individual residing at [Employee Address], herein referred to as the \"Employee.\"\n\n    Position and Duties:\n    a. The Company hereby employs Employee in the capacity of Data Analyst.\n    b. The Employee's primary duties will be to [specific data analysis tasks, e.g., \"analyze sales data, forecast trends, and produce reports for managerial review\"].\n\n    Term: The Employee's engagement will commence on [Start Date] and will terminate on [End Date].\n\n    Compensation: For the services rendered by the Employee under this Agreement, the Company will pay Employee a total sum of [specific amount, e.g., \"$5,000\"] payable on [payment schedule, e.g., \"a monthly basis\"].\n\n    Confidentiality: The Employee agrees not to disclose or use, either during or after the term of employment, any proprietary or confidential information or data of the Company without the Company's prior written consent, except as necessary in the course of performing their duties for the Company.\n\n    Intellectual Property: Any works, developments, or inventions created by the Employee in the course of this employment related to the Company's business will remain the sole property of the Company.\n\n    Termination: Either party may terminate this Agreement with [e.g., \"30\"] days written notice. Upon termination, Employee agrees to return all company property and data.\n\n    Governing Law: This Agreement shall be governed by and construed under the laws of [State/Country].\n\n    Amendments: This Agreement may only be amended in writing and signed by both parties.\n\n    Entire Agreement: This Agreement contains the entire agreement between the parties and supersedes all prior negotiations, understandings, and agreements between the parties.\n\nThe parties hereto have executed this Agreement as of the date first above written.\n\n[Company Name or Authorized [Employee Name]\nRepresentative Name, Title]",
+          "DATA ANALYSIS SERVICE AGREEMENT\n\nThis Agreement (\"Agreement\") is made and entered into as of [Date], by and between [Company Name], a [legal structure, e.g., \"corporation\"] incorporated under the laws of [State/Country], with its principal place of business at [Company Address], herein referred to as the \"Company,\" and [Contractor Business Name], a [legal structure, e.g., \"limited liability company\"] organized under the laws of [State/Country], with its principal place of business at [Contractor Business Address], herein referred to as the \"Contractor.\"\n\n    Scope of Work:\n    a. The Contractor agrees to provide data analysis services to the Company.\n    b. The specific services will include [specific data analysis tasks, e.g., \"analyzing sales data, forecasting trends, and producing reports for managerial review\"].\n\n    Term: The Contractor's engagement will commence on [Start Date] and will terminate on [End Date].\n\n    Compensation: For the services rendered by the Contractor under this Agreement, the Company will pay the Contractor a total sum of [specific amount, e.g., \"$5,000\"] payable on [payment schedule, e.g., \"a monthly basis\"].\n\n    Confidentiality: The Contractor agrees not to disclose or use, either during or after the term of this Agreement, any proprietary or confidential information or data of the Company without the Company's prior written consent, except as necessary in the course of providing the services.\n\n    Intellectual Property: Any works, developments, or inventions created by the Contractor in the course of providing the services related to the Company's business will remain the sole property of the Company.\n\n    Termination: Either party may terminate this Agreement with [e.g., \"30\"] days written notice. Upon termination, Contractor agrees to return all company data and any other proprietary materials.\n\n    Governing Law: This Agreement shall be governed by and construed under the laws of [State/Country].\n\n    Amendments: This Agreement may only be amended in writing and signed by both parties.\n\n    Entire Agreement: This Agreement contains the entire agreement between the parties and supersedes all prior negotiations, understandings, and agreements between the parties.\n\nThe parties hereto have executed this Agreement as of the date first above written."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "This Non-Disclosure and Non-Competition Agreement is made between [Your Company Name] and [Contractor Name/Company].\n\n1. Confidentiality: The Contractor acknowledges access to the Company's confidential information during their relationship.\n\n2. Non-Disclosure: The Contractor agrees not to disclose, use, reproduce, or distribute this confidential information unless necessary for their obligations.\n\n3. Non-Competition: The Contractor agrees not to compete with the company or assist others in doing so for one year after the termination of their relationship. They also agree not to solicit the company's clients or customers for the benefit of a competitor for one year.\n\n4. Return of Confidential Information: At the end of the relationship or upon the company's request, the Contractor will return all confidential information and copies thereof.\n\n5. Remedies: For any breach, the Company may seek specific performance and injunctive relief, in addition to other remedies.\n\n6. Governing Law: The Agreement is governed by the laws of [Your State].\n\n7. Entire Agreement: This document replaces all previous agreements and understandings on the subject.\n\nBoth parties acknowledge understanding and voluntarily accepting the Agreement.\n\nSignatures required from [Your Company Name] and [Contractor Name/Company].",
+          "NON-DISCLOSURE AND NON-COMPETE AGREEMENT\n\nEffective Date: [Date]\n\nPARTIES:\n\n    Company: [Full Legal Name of Company], located at [Company Address].\n    Supplier: [Full Legal Name of Supplier], located at [Supplier Address].\n\n1. CONFIDENTIALITY:\n\nSupplier shall not disclose Company's confidential information, which includes business strategies, financial data, and customer details, to any third party. This confidentiality obligation lasts for [X years, e.g., \"5 years\"] from the date of disclosure.\n\n2. NON-COMPETITION:\n\nFor [X years, e.g., \"3 years\"] following the termination of their business relationship, Supplier agrees not to engage in or start any business that directly competes with Company within a [X mile/km radius, e.g., \"50-mile radius\"] of Company's primary business location.\n\n3. PENALTY FOR BREACH:\n\nShould Supplier breach this Agreement, they shall pay Company a penalty of [specific amount, e.g., \"$50,000\"], in addition to any other legal remedies available to Company.\n\n4. RETURN OF INFORMATION:\n\nUpon request, Supplier shall return or destroy all of Company's confidential information and confirm its deletion in writing.\n\n5. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\nAGREEMENT ACKNOWLEDGEMENT:\n\n__________ [Company] __________ [Supplier]",
+          "DATA ANALYSIS EMPLOYEE AGREEMENT\n\nThis Agreement (\"Agreement\") is made and entered into as of [Date], by and between [Company Name], a [legal structure, e.g., \"corporation\"] incorporated under the laws of [State/Country], with its principal place of business at [Company Address], herein referred to as the \"Company,\" and [Employee Name], an individual residing at [Employee Address], herein referred to as the \"Employee.\"\n\n    Position and Duties:\n    a. The Company hereby employs Employee in the capacity of Data Analyst.\n    b. The Employee's primary duties will be to [specific data analysis tasks, e.g., \"analyze sales data, forecast trends, and produce reports for managerial review\"].\n\n    Term: The Employee's engagement will commence on [Start Date] and will terminate on [End Date].\n\n    Compensation: For the services rendered by the Employee under this Agreement, the Company will pay Employee a total sum of [specific amount, e.g., \"$5,000\"] payable on [payment schedule, e.g., \"a monthly basis\"].\n\n    Confidentiality: The Employee agrees not to disclose or use, either during or after the term of employment, any proprietary or confidential information or data of the Company without the Company's prior written consent, except as necessary in the course of performing their duties for the Company.\n\n    Intellectual Property: Any works, developments, or inventions created by the Employee in the course of this employment related to the Company's business will remain the sole property of the Company.\n\n    Termination: Either party may terminate this Agreement with [e.g., \"30\"] days written notice. Upon termination, Employee agrees to return all company property and data.\n\n    Governing Law: This Agreement shall be governed by and construed under the laws of [State/Country].\n\n    Amendments: This Agreement may only be amended in writing and signed by both parties.\n\n    Entire Agreement: This Agreement contains the entire agreement between the parties and supersedes all prior negotiations, understandings, and agreements between the parties.\n\nThe parties hereto have executed this Agreement as of the date first above written.\n\n[Company Name or Authorized [Employee Name]\nRepresentative Name, Title]",
+          "DATA ANALYSIS SERVICE AGREEMENT\n\nThis Agreement (\"Agreement\") is made and entered into as of [Date], by and between [Company Name], a [legal structure, e.g., \"corporation\"] incorporated under the laws of [State/Country], with its principal place of business at [Company Address], herein referred to as the \"Company,\" and [Contractor Business Name], a [legal structure, e.g., \"limited liability company\"] organized under the laws of [State/Country], with its principal place of business at [Contractor Business Address], herein referred to as the \"Contractor.\"\n\n    Scope of Work:\n    a. The Contractor agrees to provide data analysis services to the Company.\n    b. The specific services will include [specific data analysis tasks, e.g., \"analyzing sales data, forecasting trends, and producing reports for managerial review\"].\n\n    Term: The Contractor's engagement will commence on [Start Date] and will terminate on [End Date].\n\n    Compensation: For the services rendered by the Contractor under this Agreement, the Company will pay the Contractor a total sum of [specific amount, e.g., \"$5,000\"] payable on [payment schedule, e.g., \"a monthly basis\"].\n\n    Confidentiality: The Contractor agrees not to disclose or use, either during or after the term of this Agreement, any proprietary or confidential information or data of the Company without the Company's prior written consent, except as necessary in the course of providing the services.\n\n    Intellectual Property: Any works, developments, or inventions created by the Contractor in the course of providing the services related to the Company's business will remain the sole property of the Company.\n\n    Termination: Either party may terminate this Agreement with [e.g., \"30\"] days written notice. Upon termination, Contractor agrees to return all company data and any other proprietary materials.\n\n    Governing Law: This Agreement shall be governed by and construed under the laws of [State/Country].\n\n    Amendments: This Agreement may only be amended in writing and signed by both parties.\n\n    Entire Agreement: This Agreement contains the entire agreement between the parties and supersedes all prior negotiations, understandings, and agreements between the parties.\n\nThe parties hereto have executed this Agreement as of the date first above written."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

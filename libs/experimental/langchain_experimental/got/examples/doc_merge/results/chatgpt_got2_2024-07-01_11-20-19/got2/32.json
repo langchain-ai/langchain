@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "BUSINESS COOPERATION AGREEMENT\n\nThis Agreement is between [Business A Name], at [Business A Address] (\"Business A\"), and [Business B Name], at [Business B Address] (\"Business B\"), effective [Day, Month, Year].\n\n1. Purpose:\nBoth businesses will cooperate in [brief description, e.g., \"joint marketing\"].\n\n2. Responsibilities:\n\n    Business A will: [Key obligation, e.g., \"Promote Business B in newsletters.\"]\n    Business B will: [Key obligation, e.g., \"Display Business A products.\"]\n\n3. Term:\nEffective from the above date for [e.g., \"12 months\"]. Either party can terminate with [e.g., \"30 days\"] notice.\n\n4. Confidentiality:\nConfidential information remains private, during and post-agreement.\n\n5. Governing Law:\nGoverning laws of [State/Country, e.g., \"California\"].\n\n6. Amendments:\nChanges must be written and signed by both parties.",
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is part of the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name] (\"Company\") and [Contractor Name] (\"Contractor\").\n\n1. Confidential Information:\nBoth parties may access or receive the other's confidential information (\"Confidential Information\") during the Agreement term. Confidential Information excludes publicly known details, data known prior, or information obtained from third parties without confidentiality obligations.\n\n2. Obligations:\nThe recipient shall:\n\n    Use the Confidential Information solely for the Agreement's purpose.\n    Prevent unauthorized disclosures.\n    Not disclose without prior written consent.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] post Agreement termination or expiration.\n\n4. Return/Destruction:\nUpon Agreement conclusion, or on request, all Confidential Information copies should be returned or destroyed.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: EXTENSION OF CONTRACT DURATION\n\nThis Appendix is a part of the Agreement initially dated [Original Agreement Date, e.g., \"August 15, 2021\"], between [Party A Name], located at [Party A Address] (\"Party A\") and [Party B Name], located at [Party B Address] (\"Party B\").\n\n1. Duration Extension:\nThe duration of the Agreement referenced above is hereby extended for an additional two (2) years from the original expiration date. With this extension, the new expiration date of the Agreement will be [New Expiration Date, e.g., \"August 15, 2025\"].\n\n2. All Other Terms Remain Unchanged:\nExcept for the extension of the contract duration as described herein, all other terms and conditions of the Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the original Agreement, constitutes the entire agreement between Party A and Party B. Any previous understandings, written or oral, relating to the subject of this Appendix are superseded by the terms herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "CONFIDENTIALITY AGREEMENT\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Company Name], located at [Company Address] (\"Company\"), and [Supplier Name], located at [Supplier Address] (\"Supplier\").\n\n1. Definition:\n\"Confidential Information\" means proprietary data of the Company, excluding:\n\n    Pre-disclosed or publicly known data.\n    Info from third parties without confidentiality bounds.\n\n2. Obligations:\nSupplier will:\n\n    Use Confidential Information solely for business purposes with the Company.\n    Protect its secrecy and prevent unauthorized disclosure.\n    Return or destroy all Confidential Information upon request or business completion.\n\n3. Duration:\nObligations last for [e.g., \"two years\"] from disclosure date.\n\n4. Remedies:\nBreaches may result in legal actions, damages, and costs by the Company.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "BUSINESS COOPERATION AGREEMENT\n\nThis Agreement is between [Business A Name], at [Business A Address] (\"Business A\"), and [Business B Name], at [Business B Address] (\"Business B\"), effective [Day, Month, Year].\n\n1. Purpose:\nBoth businesses will cooperate in [brief description, e.g., \"joint marketing\"].\n\n2. Responsibilities:\n\n    Business A will: [Key obligation, e.g., \"Promote Business B in newsletters.\"]\n    Business B will: [Key obligation, e.g., \"Display Business A products.\"]\n\n3. Term:\nEffective from the above date for [e.g., \"12 months\"]. Either party can terminate with [e.g., \"30 days\"] notice.\n\n4. Confidentiality:\nConfidential information remains private, during and post-agreement.\n\n5. Governing Law:\nGoverning laws of [State/Country, e.g., \"California\"].\n\n6. Amendments:\nChanges must be written and signed by both parties.",
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is part of the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name] (\"Company\") and [Contractor Name] (\"Contractor\").\n\n1. Confidential Information:\nBoth parties may access or receive the other's confidential information (\"Confidential Information\") during the Agreement term. Confidential Information excludes publicly known details, data known prior, or information obtained from third parties without confidentiality obligations.\n\n2. Obligations:\nThe recipient shall:\n\n    Use the Confidential Information solely for the Agreement's purpose.\n    Prevent unauthorized disclosures.\n    Not disclose without prior written consent.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] post Agreement termination or expiration.\n\n4. Return/Destruction:\nUpon Agreement conclusion, or on request, all Confidential Information copies should be returned or destroyed.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: EXTENSION OF CONTRACT DURATION\n\nThis Appendix is a part of the Agreement initially dated [Original Agreement Date, e.g., \"August 15, 2021\"], between [Party A Name], located at [Party A Address] (\"Party A\") and [Party B Name], located at [Party B Address] (\"Party B\").\n\n1. Duration Extension:\nThe duration of the Agreement referenced above is hereby extended for an additional two (2) years from the original expiration date. With this extension, the new expiration date of the Agreement will be [New Expiration Date, e.g., \"August 15, 2025\"].\n\n2. All Other Terms Remain Unchanged:\nExcept for the extension of the contract duration as described herein, all other terms and conditions of the Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the original Agreement, constitutes the entire agreement between Party A and Party B. Any previous understandings, written or oral, relating to the subject of this Appendix are superseded by the terms herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "CONFIDENTIALITY AGREEMENT\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Company Name], located at [Company Address] (\"Company\"), and [Supplier Name], located at [Supplier Address] (\"Supplier\").\n\n1. Definition:\n\"Confidential Information\" means proprietary data of the Company, excluding:\n\n    Pre-disclosed or publicly known data.\n    Info from third parties without confidentiality bounds.\n\n2. Obligations:\nSupplier will:\n\n    Use Confidential Information solely for business purposes with the Company.\n    Protect its secrecy and prevent unauthorized disclosure.\n    Return or destroy all Confidential Information upon request or business completion.\n\n3. Duration:\nObligations last for [e.g., \"two years\"] from disclosure date.\n\n4. Remedies:\nBreaches may result in legal actions, damages, and costs by the Company.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

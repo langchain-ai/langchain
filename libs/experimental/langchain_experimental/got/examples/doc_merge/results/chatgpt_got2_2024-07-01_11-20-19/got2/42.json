@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "BUSINESS AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\n1. PURPOSE:\n\nThis Agreement outlines the terms of the collaboration/project/service between Business A and Business B regarding [Brief Description of the Collaboration/Project/Service].\n\n2. TERMS OF SERVICE:\n\n    Business A agrees to: [Specific tasks/responsibilities, e.g., \"Supply 500 units of Product X monthly.\"].\n    Business B agrees to: [Specific tasks/responsibilities, e.g., \"Pay $50 per unit of Product X within 30 days of delivery.\"].\n\n3. PAYMENT TERMS:\n\nPayments shall be made as follows: [Payment structure, e.g., \"Payment due within 30 days of invoice.\"].\n\n4. CONFIDENTIALITY:\n\nBoth parties commit to maintaining confidentiality regarding all proprietary information exchanged during this agreement.\n\n5. TERMINATION:\n\nEither party may terminate this Agreement with [X days, e.g., \"30 days\"] written notice. If breached, the aggrieved party may seek remedies as per governing laws.\n\n6. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of California\"].\n\n7. AMENDMENTS:\n\nModifications to this Agreement must be in writing and signed by both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, both parties affirm their understanding and acceptance of this Business Agreement.",
+          "AMENDMENT TO CONTRACT\n\nThis Amendment (the \"Amendment\") is entered into on [Date], between [Party One Name], hereinafter referred to as the \"First Party', and [Party Two Name], hereinafter referred to as the \"Second Party'', collectively referred to as the \"Parties\".\n\nWHEREAS, the Parties entered into a contract dated [Original Contract Date], hereinafter referred to as the \"Original Contract', for [Brief Description of the Original Contract, e.g., \"provision of IT services to First Party\"];\n\nWHEREAS, the Parties now wish to amend the Original Contract to add additional responsibilities pertaining to the maintenance of existing IT systems;\n\nNOW, THEREFORE, in consideration of the mutual covenants contained herein and for other good and valuable consideration, the receipt and sufficiency of which is hereby acknowledged, the Parties agree as follows:\n\n    Additional Responsibility:\n\n    The Second Party shall assume the responsibility of maintaining and ensuring the smooth functioning of the existing IT systems of the First Party. This responsibility includes, but is not limited to:\n\n    a. Regular monitoring of the IT systems for any anomalies or issues.\n\n    b. Prompt troubleshooting and rectification of any issues identified.\n\n    c. Routine updates and patches to ensure the systems are secure and up-to-date.\n\n    d. Any other related tasks as deemed necessary by the First Party.\n\n    Compensation:\n\n    As a result of this additional responsibility, the Parties agree to a revised compensation of [New Compensation Details, e.g., \"$XXX per month\"]. All other payment terms as outlined in the Original Contract shall remain unchanged.\n\n    Duration and Termination:\n\n    The duration and termination clauses from the Original Contract shall remain applicable to this Amendment unless otherwise agreed upon in writing by the Parties.\n\n    Miscellaneous:\n\n    All other terms and conditions of the Original Contract, which are not specifically amended by this Amendment, shall remain in full force and effect. In the event of a conflict between this Amendment and the Original Contract, the terms of this Amendment shall prevail.\n\n    Entire Agreement:\n\n    This Amendment, along with the Original Contract, constitutes the entire agreement between the Parties and supersedes any prior understandings, written or oral, relating to the subject matter of this Amendment.\n\n    Governing Law:\n\n    This Amendment shall be governed by the laws of [Jurisdiction, e.g., \"State of New York\"].",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Tech Company Name], located at [Tech Company Address], (\"Company\") and [Contractor's Full Name], located at [Contractor Address], (\"Contractor\").\n\nPurpose:\nContractor will access Company's confidential information during their engagement.\n\n1. Definition:\n\"Confidential Information\" means proprietary data related to the Company\u2019s business, excluding publicly known details, prior known information, or data from third parties without confidentiality bounds.\n\n2. Obligation:\nContractor shall:\n\n    Use Confidential Information solely for engagement purposes.\n    Prevent unauthorized disclosure.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] from disclosure date.\n\n4. Return:\nContractor shall return all Confidential Information items upon engagement completion or Company's request, retaining no copies.\n\n5. Remedies:\nBreach may result in legal actions, damages, and costs.\n\n6. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: TERMS OF CONTRACT TERMINATION\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Termination for Breach:\nIf either party breaches any conditions of the Agreement, the non-breaching party may terminate the Agreement immediately upon written notice to the breaching party.\n\n2. Termination by Notice:\nEither party may terminate the Agreement for any reason by providing a written notice to the other party. The termination will become effective 30 days after the receipt of such notice.\n\n3. Obligations Upon Termination:\nUpon termination, all rights and obligations under the Agreement will cease, except for those which by their nature should survive termination (e.g., confidentiality, liability for prior breaches, etc.).\n\n4. Governing Law:\nThis Appendix, and any disputes arising from it, will be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "BUSINESS AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\n1. PURPOSE:\n\nThis Agreement outlines the terms of the collaboration/project/service between Business A and Business B regarding [Brief Description of the Collaboration/Project/Service].\n\n2. TERMS OF SERVICE:\n\n    Business A agrees to: [Specific tasks/responsibilities, e.g., \"Supply 500 units of Product X monthly.\"].\n    Business B agrees to: [Specific tasks/responsibilities, e.g., \"Pay $50 per unit of Product X within 30 days of delivery.\"].\n\n3. PAYMENT TERMS:\n\nPayments shall be made as follows: [Payment structure, e.g., \"Payment due within 30 days of invoice.\"].\n\n4. CONFIDENTIALITY:\n\nBoth parties commit to maintaining confidentiality regarding all proprietary information exchanged during this agreement.\n\n5. TERMINATION:\n\nEither party may terminate this Agreement with [X days, e.g., \"30 days\"] written notice. If breached, the aggrieved party may seek remedies as per governing laws.\n\n6. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of California\"].\n\n7. AMENDMENTS:\n\nModifications to this Agreement must be in writing and signed by both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, both parties affirm their understanding and acceptance of this Business Agreement.",
+          "AMENDMENT TO CONTRACT\n\nThis Amendment (the \"Amendment\") is entered into on [Date], between [Party One Name], hereinafter referred to as the \"First Party', and [Party Two Name], hereinafter referred to as the \"Second Party'', collectively referred to as the \"Parties\".\n\nWHEREAS, the Parties entered into a contract dated [Original Contract Date], hereinafter referred to as the \"Original Contract', for [Brief Description of the Original Contract, e.g., \"provision of IT services to First Party\"];\n\nWHEREAS, the Parties now wish to amend the Original Contract to add additional responsibilities pertaining to the maintenance of existing IT systems;\n\nNOW, THEREFORE, in consideration of the mutual covenants contained herein and for other good and valuable consideration, the receipt and sufficiency of which is hereby acknowledged, the Parties agree as follows:\n\n    Additional Responsibility:\n\n    The Second Party shall assume the responsibility of maintaining and ensuring the smooth functioning of the existing IT systems of the First Party. This responsibility includes, but is not limited to:\n\n    a. Regular monitoring of the IT systems for any anomalies or issues.\n\n    b. Prompt troubleshooting and rectification of any issues identified.\n\n    c. Routine updates and patches to ensure the systems are secure and up-to-date.\n\n    d. Any other related tasks as deemed necessary by the First Party.\n\n    Compensation:\n\n    As a result of this additional responsibility, the Parties agree to a revised compensation of [New Compensation Details, e.g., \"$XXX per month\"]. All other payment terms as outlined in the Original Contract shall remain unchanged.\n\n    Duration and Termination:\n\n    The duration and termination clauses from the Original Contract shall remain applicable to this Amendment unless otherwise agreed upon in writing by the Parties.\n\n    Miscellaneous:\n\n    All other terms and conditions of the Original Contract, which are not specifically amended by this Amendment, shall remain in full force and effect. In the event of a conflict between this Amendment and the Original Contract, the terms of this Amendment shall prevail.\n\n    Entire Agreement:\n\n    This Amendment, along with the Original Contract, constitutes the entire agreement between the Parties and supersedes any prior understandings, written or oral, relating to the subject matter of this Amendment.\n\n    Governing Law:\n\n    This Amendment shall be governed by the laws of [Jurisdiction, e.g., \"State of New York\"].",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Tech Company Name], located at [Tech Company Address], (\"Company\") and [Contractor's Full Name], located at [Contractor Address], (\"Contractor\").\n\nPurpose:\nContractor will access Company's confidential information during their engagement.\n\n1. Definition:\n\"Confidential Information\" means proprietary data related to the Company\u2019s business, excluding publicly known details, prior known information, or data from third parties without confidentiality bounds.\n\n2. Obligation:\nContractor shall:\n\n    Use Confidential Information solely for engagement purposes.\n    Prevent unauthorized disclosure.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] from disclosure date.\n\n4. Return:\nContractor shall return all Confidential Information items upon engagement completion or Company's request, retaining no copies.\n\n5. Remedies:\nBreach may result in legal actions, damages, and costs.\n\n6. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: TERMS OF CONTRACT TERMINATION\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Termination for Breach:\nIf either party breaches any conditions of the Agreement, the non-breaching party may terminate the Agreement immediately upon written notice to the breaching party.\n\n2. Termination by Notice:\nEither party may terminate the Agreement for any reason by providing a written notice to the other party. The termination will become effective 30 days after the receipt of such notice.\n\n3. Obligations Upon Termination:\nUpon termination, all rights and obligations under the Agreement will cease, except for those which by their nature should survive termination (e.g., confidentiality, liability for prior breaches, etc.).\n\n4. Governing Law:\nThis Appendix, and any disputes arising from it, will be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

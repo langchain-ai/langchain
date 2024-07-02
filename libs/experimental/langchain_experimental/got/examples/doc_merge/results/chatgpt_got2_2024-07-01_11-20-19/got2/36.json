@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is part of the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name] (\"Company\") and [Contractor Name] (\"Contractor\").\n\n1. Confidential Information:\nBoth parties may access or receive the other's confidential information (\"Confidential Information\") during the Agreement term. Confidential Information excludes publicly known details, data known prior, or information obtained from third parties without confidentiality obligations.\n\n2. Obligations:\nThe recipient shall:\n\n    Use the Confidential Information solely for the Agreement's purpose.\n    Prevent unauthorized disclosures.\n    Not disclose without prior written consent.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] post Agreement termination or expiration.\n\n4. Return/Destruction:\nUpon Agreement conclusion, or on request, all Confidential Information copies should be returned or destroyed.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: TERMS OF CONTRACT TERMINATION\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Termination for Breach:\nIf either party breaches any conditions of the Agreement, the non-breaching party may terminate the Agreement immediately upon written notice to the breaching party.\n\n2. Termination by Notice:\nEither party may terminate the Agreement for any reason by providing a written notice to the other party. The termination will become effective 30 days after the receipt of such notice.\n\n3. Obligations Upon Termination:\nUpon termination, all rights and obligations under the Agreement will cease, except for those which by their nature should survive termination (e.g., confidentiality, liability for prior breaches, etc.).\n\n4. Governing Law:\nThis Appendix, and any disputes arising from it, will be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "APPENDIX: OBLIGATIONS UPON TERMINATION\n\nPertaining to the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Return of Property:\nUpon termination, each party shall promptly return to the other all property, materials, and assets belonging to the other party, unless otherwise specified in the Agreement.\n\n2. Confidential Information:\nBoth parties shall continue to abide by any confidentiality obligations set forth in the Agreement. Any confidential information must be returned or destroyed, as instructed by the owning party.\n\n3. Outstanding Payments:\nAll due payments must be settled within [e.g., \"14 days\"] of termination, as per the terms of the original Agreement.\n\n4. Non-Disparagement:\nBoth parties agree not to make any derogatory or disparaging statements about the other party post-termination.\n\n5. Survival of Provisions:\nAny provisions in the Agreement that, by their nature, should persist beyond termination (e.g., indemnity, liability, confidentiality) will continue to be in effect.\n\n6. Notifications:\nEach party must inform their respective stakeholders, if necessary, about the termination in a manner that maintains the goodwill and reputation of both parties.\n\n7. Transition Assistance:\nTo ensure a smooth transition, both parties agree to cooperate, as reasonably requested by the other, for a period of [e.g., \"30 days\"] after termination.\n\n8. Governing Law:\nThis Appendix is governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Date, e.g., \"August 15, 2023\"], between [Client Name], (\"Client\") and [Business Name], (\"Business\").\n\nPurpose:\nProtection of confidential information exchanged due to potential collaboration.\n\n1. Confidentiality:\nBusiness agrees to keep secret all Confidential Information shared by Client.\n\n2. Definition:\n\"Confidential Information\" is non-public data shared by either party, excluding info that's publicly available, already known, or received without confidentiality constraints.\n\n3. Duration:\nObligations last [e.g., \"two years\"] from the date of disclosure.\n\n4. Return/Destruction:\nUpon Client's request, Business will return or destroy all Confidential Information.\n\n5. Remedies:\nUnauthorized disclosures may lead to legal action by Client, including damages.\n\n6. Law:\nGoverned by [State/Country, e.g., \"California\"] laws."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is part of the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name] (\"Company\") and [Contractor Name] (\"Contractor\").\n\n1. Confidential Information:\nBoth parties may access or receive the other's confidential information (\"Confidential Information\") during the Agreement term. Confidential Information excludes publicly known details, data known prior, or information obtained from third parties without confidentiality obligations.\n\n2. Obligations:\nThe recipient shall:\n\n    Use the Confidential Information solely for the Agreement's purpose.\n    Prevent unauthorized disclosures.\n    Not disclose without prior written consent.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] post Agreement termination or expiration.\n\n4. Return/Destruction:\nUpon Agreement conclusion, or on request, all Confidential Information copies should be returned or destroyed.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "APPENDIX: TERMS OF CONTRACT TERMINATION\n\nRelated to the Agreement on [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Termination for Breach:\nIf either party breaches any conditions of the Agreement, the non-breaching party may terminate the Agreement immediately upon written notice to the breaching party.\n\n2. Termination by Notice:\nEither party may terminate the Agreement for any reason by providing a written notice to the other party. The termination will become effective 30 days after the receipt of such notice.\n\n3. Obligations Upon Termination:\nUpon termination, all rights and obligations under the Agreement will cease, except for those which by their nature should survive termination (e.g., confidentiality, liability for prior breaches, etc.).\n\n4. Governing Law:\nThis Appendix, and any disputes arising from it, will be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "APPENDIX: OBLIGATIONS UPON TERMINATION\n\nPertaining to the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"], between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Return of Property:\nUpon termination, each party shall promptly return to the other all property, materials, and assets belonging to the other party, unless otherwise specified in the Agreement.\n\n2. Confidential Information:\nBoth parties shall continue to abide by any confidentiality obligations set forth in the Agreement. Any confidential information must be returned or destroyed, as instructed by the owning party.\n\n3. Outstanding Payments:\nAll due payments must be settled within [e.g., \"14 days\"] of termination, as per the terms of the original Agreement.\n\n4. Non-Disparagement:\nBoth parties agree not to make any derogatory or disparaging statements about the other party post-termination.\n\n5. Survival of Provisions:\nAny provisions in the Agreement that, by their nature, should persist beyond termination (e.g., indemnity, liability, confidentiality) will continue to be in effect.\n\n6. Notifications:\nEach party must inform their respective stakeholders, if necessary, about the termination in a manner that maintains the goodwill and reputation of both parties.\n\n7. Transition Assistance:\nTo ensure a smooth transition, both parties agree to cooperate, as reasonably requested by the other, for a period of [e.g., \"30 days\"] after termination.\n\n8. Governing Law:\nThis Appendix is governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Date, e.g., \"August 15, 2023\"], between [Client Name], (\"Client\") and [Business Name], (\"Business\").\n\nPurpose:\nProtection of confidential information exchanged due to potential collaboration.\n\n1. Confidentiality:\nBusiness agrees to keep secret all Confidential Information shared by Client.\n\n2. Definition:\n\"Confidential Information\" is non-public data shared by either party, excluding info that's publicly available, already known, or received without confidentiality constraints.\n\n3. Duration:\nObligations last [e.g., \"two years\"] from the date of disclosure.\n\n4. Return/Destruction:\nUpon Client's request, Business will return or destroy all Confidential Information.\n\n5. Remedies:\nUnauthorized disclosures may lead to legal action by Client, including damages.\n\n6. Law:\nGoverned by [State/Country, e.g., \"California\"] laws."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

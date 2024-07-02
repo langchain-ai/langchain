@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "NON-COMPETE AND LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\n1. PURPOSE:\n\nThis Agreement is designed to protect the proprietary and business interests of both parties by ensuring loyalty and preventing competition during and after the period of collaboration or engagement.\n\n2. NON-COMPETE:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 24 months following its termination\"], neither party shall:\n\na. Engage in or support any venture that directly competes with the core business of the other party within [specific geographical region, e.g., \"the State of California\"].\nb. Invest in, partner with, or advise any business entity that competes directly with the other party.\n\n3. LOYALTY AND NON-POACHING:\n\nBoth parties pledge their commitment to a loyal business relationship. Specifically:\n\na. Neither party will, without the prior written consent of the other, solicit, induce, or encourage any employees or contractors of the other party to terminate their engagement or to join another business.\nb. Neither party shall disparage or encourage others to disparage the other party, its products, services, or its employees.\n\n4. CONFIDENTIALITY:\n\nBoth parties agree to maintain confidentiality regarding any proprietary or business-sensitive information exchanged during the course of this Agreement, ensuring that such information isn't disclosed without the explicit consent of the party owning that information.\n\n5. BREACH AND REMEDIES:\n\nA violation of any provision in this Agreement will be deemed a significant breach. The aggrieved party shall be entitled to seek injunctive relief, damages, or any other remedies available under the laws of [specific country/state, e.g., \"the State of California\"].\n\n6. GOVERNING LAW:\n\nThis Agreement shall be governed by and interpreted in accordance with the laws of [specific country/state, e.g., \"the State of California\"].\n\n7. AMENDMENTS:\n\nModifications or amendments to this Agreement must be in writing and duly signed by authorized representatives of both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, representatives from both businesses affirm their understanding and acceptance of this Non-Compete and Loyalty Agreement.",
+          "APPENDIX TO BUSINESS COOPERATION AGREEMENT\n\nEXTENSION OF CONFIDENTIALITY CONDITIONS\n\nThis Appendix is made as of [Day, Month, Year], and is appended to the Business Cooperation Agreement dated [Original Agreement Date] (\"Original Agreement\") between [Business A Name], located at [Business A Address] (\"Business A\") and [Business B Name], located at [Business B Address] (\"Business B\").\n\n1. Extension of Confidentiality Period:\nThe confidentiality period stipulated in Section 4 (or the appropriate section number) of the Original Agreement is hereby extended. Previously set to expire [Original Expiry Date], it will now extend to [New Expiry Date].\n\n2. Continued Obligations:\nAll other confidentiality obligations and conditions outlined in the Original Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the Original Agreement, constitutes the entire agreement between the parties regarding the subject matter herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"].\n\nIN WITNESS WHEREOF, both parties hereto have executed this Appendix as of the date first above written.",
+          "APPENDIX: EXTENSION OF CONTRACT DURATION\n\nThis Appendix is a part of the Agreement initially dated [Original Agreement Date, e.g., \"August 15, 2021\"], between [Party A Name], located at [Party A Address] (\"Party A\") and [Party B Name], located at [Party B Address] (\"Party B\").\n\n1. Duration Extension:\nThe duration of the Agreement referenced above is hereby extended for an additional two (2) years from the original expiration date. With this extension, the new expiration date of the Agreement will be [New Expiration Date, e.g., \"August 15, 2025\"].\n\n2. All Other Terms Remain Unchanged:\nExcept for the extension of the contract duration as described herein, all other terms and conditions of the Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the original Agreement, constitutes the entire agreement between Party A and Party B. Any previous understandings, written or oral, relating to the subject of this Appendix are superseded by the terms herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "LOYALTY AGREEMENT\n\nThis Agreement (\"Agreement\") is made as of [Date, e.g., \"August 15, 2023\"], between:\n\n    [Party A Name], with its principal office at [Party A Address] (\"Party A\"),\n    [Party B Name], with its principal office at [Party B Address] (\"Party B\").\n\nPurpose:\nThe parties wish to collaborate and establish a loyal relationship in their joint business endeavors.\n\n1. Loyalty Commitment:\n\na) Both parties commit to act in good faith and refrain from engaging in any activity or partnership that might conflict with the interests of the other party during the term of this Agreement.\n\nb) Neither party shall assist, collaborate, or engage with third parties that may cause harm or disrepute to the other party.\n\nc) Each party shall prioritize the other's interests in situations where opportunities arise from their collaboration.\n\n2. Non-Solicitation:\nDuring the term of this Agreement, and for [e.g., \"one year\"] thereafter, neither party shall solicit or attempt to entice away any clients, customers, or employees of the other party.\n\n3. Duration:\nThis Agreement will begin on the Effective Date and remain in effect for [e.g., \"two years\"] unless terminated earlier by mutual consent.\n\n4. Termination:\nEither party may terminate this Agreement with [e.g., \"30 days\"] written notice if the other party breaches any term herein.\n\n5. Confidentiality:\nBoth parties agree to maintain the confidentiality of all proprietary or non-public information obtained during the collaboration.\n\n6. Governing Law:\nThis Agreement is governed by the laws of [State/Country, e.g., \"California\"].\n\n7. Entire Agreement:\nThis document constitutes the full understanding between both parties, superseding all prior discussions, agreements, or understandings."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "NON-COMPETE AND LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\n1. PURPOSE:\n\nThis Agreement is designed to protect the proprietary and business interests of both parties by ensuring loyalty and preventing competition during and after the period of collaboration or engagement.\n\n2. NON-COMPETE:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 24 months following its termination\"], neither party shall:\n\na. Engage in or support any venture that directly competes with the core business of the other party within [specific geographical region, e.g., \"the State of California\"].\nb. Invest in, partner with, or advise any business entity that competes directly with the other party.\n\n3. LOYALTY AND NON-POACHING:\n\nBoth parties pledge their commitment to a loyal business relationship. Specifically:\n\na. Neither party will, without the prior written consent of the other, solicit, induce, or encourage any employees or contractors of the other party to terminate their engagement or to join another business.\nb. Neither party shall disparage or encourage others to disparage the other party, its products, services, or its employees.\n\n4. CONFIDENTIALITY:\n\nBoth parties agree to maintain confidentiality regarding any proprietary or business-sensitive information exchanged during the course of this Agreement, ensuring that such information isn't disclosed without the explicit consent of the party owning that information.\n\n5. BREACH AND REMEDIES:\n\nA violation of any provision in this Agreement will be deemed a significant breach. The aggrieved party shall be entitled to seek injunctive relief, damages, or any other remedies available under the laws of [specific country/state, e.g., \"the State of California\"].\n\n6. GOVERNING LAW:\n\nThis Agreement shall be governed by and interpreted in accordance with the laws of [specific country/state, e.g., \"the State of California\"].\n\n7. AMENDMENTS:\n\nModifications or amendments to this Agreement must be in writing and duly signed by authorized representatives of both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, representatives from both businesses affirm their understanding and acceptance of this Non-Compete and Loyalty Agreement.",
+          "APPENDIX TO BUSINESS COOPERATION AGREEMENT\n\nEXTENSION OF CONFIDENTIALITY CONDITIONS\n\nThis Appendix is made as of [Day, Month, Year], and is appended to the Business Cooperation Agreement dated [Original Agreement Date] (\"Original Agreement\") between [Business A Name], located at [Business A Address] (\"Business A\") and [Business B Name], located at [Business B Address] (\"Business B\").\n\n1. Extension of Confidentiality Period:\nThe confidentiality period stipulated in Section 4 (or the appropriate section number) of the Original Agreement is hereby extended. Previously set to expire [Original Expiry Date], it will now extend to [New Expiry Date].\n\n2. Continued Obligations:\nAll other confidentiality obligations and conditions outlined in the Original Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the Original Agreement, constitutes the entire agreement between the parties regarding the subject matter herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"].\n\nIN WITNESS WHEREOF, both parties hereto have executed this Appendix as of the date first above written.",
+          "APPENDIX: EXTENSION OF CONTRACT DURATION\n\nThis Appendix is a part of the Agreement initially dated [Original Agreement Date, e.g., \"August 15, 2021\"], between [Party A Name], located at [Party A Address] (\"Party A\") and [Party B Name], located at [Party B Address] (\"Party B\").\n\n1. Duration Extension:\nThe duration of the Agreement referenced above is hereby extended for an additional two (2) years from the original expiration date. With this extension, the new expiration date of the Agreement will be [New Expiration Date, e.g., \"August 15, 2025\"].\n\n2. All Other Terms Remain Unchanged:\nExcept for the extension of the contract duration as described herein, all other terms and conditions of the Agreement remain unchanged and in full effect.\n\n3. Entire Agreement:\nThis Appendix, in conjunction with the original Agreement, constitutes the entire agreement between Party A and Party B. Any previous understandings, written or oral, relating to the subject of this Appendix are superseded by the terms herein.\n\n4. Governing Law:\nThis Appendix shall be governed by the laws of [State/Country, e.g., \"California\"], consistent with the original Agreement.",
+          "LOYALTY AGREEMENT\n\nThis Agreement (\"Agreement\") is made as of [Date, e.g., \"August 15, 2023\"], between:\n\n    [Party A Name], with its principal office at [Party A Address] (\"Party A\"),\n    [Party B Name], with its principal office at [Party B Address] (\"Party B\").\n\nPurpose:\nThe parties wish to collaborate and establish a loyal relationship in their joint business endeavors.\n\n1. Loyalty Commitment:\n\na) Both parties commit to act in good faith and refrain from engaging in any activity or partnership that might conflict with the interests of the other party during the term of this Agreement.\n\nb) Neither party shall assist, collaborate, or engage with third parties that may cause harm or disrepute to the other party.\n\nc) Each party shall prioritize the other's interests in situations where opportunities arise from their collaboration.\n\n2. Non-Solicitation:\nDuring the term of this Agreement, and for [e.g., \"one year\"] thereafter, neither party shall solicit or attempt to entice away any clients, customers, or employees of the other party.\n\n3. Duration:\nThis Agreement will begin on the Effective Date and remain in effect for [e.g., \"two years\"] unless terminated earlier by mutual consent.\n\n4. Termination:\nEither party may terminate this Agreement with [e.g., \"30 days\"] written notice if the other party breaches any term herein.\n\n5. Confidentiality:\nBoth parties agree to maintain the confidentiality of all proprietary or non-public information obtained during the collaboration.\n\n6. Governing Law:\nThis Agreement is governed by the laws of [State/Country, e.g., \"California\"].\n\n7. Entire Agreement:\nThis document constitutes the full understanding between both parties, superseding all prior discussions, agreements, or understandings."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

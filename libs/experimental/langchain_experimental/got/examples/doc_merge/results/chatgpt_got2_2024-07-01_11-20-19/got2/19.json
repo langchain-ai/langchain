@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "FREELANCER AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Client: [Client Full Name or Company Name], located at [Client Address].\n    Freelancer: [Freelancer Full Name], located at [Freelancer Address].\n\n1. SERVICES:\n\nFreelancer agrees to provide the following services: [Brief description of services, e.g., \"web design, content creation, graphic design\"].\n\n2. PAYMENT TERMS:\n\nFor the services rendered, Client agrees to pay Freelancer a total of [Total Amount, e.g., \"$1,000\"]. Payments shall be made as follows: [Payment structure, e.g., \"50% upfront, 50% upon completion\"].\n\n3. DEADLINE:\n\nThe services will be completed by [End Date, e.g., \"December 31, 2023\"].\n\n4. PENALTIES:\n\na. Late Delivery: If Freelancer fails to deliver the completed service by the specified deadline, a penalty of [specific amount, e.g., \"$50\"] per day will be deducted from the final payment until the service is delivered.\n\nb. Confidentiality Breach: Breaching the confidentiality clause will result in a penalty of [specific amount, e.g., \"$2,000\"].\n\n5. CONFIDENTIALITY:\n\nFreelancer agrees to maintain confidentiality regarding all proprietary information of the Client.\n\n6. TERMINATION:\n\nEither party may terminate this agreement with [X days, e.g., \"14 days\"] written notice. Upon termination, payments will be adjusted for work completed.\n\n7. INDEPENDENT CONTRACTOR:\n\nFreelancer is an independent contractor and not an employee of the Client. No benefits, rights, or obligations of employment are conferred by this agreement.\n\n8. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\n9. AMENDMENTS:\n\nAny changes to this agreement must be in writing and signed by both parties.",
+          "CONFIDENTIALITY:\n\n4.1. Confidential Information: For the purposes of this Agreement, \"Confidential Information\" refers to any data or information, regardless of its form, proprietary to or maintained as confidential by either party, which is not publicly known and which is disclosed during the term of this Agreement or in relation to the collaboration/project/service.\n\n4.2. Protection and Non-Disclosure: Both parties agree to use the Confidential Information solely for the purposes of the Agreement and will exert reasonable efforts to prevent the unauthorized disclosure or use of the Confidential Information. Neither party shall disclose, reproduce, or distribute any portion of the Confidential Information without the disclosing party's prior written consent.\n\n4.3. Exclusions: Confidential Information shall not include any data or information which:\n\n    Is or becomes publicly known through no wrongful act of the receiving party;\n    Is independently developed by the receiving party without the use of the Confidential Information;\n    Is rightfully received from a third party without any obligation of confidentiality;\n    Is disclosed under legal requirement or order.\n\n4.4. Return or Destruction: Upon the termination of this Agreement, or at the request of the disclosing party, the receiving party shall return all copies of the Confidential Information to the disclosing party or certify in writing that it has destroyed all such copies.\n\n4.5. Duration: The obligations set forth in this Confidentiality section shall survive the termination or expiration of this Agreement for a period of [specific time, e.g., \"five years\"].",
+          "LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Party A: [Full Legal Name of Party A], located at [Party A Address].\n    Party B: [Full Legal Name of Party B], located at [Party B Address].\n\n1. LOYALTY COMMITMENT:\n\nBoth parties acknowledge the mutual value of their business relationship. They commit to work in good faith, ensuring a collaborative environment that prioritizes trust, loyalty, and shared objectives.\n\n2. NON-POACHING OF EMPLOYEES:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 12 months following its termination\"], neither Party A nor Party B shall, without the prior written consent of the other party:\n\na. Directly or indirectly solicit, induce, or encourage any employees of the other party to terminate their employment or to engage in employment or other services elsewhere.\nb. Hire, employ, or contract the services of any employee of the other party who has been employed by the said party within the last 12 months.\n\n3. BREACH:\n\nAny violation of the clauses in this Agreement will be deemed a material breach and may result in legal action or other remedies as available by law.\n\n4. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of California\"].\n\n5. AMENDMENTS:\n\nAny modifications to this Agreement must be in writing and signed by both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, both parties affirm their understanding and acceptance of this Loyalty Agreement.",
+          "AMENDMENT TO CONTRACT: FEES FOR LATE DELIVERY\n\nThis Amendment is made on [Date], and amends the Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Agreement as follows:\n\nSection [Specific Section Number, e.g., \"3\"] - Fees for Late Delivery\n\na. If Business A/B fails to deliver the products/services by the agreed-upon deadline, a late fee of [Specific Amount or Percentage, e.g., \"$100\" or \"5% of the total contract value\"] shall be applied for each [time period, e.g., \"day\"] of delay.\n\nb. The total late fees shall not exceed [Specific Maximum Amount or Percentage, e.g., \"$1,000\" or \"20% of the total contract value\"].\n\nc. The fees will be deducted from the final payment or invoiced separately, as deemed appropriate by the non-defaulting party.\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "FREELANCER AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Client: [Client Full Name or Company Name], located at [Client Address].\n    Freelancer: [Freelancer Full Name], located at [Freelancer Address].\n\n1. SERVICES:\n\nFreelancer agrees to provide the following services: [Brief description of services, e.g., \"web design, content creation, graphic design\"].\n\n2. PAYMENT TERMS:\n\nFor the services rendered, Client agrees to pay Freelancer a total of [Total Amount, e.g., \"$1,000\"]. Payments shall be made as follows: [Payment structure, e.g., \"50% upfront, 50% upon completion\"].\n\n3. DEADLINE:\n\nThe services will be completed by [End Date, e.g., \"December 31, 2023\"].\n\n4. PENALTIES:\n\na. Late Delivery: If Freelancer fails to deliver the completed service by the specified deadline, a penalty of [specific amount, e.g., \"$50\"] per day will be deducted from the final payment until the service is delivered.\n\nb. Confidentiality Breach: Breaching the confidentiality clause will result in a penalty of [specific amount, e.g., \"$2,000\"].\n\n5. CONFIDENTIALITY:\n\nFreelancer agrees to maintain confidentiality regarding all proprietary information of the Client.\n\n6. TERMINATION:\n\nEither party may terminate this agreement with [X days, e.g., \"14 days\"] written notice. Upon termination, payments will be adjusted for work completed.\n\n7. INDEPENDENT CONTRACTOR:\n\nFreelancer is an independent contractor and not an employee of the Client. No benefits, rights, or obligations of employment are conferred by this agreement.\n\n8. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\n9. AMENDMENTS:\n\nAny changes to this agreement must be in writing and signed by both parties.",
+          "CONFIDENTIALITY:\n\n4.1. Confidential Information: For the purposes of this Agreement, \"Confidential Information\" refers to any data or information, regardless of its form, proprietary to or maintained as confidential by either party, which is not publicly known and which is disclosed during the term of this Agreement or in relation to the collaboration/project/service.\n\n4.2. Protection and Non-Disclosure: Both parties agree to use the Confidential Information solely for the purposes of the Agreement and will exert reasonable efforts to prevent the unauthorized disclosure or use of the Confidential Information. Neither party shall disclose, reproduce, or distribute any portion of the Confidential Information without the disclosing party's prior written consent.\n\n4.3. Exclusions: Confidential Information shall not include any data or information which:\n\n    Is or becomes publicly known through no wrongful act of the receiving party;\n    Is independently developed by the receiving party without the use of the Confidential Information;\n    Is rightfully received from a third party without any obligation of confidentiality;\n    Is disclosed under legal requirement or order.\n\n4.4. Return or Destruction: Upon the termination of this Agreement, or at the request of the disclosing party, the receiving party shall return all copies of the Confidential Information to the disclosing party or certify in writing that it has destroyed all such copies.\n\n4.5. Duration: The obligations set forth in this Confidentiality section shall survive the termination or expiration of this Agreement for a period of [specific time, e.g., \"five years\"].",
+          "LOYALTY AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Party A: [Full Legal Name of Party A], located at [Party A Address].\n    Party B: [Full Legal Name of Party B], located at [Party B Address].\n\n1. LOYALTY COMMITMENT:\n\nBoth parties acknowledge the mutual value of their business relationship. They commit to work in good faith, ensuring a collaborative environment that prioritizes trust, loyalty, and shared objectives.\n\n2. NON-POACHING OF EMPLOYEES:\n\nFor the duration of this Agreement and [specific time after termination, e.g., \"for 12 months following its termination\"], neither Party A nor Party B shall, without the prior written consent of the other party:\n\na. Directly or indirectly solicit, induce, or encourage any employees of the other party to terminate their employment or to engage in employment or other services elsewhere.\nb. Hire, employ, or contract the services of any employee of the other party who has been employed by the said party within the last 12 months.\n\n3. BREACH:\n\nAny violation of the clauses in this Agreement will be deemed a material breach and may result in legal action or other remedies as available by law.\n\n4. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of California\"].\n\n5. AMENDMENTS:\n\nAny modifications to this Agreement must be in writing and signed by both parties.\n\nACKNOWLEDGEMENT:\n\nBy signing below, both parties affirm their understanding and acceptance of this Loyalty Agreement.",
+          "AMENDMENT TO CONTRACT: FEES FOR LATE DELIVERY\n\nThis Amendment is made on [Date], and amends the Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Agreement as follows:\n\nSection [Specific Section Number, e.g., \"3\"] - Fees for Late Delivery\n\na. If Business A/B fails to deliver the products/services by the agreed-upon deadline, a late fee of [Specific Amount or Percentage, e.g., \"$100\" or \"5% of the total contract value\"] shall be applied for each [time period, e.g., \"day\"] of delay.\n\nb. The total late fees shall not exceed [Specific Maximum Amount or Percentage, e.g., \"$1,000\" or \"20% of the total contract value\"].\n\nc. The fees will be deducted from the final payment or invoiced separately, as deemed appropriate by the non-defaulting party.\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

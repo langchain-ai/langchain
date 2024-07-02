@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "AMENDMENT TO CONTRACT: LENGTH OF ENGAGEMENT\n\nThis Amendment is made on [Date], and amends the Non-Compete and Loyalty Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Non-Compete and Loyalty Agreement as follows:\n\nSection [Specific Section Number, e.g., \"2\"] - Length of Engagement\n\nThe period of engagement between Business A and Business B as stipulated in the original Agreement is hereby extended/shortened/set to commence from [New Start Date] and conclude on [New End Date].\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment.",
+          "APPENDIX B \u2013 CHANGE IN TIME OF DELIVERY\n\nThis Appendix is an addendum to the contract (the \"Contract\") dated [Original Contract Date], entered into between [Party One Name], hereinafter referred to as the \"First Party', and [Party Two Name], hereinafter referred to as the \"Second Party\". The purpose of this Appendix is to amend and modify the delivery time as specified in the original Contract.\n\n    Original Delivery Time: As per the terms of the original Contract, the delivery time was set for [Original Delivery Date, e.g., \"September 15, 2023\"].\n\n    Revised Delivery Time: The Parties, through mutual agreement, have now decided to amend the delivery time. The new delivery date shall be [Revised Delivery Date, e.g., \"October 10, 2023\"].\n\n    Reason for Change: [Provide a brief explanation for the change in delivery time, e.g., \"Due to unforeseen challenges in the production process, additional time is required to ensure that the deliverables meet the agreed-upon quality standards.\"]\n\n    Consequences of Delay: Unless otherwise stated in the main body of the Contract:\n\n    a. If the Second Party fails to meet the revised delivery time, penalties or consequences as outlined in the original Contract for late delivery will apply from the revised delivery date.\n\n    b. All other terms related to late delivery, including but not limited to penalties, refunds, or rights to terminate, remain effective and unchanged by this Appendix.\n\n    Prevailing Terms: All other terms and conditions of the original Contract not specifically amended by this Appendix shall remain in full force and effect. In the event of any inconsistency or conflict between the original Contract and this Appendix, the terms of this Appendix shall prevail with respect to the change in the delivery time.\n\n    Acknowledgment: By signing this Appendix, the Parties acknowledge and agree to the revised delivery time and any associated consequences of delays.\n\nThis Appendix is executed as an acknowledgment and agreement to the revised delivery time and shall be considered an integral part of the original Contract.",
+          "AMENDMENT TO NON-DISCLOSURE AGREEMENT\n\nThis Amendment (the \u201cAmendment\u201d) is made and entered into as of [Amendment Date], by and between [Party A Name], having an address at [Party A Address] (\u201cParty A\u201d), and [Party B Name], having an address at [Party B Address] (\u201cParty B\u201d), collectively referred to as the \u201cParties.\u201d\n\nRECITALS\n\nWHEREAS, the Parties entered into a Non-Disclosure Agreement dated [Original NDA Date] (the \u201cOriginal Agreement\u201d);\n\nWHEREAS, the Parties desire to amend the Original Agreement to extend the duration of certain restrictions therein;\n\nNOW, THEREFORE, in consideration of the mutual covenants and promises made by the Parties hereto, the Parties agree as follows:\n\n    Extension of Time Restrictions: The time restriction set forth in Section [X] of the Original Agreement, currently stating a period of [Original Time, e.g., \"two (2) years\"], is hereby amended and extended to [New Time, e.g., \"five (5) years\"] from the date of disclosure of the Confidential Information.\n\n    Full Force and Effect: Except as expressly modified by this Amendment, all terms, conditions, and provisions of the Original Agreement shall remain in full force and effect. In the event of any conflict between the terms of this Amendment and the Original Agreement, the terms of this Amendment shall govern.\n\n    Counterparts: This Amendment may be executed in counterparts, each of which shall be deemed an original and all of which together shall constitute one and the same instrument.\n\n    Governing Law: This Amendment shall be governed by and construed in accordance with the laws of [Governing State or Country, e.g., \"the State of California\"], without regard to its conflict of laws principles.\n\nIN WITNESS WHEREOF, the Parties hereto have executed this Amendment as of the date first above written.",
+          "BUSINESS COOPERATION AGREEMENT\n\nThis Agreement is between [Business A Name], at [Business A Address] (\"Business A\"), and [Business B Name], at [Business B Address] (\"Business B\"), effective [Day, Month, Year].\n\n1. Purpose:\nBoth businesses will cooperate in [brief description, e.g., \"joint marketing\"].\n\n2. Responsibilities:\n\n    Business A will: [Key obligation, e.g., \"Promote Business B in newsletters.\"]\n    Business B will: [Key obligation, e.g., \"Display Business A products.\"]\n\n3. Term:\nEffective from the above date for [e.g., \"12 months\"]. Either party can terminate with [e.g., \"30 days\"] notice.\n\n4. Confidentiality:\nConfidential information remains private, during and post-agreement.\n\n5. Governing Law:\nGoverning laws of [State/Country, e.g., \"California\"].\n\n6. Amendments:\nChanges must be written and signed by both parties."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "AMENDMENT TO CONTRACT: LENGTH OF ENGAGEMENT\n\nThis Amendment is made on [Date], and amends the Non-Compete and Loyalty Agreement dated [Original Agreement Date] between:\n\n    Business A: [Full Legal Name of Business A], located at [Business A Address].\n    Business B: [Full Legal Name of Business B], located at [Business B Address].\n\nAMENDMENT:\n\nThe parties hereby agree to amend the Non-Compete and Loyalty Agreement as follows:\n\nSection [Specific Section Number, e.g., \"2\"] - Length of Engagement\n\nThe period of engagement between Business A and Business B as stipulated in the original Agreement is hereby extended/shortened/set to commence from [New Start Date] and conclude on [New End Date].\n\nGENERAL PROVISIONS:\n\n    Except as specifically amended herein, all other terms and conditions of the original Agreement remain unchanged and in full effect.\n    This Amendment, together with the original Agreement, represents the entire understanding between the parties.\n\nACKNOWLEDGEMENT:\n\nBoth parties, by their signatures below, indicate their acceptance and approval of this Amendment.",
+          "APPENDIX B \u2013 CHANGE IN TIME OF DELIVERY\n\nThis Appendix is an addendum to the contract (the \"Contract\") dated [Original Contract Date], entered into between [Party One Name], hereinafter referred to as the \"First Party', and [Party Two Name], hereinafter referred to as the \"Second Party\". The purpose of this Appendix is to amend and modify the delivery time as specified in the original Contract.\n\n    Original Delivery Time: As per the terms of the original Contract, the delivery time was set for [Original Delivery Date, e.g., \"September 15, 2023\"].\n\n    Revised Delivery Time: The Parties, through mutual agreement, have now decided to amend the delivery time. The new delivery date shall be [Revised Delivery Date, e.g., \"October 10, 2023\"].\n\n    Reason for Change: [Provide a brief explanation for the change in delivery time, e.g., \"Due to unforeseen challenges in the production process, additional time is required to ensure that the deliverables meet the agreed-upon quality standards.\"]\n\n    Consequences of Delay: Unless otherwise stated in the main body of the Contract:\n\n    a. If the Second Party fails to meet the revised delivery time, penalties or consequences as outlined in the original Contract for late delivery will apply from the revised delivery date.\n\n    b. All other terms related to late delivery, including but not limited to penalties, refunds, or rights to terminate, remain effective and unchanged by this Appendix.\n\n    Prevailing Terms: All other terms and conditions of the original Contract not specifically amended by this Appendix shall remain in full force and effect. In the event of any inconsistency or conflict between the original Contract and this Appendix, the terms of this Appendix shall prevail with respect to the change in the delivery time.\n\n    Acknowledgment: By signing this Appendix, the Parties acknowledge and agree to the revised delivery time and any associated consequences of delays.\n\nThis Appendix is executed as an acknowledgment and agreement to the revised delivery time and shall be considered an integral part of the original Contract.",
+          "AMENDMENT TO NON-DISCLOSURE AGREEMENT\n\nThis Amendment (the \u201cAmendment\u201d) is made and entered into as of [Amendment Date], by and between [Party A Name], having an address at [Party A Address] (\u201cParty A\u201d), and [Party B Name], having an address at [Party B Address] (\u201cParty B\u201d), collectively referred to as the \u201cParties.\u201d\n\nRECITALS\n\nWHEREAS, the Parties entered into a Non-Disclosure Agreement dated [Original NDA Date] (the \u201cOriginal Agreement\u201d);\n\nWHEREAS, the Parties desire to amend the Original Agreement to extend the duration of certain restrictions therein;\n\nNOW, THEREFORE, in consideration of the mutual covenants and promises made by the Parties hereto, the Parties agree as follows:\n\n    Extension of Time Restrictions: The time restriction set forth in Section [X] of the Original Agreement, currently stating a period of [Original Time, e.g., \"two (2) years\"], is hereby amended and extended to [New Time, e.g., \"five (5) years\"] from the date of disclosure of the Confidential Information.\n\n    Full Force and Effect: Except as expressly modified by this Amendment, all terms, conditions, and provisions of the Original Agreement shall remain in full force and effect. In the event of any conflict between the terms of this Amendment and the Original Agreement, the terms of this Amendment shall govern.\n\n    Counterparts: This Amendment may be executed in counterparts, each of which shall be deemed an original and all of which together shall constitute one and the same instrument.\n\n    Governing Law: This Amendment shall be governed by and construed in accordance with the laws of [Governing State or Country, e.g., \"the State of California\"], without regard to its conflict of laws principles.\n\nIN WITNESS WHEREOF, the Parties hereto have executed this Amendment as of the date first above written.",
+          "BUSINESS COOPERATION AGREEMENT\n\nThis Agreement is between [Business A Name], at [Business A Address] (\"Business A\"), and [Business B Name], at [Business B Address] (\"Business B\"), effective [Day, Month, Year].\n\n1. Purpose:\nBoth businesses will cooperate in [brief description, e.g., \"joint marketing\"].\n\n2. Responsibilities:\n\n    Business A will: [Key obligation, e.g., \"Promote Business B in newsletters.\"]\n    Business B will: [Key obligation, e.g., \"Display Business A products.\"]\n\n3. Term:\nEffective from the above date for [e.g., \"12 months\"]. Either party can terminate with [e.g., \"30 days\"] notice.\n\n4. Confidentiality:\nConfidential information remains private, during and post-agreement.\n\n5. Governing Law:\nGoverning laws of [State/Country, e.g., \"California\"].\n\n6. Amendments:\nChanges must be written and signed by both parties."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

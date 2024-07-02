@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "CONFIDENTIALITY AGREEMENT\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Company Name], located at [Company Address] (\"Company\"), and [Supplier Name], located at [Supplier Address] (\"Supplier\").\n\n1. Definition:\n\"Confidential Information\" means proprietary data of the Company, excluding:\n\n    Pre-disclosed or publicly known data.\n    Info from third parties without confidentiality bounds.\n\n2. Obligations:\nSupplier will:\n\n    Use Confidential Information solely for business purposes with the Company.\n    Protect its secrecy and prevent unauthorized disclosure.\n    Return or destroy all Confidential Information upon request or business completion.\n\n3. Duration:\nObligations last for [e.g., \"two years\"] from disclosure date.\n\n4. Remedies:\nBreaches may result in legal actions, damages, and costs by the Company.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Date, e.g., \"August 15, 2023\"], between [Client Name], (\"Client\") and [Business Name], (\"Business\").\n\nPurpose:\nProtection of confidential information exchanged due to potential collaboration.\n\n1. Confidentiality:\nBusiness agrees to keep secret all Confidential Information shared by Client.\n\n2. Definition:\n\"Confidential Information\" is non-public data shared by either party, excluding info that's publicly available, already known, or received without confidentiality constraints.\n\n3. Duration:\nObligations last [e.g., \"two years\"] from the date of disclosure.\n\n4. Return/Destruction:\nUpon Client's request, Business will return or destroy all Confidential Information.\n\n5. Remedies:\nUnauthorized disclosures may lead to legal action by Client, including damages.\n\n6. Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "CONFIDENTIALITY AMENDMENT TO NDA\n\nThis Amendment, effective [Date, e.g., \"August 15, 2023\"], modifies the NDA dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Responsibilities:\n\na) Protection: Parties must safeguard Confidential Information at least as they do their own.\n\nb) Access: Access is limited to those needing it who are also bound by confidentiality.\n\nc) Breach Notification: Parties must immediately inform the other of any breaches.\n\nd) Return/Destruction: Upon request or agreement end, parties must return or certify the destruction of Confidential Information.\n\ne) No Reverse Engineering: Receiving party shall not reverse engineer any provided items.\n\n2. Remedies:\nUnauthorized disclosures permit injunctive relief and other legal remedies.\n\n3. Original Agreement:\nExcept for this Amendment, the NDA remains unchanged.\n\nGoverning Law:\nAs per the NDA.",
+          "LOYALTY AGREEMENT\n\nThis Agreement (\"Agreement\") is made as of [Date, e.g., \"August 15, 2023\"], between:\n\n    [Party A Name], with its principal office at [Party A Address] (\"Party A\"),\n    [Party B Name], with its principal office at [Party B Address] (\"Party B\").\n\nPurpose:\nThe parties wish to collaborate and establish a loyal relationship in their joint business endeavors.\n\n1. Loyalty Commitment:\n\na) Both parties commit to act in good faith and refrain from engaging in any activity or partnership that might conflict with the interests of the other party during the term of this Agreement.\n\nb) Neither party shall assist, collaborate, or engage with third parties that may cause harm or disrepute to the other party.\n\nc) Each party shall prioritize the other's interests in situations where opportunities arise from their collaboration.\n\n2. Non-Solicitation:\nDuring the term of this Agreement, and for [e.g., \"one year\"] thereafter, neither party shall solicit or attempt to entice away any clients, customers, or employees of the other party.\n\n3. Duration:\nThis Agreement will begin on the Effective Date and remain in effect for [e.g., \"two years\"] unless terminated earlier by mutual consent.\n\n4. Termination:\nEither party may terminate this Agreement with [e.g., \"30 days\"] written notice if the other party breaches any term herein.\n\n5. Confidentiality:\nBoth parties agree to maintain the confidentiality of all proprietary or non-public information obtained during the collaboration.\n\n6. Governing Law:\nThis Agreement is governed by the laws of [State/Country, e.g., \"California\"].\n\n7. Entire Agreement:\nThis document constitutes the full understanding between both parties, superseding all prior discussions, agreements, or understandings."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "CONFIDENTIALITY AGREEMENT\n\nEffective [Effective Date, e.g., \"August 15, 2023\"], between [Company Name], located at [Company Address] (\"Company\"), and [Supplier Name], located at [Supplier Address] (\"Supplier\").\n\n1. Definition:\n\"Confidential Information\" means proprietary data of the Company, excluding:\n\n    Pre-disclosed or publicly known data.\n    Info from third parties without confidentiality bounds.\n\n2. Obligations:\nSupplier will:\n\n    Use Confidential Information solely for business purposes with the Company.\n    Protect its secrecy and prevent unauthorized disclosure.\n    Return or destroy all Confidential Information upon request or business completion.\n\n3. Duration:\nObligations last for [e.g., \"two years\"] from disclosure date.\n\n4. Remedies:\nBreaches may result in legal actions, damages, and costs by the Company.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "NON-DISCLOSURE AGREEMENT (NDA)\n\nEffective [Date, e.g., \"August 15, 2023\"], between [Client Name], (\"Client\") and [Business Name], (\"Business\").\n\nPurpose:\nProtection of confidential information exchanged due to potential collaboration.\n\n1. Confidentiality:\nBusiness agrees to keep secret all Confidential Information shared by Client.\n\n2. Definition:\n\"Confidential Information\" is non-public data shared by either party, excluding info that's publicly available, already known, or received without confidentiality constraints.\n\n3. Duration:\nObligations last [e.g., \"two years\"] from the date of disclosure.\n\n4. Return/Destruction:\nUpon Client's request, Business will return or destroy all Confidential Information.\n\n5. Remedies:\nUnauthorized disclosures may lead to legal action by Client, including damages.\n\n6. Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "CONFIDENTIALITY AMENDMENT TO NDA\n\nThis Amendment, effective [Date, e.g., \"August 15, 2023\"], modifies the NDA dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Responsibilities:\n\na) Protection: Parties must safeguard Confidential Information at least as they do their own.\n\nb) Access: Access is limited to those needing it who are also bound by confidentiality.\n\nc) Breach Notification: Parties must immediately inform the other of any breaches.\n\nd) Return/Destruction: Upon request or agreement end, parties must return or certify the destruction of Confidential Information.\n\ne) No Reverse Engineering: Receiving party shall not reverse engineer any provided items.\n\n2. Remedies:\nUnauthorized disclosures permit injunctive relief and other legal remedies.\n\n3. Original Agreement:\nExcept for this Amendment, the NDA remains unchanged.\n\nGoverning Law:\nAs per the NDA.",
+          "LOYALTY AGREEMENT\n\nThis Agreement (\"Agreement\") is made as of [Date, e.g., \"August 15, 2023\"], between:\n\n    [Party A Name], with its principal office at [Party A Address] (\"Party A\"),\n    [Party B Name], with its principal office at [Party B Address] (\"Party B\").\n\nPurpose:\nThe parties wish to collaborate and establish a loyal relationship in their joint business endeavors.\n\n1. Loyalty Commitment:\n\na) Both parties commit to act in good faith and refrain from engaging in any activity or partnership that might conflict with the interests of the other party during the term of this Agreement.\n\nb) Neither party shall assist, collaborate, or engage with third parties that may cause harm or disrepute to the other party.\n\nc) Each party shall prioritize the other's interests in situations where opportunities arise from their collaboration.\n\n2. Non-Solicitation:\nDuring the term of this Agreement, and for [e.g., \"one year\"] thereafter, neither party shall solicit or attempt to entice away any clients, customers, or employees of the other party.\n\n3. Duration:\nThis Agreement will begin on the Effective Date and remain in effect for [e.g., \"two years\"] unless terminated earlier by mutual consent.\n\n4. Termination:\nEither party may terminate this Agreement with [e.g., \"30 days\"] written notice if the other party breaches any term herein.\n\n5. Confidentiality:\nBoth parties agree to maintain the confidentiality of all proprietary or non-public information obtained during the collaboration.\n\n6. Governing Law:\nThis Agreement is governed by the laws of [State/Country, e.g., \"California\"].\n\n7. Entire Agreement:\nThis document constitutes the full understanding between both parties, superseding all prior discussions, agreements, or understandings."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

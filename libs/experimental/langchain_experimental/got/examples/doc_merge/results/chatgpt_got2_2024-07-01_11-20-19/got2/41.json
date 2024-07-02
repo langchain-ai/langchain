@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "This document outlines the terms of cooperation between Company A and Company B for a joint research project. The duties of each company are designated, with a detailed financial contribution outlined in Appendix A. Confidentiality is strictly enforced, and any intellectual property created will be jointly owned. All published findings will be reviewed by both parties for protection of proprietary information. Termination of this agreement requires 30 days' written notice, and each party assumes any risks or liabilities during this collaboration. Amendments must be in writing and signed by both parties. The duration of the agreement lasts from the start date to the end date, unless extended. By signing, both parties acknowledge and agree to these terms.",
+          "APPENDIX C \u2013 ADDITIONAL CONFIDENTIAL INFORMATION\n\nThis Appendix is an extension of the contract (the \"Contract\") dated [Original Contract Date], between [Party One Name] (\"First Party\") and [Party Two Name] (\"Second Party\"). It outlines additional categories of confidential information beyond those detailed in the Contract.\n\n    Additional Confidential Information Includes:\n\n    a. Non-public financial data.\n\n    b. Unpublished marketing strategies and materials.\n\n    c. Upcoming product or service details.\n\n    d. Proprietary software codes and processes.\n\n    e. Personnel records.\n\n    f. Any data labeled as \"Confidential\" or \"Proprietary\" after the Contract\u2019s execution.\n\n    Protection & Exclusions:\n\nBoth Parties shall extend the same protection to this Additional Confidential Information as previously agreed upon in the Contract. Information that becomes public, is received rightfully from a third party, is independently developed, or gets written release authorization is excluded from confidentiality obligations.\n\n    Duration:\n\nThe confidentiality obligations for this Appendix shall persist as defined in the Contract or, if unspecified, for [e.g., \"five years\"] from the disclosure date.\n\n    Prevailing Terms:\n\nIf there\u2019s any conflict between this Appendix and the Contract concerning confidentiality, this Appendix takes precedence concerning Additional Confidential Information.\n\nExecuted as an integral part of the Contract.",
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is part of the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name] (\"Company\") and [Contractor Name] (\"Contractor\").\n\n1. Confidential Information:\nBoth parties may access or receive the other's confidential information (\"Confidential Information\") during the Agreement term. Confidential Information excludes publicly known details, data known prior, or information obtained from third parties without confidentiality obligations.\n\n2. Obligations:\nThe recipient shall:\n\n    Use the Confidential Information solely for the Agreement's purpose.\n    Prevent unauthorized disclosures.\n    Not disclose without prior written consent.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] post Agreement termination or expiration.\n\n4. Return/Destruction:\nUpon Agreement conclusion, or on request, all Confidential Information copies should be returned or destroyed.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "CONFIDENTIALITY AMENDMENT TO NDA\n\nThis Amendment, effective [Date, e.g., \"August 15, 2023\"], modifies the NDA dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Responsibilities:\n\na) Protection: Parties must safeguard Confidential Information at least as they do their own.\n\nb) Access: Access is limited to those needing it who are also bound by confidentiality.\n\nc) Breach Notification: Parties must immediately inform the other of any breaches.\n\nd) Return/Destruction: Upon request or agreement end, parties must return or certify the destruction of Confidential Information.\n\ne) No Reverse Engineering: Receiving party shall not reverse engineer any provided items.\n\n2. Remedies:\nUnauthorized disclosures permit injunctive relief and other legal remedies.\n\n3. Original Agreement:\nExcept for this Amendment, the NDA remains unchanged.\n\nGoverning Law:\nAs per the NDA."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "This document outlines the terms of cooperation between Company A and Company B for a joint research project. The duties of each company are designated, with a detailed financial contribution outlined in Appendix A. Confidentiality is strictly enforced, and any intellectual property created will be jointly owned. All published findings will be reviewed by both parties for protection of proprietary information. Termination of this agreement requires 30 days' written notice, and each party assumes any risks or liabilities during this collaboration. Amendments must be in writing and signed by both parties. The duration of the agreement lasts from the start date to the end date, unless extended. By signing, both parties acknowledge and agree to these terms.",
+          "APPENDIX C \u2013 ADDITIONAL CONFIDENTIAL INFORMATION\n\nThis Appendix is an extension of the contract (the \"Contract\") dated [Original Contract Date], between [Party One Name] (\"First Party\") and [Party Two Name] (\"Second Party\"). It outlines additional categories of confidential information beyond those detailed in the Contract.\n\n    Additional Confidential Information Includes:\n\n    a. Non-public financial data.\n\n    b. Unpublished marketing strategies and materials.\n\n    c. Upcoming product or service details.\n\n    d. Proprietary software codes and processes.\n\n    e. Personnel records.\n\n    f. Any data labeled as \"Confidential\" or \"Proprietary\" after the Contract\u2019s execution.\n\n    Protection & Exclusions:\n\nBoth Parties shall extend the same protection to this Additional Confidential Information as previously agreed upon in the Contract. Information that becomes public, is received rightfully from a third party, is independently developed, or gets written release authorization is excluded from confidentiality obligations.\n\n    Duration:\n\nThe confidentiality obligations for this Appendix shall persist as defined in the Contract or, if unspecified, for [e.g., \"five years\"] from the disclosure date.\n\n    Prevailing Terms:\n\nIf there\u2019s any conflict between this Appendix and the Contract concerning confidentiality, this Appendix takes precedence concerning Additional Confidential Information.\n\nExecuted as an integral part of the Contract.",
+          "APPENDIX: CONFIDENTIALITY CLAUSE\n\nThis Appendix is part of the Agreement dated [Original Agreement Date, e.g., \"August 15, 2023\"] between [Company Name] (\"Company\") and [Contractor Name] (\"Contractor\").\n\n1. Confidential Information:\nBoth parties may access or receive the other's confidential information (\"Confidential Information\") during the Agreement term. Confidential Information excludes publicly known details, data known prior, or information obtained from third parties without confidentiality obligations.\n\n2. Obligations:\nThe recipient shall:\n\n    Use the Confidential Information solely for the Agreement's purpose.\n    Prevent unauthorized disclosures.\n    Not disclose without prior written consent.\n\n3. Duration:\nObligations persist for [e.g., \"two years\"] post Agreement termination or expiration.\n\n4. Return/Destruction:\nUpon Agreement conclusion, or on request, all Confidential Information copies should be returned or destroyed.\n\n5. Governing Law:\nGoverned by [State/Country, e.g., \"California\"] laws.",
+          "CONFIDENTIALITY AMENDMENT TO NDA\n\nThis Amendment, effective [Date, e.g., \"August 15, 2023\"], modifies the NDA dated [Original Agreement Date] between [Party A Name] (\"Party A\") and [Party B Name] (\"Party B\").\n\n1. Responsibilities:\n\na) Protection: Parties must safeguard Confidential Information at least as they do their own.\n\nb) Access: Access is limited to those needing it who are also bound by confidentiality.\n\nc) Breach Notification: Parties must immediately inform the other of any breaches.\n\nd) Return/Destruction: Upon request or agreement end, parties must return or certify the destruction of Confidential Information.\n\ne) No Reverse Engineering: Receiving party shall not reverse engineer any provided items.\n\n2. Remedies:\nUnauthorized disclosures permit injunctive relief and other legal remedies.\n\n3. Original Agreement:\nExcept for this Amendment, the NDA remains unchanged.\n\nGoverning Law:\nAs per the NDA."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

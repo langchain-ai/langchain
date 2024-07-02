@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "DATA ANALYSIS SERVICE AGREEMENT\n\nThis Agreement (\"Agreement\") is made and entered into as of [Date], by and between [Company Name], a [legal structure, e.g., \"corporation\"] incorporated under the laws of [State/Country], with its principal place of business at [Company Address], herein referred to as the \"Company,\" and [Contractor Business Name], a [legal structure, e.g., \"limited liability company\"] organized under the laws of [State/Country], with its principal place of business at [Contractor Business Address], herein referred to as the \"Contractor.\"\n\n    Scope of Work:\n    a. The Contractor agrees to provide data analysis services to the Company.\n    b. The specific services will include [specific data analysis tasks, e.g., \"analyzing sales data, forecasting trends, and producing reports for managerial review\"].\n\n    Term: The Contractor's engagement will commence on [Start Date] and will terminate on [End Date].\n\n    Compensation: For the services rendered by the Contractor under this Agreement, the Company will pay the Contractor a total sum of [specific amount, e.g., \"$5,000\"] payable on [payment schedule, e.g., \"a monthly basis\"].\n\n    Confidentiality: The Contractor agrees not to disclose or use, either during or after the term of this Agreement, any proprietary or confidential information or data of the Company without the Company's prior written consent, except as necessary in the course of providing the services.\n\n    Intellectual Property: Any works, developments, or inventions created by the Contractor in the course of providing the services related to the Company's business will remain the sole property of the Company.\n\n    Termination: Either party may terminate this Agreement with [e.g., \"30\"] days written notice. Upon termination, Contractor agrees to return all company data and any other proprietary materials.\n\n    Governing Law: This Agreement shall be governed by and construed under the laws of [State/Country].\n\n    Amendments: This Agreement may only be amended in writing and signed by both parties.\n\n    Entire Agreement: This Agreement contains the entire agreement between the parties and supersedes all prior negotiations, understandings, and agreements between the parties.\n\nThe parties hereto have executed this Agreement as of the date first above written.",
+          "FREELANCER AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Client: [Client Full Name or Company Name], located at [Client Address].\n    Freelancer: [Freelancer Full Name], located at [Freelancer Address].\n\n1. SERVICES:\n\nFreelancer agrees to provide the following services: [Brief description of services, e.g., \"web design, content creation, graphic design\"].\n\n2. PAYMENT TERMS:\n\nFor the services rendered, Client agrees to pay Freelancer a total of [Total Amount, e.g., \"$1,000\"]. Payments shall be made as follows: [Payment structure, e.g., \"50% upfront, 50% upon completion\"].\n\n3. DEADLINE:\n\nThe services will be completed by [End Date, e.g., \"December 31, 2023\"].\n\n4. CONFIDENTIALITY:\n\nFreelancer agrees to maintain confidentiality regarding all proprietary information of the Client.\n\n5. TERMINATION:\n\nEither party may terminate this agreement with [X days, e.g., \"14 days\"] written notice. Upon termination, payments will be adjusted for work completed.\n\n6. INDEPENDENT CONTRACTOR:\n\nFreelancer is an independent contractor and not an employee of the Client. No benefits, rights, or obligations of employment are conferred by this agreement.\n\n7. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\n8. AMENDMENTS:\n\nAny changes to this agreement must be in writing and signed by both parties.",
+          "FREELANCER AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Client: [Client Full Name or Company Name], located at [Client Address].\n    Freelancer: [Freelancer Full Name], located at [Freelancer Address].\n\n1. SERVICES:\n\nFreelancer agrees to provide the following services: [Brief description of services, e.g., \"web design, content creation, graphic design\"].\n\n2. PAYMENT TERMS:\n\nFor the services rendered, Client agrees to pay Freelancer a total of [Total Amount, e.g., \"$1,000\"]. Payments shall be made as follows: [Payment structure, e.g., \"50% upfront, 50% upon completion\"].\n\n3. DEADLINE:\n\nThe services will be completed by [End Date, e.g., \"December 31, 2023\"].\n\n4. PENALTIES:\n\na. Late Delivery: If Freelancer fails to deliver the completed service by the specified deadline, a penalty of [specific amount, e.g., \"$50\"] per day will be deducted from the final payment until the service is delivered.\n\nb. Confidentiality Breach: Breaching the confidentiality clause will result in a penalty of [specific amount, e.g., \"$2,000\"].\n\n5. CONFIDENTIALITY:\n\nFreelancer agrees to maintain confidentiality regarding all proprietary information of the Client.\n\n6. TERMINATION:\n\nEither party may terminate this agreement with [X days, e.g., \"14 days\"] written notice. Upon termination, payments will be adjusted for work completed.\n\n7. INDEPENDENT CONTRACTOR:\n\nFreelancer is an independent contractor and not an employee of the Client. No benefits, rights, or obligations of employment are conferred by this agreement.\n\n8. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\n9. AMENDMENTS:\n\nAny changes to this agreement must be in writing and signed by both parties.",
+          "This document outlines the terms of cooperation between Company A and Company B for a joint research project. The duties of each company are designated, with a detailed financial contribution outlined in Appendix A. Confidentiality is strictly enforced, and any intellectual property created will be jointly owned. All published findings will be reviewed by both parties for protection of proprietary information. Termination of this agreement requires 30 days' written notice, and each party assumes any risks or liabilities during this collaboration. Amendments must be in writing and signed by both parties. The duration of the agreement lasts from the start date to the end date, unless extended. By signing, both parties acknowledge and agree to these terms."
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "DATA ANALYSIS SERVICE AGREEMENT\n\nThis Agreement (\"Agreement\") is made and entered into as of [Date], by and between [Company Name], a [legal structure, e.g., \"corporation\"] incorporated under the laws of [State/Country], with its principal place of business at [Company Address], herein referred to as the \"Company,\" and [Contractor Business Name], a [legal structure, e.g., \"limited liability company\"] organized under the laws of [State/Country], with its principal place of business at [Contractor Business Address], herein referred to as the \"Contractor.\"\n\n    Scope of Work:\n    a. The Contractor agrees to provide data analysis services to the Company.\n    b. The specific services will include [specific data analysis tasks, e.g., \"analyzing sales data, forecasting trends, and producing reports for managerial review\"].\n\n    Term: The Contractor's engagement will commence on [Start Date] and will terminate on [End Date].\n\n    Compensation: For the services rendered by the Contractor under this Agreement, the Company will pay the Contractor a total sum of [specific amount, e.g., \"$5,000\"] payable on [payment schedule, e.g., \"a monthly basis\"].\n\n    Confidentiality: The Contractor agrees not to disclose or use, either during or after the term of this Agreement, any proprietary or confidential information or data of the Company without the Company's prior written consent, except as necessary in the course of providing the services.\n\n    Intellectual Property: Any works, developments, or inventions created by the Contractor in the course of providing the services related to the Company's business will remain the sole property of the Company.\n\n    Termination: Either party may terminate this Agreement with [e.g., \"30\"] days written notice. Upon termination, Contractor agrees to return all company data and any other proprietary materials.\n\n    Governing Law: This Agreement shall be governed by and construed under the laws of [State/Country].\n\n    Amendments: This Agreement may only be amended in writing and signed by both parties.\n\n    Entire Agreement: This Agreement contains the entire agreement between the parties and supersedes all prior negotiations, understandings, and agreements between the parties.\n\nThe parties hereto have executed this Agreement as of the date first above written.",
+          "FREELANCER AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Client: [Client Full Name or Company Name], located at [Client Address].\n    Freelancer: [Freelancer Full Name], located at [Freelancer Address].\n\n1. SERVICES:\n\nFreelancer agrees to provide the following services: [Brief description of services, e.g., \"web design, content creation, graphic design\"].\n\n2. PAYMENT TERMS:\n\nFor the services rendered, Client agrees to pay Freelancer a total of [Total Amount, e.g., \"$1,000\"]. Payments shall be made as follows: [Payment structure, e.g., \"50% upfront, 50% upon completion\"].\n\n3. DEADLINE:\n\nThe services will be completed by [End Date, e.g., \"December 31, 2023\"].\n\n4. CONFIDENTIALITY:\n\nFreelancer agrees to maintain confidentiality regarding all proprietary information of the Client.\n\n5. TERMINATION:\n\nEither party may terminate this agreement with [X days, e.g., \"14 days\"] written notice. Upon termination, payments will be adjusted for work completed.\n\n6. INDEPENDENT CONTRACTOR:\n\nFreelancer is an independent contractor and not an employee of the Client. No benefits, rights, or obligations of employment are conferred by this agreement.\n\n7. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\n8. AMENDMENTS:\n\nAny changes to this agreement must be in writing and signed by both parties.",
+          "FREELANCER AGREEMENT\n\nEffective Date: [Date]\n\nBETWEEN:\n\n    Client: [Client Full Name or Company Name], located at [Client Address].\n    Freelancer: [Freelancer Full Name], located at [Freelancer Address].\n\n1. SERVICES:\n\nFreelancer agrees to provide the following services: [Brief description of services, e.g., \"web design, content creation, graphic design\"].\n\n2. PAYMENT TERMS:\n\nFor the services rendered, Client agrees to pay Freelancer a total of [Total Amount, e.g., \"$1,000\"]. Payments shall be made as follows: [Payment structure, e.g., \"50% upfront, 50% upon completion\"].\n\n3. DEADLINE:\n\nThe services will be completed by [End Date, e.g., \"December 31, 2023\"].\n\n4. PENALTIES:\n\na. Late Delivery: If Freelancer fails to deliver the completed service by the specified deadline, a penalty of [specific amount, e.g., \"$50\"] per day will be deducted from the final payment until the service is delivered.\n\nb. Confidentiality Breach: Breaching the confidentiality clause will result in a penalty of [specific amount, e.g., \"$2,000\"].\n\n5. CONFIDENTIALITY:\n\nFreelancer agrees to maintain confidentiality regarding all proprietary information of the Client.\n\n6. TERMINATION:\n\nEither party may terminate this agreement with [X days, e.g., \"14 days\"] written notice. Upon termination, payments will be adjusted for work completed.\n\n7. INDEPENDENT CONTRACTOR:\n\nFreelancer is an independent contractor and not an employee of the Client. No benefits, rights, or obligations of employment are conferred by this agreement.\n\n8. GOVERNING LAW:\n\nThis Agreement is governed by the laws of [specific country/state, e.g., \"the State of New York\"].\n\n9. AMENDMENTS:\n\nAny changes to this agreement must be in writing and signed by both parties.",
+          "This document outlines the terms of cooperation between Company A and Company B for a joint research project. The duties of each company are designated, with a detailed financial contribution outlined in Appendix A. Confidentiality is strictly enforced, and any intellectual property created will be jointly owned. All published findings will be reviewed by both parties for protection of proprietary information. Termination of this agreement requires 30 days' written notice, and each party assumes any risks or liabilities during this collaboration. Amendments must be in writing and signed by both parties. The duration of the agreement lasts from the start date to the end date, unless extended. By signing, both parties acknowledge and agree to these terms."
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]

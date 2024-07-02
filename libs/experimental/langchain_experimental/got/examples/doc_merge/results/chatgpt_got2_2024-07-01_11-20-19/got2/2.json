@@ -1,0 +1,93 @@
+[
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "CONFIDENTIALITY & NON-DISCLOSURE AGREEMENT\n\n    Entities Involved:\n    Effective [Date], between [AquaBlue Innovations], established in [State], and [PineTree Solutions], a registered entity.\n\n    Objective:\n    To safeguard classified data during talks of a potential technological alliance.\n\n    Specification of Protected Information:\n    Particularly:\n\na. System designs and architectural schematics.\nb. Proprietary computational algorithms.\n\n    Receiver's Obligations:\n    a. Maintain strict non-disclosure using best practices.\n    b. Employ solely for the aforementioned aim.\n    c. No unveiling without explicit authorization.\n\n    Violation Ramifications:\n    A charge of $280,000 for every infringement, plus possible legal proceedings.\n\n    General Terms:\n    Binding for both parties and any successors. This encapsulates the entire accord.\n\n    Legal Reference:\n    Governed as per [State]'s legal framework.\n\n    Attestation:\n    Duly signed on [Date].\n\n[AquaBlue Innovations] [PineTree Solutions]",
+          "This Non-Disclosure and Non-Competition Agreement is made between [Your Company Name] and [Contractor Name/Company].\n\n1. Confidentiality: The Contractor acknowledges access to the Company's confidential information during their relationship.\n\n2. Non-Disclosure: The Contractor agrees not to disclose, use, reproduce, or distribute this confidential information unless necessary for their obligations.\n\n3. Non-Competition: The Contractor agrees not to compete with the company or assist others in doing so for one year after the termination of their relationship. They also agree not to solicit the company's clients or customers for the benefit of a competitor for one year.\n\n4. Return of Confidential Information: At the end of the relationship or upon the company's request, the Contractor will return all confidential information and copies thereof.\n\n5. Remedies: For any breach, the Company may seek specific performance and injunctive relief, in addition to other remedies.\n\n6. Governing Law: The Agreement is governed by the laws of [Your State].\n\n7. Entire Agreement: This document replaces all previous agreements and understandings on the subject.\n\nBoth parties acknowledge understanding and voluntarily accepting the Agreement.\n\nSignatures required from [Your Company Name] and [Contractor Name/Company].",
+          "This Loyalty Agreement is between [Company Name] and [Contractor Company Name]. The Agreement ensures the Contractor's loyalty and confidentiality towards the Company during and post engagement. Contractor agrees not to use or disclose the Company's confidential information, or engage in competing business or solicitation for a period of [e.g., \"12\"] months post termination. Contractor must return all Company property upon termination. In case of breach, Company can seek legal remedies including injunction. The Agreement remains valid even if a provision is held invalid. The Agreement follows [State, e.g., \"California\"] laws and replaces all previous understandings. It can be amended only in writing with both parties' signature.",
+          "B2B CONTRACTOR LOYALTY AGREEMENT\n\nThis Agreement is made on _____ day of ______, 20, between [Company Name], located at [Company Address] (\"Company\"), and [Contractor Company Name], located at [Contractor Address] (\"Contractor\").\n\n1. CONFIDENTIALITY\n\nContractor agrees not to disclose, use, or allow the use of the Company's confidential information during or after the relationship, except as required for their services to the Company.\n\n2. NON-COMPETITION\n\nFor 12 months post-relationship, the Contractor won't provide similar services to any entity competing with the Company within a 50-mile radius of any Company location.\n\n3. NON-SOLICITATION\n\nFor 12 months post-relationship, the Contractor won't solicit or induce any entity or individual connected to the Company to cease or reduce their relationship with the Company.\n\n4. RETURN OF PROPERTY\n\nUpon relationship termination or on Company's request, the Contractor will immediately return all Company property and data.\n\n5. PENALTY FOR BREACH\n\nIn the event of a breach of this Agreement, the Contractor shall pay the Company a penalty of $50,000.\n\n6. GOVERNING LAW\n\nThis Agreement is governed by [State, e.g., \"California\"] laws.\n\n7. ENTIRE AGREEMENT\n\nThis Agreement supersedes prior discussions and agreements between the parties.\n\nBy signing below, the parties agree to these terms.\n\n[Company Name] - Signatory [Contractor Company Name] - Signatory\nDate: _______________________ Date: _______________________"
+        ],
+        "parts": [
+          0,
+          1
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "selector",
+    "thoughts": [
+      {
+        "documents": [
+          "CONFIDENTIALITY & NON-DISCLOSURE AGREEMENT\n\n    Entities Involved:\n    Effective [Date], between [AquaBlue Innovations], established in [State], and [PineTree Solutions], a registered entity.\n\n    Objective:\n    To safeguard classified data during talks of a potential technological alliance.\n\n    Specification of Protected Information:\n    Particularly:\n\na. System designs and architectural schematics.\nb. Proprietary computational algorithms.\n\n    Receiver's Obligations:\n    a. Maintain strict non-disclosure using best practices.\n    b. Employ solely for the aforementioned aim.\n    c. No unveiling without explicit authorization.\n\n    Violation Ramifications:\n    A charge of $280,000 for every infringement, plus possible legal proceedings.\n\n    General Terms:\n    Binding for both parties and any successors. This encapsulates the entire accord.\n\n    Legal Reference:\n    Governed as per [State]'s legal framework.\n\n    Attestation:\n    Duly signed on [Date].\n\n[AquaBlue Innovations] [PineTree Solutions]",
+          "This Non-Disclosure and Non-Competition Agreement is made between [Your Company Name] and [Contractor Name/Company].\n\n1. Confidentiality: The Contractor acknowledges access to the Company's confidential information during their relationship.\n\n2. Non-Disclosure: The Contractor agrees not to disclose, use, reproduce, or distribute this confidential information unless necessary for their obligations.\n\n3. Non-Competition: The Contractor agrees not to compete with the company or assist others in doing so for one year after the termination of their relationship. They also agree not to solicit the company's clients or customers for the benefit of a competitor for one year.\n\n4. Return of Confidential Information: At the end of the relationship or upon the company's request, the Contractor will return all confidential information and copies thereof.\n\n5. Remedies: For any breach, the Company may seek specific performance and injunctive relief, in addition to other remedies.\n\n6. Governing Law: The Agreement is governed by the laws of [Your State].\n\n7. Entire Agreement: This document replaces all previous agreements and understandings on the subject.\n\nBoth parties acknowledge understanding and voluntarily accepting the Agreement.\n\nSignatures required from [Your Company Name] and [Contractor Name/Company].",
+          "This Loyalty Agreement is between [Company Name] and [Contractor Company Name]. The Agreement ensures the Contractor's loyalty and confidentiality towards the Company during and post engagement. Contractor agrees not to use or disclose the Company's confidential information, or engage in competing business or solicitation for a period of [e.g., \"12\"] months post termination. Contractor must return all Company property upon termination. In case of breach, Company can seek legal remedies including injunction. The Agreement remains valid even if a provision is held invalid. The Agreement follows [State, e.g., \"California\"] laws and replaces all previous understandings. It can be amended only in writing with both parties' signature.",
+          "B2B CONTRACTOR LOYALTY AGREEMENT\n\nThis Agreement is made on _____ day of ______, 20, between [Company Name], located at [Company Address] (\"Company\"), and [Contractor Company Name], located at [Contractor Address] (\"Contractor\").\n\n1. CONFIDENTIALITY\n\nContractor agrees not to disclose, use, or allow the use of the Company's confidential information during or after the relationship, except as required for their services to the Company.\n\n2. NON-COMPETITION\n\nFor 12 months post-relationship, the Contractor won't provide similar services to any entity competing with the Company within a 50-mile radius of any Company location.\n\n3. NON-SOLICITATION\n\nFor 12 months post-relationship, the Contractor won't solicit or induce any entity or individual connected to the Company to cease or reduce their relationship with the Company.\n\n4. RETURN OF PROPERTY\n\nUpon relationship termination or on Company's request, the Contractor will immediately return all Company property and data.\n\n5. PENALTY FOR BREACH\n\nIn the event of a breach of this Agreement, the Contractor shall pay the Company a penalty of $50,000.\n\n6. GOVERNING LAW\n\nThis Agreement is governed by [State, e.g., \"California\"] laws.\n\n7. ENTIRE AGREEMENT\n\nThis Agreement supersedes prior discussions and agreements between the parties.\n\nBy signing below, the parties agree to these terms.\n\n[Company Name] - Signatory [Contractor Company Name] - Signatory\nDate: _______________________ Date: _______________________"
+        ],
+        "parts": [
+          2,
+          3
+        ],
+        "current": "",
+        "method": "got2"
+      }
+    ]
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "aggregate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "operation": "generate",
+    "thoughts": []
+  },
+  {
+    "operation": "score",
+    "thoughts": []
+  },
+  {
+    "operation": "keep_best_n",
+    "thoughts": []
+  },
+  {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "cost": 0.0
+  }
+]
