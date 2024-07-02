@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-community"
-version = "0.2.5"
+version = "0.2.6"
 description = "Community contributed LangChain integrations."
 authors = []
 license = "MIT"
@@ -9,8 +9,8 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.7"
-langchain = "^0.2.5"
+langchain-core = "^0.2.10"
+langchain = "^0.2.6"
 SQLAlchemy = ">=1.4,<3"
 requests = "^2"
 PyYAML = ">=5.3"
@@ -48,6 +48,7 @@ syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
 langchain-core = { path = "../core", develop = true }
 langchain = { path = "../langchain", develop = true }
+langchain-standard-tests = { path = "../standard-tests", develop = true }
 mockredispy = "^2.9.3"
 
 [tool.poetry.group.codespell]
@@ -157,4 +158,4 @@ ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
 # aapply - async apply
 # unsecure - typo but part of API, decided to not bother for now
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin'
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin,cann'
