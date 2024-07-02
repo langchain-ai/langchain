@@ -225,7 +225,7 @@ class Milvus(VectorStore):
         replica_number: int = 1,
         timeout: Optional[float] = None,
         num_shards: Optional[int] = None,
-        field_schema: Optional[dict] = None,
+        field_schema: Optional[dict] = dict(),
     ):
         """Initialize the Milvus vector store."""
         try:
