@@ -74,7 +74,7 @@ class ReadWriteTestSuite(ABC):
         vectorstore.add_documents(documents, ids=["1", "2"])
         vectorstore.delete(["1"])
         documents = vectorstore.similarity_search("foo", k=1)
-        assert documents == [Document(page_content="bar", metadata={"id": 2})]
+        assert documents == [Document(page_content="bar", metadata={"id": 2}, id="1")]
 
     def test_deleting_bulk_documents(self, vectorstore: VectorStore) -> None:
         """Test that we can delete several documents at once."""
@@ -87,7 +87,7 @@ class ReadWriteTestSuite(ABC):
         vectorstore.add_documents(documents, ids=["1", "2", "3"])
         vectorstore.delete(["1", "2"])
         documents = vectorstore.similarity_search("foo", k=1)
-        assert documents == [Document(page_content="baz", metadata={"id": 3})]
+        assert documents == [Document(page_content="baz", metadata={"id": 3}, id="3")]
 
     def test_delete_missing_content(self, vectorstore: VectorStore) -> None:
         """Deleting missing content should not raise an exception."""
@@ -106,8 +106,8 @@ class ReadWriteTestSuite(ABC):
         vectorstore.add_documents(documents, ids=["1", "2"])
         documents = vectorstore.similarity_search("bar", k=2)
         assert documents == [
-            Document(page_content="bar", metadata={"id": 2}),
-            Document(page_content="foo", metadata={"id": 1}),
+            Document(page_content="bar", metadata={"id": 2}, id="2"),
+            Document(page_content="foo", metadata={"id": 1}, id="1"),
         ]
 
     def test_add_documents_without_ids_gets_duplicated(

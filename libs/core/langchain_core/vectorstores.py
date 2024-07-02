@@ -20,6 +20,7 @@ and retrieve the data that are 'most similar' to the embedded query.
 """  # noqa: E501
 from __future__ import annotations
 
+import abc
 import logging
 import math
 import warnings
@@ -44,6 +45,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables.config import run_in_executor
+from langchain_core.utils.iter import batch_iterate
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -57,10 +59,18 @@ logger = logging.getLogger(__name__)
 VST = TypeVar("VST", bound="VectorStore")
 
 
+class UpsertResponse(TypedDict):
+    """An indexing result."""
+
+    succeeded: Sequence[str]
+    """The IDs that were successfully indexed."""
+    failed: Sequence[str]
+    """The IDs that failed to index."""
+
+
 class VectorStore(ABC):
     """Interface for vector store."""
 
-    @abstractmethod
     def add_texts(
         self,
         texts: Iterable[str],
@@ -77,12 +87,45 @@ class VectorStore(ABC):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
+        if type(self).upsert != VectorStore.upsert:
+            # If the subclass has implemented upsert, use it
+            if "ids" in kwargs and kwargs["ids"]:
+                ids = kwargs.pop("ids")
+            if kwargs["ids"]:
+                docs = (
+                    Document(page_content=text, metadata=metadata, id=id_)
+                    for text, metadata, id_ in zip(texts, metadatas, ids)
+                )
+            else:
+                docs = (
+                    Document(page_content=text, metadata=metadata)
+                    for text, metadata in zip(texts, metadatas)
+                )
+            return self.upsert(docs, **kwargs)
+        raise NotImplementedError()
+
+    def upsert(self, documents: Iterable[Document], /, **kwargs: Any) -> Iterator[str]:
+        """Add or update documents in the vectorstore.
+
+        Args:
+            documents: List of Documents to add to the vectorstore.
+            kwargs: Additional keyword arguments.
+                kwargs should not include ids to avoid ambiguous semantics.
+                Instead the ID should be provided as part of the Document object.
+
+        Returns:
+            List of IDs of the added texts.
+        """
+        for batch in batch_iterate(documents, 100):
+            self.upsert_eager(batch, **kwargs)
+        raise NotImplementedError()
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
         """Access the query embedding object if available."""
         logger.debug(
-            f"{Embeddings.__name__} is not implemented for {self.__class__.__name__}"
+            f"The embeddings property has not been "
+            f"implemented for {self.__class__.__name__}"
         )
         return None
 
