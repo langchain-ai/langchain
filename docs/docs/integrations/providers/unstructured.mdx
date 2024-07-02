@@ -8,10 +8,17 @@ ecosystem within LangChain.
 
 ## Installation and Setup
 
-If you are using a loader that runs locally, use the following steps to get `unstructured` and
-its dependencies running locally.
+If you are using a loader that runs locally, use the following steps to get `unstructured` and its
+dependencies running.
 
-- Install the Python SDK with `pip install unstructured`.
+- For the smallest installation footprint and to take advantage of features not available in the
+  open-source `unstructured` package, install the Python SDK with `pip install unstructured-client`
+  and use the `UnstructuredAPIFileLoader` or `UnstructuredAPIFileIOLoader`.
+    - Unstructured's documentation for the sdk can be found here:
+      https://docs.unstructured.io/api-reference/api-services/sdk
+
+- To run everything locally, install the open-source python package with `pip install unstructured`
+  and use the `UnstructuredFileLoader` or `UnstructuredFileIOLoader`.
     - You can install document specific dependencies with extras, i.e. `pip install "unstructured[docx]"`.
     - To install the dependencies for all document types, use `pip install "unstructured[all-docs]"`.
 - Install the following system dependencies if they are not already available on your system with e.g. `brew install` for Mac.
