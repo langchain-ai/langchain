@@ -57,6 +57,8 @@ def test_stream() -> None:
         full.usage_metadata["input_tokens"] + full.usage_metadata["output_tokens"]
         == full.usage_metadata["total_tokens"]
     )
+    assert "stop_reason" in full.response_metadata
+    assert "stop_sequence" in full.response_metadata
 
 
 async def test_astream() -> None:
@@ -91,6 +93,8 @@ async def test_astream() -> None:
         full.usage_metadata["input_tokens"] + full.usage_metadata["output_tokens"]
         == full.usage_metadata["total_tokens"]
     )
+    assert "stop_reason" in full.response_metadata
+    assert "stop_sequence" in full.response_metadata
 
     # test usage metadata can be excluded
     model = ChatAnthropic(model_name=MODEL_NAME, stream_usage=False)  # type: ignore[call-arg]
