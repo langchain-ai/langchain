@@ -300,16 +300,17 @@ class ChatOllama(BaseChatModel):
         if 'tool_prompt' in kwargs:
             ollama_messages[-1]['content'] = kwargs['tool_prompt'] + "[INST]" + ollama_messages[-1]['content'] + "[/INST]"
         """  # noqa: E501
-        options_data = {
+        options_data: Dict = {
             k: v
             for k, v in kwargs.items()
             if k not in ["keep_alive", "format"] and k in Options.__annotations__
         }
+        options_data["stop"] = stop
         yield from ollama.chat(
             model=self.model,
             messages=ollama_messages,
             stream=True,
-            options=Options(dict(stop=stop, **options_data)),
+            options=Options(**options_data),
             keep_alive=kwargs.get("keep_alive", None),
             format=kwargs.get("format", None),
         )
