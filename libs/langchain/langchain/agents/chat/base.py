@@ -80,6 +80,23 @@ class ChatAgent(Agent):
         format_instructions: str = FORMAT_INSTRUCTIONS,
         input_variables: Optional[List[str]] = None,
     ) -> BasePromptTemplate:
+        """Create a prompt from a list of tools.
+
+        Args:
+            tools: A list of tools.
+            system_message_prefix: The system message prefix.
+                Default is SYSTEM_MESSAGE_PREFIX.
+            system_message_suffix: The system message suffix.
+                Default is SYSTEM_MESSAGE_SUFFIX.
+            human_message: The human message. Default is HUMAN_MESSAGE.
+            format_instructions: The format instructions.
+                Default is FORMAT_INSTRUCTIONS.
+            input_variables: The input variables. Default is None.
+
+        Returns:
+            A prompt template.
+        """
+
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
@@ -113,7 +130,26 @@ class ChatAgent(Agent):
         input_variables: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Agent:
-        """Construct an agent from an LLM and tools."""
+        """Construct an agent from an LLM and tools.
+
+        Args:
+            llm: The language model.
+            tools: A list of tools.
+            callback_manager: The callback manager. Default is None.
+            output_parser: The output parser. Default is None.
+            system_message_prefix: The system message prefix.
+                Default is SYSTEM_MESSAGE_PREFIX.
+            system_message_suffix: The system message suffix.
+                Default is SYSTEM_MESSAGE_SUFFIX.
+            human_message: The human message. Default is HUMAN_MESSAGE.
+            format_instructions: The format instructions.
+                Default is FORMAT_INSTRUCTIONS.
+            input_variables: The input variables. Default is None.
+            kwargs: Additional keyword arguments.
+
+        Returns:
+            An agent.
+        """
         cls._validate_tools(tools)
         prompt = cls.create_prompt(
             tools,
