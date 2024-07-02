@@ -1,16 +1,10 @@
 """Ollama chat models."""
-
-from operator import itemgetter
 from typing import (
     Any,
-    Callable,
     Dict,
     Iterator,
     List,
-    Literal,
     Optional,
-    Sequence,
-    Type,
     Union,
     cast,
 )
@@ -303,7 +297,7 @@ class ChatOllama(BaseChatModel):
         """
         if 'tool_prompt' in kwargs:
             ollama_messages[-1]['content'] = kwargs['tool_prompt'] + "[INST]" + ollama_messages[-1]['content'] + "[/INST]"
-        """
+        """  # noqa: E501
         yield from ollama.chat(
             model=self.model,
             messages=ollama_messages,
