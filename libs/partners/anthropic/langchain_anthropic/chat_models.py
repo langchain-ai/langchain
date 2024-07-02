@@ -43,6 +43,11 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.output_parsers import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
+from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import (
@@ -58,7 +63,7 @@ from langchain_core.utils import (
 )
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
-from langchain_anthropic.output_parsers import ToolsOutputParser, extract_tool_calls
+from langchain_anthropic.output_parsers import extract_tool_calls
 
 _message_type_lookups = {
     "human": "user",
@@ -990,11 +995,13 @@ class ChatAnthropic(BaseChatModel):
         tool_name = convert_to_anthropic_tool(schema)["name"]
         llm = self.bind_tools([schema], tool_choice=tool_name)
         if isinstance(schema, type) and issubclass(schema, BaseModel):
-            output_parser = ToolsOutputParser(
-                first_tool_only=True, pydantic_schemas=[schema]
+            output_parser: OutputParserLike = PydanticToolsParser(
+                tools=[schema], first_tool_only=True
             )
         else:
-            output_parser = ToolsOutputParser(first_tool_only=True, args_only=True)
+            output_parser = JsonOutputKeyToolsParser(
+                key_name=tool_name, first_tool_only=True
+            )
 
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
