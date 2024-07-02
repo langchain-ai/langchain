@@ -16,5 +16,5 @@ def test_repr() -> None:
     )
     assert (
         repr(Document(page_content="Hello, World!", metadata={"a": 3}))
-        == "Document(page_content='Hello, World!', metadata={'a': 3})"
+        == "Document(metadata={'a': 3}, page_content='Hello, World!')"
     )
