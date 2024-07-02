@@ -416,7 +416,8 @@ class Milvus(VectorStore):
                 # Create FieldSchema for each entry in metadata.
                 for key, value in metadatas[0].items():
                     # Infer the corresponding datatype of the metadata
-                    if key in self.field_schema and "dtype" in self.field_schema[key]:
+                    field_type = "dtype"
+                    if key in self.field_schema and field_type in self.field_schema[key]:
                         dtype = self.field_schema[key]["dtype"]
                     else:
                         dtype = infer_dtype_bydata(value)
