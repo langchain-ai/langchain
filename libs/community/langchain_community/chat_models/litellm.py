@@ -278,7 +278,7 @@ class ChatLiteLLM(BaseChatModel):
         return values
 
     @root_validator(pre=False, skip_on_failure=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    def post_init(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
 
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
