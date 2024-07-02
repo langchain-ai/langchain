@@ -102,7 +102,18 @@ class VectorStore(ABC):
             return self.upsert(docs, **kwargs)
         raise NotImplementedError()
 
-    def upsert(self, documents: Iterable[Document], /, **kwargs) -> Iterator[str]:
+    def streaming_upsert(
+        self, documents: Iterable[Document], /, batch_size: int, **kwargs
+    ) -> Iterable[UpsertResponse]:
+        """Add or update documents in the vectorstore."""
+        from langchain_core.utils.iter import batch_iterable
+
+        for batch_documents in batch_iterable(documents, batch_size):
+            yield self.upsert([document], **kwargs)
+
+    def upsert(
+        self, documents: Sequence[Document], /, **kwargs
+    ) -> List[UpsertResponse]:
         """Add or update documents in the vectorstore.
 
         The upsert functionality should utilize the ID field of the Document object
