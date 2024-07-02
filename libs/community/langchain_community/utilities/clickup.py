@@ -323,7 +323,7 @@ class ClickupAPIWrapper(BaseModel):
 
         return data["access_token"]
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["access_token"] = get_from_dict_or_env(

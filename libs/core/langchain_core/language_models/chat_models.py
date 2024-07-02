@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import json
 import uuid
 import warnings
 from abc import ABC, abstractmethod
@@ -54,7 +55,7 @@ from langchain_core.outputs import (
     RunInfo,
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
@@ -62,7 +63,6 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 
 if TYPE_CHECKING:
     from langchain_core.output_parsers.base import OutputParserLike
-    from langchain_core.pydantic_v1 import BaseModel
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
 
@@ -449,7 +449,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if self.is_lc_serializable():
             params = {**kwargs, **{"stop": stop}}
             param_string = str(sorted([(k, v) for k, v in params.items()]))
-            llm_string = dumps(self)
+            # This code is not super efficient as it goes back and forth between
+            # json and dict.
+            serialized_repr = dumpd(self)
+            _cleanup_llm_representation(serialized_repr, 1)
+            llm_string = json.dumps(serialized_repr, sort_keys=True)
             return llm_string + "---" + param_string
         else:
             params = self._get_invocation_params(stop=stop, **kwargs)
@@ -1216,3 +1220,20 @@ def _gen_info_and_msg_metadata(
         **(generation.generation_info or {}),
         **generation.message.response_metadata,
     }
+
+
+def _cleanup_llm_representation(serialized: Any, depth: int) -> None:
+    """Remove non-serializable objects from a serialized object."""
+    if depth > 100:  # Don't cooperate for pathological cases
+        return
+    if serialized["type"] == "not_implemented" and "repr" in serialized:
+        del serialized["repr"]
+
+    if "graph" in serialized:
+        del serialized["graph"]
+
+    if "kwargs" in serialized:
+        kwargs = serialized["kwargs"]
+
+        for value in kwargs.values():
+            _cleanup_llm_representation(value, depth + 1)
