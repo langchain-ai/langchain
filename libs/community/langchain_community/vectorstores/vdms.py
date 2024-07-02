@@ -76,6 +76,41 @@ def _len_check_if_sized(x: Any, y: Any, x_name: str, y_name: str) -> None:
     return
 
 
+def _results_to_docs(results: Any) -> List[Document]:
+    return [doc for doc, _ in _results_to_docs_and_scores(results)]
+
+
+def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
+    final_res: List[Any] = []
+    try:
+        responses, blobs = results[0]
+        if (
+            len(responses) > 0
+            and "FindDescriptor" in responses[0]
+            and "entities" in responses[0]["FindDescriptor"]
+        ):
+            result_entities = responses[0]["FindDescriptor"]["entities"]
+            # result_blobs = blobs
+            for ent in result_entities:
+                distance = round(ent["_distance"], 10)
+                txt_contents = ent["content"]
+                for p in INVALID_DOC_METADATA_KEYS:
+                    if p in ent:
+                        del ent[p]
+                props = {
+                    mkey: mval
+                    for mkey, mval in ent.items()
+                    if mval not in INVALID_METADATA_VALUE
+                }
+
+                final_res.append(
+                    (Document(page_content=txt_contents, metadata=props), distance)
+                )
+    except Exception as e:
+        print(f"Error while parsing results: {e}")  # noqa: T201
+    return final_res
+
+
 def VDMS_Client(host: str = "localhost", port: int = 55555) -> vdms.vdms:
     """VDMS client for the VDMS server.
 
@@ -122,7 +157,7 @@ class VDMS(VectorStore):
     Example:
         .. code-block:: python
 
-            from langchain_community.embeddings import HuggingFaceEmbeddings
+            from langchain_huggingface import HuggingFaceEmbeddings
             from langchain_community.vectorstores.vdms import VDMS, VDMS_Client
 
             vectorstore = VDMS(
@@ -155,7 +190,7 @@ class VDMS(VectorStore):
         self.override_relevance_score_fn = relevance_score_fn
 
         # Initialize collection
-        self._collection_name = self.__add_set(
+        self._collection_name = self.add_set(
             collection_name,
             engine=self.similarity_search_engine,
             metric=self.distance_strategy,
@@ -172,6 +207,14 @@ class VDMS(VectorStore):
             p_str = "Must provide `embedding` which is expected"
             p_str += " to be an Embeddings object"
             raise ValueError(p_str)
+
+    def _embed_video(self, paths: List[str], **kwargs: Any) -> List[List[float]]:
+        if self.embedding is not None and hasattr(self.embedding, "embed_video"):
+            return self.embedding.embed_video(paths=paths, **kwargs)
+        else:
+            raise ValueError(
+                "Must provide `embedding` which has attribute `embed_image`"
+            )
 
     def _embed_image(self, uris: List[str]) -> List[List[float]]:
         if self.embedding is not None and hasattr(self.embedding, "embed_image"):
@@ -242,7 +285,7 @@ class VDMS(VectorStore):
                 )
         return docs_and_rel_scores
 
-    def __add(
+    def add(
         self,
         collection_name: str,
         texts: List[str],
@@ -275,7 +318,7 @@ class VDMS(VectorStore):
 
         return inserted_ids
 
-    def __add_set(
+    def add_set(
         self,
         collection_name: str,
         engine: ENGINES = "FaissFlat",
@@ -365,7 +408,7 @@ class VDMS(VectorStore):
 
         if metadata:
             props.update(metadata)
-        if document:
+        if document not in [None, ""]:
             props["content"] = document
 
         for k in props.keys():
@@ -515,7 +558,7 @@ class VDMS(VectorStore):
 
         Args:
             uris: List of paths to the images to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
+            metadatas: Optional list of metadatas associated with the images.
             ids: Optional list of unique IDs.
             batch_size (int): Number of concurrent requests to send to the server.
             add_path: Bool to add image path as metadata
@@ -545,8 +588,64 @@ class VDMS(VectorStore):
         else:
             metadatas = [_validate_vdms_properties(m) for m in metadatas]
 
-        self.__from(
+        self.add_from(
             texts=b64_texts,
+            embeddings=embeddings,
+            ids=ids,
+            metadatas=metadatas,
+            batch_size=batch_size,
+            **kwargs,
+        )
+        return ids
+
+    def add_videos(
+        self,
+        paths: List[str],
+        texts: Optional[List[str]] = None,
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        batch_size: int = 1,
+        add_path: Optional[bool] = True,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Run videos through the embeddings and add to the vectorstore.
+
+        Videos are added as embeddings (AddDescriptor) instead of separate
+        entity (AddVideo) within VDMS to leverage similarity search capability
+
+        Args:
+            paths: List of paths to the videos to add to the vectorstore.
+            metadatas: Optional list of text associated with the videos.
+            metadatas: Optional list of metadatas associated with the videos.
+            ids: Optional list of unique IDs.
+            batch_size (int): Number of concurrent requests to send to the server.
+            add_path: Bool to add video path as metadata
+
+        Returns:
+            List of ids from adding videos into the vectorstore.
+        """
+        if texts is None:
+            texts = ["" for _ in paths]
+
+        if add_path and metadatas:
+            for midx, path in enumerate(paths):
+                metadatas[midx]["video_path"] = path
+        elif add_path:
+            metadatas = []
+            for path in paths:
+                metadatas.append({"video_path": path})
+
+        # Populate IDs
+        ids = ids if ids is not None else [str(uuid.uuid4()) for _ in paths]
+
+        # Set embeddings
+        embeddings = self._embed_video(paths=paths, **kwargs)
+
+        if metadatas is None:
+            metadatas = [{} for _ in paths]
+
+        self.add_from(
+            texts=texts,
             embeddings=embeddings,
             ids=ids,
             metadatas=metadatas,
@@ -586,7 +685,7 @@ class VDMS(VectorStore):
         else:
             metadatas = [_validate_vdms_properties(m) for m in metadatas]
 
-        inserted_ids = self.__from(
+        inserted_ids = self.add_from(
             texts=texts,
             embeddings=embeddings,
             ids=ids,
@@ -596,7 +695,7 @@ class VDMS(VectorStore):
         )
         return inserted_ids
 
-    def __from(
+    def add_from(
         self,
         texts: List[str],
         embeddings: List[List[float]],
@@ -617,7 +716,7 @@ class VDMS(VectorStore):
             if metadatas:
                 batch_metadatas = metadatas[start_idx:end_idx]
 
-            result = self.__add(
+            result = self.add(
                 self._collection_name,
                 embeddings=batch_embedding_vectors,
                 texts=batch_texts,
@@ -727,7 +826,7 @@ class VDMS(VectorStore):
         )
         response, response_array = self.__run_vdms_query([query], all_blobs)
 
-        if normalize:
+        if normalize and command_str in response[0]:
             max_dist = response[0][command_str]["entities"][-1]["_distance"]
 
         return response, response_array, max_dist
@@ -769,14 +868,21 @@ class VDMS(VectorStore):
                 results=results,
             )
             response, response_array = self.__run_vdms_query([query])
-            ids_of_interest = [
-                ent["id"] for ent in response[0][command_str]["entities"]
-            ]
+            if command_str in response[0] and response[0][command_str]["returned"] > 0:
+                ids_of_interest = [
+                    ent["id"] for ent in response[0][command_str]["entities"]
+                ]
+            else:
+                return [], []
 
             # (2) Find top fetch_k results
             response, response_array, max_dist = self.get_k_candidates(
                 setname, fetch_k, results, all_blobs, normalize=normalize_distance
             )
+            if command_str not in response[0] or (
+                command_str in response[0] and response[0][command_str]["returned"] == 0
+            ):
+                return [], []
 
             # (3) Intersection of (1) & (2) using ids
             new_entities: List[Dict] = []
@@ -792,7 +898,7 @@ class VDMS(VectorStore):
                 print(p_str)  # noqa: T201
 
         if normalize_distance:
-            max_dist = 1.0 if max_dist == 0 else max_dist
+            max_dist = 1.0 if max_dist in [0, np.inf] else max_dist
             for ent_idx, ent in enumerate(response[0][command_str]["entities"]):
                 ent["_distance"] = ent["_distance"] / max_dist
                 response[0][command_str]["entities"][ent_idx]["_distance"] = ent[
@@ -1006,19 +1112,27 @@ class VDMS(VectorStore):
             include=["metadatas", "documents", "distances", "embeddings"],
         )
 
-        embedding_list = [list(_bytes2embedding(result)) for result in results[0][1]]
+        if len(results[0][1]) == 0:
+            # No results returned
+            return []
+        else:
+            embedding_list = [
+                list(_bytes2embedding(result)) for result in results[0][1]
+            ]
 
-        mmr_selected = maximal_marginal_relevance(
-            np.array(embedding, dtype=np.float32),
-            embedding_list,
-            k=k,
-            lambda_mult=lambda_mult,
-        )
+            mmr_selected = maximal_marginal_relevance(
+                np.array(embedding, dtype=np.float32),
+                embedding_list,
+                k=k,
+                lambda_mult=lambda_mult,
+            )
 
-        candidates = _results_to_docs(results)
+            candidates = _results_to_docs(results)
 
-        selected_results = [r for i, r in enumerate(candidates) if i in mmr_selected]
-        return selected_results
+            selected_results = [
+                r for i, r in enumerate(candidates) if i in mmr_selected
+            ]
+            return selected_results
 
     def max_marginal_relevance_search_with_score(
         self,
@@ -1094,21 +1208,27 @@ class VDMS(VectorStore):
             include=["metadatas", "documents", "distances", "embeddings"],
         )
 
-        embedding_list = [list(_bytes2embedding(result)) for result in results[0][1]]
+        if len(results[0][1]) == 0:
+            # No results returned
+            return []
+        else:
+            embedding_list = [
+                list(_bytes2embedding(result)) for result in results[0][1]
+            ]
 
-        mmr_selected = maximal_marginal_relevance(
-            np.array(embedding, dtype=np.float32),
-            embedding_list,
-            k=k,
-            lambda_mult=lambda_mult,
-        )
+            mmr_selected = maximal_marginal_relevance(
+                np.array(embedding, dtype=np.float32),
+                embedding_list,
+                k=k,
+                lambda_mult=lambda_mult,
+            )
 
-        candidates = _results_to_docs_and_scores(results)
+            candidates = _results_to_docs_and_scores(results)
 
-        selected_results = [
-            (r, s) for i, (r, s) in enumerate(candidates) if i in mmr_selected
-        ]
-        return selected_results
+            selected_results = [
+                (r, s) for i, (r, s) in enumerate(candidates) if i in mmr_selected
+            ]
+            return selected_results
 
     def query_collection_embeddings(
         self,
@@ -1306,37 +1426,6 @@ class VDMS(VectorStore):
 
 
 # VDMS UTILITY
-
-
-def _results_to_docs(results: Any) -> List[Document]:
-    return [doc for doc, _ in _results_to_docs_and_scores(results)]
-
-
-def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
-    final_res: List[Any] = []
-    responses, blobs = results[0]
-    if (
-        "FindDescriptor" in responses[0]
-        and "entities" in responses[0]["FindDescriptor"]
-    ):
-        result_entities = responses[0]["FindDescriptor"]["entities"]
-        # result_blobs = blobs
-        for ent in result_entities:
-            distance = ent["_distance"]
-            txt_contents = ent["content"]
-            for p in INVALID_DOC_METADATA_KEYS:
-                if p in ent:
-                    del ent[p]
-            props = {
-                mkey: mval
-                for mkey, mval in ent.items()
-                if mval not in INVALID_METADATA_VALUE
-            }
-
-            final_res.append(
-                (Document(page_content=txt_contents, metadata=props), distance)
-            )
-    return final_res
 
 
 def _add_descriptor(
