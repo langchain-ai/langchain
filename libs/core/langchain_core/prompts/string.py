@@ -97,19 +97,18 @@ def mustache_template_vars(
 ) -> Set[str]:
     """Get the variables from a mustache template."""
     vars: Set[str] = set()
-    in_section = False
+    section_depth = 0
     for type, key in mustache.tokenize(template):
         if type == "end":
-            in_section = False
-        elif in_section:
-            continue
+            section_depth -= 1
         elif (
             type in ("variable", "section", "inverted section", "no escape")
             and key != "."
+            and section_depth == 0
         ):
             vars.add(key.split(".")[0])
-            if type in ("section", "inverted section"):
-                in_section = True
+        if type in ("section", "inverted section"):
+            section_depth += 1
     return vars
 
 
@@ -122,12 +121,15 @@ def mustache_schema(
     """Get the variables from a mustache template."""
     fields = {}
     prefix: Tuple[str, ...] = ()
+    section_stack: List[Tuple[str, ...]] = []
     for type, key in mustache.tokenize(template):
         if key == ".":
             continue
         if type == "end":
-            prefix = prefix[: -key.count(".")]
+            if section_stack:
+                prefix = section_stack.pop()
         elif type in ("section", "inverted section"):
+            section_stack.append(prefix)
             prefix = prefix + tuple(key.split("."))
             fields[prefix] = False
         elif type in ("variable", "no escape"):
