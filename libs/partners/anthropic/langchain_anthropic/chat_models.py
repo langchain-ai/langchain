@@ -636,7 +636,7 @@ class ChatAnthropic(BaseChatModel):
         values["_async_client"] = anthropic.AsyncClient(**client_params)
         return values
 
-    def get_request_payload(
+    def _get_request_payload(
         self,
         input_: LanguageModelInput,
         *,
@@ -671,7 +671,7 @@ class ChatAnthropic(BaseChatModel):
         if stream_usage is None:
             stream_usage = self.stream_usage
         kwargs["stream"] = True
-        payload = self.get_request_payload(messages, stop=stop, **kwargs)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
         stream = self._client.messages.create(**payload)
         coerce_content_to_string = not _tools_in_params(payload)
         for event in stream:
@@ -698,7 +698,7 @@ class ChatAnthropic(BaseChatModel):
         if stream_usage is None:
             stream_usage = self.stream_usage
         kwargs["stream"] = True
-        payload = self.get_request_payload(messages, stop=stop, **kwargs)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
         stream = await self._async_client.messages.create(**payload)
         coerce_content_to_string = not _tools_in_params(payload)
         async for event in stream:
@@ -752,7 +752,7 @@ class ChatAnthropic(BaseChatModel):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return generate_from_stream(stream_iter)
-        payload = self.get_request_payload(messages, stop=stop, **kwargs)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
         data = self._client.messages.create(**payload)
         return self._format_output(data, **kwargs)
 
@@ -768,7 +768,7 @@ class ChatAnthropic(BaseChatModel):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return await agenerate_from_stream(stream_iter)
-        payload = self.get_request_payload(messages, stop=stop, **kwargs)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
         data = await self._async_client.messages.create(**payload)
         return self._format_output(data, **kwargs)
 
