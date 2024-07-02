@@ -219,12 +219,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         message_dict["role"] = "tool"
         message_dict["tool_call_id"] = message.tool_call_id
 
-        # Note: "name" is not documented in OpenAI's API Reference
-        # https://platform.openai.com/docs/api-reference/chat/create
-        # but is referenced in cookbooks
-        # https://cookbook.openai.com/examples/how_to_call_functions_with_chat_models
-        # and is required for some proxys (e.g., Google Gemini).
-        supported_props = {"content", "role", "tool_call_id", "name"}
+        supported_props = {"content", "role", "tool_call_id"}
         message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
     else:
         raise TypeError(f"Got unknown type {message}")
@@ -1118,8 +1113,6 @@ class BaseChatOpenAI(BaseChatModel):
         Example: JSON mode, no schema (schema=None, method="json_mode", include_raw=True):
             .. code-block::
 
-                from langchain_openai import ChatOpenAI
-
                 structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
 
                 structured_llm.invoke(
@@ -1147,15 +1140,17 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            llm = self.bind_tools([schema], tool_choice=True, parallel_tool_calls=False)
+            tool_name = convert_to_openai_tool(schema)["function"]["name"]
+            llm = self.bind_tools(
+                [schema], tool_choice=tool_name, parallel_tool_calls=False
+            )
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema], first_tool_only=True
                 )
             else:
-                key_name = convert_to_openai_tool(schema)["function"]["name"]
                 output_parser = JsonOutputKeyToolsParser(
-                    key_name=key_name, first_tool_only=True
+                    key_name=tool_name, first_tool_only=True
                 )
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})

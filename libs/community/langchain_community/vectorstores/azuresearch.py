@@ -1559,7 +1559,7 @@ class AzureSearchVectorStoreRetriever(BaseRetriever):
 
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_search_type(cls, values: Dict) -> Dict:
         """Validate search type."""
         if "search_type" in values:

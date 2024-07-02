@@ -26,13 +26,14 @@ class WikipediaAPIWrapper(BaseModel):
     load_all_available_meta: bool = False
     doc_content_chars_max: int = 4000
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:
             import wikipedia
 
-            wikipedia.set_lang(values["lang"])
+            lang = values.get("lang", "en")
+            wikipedia.set_lang(lang)
             values["wiki_client"] = wikipedia
         except ImportError:
             raise ImportError(
