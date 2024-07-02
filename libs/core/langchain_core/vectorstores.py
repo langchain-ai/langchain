@@ -121,6 +121,8 @@ class VectorStore(ABC):
 
         Returns:
             List of Documents.
+
+        .. versionadded:: 0.2.11
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} does not yet support get_by_ids."
@@ -148,6 +150,8 @@ class VectorStore(ABC):
 
         Returns:
             List of Documents.
+
+        .. versionadded:: 0.2.11
         """
         return await run_in_executor(None, self.get_by_ids, ids)
 
