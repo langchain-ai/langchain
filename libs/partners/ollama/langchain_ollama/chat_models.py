@@ -1,14 +1,5 @@
 """Ollama chat models."""
-from typing import (
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    cast,
-)
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union, cast
 
 import ollama
 from langchain_core.callbacks import (
@@ -294,7 +285,7 @@ class ChatOllama(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         **kwargs: Any,
-    ) -> Iterator[Mapping[str, Any] | str]:
+    ) -> Iterator[Union[Mapping[str, Any], str]]:
         ollama_messages = self._convert_messages_to_ollama_messages(messages)
         """
         if 'tool_prompt' in kwargs:
