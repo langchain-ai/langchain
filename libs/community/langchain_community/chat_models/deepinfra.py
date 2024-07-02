@@ -278,8 +278,8 @@ class ChatDeepInfra(BaseChatModel):
 
         return await _completion_with_retry(**kwargs)
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @root_validator(pre=True)
+    def init_defaults(cls, values: Dict) -> Dict:
         """Validate api key, python package exists, temperature, top_p, and top_k."""
         # For compatibility with LiteLLM
         api_key = get_from_dict_or_env(
@@ -294,7 +294,10 @@ class ChatDeepInfra(BaseChatModel):
             "DEEPINFRA_API_TOKEN",
             default=api_key,
         )
+        return values
 
+    @root_validator(pre=False, skip_on_failure=True)
+    def validate_environment(cls, values: Dict) -> Dict:
         if values["temperature"] is not None and not 0 <= values["temperature"] <= 1:
             raise ValueError("temperature must be in the range [0.0, 1.0]")
 
