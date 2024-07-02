@@ -141,9 +141,10 @@ def create_sql_agent(
     toolkit = toolkit or SQLDatabaseToolkit(llm=llm, db=db)  # type: ignore[arg-type]
     agent_type = agent_type or AgentType.ZERO_SHOT_REACT_DESCRIPTION
     tools = toolkit.get_tools() + list(extra_tools)
+    if prefix is None:
+        prefix = SQL_PREFIX
     if prompt is None:
-        prefix: str = prefix or SQL_PREFIX
-        prefix: str = prefix.format(dialect=toolkit.dialect, top_k=top_k)
+        prefix = prefix.format(dialect=toolkit.dialect, top_k=top_k)
     else:
         if "top_k" in prompt.input_variables:
             prompt = prompt.partial(top_k=str(top_k))
