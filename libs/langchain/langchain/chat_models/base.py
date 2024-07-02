@@ -397,7 +397,7 @@ class _ConfigurableModel:
     ) -> None:
         self._default_config = default_config or {}
         self._configurable_fields = configurable_fields
-        self._config_prefix = config_prefix
+        self._config_prefix = config_prefix + "_" if config_prefix else config_prefix
         self._queued_declarative_operations: List[Tuple[str, Tuple, Dict]] = list(
             queued_declarative_operations
         )
@@ -472,7 +472,7 @@ class _ConfigurableModel:
         remaining_config["configurable"] = {
             k: v
             for k, v in config.get("configurable", {}).items()
-            if k not in model_params
+            if _remove_prefix(k, self._config_prefix) not in model_params
         }
         queued_declarative_operations = list(self._queued_declarative_operations)
         if remaining_config:

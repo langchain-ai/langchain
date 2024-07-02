@@ -120,7 +120,7 @@ def test_configurable() -> None:
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
 def test_configurable_with_default() -> None:
-    model = init_chat_model("gpt-4o", configurable_fields="any")
+    model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
     for method in (
         "invoke",
         "ainvoke",
@@ -145,7 +145,8 @@ def test_configurable_with_default() -> None:
     )
 
     model_with_config = model_with_tools.with_config(
-        RunnableConfig(tags=["foo"]), configurable={"model": "claude-3-sonnet-20240229"}
+        RunnableConfig(tags=["foo"]),
+        configurable={"bar_model": "claude-3-sonnet-20240229"},
     )
 
     assert model_with_config.model == "claude-3-sonnet-20240229"  # type: ignore[attr-defined]
