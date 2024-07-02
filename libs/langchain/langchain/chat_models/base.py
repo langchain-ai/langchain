@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import inspect
+import warnings
 from importlib import util
-from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union, cast
 
 from langchain_core._api import beta
 from langchain_core.language_models import (
@@ -33,9 +34,10 @@ def init_chat_model(
     model: Optional[str] = None,
     *,
     model_provider: Optional[str] = None,
-    configurable: Optional[bool] = None,
+    configurable_fields: Optional[
+        Union[Literal["any"], List[str], Tuple[str, ...]]
+    ] = None,
     config_prefix: Optional[str] = None,
-    configure_any: bool = False,
     **kwargs: Any,
 ) -> BaseChatModel:
     """Initialize a ChatModel from the model name and provider.
@@ -68,19 +70,21 @@ def init_chat_model(
                 - gemini... -> google_vertexai
                 - command... -> cohere
                 - accounts/fireworks... -> fireworks
-        configurable: Whether model parameters are configurable. Defaults to True if
-            model is None or config_prefix is non-null or configure_any is True.
+        configurable_fields: Which model parameters are configurable. If
+            - None: No configurable fields.
+            - "any": All fields are configurable.
+            - Union[List[str], Tuple[str, ...]]: Specified fields are configurable.
+
+            Fields are assumed to have config_prefix stripped if there is a
+            config_prefix.
+
+            If model is specified, then defaults to None. If model is not specified,
+            then defaults to ``("model", "model_provider")``.
         config_prefix: If config_prefix is a non-empty string then model will be
             configurable at runtime via the
-            ``config["configurable"]["{config_prefix}_model"]`` and
-            ``config["configurable"]["{config_prefix}_model_provider"]`` keys. If
+            ``config["configurable"]["{config_prefix}_{param}"]`` keys. If
             config_prefix is an empty string then model will be configurable via
-            ``config["configurable"]["model"]`` and
-            ``config["configurable"]["model_provider"]`` keys.
-        configure_any: If True then any parameter can be passed to model initializer as
-            part of the config using the "{config_prefix}_{param}" key if config_prefix
-            is a non-empty string and via "{param}" otherwise. If False then only
-            model and model_provider can be configured.
+            ``config["configurable"]["{param}"]``.
         kwargs: Additional keyword args to pass to
             ``<<selected ChatModel>>.__init__(model=model_name, **kwargs)``.
 
@@ -135,12 +139,11 @@ def init_chat_model(
             # pip install langchain langchain-openai langchain-anthropic
             from langchain.chat_models import init_chat_model
 
-            # We don't need to specify if config_prefix or configure_any is specified.
             configurable_model_with_default = init_chat_model(
                 "gpt-4o",
                 model_provider="openai",
+                configurable_fields="any",  # this allows us to configure other params like temperature, max_tokens, etc at runtime.
                 config_prefix="foo",
-                configure_any=True,  # this allows us to configure other params like temperature, max_tokens, etc at runtime.
                 temperature=0
             )
 
@@ -179,7 +182,11 @@ def init_chat_model(
 
                 location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
-            configurable_model = init_chat_model("gpt-4o", configurable=True, temperature=0)
+            configurable_model = init_chat_model(
+                "gpt-4o",
+                configurable_fields=("model", "model_provider"),
+                temperature=0
+            )
 
             configurable_model_with_tools = configurable_model.bind_tools([GetWeather, GetPopulation])
             configurable_model_with_tools.invoke(
@@ -193,12 +200,17 @@ def init_chat_model(
             )
             # Claude-3.5 sonnet response with tools
     """  # noqa: E501
-    if configurable is None:
-        configurable = bool(
-            (model is None) or (config_prefix is not None) or configure_any
-        )
+    if not model and not configurable_fields:
+        configurable_fields = ("model", "model_provider")
     config_prefix = config_prefix or ""
-    if not configurable:
+    if config_prefix and not configurable_fields:
+        warnings.warn(
+            f"{config_prefix=} has been set but no fields are configurable. Set "
+            f"`configurable_fields=(...)` to specify the model params that are "
+            f"configurable."
+        )
+
+    if not configurable_fields:
         return _init_chat_model_helper(
             cast(str, model), model_provider=model_provider, **kwargs
         )
@@ -212,7 +224,7 @@ def init_chat_model(
             _ConfigurableModel(
                 default_config=kwargs,
                 config_prefix=config_prefix,
-                configure_any=configure_any,
+                configurable_fields=configurable_fields,
             ),
         )
 
@@ -379,13 +391,13 @@ class _ConfigurableModel:
         self,
         *,
         default_config: Optional[dict] = None,
+        configurable_fields: Union[Literal["any"], List[str], Tuple[str, ...]] = "any",
         config_prefix: str = "",
-        configure_any: bool = False,
         queued_operations: Sequence[Tuple[str, Tuple, Dict]] = (),
     ) -> None:
         self._default_config = default_config or {}
+        self._configurable_fields = configurable_fields
         self._config_prefix = config_prefix
-        self._configure_any = configure_any
         self._queued_operations: List[Tuple[str, Tuple, Dict]] = list(queued_operations)
 
     def __getattr__(self, name: str) -> Any:
@@ -429,11 +441,9 @@ class _ConfigurableModel:
             for k, v in config.get("configurable", {}).items()
             if k.startswith(self._config_prefix)
         }
-        if not self._configure_any:
+        if self._configurable_fields != "any":
             model_params = {
-                k: v
-                for k, v in model_params.items()
-                if k in ("model", "model_provider")
+                k: v for k, v in model_params.items() if k in self._configurable_fields
             }
         return model_params
 
@@ -459,7 +469,7 @@ class _ConfigurableModel:
             queued_operations = []
         return _ConfigurableModel(
             default_config={**self._default_config, **model_params},
+            configurable_fields=self._configurable_fields,
             config_prefix=self._config_prefix,
-            configure_any=self._configure_any,
             queued_operations=queued_operations,
         )

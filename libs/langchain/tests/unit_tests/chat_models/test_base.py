@@ -120,7 +120,7 @@ def test_configurable() -> None:
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
 def test_configurable_with_default() -> None:
-    model = init_chat_model("gpt-4o", configurable=True)
+    model = init_chat_model("gpt-4o", configurable_fields="any")
     for method in (
         "invoke",
         "ainvoke",
