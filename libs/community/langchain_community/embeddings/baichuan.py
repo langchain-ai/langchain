@@ -48,12 +48,14 @@ class BaichuanTextEmbeddings(BaseModel, Embeddings):
 
         allow_population_by_field_name = True
 
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=True, allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that auth token exists in environment."""
         try:
             baichuan_api_key = convert_to_secret_str(
-                get_from_dict_or_env(values, "baichuan_api_key", "BAICHUAN_API_KEY")
+                get_from_dict_or_env(
+                    values, ["baichuan_api_key", "api_key"], "BAICHUAN_API_KEY"
+                )
             )
         except ValueError as original_exc:
             try:

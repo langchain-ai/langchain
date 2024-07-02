@@ -52,7 +52,7 @@ class VolcEngineMaasBase(BaseModel):
     """Timeout for read response from volc engine maas endpoint. 
     Default is 60 seconds."""
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         volc_engine_maas_ak = convert_to_secret_str(
             get_from_dict_or_env(values, "volc_engine_maas_ak", "VOLC_ACCESSKEY")
@@ -60,17 +60,22 @@ class VolcEngineMaasBase(BaseModel):
         volc_engine_maas_sk = convert_to_secret_str(
             get_from_dict_or_env(values, "volc_engine_maas_sk", "VOLC_SECRETKEY")
         )
-        endpoint = values["endpoint"]
-        if values["endpoint"] is not None and values["endpoint"] != "":
-            endpoint = values["endpoint"]
+        default_values = {
+            name: field.default
+            for name, field in cls.__fields__.items()
+            if field.default is not None
+        }
+        default_values.update(values)
+
+        endpoint = default_values.get("endpoint")
         try:
             from volcengine.maas import MaasService
 
             maas = MaasService(
                 endpoint,
-                values["region"],
-                connection_timeout=values["connect_timeout"],
-                socket_timeout=values["read_timeout"],
+                default_values.get("region"),
+                connection_timeout=default_values.get("connect_timeout"),
+                socket_timeout=default_values.get("read_timeout"),
             )
             maas.set_ak(volc_engine_maas_ak.get_secret_value())
             maas.set_sk(volc_engine_maas_sk.get_secret_value())

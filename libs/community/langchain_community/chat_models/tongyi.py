@@ -412,7 +412,7 @@ class ChatTongyi(BaseChatModel):
     top_p: float = 0.8
     """Total probability mass of tokens to consider at each step."""
 
-    dashscope_api_key: Optional[SecretStr] = Field(None, alias="api_key")
+    dashscope_api_key: SecretStr = Field(default=None, alias="api_key")
     """Dashscope api key provide by Alibaba Cloud."""
 
     streaming: bool = False
@@ -431,11 +431,13 @@ class ChatTongyi(BaseChatModel):
         """Return type of llm."""
         return "tongyi"
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["dashscope_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "dashscope_api_key", "DASHSCOPE_API_KEY")
+            get_from_dict_or_env(
+                values, ["dashscope_api_key", "api_key"], "DASHSCOPE_API_KEY"
+            )
         )
         try:
             import dashscope

@@ -79,17 +79,19 @@ class SparkLLMTextEmbeddings(BaseModel, Embeddings):
 
         allow_population_by_field_name = True
 
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=True, allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that auth token exists in environment."""
         values["spark_app_id"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "spark_app_id", "SPARK_APP_ID")
+            get_from_dict_or_env(values, ["spark_app_id", "app_id"], "SPARK_APP_ID")
         )
         values["spark_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "spark_api_key", "SPARK_API_KEY")
+            get_from_dict_or_env(values, ["spark_api_key", "api_key"], "SPARK_API_KEY")
         )
         values["spark_api_secret"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "spark_api_secret", "SPARK_API_SECRET")
+            get_from_dict_or_env(
+                values, ["spark_api_secret", "api_secret"], "SPARK_API_SECRET"
+            )
         )
         return values
 
