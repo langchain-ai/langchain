@@ -1,12 +1,25 @@
 """Ollama chat models."""
 
 from operator import itemgetter
-from typing import Any, List, Literal, Optional, Iterator, Union, Dict, Type, cast, Callable, Sequence
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    cast,
+)
+
+import ollama
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
-import ollama
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -15,6 +28,8 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+
+
 class ChatOllama(BaseChatModel):
     """Ollama chat model integration.
 
@@ -275,7 +290,6 @@ class ChatOllama(BaseChatModel):
                     "images": images,
                 }
             )
-            
 
         return ollama_messages
 
@@ -286,18 +300,24 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[str]:
         ollama_messages = self._convert_messages_to_ollama_messages(messages)
-        '''
+        """
         if 'tool_prompt' in kwargs:
             ollama_messages[-1]['content'] = kwargs['tool_prompt'] + "[INST]" + ollama_messages[-1]['content'] + "[/INST]"
-        '''
-        yield from ollama.chat(model=self.model,
-                               messages=ollama_messages,
-                               stream=True,
-                               options={"stop":stop,**{k: v for k,v in kwargs.items() if k not in ["keep_alive","format"]}},
-                               keep_alive=kwargs.get("keep_alive",None),
-                               format=kwargs.get("format",None))
+        """
+        yield from ollama.chat(
+            model=self.model,
+            messages=ollama_messages,
+            stream=True,
+            options={
+                "stop": stop,
+                **{
+                    k: v for k, v in kwargs.items() if k not in ["keep_alive", "format"]
+                },
+            },
+            keep_alive=kwargs.get("keep_alive", None),
+            format=kwargs.get("format", None),
+        )
 
-    
     def _chat_stream_with_aggregation(
         self,
         messages: List[BaseMessage],
@@ -307,13 +327,17 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> ChatGenerationChunk:
         final_chunk = None
-        for stream_resp in self._create_chat_stream(messages,stop,**kwargs):
+        for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if stream_resp:
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content=stream_resp['message']['content'] if 'message' in stream_resp else ""
+                        content=stream_resp["message"]["content"]
+                        if "message" in stream_resp
+                        else ""
                     ),
-                    generation_info= stream_resp if stream_resp.get("done") is True else None
+                    generation_info=stream_resp
+                    if stream_resp.get("done") is True
+                    else None,
                 )
                 if final_chunk is None:
                     final_chunk = chunk
@@ -327,7 +351,7 @@ class ChatOllama(BaseChatModel):
                     )
             if final_chunk is None:
                 raise ValueError("No data received from Ollama stream.")
-            
+
         return final_chunk
 
     def _generate(
@@ -337,7 +361,9 @@ class ChatOllama(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        final_chunk = self._chat_stream_with_aggregation(messages,stop,run_manager,verbose=self.verbose,**kwargs)
+        final_chunk = self._chat_stream_with_aggregation(
+            messages, stop, run_manager, verbose=self.verbose, **kwargs
+        )
         chat_generation = ChatGeneration(
             message=AIMessage(content=final_chunk.text),
             generation_info=final_chunk.generation_info,
@@ -355,9 +381,13 @@ class ChatOllama(BaseChatModel):
             if stream_resp:
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content=stream_resp['message']['content'] if 'message' in stream_resp else ""
+                        content=stream_resp["message"]["content"]
+                        if "message" in stream_resp
+                        else ""
                     ),
-                    generation_info= stream_resp if stream_resp.get("done") is True else None
+                    generation_info=stream_resp
+                    if stream_resp.get("done") is True
+                    else None,
                 )
                 if run_manager:
                     run_manager.on_llm_new_token(
@@ -385,7 +415,7 @@ class ChatOllama(BaseChatModel):
     # ) -> ChatResult:
 
     # TODO: Work in progress for binding tools
-    ''' 
+    """ 
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
@@ -453,10 +483,9 @@ class ChatOllama(BaseChatModel):
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
             return llm #| output_parser
-    '''
+    """
 
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "chat-ollama"
-
