@@ -1,9 +1,10 @@
 from typing import List
 
 from langchain_core.embeddings import Embeddings
+import ollama
+from langchain_core.pydantic_v1 import BaseModel, Extra
 
-
-class OllamaEmbeddings(Embeddings):
+class OllamaEmbeddings(BaseModel, Embeddings):
     """OllamaEmbeddings embedding model.
 
     Example:
@@ -13,14 +14,24 @@ class OllamaEmbeddings(Embeddings):
 
             model = OllamaEmbeddings()
     """
+    model: str = "llama2"
+    """Model name to use."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
-        raise NotImplementedError
+        embedded_docs = []
+        for doc in texts:
+            embedded_docs.append(ollama.embeddings(self.model,doc)['embedding'])
+        return embedded_docs
 
     def embed_query(self, text: str) -> List[float]:
         """Embed query text."""
-        raise NotImplementedError
+        return self.embed_documents([text])[0]
 
     # only keep aembed_documents and aembed_query if they're implemented!
     # delete them otherwise to use the base class' default

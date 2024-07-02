@@ -18,7 +18,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import BaseLLM
 from langchain_core.outputs import GenerationChunk, LLMResult
 from ollama import Options
-
+from langchain_core.pydantic_v1 import BaseModel, Extra
 
 class OllamaLLM(BaseLLM):
     """OllamaLLM large language models.
@@ -34,6 +34,11 @@ class OllamaLLM(BaseLLM):
 
     model: str = "llama2"
     """Model name to use."""
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        extra = Extra.forbid
 
     @property
     def _llm_type(self) -> str:
@@ -73,8 +78,8 @@ class OllamaLLM(BaseLLM):
         for stream_resp in self._create_generate_stream(prompt, stop, **kwargs):
             if not isinstance(stream_resp, str):
                 chunk = GenerationChunk(
-                    text=stream_resp["message"]["content"]
-                    if "message" in stream_resp
+                    text=stream_resp["response"]
+                    if "response" in stream_resp
                     else "",
                     generation_info=dict(stream_resp)
                     if stream_resp.get("done") is True
@@ -95,7 +100,6 @@ class OllamaLLM(BaseLLM):
 
         return final_chunk
 
-    # TODO: This method must be implemented to generate text completions.
     def _generate(
         self,
         prompts: List[str],
