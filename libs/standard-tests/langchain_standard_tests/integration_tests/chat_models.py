@@ -1,6 +1,6 @@
 import base64
 import json
-from typing import Optional
+from typing import List, Optional
 
 import httpx
 import pytest
@@ -10,6 +10,7 @@ from langchain_core.messages import (
     AIMessageChunk,
     BaseMessageChunk,
     HumanMessage,
+    SystemMessage,
     ToolMessage,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -283,3 +284,63 @@ class ChatModelIntegrationTests(ChatModelTests):
             ],
         )
         model.invoke([message])
+
+    def test_anthropic_inputs(self, model: BaseChatModel) -> None:
+        if not self.supports_anthropic_inputs:
+            return
+
+        class color_picker(BaseModel):
+            """Input your fav color and get a random fact about it."""
+
+            fav_color: str
+
+        human_content: List[dict] = [
+            {
+                "type": "text",
+                "text": "what's your favorite color in this image",
+            },
+        ]
+        if self.supports_image_inputs:
+            image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+            image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+            human_content.append(
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": image_data,
+                    },
+                }
+            )
+        messages = [
+            SystemMessage("you're a good assistant"),
+            HumanMessage(human_content),  # type: ignore[arg-type]
+            AIMessage(
+                [
+                    {"type": "text", "text": "Hmm let me think about that"},
+                    {
+                        "type": "tool_use",
+                        "input": {"fav_color": "green"},
+                        "id": "foo",
+                        "name": "color_picker",
+                    },
+                ]
+            ),
+            HumanMessage(
+                [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": "foo",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
+                            }
+                        ],
+                    },
+                    {"type": "text", "text": "what's my sister's favorite color"},
+                ]
+            ),
+        ]
+        model.bind_tools([color_picker]).invoke(messages)

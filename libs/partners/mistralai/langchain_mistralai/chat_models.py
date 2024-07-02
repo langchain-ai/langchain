@@ -586,7 +586,7 @@ class ChatMistralAI(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else False
+        should_stream = stream if stream is not None else self.streaming
         if should_stream:
             stream_iter = self._astream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
