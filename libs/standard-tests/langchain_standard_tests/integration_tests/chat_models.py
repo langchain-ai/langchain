@@ -167,6 +167,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         for chunk in chat.stream("Tell me a joke about cats."):
             assert isinstance(chunk, dict)
+        assert isinstance(chunk, dict)  # for mypy
         assert set(chunk.keys()) == {"setup", "punchline"}
 
     def test_tool_message_histories_string_content(
