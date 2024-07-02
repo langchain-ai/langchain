@@ -231,7 +231,7 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
         Returns:
             List of input variable names.
         """
-        return [self.variable_name]
+        return [self.variable_name] if not self.optional else []
 
     def pretty_repr(self, html: bool = False) -> str:
         var = "{" + self.variable_name + "}"
