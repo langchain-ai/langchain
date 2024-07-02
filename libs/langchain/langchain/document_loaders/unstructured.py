@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders import (
         UnstructuredAPIFileIOLoader,
         UnstructuredAPIFileLoader,
+        UnstructuredBaseLoader,
         UnstructuredFileIOLoader,
         UnstructuredFileLoader,
     )

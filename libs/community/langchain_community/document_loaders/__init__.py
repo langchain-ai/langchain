@@ -474,6 +474,7 @@ if TYPE_CHECKING:
     from langchain_community.document_loaders.unstructured import (
         UnstructuredAPIFileIOLoader,
         UnstructuredAPIFileLoader,
+        UnstructuredBaseLoader,
         UnstructuredFileIOLoader,
         UnstructuredFileLoader,
     )
@@ -683,6 +684,7 @@ _module_lookup = {
     "TwitterTweetLoader": "langchain_community.document_loaders.twitter",
     "UnstructuredAPIFileIOLoader": "langchain_community.document_loaders.unstructured",
     "UnstructuredAPIFileLoader": "langchain_community.document_loaders.unstructured",
+    "UnstructuredBaseLoader": "langchain_community.document_loaders.unstructured",
     "UnstructuredCHMLoader": "langchain_community.document_loaders.chm",
     "UnstructuredCSVLoader": "langchain_community.document_loaders.csv_loader",
     "UnstructuredEPubLoader": "langchain_community.document_loaders.epub",
@@ -884,6 +886,7 @@ __all__ = [
     "TwitterTweetLoader",
     "UnstructuredAPIFileIOLoader",
     "UnstructuredAPIFileLoader",
+    "UnstructuredBaseLoader",
     "UnstructuredCHMLoader",
     "UnstructuredCSVLoader",
     "UnstructuredEPubLoader",
