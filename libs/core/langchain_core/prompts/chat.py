@@ -904,6 +904,8 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                     input_types[message.variable_name] = List[AnyMessage]
         if "partial_variables" in values:
             input_vars = input_vars - set(values["partial_variables"])
+        if optional_variables:
+            input_vars = input_vars - optional_variables
         if "input_variables" in values and values.get("validate_template"):
             if input_vars != set(values["input_variables"]):
                 raise ValueError(
