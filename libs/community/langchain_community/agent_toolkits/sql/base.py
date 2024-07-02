@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from langchain_core.messages import AIMessage, SystemMessage
+from langchain_core.messages import SystemMessage
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
@@ -188,8 +188,7 @@ def create_sql_agent(
         if prompt is None:
             messages: List = [
                 SystemMessage(content=cast(str, prefix)),
-                HumanMessagePromptTemplate.from_template("{input}"),
-                AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
+                HumanMessagePromptTemplate.from_template("{input}\n" +  f"{suffix or SQL_FUNCTIONS_SUFFIX}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
             prompt = ChatPromptTemplate.from_messages(messages)
@@ -203,8 +202,7 @@ def create_sql_agent(
         if prompt is None:
             messages = [
                 SystemMessage(content=cast(str, prefix)),
-                HumanMessagePromptTemplate.from_template("{input}"),
-                AIMessage(content=suffix or SQL_FUNCTIONS_SUFFIX),
+                HumanMessagePromptTemplate.from_template("{input}\n" +  f"{suffix or SQL_FUNCTIONS_SUFFIX}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
             prompt = ChatPromptTemplate.from_messages(messages)
