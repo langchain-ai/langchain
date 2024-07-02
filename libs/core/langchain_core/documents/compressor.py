@@ -32,7 +32,16 @@ class BaseDocumentCompressor(BaseModel, ABC):
         query: str,
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
-        """Compress retrieved documents given the query context."""
+        """Compress retrieved documents given the query context.
+
+        Args:
+            documents: The retrieved documents.
+            query: The query context.
+            callbacks: Optional callbacks to run during compression.
+
+        Returns:
+            The compressed documents.
+        """
 
     async def acompress_documents(
         self,
@@ -40,7 +49,16 @@ class BaseDocumentCompressor(BaseModel, ABC):
         query: str,
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
-        """Compress retrieved documents given the query context."""
+        """Async compress retrieved documents given the query context.
+
+        Args:
+            documents: The retrieved documents.
+            query: The query context.
+            callbacks: Optional callbacks to run during compression.
+
+        Returns:
+            The compressed documents.
+        """
         return await run_in_executor(
             None, self.compress_documents, documents, query, callbacks
         )
