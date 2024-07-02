@@ -529,7 +529,9 @@ Remember, even when answering to the user, you must still use this only JSON for
                     prompt += message["content"] + "\n[/INST]\n"
 
         else:
-            prompt = ChatPromptValue(messages=convert_to_messages(messages)).to_string()
+            prompt = ChatPromptValue(
+                messages=convert_to_messages(messages) + [AIMessage(content="")]
+            ).to_string()
 
         return prompt
 
