@@ -10,4 +10,5 @@ def test_all() -> None:
         "IndexingResult",
         "InMemoryRecordManager",
         "RecordManager",
+        "UpsertResponse",
     ]

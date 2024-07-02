@@ -24,6 +24,7 @@ import logging
 import math
 import warnings
 from abc import ABC, abstractmethod
+from itertools import cycle
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -32,18 +33,22 @@ from typing import (
     Collection,
     Dict,
     Iterable,
+    Iterator,
     List,
     Optional,
     Sequence,
     Tuple,
     Type,
     TypeVar,
+    Union,
 )
 
+from langchain_core._api import beta
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables.config import run_in_executor
+from langchain_core.utils.iter import batch_iterate
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -51,19 +56,11 @@ if TYPE_CHECKING:
         CallbackManagerForRetrieverRun,
     )
     from langchain_core.documents import Document
+    from langchain_core.indexing.base import UpsertResponse
 
 logger = logging.getLogger(__name__)
 
 VST = TypeVar("VST", bound="VectorStore")
-
-
-class UpsertResponse(TypedDict):
-    """An indexing result."""
-
-    succeeded: Sequence[str]
-    """The IDs that were successfully indexed."""
-    failed: Sequence[str]
-    """The IDs that failed to index."""
 
 
 class VectorStore(ABC):
@@ -73,6 +70,9 @@ class VectorStore(ABC):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        # One of the kwargs should be `ids` which is a list of ids
+        # associated with the texts.
+        # This is not yet enforced in the type signature for backwards compatibility.
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -81,39 +81,74 @@ class VectorStore(ABC):
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
             **kwargs: vectorstore specific parameters.
+                One of the kwargs should be `ids` which is a list of ids
+                associated with the texts.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
         if type(self).upsert != VectorStore.upsert:
-            # If the subclass has implemented upsert, use it
-            if "ids" in kwargs and kwargs["ids"]:
+            # Import document in local scope to avoid circular imports
+            from langchain_core.documents import Document
+
+            # This condition is triggered if the subclass has provided
+            # an implementation of the upsert method.
+            # The existing add_texts
+            texts_: Sequence[str] = (
+                texts if isinstance(texts, (list, tuple)) else list(texts)
+            )
+            if metadatas and len(metadatas) != len(texts_):
+                raise ValueError(
+                    "The number of metadatas must match the number of texts."
+                    "Got {len(metadatas)} metadatas and {len(texts_)} texts."
+                )
+
+            if "ids" in kwargs:
                 ids = kwargs.pop("ids")
-            if kwargs["ids"]:
-                docs = (
-                    Document(page_content=text, metadata=metadata, id=id_)
-                    for text, metadata, id_ in zip(texts, metadatas, ids)
-                )
+                if ids and len(ids) != len(texts_):
+                    raise ValueError(
+                        "The number of ids must match the number of texts."
+                        "Got {len(ids)} ids and {len(texts_)} texts."
+                    )
             else:
-                docs = (
-                    Document(page_content=text, metadata=metadata)
-                    for text, metadata in zip(texts, metadatas)
-                )
-            return self.upsert(docs, **kwargs)
-        raise NotImplementedError()
+                ids = None
+
+            metadatas_ = iter(metadatas) if metadatas else cycle([{}])
+            ids_: Iterable[Union[str, None]] = ids if ids is not None else cycle([None])
+            docs = [
+                Document(page_content=text, metadata=metadata_, id=id_)
+                for text, metadata_, id_ in zip(texts, metadatas_, ids_)
+            ]
+            upsert_response = self.upsert(docs, **kwargs)
+            return upsert_response["succeeded"]
+        raise NotImplementedError(
+            f"`add_texts` has not been implemented for {self.__class__.__name__} "
+        )
 
     def streaming_upsert(
-        self, documents: Iterable[Document], /, batch_size: int, **kwargs
-    ) -> Iterable[UpsertResponse]:
-        """Add or update documents in the vectorstore."""
-        from langchain_core.utils.iter import batch_iterable
+        self, items: Iterable[Document], /, batch_size: int, **kwargs: Any
+    ) -> Iterator[UpsertResponse]:
+        """Upsert documents in a streaming fashion.
 
-        for batch_documents in batch_iterable(documents, batch_size):
-            yield self.upsert([document], **kwargs)
+        Args:
+            documents: Iterable of Documents to add to the vectorstore.
+            batch_size: The size of each batch to upsert. Required and
+                should not be associa
+            **kwargs: Additional keyword arguments.
+                kwargs should not include ids to avoid ambiguous semantics.
+                Instead the ID should be provided as part of the Document object.
 
-    def upsert(
-        self, documents: Sequence[Document], /, **kwargs
-    ) -> List[UpsertResponse]:
+        .. versionadded:: 0.2.11
+        """
+        # The default implementation of this method breaks the input into
+        # batches of size `batch_size` and calls the `upsert` method on each batch.
+        # Subclasses can override this method to provide a more efficient
+        # implementation.
+        for item_batch in batch_iterate(batch_size, items):
+            yield self.upsert(item_batch, **kwargs)
+
+    @beta(message="Added in 0.2.11 and may change.")
+    def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
         """Add or update documents in the vectorstore.
 
         The upsert functionality should utilize the ID field of the Document object
@@ -150,16 +185,27 @@ class VectorStore(ABC):
                 # or Document
                 pass
 
+        Implementations that override upsert should include a new doc-string
+        that explains the semantics of upsert and includes in code
+        examples of how to insert using the alternate data formats.
+
         Args:
-            documents: List of Documents to add to the vectorstore.
+            items: A sequence of documents to add or update.
             kwargs: Additional keyword arguments.
                 kwargs should not include ids to avoid ambiguous semantics.
                 Instead the ID should be provided as part of the Document object.
 
         Returns:
             List of IDs of the added texts.
+
+        .. versionadded:: 0.2.11
         """
-        raise NotImplementedError()
+        # The implementation does not delegate to the `add_texts` method or
+        # the `add_documents` method by default since those implementations
+
+        raise NotImplementedError(
+            f"upsert has not been implemented for {self.__class__.__name__}"
+        )
 
     @property
     def embeddings(self) -> Optional[Embeddings]:
@@ -277,10 +323,40 @@ class VectorStore(ABC):
 
         Args:
             documents: Documents to add to the vectorstore.
+            kwargs: Additional keyword arguments.
+                if kwargs contains ids and documents contain ids,
+                the ids in the kwargs will receive precedence.
 
         Returns:
             List of IDs of the added texts.
         """
+        if type(self).upsert != VectorStore.upsert:
+            from langchain_core.documents import Document
+
+            if "ids" in kwargs:
+                ids = kwargs.pop("ids")
+                if ids and len(ids) != len(documents):
+                    raise ValueError(
+                        "The number of ids must match the number of documents."
+                        "Got {len(ids)} ids and {len(documents)} documents."
+                    )
+
+                documents_ = []
+
+                for id_, document in zip(ids, documents):
+                    doc_with_id = Document(
+                        page_content=document.page_content,
+                        metadata=document.metadata,
+                        id=id_,
+                    )
+                    documents_.append(doc_with_id)
+            else:
+                documents_ = documents
+
+            # If upsert has been implemented, we can use it to add documents
+            return self.upsert(documents_, **kwargs)["succeeded"]
+
+        # Code path that delegates to add_text for backwards compatibility
         # TODO: Handle the case where the user doesn't provide ids on the Collection
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
