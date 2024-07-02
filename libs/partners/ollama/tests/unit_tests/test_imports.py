@@ -4,6 +4,7 @@ EXPECTED_ALL = [
     "OllamaLLM",
     "ChatOllama",
     "OllamaEmbeddings",
+    "__version__",
 ]
 
 
