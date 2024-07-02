@@ -482,7 +482,7 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
-        payload = self.get_request_payload(messages, stop=stop, **kwargs)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         with self.client.create(**payload) as response:
             for chunk in response:
@@ -543,11 +543,11 @@ class BaseChatOpenAI(BaseChatModel):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return generate_from_stream(stream_iter)
-        payload = self.get_request_payload(messages, stop=stop, **kwargs)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
         response = self.client.create(**payload)
         return self._create_chat_result(response)
 
-    def get_request_payload(
+    def _get_request_payload(
         self,
         input_: LanguageModelInput,
         *,
@@ -606,7 +606,7 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
-        payload = self.get_request_payload(messages, stop=stop, **kwargs)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
         response = await self.async_client.create(**payload)
         async with response:
@@ -670,7 +670,7 @@ class BaseChatOpenAI(BaseChatModel):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return await agenerate_from_stream(stream_iter)
-        payload = self.get_request_payload(messages, stop=stop, **kwargs)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
         response = await self.async_client.create(**payload)
         return self._create_chat_result(response)
 
