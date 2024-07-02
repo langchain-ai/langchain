@@ -731,6 +731,8 @@ def test_chat_input_schema() -> None:
     prompt_all_required = ChatPromptTemplate.from_messages(
         messages=[MessagesPlaceholder("history", optional=False), ("user", "${input}")]
     )
+    prompt_all_required.input_variables == {"input"}
+    prompt_all_required.optional_variables == {"history"}
     with pytest.raises(ValidationError):
         prompt_all_required.input_schema(input="")
     assert prompt_all_required.input_schema.schema() == {
@@ -1033,6 +1035,7 @@ def test_chat_input_schema() -> None:
     prompt_optional = ChatPromptTemplate.from_messages(
         messages=[MessagesPlaceholder("history", optional=True), ("user", "${input}")]
     )
+    prompt_optional.input_variables == {"history", "input"}
     prompt_optional.input_schema(input="")  # won't raise error
     prompt_optional.input_schema.schema() == {
         "title": "PromptInput",
