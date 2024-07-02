@@ -498,23 +498,21 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         return [e if e is not None else await empty_embedding() for e in embeddings]
 
-    def embed_documents(
-        self, texts: List[str], chunk_size: Optional[int] = 0
-    ) -> List[List[float]]:
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.
 
         Args:
             texts: The list of texts to embed.
-            chunk_size: The chunk size of embeddings. If None, will use the chunk size
-                specified by the class.
 
         Returns:
             List of embeddings, one for each text.
         """
         if not self.check_embedding_ctx_length:
             embeddings: List[List[float]] = []
-            for text in texts:
-                response = self.client.create(input=text, **self._invocation_params)
+            for i in range(0, len(texts), self.chunk_size):
+                response = self.client.create(
+                    input=texts[i : i + self.chunk_size], **self._invocation_params
+                )
                 if not isinstance(response, dict):
                     response = response.dict()
                 embeddings.extend(r["embedding"] for r in response["data"])
@@ -530,8 +528,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         Args:
             texts: The list of texts to embed.
-            chunk_size: The chunk size of embeddings. If None, will use the chunk size
-                specified by the class.
 
         Returns:
             List of embeddings, one for each text.
