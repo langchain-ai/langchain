@@ -787,6 +787,20 @@ files = [
 ]
 
 [[package]]
+name = "syrupy"
+version = "4.6.1"
+description = "Pytest Snapshot Test Utility"
+optional = false
+python-versions = ">=3.8.1,<4"
+files = [
+    {file = "syrupy-4.6.1-py3-none-any.whl", hash = "sha256:203e52f9cb9fa749cf683f29bd68f02c16c3bc7e7e5fe8f2fc59bdfe488ce133"},
+    {file = "syrupy-4.6.1.tar.gz", hash = "sha256:37a835c9ce7857eeef86d62145885e10b3cb9615bc6abeb4ce404b3f18e1bb36"},
+]
+
+[package.dependencies]
+pytest = ">=7.0.0,<9.0.0"
+
+[[package]]
 name = "tenacity"
 version = "8.4.2"
 description = "Retry code until it succeeds"
@@ -843,4 +857,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "8cdc5667562c700908f8ba6fa883a55c497a04293a749115aa2c58235d40b3f0"
+content-hash = "e121224bfacaf511f9739816f44cd8097187995f7dfd1b5f62c32248a11074e8"
