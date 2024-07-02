@@ -448,7 +448,7 @@ files = [
 
 [[package]]
 name = "langchain-core"
-version = "0.2.9"
+version = "0.2.10"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -490,7 +490,7 @@ url = "../../standard-tests"
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.2.1"
+version = "0.2.2"
 description = "LangChain text splitting utilities"
 optional = false
 python-versions = ">=3.8.1,<4.0"
@@ -498,7 +498,7 @@ files = []
 develop = true
 
 [package.dependencies]
-langchain-core = "^0.2.0"
+langchain-core = "^0.2.10"
 
 [package.source]
 type = "directory"
