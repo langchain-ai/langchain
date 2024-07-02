@@ -15,6 +15,9 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from langchain_community.embeddings.mindsdb import (
+        AIMindEmbeddings,
+    )
     from langchain_community.embeddings.aleph_alpha import (
         AlephAlphaAsymmetricSemanticEmbedding,
         AlephAlphaSymmetricSemanticEmbedding,
@@ -236,6 +239,7 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "AIMindEmbeddings",
     "AlephAlphaAsymmetricSemanticEmbedding",
     "AlephAlphaSymmetricSemanticEmbedding",
     "AnyscaleEmbeddings",
@@ -318,6 +322,7 @@ __all__ = [
 ]
 
 _module_lookup = {
+    "AIMindEmbeddings": "langchain_community.embeddings.mindsdb",
     "AlephAlphaAsymmetricSemanticEmbedding": "langchain_community.embeddings.aleph_alpha",  # noqa: E501
     "AlephAlphaSymmetricSemanticEmbedding": "langchain_community.embeddings.aleph_alpha",  # noqa: E501
     "AnyscaleEmbeddings": "langchain_community.embeddings.anyscale",
