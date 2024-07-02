@@ -266,10 +266,15 @@ class WatsonxLLM(BaseLLM):
         }
 
     def _get_chat_params(
-        self, stop: Optional[List[str]] = None
+        self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> Optional[Dict[str, Any]]:
-        params: Optional[Dict[str, Any]] = {**self.params} if self.params else None
+        params = {**self.params} if self.params else {}
+        params = params | {**kwargs.get("params", {})}
         if stop is not None:
+            if params and "stop_sequences" in params:
+                raise ValueError(
+                    "`stop_sequences` found in both the input and default params."
+                )
             params = (params or {}) | {"stop_sequences": stop}
         return params
 
@@ -355,7 +360,7 @@ class WatsonxLLM(BaseLLM):
 
                 response = watsonx_llm.generate(["What is a molecule"])
         """
-        params = self._get_chat_params(stop=stop)
+        params = self._get_chat_params(stop=stop, **kwargs)
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
             if len(prompts) > 1:
@@ -378,7 +383,7 @@ class WatsonxLLM(BaseLLM):
             return LLMResult(generations=[[generation]])
         else:
             response = self.watsonx_model.generate(
-                prompt=prompts, params=params, **kwargs
+                prompt=prompts, **(kwargs | {"params": params})
             )
             return self._create_llm_result(response)
 
@@ -403,9 +408,9 @@ class WatsonxLLM(BaseLLM):
                 for chunk in response:
                     print(chunk, end='')
         """
-        params = self._get_chat_params(stop=stop)
+        params = self._get_chat_params(stop=stop, **kwargs)
         for stream_resp in self.watsonx_model.generate_text_stream(
-            prompt=prompt, raw_response=True, params=params, **kwargs
+            prompt=prompt, raw_response=True, **(kwargs | {"params": params})
         ):
             if not isinstance(stream_resp, dict):
                 stream_resp = stream_resp.dict()

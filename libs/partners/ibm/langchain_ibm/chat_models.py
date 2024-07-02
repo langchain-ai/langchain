@@ -457,11 +457,8 @@ Remember, even when answering to the user, you must still use this only JSON for
             if "tool_choice" in kwargs:
                 del kwargs["tool_choice"]
 
-        if "params" in kwargs:
-            del kwargs["params"]
-
         response = self.watsonx_model.generate(
-            prompt=chat_prompt, params=params, **kwargs
+            prompt=chat_prompt, **(kwargs | {"params": params})
         )
         return self._create_chat_result(response)
 
@@ -472,11 +469,11 @@ Remember, even when answering to the user, you must still use this only JSON for
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
+        message_dicts, params = self._create_message_dicts(messages, stop, **kwargs)
         chat_prompt = self._create_chat_prompt(message_dicts)
 
         for chunk in self.watsonx_model.generate_text_stream(
-            prompt=chat_prompt, raw_response=True, params=params, **kwargs
+            prompt=chat_prompt, raw_response=True, **(kwargs | {"params": params})
         ):
             if not isinstance(chunk, dict):
                 chunk = chunk.dict()
