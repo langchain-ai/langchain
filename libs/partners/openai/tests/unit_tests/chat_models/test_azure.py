@@ -38,8 +38,8 @@ def test_initialize_more() -> None:
 
 def test_initialize_azure_openai_with_openai_api_base_set() -> None:
     os.environ["OPENAI_API_BASE"] = "https://api.openai.com"
-    llm = AzureChatOpenAI(
-        api_key="xyz",
+    llm = AzureChatOpenAI(  # type: ignore[call-arg, call-arg]
+        api_key="xyz",  # type: ignore[arg-type]
         azure_endpoint="my-base-url",
         azure_deployment="35-turbo-dev",
         openai_api_version="2023-05-15",

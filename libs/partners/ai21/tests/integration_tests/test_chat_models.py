@@ -89,7 +89,7 @@ async def test_ageneration(model: str) -> None:
 
 
 def test__chat_stream() -> None:
-    llm = ChatAI21(model="jamba-instruct")
+    llm = ChatAI21(model="jamba-instruct")  # type: ignore[call-arg]
     message = HumanMessage(content="What is the meaning of life?")
 
     for chunk in llm.stream([message]):
@@ -98,7 +98,7 @@ def test__chat_stream() -> None:
 
 
 def test__j2_chat_stream__should_raise_error() -> None:
-    llm = ChatAI21(model="j2-ultra")
+    llm = ChatAI21(model="j2-ultra")  # type: ignore[call-arg]
     message = HumanMessage(content="What is the meaning of life?")
 
     with pytest.raises(NotImplementedError):
