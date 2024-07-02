@@ -106,8 +106,10 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
         else:
             raise ValueError(f"mode of {self.mode} not supported.")
 
-    def _check_if_both_mode_and_chunking_strategy_are_by_page(self, mode, unstructured_kwargs) -> None:
-        if mode=="paged" and unstructured_kwargs.get("chunking_strategy", None)=="by_page":
+    def _check_if_both_mode_and_chunking_strategy_are_by_page(
+        self, mode: str, unstructured_kwargs: dict[str, Any]
+    ) -> None:
+        if mode=="paged" and unstructured_kwargs.get("chunking_strategy")=="by_page":
             raise ValueError(
                 "Only one of `chunking_strategy='by_page'` or `mode='paged'` may be set."
                 " `chunking_strategy` is preferred."
