@@ -407,8 +407,6 @@ class _ConfigurableModel:
         self._queued_declarative_operations: List[Tuple[str, Tuple, Dict]] = list(
             queued_declarative_operations
         )
-        self._cached_model: Optional[Runnable] = None
-        self._cached_model_config: Optional[RunnableConfig] = None
 
     def __getattr__(self, name: str) -> Any:
         if name in _CHAT_MODEL_METHODS_TAKE_CONFIG:
@@ -431,7 +429,6 @@ class _ConfigurableModel:
                 self._queued_declarative_operations.append((name, args, kwargs))
                 return self
 
-            self._clear_cached_model()
             return queue
         elif self._default_config and (model := self._model()) and hasattr(model, name):
             return getattr(model, name)
@@ -443,14 +440,10 @@ class _ConfigurableModel:
             raise AttributeError(msg)
 
     def _model(self, config: Optional[RunnableConfig] = None) -> Runnable:
-        if cached_model := self._get_cached_model(config):
-            return cached_model
-
         params = {**self._default_config, **self._model_params(config)}
         model = _init_chat_model_helper(**params)
         for name, args, kwargs in self._queued_declarative_operations:
             model = getattr(model, name)(*args, **kwargs)
-        self._set_cached_model(model, config)
         return model
 
     def _model_params(self, config: Optional[RunnableConfig]) -> dict:
@@ -491,18 +484,3 @@ class _ConfigurableModel:
             config_prefix=self._config_prefix,
             queued_declarative_operations=queued_declarative_operations,
         )
-
-    def _clear_cached_model(self) -> None:
-        self._cached_model_config = None
-        self._cached_model = None
-
-    def _set_cached_model(
-        self, model: Runnable, config: Optional[RunnableConfig]
-    ) -> None:
-        self._cached_model = model
-        self._cached_model_config = config
-
-    def _get_cached_model(self, config: Optional[RunnableConfig]) -> Optional[Runnable]:
-        if config == self._cached_model_config:
-            return self._cached_model
-        return None
