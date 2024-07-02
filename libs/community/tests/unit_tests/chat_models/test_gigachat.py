@@ -25,6 +25,7 @@ from langchain.schema.messages import (
     ChatMessage,
     HumanMessage,
     SystemMessage,
+    FunctionMessage,
 )
 
 from ..callbacks.fake_callback_handler import (
@@ -90,7 +91,26 @@ def test__convert_message_to_dict_ai() -> None:
 
 
 @pytest.mark.parametrize(
-    "role", (MessagesRole.SYSTEM, MessagesRole.USER, MessagesRole.ASSISTANT)
+    "pairs", (("{}", "{}"), ("abc", '"abc"'), (123, "123"), ("[]", "[]"))
+)
+def test__convert_message_to_dict_function(pairs) -> None:
+    """Checks if string, that was not JSON was converted to JSON"""
+    message = FunctionMessage(content=pairs[0], id="1", name="func")
+    expected = Messages(id=None, role=MessagesRole.FUNCTION, content=pairs[1])
+
+    actual = _convert_message_to_dict(message)
+
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    "role",
+    (
+        MessagesRole.SYSTEM,
+        MessagesRole.USER,
+        MessagesRole.ASSISTANT,
+        MessagesRole.FUNCTION,
+    ),
 )
 def test__convert_message_to_dict_chat(role: MessagesRole) -> None:
     message = ChatMessage(role=role, content="foo")
@@ -276,3 +296,10 @@ def test_gigachat_build_payload_non_existing_parameter() -> None:
     llm = GigaChat()
     payload = llm._build_payload([], fake_parameter=1)
     assert getattr(payload, "fake_param", None) is None
+
+
+# def test_gigachat_build_payload_function_not_json() -> None:
+#     llm = GigaChat()
+#     messages: List[BaseMessage] = [FunctionMessage(content="hello")]
+#     payload = llm._build_payload(messages, max_tokens=1)
+#     assert None == None
