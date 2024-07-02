@@ -2,6 +2,8 @@ from langchain_couchbase import __all__
 
 EXPECTED_ALL = [
     "CouchbaseVectorStore",
+    "CouchbaseCache",
+    "CouchbaseSemanticCache",
 ]
 
 
