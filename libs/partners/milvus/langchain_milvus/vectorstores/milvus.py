@@ -156,6 +156,8 @@ class Milvus(VectorStore):
         server_pem_path (str): If use tls one-way authentication, need to
             write the server.pem path.
         server_name (str): If use tls, need to write the common name.
+        enable_dynamic_field (Optional[bool]): Whether to enable
+            dynamic schema or not
 
     Example:
         .. code-block:: python
@@ -198,6 +200,7 @@ class Milvus(VectorStore):
         replica_number: int = 1,
         timeout: Optional[float] = None,
         num_shards: Optional[int] = None,
+        enable_dynamic_field: bool = False,
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -257,6 +260,7 @@ class Milvus(VectorStore):
         self.replica_number = replica_number
         self.timeout = timeout
         self.num_shards = num_shards
+        self.enable_dynamic_field = enable_dynamic_field
 
         # Create the connection to the server
         if connection_args is None:
@@ -269,6 +273,7 @@ class Milvus(VectorStore):
             self.col = Collection(
                 self.collection_name,
                 using=self.alias,
+                enable_dynamic_field=self.enable_dynamic_field,
             )
             if self.collection_properties is not None:
                 self.col.set_properties(self.collection_properties)
@@ -652,15 +657,24 @@ class Milvus(VectorStore):
         else:
             # Collect the metadata into the insert dict.
             if metadatas is not None:
-                for d in metadatas:
-                    for key, value in d.items():
-                        keys = (
-                            [x for x in self.fields if x != self._primary_field]
-                            if self.auto_id
-                            else [x for x in self.fields]
-                        )
-                        if key in keys:
-                            insert_dict.setdefault(key, []).append(value)
+                if not self.enable_dynamic_field:
+                    for d in metadatas:
+                        for key, value in d.items():
+                            keys = (
+                                [x for x in self.fields if x != self._primary_field]
+                                if self.auto_id
+                                else [x for x in self.fields]
+                            )
+                            if key in keys:
+                                insert_dict.setdefault(key, []).append(value)
+                else:
+                    # Extend metadata with vector data
+                    # and other field in case of enable_dynamic_field
+                    for index, d in enumerate(metadatas):
+                        metadatas[index][self._text_field] = texts[index]
+                        metadatas[index][self._vector_field] = embeddings[index]
+                        if not self.auto_id:
+                            metadatas[index][self._primary_field] = ids  # type: ignore[assignment]
 
         # Total insert count
         vectors: list = insert_dict[self._vector_field]
@@ -669,22 +683,33 @@ class Milvus(VectorStore):
         pks: list[str] = []
 
         assert isinstance(self.col, Collection)
-        for i in range(0, total_count, batch_size):
-            # Grab end index
-            end = min(i + batch_size, total_count)
-            # Convert dict to list of lists batch for insertion
-            insert_list = [
-                insert_dict[x][i:end] for x in self.fields if x in insert_dict
-            ]
-            # Insert into the collection.
+        res: Collection
+        if not self.enable_dynamic_field:
+            for i in range(0, total_count, batch_size):
+                # Grab end index
+                end = min(i + batch_size, total_count)
+                # Convert dict to list of lists batch for insertion
+                insert_list = [
+                    insert_dict[x][i:end] for x in self.fields if x in insert_dict
+                ]
+                # Insert into the collection.
+                try:
+                    res = self.col.insert(insert_list, timeout=timeout, **kwargs)
+                    pks.extend(res.primary_keys)
+                except MilvusException as e:
+                    logger.error(
+                        "Failed to insert batch starting at entity: %s/%s",
+                        i,
+                        total_count,
+                    )
+                    raise e
+        else:
             try:
-                res: Collection
-                timeout = self.timeout or timeout
-                res = self.col.insert(insert_list, timeout=timeout, **kwargs)
+                res = self.col.insert(metadatas, timeout=timeout, **kwargs)
                 pks.extend(res.primary_keys)
             except MilvusException as e:
                 logger.error(
-                    "Failed to insert batch starting at entity: %s/%s", i, total_count
+                    "Failed to insert in Milvus for enable_dynamic_field enabled"
                 )
                 raise e
         return pks
