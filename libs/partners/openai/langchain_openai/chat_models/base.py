@@ -489,8 +489,9 @@ class BaseChatOpenAI(BaseChatModel):
             for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
-                if len(chunk["choices"]) == 0:
-                    if token_usage := chunk.get("usage"):
+                token_usage = chunk.get("usage")
+                if len(chunk["choices"]) == 0 or token_usage is not None:
+                    if token_usage is not None:
                         usage_metadata = UsageMetadata(
                             input_tokens=token_usage.get("prompt_tokens", 0),
                             output_tokens=token_usage.get("completion_tokens", 0),
@@ -609,8 +610,9 @@ class BaseChatOpenAI(BaseChatModel):
             async for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
-                if len(chunk["choices"]) == 0:
-                    if token_usage := chunk.get("usage"):
+                token_usage = chunk.get("usage")
+                if len(chunk["choices"]) == 0 or token_usage is not None:
+                    if token_usage is not None:
                         usage_metadata = UsageMetadata(
                             input_tokens=token_usage.get("prompt_tokens", 0),
                             output_tokens=token_usage.get("completion_tokens", 0),
