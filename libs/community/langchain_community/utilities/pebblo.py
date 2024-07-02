@@ -45,16 +45,17 @@ dir_loader = [
 ]
 
 in_memory = ["DataFrameLoader"]
-remote_db = [
+cloud_folder = [
     "NotionDBLoader",
     "GoogleDriveLoader",
+    "SharePointLoader",
 ]
 
 LOADER_TYPE_MAPPING = {
     "file": file_loader,
     "dir": dir_loader,
     "in-memory": in_memory,
-    "remote_db": remote_db,
+    "cloud-folder": cloud_folder,
 }
 
 SUPPORTED_LOADERS = (*file_loader, *dir_loader, *in_memory)
