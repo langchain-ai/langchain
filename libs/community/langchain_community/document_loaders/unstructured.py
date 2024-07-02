@@ -1,10 +1,10 @@
 """Loader that uses unstructured to load files."""
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import io
 import json
 import logging
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import IO, Any, Callable, Iterator, Optional, Sequence, Union
 
@@ -35,10 +35,16 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
             raise ValueError(
                 f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
             )
-        if mode=="paged":
-            logger.warning("`mode='paged'` is deprecated in favor of the 'by_page' chunking strategy. Learn more about chunking here: https://docs.unstructured.io/open-source/core-functionality/chunking")
-        
-        self._check_if_both_mode_and_chunking_strategy_are_by_page(mode, unstructured_kwargs)
+        if mode == "paged":
+            logger.warning(
+                "`mode='paged'` is deprecated in favor of the 'by_page' chunking strategy. Learn"
+                " more about chunking here:"
+                " https://docs.unstructured.io/open-source/core-functionality/chunking"
+            )
+
+        self._check_if_both_mode_and_chunking_strategy_are_by_page(
+            mode, unstructured_kwargs
+        )
 
         self.mode = mode
         self.unstructured_kwargs = unstructured_kwargs
@@ -109,25 +115,29 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
     def _check_if_both_mode_and_chunking_strategy_are_by_page(
         self, mode: str, unstructured_kwargs: dict[str, Any]
     ) -> None:
-        if mode=="paged" and unstructured_kwargs.get("chunking_strategy")=="by_page":
+        if (
+            mode == "paged"
+            and unstructured_kwargs.get("chunking_strategy") == "by_page"
+        ):
             raise ValueError(
-                "Only one of `chunking_strategy='by_page'` or `mode='paged'` may be set."
-                " `chunking_strategy` is preferred."
+                "Only one of `chunking_strategy='by_page'` or `mode='paged'` may be"
+                " set. `chunking_strategy` is preferred."
             )
 
 
 class UnstructuredFileLoader(UnstructuredBaseLoader):
     """Load files using `Unstructured`.
 
-    The file loader uses the unstructured partition function and will automatically detect the file
-    type. You can run the loader in different modes: "single", "elements", and "paged". The default
-    "single" mode will return a single langchain Document object. If you use "elements" mode, the
-    unstructured library will split the document into elements such as Title and NarrativeText and
-    return those as individual langchain Document objects. In addition to these post-processing modes
-    (which are specific to the LangChain Loaders), Unstructured has its own "chunking" parameters for
-    post-processing elements into more useful chunks for uses cases such as Retrieval Augmented
-    Generation (RAG). You can pass in additional unstructured kwargs to configure different
-    unstructured settings.
+    The file loader uses the unstructured partition function and will automatically
+    detect the file type. You can run the loader in different modes: "single",
+    "elements", and "paged". The default "single" mode will return a single langchain
+    Document object. If you use "elements" mode, the unstructured library will split
+    the document into elements such as Title and NarrativeText and return those as
+    individual langchain Document objects. In addition to these post-processing modes
+    (which are specific to the LangChain Loaders), Unstructured has its own "chunking"
+    parameters for post-processing elements into more useful chunks for uses cases such
+    as Retrieval Augmented Generation (RAG). You can pass in additional unstructured
+    kwargs to configure different unstructured settings.
 
     Examples
     --------
@@ -185,7 +195,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
     def _get_metadata(self) -> dict:
         return {"source": self.file_path}
-    
+
     def _post_process_elements(self, elements: list) -> list:
         """Apply post processing functions to extracted unstructured elements.
 
@@ -201,19 +211,21 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
     """Load files using `unstructured-client` sdk to access the Unstructured API.
 
-    By default, the loader makes a call to the hosted Unstructured API. If you are running the
-    unstructured API locally, you can change the API rule by passing in the url parameter when you
-    initialize the loader. The hosted Unstructured API requires an API key. See the links below to
-    learn more about our API offerings and get an API key.
+    By default, the loader makes a call to the hosted Unstructured API. If you are
+    running the unstructured API locally, you can change the API rule by passing in the
+    url parameter when you initialize the loader. The hosted Unstructured API requires
+    an API key. See the links below to learn more about our API offerings and get an
+    API key.
 
-    You can run the loader in different modes: "single", "elements", and "paged". The default
-    "single" mode will return a single langchain Document object. If you use "elements" mode, the
-    unstructured library will split the document into elements such as Title and NarrativeText and
-    return those as individual langchain Document objects. In addition to these post-processing modes
-    (which are specific to the LangChain Loaders), Unstructured has its own "chunking" parameters for
-    post-processing elements into more useful chunks for uses cases such as Retrieval Augmented
-    Generation (RAG). You can pass in additional unstructured kwargs to configure different
-    unstructured settings.
+    You can run the loader in different modes: "single", "elements", and "paged". The
+    default "single" mode will return a single langchain Document object. If you use
+    "elements" mode, the unstructured library will split the document into elements such
+    as Title and NarrativeText and return those as individual langchain Document
+    objects. In addition to these post-processing modes (which are specific to the
+    LangChain Loaders), Unstructured has its own "chunking" parameters for
+    post-processing elements into more useful chunks for uses cases such as Retrieval
+    Augmented Generation (RAG). You can pass in additional unstructured kwargs to
+    configure different unstructured settings.
 
     Examples
     ```python
@@ -251,8 +263,8 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """Load file."""
-        # This method overwrites the UnstructuredBaseLoader method because that one expects
-        # `Element` objects instead of a json, which is what the SDK returns.
+        # This method overwrites the UnstructuredBaseLoader method because that one
+        # expects `Element` objects instead of a json, which is what the SDK returns.
         elements_json = self._get_elements()
         self._post_process_elements(elements_json)
 
@@ -312,7 +324,7 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
             api_url=self.url,
             **self.unstructured_kwargs,
         )
-    
+
     def _get_metadata(self) -> dict:
         return {"source": self.file_path}
 
@@ -326,20 +338,21 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
             for post_processor in self.post_processors:
                 element["text"] = post_processor(element.get("text"))
         return elements
-    
+
 
 class UnstructuredFileIOLoader(UnstructuredBaseLoader):
     """Load file-like objects opened in read mode using `Unstructured`.
 
-    The file loader uses the unstructured partition function and will automatically detect the file
-    type. You can run the loader in different modes: "single", "elements", and "paged". The default
-    "single" mode will return a single langchain Document object. If you use "elements" mode, the
-    unstructured library will split the document into elements such as Title and NarrativeText and
-    return those as individual langchain Document objects. In addition to these post-processing modes
-    (which are specific to the LangChain Loaders), Unstructured has its own "chunking" parameters for
-    post-processing elements into more useful chunks for uses cases such as Retrieval Augmented
-    Generation (RAG). You can pass in additional unstructured kwargs to configure different
-    unstructured settings.
+    The file loader uses the unstructured partition function and will automatically
+    detect the file type. You can run the loader in different modes: "single",
+    "elements", and "paged". The default "single" mode will return a single langchain
+    Document object. If you use "elements" mode, the unstructured library will split
+    the document into elements such as Title and NarrativeText and return those as
+    individual langchain Document objects. In addition to these post-processing modes
+    (which are specific to the LangChain Loaders), Unstructured has its own "chunking"
+    parameters for post-processing elements into more useful chunks for uses cases
+    such as Retrieval Augmented Generation (RAG). You can pass in additional
+    unstructured kwargs to configure different unstructured settings.
 
     Examples
     --------
@@ -392,7 +405,7 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
     def _get_metadata(self) -> dict:
         return {}
-    
+
     def _post_process_elements(self, elements: list) -> list:
         """Apply post processing functions to extracted unstructured elements.
 
@@ -406,21 +419,23 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
 
 
 class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
-    """Load file-like objects using the `unstructured-client` sdk to access the Unstructured API.
+    """Send file-like objects with `unstructured-client` sdk to the Unstructured API.
 
-    By default, the loader makes a call to the hosted Unstructured API. If you are running the
-    unstructured API locally, you can change the API rule by passing in the url parameter when you
-    initialize the loader. The hosted Unstructured API requires an API key. See the links below to
-    learn more about our API offerings and get an API key.
+    By default, the loader makes a call to the hosted Unstructured API. If you are
+    running the unstructured API locally, you can change the API rule by passing in the
+    url parameter when you initialize the loader. The hosted Unstructured API requires
+    an API key. See the links below to learn more about our API offerings and get an
+    API key.
 
-    You can run the loader in different modes: "single", "elements", and "paged". The default
-    "single" mode will return a single langchain Document object. If you use "elements" mode, the
-    unstructured library will split the document into elements such as Title and NarrativeText and
-    return those as individual langchain Document objects. In addition to these post-processing modes
-    (which are specific to the LangChain Loaders), Unstructured has its own "chunking" parameters
-    for post-processing elements into more useful chunks for uses cases such as Retrieval Augmented
-    Generation (RAG). You can pass in additional unstructured kwargs to configure different
-    unstructured settings.
+    You can run the loader in different modes: "single", "elements", and "paged". The
+    default "single" mode will return a single langchain Document object. If you use
+    "elements" mode, the unstructured library will split the document into elements
+    such as Title and NarrativeText and return those as individual langchain Document
+    objects. In addition to these post-processing modes (which are specific to the
+    LangChain Loaders), Unstructured has its own "chunking" parameters for
+    post-processing elements into more useful chunks for uses cases such as Retrieval
+    Augmented Generation (RAG). You can pass in additional unstructured kwargs to
+    configure different unstructured settings.
 
     Examples
     --------
@@ -459,8 +474,8 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """Load file."""
-        # This method overwrites the UnstructuredBaseLoader method because that one expects
-        # `Element` objects instead of a json, which is what the SDK returns.
+        # This method overwrites the UnstructuredBaseLoader method because that one
+        # expects `Element` objects instead of a json, which is what the SDK returns.
         elements_json = self._get_elements()
         self._post_process_elements(elements_json)
 
@@ -499,7 +514,7 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
             yield Document(page_content=text, metadata=metadata)
         else:
             raise ValueError(f"mode of {self.mode} not supported.")
-    
+
     def _get_elements(self) -> list:
         if isinstance(self.file, Sequence):
             if _metadata_filenames := self.unstructured_kwargs.pop("metadata_filename"):
@@ -582,12 +597,14 @@ def get_elements_from_api(
         raise ValueError(
             f"Receive unexpected status code {response.status_code} from the API.",
         )
-    
 
-def _get_content(file_path: Union[str, Path], file: Union[IO[bytes], None] = None) -> bytes:
+
+def _get_content(
+    file_path: Union[str, Path], file: Union[IO[bytes], None] = None
+) -> bytes:
     """Get content from either file or file_path."""
-    # `file_path` is a required arg and used to define `file_name` for the sdk, but use `file` for the
-    # `content` if it is provided
+    # `file_path` is a required arg and used to define `file_name` for the sdk,
+    # but use `file` for the `content` if it is provided
     if file is not None:
         return file.read()
     else:
