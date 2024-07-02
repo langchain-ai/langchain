@@ -49,6 +49,7 @@ requests-mock = "^1.11.0"
 langchain-core = { path = "../core", develop = true }
 langchain = { path = "../langchain", develop = true }
 langchain-standard-tests = { path = "../standard-tests", develop = true }
+mockredispy = "^2.9.3"
 
 [tool.poetry.group.codespell]
 optional = true
