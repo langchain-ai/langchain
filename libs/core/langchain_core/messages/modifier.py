@@ -1,8 +1,10 @@
 from typing import Any, List, Literal
 
 from langchain_core.messages.base import BaseMessage
+from langchain_core._api import beta
 
 
+@beta()
 class RemoveMessage(BaseMessage):
     """Message responsible for deleting other messages."""
 
