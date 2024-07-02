@@ -41,6 +41,15 @@ class GitLabToolkit(BaseToolkit):
     def from_gitlab_api_wrapper(
         cls, gitlab_api_wrapper: GitLabAPIWrapper
     ) -> "GitLabToolkit":
+        """Create a GitLabToolkit from a GitLabAPIWrapper.
+
+        Args:
+            gitlab_api_wrapper: GitLabAPIWrapper. The GitLab API wrapper.
+
+        Returns:
+            GitLabToolkit. The GitLab toolkit.
+        """
+
         operations: List[Dict] = [
             {
                 "mode": "get_issues",
