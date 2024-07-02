@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-anthropic"
-version = "0.1.18"
+version = "0.1.19"
 description = "An integration package connecting AnthropicMessages and LangChain"
 authors = []
 readme = "README.md"
@@ -80,14 +80,14 @@ develop = true
 path = "../../standard-tests"
 develop = true
 
-[tool.poetry.group.typing.dependencies.langchain-core]
-path = "../../core"
-develop = true
-
 [tool.poetry.group.dev.dependencies.langchain-core]
 path = "../../core"
 develop = true
 
 [tool.poetry.group.test_integration.dependencies.langchain-core]
+path = "../../core"
+develop = true
+
+[tool.poetry.group.typing.dependencies.langchain-core]
 path = "../../core"
 develop = true
