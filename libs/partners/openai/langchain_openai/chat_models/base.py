@@ -317,10 +317,26 @@ class BaseChatOpenAI(BaseChatModel):
         None."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
+    presence_penalty: float = 0
+    """Penalizes repeated tokens."""
+    frequency_penalty: float = 0
+    """Penalizes repeated tokens according to frequency."""
+    seed: Optional[int] = None
+    """Seed for generation"""
+    logprobs: Optional[bool] = False
+    """Whether to return logprobs."""
+    top_logprobs: Optional[int] = None
+    """Number of most likely tokens to return at each token position, each with
+     an associated log probability. `logprobs` must be set to true 
+     if this parameter is used."""
+    logit_bias: Optional[Dict[int, int]] = None
+    """Modify the likelihood of specified tokens appearing in the completion."""
     streaming: bool = False
     """Whether to stream the results or not."""
     n: int = 1
     """Number of chat completions to generate for each prompt."""
+    top_p: float = 1.0
+    """Total probability mass of tokens to consider at each step."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
     tiktoken_model_name: Optional[str] = None
@@ -372,6 +388,16 @@ class BaseChatOpenAI(BaseChatModel):
             raise ValueError("n must be at least 1.")
         if values["n"] > 1 and values["streaming"]:
             raise ValueError("n must be 1 when streaming.")
+        if values["top_logprobs"] is not None:
+            if values["logprobs"] is False:
+                raise ValueError("top_logprobs is used only when `logprobs` is True")
+            if 0 > values["top_logprobs"] or values["top_logprobs"] < 20:
+                raise ValueError("top_logprobs must be between 0 and 20")
+        for penalty in ["frequency_penalty", "presence_penalty"]:
+            if values[penalty] is not None and (
+                values[penalty] < -2.0 or values[penalty] > 2.0
+            ):
+                raise ValueError(f"`{penalty}` must be between -2.0 and 2.0")
 
         values["openai_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "openai_api_key", "OPENAI_API_KEY")
@@ -442,6 +468,13 @@ class BaseChatOpenAI(BaseChatModel):
             "stream": self.streaming,
             "n": self.n,
             "temperature": self.temperature,
+            "presence_penalty": self.presence_penalty,
+            "frequency_penalty": self.frequency_penalty,
+            "seed": self.seed,
+            "top_p": self.top_p,
+            "logprobs": self.logprobs,
+            "top_logprobs": self.top_logprobs,
+            "logit_bias": self.logit_bias,
             **self.model_kwargs,
         }
         if self.max_tokens is not None:
