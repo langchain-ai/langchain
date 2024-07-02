@@ -117,7 +117,7 @@ class ChatKonko(ChatOpenAI):
             )
 
     @root_validator(pre=False, skip_on_failure=True)
-    def validate(cls, values: Dict) -> Dict:
+    def validate_n(cls, values: Dict) -> Dict:
         if values["n"] < 1:
             raise ValueError("n must be at least 1.")
         if values["n"] > 1 and values["streaming"]:
