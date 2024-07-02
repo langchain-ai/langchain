@@ -5,13 +5,27 @@ import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-# BING_SEARCH_ENDPOINT is the default endpoint for Bing Search API and is normally
-# invariant to users.
-BING_SEARCH_ENDPOINT = "https://api.bing.microsoft.com/v7.0/search"
+# BING_SEARCH_ENDPOINT is the default endpoint for Bing Web Search API.
+# Currently There are two web-based Bing Search services available on Azure,
+# i.e. Bing Web Search[1] and Bing Custom Search[2]. Compared to Bing Custom Search,
+# Both services that provides a wide range of search results, while Bing Custom
+# Search requires you to provide an additional custom search instance, `customConfig`.
+# Both services are available for BingSearchAPIWrapper.
+# History of Azure Bing Search API:
+# Before shown in Azure Marketplace as a separate service, Bing Search APIs were
+# part of Azure Cognitive Services, the endpoint of which is unique, and the user
+# must specify the endpoint when making a request. After transitioning to Azure
+# Marketplace, the endpoint is standardized and the user does not need to specify
+# the endpoint[3].
+# Reference:
+#  1. https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/overview
+#  2. https://learn.microsoft.com/en-us/bing/search-apis/bing-custom-search/overview
+#  3. https://azure.microsoft.com/en-in/updates/bing-search-apis-will-transition-from-azure-cognitive-services-to-azure-marketplace-on-31-october-2023/
+DEFAULT_BING_SEARCH_ENDPOINT = "https://api.bing.microsoft.com/v7.0/search"
 
 
 class BingSearchAPIWrapper(BaseModel):
-    """Wrapper for Bing Search API."""
+    """Wrapper for Bing Web Search API."""
 
     bing_subscription_key: str
     bing_search_url: str
@@ -56,7 +70,7 @@ class BingSearchAPIWrapper(BaseModel):
             values,
             "bing_search_url",
             "BING_SEARCH_URL",
-            default=BING_SEARCH_ENDPOINT,
+            default=DEFAULT_BING_SEARCH_ENDPOINT,
         )
 
         values["bing_search_url"] = bing_search_url
