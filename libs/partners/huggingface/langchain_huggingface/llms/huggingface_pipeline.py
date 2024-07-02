@@ -96,7 +96,17 @@ class HuggingFacePipeline(BaseLLM):
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
-
+        if device_map is not None:
+            if device is not None:
+                logger.warning(
+                    "Both `device` and `device_map` are specified. "
+                    "`device` will override `device_map`. "
+                    "You will most likely encounter unexpected behavior." 
+                    "Please remove `device` and keep "
+                    "`device_map`."
+                )
+            model_kwargs["device_map"] = device_map
+            device = None
         _model_kwargs = model_kwargs or {}
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
@@ -219,7 +229,6 @@ class HuggingFacePipeline(BaseLLM):
             model=model,
             tokenizer=tokenizer,
             device=device,
-            device_map=device_map,
             batch_size=batch_size,
             model_kwargs=_model_kwargs,
             **_pipeline_kwargs,
@@ -262,7 +271,6 @@ class HuggingFacePipeline(BaseLLM):
         text_generations: List[str] = []
         pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
         skip_prompt = kwargs.get("skip_prompt", False)
-
         for i in range(0, len(prompts), self.batch_size):
             batch_prompts = prompts[i : i + self.batch_size]
 
