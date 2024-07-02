@@ -110,19 +110,38 @@ These also have corresponding async methods that should be used with [asyncio](h
 
 The **input type** and **output type** varies by component:
 
-| Component | Input Type | Output Type |
-| --- | --- | --- |
-| Prompt | Dictionary | PromptValue |
-| ChatModel | Single string, list of chat messages or a PromptValue | ChatMessage |
-| LLM | Single string, list of chat messages or a PromptValue | String |
-| OutputParser | The output of an LLM or ChatModel | Depends on the parser |
-| Retriever | Single string | List of Documents |
-| Tool | Single string or dictionary, depending on the tool | Depends on the tool |
+| Component    | Input Type                                            | Output Type           |
+|--------------|-------------------------------------------------------|-----------------------|
+| Prompt       | Dictionary                                            | PromptValue           |
+| ChatModel    | Single string, list of chat messages or a PromptValue | ChatMessage           |
+| LLM          | Single string, list of chat messages or a PromptValue | String                |
+| OutputParser | The output of an LLM or ChatModel                     | Depends on the parser |
+| Retriever    | Single string                                         | List of Documents     |
+| Tool         | Single string or dictionary, depending on the tool    | Depends on the tool   |
 
 
 All runnables expose input and output **schemas** to inspect the inputs and outputs:
+
 - `input_schema`: an input Pydantic model auto-generated from the structure of the Runnable
 - `output_schema`: an output Pydantic model auto-generated from the structure of the Runnable
+
+
+#### Runnable Config
+
+The standard runnable methods (e.g., `stream`, `invoke`, `batch`) accept a 2nd argument. This argument is a config dict that follows the [RunnableConfig](https://api.python.langchain.com/en/latest/runnables/langchain_core.runnables.config.RunnableConfig.html) format.
+
+A `RunnableConfig` can have any of the following properties defined:
+
+| Attribute       | Description                                                                                |
+|-----------------|--------------------------------------------------------------------------------------------|
+| tags            | Tags for this call and any sub-calls.                                                      |
+| metadata        | Metadata for this call and any sub-calls.                                                  |
+| callbacks       | Callbacks for this call and any sub-calls.                                                 |
+| run_name        | Name used for the given Runnable (not inherited).                                          |
+| max_concurrency | Maximum number of parallel calls to make (e.g., used by batch).                            |
+| recursion_limit | Maximum number of times a call can recurse (e.g., used by Runnables that return Runnables) |
+| configurable    | Runtime values for configurable attributes of the Runnable.                                |
+| run_id          | Unique identifier for the tracer run for this call.                                        |
 
 ## Components
 
@@ -636,10 +655,9 @@ callbacks to any child objects.
 Any `RunnableLambda`, a `RunnableGenerator`, or `Tool` that invokes other runnables
 and is running async in python<=3.10, will have to propagate callbacks to child
 objects manually. This is because LangChain cannot automatically propagate
-callbacks to child objects in this case.
-
-This is a common reason why you may fail to see events being emitted from custom
-runnables or tools.
+callbacks to child objects in this case. If you see that callbacks
+are not being triggered in your child objects, you may need to [manually
+propagate runnable config to child runnables](/docs/how_to/runnables_propagate_config/).
 :::
 
 For specifics on how to use callbacks, see the [relevant how-to guides here](/docs/how_to/#callbacks).
