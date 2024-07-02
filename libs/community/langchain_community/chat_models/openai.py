@@ -242,6 +242,7 @@ class ChatOpenAI(BaseChatModel):
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = None
     """Optional httpx.Client."""
+    frequency_penalty: Optional[float] = 0
 
     class Config:
         """Configuration for this pydantic object."""
