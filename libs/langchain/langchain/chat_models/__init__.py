@@ -73,4 +73,5 @@ __all__ = [
     "ChatHunyuan",
     "GigaChat",
     "VolcEngineMaasChat",
+    "VolcEngineMaasChatV3",
 ]

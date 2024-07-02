@@ -1,5 +1,6 @@
-"""Loader that uses Playwright to load a page, then uses unstructured to load the html.
-"""
+"""Loader that uses Playwright to load a page, then uses unstructured
+to load the html."""
+
 import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, AsyncIterator, Dict, Iterator, List, Optional

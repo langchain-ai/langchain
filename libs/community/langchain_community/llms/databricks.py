@@ -44,8 +44,7 @@ class _DatabricksClientBase(BaseModel, ABC):
     @abstractmethod
     def post(
         self, request: Any, transform_output_fn: Optional[Callable[..., str]] = None
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
     @property
     def llm(self) -> bool:

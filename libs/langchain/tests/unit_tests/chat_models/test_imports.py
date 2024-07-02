@@ -32,6 +32,7 @@ EXPECTED_ALL = [
     "ChatHunyuan",
     "GigaChat",
     "VolcEngineMaasChat",
+    "VolcEngineMaasChatV3",
 ]
 
 

@@ -1,4 +1,5 @@
 """A Tracer Implementation that records activity to Weights & Biases."""
+
 from __future__ import annotations
 
 import json
@@ -234,9 +235,9 @@ def build_tree(runs: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     for child_id, parent_id in child_to_parent.items():
         parent_dict = id_to_data[parent_id]
-        parent_dict[next(iter(parent_dict))][
-            next(iter(id_to_data[child_id]))
-        ] = id_to_data[child_id][next(iter(id_to_data[child_id]))]
+        parent_dict[next(iter(parent_dict))][next(iter(id_to_data[child_id]))] = (
+            id_to_data[child_id][next(iter(id_to_data[child_id]))]
+        )
 
     root_dict = next(
         data for id_val, data in id_to_data.items() if id_val not in child_to_parent
