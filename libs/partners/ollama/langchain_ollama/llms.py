@@ -2,7 +2,6 @@
 
 from typing import (
     Any,
-    AsyncIterator,
     Iterator,
     List,
     Optional,
@@ -66,11 +65,11 @@ class OllamaLLM(BaseLLM):
 
     # TODO: Implement if OllamaLLM supports async streaming. Otherwise delete
     # method.
-    async def _astream(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[GenerationChunk]:
-        raise NotImplementedError
+    # async def _astream(
+    #     self,
+    #     prompt: str,
+    #     stop: Optional[List[str]] = None,
+    #     run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+    #     **kwargs: Any,
+    # ) -> AsyncIterator[GenerationChunk]:
+    #     raise NotImplementedError
