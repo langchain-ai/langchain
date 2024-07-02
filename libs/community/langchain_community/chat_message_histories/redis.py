@@ -23,6 +23,7 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         url: str = "redis://localhost:6379/0",
         key_prefix: str = "message_store:",
         ttl: Optional[int] = None,
+        history_size: Optional[int] = None,
     ):
         try:
             import redis
@@ -40,6 +41,7 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
         self.session_id = session_id
         self.key_prefix = key_prefix
         self.ttl = ttl
+        self.history_size = history_size
 
     @property
     def key(self) -> str:
@@ -64,6 +66,8 @@ class RedisChatMessageHistory(BaseChatMessageHistory):
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in Redis"""
         self.redis_client.lpush(self.key, json.dumps(message_to_dict(message)))
+        if self.history_size:
+            self.redis_client.ltrim(self.key, 0, self.history_size - 1)
         if self.ttl:
             self.redis_client.expire(self.key, self.ttl)
 
