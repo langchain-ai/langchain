@@ -1,7 +1,7 @@
 """Ollama chat models."""
 
-from typing import Any, List, Optional, Iterator
-
+from operator import itemgetter
+from typing import Any, List, Literal, Optional, Iterator, Union, Dict, Type, cast, Callable, Sequence
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
@@ -11,16 +11,11 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    ChatMessage,
     HumanMessage,
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-
-
 class ChatOllama(BaseChatModel):
-    # TODO: Replace all TODOs in docstring. See example docstring:
-    # https://github.com/langchain-ai/langchain/blob/7ff05357bac6eaedf5058a2af88f23a1817d40fe/libs/partners/openai/langchain_openai/chat_models/base.py#L1120
     """Ollama chat model integration.
 
     # TODO: Replace with relevant packages, env vars.
@@ -216,6 +211,10 @@ class ChatOllama(BaseChatModel):
 
     """  # noqa: E501
 
+    model: str = "llama2"
+    """Model name to use."""
+    tool_prompt: Optional[str] = None
+
     def _convert_messages_to_ollama_messages(
         self, messages: List[BaseMessage]
     ) -> List[Dict[str, Union[str, List[str]]]]:
@@ -276,21 +275,27 @@ class ChatOllama(BaseChatModel):
                     "images": images,
                 }
             )
+            
 
         return ollama_messages
-   
+
     def _create_chat_stream(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Iterator[str]:
+        ollama_messages = self._convert_messages_to_ollama_messages(messages)
+        '''
+        if 'tool_prompt' in kwargs:
+            ollama_messages[-1]['content'] = kwargs['tool_prompt'] + "[INST]" + ollama_messages[-1]['content'] + "[/INST]"
+        '''
         yield from ollama.chat(model=self.model,
-                               messages=self._convert_messages_to_ollama_messages(messages),
+                               messages=ollama_messages,
                                stream=True,
-                               options={"stop":stop,**{k: v for k,v in kwargs.item() if k not in ["keep_alive","format"]}},
+                               options={"stop":stop,**{k: v for k,v in kwargs.items() if k not in ["keep_alive","format"]}},
                                keep_alive=kwargs.get("keep_alive",None),
-                               format=kwargs.get("format",''))
+                               format=kwargs.get("format",None))
 
     
     def _chat_stream_with_aggregation(
@@ -306,7 +311,7 @@ class ChatOllama(BaseChatModel):
             if stream_resp:
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content=stream_resp.get("response", "")
+                        content=stream_resp['message']['content'] if 'message' in stream_resp else ""
                     ),
                     generation_info= stream_resp if stream_resp.get("done") is True else None
                 )
@@ -325,7 +330,6 @@ class ChatOllama(BaseChatModel):
             
         return final_chunk
 
-    # TODO: This method must be implemented to generate chat responses.
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -333,7 +337,6 @@ class ChatOllama(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        
         final_chunk = self._chat_stream_with_aggregation(messages,stop,run_manager,verbose=self.verbose,**kwargs)
         chat_generation = ChatGeneration(
             message=AIMessage(content=final_chunk.text),
@@ -341,14 +344,27 @@ class ChatOllama(BaseChatModel):
         )
         return ChatResult(generations=[chat_generation])
 
-    # TODO: Implement if ChatOllama supports streaming. Otherwise delete method.
-    # def _stream(
-    #     self,
-    #     messages: List[BaseMessage],
-    #     stop: Optional[List[str]] = None,
-    #     run_manager: Optional[CallbackManagerForLLMRun] = None,
-    #     **kwargs: Any,
-    # ) -> Iterator[ChatGenerationChunk]:
+    def _stream(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
+            if stream_resp:
+                chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=stream_resp['message']['content'] if 'message' in stream_resp else ""
+                    ),
+                    generation_info= stream_resp if stream_resp.get("done") is True else None
+                )
+                if run_manager:
+                    run_manager.on_llm_new_token(
+                        chunk.text,
+                        verbose=self.verbose,
+                    )
+                yield chunk
 
     # TODO: Implement if ChatOllama supports async streaming. Otherwise delete.
     # async def _astream(
@@ -368,7 +384,79 @@ class ChatOllama(BaseChatModel):
     #     **kwargs: Any,
     # ) -> ChatResult:
 
+    # TODO: Work in progress for binding tools
+    ''' 
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,    
+    ):
+        if self.model != "mistral:v0.3":
+            raise ValueError(f"Binding tools is not available for model {self.model}")
+        else:
+            tool_prompt = "[AVAILABLE_TOOLS]["
+            for tool in tools:
+                tool_prompt += json.dumps(convert_to_openai_tool(tool)) + ","
+            tool_prompt = tool_prompt[:-1]
+            tool_prompt += "][/AVAILABLE_TOOLS]"
+
+            return self.bind(tool_prompt=tool_prompt)
+
+    def with_structured_output(
+        self,
+        schema: Union[Dict, Type[BaseModel]] = None,
+        *,
+        method: Literal["function_calling", "json_mode"] = "function_calling",
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = _is_pydantic_class(schema)
+        if method == "function_calling":
+            if schema is None:
+                raise ValueError(
+                    "schema must be specified when method is 'function_calling'. "
+                    "Received None."
+                )
+            llm = self.bind_tools([schema])
+            if is_pydantic_schema:
+                output_parser: OutputParserLike = PydanticToolsParser(
+                    tools=[schema], first_tool_only=True
+                )
+            else:
+                key_name = convert_to_openai_tool(schema)["function"]["name"]
+                output_parser = JsonOutputKeyToolsParser(
+                    key_name=key_name, first_tool_only=True
+                )
+        elif method == "json_mode":
+            llm = self.bind(format="json")
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+        else:
+            raise ValueError(
+                f"Unrecognized method argument. Expected one of 'function_calling' or "
+                f"'json_mode'. Received: '{method}'"
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm #| output_parser
+    '''
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "chat-ollama"
+
