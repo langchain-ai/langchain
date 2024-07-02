@@ -139,7 +139,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         return values
 
     @root_validator(pre=False, skip_on_failure=True)
-    def validate_base_url(cls, values: Dict) -> Dict:
+    def post_init_validator(cls, values: Dict) -> Dict:
         """Validate that the base url is set."""
         import openai
 
