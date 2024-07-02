@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
 
 from langchain_core.callbacks import (
@@ -10,7 +9,7 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_pydantic_field_names
+from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
 
 logger = logging.getLogger(__name__)
 
@@ -146,18 +145,23 @@ class HuggingFaceEndpoint(LLM):
             )
 
         values["model_kwargs"] = extra
-        if "endpoint_url" not in values and "repo_id" not in values:
+
+        values["endpoint_url"] = get_from_dict_or_env(
+            values, "endpoint_url", "HF_INFERENCE_ENDPOINT", None
+        )
+
+        if values["endpoint_url"] is None and "repo_id" not in values:
             raise ValueError(
                 "Please specify an `endpoint_url` or `repo_id` for the model."
             )
-        if "endpoint_url" in values and "repo_id" in values:
+        if values["endpoint_url"] is not None and "repo_id" in values:
             raise ValueError(
                 "Please specify either an `endpoint_url` OR a `repo_id`, not both."
             )
         values["model"] = values.get("endpoint_url") or values.get("repo_id")
         return values
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that package is installed and that the API token is valid."""
         try:
@@ -168,9 +172,15 @@ class HuggingFaceEndpoint(LLM):
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
-        huggingfacehub_api_token = values["huggingfacehub_api_token"] or os.getenv(
-            "HUGGINGFACEHUB_API_TOKEN"
+
+        values["huggingfacehub_api_token"] = get_from_dict_or_env(
+            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN", None
         )
+
+        huggingfacehub_api_token = get_from_dict_or_env(
+            values, "huggingfacehub_api_token", "HF_TOKEN", None
+        )
+
         if huggingfacehub_api_token is not None:
             try:
                 login(token=huggingfacehub_api_token)

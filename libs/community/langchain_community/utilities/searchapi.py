@@ -32,7 +32,7 @@ class SearchApiAPIWrapper(BaseModel):
 
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that API key exists in environment."""
         searchapi_api_key = get_from_dict_or_env(
