@@ -854,11 +854,13 @@ class Neo4jVector(VectorStore):
             "CALL { WITH row "
             f"MERGE (c:`{self.node_label}` {{id: row.id}}) "
             "WITH c, row "
-            f"CALL db.create.setVectorProperty(c, "
+            f"CALL db.create.setNodeVectorProperty(c, "
             f"'{self.embedding_node_property}', row.embedding) "
-            "YIELD node "
             f"SET c.`{self.text_node_property}` = row.text "
-            "SET c += row.metadata } IN TRANSACTIONS OF 1000 ROWS"
+            "SET c += row.metadata "
+            "RETURN c "
+            "} IN TRANSACTIONS OF 1000 ROWS "
+            "RETURN c "
         )
 
         parameters = {
@@ -873,6 +875,56 @@ class Neo4jVector(VectorStore):
         self.query(import_query, params=parameters)
 
         return ids
+
+    def add_relation_embeddings(
+        self,
+        texts: Iterable[str],
+        embeddings: List[List[float]],
+        relation_type: str,
+        text_relation_property: str = "text",
+        embedding_relation_property: str = "embeddings",
+        metadatas: Optional[List[dict]] = None,
+        ids: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Add embeddings to the relations in the vectorstore.
+
+        Args:
+            texts: Iterable of strings to add embeddings to.
+            embeddings: List of list of embedding vectors.
+            relation_type:The relationship type to associate the embeddings.
+            text_relation_property: The property name to search relations.
+            embedding_relation_property: The property name for the embedding vectors.
+            metadatas: List of metadatas associated with the relations.
+            kwargs: vectorstore specific parameters
+        """
+
+        if ids is None:
+            ids = [md5(text.encode("utf-8")).hexdigest() for text in texts]
+
+        if not metadatas:
+            metadatas = [{} for _ in texts]
+
+        import_query = (
+            "UNWIND $data AS row "
+            f"MATCH ()-[r:`{relation_type}`]->() "
+            f"WHERE r.`{text_relation_property}` = row.text "
+            f"CALL db.create.setRelationshipVectorProperty(r, "
+            f"'{embedding_relation_property}', row.embedding) "
+        )
+
+        parameters = {
+            "data": [
+                {"text": text, "metadata": metadata, "embedding": embedding, "id": id}
+                for text, metadata, embedding, id in zip(
+                    texts, metadatas, embeddings, ids
+                )
+            ]
+        }
+
+        self.query(import_query, params=parameters)
+
+        return list(ids)
 
     def add_texts(
         self,
@@ -1441,9 +1493,9 @@ class Neo4jVector(VectorStore):
                 "UNWIND $data AS row "
                 f"MATCH (n:`{node_label}`) "
                 "WHERE elementId(n) = row.id "
-                f"CALL db.create.setVectorProperty(n, "
+                f"CALL db.create.setNodeVectorProperty(n, "
                 f"'{embedding_node_property}', row.embedding) "
-                "YIELD node RETURN count(*)",
+                "RETURN count(*)",
                 params=params,
             )
             # If embedding calculation should be stopped
