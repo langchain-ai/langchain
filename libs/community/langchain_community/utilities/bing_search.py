@@ -5,19 +5,23 @@ import requests
 from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
 from langchain_core.utils import get_from_dict_or_env
 
-# BING_SEARCH_ENDPOINT is the endpoint for Bing Web Search API.
-# Because Bing Search is a service provided by Microsoft, you need to
+# BING_SEARCH_ENDPOINT is the default endpoint for Bing Web Search API.
 # Currently There are two web-based Bing Search services available on Azure,
-# Bing Web Search and Bing Custom Search. Compared to Bing Custom Search,
-# Bing Web Search is a more general search service that provides a wider range
-# of search results, while Bing Custom Search requires you to provide an additional
-# custom search instance. To facilitate and simply the use of Bing Web Search on
-# Langchain, we pick Bing Web Search as the only option.
-#
+# i.e. Bing Web Search[1] and Bing Custom Search[2]. Compared to Bing Custom Search,
+# Both services that provides a wide range of search results, while Bing Custom
+# Search requires you to provide an additional custom search instance. Both services
+# are available for BingSearchAPIWrapper.
+# History of Azure Bing Search API:
+# Before shown in Azure Marketplace as a separate service, Bing Search APIs were
+# part of Azure Cognitive Services, the endpoint of which is unique, and the user
+# must specify the endpoint when making a request. After transitioning to Azure
+# Marketplace, the endpoint is standardized and the user does not need to specify
+# the endpoint[3].
 # Reference:
-#  https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/overview
-#  https://learn.microsoft.com/en-us/bing/search-apis/bing-custom-search/overview
-BING_SEARCH_ENDPOINT = "https://api.bing.microsoft.com/v7.0/search"
+#  1. https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/overview
+#  2. https://learn.microsoft.com/en-us/bing/search-apis/bing-custom-search/overview
+#  3. https://azure.microsoft.com/en-in/updates/bing-search-apis-will-transition-from-azure-cognitive-services-to-azure-marketplace-on-31-october-2023/
+DEFAULT_BING_SEARCH_ENDPOINT = "https://api.bing.microsoft.com/v7.0/search"
 
 
 class BingSearchAPIWrapper(BaseModel):
@@ -43,7 +47,7 @@ class BingSearchAPIWrapper(BaseModel):
             **self.search_kwargs,
         }
         response = requests.get(
-            BING_SEARCH_ENDPOINT,
+            self.bing_search_url,
             headers=headers,
             params=params,  # type: ignore
         )
@@ -60,6 +64,15 @@ class BingSearchAPIWrapper(BaseModel):
             values, "bing_subscription_key", "BING_SUBSCRIPTION_KEY"
         )
         values["bing_subscription_key"] = bing_subscription_key
+
+        bing_search_url = get_from_dict_or_env(
+            values,
+            "bing_search_url",
+            "BING_SEARCH_URL",
+            default=DEFAULT_BING_SEARCH_ENDPOINT,
+        )
+
+        values["bing_search_url"] = bing_search_url
 
         return values
 
