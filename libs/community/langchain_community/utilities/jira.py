@@ -1,4 +1,5 @@
 """Util that calls Jira."""
+
 from typing import Any, Dict, List, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
@@ -23,7 +24,9 @@ class JiraAPIWrapper(BaseModel):
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        jira_username = get_from_dict_or_env(values, "jira_username", "JIRA_USERNAME")
+        jira_username = get_from_dict_or_env(
+            values, "jira_username", "JIRA_USERNAME", default=""
+        )
         values["jira_username"] = jira_username
 
         jira_api_token = get_from_dict_or_env(
@@ -44,12 +47,19 @@ class JiraAPIWrapper(BaseModel):
                 "Please install it with `pip install atlassian-python-api`"
             )
 
-        jira = Jira(
-            url=jira_instance_url,
-            username=jira_username,
-            password=jira_api_token,
-            cloud=True,
-        )
+        if jira_username == "":
+            jira = Jira(
+                url=jira_instance_url,
+                token=jira_api_token,
+                cloud=True,
+            )
+        else:
+            jira = Jira(
+                url=jira_instance_url,
+                username=jira_username,
+                password=jira_api_token,
+                cloud=True,
+            )
 
         confluence = Confluence(
             url=jira_instance_url,
