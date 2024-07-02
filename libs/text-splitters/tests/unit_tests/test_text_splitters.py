@@ -352,6 +352,27 @@ Bye!\n\n-H."""
     assert output == expected_output
 
 
+def test_recursive_text_splitter_regex_not_keep_separator() -> None:
+    """Test Recursive Text Splitter using regex to split but not keeping separators."""
+
+    splitter = RecursiveCharacterTextSplitter(
+        separators=[r"\s"],
+        keep_separator=False,
+        is_separator_regex=True,
+        chunk_size=15,
+        chunk_overlap=0,
+        strip_whitespace=False,
+    )
+    output = splitter.split_text("Hello world")
+
+    # here we expect that the original space between "Hello" and "world" be retained,
+    #  rather than replaced by the regular expression "\s"
+    expected_output = [
+        "Hello world",
+    ]
+    assert output == expected_output
+
+
 def test_split_documents() -> None:
     """Test split_documents."""
     splitter = CharacterTextSplitter(separator="", chunk_size=1, chunk_overlap=0)
