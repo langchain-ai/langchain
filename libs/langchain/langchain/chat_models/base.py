@@ -70,16 +70,22 @@ def init_chat_model(
                 - gemini... -> google_vertexai
                 - command... -> cohere
                 - accounts/fireworks... -> fireworks
-        configurable_fields: Which model parameters are configurable. If
-            - None: No configurable fields.
-            - "any": All fields are configurable.
-            - Union[List[str], Tuple[str, ...]]: Specified fields are configurable.
+        configurable_fields: Which model parameters are
+            configurable:
+                - None: No configurable fields.
+                - "any": All fields are configurable. *See Security Note below.*
+                - Union[List[str], Tuple[str, ...]]: Specified fields are configurable.
 
             Fields are assumed to have config_prefix stripped if there is a
-            config_prefix.
+            config_prefix. If model is specified, then defaults to None. If model is
+            not specified, then defaults to ``("model", "model_provider")``.
 
-            If model is specified, then defaults to None. If model is not specified,
-            then defaults to ``("model", "model_provider")``.
+            ***Security Note***: Setting ``configurable_fields="any"`` means fields like
+            api_key, base_url, etc. can be altered at runtime, potentially redirecting
+            model requests to a different service/user. Make sure that if you're
+            accepting untrusted configurations that you enumerate the
+            ``configurable_fields=(...)`` explicitly.
+
         config_prefix: If config_prefix is a non-empty string then model will be
             configurable at runtime via the
             ``config["configurable"]["{config_prefix}_{param}"]`` keys. If
