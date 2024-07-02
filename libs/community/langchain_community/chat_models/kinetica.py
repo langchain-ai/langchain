@@ -341,7 +341,7 @@ class ChatKinetica(BaseChatModel):
     kdbc: Any = Field(exclude=True)
     """ Kinetica DB connection. """
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Pydantic object validator."""
 

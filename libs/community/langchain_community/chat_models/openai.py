@@ -145,6 +145,9 @@ def _convert_delta_to_message_chunk(
         return default_class(content=content)  # type: ignore[call-arg]
 
 
+DEFAULT_MAX_RETRIES = 2
+
+
 @deprecated(
     since="0.0.10", removal="0.3.0", alternative_import="langchain_openai.ChatOpenAI"
 )
@@ -218,7 +221,7 @@ class ChatOpenAI(BaseChatModel):
     )
     """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
         None."""
-    max_retries: int = Field(default=2)
+    max_retries: int = Field(default=DEFAULT_MAX_RETRIES)
     """Maximum number of retries to make when generating."""
     streaming: bool = False
     """Whether to stream the results or not."""
@@ -274,14 +277,9 @@ class ChatOpenAI(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @root_validator(pre=True)
+    def pre_init(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        if values["n"] < 1:
-            raise ValueError("n must be at least 1.")
-        if values["n"] > 1 and values["streaming"]:
-            raise ValueError("n must be 1 when streaming.")
-
         values["openai_api_key"] = get_from_dict_or_env(
             values, "openai_api_key", "OPENAI_API_KEY"
         )
@@ -291,7 +289,7 @@ class ChatOpenAI(BaseChatModel):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
+        values["openai_api_base"] = values.get("openai_api_base") or os.getenv(
             "OPENAI_API_BASE"
         )
         values["openai_proxy"] = get_from_dict_or_env(
@@ -311,14 +309,14 @@ class ChatOpenAI(BaseChatModel):
 
         if is_openai_v1():
             client_params = {
-                "api_key": values["openai_api_key"],
-                "organization": values["openai_organization"],
-                "base_url": values["openai_api_base"],
-                "timeout": values["request_timeout"],
-                "max_retries": values["max_retries"],
-                "default_headers": values["default_headers"],
-                "default_query": values["default_query"],
-                "http_client": values["http_client"],
+                "api_key": values.get("openai_api_key"),
+                "organization": values.get("openai_organization"),
+                "base_url": values.get("openai_api_base"),
+                "timeout": values.get("request_timeout"),
+                "max_retries": values.get("max_retries", DEFAULT_MAX_RETRIES),
+                "default_headers": values.get("default_headers"),
+                "default_query": values.get("default_query"),
+                "http_client": values.get("http_client"),
             }
 
             if not values.get("client"):
@@ -331,6 +329,14 @@ class ChatOpenAI(BaseChatModel):
             values["client"] = openai.ChatCompletion
         else:
             pass
+        return values
+
+    @root_validator(pre=True, skip_on_failure=True)
+    def validate_environment(self, values: Dict) -> Dict:
+        if values["n"] < 1:
+            raise ValueError("n must be at least 1.")
+        if values["n"] > 1 and values["streaming"]:
+            raise ValueError("n must be 1 when streaming.")
         return values
 
     @property
