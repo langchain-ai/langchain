@@ -1,4 +1,5 @@
-"""Custom **exceptions** for LangChain. """
+"""Custom **exceptions** for LangChain."""
+
 from typing import Any, Optional
 
 
@@ -18,7 +19,7 @@ class OutputParserException(ValueError, LangChainException):
     available to catch and handle in ways to fix the parsing error, while other
     errors will be raised.
 
-    Args:
+    Parameters:
         error: The error that's being re-raised or an error message.
         observation: String explanation of error which can be passed to a
             model to try and remediate the issue.

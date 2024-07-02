@@ -28,6 +28,9 @@ def create_openai_tools_agent(
         variables as the prompt passed in does. It returns as output either an
         AgentAction or AgentFinish.
 
+    Raises:
+        ValueError: If the prompt is missing required variables.
+
     Example:
 
         .. code-block:: python
