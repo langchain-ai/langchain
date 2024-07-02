@@ -13,7 +13,7 @@ class RememberizerAPIWrapper(BaseModel):
     top_k_results: int = 10
     rememberizer_api_key: Optional[str] = None
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key in environment."""
         rememberizer_api_key = get_from_dict_or_env(
