@@ -116,7 +116,7 @@ class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
         file_path: Union[str, list[str]],
         *,
         mode: str = "single",
-        url: str = "https://api.unstructured.io/general/v0/general",
+        url: str = "https://api.unstructuredapp.io/general/v0/general",
         api_key: str = "",
         **unstructured_kwargs: Any,
     ):
@@ -249,7 +249,7 @@ class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
         file: Union[IO, Sequence[IO]],
         *,
         mode: str = "single",
-        url: str = "https://api.unstructured.io/general/v0/general",
+        url: str = "https://api.unstructuredapp.io/general/v0/general",
         api_key: str = "",
         **unstructured_kwargs: Any,
     ):
@@ -352,7 +352,7 @@ def get_elements_from_api(
     file_path: Union[str, Path],
     *,
     file: Union[IO[bytes], None] = None,
-    api_url: str = "https://api.unstructured.io/general/v0/general",
+    api_url: str = "https://api.unstructuredapp.io/general/v0/general",
     api_key: str = "",
     **unstructured_kwargs: Any,
 ) -> list[dict[str, Any]]:
