@@ -4,6 +4,7 @@ import time
 import pytest
 from dotenv import load_dotenv
 
+from langchain_community.embeddings.azure_openai import AzureOpenAIEmbeddings
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.vectorstores.azuresearch import AzureSearch
 
@@ -83,4 +84,36 @@ def test_semantic_hybrid_search() -> None:
     )
     time.sleep(1)
     res = vector_store.semantic_hybrid_search(query="What's Azure Search?", k=3)
+    assert len(res) == 3
+
+
+def test_similarity_search_test_managed_identity() -> None:
+    """Test end to end construction and search using managed identity."""
+    from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+
+    token_provider = get_bearer_token_provider(
+        DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
+    )
+    # Create Embeddings
+    embeddings: OpenAIEmbeddings = AzureOpenAIEmbeddings(
+        model=model, azure_ad_token_provider=token_provider
+    )
+    # Create Vector store
+    vector_store: AzureSearch = AzureSearch(
+        azure_search_endpoint=vector_store_address,
+        azure_credential=DefaultAzureCredential(),
+        index_name=index_name,
+        embedding_function=embeddings.embed_query,
+    )
+    # Add texts to vector store and perform a similarity search
+    vector_store.add_texts(
+        ["Test 1", "Test 2", "Test 3"],
+        [
+            {"title": "Title 1", "any_metadata": "Metadata 1"},
+            {"title": "Title 2", "any_metadata": "Metadata 2"},
+            {"title": "Title 3", "any_metadata": "Metadata 3"},
+        ],
+    )
+    time.sleep(1)
+    res = vector_store.similarity_search(query="Test 1", k=3)
     assert len(res) == 3

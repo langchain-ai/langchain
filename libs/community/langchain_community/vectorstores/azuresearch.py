@@ -74,6 +74,7 @@ def _get_search_client(
     endpoint: str,
     key: str,
     index_name: str,
+    azure_credential: Optional[Callable] = None,
     semantic_configuration_name: Optional[str] = None,
     fields: Optional[List[SearchField]] = None,
     vector_search: Optional[VectorSearch] = None,
@@ -110,11 +111,14 @@ def _get_search_client(
     )
 
     default_fields = default_fields or []
-    if key is None:
+    if azure_credential:
+        credential = azure_credential
+    elif key is None:
         credential = DefaultAzureCredential()
     elif key.upper() == "INTERACTIVE":
-        credential = InteractiveBrowserCredential()
-        credential.get_token("https://search.azure.com/.default")
+        credential = InteractiveBrowserCredential().get_token(
+            "https://search.azure.com/.default"
+        )
     else:
         credential = AzureKeyCredential(key)
     index_client: SearchIndexClient = SearchIndexClient(
@@ -236,14 +240,15 @@ def _get_search_client(
 
 
 class AzureSearch(VectorStore):
-    """`Azure Cognitive Search` vector store."""
+    """`Azure AI Search` vector store."""
 
     def __init__(
         self,
-        azure_search_endpoint: str,
-        azure_search_key: str,
-        index_name: str,
-        embedding_function: Union[Callable, Embeddings],
+        azure_search_endpoint: str = "",
+        azure_search_key: str = "",
+        index_name: str = "",
+        embedding_function: Union[Callable, Embeddings] = lambda x: x,
+        azure_credential: Optional[Callable] = None,
         search_type: str = "hybrid",
         semantic_configuration_name: Optional[str] = None,
         fields: Optional[List[SearchField]] = None,
@@ -310,7 +315,8 @@ class AzureSearch(VectorStore):
         self.client = _get_search_client(
             azure_search_endpoint,
             azure_search_key,
-            index_name,
+            index_name=index_name,
+            azure_credential=azure_credential,
             semantic_configuration_name=semantic_configuration_name,
             fields=fields,
             vector_search=vector_search,
@@ -328,6 +334,7 @@ class AzureSearch(VectorStore):
         self._azure_search_endpoint = azure_search_endpoint
         self._azure_search_key = azure_search_key
         self._index_name = index_name
+        self._azure_credential = azure_credential
         self._semantic_configuration_name = semantic_configuration_name
         self._fields = fields
         self._vector_search = vector_search
@@ -343,6 +350,7 @@ class AzureSearch(VectorStore):
             self._azure_search_endpoint,
             self._azure_search_key,
             self._index_name,
+            azure_credential=self._azure_credential,
             semantic_configuration_name=self._semantic_configuration_name,
             fields=self._fields,
             vector_search=self._vector_search,
@@ -1375,6 +1383,7 @@ class AzureSearch(VectorStore):
         azure_search_endpoint: str = "",
         azure_search_key: str = "",
         index_name: str = "langchain-index",
+        azure_credential: Optional[Callable] = None,
         fields: Optional[List[SearchField]] = None,
         **kwargs: Any,
     ) -> AzureSearch:
@@ -1384,6 +1393,7 @@ class AzureSearch(VectorStore):
             azure_search_key,
             index_name,
             embedding,
+            azure_credential=azure_credential,
             fields=fields,
             **kwargs,
         )
@@ -1399,6 +1409,7 @@ class AzureSearch(VectorStore):
         azure_search_endpoint: str = "",
         azure_search_key: str = "",
         index_name: str = "langchain-index",
+        azure_credential: Optional[Callable] = None,
         fields: Optional[List[SearchField]] = None,
         **kwargs: Any,
     ) -> AzureSearch:
@@ -1408,6 +1419,7 @@ class AzureSearch(VectorStore):
             azure_search_key,
             index_name,
             embedding,
+            azure_credential=azure_credential,
             fields=fields,
             **kwargs,
         )
@@ -1424,6 +1436,7 @@ class AzureSearch(VectorStore):
         azure_search_endpoint: str = "",
         azure_search_key: str = "",
         index_name: str = "langchain-index",
+        azure_credential: Optional[Callable] = None,
         fields: Optional[List[SearchField]] = None,
         **kwargs: Any,
     ) -> AzureSearch:
@@ -1437,6 +1450,7 @@ class AzureSearch(VectorStore):
             azure_search_key=azure_search_key,
             index_name=index_name,
             embedding_function=embedding,
+            azure_credential=azure_credential,
             fields=fields,
             vector_search_dimensions=vector_search_dimensions,
             **kwargs,
@@ -1454,6 +1468,7 @@ class AzureSearch(VectorStore):
         azure_search_endpoint: str = "",
         azure_search_key: str = "",
         index_name: str = "langchain-index",
+        azure_credential: Optional[Callable] = None,
         fields: Optional[List[SearchField]] = None,
         **kwargs: Any,
     ) -> AzureSearch:
@@ -1468,6 +1483,7 @@ class AzureSearch(VectorStore):
             azure_search_key=azure_search_key,
             index_name=index_name,
             embedding_function=embedding,
+            azure_credential=azure_credential,
             fields=fields,
             vector_search_dimensions=vector_search_dimensions,
             **kwargs,

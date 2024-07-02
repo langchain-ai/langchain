@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from typing import Dict, List, Optional
+import os
+from typing import Callable, Dict, List, Optional
 
 import aiohttp
 import requests
@@ -30,6 +31,8 @@ class AzureAISearchRetriever(BaseRetriever):
     recommended to use a Query key."""
     api_version: str = "2023-11-01"
     """API version"""
+    azure_ad_token_provider: Optional[Callable] = None
+    """A function that returns an Azure OpenAI authentication token."""
     aiosession: Optional[aiohttp.ClientSession] = None
     """ClientSession, in case we want to reuse connection for better performance."""
     content_key: str = "content"
@@ -52,10 +55,13 @@ class AzureAISearchRetriever(BaseRetriever):
         values["index_name"] = get_from_dict_or_env(
             values, "index_name", "AZURE_AI_SEARCH_INDEX_NAME"
         )
-        values["api_key"] = get_from_dict_or_env(
-            values, "api_key", "AZURE_AI_SEARCH_API_KEY"
-        )
-        return values
+        if "azure_ad_token_provider" in values or os.getenv("AZURE_AD_TOKEN_PROVIDER"):
+            return values
+        else:
+            values["api_key"] = get_from_dict_or_env(
+                values, "api_key", "AZURE_AI_SEARCH_API_KEY"
+            )
+            return values
 
     def _build_search_url(self, query: str) -> str:
         url_suffix = get_from_env("", "AZURE_AI_SEARCH_URL_SUFFIX", DEFAULT_URL_SUFFIX)
@@ -79,10 +85,14 @@ class AzureAISearchRetriever(BaseRetriever):
 
     @property
     def _headers(self) -> Dict[str, str]:
-        return {
-            "Content-Type": "application/json",
-            "api-key": self.api_key,
-        }
+        headers = {"Content-Type": "application/json"}
+
+        if self.azure_ad_token_provider:
+            token = f"Bearer {self.azure_ad_token_provider()}"
+            headers["authorization"] = token
+        else:
+            headers["api-key"] = self.api_key
+        return headers
 
     def _search(self, query: str) -> List[dict]:
         search_url = self._build_search_url(query)
