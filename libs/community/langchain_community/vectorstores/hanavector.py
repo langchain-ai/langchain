@@ -125,7 +125,7 @@ class HanaDB(VectorStore):
                 f'"{self.metadata_column}" NCLOB, '
                 f'"{self.vector_column}" REAL_VECTOR '
             )
-            if self.vector_column_length == -1:
+            if self.vector_column_length in [-1, 0]:
                 sql_str += ");"
             else:
                 sql_str += f"({self.vector_column_length}));"
@@ -186,7 +186,9 @@ class HanaDB(VectorStore):
                             f"Column {column_name} has the wrong type: {rows[0][0]}"
                         )
                 # Check length, if parameter was provided
-                if column_length is not None:
+                # Length can either be -1 (QRC01+02-24) or 0 (QRC03-24 onwards)
+                # to indicate no length constraint being present.
+                if column_length is not None and column_length > 0:
                     if rows[0][1] != column_length:
                         raise AttributeError(
                             f"Column {column_name} has the wrong length: {rows[0][1]}"

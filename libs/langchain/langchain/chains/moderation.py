@@ -40,7 +40,7 @@ class OpenAIModerationChain(Chain):
     openai_organization: Optional[str] = None
     _openai_pre_1_0: bool = Field(default=None)
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         openai_api_key = get_from_dict_or_env(

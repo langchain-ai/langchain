@@ -37,7 +37,7 @@ class ChatModelTests(ABC):
             "temperature": 0,
             "max_tokens": 100,
             "timeout": 60,
-            "stop_sequences": [],
+            "stop": [],
             "max_retries": 2,
         }
 
@@ -69,6 +69,10 @@ class ChatModelTests(ABC):
     @property
     def returns_usage_metadata(self) -> bool:
         return True
+
+    @property
+    def supports_anthropic_inputs(self) -> bool:
+        return False
 
 
 class ChatModelUnitTests(ChatModelTests):

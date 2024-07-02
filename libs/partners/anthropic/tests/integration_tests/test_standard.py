@@ -16,3 +16,11 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         return {"model": "claude-3-haiku-20240307"}
+
+    @property
+    def supports_image_inputs(self) -> bool:
+        return True
+
+    @property
+    def supports_anthropic_inputs(self) -> bool:
+        return True

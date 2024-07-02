@@ -231,7 +231,7 @@ def _format_messages(messages: List[BaseMessage]) -> Tuple[Optional[str], List[D
 
 
 class ChatAnthropic(BaseChatModel):
-    """Anthropic chat model integration.
+    """Anthropic chat models.
 
     See https://docs.anthropic.com/en/docs/models-overview for a list of the latest models.
 
@@ -986,7 +986,9 @@ class ChatAnthropic(BaseChatModel):
                 # }
 
         """  # noqa: E501
-        llm = self.bind_tools([schema], tool_choice="any")
+
+        tool_name = convert_to_anthropic_tool(schema)["name"]
+        llm = self.bind_tools([schema], tool_choice=tool_name)
         if isinstance(schema, type) and issubclass(schema, BaseModel):
             output_parser = ToolsOutputParser(
                 first_tool_only=True, pydantic_schemas=[schema]
@@ -1008,6 +1010,8 @@ class ChatAnthropic(BaseChatModel):
 
 
 class AnthropicTool(TypedDict):
+    """Anthropic tool definition."""
+
     name: str
     description: str
     input_schema: Dict[str, Any]
@@ -1016,6 +1020,7 @@ class AnthropicTool(TypedDict):
 def convert_to_anthropic_tool(
     tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
 ) -> AnthropicTool:
+    """Convert a tool-like object to an Anthropic tool definition."""
     # already in Anthropic tool format
     if isinstance(tool, dict) and all(
         k in tool for k in ("name", "description", "input_schema")
