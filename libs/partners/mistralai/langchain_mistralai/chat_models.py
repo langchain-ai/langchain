@@ -586,7 +586,7 @@ class ChatMistralAI(BaseChatModel):
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        should_stream = stream if stream is not None else False
+        should_stream = stream if stream is not None else self.streaming
         if should_stream:
             stream_iter = self._astream(
                 messages=messages, stop=stop, run_manager=run_manager, **kwargs
@@ -794,6 +794,8 @@ class ChatMistralAI(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
+            # TODO: Update to pass in tool name as tool_choice if/when Mistral supports
+            # specifying a tool.
             llm = self.bind_tools([schema], tool_choice="any")
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(

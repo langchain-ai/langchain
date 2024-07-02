@@ -201,10 +201,10 @@ class SQLDatabase:
             from dbruntime.databricks_repl_context import get_context
 
             context = get_context()
+            default_host = context.browserHostName
         except ImportError:
-            pass
+            default_host = None
 
-        default_host = context.browserHostName if context else None
         if host is None:
             host = get_from_env("host", "DATABRICKS_HOST", default_host)
 

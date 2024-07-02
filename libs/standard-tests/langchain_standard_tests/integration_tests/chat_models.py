@@ -1,15 +1,40 @@
 import base64
 import json
+from typing import List, Optional
 
 import httpx
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessageChunk,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.tools import tool
 
 from langchain_standard_tests.unit_tests.chat_models import (
     ChatModelTests,
     my_adder_tool,
 )
+
+
+@tool
+def magic_function(input: int) -> int:
+    """Applies a magic function to an input."""
+    return input + 2
+
+
+def _validate_tool_call_message(message: AIMessage) -> None:
+    assert isinstance(message, AIMessage)
+    assert len(message.tool_calls) == 1
+    tool_call = message.tool_calls[0]
+    assert tool_call["name"] == "magic_function"
+    assert tool_call["args"] == {"input": 3}
+    assert tool_call["id"] is not None
 
 
 class ChatModelIntegrationTests(ChatModelTests):
@@ -97,6 +122,38 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         result = custom_model.invoke("hi")
         assert isinstance(result, AIMessage)
+
+    def test_tool_calling(self, model: BaseChatModel) -> None:
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+        model_with_tools = model.bind_tools([magic_function])
+
+        # Test invoke
+        query = "What is the value of magic_function(3)? Use the tool."
+        result = model_with_tools.invoke(query)
+        assert isinstance(result, AIMessage)
+        _validate_tool_call_message(result)
+
+        # Test stream
+        full: Optional[BaseMessageChunk] = None
+        for chunk in model_with_tools.stream(query):
+            full = chunk if full is None else full + chunk  # type: ignore
+        assert isinstance(full, AIMessage)
+        _validate_tool_call_message(full)
+
+    def test_structured_output(self, model: BaseChatModel) -> None:
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
+        class Joke(BaseModel):
+            """Joke to tell user."""
+
+            setup: str = Field(description="question to set up a joke")
+            punchline: str = Field(description="answer to resolve the joke")
+
+        chat = model.with_structured_output(Joke)
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, Joke)
 
     def test_tool_message_histories_string_content(
         self,
@@ -227,3 +284,63 @@ class ChatModelIntegrationTests(ChatModelTests):
             ],
         )
         model.invoke([message])
+
+    def test_anthropic_inputs(self, model: BaseChatModel) -> None:
+        if not self.supports_anthropic_inputs:
+            return
+
+        class color_picker(BaseModel):
+            """Input your fav color and get a random fact about it."""
+
+            fav_color: str
+
+        human_content: List[dict] = [
+            {
+                "type": "text",
+                "text": "what's your favorite color in this image",
+            },
+        ]
+        if self.supports_image_inputs:
+            image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+            image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+            human_content.append(
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": image_data,
+                    },
+                }
+            )
+        messages = [
+            SystemMessage("you're a good assistant"),
+            HumanMessage(human_content),  # type: ignore[arg-type]
+            AIMessage(
+                [
+                    {"type": "text", "text": "Hmm let me think about that"},
+                    {
+                        "type": "tool_use",
+                        "input": {"fav_color": "green"},
+                        "id": "foo",
+                        "name": "color_picker",
+                    },
+                ]
+            ),
+            HumanMessage(
+                [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": "foo",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
+                            }
+                        ],
+                    },
+                    {"type": "text", "text": "what's my sister's favorite color"},
+                ]
+            ),
+        ]
+        model.bind_tools([color_picker]).invoke(messages)

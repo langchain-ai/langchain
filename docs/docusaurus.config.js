@@ -238,10 +238,6 @@ const config = {
                 label: "LangSmith Docs",
               },
               {
-                href: "https://github.com/langchain-ai/langserve",
-                label: "LangServe GitHub",
-              },
-              {
                 href: "https://github.com/langchain-ai/langchain/tree/master/templates",
                 label: "Templates GitHub",
               },
