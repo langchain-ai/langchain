@@ -169,8 +169,7 @@ class ChatYuan2(BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["yuan2_api_key"] = get_from_dict_or_env(
-            values, "yuan2_api_key", "YUAN2_API_KEY",
-            default="EMPTY"
+            values, "yuan2_api_key", "YUAN2_API_KEY", default="EMPTY"
         )
 
         try:
