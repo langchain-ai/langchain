@@ -1,26 +1,22 @@
 """NexaAI large language models."""
 
 import logging
+from os import getenv
 from typing import (
     Any,
-    AsyncIterator,
     Dict,
-    Iterator,
     List,
     Optional,
     Tuple,
 )
 
+import requests
 from langchain_core.callbacks import (
-    AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import BaseLLM
-from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-
+from langchain_core.outputs import Generation, LLMResult
 from pydantic import Field
-import requests
-from os import getenv
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +40,7 @@ class NexaAILLM(BaseLLM):
 
     api_key: Optional[str]
     url: str = "https://octopus.nexa4ai.com/model/octopus-v2"
-    response_keys: Tuple = ('result', 'function_name', 'function_arguments', 'latency')
+    response_keys: Tuple = ("result", "function_name", "function_arguments", "latency")
     headers: Dict[str, str] = Field(default_factory=dict)
 
     def __init__(self, api_key: Optional[str] = None, **kwargs: Any):
@@ -56,21 +52,24 @@ class NexaAILLM(BaseLLM):
         super().__init__(**kwargs)
         self._init_request_template(api_key)
 
-    def _init_request_template(self, api_key: Optional[str] = None):
+    def _init_request_template(self, api_key: Optional[str] = None) -> None:
         self.api_key = api_key or getenv("NEXA_API_KEY")
         if self.api_key is None:
-            raise ValueError("NEXA_API_KEY must be set in the environment or passed via argument `api_key`.")
+            raise ValueError(
+                "NEXA_API_KEY must be set in the environment or "
+                "passed via argument `api_key`."
+            )
 
         self.headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}"
+            "Authorization": f"Bearer {self.api_key}",
         }
 
     def _create_llm_result(
         self,
         prompts: List[str],
         categories: List[str],
-    )-> LLMResult:
+    ) -> LLMResult:
         generations: List[List[Generation]] = []
         llm_outputs: Dict[str, List[str]] = {}
 
@@ -82,12 +81,14 @@ class NexaAILLM(BaseLLM):
             response = requests.post(self.url, headers=self.headers, json=data)
             response_json = response.json()
 
-            generations.append([
-                Generation(
-                    text=response.text,
-                    generation_info=response_json,
-                )
-            ])
+            generations.append(
+                [
+                    Generation(
+                        text=response.text,
+                        generation_info=response_json,
+                    )
+                ]
+            )
             for k in self.response_keys:
                 llm_outputs[k] = llm_outputs.get(k, []) + [response_json.get(k, None)]
 
@@ -99,13 +100,19 @@ class NexaAILLM(BaseLLM):
 
         if categories is None:
             if category is None:
-                logger.warning("No category or categories provided. Defaulting to 'shopping'.")
+                logger.warning(
+                    "No category or categories provided. Defaulting to 'shopping'."
+                )
                 category = "shopping"
-            categories = [category,] * len(prompts)
+            categories = [
+                category,
+            ] * len(prompts)
         elif category is not None:
             logger.warning("Both category and categories provided. Using categories.")
 
-        assert len(categories) == len(prompts), "Number of prompts and categories must match."
+        assert len(categories) == len(
+            prompts
+        ), "Number of prompts and categories must match."
         return categories
 
     def _generate(
@@ -117,35 +124,3 @@ class NexaAILLM(BaseLLM):
     ) -> LLMResult:
         categories = self._prepare_categories(prompts, **kwargs)
         return self._create_llm_result(prompts, categories)
-
-    # TODO: Implement if NexaAILLM supports async generation. Otherwise
-    # delete method.
-    async def _agenerate(
-        self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> LLMResult:
-        raise NotImplementedError
-
-    # TODO: Implement if NexaAILLM supports streaming. Otherwise delete method.
-    def _stream(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> Iterator[GenerationChunk]:
-        raise NotImplementedError
-
-    # TODO: Implement if NexaAILLM supports async streaming. Otherwise delete
-    # method.
-    async def _astream(
-        self,
-        prompt: str,
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[GenerationChunk]:
-        raise NotImplementedError
