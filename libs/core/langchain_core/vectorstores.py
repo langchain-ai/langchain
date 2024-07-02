@@ -20,7 +20,6 @@ and retrieve the data that are 'most similar' to the embedded query.
 """  # noqa: E501
 from __future__ import annotations
 
-import abc
 import logging
 import math
 import warnings
@@ -45,7 +44,6 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables.config import run_in_executor
-from langchain_core.utils.iter import batch_iterate
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -104,8 +102,42 @@ class VectorStore(ABC):
             return self.upsert(docs, **kwargs)
         raise NotImplementedError()
 
-    def upsert(self, documents: Iterable[Document], /, **kwargs: Any) -> Iterator[str]:
+    def upsert(self, documents: Iterable[Document], /, **kwargs) -> Iterator[str]:
         """Add or update documents in the vectorstore.
+
+        The upsert functionality should utilize the ID field of the Document object
+        if it is provided. If the ID is not provided, the upsert method is free
+        to generate an ID for the document.
+
+        When an ID is specified and the document already exists in the vectorstore,
+        the upsert method should update the document with the new data. If the document
+        does not exist, the upsert method should add the document to the vectorstore.
+
+        Vectorstores implementations are free to extend `upsert` implementation
+        to take in additional data per document.
+
+        This data **SHOULD NOT** be part of the **kwargs** parameter, instead
+        a sub-classes can use a Union type on `documents` to include additional
+        supported formats for the input data stream.
+
+        For example,
+
+        .. code-block:: python
+            from typing import TypedDict
+
+            class DocumentWithVector(TypedDict):
+                document: Document
+                vector: List[float]
+
+            def upsert(
+                self,
+                documents: Union[Iterable[Document], Iterable[DocumentWithVector]],
+                /,
+                **kwargs
+            ) -> Iterator[str]:
+                # Check if documents is an iterable of DocumentWithVector
+                # or Document
+                pass
 
         Args:
             documents: List of Documents to add to the vectorstore.
@@ -116,8 +148,6 @@ class VectorStore(ABC):
         Returns:
             List of IDs of the added texts.
         """
-        for batch in batch_iterate(documents, 100):
-            self.upsert_eager(batch, **kwargs)
         raise NotImplementedError()
 
     @property
