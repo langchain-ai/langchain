@@ -149,7 +149,8 @@ class CustomOpenAIChatContentFormatter(ContentFormatterBase):
             )
         if api_type == AzureMLEndpointApiType.serverless:
             try:
-                choice = json.loads(output)["choices"][0]
+                output_parsed = json.loads(output)
+                choice = output_parsed.pop("choices")[0]
                 if not isinstance(choice, dict):
                     raise TypeError(
                         "Endpoint response is not well formed for a chat "
@@ -165,6 +166,7 @@ class CustomOpenAIChatContentFormatter(ContentFormatterBase):
                 generation_info=dict(
                     finish_reason=choice.get("finish_reason"),
                     logprobs=choice.get("logprobs"),
+                    **output_parsed,
                 ),
             )
         raise ValueError(f"`api_type` {api_type} is not supported by this formatter")
@@ -316,16 +318,17 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
                 chunk = chunk.dict()
             if len(chunk["choices"]) == 0:
                 continue
-            choice = chunk["choices"][0]
-            chunk = _convert_delta_to_message_chunk(
-                choice["delta"], default_chunk_class
-            )
+            choice = chunk.pop("choices")[0]
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
+                generation_info.update(chunk)
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
+            chunk = _convert_delta_to_message_chunk(
+                choice["delta"], default_chunk_class
+            )
             default_chunk_class = chunk.__class__
             chunk = ChatGenerationChunk(
                 message=chunk, generation_info=generation_info or None
@@ -371,16 +374,17 @@ class AzureMLChatOnlineEndpoint(BaseChatModel, AzureMLBaseEndpoint):
                 chunk = chunk.dict()
             if len(chunk["choices"]) == 0:
                 continue
-            choice = chunk["choices"][0]
-            chunk = _convert_delta_to_message_chunk(
-                choice["delta"], default_chunk_class
-            )
+            choice = chunk.pop("choices")[0]
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
+                generation_info.update(chunk)
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
+            chunk = _convert_delta_to_message_chunk(
+                choice["delta"], default_chunk_class
+            )
             default_chunk_class = chunk.__class__
             chunk = ChatGenerationChunk(
                 message=chunk, generation_info=generation_info or None
