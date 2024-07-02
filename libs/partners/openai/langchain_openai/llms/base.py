@@ -211,6 +211,12 @@ class BaseOpenAI(BaseLLM):
         return values
 
     @property
+    def _extra_body(self) -> Dict[str, Any]:
+        if self.extra_body is not None:
+            return dict(self.extra_body)
+        return {}
+
+    @property
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling OpenAI API."""
         normal_params: Dict[str, Any] = {
@@ -220,13 +226,11 @@ class BaseOpenAI(BaseLLM):
             "presence_penalty": self.presence_penalty,
             "n": self.n,
             "logit_bias": self.logit_bias,
+            "extra_body": self._extra_body,
         }
 
         if self.max_tokens is not None:
             normal_params["max_tokens"] = self.max_tokens
-
-        if self.extra_body is not None:
-            normal_params["extra_body"] = self.extra_body
 
         # Azure gpt-35-turbo doesn't support best_of
         # don't specify best_of if it is 1
