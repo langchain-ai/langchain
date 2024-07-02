@@ -1,9 +1,12 @@
 """Unstructured document loader."""
 
-from typing import Iterator
+import json
+from pathlib import Path
+from typing import IO, Any, Iterator, Sequence, Union
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 
+from langchain_community.document_loaders import UnstructuredBaseLoader
 
 class UnstructuredLoader(BaseLoader):
     # TODO: Replace all TODOs in docstring. See example docstring:
@@ -343,3 +346,55 @@ class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
             for post_processor in self.post_processors:
                 element["text"] = post_processor(element.get("text"))
         return elements
+
+
+def get_elements_from_api(
+    file_path: Union[str, Path],
+    *,
+    file: Union[IO[bytes], None] = None,
+    api_url: str = "https://api.unstructured.io/general/v0/general",
+    api_key: str = "",
+    **unstructured_kwargs: Any,
+) -> list[dict[str, Any]]:
+    """Retrieve a list of elements from the `Unstructured API`."""
+
+    try:
+        import unstructured_client  # noqa:F401
+    except ImportError:
+        raise ImportError(
+            "unstructured_client package not found, please install it with "
+            "`pip install unstructured-client`."
+        )
+    from unstructured_client.models import operations, shared
+
+    content = _get_content(file=file, file_path=file_path)
+
+    client = unstructured_client.UnstructuredClient(
+        api_key_auth=api_key, server_url=api_url
+    )
+    req = operations.PartitionRequest(
+        partition_parameters=shared.PartitionParameters(
+            files=shared.Files(content=content, file_name=str(file_path)),
+            **unstructured_kwargs,
+        ),
+    )
+    response = client.general.partition(req)
+
+    if response.status_code == 200:
+        return json.loads(response.raw_response.text)
+    else:
+        raise ValueError(
+            f"Receive unexpected status code {response.status_code} from the API.",
+        )
+
+def _get_content(
+    file_path: Union[str, Path], file: Union[IO[bytes], None] = None
+) -> bytes:
+    """Get content from either file or file_path."""
+    # `file_path` is a required arg and used to define `file_name` for the sdk,
+    # but use `file` for the `content` if it is provided
+    if file is not None:
+        return file.read()
+    else:
+        with open(file_path, "rb") as f:
+            return f.read()
