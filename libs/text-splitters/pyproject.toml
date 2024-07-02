@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "langchain-text-splitters"
-version = "0.2.1"
+version = "0.2.2"
 description = "LangChain text splitting utilities"
 authors = []
 license = "MIT"
@@ -10,7 +10,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = "^0.2.0"
+langchain-core = "^0.2.10"
 
 [tool.poetry.group.lint]
 optional = true

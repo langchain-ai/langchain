@@ -1,9 +1,9 @@
 import json
-import os
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.utils import get_from_dict_or_env
 
 DEFAULT_MODEL = "sentence-transformers/all-mpnet-base-v2"
 VALID_TASKS = ("feature-extraction",)
@@ -46,11 +46,15 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        huggingfacehub_api_token = values["huggingfacehub_api_token"] or os.getenv(
-            "HUGGINGFACEHUB_API_TOKEN"
+        values["huggingfacehub_api_token"] = get_from_dict_or_env(
+            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN", None
+        )
+
+        huggingfacehub_api_token = get_from_dict_or_env(
+            values, "huggingfacehub_api_token", "HF_TOKEN", None
         )
 
         try:
