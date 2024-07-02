@@ -43,7 +43,8 @@ class BasePromptTemplate(
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
-    """A list of the names of the variables whose values are required as inputs to the prompt."""
+    """A list of the names of the variables whose values are required as inputs to the 
+    prompt."""
     optional_variables: List[str] = Field(default=[])
     """A list of the names of the variables that are optional in the prompt."""
     input_types: Dict[str, Any] = Field(default_factory=dict)
