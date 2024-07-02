@@ -31,6 +31,7 @@ class WikipediaAPIWrapper(BaseModel):
         """Validate that the python package exists in environment."""
         try:
             import wikipedia
+
             lang = values.get("lang", "en")
             wikipedia.set_lang(lang)
             values["wiki_client"] = wikipedia
