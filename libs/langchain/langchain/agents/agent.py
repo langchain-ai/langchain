@@ -20,6 +20,7 @@ from typing import (
     Tuple,
     Union,
 )
+from uuid import UUID
 
 import yaml
 from langchain_core._api import deprecated
@@ -1096,6 +1097,22 @@ class AgentExecutor(Chain):
     Defaults to -1, which means no trimming.
     """
 
+    forced_to_terminate_history: Dict[UUID, bool] = {}
+    """Whether the agent's run has been forced to terminate. 
+    It will cause the first next observation of the run to be returned as AgentFinish.
+    Defaults to False.
+    """
+
+    def terminate(
+        self,
+        run_manager: Union[AsyncCallbackManagerForChainRun, CallbackManagerForChainRun],
+    ):
+        """Terminate the agent on the next observation."""
+        if isinstance(self.agent, BaseSingleActionAgent):
+            self.forced_to_terminate_history[run_manager.parent_run_id] = True
+        else:
+            raise ValueError("Can only terminate single action agents.")
+
     @classmethod
     def from_agent_and_tools(
         cls,
@@ -1649,7 +1666,9 @@ class AgentExecutor(Chain):
             if len(next_step_output) == 1:
                 next_step_action = next_step_output[0]
                 # See if tool should return directly
-                tool_return = self._get_tool_return(next_step_action)
+                tool_return = self._get_tool_return(
+                    next_step_action, run_manager=run_manager
+                )
                 if tool_return is not None:
                     return self._return(
                         tool_return, intermediate_steps, run_manager=run_manager
@@ -1700,7 +1719,9 @@ class AgentExecutor(Chain):
                     if len(next_step_output) == 1:
                         next_step_action = next_step_output[0]
                         # See if tool should return directly
-                        tool_return = self._get_tool_return(next_step_action)
+                        tool_return = self._get_tool_return(
+                            next_step_action, run_manager=run_manager
+                        )
                         if tool_return is not None:
                             return await self._areturn(
                                 tool_return, intermediate_steps, run_manager=run_manager
@@ -1724,7 +1745,9 @@ class AgentExecutor(Chain):
             )
 
     def _get_tool_return(
-        self, next_step_output: Tuple[AgentAction, str]
+        self,
+        next_step_output: Tuple[AgentAction, str],
+        run_manager: Union[AsyncCallbackManagerForChainRun, CallbackManagerForChainRun],
     ) -> Optional[AgentFinish]:
         """Check if the tool is a returning tool."""
         agent_action, observation = next_step_output
@@ -1732,6 +1755,13 @@ class AgentExecutor(Chain):
         return_value_key = "output"
         if len(self.agent.return_values) > 0:
             return_value_key = self.agent.return_values[0]
+        # If we are forcing termination, we return the observation.
+        if self.forced_to_terminate_history.get(run_manager.run_id, False):
+            del self.forced_to_terminate_history[run_manager.run_id]
+            return AgentFinish(
+                {return_value_key: observation},
+                "",
+            )
         # Invalid tools won't be in the map, so we return False.
         if agent_action.tool in name_to_tool_map:
             if name_to_tool_map[agent_action.tool].return_direct:
