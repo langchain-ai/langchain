@@ -1,15 +1,26 @@
 """Test NexaAI Chat API wrapper."""
+
+import pytest
+
 from langchain_nexa_ai import NexaAILLM
+from tests import temporary_api_key
 
 
 def test_initialization() -> None:
     """Test integration initialization."""
-    NexaAILLM()
+
+    # Test that an error is raised without NEXA_API_KEY set
+    with pytest.raises(ValueError):
+        NexaAILLM()
+
+    with temporary_api_key():
+        NexaAILLM()
 
 
 def test_prepare_categories() -> None:
     """Test _prepare_categories method of NexaAILLM."""
-    llm = NexaAILLM()
+    with temporary_api_key():
+        llm = NexaAILLM()
 
     # Test case 1: No categories or category provided
     prompts = ["Prompt 1", "Prompt 2"]
