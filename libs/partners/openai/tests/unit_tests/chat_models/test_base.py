@@ -15,6 +15,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import ConfigurableField
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
@@ -369,3 +370,31 @@ def test_get_num_tokens_from_messages() -> None:
     expected = 170
     actual = llm.get_num_tokens_from_messages(messages)
     assert expected == actual
+
+
+def test_client_configurable_parameters_change() -> None:
+    """Test change in client configurable parameters"""
+    llm = ChatOpenAI(openai_api_key="api_key_1").configurable_fields(
+        openai_api_key=ConfigurableField(id="openai_api_key")
+    )
+    inital_client = llm.__dict__["default"].client
+    _llm = llm.with_config(configurable={"openai_api_key": "api_key_2"})
+    # create a client with new configuration within ChatOpenAI
+    prepare = getattr(_llm, "_prepare")
+    llm, config = prepare(_llm.__dict__["config"])
+    final_client = llm.__dict__["client"]
+    assert inital_client != final_client
+
+
+def test_async_client_configurable_parameters_change() -> None:
+    """Test change in async client configurable parameters"""
+    llm = ChatOpenAI(openai_api_key="api_key_1").configurable_fields(
+        openai_api_key=ConfigurableField(id="openai_api_key")
+    )
+    inital_async_client = llm.__dict__["default"].async_client
+    _llm = llm.with_config(configurable={"openai_api_key": "api_key_2"})
+    # create a client with new configuration within ChatOpenAI
+    prepare = getattr(_llm, "_prepare")
+    llm, config = prepare(_llm.__dict__["config"])
+    final_async_client = llm.__dict__["async_client"]
+    assert inital_async_client != final_async_client
