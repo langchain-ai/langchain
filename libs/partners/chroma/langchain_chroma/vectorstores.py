@@ -814,7 +814,7 @@ class Chroma(VectorStore):
                 documents=text,
                 metadatas=metadata,  # type: ignore
             )
-
+            
     @classmethod
     def from_texts(
         cls: Type[Chroma],
@@ -930,7 +930,37 @@ class Chroma(VectorStore):
             collection_metadata=collection_metadata,
             **kwargs,
         )
-
+    # chroma_collection = cls(
+    #         collection_name=collection_name,
+    #         embedding_function=embedding,
+    #         persist_directory=persist_directory,
+    #         client_settings=client_settings,
+    #         client=client,
+    #         collection_metadata=collection_metadata,
+    #         **kwargs,
+    #     )
+    @classmethod
+    def from_existing_collection(
+        cls: Type[Chroma],
+        collection_name: str,
+        embedding: Embeddings,
+        persist_directory: str,
+        client_settings: Optional[chromadb.config.Settings] = None,
+        client: Optional[chromadb.ClientAPI] = None,  # Add this line
+        collection_metadata: Optional[Dict] = None,
+        **kwargs: Any,
+    ) -> Chroma:
+        
+        return cls(
+            collection_name=collection_name,
+            embedding_function=embedding,
+            persist_directory=persist_directory,
+            client_settings=client_settings,
+            client=client,
+            collection_metadata=collection_metadata,
+            **kwargs,
+        )
+        
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> None:
         """Delete by vector IDs.
 
