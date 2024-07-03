@@ -1,4 +1,5 @@
 """Test FAISS functionality."""
+
 import datetime
 import math
 import tempfile

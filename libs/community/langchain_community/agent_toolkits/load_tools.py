@@ -626,6 +626,25 @@ def load_huggingface_tool(
     )
 
 
+def raise_dangerous_tools_exception(name: str) -> None:
+    raise ValueError(
+        f"{name} is a dangerous tool. You cannot use it without opting in "
+        "by setting allow_dangerous_tools to True. "
+        "Most tools have some inherit risk to them merely because they are "
+        'allowed to interact with the "real world".'
+        "Please refer to LangChain security guidelines "
+        "to https://python.langchain.com/docs/security."
+        "Some tools have been designated as dangerous because they pose "
+        "risk that is not intuitively obvious. For example, a tool that "
+        "allows an agent to make requests to the web, can also be used "
+        "to make requests to a server that is only accessible from the "
+        "server hosting the code."
+        "Again, all tools carry some risk, and it's your responsibility to "
+        "understand which tools you're using and the risks associated with "
+        "them."
+    )
+
+
 def load_tools(
     tool_names: List[str],
     llm: Optional[BaseLanguageModel] = None,
@@ -684,22 +703,7 @@ def load_tools(
     )
     for name in tool_names:
         if name in DANGEROUS_TOOLS and not allow_dangerous_tools:
-            raise ValueError(
-                f"{name} is a dangerous tool. You cannot use it without opting in "
-                "by setting allow_dangerous_tools to True. "
-                "Most tools have some inherit risk to them merely because they are "
-                'allowed to interact with the "real world".'
-                "Please refer to LangChain security guidelines "
-                "to https://python.langchain.com/docs/security."
-                "Some tools have been designated as dangerous because they pose "
-                "risk that is not intuitively obvious. For example, a tool that "
-                "allows an agent to make requests to the web, can also be used "
-                "to make requests to a server that is only accessible from the "
-                "server hosting the code."
-                "Again, all tools carry some risk, and it's your responsibility to "
-                "understand which tools you're using and the risks associated with "
-                "them."
-            )
+            raise_dangerous_tools_exception(name)
 
         if name in {"requests"}:
             warnings.warn(
@@ -708,8 +712,10 @@ def load_tools(
             )
         if name == "requests_all":
             # expand requests into various methods
+            if not allow_dangerous_tools:
+                raise_dangerous_tools_exception(name)
             requests_method_tools = [
-                _tool for _tool in _BASE_TOOLS if _tool.startswith("requests_")
+                _tool for _tool in DANGEROUS_TOOLS if _tool.startswith("requests_")
             ]
             tool_names.extend(requests_method_tools)
         elif name in _BASE_TOOLS:
