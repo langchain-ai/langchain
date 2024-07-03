@@ -89,15 +89,13 @@ class PebbloSafeLoader(BaseLoader):
             list: Documents fetched from load method of the wrapped `loader`.
         """
         self.docs = self.loader.load()
-        if not self.load_semantic:
-            self._classify_doc(self.docs, loading_end=True)
-            return self.docs
         self.docs_with_id = self._index_docs()
         classified_docs = self._classify_doc(self.docs_with_id, loading_end=True)
-        self.docs_with_id = self._add_semantic_to_docs(
-            self.docs_with_id, classified_docs
-        )
-        self.docs = self._unindex_docs(self.docs_with_id)  # type: ignore
+        if self.load_semantic:
+            self.docs_with_id = self._add_semantic_to_docs(
+                self.docs_with_id, classified_docs
+            )
+            self.docs = self._unindex_docs(self.docs_with_id)  # type: ignore
         return self.docs
 
     def lazy_load(self) -> Iterator[Document]:
@@ -123,17 +121,14 @@ class PebbloSafeLoader(BaseLoader):
                 self.docs = []
                 break
             self.docs = list((doc,))
-            if not self.load_semantic:
-                self._classify_doc(self.docs, loading_end=True)
-                yield self.docs[0]
-            else:
-                self.docs_with_id = self._index_docs()
-                classified_doc = self._classify_doc(self.docs)
+            self.docs_with_id = self._index_docs()
+            classified_doc = self._classify_doc(self.docs)
+            if self.load_semantic:
                 self.docs_with_id = self._add_semantic_to_docs(
                     self.docs_with_id, classified_doc
                 )
                 self.docs = self._unindex_docs(self.docs_with_id)  # type: ignore
-                yield self.docs[0]
+            yield self.docs[0]
 
     @classmethod
     def set_discover_sent(cls) -> None:
@@ -257,7 +252,7 @@ class PebbloSafeLoader(BaseLoader):
                 docs = payload["docs"]
                 for doc_data in docs:
                     for doc in classified_docs:
-                        if doc_data["source_path"] == doc["source_path"]:
+                        if doc_data["id"] == doc["id"]:
                             doc_data.update(
                                 {
                                     "content_checksum": doc["content_checksum"],
