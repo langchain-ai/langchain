@@ -29,7 +29,7 @@ class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
         """Patched insert_texts that waits for data to be indexed before returning"""
         ids = super()._insert_texts(texts, metadatas)
         timeout = TIMEOUT
-        while len(ids) != self.similarity_search("sandwich") and timeout >= 0:
+        while len(ids) != len(self.similarity_search("sandwich")) and timeout >= 0:
             sleep(INTERVAL)
             timeout -= INTERVAL
         return ids
@@ -215,3 +215,31 @@ class TestMongoDBAtlasVectorSearch:
         assert len(output) == len(texts)
         assert output[0].page_content == "foo"
         assert output[1].page_content != "foo"
+
+    def test_delete(self, embedding_openai: Embeddings, collection: Any) -> None:
+        texts = [
+            "Dogs are tough.",
+            "Cats have fluff.",
+            "What is a sandwich?",
+            "That fence is purple.",
+        ]
+        vectorstore = MongoDBAtlasVectorSearch(  # PatchedMongoDBAtlasVectorSearch(
+            collection=collection,
+            embedding=embedding_openai,
+            index_name=INDEX_NAME,
+        )
+        clxn: Collection = vectorstore._collection
+        assert clxn.count_documents({}) == 0
+        ids = vectorstore.add_texts(texts)
+        assert clxn.count_documents({}) == len(texts)
+
+        deleted = vectorstore.delete(ids[-2:])
+        assert deleted
+        assert clxn.count_documents({}) == len(texts) - 2
+
+        new_ids = vectorstore.add_texts(["Pigs eat stuff", "Pigs eat sandwiches"])
+        assert set(new_ids).intersection(set(ids)) == set()  # new ids will be unique.
+        assert isinstance(new_ids, list)
+        assert all(isinstance(i, str) for i in new_ids)
+        assert len(new_ids) == 2
+        assert clxn.count_documents({}) == 4

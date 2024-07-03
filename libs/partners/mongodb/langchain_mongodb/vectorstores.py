@@ -17,7 +17,6 @@ from typing import (
 
 import numpy as np
 from bson import ObjectId, json_util
-from bson.errors import InvalidId
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
@@ -26,7 +25,7 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.driver_info import DriverInfo
 
-from langchain_mongodb.utils import maximal_marginal_relevance
+from langchain_mongodb.utils import maximal_marginal_relevance, str_to_oid, oid_to_str
 
 MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 VST = TypeVar("VST", bound=VectorStore)
@@ -139,8 +138,9 @@ class MongoDBAtlasVectorSearch(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[Dict[str, Any]]] = None,
+        ids: Optional[Iterable[str]] = None,
         **kwargs: Any,
-    ) -> List:
+    ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
@@ -150,6 +150,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
+        
         batch_size = kwargs.get("batch_size", DEFAULT_INSERT_BATCH_SIZE)
         _metadatas: Union[List, Generator] = metadatas or ({} for _ in texts)
         texts_batch = texts
@@ -168,9 +169,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
                     texts_batch = []
                     metadatas_batch = []
                     size = 0
+
         if texts_batch:
             result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))  # type: ignore
-        return [str(result_ids) for i in result_ids]
+        return [str(i) for i in result_ids]
 
     def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
         if not texts:
@@ -396,21 +398,22 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return vectorstore
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
-        """Delete by ObjectId or other criteria.
+        """Delete documents from VectorStore by ids.
 
         Args:
             ids: List of ids to delete.
-            **kwargs: Other keyword arguments that subclasses might use.
+            **kwargs: Other keyword arguments passed to Collection.delete_many()
 
         Returns:
             Optional[bool]: True if deletion is successful,
             False otherwise, None if not implemented.
         """
-        search_params: dict[str, Any] = {}
+        filter = {}
         if ids:
-            search_params[self._text_key]["$in"] = ids
+            oids = [str_to_oid(i) for i in ids]
+            filter = {"_id": {"$in": oids}}
 
-        return self._collection.delete_many({**search_params, **kwargs}).acknowledged
+        return self._collection.delete_many(filter=filter, **kwargs).acknowledged
 
     async def adelete(
         self, ids: Optional[List[str]] = None, **kwargs: Any
@@ -494,19 +497,3 @@ class MongoDBAtlasVectorSearch(VectorStore):
         )
 
 
-def str_to_id(str_repr: str) -> ObjectId | str:
-    """Convert string representation to ObjectID.
-
-    If not a 24 character hex string, then return str_repr
-
-    Args:
-        str_repr: 24 character hex string, for performance. Else any string.
-
-    Returns:
-        ObjectID
-    """
-    try:
-        return ObjectId(str_repr)
-    except InvalidId:
-        logger.debug("For performance, ids must 12-byte input or a 24-character hex string")
-        return str_repr
