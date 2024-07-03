@@ -1,6 +1,7 @@
 """Utilities for tests."""
+
 from functools import wraps
-from typing import Dict, Any
+from typing import Any, Dict
 
 from langchain_core.pydantic_v1 import root_validator
 
@@ -28,11 +29,20 @@ def pre_init(func: callable) -> callable:
         # Insert default values
         fields = cls.__fields__
         for name, field_info in fields.items():
+            # Check if allow_population_by_field_name is enabled
+            # If yes, then set the field name to the alias
+            if hasattr(cls, "Config"):
+                if hasattr(cls.Config, "allow_population_by_field_name"):
+                    if cls.Config.allow_population_by_field_name:
+                        if field_info.alias in values:
+                            values[name] = values.pop(field_info.alias)
+
             if name not in values or values[name] is None:
-                if field_info.default_factory is not None:
-                    values[name] = field_info.default_factory()
-                elif field_info.default is not None:
-                    values[name] = field_info.default
+                if not field_info.required:
+                    if field_info.default_factory is not None:
+                        values[name] = field_info.default_factory()
+                    else:
+                        values[name] = field_info.default
 
         # Call the decorated function
         return func(cls, values)
