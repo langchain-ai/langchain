@@ -71,7 +71,7 @@ class InMemoryVectorStore(VectorStore):
                 )
         return documents
 
-    await def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+    async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
         return self.get_by_ids(ids)
 
     async def aadd_texts(
