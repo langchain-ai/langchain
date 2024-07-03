@@ -93,9 +93,13 @@ CHAT_MODEL_FEAT_TABLE = {
         "package": "langchain-community",
         "link": "/docs/integrations/chat/ollama/",
     },
-    "vLLM Chat (via ChatOpenAI)": {
+    "vLLM Chat": {
         "local": True,
-        "package": "langchain-openai",
+        "json_mode": True,
+        "structured_output": True,
+        "tool_calling": False,
+        "multimodal": True,
+        "package": "langchain-community",
         "link": "/docs/integrations/chat/vllm/",
     },
     "ChatEdenAI": {
@@ -112,7 +116,8 @@ CHAT_MODEL_FEAT_TABLE = {
 }
 
 for feats in CHAT_MODEL_FEAT_TABLE.values():
-    feats["structured_output"] = feats.get("tool_calling", False)
+    if "structured_output" not in feats:
+        feats["structured_output"] = feats.get("tool_calling", False)
 
 
 LLM_TEMPLATE = """\
