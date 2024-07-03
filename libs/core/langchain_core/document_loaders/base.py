@@ -1,4 +1,5 @@
 """Abstract interface for document loader implementations."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -10,7 +11,7 @@ from langchain_core.runnables import run_in_executor
 if TYPE_CHECKING:
     from langchain_text_splitters import TextSplitter
 
-from langchain_core.document_loaders.blob_loaders import Blob
+from langchain_core.documents.base import Blob
 
 
 class BaseLoader(ABC):

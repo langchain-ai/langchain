@@ -242,22 +242,31 @@ def create_unstructured_prompt(
     system_message = SystemMessage(content=system_prompt)
     parser = JsonOutputParser(pydantic_object=UnstructuredRelation)
 
+    human_string_parts = [
+        "Based on the following example, extract entities and "
+        "relations from the provided text.\n\n",
+        "Use the following entity types, don't use other entity "
+        "that is not defined below:"
+        "# ENTITY TYPES:"
+        "{node_labels}"
+        if node_labels
+        else "",
+        "Use the following relation types, don't use other relation "
+        "that is not defined below:"
+        "# RELATION TYPES:"
+        "{rel_types}"
+        if rel_types
+        else "",
+        "Below are a number of examples of text and their extracted "
+        "entities and relationships."
+        "{examples}\n"
+        "For the following text, extract entities and relations as "
+        "in the provided example."
+        "{format_instructions}\nText: {input}",
+    ]
+    human_prompt_string = "\n".join(filter(None, human_string_parts))
     human_prompt = PromptTemplate(
-        template="""Based on the following example, extract entities and 
-relations from the provided text.\n\n
-Use the following entity types, don't use other entity that is not defined below:
-# ENTITY TYPES:
-{node_labels}
-
-Use the following relation types, don't use other relation that is not defined below:
-# RELATION TYPES:
-{rel_types}
-
-Below are a number of examples of text and their extracted entities and relationships.
-{examples}
-
-For the following text, extract entities and relations as in the provided example.
-{format_instructions}\nText: {input}""",
+        template=human_prompt_string,
         input_variables=["input"],
         partial_variables={
             "format_instructions": parser.get_format_instructions(),
@@ -525,7 +534,9 @@ def _format_nodes(nodes: List[Node]) -> List[Node]:
     return [
         Node(
             id=el.id.title() if isinstance(el.id, str) else el.id,
-            type=el.type.capitalize(),
+            type=el.type.capitalize()  # type: ignore[arg-type]
+            if el.type
+            else None,  # handle empty strings  # type: ignore[arg-type]
             properties=el.properties,
         )
         for el in nodes
@@ -576,13 +587,17 @@ def _convert_to_graph_document(
     else:  # If there are no validation errors use parsed pydantic object
         parsed_schema: _Graph = raw_schema["parsed"]
         nodes = (
-            [map_to_base_node(node) for node in parsed_schema.nodes]
+            [map_to_base_node(node) for node in parsed_schema.nodes if node.id]
             if parsed_schema.nodes
             else []
         )
 
         relationships = (
-            [map_to_base_relationship(rel) for rel in parsed_schema.relationships]
+            [
+                map_to_base_relationship(rel)
+                for rel in parsed_schema.relationships
+                if rel.type and rel.source_node_id and rel.target_node_id
+            ]
             if parsed_schema.relationships
             else []
         )

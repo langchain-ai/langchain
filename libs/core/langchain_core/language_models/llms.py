@@ -78,7 +78,20 @@ def create_base_retry_decorator(
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
 ) -> Callable[[Any], Any]:
-    """Create a retry decorator for a given LLM and provided list of error types."""
+    """Create a retry decorator for a given LLM and provided
+     a list of error types.
+
+    Args:
+        error_types: List of error types to retry on.
+        max_retries: Number of retries. Default is 1.
+        run_manager: Callback manager for the run. Default is None.
+
+    Returns:
+        A retry decorator.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
 
     _logging = before_sleep_log(logger, logging.WARNING)
 
@@ -141,7 +154,20 @@ def get_prompts(
     prompts: List[str],
     cache: Optional[Union[BaseCache, bool, None]] = None,
 ) -> Tuple[Dict[int, List], str, List[int], List[str]]:
-    """Get prompts that are already cached."""
+    """Get prompts that are already cached.
+
+    Args:
+        params: Dictionary of parameters.
+        prompts: List of prompts.
+        cache: Cache object. Default is None.
+
+    Returns:
+        A tuple of existing prompts, llm_string, missing prompt indexes,
+            and missing prompts.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     missing_prompts = []
     missing_prompt_idxs = []
@@ -164,7 +190,20 @@ async def aget_prompts(
     prompts: List[str],
     cache: Optional[Union[BaseCache, bool, None]] = None,
 ) -> Tuple[Dict[int, List], str, List[int], List[str]]:
-    """Get prompts that are already cached. Async version."""
+    """Get prompts that are already cached. Async version.
+
+    Args:
+        params: Dictionary of parameters.
+        prompts: List of prompts.
+        cache: Cache object. Default is None.
+
+    Returns:
+        A tuple of existing prompts, llm_string, missing prompt indexes,
+            and missing prompts.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     missing_prompts = []
     missing_prompt_idxs = []
@@ -189,7 +228,22 @@ def update_cache(
     new_results: LLMResult,
     prompts: List[str],
 ) -> Optional[dict]:
-    """Update the cache and get the LLM output."""
+    """Update the cache and get the LLM output.
+
+    Args:
+        cache: Cache object.
+        existing_prompts: Dictionary of existing prompts.
+        llm_string: LLM string.
+        missing_prompt_idxs: List of missing prompt indexes.
+        new_results: LLMResult object.
+        prompts: List of prompts.
+
+    Returns:
+        LLM output.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
     llm_cache = _resolve_cache(cache)
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
@@ -208,7 +262,23 @@ async def aupdate_cache(
     new_results: LLMResult,
     prompts: List[str],
 ) -> Optional[dict]:
-    """Update the cache and get the LLM output. Async version"""
+    """Update the cache and get the LLM output. Async version.
+
+    Args:
+        cache: Cache object.
+        existing_prompts: Dictionary of existing prompts.
+        llm_string: LLM string.
+        missing_prompt_idxs: List of missing prompt indexes.
+        new_results: LLMResult object.
+        prompts: List of prompts.
+
+    Returns:
+        LLM output.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
+
     llm_cache = _resolve_cache(cache)
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
@@ -706,6 +776,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 first occurrence of any of these substrings.
             callbacks: Callbacks to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
+            tags: List of tags to associate with each prompt. If provided, the length
+                of the list must match the length of the prompts list.
+            metadata: List of metadata dictionaries to associate with each prompt. If
+                provided, the length of the list must match the length of the prompts
+                list.
+            run_name: List of run names to associate with each prompt. If provided, the
+                length of the list must match the length of the prompts list.
+            run_id: List of run IDs to associate with each prompt. If provided, the
+                length of the list must match the length of the prompts list.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
 
@@ -924,6 +1003,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 first occurrence of any of these substrings.
             callbacks: Callbacks to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
+            tags: List of tags to associate with each prompt. If provided, the length
+                of the list must match the length of the prompts list.
+            metadata: List of metadata dictionaries to associate with each prompt. If
+                provided, the length of the list must match the length of the prompts
+                list.
+            run_name: List of run names to associate with each prompt. If provided, the
+                length of the list must match the length of the prompts list.
+            run_id: List of run IDs to associate with each prompt. If provided, the
+                length of the list must match the length of the prompts list.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
 
@@ -1075,7 +1163,25 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
-        """Check Cache and run the LLM on the given prompt and input."""
+        """Check Cache and run the LLM on the given prompt and input.
+
+        Args:
+            prompt: The prompt to generate from.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            callbacks: Callbacks to pass through. Used for executing additional
+                functionality, such as logging or streaming, throughout generation.
+            tags: List of tags to associate with the prompt.
+            metadata: Metadata to associate with the prompt.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            The generated text.
+
+        Raises:
+            ValueError: If the prompt is not a string.
+        """
         if not isinstance(prompt, str):
             raise ValueError(
                 "Argument `prompt` is expected to be a string. Instead found "
@@ -1189,6 +1295,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Args:
             file_path: Path to file to save the LLM to.
+
+        Raises:
+            ValueError: If the file path is not a string or Path object.
 
         Example:
         .. code-block:: python
@@ -1333,7 +1442,7 @@ class LLM(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Run the LLM on the given prompt and input."""
+        """Async run the LLM on the given prompt and input."""
         generations = []
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         for prompt in prompts:

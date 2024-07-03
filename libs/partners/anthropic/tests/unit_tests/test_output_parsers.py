@@ -70,3 +70,19 @@ def test_tools_output_parser_pydantic() -> None:
     expected = [_Foo1(bar=0), _Foo2(baz="a")]
     actual = output_parser.parse_result(_RESULT)
     assert expected == actual
+
+
+def test_tools_output_parser_empty_content() -> None:
+    class ChartType(BaseModel):
+        chart_type: Literal["pie", "line", "bar"]
+
+    output_parser = ToolsOutputParser(
+        first_tool_only=True, pydantic_schemas=[ChartType]
+    )
+    message = AIMessage(
+        "",
+        tool_calls=[{"name": "ChartType", "args": {"chart_type": "pie"}, "id": "foo"}],
+    )
+    actual = output_parser.invoke(message)
+    expected = ChartType(chart_type="pie")
+    assert expected == actual

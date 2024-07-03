@@ -1,4 +1,5 @@
 """Logic for converting internal query language to a valid AstraDB query."""
+
 from typing import Dict, Tuple, Union
 
 from langchain_core.structured_query import (

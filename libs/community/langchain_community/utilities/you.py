@@ -1,6 +1,7 @@
 """Util that calls you.com Search API.
 
 In order to set this up, follow instructions at:
+https://documentation.you.com/quickstart
 """
 
 import warnings

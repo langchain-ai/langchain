@@ -473,6 +473,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     )
                 elif isinstance(tmpl, dict) and "image_url" in tmpl:
                     img_template = cast(_ImageTemplateParam, tmpl)["image_url"]
+                    input_variables = []
                     if isinstance(img_template, str):
                         vars = get_template_variables(img_template, "f-string")
                         if vars:
@@ -483,20 +484,19 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                                     f"\nFrom: {tmpl}"
                                 )
                             input_variables = [vars[0]]
-                        else:
-                            input_variables = None
                         img_template = {"url": img_template}
                         img_template_obj = ImagePromptTemplate(
                             input_variables=input_variables, template=img_template
                         )
                     elif isinstance(img_template, dict):
                         img_template = dict(img_template)
-                        if "url" in img_template:
-                            input_variables = get_template_variables(
-                                img_template["url"], "f-string"
-                            )
-                        else:
-                            input_variables = None
+                        for key in ["url", "path", "detail"]:
+                            if key in img_template:
+                                input_variables.extend(
+                                    get_template_variables(
+                                        img_template[key], "f-string"
+                                    )
+                                )
                         img_template_obj = ImagePromptTemplate(
                             input_variables=input_variables, template=img_template
                         )
@@ -1118,12 +1118,10 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         self.messages.extend([_convert_to_message(message) for message in messages])
 
     @overload
-    def __getitem__(self, index: int) -> MessageLike:
-        ...
+    def __getitem__(self, index: int) -> MessageLike: ...
 
     @overload
-    def __getitem__(self, index: slice) -> ChatPromptTemplate:
-        ...
+    def __getitem__(self, index: slice) -> ChatPromptTemplate: ...
 
     def __getitem__(
         self, index: Union[int, slice]
