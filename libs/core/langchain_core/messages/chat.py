@@ -9,7 +9,7 @@ from langchain_core.utils._merge import merge_dicts
 
 
 class ChatMessage(BaseMessage):
-    """Message that can be assigned an arbitrary speaker (i.e., role)."""
+    """Message that can be assigned an arbitrary speaker (i.e. role)."""
 
     role: str
     """The speaker / role of the Message."""
