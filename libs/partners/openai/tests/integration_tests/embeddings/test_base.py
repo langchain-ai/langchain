@@ -1,4 +1,5 @@
 """Test OpenAI embeddings."""
+
 import numpy as np
 import openai
 
