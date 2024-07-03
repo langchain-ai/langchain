@@ -325,7 +325,7 @@ class ChatHuggingFace(BaseChatModel):
             else self.tokenizer
         )
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_llm(cls, values: dict) -> dict:
         if (
             not _is_huggingface_hub(values["llm"])

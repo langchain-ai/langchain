@@ -19,7 +19,7 @@ class StackExchangeAPIWrapper(BaseModel):
     result_separator: str = "\n\n"
     """Separator between question,answer pairs."""
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the required Python package exists."""
         try:

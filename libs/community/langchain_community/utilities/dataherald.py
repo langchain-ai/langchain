@@ -26,7 +26,7 @@ class DataheraldAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         dataherald_api_key = get_from_dict_or_env(
