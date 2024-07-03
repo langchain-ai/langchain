@@ -463,12 +463,10 @@ class PebbloRetrievalQA(Chain):
                     resp = json.loads(pebblo_resp.text)
                     if resp:
                         payload["response"].update(
-                            resp.get("retrieval_data", {})
-                            .get("response", {})
+                            resp.get("retrieval_data", {}).get("response", {})
                         )
                         payload["prompt"].update(
-                            resp.get("retrieval_data", {})
-                            .get("prompt", {})
+                            resp.get("retrieval_data", {}).get("prompt", {})
                         )
                 else:
                     payload["response"] = {}

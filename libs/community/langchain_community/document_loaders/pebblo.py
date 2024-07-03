@@ -258,10 +258,12 @@ class PebbloSafeLoader(BaseLoader):
                 for doc_data in docs:
                     for doc in classified_docs:
                         if doc_data["source_path"] == doc["source_path"]:
-                            doc_data.update({
-                                "content_checksum": doc["content_checksum"],
-                                "loader_source_path": doc["loader_source_path"]
-                            })
+                            doc_data.update(
+                                {
+                                    "content_checksum": doc["content_checksum"],
+                                    "loader_source_path": doc["loader_source_path"],
+                                }
+                            )
                         break
                     doc_data.pop("doc")
                     payload_docs.append(doc_data)
