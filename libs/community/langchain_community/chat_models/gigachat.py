@@ -80,7 +80,7 @@ VIDEO_SEARCH_REGEX = re.compile(
 )
 
 
-def _validate_content(content):
+def _validate_content(content: Any) -> Any:
     """If content is string, but not JSON - convert string to json-string"""
     if isinstance(content, str):
         try:
