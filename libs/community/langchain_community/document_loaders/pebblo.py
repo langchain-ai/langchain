@@ -522,7 +522,7 @@ class PebbloSafeLoader(BaseLoader):
         )
         return doc
 
-    def _add_pebblo_specific_metadata(self):
+    def _add_pebblo_specific_metadata(self) -> None:
         """Add Pebblo specific metadata to documents."""
         for doc in self.docs:
             doc_metadata = doc.metadata
