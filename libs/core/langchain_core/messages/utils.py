@@ -49,7 +49,6 @@ AnyMessage = Union[
     SystemMessage,
     FunctionMessage,
     ToolMessage,
-    RemoveMessage,
 ]
 
 
