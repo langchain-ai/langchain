@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Any, Dict, List, Optional
 
 from langchain_core.embeddings import Embeddings
@@ -49,12 +50,9 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["huggingfacehub_api_token"] = get_from_dict_or_env(
-            values, "huggingfacehub_api_token", "HUGGINGFACEHUB_API_TOKEN", None
-        )
-
+        existing_key = next((key for key in ["HF_TOKEN", "HUGGINGFACEHUB_API_TOKEN"] if key in os.environ), "HUGGINGFACEHUB_API_TOKEN")
         huggingfacehub_api_token = get_from_dict_or_env(
-            values, "huggingfacehub_api_token", "HF_TOKEN", None
+            values, "huggingfacehub_api_token", f"{existing_key}", None
         )
 
         try:
