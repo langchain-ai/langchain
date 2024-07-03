@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra
 from langchain_core.utils import pre_init
 
 LASER_MULTILINGUAL_MODEL: str = "laser2"

@@ -50,7 +50,6 @@ from langchain_core.pydantic_v1 import (
     Extra,
     Field,
     SecretStr,
-    root_validator,
 )
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool

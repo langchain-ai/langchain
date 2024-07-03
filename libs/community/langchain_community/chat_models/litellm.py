@@ -46,7 +46,7 @@ from langchain_core.outputs import (
     ChatGenerationChunk,
     ChatResult,
 )
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
 logger = logging.getLogger(__name__)

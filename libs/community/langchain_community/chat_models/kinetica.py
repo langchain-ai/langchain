@@ -26,8 +26,7 @@ from langchain_core.messages import (
 )
 from langchain_core.output_parsers.transform import BaseOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult, Generation
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.utils import pre_init
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 LOG = logging.getLogger(__name__)
 

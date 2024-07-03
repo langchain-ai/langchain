@@ -11,7 +11,6 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.load.serializable import Serializable
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import pre_init
 
 if TYPE_CHECKING:

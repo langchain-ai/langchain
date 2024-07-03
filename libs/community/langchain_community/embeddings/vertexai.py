@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Literal, Optional, Tuple
 from langchain_core._api.deprecation import deprecated
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import create_base_retry_decorator
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import pre_init
 
 from langchain_community.llms.vertexai import _VertexAICommon

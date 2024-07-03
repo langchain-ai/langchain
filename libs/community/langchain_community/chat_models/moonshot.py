@@ -2,7 +2,6 @@
 
 from typing import Dict
 
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
     get_from_dict_or_env,

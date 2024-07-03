@@ -3,7 +3,7 @@
 from typing import Dict
 
 from langchain_core._api import deprecated
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field
 from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.chat_models import ChatOpenAI
