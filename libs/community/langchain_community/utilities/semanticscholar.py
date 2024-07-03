@@ -50,7 +50,7 @@ class SemanticScholarAPIWrapper(BaseModel):
         "externalIds",
     ]
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:

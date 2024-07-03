@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import json
 import uuid
 import warnings
 from abc import ABC, abstractmethod
@@ -54,7 +55,7 @@ from langchain_core.outputs import (
     RunInfo,
 )
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
@@ -62,22 +63,36 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 
 if TYPE_CHECKING:
     from langchain_core.output_parsers.base import OutputParserLike
-    from langchain_core.pydantic_v1 import BaseModel
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.tools import BaseTool
 
 
 class LangSmithParams(TypedDict, total=False):
+    """LangSmith parameters for tracing."""
+
     ls_provider: str
+    """Provider of the model."""
     ls_model_name: str
+    """Name of the model."""
     ls_model_type: Literal["chat"]
+    """Type of the model. Should be 'chat'."""
     ls_temperature: Optional[float]
+    """Temperature for generation."""
     ls_max_tokens: Optional[int]
+    """Max tokens for generation."""
     ls_stop: Optional[List[str]]
+    """Stop words for generation."""
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
-    """Generate from a stream."""
+    """Generate from a stream.
+
+    Args:
+        stream: Iterator of ChatGenerationChunk.
+
+    Returns:
+        ChatResult: Chat result.
+    """
 
     generation: Optional[ChatGenerationChunk] = None
     for chunk in stream:
@@ -99,7 +114,14 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
 async def agenerate_from_stream(
     stream: AsyncIterator[ChatGenerationChunk],
 ) -> ChatResult:
-    """Async generate from a stream."""
+    """Async generate from a stream.
+
+    Args:
+        stream: Iterator of ChatGenerationChunk.
+
+    Returns:
+        ChatResult: Chat result.
+    """
 
     generation: Optional[ChatGenerationChunk] = None
     async for chunk in stream:
@@ -200,7 +222,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
-        """Raise deprecation warning if callback_manager is used."""
+        """Raise deprecation warning if callback_manager is used.
+
+        Args:
+            values (Dict): Values to validate.
+
+        Returns:
+            Dict: Validated values.
+
+        Raises:
+            DeprecationWarning: If callback_manager is used.
+        """
         if values.get("callback_manager") is not None:
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
@@ -449,7 +481,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if self.is_lc_serializable():
             params = {**kwargs, **{"stop": stop}}
             param_string = str(sorted([(k, v) for k, v in params.items()]))
-            llm_string = dumps(self)
+            # This code is not super efficient as it goes back and forth between
+            # json and dict.
+            serialized_repr = dumpd(self)
+            _cleanup_llm_representation(serialized_repr, 1)
+            llm_string = json.dumps(serialized_repr, sort_keys=True)
             return llm_string + "---" + param_string
         else:
             params = self._get_invocation_params(stop=stop, **kwargs)
@@ -1216,3 +1252,20 @@ def _gen_info_and_msg_metadata(
         **(generation.generation_info or {}),
         **generation.message.response_metadata,
     }
+
+
+def _cleanup_llm_representation(serialized: Any, depth: int) -> None:
+    """Remove non-serializable objects from a serialized object."""
+    if depth > 100:  # Don't cooperate for pathological cases
+        return
+    if serialized["type"] == "not_implemented" and "repr" in serialized:
+        del serialized["repr"]
+
+    if "graph" in serialized:
+        del serialized["graph"]
+
+    if "kwargs" in serialized:
+        kwargs = serialized["kwargs"]
+
+        for value in kwargs.values():
+            _cleanup_llm_representation(value, depth + 1)

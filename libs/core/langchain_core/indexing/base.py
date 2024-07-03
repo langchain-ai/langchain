@@ -37,7 +37,7 @@ class RecordManager(ABC):
     2. The record manager is currently implemented separately from the
        vectorstore, which means that the overall system becomes distributed
        and may create issues with consistency. For example, writing to
-       record manager succeeds but corresponding writing to vectorstore fails.
+       record manager succeeds, but corresponding writing to vectorstore fails.
     """
 
     def __init__(
@@ -227,6 +227,11 @@ class InMemoryRecordManager(RecordManager):
     """An in-memory record manager for testing purposes."""
 
     def __init__(self, namespace: str) -> None:
+        """Initialize the in-memory record manager.
+
+        Args:
+            namespace (str): The namespace for the record manager.
+        """
         super().__init__(namespace)
         # Each key points to a dictionary
         # of {'group_id': group_id, 'updated_at': timestamp}
@@ -237,14 +242,16 @@ class InMemoryRecordManager(RecordManager):
         """In-memory schema creation is simply ensuring the structure is initialized."""
 
     async def acreate_schema(self) -> None:
-        """In-memory schema creation is simply ensuring the structure is initialized."""
+        """Async in-memory schema creation is simply ensuring
+        the structure is initialized.
+        """
 
     def get_time(self) -> float:
         """Get the current server time as a high resolution timestamp!"""
         return time.time()
 
     async def aget_time(self) -> float:
-        """Get the current server time as a high resolution timestamp!"""
+        """Async get the current server time as a high resolution timestamp!"""
         return self.get_time()
 
     def update(
@@ -254,6 +261,27 @@ class InMemoryRecordManager(RecordManager):
         group_ids: Optional[Sequence[Optional[str]]] = None,
         time_at_least: Optional[float] = None,
     ) -> None:
+        """Upsert records into the database.
+
+        Args:
+            keys: A list of record keys to upsert.
+            group_ids: A list of group IDs corresponding to the keys.
+                Defaults to None.
+            time_at_least: Optional timestamp. Implementation can use this
+                to optionally verify that the timestamp IS at least this time
+                in the system that stores. Defaults to None.
+                E.g., use to validate that the time in the postgres database
+                is equal to or larger than the given timestamp, if not
+                raise an error.
+                This is meant to help prevent time-drift issues since
+                time may not be monotonically increasing!
+
+        Raises:
+            ValueError: If the length of keys doesn't match the length of group
+                ids.
+            ValueError: If time_at_least is in the future.
+        """
+
         if group_ids and len(keys) != len(group_ids):
             raise ValueError("Length of keys must match length of group_ids")
         for index, key in enumerate(keys):
@@ -269,12 +297,48 @@ class InMemoryRecordManager(RecordManager):
         group_ids: Optional[Sequence[Optional[str]]] = None,
         time_at_least: Optional[float] = None,
     ) -> None:
+        """Async upsert records into the database.
+
+        Args:
+            keys: A list of record keys to upsert.
+            group_ids: A list of group IDs corresponding to the keys.
+                Defaults to None.
+            time_at_least: Optional timestamp. Implementation can use this
+                to optionally verify that the timestamp IS at least this time
+                in the system that stores. Defaults to None.
+                E.g., use to validate that the time in the postgres database
+                is equal to or larger than the given timestamp, if not
+                raise an error.
+                This is meant to help prevent time-drift issues since
+                time may not be monotonically increasing!
+
+        Raises:
+            ValueError: If the length of keys doesn't match the length of group
+                ids.
+            ValueError: If time_at_least is in the future.
+        """
         self.update(keys, group_ids=group_ids, time_at_least=time_at_least)
 
     def exists(self, keys: Sequence[str]) -> List[bool]:
+        """Check if the provided keys exist in the database.
+
+        Args:
+            keys: A list of keys to check.
+
+        Returns:
+            A list of boolean values indicating the existence of each key.
+        """
         return [key in self.records for key in keys]
 
     async def aexists(self, keys: Sequence[str]) -> List[bool]:
+        """Async check if the provided keys exist in the database.
+
+        Args:
+            keys: A list of keys to check.
+
+        Returns:
+            A list of boolean values indicating the existence of each key.
+        """
         return self.exists(keys)
 
     def list_keys(
@@ -285,6 +349,21 @@ class InMemoryRecordManager(RecordManager):
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
     ) -> List[str]:
+        """List records in the database based on the provided filters.
+
+        Args:
+            before: Filter to list records updated before this time.
+                Defaults to None.
+            after: Filter to list records updated after this time.
+                Defaults to None.
+            group_ids: Filter to list records with specific group IDs.
+                Defaults to None.
+            limit: optional limit on the number of records to return.
+                Defaults to None.
+
+        Returns:
+            A list of keys for the matching records.
+        """
         result = []
         for key, data in self.records.items():
             if before and data["updated_at"] >= before:
@@ -306,14 +385,39 @@ class InMemoryRecordManager(RecordManager):
         group_ids: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
     ) -> List[str]:
+        """Async list records in the database based on the provided filters.
+
+        Args:
+            before: Filter to list records updated before this time.
+                Defaults to None.
+            after: Filter to list records updated after this time.
+                Defaults to None.
+            group_ids: Filter to list records with specific group IDs.
+                Defaults to None.
+            limit: optional limit on the number of records to return.
+                Defaults to None.
+
+        Returns:
+            A list of keys for the matching records.
+        """
         return self.list_keys(
             before=before, after=after, group_ids=group_ids, limit=limit
         )
 
     def delete_keys(self, keys: Sequence[str]) -> None:
+        """Delete specified records from the database.
+
+        Args:
+            keys: A list of keys to delete.
+        """
         for key in keys:
             if key in self.records:
                 del self.records[key]
 
     async def adelete_keys(self, keys: Sequence[str]) -> None:
+        """Async delete specified records from the database.
+
+        Args:
+            keys: A list of keys to delete.
+        """
         self.delete_keys(keys)

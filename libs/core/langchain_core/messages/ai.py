@@ -73,17 +73,27 @@ class AIMessage(BaseMessage):
     """
 
     type: Literal["ai"] = "ai"
-    """The type of the message (used for deserialization)."""
+    """The type of the message (used for deserialization). Defaults to "ai"."""
 
     def __init__(
         self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
     ) -> None:
-        """Pass in content as positional arg."""
+        """Pass in content as positional arg.
+
+        Args:
+            content: The content of the message.
+            **kwargs: Additional arguments to pass to the parent class.
+        """
         super().__init__(content=content, **kwargs)
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            The namespace of the langchain object.
+            Defaults to ["langchain", "schema", "messages"].
+        """
         return ["langchain", "schema", "messages"]
 
     @property
@@ -117,7 +127,15 @@ class AIMessage(BaseMessage):
         return values
 
     def pretty_repr(self, html: bool = False) -> str:
-        """Return a pretty representation of the message."""
+        """Return a pretty representation of the message.
+
+        Args:
+            html: Whether to return an HTML-formatted string.
+                 Defaults to False.
+
+        Returns:
+            A pretty representation of the message.
+        """
         base = super().pretty_repr(html=html)
         lines = []
 
@@ -157,14 +175,21 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
+    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore
+    """The type of the message (used for deserialization). 
+    Defaults to "AIMessageChunk"."""
 
     tool_call_chunks: List[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            The namespace of the langchain object.
+            Defaults to ["langchain", "schema", "messages"].
+        """
         return ["langchain", "schema", "messages"]
 
     @property
@@ -177,6 +202,17 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     @root_validator(pre=False, skip_on_failure=True)
     def init_tool_calls(cls, values: dict) -> dict:
+        """Initialize tool calls from tool call chunks.
+
+        Args:
+            values: The values to validate.
+
+        Returns:
+            The values with tool calls initialized.
+
+        Raises:
+            ValueError: If the tool call chunks are malformed.
+        """
         if not values["tool_call_chunks"]:
             if values["tool_calls"]:
                 values["tool_call_chunks"] = [

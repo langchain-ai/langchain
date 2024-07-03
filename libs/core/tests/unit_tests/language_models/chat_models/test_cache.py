@@ -5,6 +5,7 @@ import pytest
 
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.globals import set_llm_cache
+from langchain_core.language_models.chat_models import _cleanup_llm_representation
 from langchain_core.language_models.fake_chat_models import (
     FakeListChatModel,
     GenericFakeChatModel,
@@ -266,3 +267,137 @@ def test_global_cache_stream() -> None:
         assert global_cache._cache != {}
     finally:
         set_llm_cache(None)
+
+
+class CustomChat(GenericFakeChatModel):
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        return True
+
+
+async def test_can_swap_caches() -> None:
+    """Test that we can use a different cache object.
+
+    This test verifies that when we fetch teh llm_string representation
+    of the chat model, we can swap the cache object and still get the same
+    result.
+    """
+    cache = InMemoryCache()
+    chat_model = CustomChat(cache=cache, messages=iter(["hello"]))
+    result = await chat_model.ainvoke("foo")
+    assert result.content == "hello"
+
+    new_cache = InMemoryCache()
+    new_cache._cache = cache._cache.copy()
+
+    # Confirm that we get a cache hit!
+    chat_model = CustomChat(cache=new_cache, messages=iter(["goodbye"]))
+    result = await chat_model.ainvoke("foo")
+    assert result.content == "hello"
+
+
+def test_llm_representation_for_serializable() -> None:
+    """Test that the llm representation of a serializable chat model is correct."""
+    cache = InMemoryCache()
+    chat = CustomChat(cache=cache, messages=iter([]))
+    assert chat._get_llm_string() == (
+        '{"id": ["tests", "unit_tests", "language_models", "chat_models", '
+        '"test_cache", "CustomChat"], "kwargs": {"cache": {"id": ["tests", '
+        '"unit_tests", "language_models", "chat_models", "test_cache", '
+        '"InMemoryCache"], "lc": 1, "type": "not_implemented"}, "messages": {"id": '
+        '["builtins", "list_iterator"], "lc": 1, "type": "not_implemented"}}, "lc": '
+        '1, "name": "CustomChat", "type": "constructor"}---[(\'stop\', None)]'
+    )
+
+
+def test_cleanup_serialized() -> None:
+    cleanup_serialized = {
+        "lc": 1,
+        "type": "constructor",
+        "id": [
+            "tests",
+            "unit_tests",
+            "language_models",
+            "chat_models",
+            "test_cache",
+            "CustomChat",
+        ],
+        "kwargs": {
+            "cache": {
+                "lc": 1,
+                "type": "not_implemented",
+                "id": [
+                    "tests",
+                    "unit_tests",
+                    "language_models",
+                    "chat_models",
+                    "test_cache",
+                    "InMemoryCache",
+                ],
+                "repr": "<tests.unit_tests.language_models.chat_models."
+                "test_cache.InMemoryCache object at 0x79ff437fe7d0>",
+            },
+            "messages": {
+                "lc": 1,
+                "type": "not_implemented",
+                "id": ["builtins", "list_iterator"],
+                "repr": "<list_iterator object at 0x79ff437f8d30>",
+            },
+        },
+        "name": "CustomChat",
+        "graph": {
+            "nodes": [
+                {"id": 0, "type": "schema", "data": "CustomChatInput"},
+                {
+                    "id": 1,
+                    "type": "runnable",
+                    "data": {
+                        "id": [
+                            "tests",
+                            "unit_tests",
+                            "language_models",
+                            "chat_models",
+                            "test_cache",
+                            "CustomChat",
+                        ],
+                        "name": "CustomChat",
+                    },
+                },
+                {"id": 2, "type": "schema", "data": "CustomChatOutput"},
+            ],
+            "edges": [{"source": 0, "target": 1}, {"source": 1, "target": 2}],
+        },
+    }
+    _cleanup_llm_representation(cleanup_serialized, 1)
+    assert cleanup_serialized == {
+        "id": [
+            "tests",
+            "unit_tests",
+            "language_models",
+            "chat_models",
+            "test_cache",
+            "CustomChat",
+        ],
+        "kwargs": {
+            "cache": {
+                "id": [
+                    "tests",
+                    "unit_tests",
+                    "language_models",
+                    "chat_models",
+                    "test_cache",
+                    "InMemoryCache",
+                ],
+                "lc": 1,
+                "type": "not_implemented",
+            },
+            "messages": {
+                "id": ["builtins", "list_iterator"],
+                "lc": 1,
+                "type": "not_implemented",
+            },
+        },
+        "lc": 1,
+        "name": "CustomChat",
+        "type": "constructor",
+    }
