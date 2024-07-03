@@ -15,6 +15,7 @@ from typing import (
     TypedDict,
     TypeVar,
     Union,
+    cast,
 )
 
 from langchain_core.callbacks import (
@@ -418,9 +419,9 @@ class ToolCallingLLM(BaseChatModel, ABC):
         return system_message, functions
 
     def _process_response(
-        self, response_message: ChatResult, functions: List[Dict]
-    ) -> ChatResult:
-        chat_generation_content = response_message.generations[0].text
+        self, response_message: BaseMessage, functions: List[Dict]
+    ) -> AIMessage:
+        chat_generation_content = response_message.content
         if not isinstance(chat_generation_content, str):
             raise ValueError("ToolCallingLLM does not support non-string output.")
         try:
@@ -456,15 +457,7 @@ class ToolCallingLLM(BaseChatModel, ABC):
                     f"Failed to parse a response from {self.model} output: "  # type: ignore[attr-defined]
                     f"{chat_generation_content}"
                 )
-            return ChatResult(
-                generations=[
-                    ChatGeneration(
-                        message=AIMessage(
-                            content=response,
-                        )
-                    )
-                ]
-            )
+            return AIMessage(content=response)
 
         called_tool_arguments = (
             parsed_chat_result["tool_input"]
@@ -483,9 +476,7 @@ class ToolCallingLLM(BaseChatModel, ABC):
             ],
         )
 
-        return ChatResult(
-            generations=[ChatGeneration(message=response_message_with_functions)]
-        )
+        return response_message_with_functions
 
     def _generate(
         self,
@@ -498,8 +489,10 @@ class ToolCallingLLM(BaseChatModel, ABC):
         response_message = super()._generate(  # type: ignore[safe-super]
             [system_message] + messages, stop=stop, run_manager=run_manager, **kwargs
         )
-        response = self._process_response(response_message, functions)
-        return response
+        response = self._process_response(
+            response_message.generations[0].message, functions
+        )
+        return ChatResult(generations=[ChatGeneration(message=response)])
 
     async def _agenerate(
         self,
@@ -512,8 +505,10 @@ class ToolCallingLLM(BaseChatModel, ABC):
         response_message = await super()._agenerate(
             [system_message] + messages, stop=stop, run_manager=run_manager, **kwargs
         )
-        response = self._process_response(response_message, functions)
-        return response
+        response = self._process_response(
+            response_message.generations[0].message, functions
+        )
+        return ChatResult(generations=[ChatGeneration(message=response)])
 
     async def astream(
         self,
@@ -523,8 +518,17 @@ class ToolCallingLLM(BaseChatModel, ABC):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[BaseMessageChunk]:
-        """
-        Default implementation of astream, which calls ainvoke.
-        Subclasses should override this method if they support streaming output.
-        """
-        yield await self.ainvoke(input, config, **kwargs)  # type: ignore[misc]
+        system_message, functions = self._generate_system_message_and_functions(kwargs)
+        generation: Optional[BaseMessageChunk] = None
+        async for chunk in super().astream(
+            [system_message] + super()._convert_input(input).to_messages(),
+            stop=stop,
+            **kwargs,
+        ):
+            if generation is None:
+                generation = chunk
+            else:
+                generation += chunk
+        assert generation is not None
+        response = self._process_response(generation, functions)
+        yield cast(BaseMessageChunk, response)
