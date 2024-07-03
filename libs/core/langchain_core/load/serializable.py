@@ -172,11 +172,7 @@ class Serializable(BaseModel, ABC):
         """Serialize the object to JSON.
 
         Returns:
-            A json serializable object.
-
-        Raises:
-            ValueError: If the object is not a Serializable object or
-                a SerializedNotImplemented object.
+            A json serializable object or a SerializedNotImplemented object.
         """
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()

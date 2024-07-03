@@ -12,11 +12,7 @@ def default(obj: Any) -> Any:
         obj: The object to serialize to json if it is a Serializable object.
 
     Returns:
-        A json serializable object.
-
-    Raises:
-        ValueError: If the object is not a Serializable object or
-            a SerializedNotImplemented object.
+        A json serializable object or a SerializedNotImplemented object.
     """
     if isinstance(obj, Serializable):
         return obj.to_json()
