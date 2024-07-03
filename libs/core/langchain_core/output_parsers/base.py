@@ -290,7 +290,7 @@ class BaseOutputParser(
             prompt: Input PromptValue.
 
         Returns:
-            Structured .
+            Structured output.
         """
         return self.parse(completion)
 
