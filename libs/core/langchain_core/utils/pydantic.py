@@ -19,7 +19,8 @@ def get_pydantic_major_version() -> int:
 PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
 
 
-def pre_init(func: Callable) -> Callable:
+# How to type hint this?
+def pre_init(func: Callable) -> Callable:  # type: ignore
     """Decorator to run a function before model initialization."""
 
     @root_validator(pre=True)
