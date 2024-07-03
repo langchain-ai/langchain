@@ -257,9 +257,7 @@ class ToolCallingLLM(BaseChatModel, ABC):
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        functions = [convert_to_tool_definition(fn) for fn in tools]
-        functions.append(DEFAULT_RESPONSE_FUNCTION)
-        return self.bind(functions=functions, **kwargs)
+        return self.bind(functions=tools, **kwargs)
 
     def with_structured_output(
         self,
@@ -409,6 +407,8 @@ class ToolCallingLLM(BaseChatModel, ABC):
                     "matching function in `functions`."
                 )
             del kwargs["function_call"]
+        functions = [convert_to_tool_definition(fn) for fn in functions]
+        functions.append(DEFAULT_RESPONSE_FUNCTION)
         system_message_prompt_template = SystemMessagePromptTemplate.from_template(
             self.tool_system_prompt_template
         )
