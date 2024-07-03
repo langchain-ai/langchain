@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import io
-import json
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -209,7 +208,7 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
 
 
 class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
-    """Load files using `unstructured-client` sdk to access the Unstructured API.
+    """Load files using `Unstructured` API.
 
     By default, the loader makes a call to the hosted Unstructured API. If you are
     running the unstructured API locally, you can change the API rule by passing in the
@@ -255,70 +254,16 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
     ):
         """Initialize with file path."""
 
+        validate_unstructured_version(min_unstructured_version="0.10.15")
+
         self.file_path = file_path
         self.url = url
         self.api_key = api_key
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
-    def lazy_load(self) -> Iterator[Document]:
-        """Load file."""
-        # This method overwrites the UnstructuredBaseLoader method because that one
-        # expects `Element` objects instead of a json, which is what the SDK returns.
-        elements_json = self._get_elements()
-        self._post_process_elements(elements_json)
-
-        if self.mode == "elements":
-            for element in elements_json:
-                metadata = self._get_metadata()
-                metadata.update({"metadata": element.get("metadata")})
-                metadata.update({"category": element.get("category")})
-                metadata.update({"element_id": element.get("element_id")})
-                yield Document(page_content=element.get("text"), metadata=metadata)
-        elif self.mode == "paged":
-            text_dict: dict[int, str] = {}
-            meta_dict: dict[int, dict] = {}
-
-            for element in elements_json:
-                metadata = self._get_metadata()
-                metadata.update({"category": element.get("category")})
-                page_number = metadata.get("page_number", 1)
-
-                # Check if this page_number already exists in text_dict
-                if page_number not in text_dict:
-                    # If not, create new entry with initial text and metadata
-                    text_dict[page_number] = str(element.get("text")) + "\n\n"
-                    meta_dict[page_number] = metadata
-                else:
-                    # If exists, append to text and update the metadata
-                    text_dict[page_number] += str(element.get("text")) + "\n\n"
-                    meta_dict[page_number].update(metadata)
-
-            # Convert the dict to a list of Document objects
-            for key in text_dict.keys():
-                yield Document(page_content=text_dict[key], metadata=meta_dict[key])
-        elif self.mode == "single":
-            metadata = self._get_metadata()
-            text = "\n\n".join([el.get("text") for el in elements_json])
-            yield Document(page_content=text, metadata=metadata)
-        else:
-            raise ValueError(f"mode of {self.mode} not supported.")
-
     def _get_elements(self) -> list:
-        if isinstance(self.file_path, list):
-            elements = []
-            for path in self.file_path:
-                elements.extend(
-                    get_elements_from_api(
-                        file_path=path,
-                        api_key=self.api_key,
-                        api_url=self.url,
-                        **self.unstructured_kwargs,
-                    )
-                )
-            return elements
-
-        return get_elements_from_api(
+        return _get_elements_from_api(
             file_path=self.file_path,
             api_key=self.api_key,
             api_url=self.url,
@@ -328,7 +273,7 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
     def _get_metadata(self) -> dict:
         return {"source": self.file_path}
 
-    def _post_process_elements(self, elements: list[dict]) -> list:
+    def _post_process_elements(self, elements: list) -> list:
         """Apply post processing functions to extracted unstructured elements.
 
         Post processing functions are str -> str callables passed
@@ -336,7 +281,7 @@ class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
         """
         for element in elements:
             for post_processor in self.post_processors:
-                element["text"] = post_processor(element.get("text"))
+                element.apply(post_processor)
         return elements
 
 
@@ -466,88 +411,38 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
     ):
         """Initialize with file path."""
 
+        if isinstance(file, Sequence):
+            validate_unstructured_version(min_unstructured_version="0.6.3")
+        validate_unstructured_version(min_unstructured_version="0.6.2")
+
         self.file = file
         self.url = url
         self.api_key = api_key
 
         super().__init__(mode=mode, **unstructured_kwargs)
 
-    def lazy_load(self) -> Iterator[Document]:
-        """Load file."""
-        # This method overwrites the UnstructuredBaseLoader method because that one
-        # expects `Element` objects instead of a json, which is what the SDK returns.
-        elements_json = self._get_elements()
-        self._post_process_elements(elements_json)
-
-        if self.mode == "elements":
-            for element in elements_json:
-                metadata = self._get_metadata()
-                metadata.update({"metadata": element.get("metadata")})
-                metadata.update({"category": element.get("category")})
-                metadata.update({"element_id": element.get("element_id")})
-                yield Document(page_content=element.get("text"), metadata=metadata)
-        elif self.mode == "paged":
-            text_dict: dict[int, str] = {}
-            meta_dict: dict[int, dict] = {}
-
-            for element in elements_json:
-                metadata = self._get_metadata()
-                metadata.update({"category": element.get("category")})
-                page_number = metadata.get("page_number", 1)
-
-                # Check if this page_number already exists in text_dict
-                if page_number not in text_dict:
-                    # If not, create new entry with initial text and metadata
-                    text_dict[page_number] = str(element.get("text")) + "\n\n"
-                    meta_dict[page_number] = metadata
-                else:
-                    # If exists, append to text and update the metadata
-                    text_dict[page_number] += str(element.get("text")) + "\n\n"
-                    meta_dict[page_number].update(metadata)
-
-            # Convert the dict to a list of Document objects
-            for key in text_dict.keys():
-                yield Document(page_content=text_dict[key], metadata=meta_dict[key])
-        elif self.mode == "single":
-            metadata = self._get_metadata()
-            text = "\n\n".join([el.get("text") for el in elements_json])
-            yield Document(page_content=text, metadata=metadata)
-        else:
-            raise ValueError(f"mode of {self.mode} not supported.")
 
     def _get_elements(self) -> list:
-        if isinstance(self.file, Sequence):
-            if _metadata_filenames := self.unstructured_kwargs.pop("metadata_filename"):
-                elements = []
-                for i, file in enumerate(self.file):
-                    elements.extend(
-                        get_elements_from_api(
-                            file=file,
-                            file_path=_metadata_filenames[i],
-                            api_key=self.api_key,
-                            api_url=self.url,
-                            **self.unstructured_kwargs,
-                        )
-                    )
-                return elements
-            else:
-                raise ValueError(
-                    "If partitioning a file via api,"
-                    " metadata_filename must be specified as well.",
-                )
+        if self.unstructured_kwargs.get("metadata_filename"):
+            return _get_elements_from_api(
+                file=self.file,
+                file_path=self.unstructured_kwargs.pop("metadata_filename"),
+                api_key=self.api_key,
+                api_url=self.url,
+                **self.unstructured_kwargs,
+            )
+        else:
+            raise ValueError(
+                "If partitioning a file via api,"
+                " metadata_filename must be specified as well.",
+            )
 
-        return get_elements_from_api(
-            file=self.file,
-            file_path=self.unstructured_kwargs.pop("metadata_filename"),
-            api_key=self.api_key,
-            api_url=self.url,
-            **self.unstructured_kwargs,
-        )
+        
 
     def _get_metadata(self) -> dict:
         return {}
 
-    def _post_process_elements(self, elements: list[dict]) -> list:
+    def _post_process_elements(self, elements: list) -> list:
         """Apply post processing functions to extracted unstructured elements.
 
         Post processing functions are str -> str callables passed
@@ -555,61 +450,44 @@ class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
         """
         for element in elements:
             for post_processor in self.post_processors:
-                element["text"] = post_processor(element.get("text"))
+                element.apply(post_processor)
         return elements
 
 
-def get_elements_from_api(
-    file_path: Union[str, Path],
-    *,
-    file: Union[IO[bytes], None] = None,
+def _get_elements_from_api(
+    file_path: Union[str, list[str], Path, list[Path], None] = None,
+    file: Union[IO, Sequence[IO], None] = None,
     api_url: str = "https://api.unstructuredapp.io/general/v0/general",
     api_key: str = "",
     **unstructured_kwargs: Any,
-) -> list[dict[str, Any]]:
+) -> list:
     """Retrieve a list of elements from the `Unstructured API`."""
+    if is_list := isinstance(file_path, list):
+        file_path = [str(path) for path in file_path]
+    if isinstance(file, Sequence) or is_list:
+        from unstructured.partition.api import partition_multiple_via_api
 
-    try:
-        import unstructured_client  # noqa:F401
-    except ImportError:
-        raise ImportError(
-            "unstructured_client package not found, please install it with "
-            "`pip install unstructured-client`."
-        )
-    from unstructured_client.models import operations, shared
-
-    content = _get_content(file=file, file_path=file_path)
-
-    client = unstructured_client.UnstructuredClient(
-        api_key_auth=api_key, server_url=api_url
-    )
-    req = operations.PartitionRequest(
-        partition_parameters=shared.PartitionParameters(
-            files=shared.Files(content=content, file_name=str(file_path)),
+        _doc_elements = partition_multiple_via_api(
+            filenames=file_path, # type: ignore
+            files=file, # type: ignore
+            api_key=api_key,
+            api_url=api_url,
             **unstructured_kwargs,
-        ),
-    )
-    response = client.general.partition(req)
-
-    if response.status_code == 200:
-        return json.loads(response.raw_response.text)
-    else:
-        raise ValueError(
-            f"Receive unexpected status code {response.status_code} from the API.",
         )
-
-
-def _get_content(
-    file_path: Union[str, Path], file: Union[IO[bytes], None] = None
-) -> bytes:
-    """Get content from either file or file_path."""
-    # `file_path` is a required arg and used to define `file_name` for the sdk,
-    # but use `file` for the `content` if it is provided
-    if file is not None:
-        return file.read()
+        elements = []
+        for _elements in _doc_elements:
+            elements.extend(_elements)
+        return elements
     else:
-        with open(file_path, "rb") as f:
-            return f.read()
+        from unstructured.partition.api import partition_via_api
+
+        return partition_via_api(
+            filename=str(file_path) if file_path is not None else None,
+            file=file,
+            api_key=api_key,
+            api_url=api_url,
+            **unstructured_kwargs,
+        )
 
 
 def satisfies_min_unstructured_version(min_version: str) -> bool:

@@ -90,8 +90,8 @@ class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
         if self.mode == "elements":
             for element in elements_json:
                 metadata = self._get_metadata()
-                metadata.update({"metadata": element.get("metadata")})
-                metadata.update({"category": element.get("category")})
+                metadata.update(element.get("metadata"))
+                metadata.update({"category": element.get("category") or element.get("type")})
                 metadata.update({"element_id": element.get("element_id")})
                 yield Document(page_content=element.get("text"), metadata=metadata)
         elif self.mode == "paged":
@@ -128,7 +128,7 @@ class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
             elements = []
             for path in self.file_path:
                 elements.extend(
-                    get_elements_from_api(
+                    _get_elements_from_api(
                         file_path=path,
                         api_key=self.api_key,
                         api_url=self.url,
@@ -137,7 +137,7 @@ class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
                 )
             return elements
 
-        return get_elements_from_api(
+        return _get_elements_from_api(
             file_path=self.file_path,
             api_key=self.api_key,
             api_url=self.url,
@@ -223,8 +223,8 @@ class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
         if self.mode == "elements":
             for element in elements_json:
                 metadata = self._get_metadata()
-                metadata.update({"metadata": element.get("metadata")})
-                metadata.update({"category": element.get("category")})
+                metadata.update(element.get("metadata"))
+                metadata.update({"category": element.get("category") or element.get("type")})
                 metadata.update({"element_id": element.get("element_id")})
                 yield Document(page_content=element.get("text"), metadata=metadata)
         elif self.mode == "paged":
@@ -262,7 +262,7 @@ class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
                 elements = []
                 for i, file in enumerate(self.file):
                     elements.extend(
-                        get_elements_from_api(
+                        _get_elements_from_api(
                             file=file,
                             file_path=_metadata_filenames[i],
                             api_key=self.api_key,
@@ -277,7 +277,7 @@ class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
                     " metadata_filename must be specified as well.",
                 )
 
-        return get_elements_from_api(
+        return _get_elements_from_api(
             file=self.file,
             file_path=self.unstructured_kwargs.pop("metadata_filename"),
             api_key=self.api_key,
@@ -300,7 +300,7 @@ class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
         return elements
 
 
-def get_elements_from_api(
+def _get_elements_from_api(
     file_path: Union[str, Path],
     *,
     file: Union[IO[bytes], None] = None,
@@ -308,7 +308,7 @@ def get_elements_from_api(
     api_key: str = "",
     **unstructured_kwargs: Any,
 ) -> list[dict[str, Any]]:
-    """Retrieve a list of elements from the `Unstructured API`."""
+    """Retrieve a list of elements from the `Unstructured API` using the SDK client."""
 
     try:
         import unstructured_client  # noqa:F401
