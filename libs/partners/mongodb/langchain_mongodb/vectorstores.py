@@ -2,13 +2,6 @@ from __future__ import annotations
 
 import logging
 from importlib.metadata import version
-
-import numpy as np
-from bson import ObjectId, json_util
-from pymongo import MongoClient
-from pymongo.collection import Collection
-from pymongo.driver_info import DriverInfo
-from pymongo.errors import CollectionInvalid
 from typing import (
     Any,
     Callable,
@@ -22,10 +15,17 @@ from typing import (
     Union,
 )
 
+import numpy as np
+from bson import ObjectId, json_util
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.vectorstores import VectorStore
+from pymongo import MongoClient
+from pymongo.collection import Collection
+from pymongo.driver_info import DriverInfo
+from pymongo.errors import CollectionInvalid
+
 from langchain_mongodb.index import (
     create_vector_search_index,
     update_vector_search_index,
@@ -62,14 +62,14 @@ class MongoDBAtlasVectorSearch(VectorStore):
     """
 
     def __init__(
-            self,
-            collection: Collection[MongoDBDocumentType],
-            embedding: Embeddings,
-            *,
-            index_name: str = "default",
-            text_key: str = "text",
-            embedding_key: str = "embedding",
-            relevance_score_fn: str = "cosine",
+        self,
+        collection: Collection[MongoDBDocumentType],
+        embedding: Embeddings,
+        *,
+        index_name: str = "default",
+        text_key: str = "text",
+        embedding_key: str = "embedding",
+        relevance_score_fn: str = "cosine",
     ):
         """
         Args:
@@ -113,11 +113,11 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     @classmethod
     def from_connection_string(
-            cls,
-            connection_string: str,
-            namespace: str,
-            embedding: Embeddings,
-            **kwargs: Any,
+        cls,
+        connection_string: str,
+        namespace: str,
+        embedding: Embeddings,
+        **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
         """Construct a `MongoDB Atlas Vector Search` vector store
         from a MongoDB connection URI.
@@ -140,10 +140,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return cls(collection, embedding, **kwargs)
 
     def add_texts(
-            self,
-            texts: Iterable[str],
-            metadatas: Optional[List[Dict[str, Any]]] = None,
-            **kwargs: Any,
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[Dict[str, Any]]] = None,
+        **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
@@ -173,8 +173,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                     metadatas_batch = []
                     size = 0
         if texts_batch:
-            result_ids.extend(
-                self._insert_texts(texts_batch, metadatas_batch))  # type: ignore
+            result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))  # type: ignore
         return [str(id) for id in result_ids]
 
     def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
@@ -191,13 +190,13 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return insert_result.inserted_ids
 
     def _similarity_search_with_score(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            pre_filter: Optional[Dict] = None,
-            post_filter_pipeline: Optional[List[Dict]] = None,
-            include_embedding: bool = False,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        pre_filter: Optional[Dict] = None,
+        post_filter_pipeline: Optional[List[Dict]] = None,
+        include_embedding: bool = False,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         params = {
             "queryVector": embedding,
@@ -244,12 +243,12 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return docs
 
     def similarity_search_with_score(
-            self,
-            query: str,
-            k: int = 4,
-            pre_filter: Optional[Dict] = None,
-            post_filter_pipeline: Optional[List[Dict]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        pre_filter: Optional[Dict] = None,
+        post_filter_pipeline: Optional[List[Dict]] = None,
+        **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
         """Return MongoDB documents most similar to the given query and their scores.
 
@@ -278,12 +277,12 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return docs
 
     def similarity_search(
-            self,
-            query: str,
-            k: int = 4,
-            pre_filter: Optional[Dict] = None,
-            post_filter_pipeline: Optional[List[Dict]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        pre_filter: Optional[Dict] = None,
+        post_filter_pipeline: Optional[List[Dict]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return MongoDB documents most similar to the given query.
 
@@ -316,14 +315,14 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return [doc for doc, _ in docs_and_scores]
 
     def max_marginal_relevance_search(
-            self,
-            query: str,
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            pre_filter: Optional[Dict] = None,
-            post_filter_pipeline: Optional[List[Dict]] = None,
-            **kwargs: Any,
+        self,
+        query: str,
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        pre_filter: Optional[Dict] = None,
+        post_filter_pipeline: Optional[List[Dict]] = None,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return documents selected using the maximal marginal relevance.
 
@@ -359,12 +358,12 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     @classmethod
     def from_texts(
-            cls,
-            texts: List[str],
-            embedding: Embeddings,
-            metadatas: Optional[List[Dict]] = None,
-            collection: Optional[Collection[MongoDBDocumentType]] = None,
-            **kwargs: Any,
+        cls,
+        texts: List[str],
+        embedding: Embeddings,
+        metadatas: Optional[List[Dict]] = None,
+        collection: Optional[Collection[MongoDBDocumentType]] = None,
+        **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
         """Construct a `MongoDB Atlas Vector Search` vector store from raw documents.
 
@@ -416,7 +415,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return self._collection.delete_many({**search_params, **kwargs}).acknowledged
 
     async def adelete(
-            self, ids: Optional[List[str]] = None, **kwargs: Any
+        self, ids: Optional[List[str]] = None, **kwargs: Any
     ) -> Optional[bool]:
         """Delete by vector ID or other criteria.
 
@@ -431,14 +430,14 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return await run_in_executor(None, self.delete, ids=ids, **kwargs)
 
     def max_marginal_relevance_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            pre_filter: Optional[Dict] = None,
-            post_filter_pipeline: Optional[List[Dict]] = None,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        pre_filter: Optional[Dict] = None,
+        post_filter_pipeline: Optional[List[Dict]] = None,
+        **kwargs: Any,
     ) -> List[Document]:  # type: ignore
         """Return docs selected using the maximal marginal relevance.
 
@@ -478,12 +477,12 @@ class MongoDBAtlasVectorSearch(VectorStore):
         return mmr_docs
 
     async def amax_marginal_relevance_search_by_vector(
-            self,
-            embedding: List[float],
-            k: int = 4,
-            fetch_k: int = 20,
-            lambda_mult: float = 0.5,
-            **kwargs: Any,
+        self,
+        embedding: List[float],
+        k: int = 4,
+        fetch_k: int = 20,
+        lambda_mult: float = 0.5,
+        **kwargs: Any,
     ) -> List[Document]:
         """Return docs selected using the maximal marginal relevance."""
         return await run_in_executor(
@@ -497,10 +496,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
         )
 
     def create_vector_search_index(
-            self,
-            dimensions: int,
-            filters: Optional[List[Dict[str, str]]] = None,
-            update: bool = False,
+        self,
+        dimensions: int,
+        filters: Optional[List[Dict[str, str]]] = None,
+        update: bool = False,
     ) -> None:
         """Creates a MongoDB Atlas vectorSearch index for the VectorStore
 
