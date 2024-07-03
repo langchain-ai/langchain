@@ -131,7 +131,7 @@ class VectorStore(ABC):
         """Upsert documents in a streaming fashion.
 
         Args:
-            documents: Iterable of Documents to add to the vectorstore.
+            items: Iterable of Documents to add to the vectorstore.
             batch_size: The size of each batch to upsert. Required and
                 should not be associa
             **kwargs: Additional keyword arguments.
