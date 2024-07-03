@@ -1,6 +1,7 @@
 """Test the base tool implementation."""
 
 import asyncio
+import inspect
 import json
 import sys
 import textwrap
@@ -10,6 +11,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import pytest
+from typing_extensions import Annotated
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -320,16 +322,16 @@ def test_structured_tool_from_function_docstring() -> None:
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
     assert structured_tool.args == {
-        "bar": {"title": "Bar", "type": "integer", "description": "the bar value"},
-        "baz": {"title": "Baz", "type": "string", "description": "the baz value"},
+        "bar": {"title": "Bar", "type": "integer"},
+        "baz": {"title": "Baz", "type": "string"},
     }
 
     assert structured_tool.args_schema.schema() == {
         "properties": {
-            "bar": {"title": "Bar", "type": "integer", "description": "the bar value"},
-            "baz": {"title": "Baz", "type": "string", "description": "the baz value"},
+            "bar": {"title": "Bar", "type": "integer"},
+            "baz": {"title": "Baz", "type": "string"},
         },
-        "description": "Docstring",
+        "description": inspect.getdoc(foo),
         "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
@@ -354,26 +356,24 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
     assert structured_tool.args == {
-        "bar": {"title": "Bar", "type": "integer", "description": "int"},
+        "bar": {"title": "Bar", "type": "integer"},
         "baz": {
             "title": "Baz",
             "type": "array",
             "items": {"type": "string"},
-            "description": "List[str]",
         },
     }
 
     assert structured_tool.args_schema.schema() == {
         "properties": {
-            "bar": {"title": "Bar", "type": "integer", "description": "int"},
+            "bar": {"title": "Bar", "type": "integer"},
             "baz": {
                 "title": "Baz",
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "List[str]",
             },
         },
-        "description": "Docstring",
+        "description": inspect.getdoc(foo),
         "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
@@ -465,16 +465,16 @@ def test_structured_tool_from_function_with_run_manager() -> None:
     structured_tool = StructuredTool.from_function(foo)
 
     assert structured_tool.args == {
-        "bar": {"title": "Bar", "type": "integer", "description": "int"},
-        "baz": {"title": "Baz", "type": "string", "description": "str"},
+        "bar": {"title": "Bar", "type": "integer"},
+        "baz": {"title": "Baz", "type": "string"},
     }
 
     assert structured_tool.args_schema.schema() == {
         "properties": {
-            "bar": {"title": "Bar", "type": "integer", "description": "int"},
-            "baz": {"title": "Baz", "type": "string", "description": "str"},
+            "bar": {"title": "Bar", "type": "integer"},
+            "baz": {"title": "Baz", "type": "string"},
         },
-        "description": "Docstring",
+        "description": inspect.getdoc(foo),
         "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
@@ -702,17 +702,17 @@ def test_structured_tool_from_function() -> None:
     structured_tool = StructuredTool.from_function(foo)
     assert structured_tool.name == "foo"
     assert structured_tool.args == {
-        "bar": {"title": "Bar", "type": "integer", "description": "the bar value"},
-        "baz": {"title": "Baz", "type": "string", "description": "the baz value"},
+        "bar": {"title": "Bar", "type": "integer"},
+        "baz": {"title": "Baz", "type": "string"},
     }
 
     assert structured_tool.args_schema.schema() == {
         "title": "fooSchema",
         "type": "object",
-        "description": "Docstring thing.",
+        "description": inspect.getdoc(foo),
         "properties": {
-            "bar": {"title": "Bar", "type": "integer", "description": "the bar value"},
-            "baz": {"title": "Baz", "type": "string", "description": "the baz value"},
+            "bar": {"title": "Bar", "type": "integer"},
+            "baz": {"title": "Baz", "type": "string"},
         },
         "required": ["bar", "baz"],
     }
@@ -951,10 +951,39 @@ def test_tool_arg_descriptions() -> None:
     assert args_schema == {
         "title": "fooSchema",
         "type": "object",
-        "description": "The foo.",
+        "description": inspect.getdoc(foo),
         "properties": {
-            "bar": {"title": "Bar", "description": "The bar.", "type": "string"},
-            "baz": {"title": "Baz", "description": "The baz.", "type": "integer"},
+            "bar": {"title": "Bar", "type": "string"},
+            "baz": {"title": "Baz", "type": "integer"},
+        },
+        "required": ["bar", "baz"],
+    }
+
+
+def test_tool_annotated_descriptions() -> None:
+    def foo(
+        bar: Annotated[str, "this is the bar"], baz: Annotated[int, "this is the baz"]
+    ) -> str:
+        """The foo.
+
+        Returns:
+            The bar only.
+        """
+        return bar
+
+    foo1 = tool(foo)
+    args_schema = foo1.args_schema.schema()  # type: ignore
+    assert args_schema == {
+        "title": "fooSchema",
+        "type": "object",
+        "description": inspect.getdoc(foo),
+        "properties": {
+            "bar": {"title": "Bar", "type": "string", "description": "this is the bar"},
+            "baz": {
+                "title": "Baz",
+                "type": "integer",
+                "description": "this is the baz",
+            },
         },
         "required": ["bar", "baz"],
     }

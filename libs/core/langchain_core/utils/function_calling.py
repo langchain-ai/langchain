@@ -137,7 +137,9 @@ def convert_python_function_to_openai_function(
     from langchain_core import tools
 
     func_name = _get_python_function_name(function)
-    model = tools.create_schema_from_function(func_name, function, filter_args=())
+    model = tools.create_schema_from_function(
+        func_name, function, filter_args=(), parse_docstring=True
+    )
     return convert_pydantic_to_openai_function(
         model,
         name=func_name,

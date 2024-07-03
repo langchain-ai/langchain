@@ -186,9 +186,15 @@ def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
     return description, arg_descriptions
 
 
-def _infer_arg_descriptions(fn: Callable) -> Tuple[str, dict]:
+def _infer_arg_descriptions(
+    fn: Callable, *, parse_docstring: bool = False
+) -> Tuple[str, dict]:
     """Infer argument descriptions from a function's docstring."""
-    description, arg_descriptions = _parse_python_function_docstring(fn)
+    if parse_docstring:
+        description, arg_descriptions = _parse_python_function_docstring(fn)
+    else:
+        description = inspect.getdoc(fn) or ""
+        arg_descriptions = {}
     if hasattr(inspect, "get_annotations"):
         # This is for python < 3.10
         annotations = inspect.get_annotations(fn)  # type: ignore
@@ -214,12 +220,15 @@ def create_schema_from_function(
     func: Callable,
     *,
     filter_args: Optional[Sequence[str]] = None,
+    parse_docstring: bool = False,
 ) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature.
     Args:
         model_name: Name to assign to the generated pydandic schema
         func: Function to generate the schema from
         filter_args: Optional list of arguments to exclude from the schema
+        parse_docstring: Whether to parse the function's docstring for descriptions
+             for each argument.
     Returns:
         A pydantic model with the same arguments as the function
     """
@@ -232,7 +241,9 @@ def create_schema_from_function(
     for arg in filter_args:
         if arg in inferred_model.__fields__:
             del inferred_model.__fields__[arg]
-    description, arg_descriptions = _infer_arg_descriptions(func)
+    description, arg_descriptions = _infer_arg_descriptions(
+        func, parse_docstring=parse_docstring
+    )
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = _get_filtered_args(inferred_model, func, filter_args=filter_args)
     return _create_subset_model(
