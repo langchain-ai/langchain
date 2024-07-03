@@ -151,9 +151,24 @@ class ChatModelIntegrationTests(ChatModelTests):
             setup: str = Field(description="question to set up a joke")
             punchline: str = Field(description="answer to resolve the joke")
 
+        # Pydantic class
         chat = model.with_structured_output(Joke)
         result = chat.invoke("Tell me a joke about cats.")
         assert isinstance(result, Joke)
+
+        for chunk in chat.stream("Tell me a joke about cats."):
+            assert isinstance(chunk, Joke)
+
+        # Schema
+        chat = model.with_structured_output(Joke.schema())
+        result = chat.invoke("Tell me a joke about cats.")
+        assert isinstance(result, dict)
+        assert set(result.keys()) == {"setup", "punchline"}
+
+        for chunk in chat.stream("Tell me a joke about cats."):
+            assert isinstance(chunk, dict)
+        assert isinstance(chunk, dict)  # for mypy
+        assert set(chunk.keys()) == {"setup", "punchline"}
 
     def test_tool_message_histories_string_content(
         self,
