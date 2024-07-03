@@ -165,7 +165,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             ]
         elif "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
-            # If tool calls only, content is None not empty string
+        # If tool calls only, content is None not empty string
         if "tool_calls" in message_dict and message_dict["content"] == "":
             message_dict["content"] = None
         else:
