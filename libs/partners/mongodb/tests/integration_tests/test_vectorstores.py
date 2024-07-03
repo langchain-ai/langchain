@@ -66,11 +66,11 @@ class TestMongoDBAtlasVectorSearch:
         collection.delete_many({})  # type: ignore[index]
 
     @pytest.fixture
-    def embedding_openai(self) -> Embeddings:
+    def embeddings(self) -> Embeddings:
         return ConsistentFakeEmbeddings(DIMENSIONS)
 
     def test_from_documents(
-        self, embedding_openai: Embeddings, collection: Any
+        self, embeddings: Embeddings, collection: Any
     ) -> None:
         """Test end to end construction and search."""
         documents = [
@@ -81,7 +81,7 @@ class TestMongoDBAtlasVectorSearch:
         ]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
             documents,
-            embedding_openai,
+            embeddings,
             collection=collection,
             index_name=INDEX_NAME,
         )
@@ -92,7 +92,7 @@ class TestMongoDBAtlasVectorSearch:
         assert any([key.page_content == output[0].page_content for key in documents])
 
     def test_from_documents_no_embedding_return(
-        self, embedding_openai: Embeddings, collection: Any
+        self, embeddings: Embeddings, collection: Any
     ) -> None:
         """Test end to end construction and search."""
         documents = [
@@ -103,7 +103,7 @@ class TestMongoDBAtlasVectorSearch:
         ]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
             documents,
-            embedding_openai,
+            embeddings,
             collection=collection,
             index_name=INDEX_NAME,
         )
@@ -115,7 +115,7 @@ class TestMongoDBAtlasVectorSearch:
         assert any([key.page_content == output[0].page_content for key in documents])
 
     def test_from_documents_embedding_return(
-        self, embedding_openai: Embeddings, collection: Any
+        self, embeddings: Embeddings, collection: Any
     ) -> None:
         """Test end to end construction and search."""
         documents = [
@@ -126,7 +126,7 @@ class TestMongoDBAtlasVectorSearch:
         ]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_documents(
             documents,
-            embedding_openai,
+            embeddings,
             collection=collection,
             index_name=INDEX_NAME,
         )
@@ -137,7 +137,7 @@ class TestMongoDBAtlasVectorSearch:
         # Check for the presence of the metadata key
         assert any([key.page_content == output[0].page_content for key in documents])
 
-    def test_from_texts(self, embedding_openai: Embeddings, collection: Any) -> None:
+    def test_from_texts(self, embeddings: Embeddings, collection: Any) -> None:
         texts = [
             "Dogs are tough.",
             "Cats have fluff.",
@@ -146,7 +146,7 @@ class TestMongoDBAtlasVectorSearch:
         ]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
-            embedding_openai,
+            embeddings,
             collection=collection,
             index_name=INDEX_NAME,
         )
@@ -155,7 +155,7 @@ class TestMongoDBAtlasVectorSearch:
         assert len(output) == 1
 
     def test_from_texts_with_metadatas(
-        self, embedding_openai: Embeddings, collection: Any
+        self, embeddings: Embeddings, collection: Any
     ) -> None:
         texts = [
             "Dogs are tough.",
@@ -167,7 +167,7 @@ class TestMongoDBAtlasVectorSearch:
         metakeys = ["a", "b", "c", "d", "e"]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
-            embedding_openai,
+            embeddings,
             metadatas=metadatas,
             collection=collection,
             index_name=INDEX_NAME,
@@ -179,7 +179,7 @@ class TestMongoDBAtlasVectorSearch:
         assert any([key in output[0].metadata for key in metakeys])
 
     def test_from_texts_with_metadatas_and_pre_filter(
-        self, embedding_openai: Embeddings, collection: Any
+        self, embeddings: Embeddings, collection: Any
     ) -> None:
         texts = [
             "Dogs are tough.",
@@ -190,7 +190,7 @@ class TestMongoDBAtlasVectorSearch:
         metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
-            embedding_openai,
+            embeddings,
             metadatas=metadatas,
             collection=collection,
             index_name=INDEX_NAME,
@@ -201,11 +201,11 @@ class TestMongoDBAtlasVectorSearch:
         )
         assert output == []
 
-    def test_mmr(self, embedding_openai: Embeddings, collection: Any) -> None:
+    def test_mmr(self, embeddings: Embeddings, collection: Any) -> None:
         texts = ["foo", "foo", "fou", "foy"]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
-            embedding_openai,
+            embeddings,
             collection=collection,
             index_name=INDEX_NAME,
         )
@@ -216,7 +216,7 @@ class TestMongoDBAtlasVectorSearch:
         assert output[0].page_content == "foo"
         assert output[1].page_content != "foo"
 
-    def test_delete(self, embedding_openai: Embeddings, collection: Any) -> None:
+    def test_delete(self, embeddings: Embeddings, collection: Any) -> None:
         texts = [
             "Dogs are tough.",
             "Cats have fluff.",
@@ -225,7 +225,7 @@ class TestMongoDBAtlasVectorSearch:
         ]
         vectorstore = MongoDBAtlasVectorSearch(  # PatchedMongoDBAtlasVectorSearch(
             collection=collection,
-            embedding=embedding_openai,
+            embedding=embeddings,
             index_name=INDEX_NAME,
         )
         clxn: Collection = vectorstore._collection
