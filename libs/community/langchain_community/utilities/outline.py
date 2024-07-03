@@ -27,7 +27,7 @@ class OutlineAPIWrapper(BaseModel):
     outline_api_key: Optional[str] = None
     outline_search_endpoint: str = "/api/documents.search"
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that instance url and api key exists in environment."""
         outline_instance_url = get_from_dict_or_env(

@@ -547,6 +547,7 @@ if __name__ == "__main__":
         "obi1kenobi",
         "langchain-infra",
         "jacoblee93",
+        "isahers1",
         "dqbd",
         "bracesproul",
         "akira",
