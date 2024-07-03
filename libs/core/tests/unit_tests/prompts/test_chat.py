@@ -683,9 +683,7 @@ async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
                     },
                     {
                         "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{in_file_data}"
-                        },
+                        "image_url": {"url": f"data:image/jpeg;base64,{in_file_data}"},
                     },
                 ]
             ),
