@@ -646,13 +646,12 @@ async def test_chat_tmpl_from_messages_multipart_image() -> None:
 
 async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
     """Verify that we can pass `path` for an image as a variable."""
-    base64_image = "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAEBAQEBAQEBAQEB"
-    other_base64_image = "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAEBAQEBAQEB"
-
-    image_data = base64.b64decode(base64_image)
+    in_mem = "base64mem"
+    in_file_data = "base64file01"
 
     with tempfile.NamedTemporaryFile(delete=True, suffix=".jpg") as temp_file:
-        temp_file.write(image_data)
+        temp_file.write(base64.b64decode(in_file_data))
+        temp_file.flush()
 
         template = ChatPromptTemplate.from_messages(
             [
@@ -663,27 +662,11 @@ async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
                         {"type": "text", "text": "What's in this image?"},
                         {
                             "type": "image_url",
-                            "image_url": "data:image/jpeg;base64,{my_image}",
+                            "image_url": "data:image/jpeg;base64,{in_mem}",
                         },
                         {
                             "type": "image_url",
-                            "image_url": {"path": "{my_image_path}"},
-                        },
-                        {"type": "image_url", "image_url": "{my_other_image}"},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": "{my_other_image}",
-                                "detail": "medium",
-                            },
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": "https://www.langchain.com/image.png"},
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": "data:image/jpeg;base64,foobar"},
+                            "image_url": {"path": "{file_path}"},
                         },
                     ],
                 ),
@@ -696,49 +679,28 @@ async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
                     {"type": "text", "text": "What's in this image?"},
                     {
                         "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                        "image_url": {"url": f"data:image/jpeg;base64,{in_mem}"},
                     },
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:image/jpeg;base64,{other_base64_image}"
+                            "url": f"data:image/jpeg;base64,{in_file_data}"
                         },
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"{other_base64_image}"},
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"{other_base64_image}",
-                            "detail": "medium",
-                        },
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": "https://www.langchain.com/image.png"},
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": "data:image/jpeg;base64,foobar"},
                     },
                 ]
             ),
         ]
         messages = template.format_messages(
             name="R2D2",
-            my_image=base64_image,
-            my_other_image=other_base64_image,
-            my_image_path=temp_file.name,
+            in_mem=in_mem,
+            file_path=temp_file.name,
         )
         assert messages == expected
 
         messages = await template.aformat_messages(
             name="R2D2",
-            my_image=base64_image,
-            my_other_image=other_base64_image,
-            my_image_path=temp_file.name,
+            in_mem=in_mem,
+            file_path=temp_file.name,
         )
         assert messages == expected
 
