@@ -789,9 +789,7 @@ files = [
 environs = "<=9.5.0"
 grpcio = ">=1.49.1,<=1.63.0"
 milvus-lite = {version = ">=2.4.0,<2.5.0", markers = "sys_platform != \"win32\""}
-numpy = [
-    {version = "<1.25.0", markers = "python_version <= \"3.8\""},
-    {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""}]
+numpy = {version = "<1.25.0", markers = "python_version <= \"3.8\""}
 pandas = ">=1.2.4"
 protobuf = ">=3.20.0"
 setuptools = ">=67"
