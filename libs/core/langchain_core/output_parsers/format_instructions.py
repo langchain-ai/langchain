@@ -9,4 +9,3 @@ Here is the output schema:
 ```
 {schema}
 ```"""
-Produce only the json result, without the schema.
