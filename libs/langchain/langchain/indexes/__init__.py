@@ -11,6 +11,7 @@ Importantly, Index keeps on working even if the content being written is derived
 via a set of transformations from some source content (e.g., indexing children
 documents that were derived from parent documents by chunking.)
 """
+
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.indexing.api import IndexingResult, aindex, index

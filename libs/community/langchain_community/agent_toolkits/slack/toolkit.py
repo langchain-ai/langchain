@@ -17,7 +17,11 @@ if TYPE_CHECKING:
 
 
 class SlackToolkit(BaseToolkit):
-    """Toolkit for interacting with Slack."""
+    """Toolkit for interacting with Slack.
+
+    Parameters:
+        client: The Slack client.
+    """
 
     client: WebClient = Field(default_factory=login)
 

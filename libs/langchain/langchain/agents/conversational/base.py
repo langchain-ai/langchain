@@ -1,4 +1,5 @@
 """An agent designed to hold a conversation in addition to using tools."""
+
 from __future__ import annotations
 
 from typing import Any, List, Optional, Sequence
@@ -40,12 +41,20 @@ class ConversationalAgent(Agent):
 
     @property
     def observation_prefix(self) -> str:
-        """Prefix to append the observation with."""
+        """Prefix to append the observation with.
+
+        Returns:
+            "Observation: "
+        """
         return "Observation: "
 
     @property
     def llm_prefix(self) -> str:
-        """Prefix to append the llm call with."""
+        """Prefix to append the llm call with.
+
+        Returns:
+            "Thought: "
+        """
         return "Thought:"
 
     @classmethod
@@ -64,11 +73,15 @@ class ConversationalAgent(Agent):
         Args:
             tools: List of tools the agent will have access to, used to format the
                 prompt.
-            prefix: String to put before the list of tools.
-            suffix: String to put after the list of tools.
-            ai_prefix: String to use before AI output.
+            prefix: String to put before the list of tools. Defaults to PREFIX.
+            suffix: String to put after the list of tools. Defaults to SUFFIX.
+            format_instructions: Instructions on how to use the tools. Defaults to
+                FORMAT_INSTRUCTIONS
+            ai_prefix: String to use before AI output. Defaults to "AI".
             human_prefix: String to use before human output.
+                Defaults to "Human".
             input_variables: List of input variables the final prompt will expect.
+                Defaults to ["input", "chat_history", "agent_scratchpad"].
 
         Returns:
             A PromptTemplate with the template assembled from the pieces here.
@@ -105,7 +118,26 @@ class ConversationalAgent(Agent):
         input_variables: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Agent:
-        """Construct an agent from an LLM and tools."""
+        """Construct an agent from an LLM and tools.
+
+        Args:
+            llm: The language model to use.
+            tools: A list of tools to use.
+            callback_manager: The callback manager to use. Default is None.
+            output_parser: The output parser to use. Default is None.
+            prefix: The prefix to use in the prompt. Default is PREFIX.
+            suffix: The suffix to use in the prompt. Default is SUFFIX.
+            format_instructions: The format instructions to use.
+                Default is FORMAT_INSTRUCTIONS.
+            ai_prefix: The prefix to use before AI output. Default is "AI".
+            human_prefix: The prefix to use before human output.
+                Default is "Human".
+            input_variables: The input variables to use. Default is None.
+            **kwargs: Any additional keyword arguments to pass to the agent.
+
+        Returns:
+            An agent.
+        """
         cls._validate_tools(tools)
         prompt = cls.create_prompt(
             tools,
