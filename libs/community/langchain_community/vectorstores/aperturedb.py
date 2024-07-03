@@ -192,41 +192,35 @@ class ApertureDB(VectorStore):
             self.utils.create_entity_index("_Descriptor", UNIQUEID_PROPERTY)
 
     @override
-    def add_texts(
-        self,
-        texts: List[str],
-        metadatas: Optional[List[dict]] = None,
-    ) -> List[str]:
-        """Creates embeddings of texts, then adds each text object, its embedding and associated 
-        metadata to aperturedb
+    def add_documents(self, documents: List[Document], **kwargs: Any):
+        """Adds documents to the vectorstore with embeddings
 
         Args:
-            texts: Iterable of strings to add to the vectorstore.
-            metadatas: Optional list of metadatas associated with the texts.
+            documents: List of Document objects to add to the vectorstore.
 
         Returns:
-            List of ids from adding the texts into the vectorstore.
-"""
+            List of ids from adding the documents into the vectorstore.
+        """
         from aperturedb.ParallelLoader import ParallelLoader
 
-        if metadatas is not None:
-            assert len(texts) == len(
-                metadatas
-            ), "Length of texts and metadatas should be the same"
-
-        assert self.embedding_function is not None, "Embedding function is not set"
+        texts = [doc.page_content for doc in documents]
+        metadatas = [
+            doc.metadata if getattr(doc, "metadata", None) is not None else {}
+            for doc in documents
+        ]
         embeddings = self.embedding_function.embed_documents(texts)
-        metadatas: Iterable[dict] = metadatas if metadatas is not None else repeat({})
+        ids = [
+            doc.id if getattr(doc, "id", None) is not None else str(uuid.uuid4())
+            for doc in documents
+        ]
 
-        unique_ids = []
         data = []
-        for text, embedding, metadata in zip(texts, embeddings, metadatas):
+        for text, embedding, metadata, unique_id in zip(
+            texts, embeddings, metadatas, ids
+        ):
             properties = {PROPERTY_PREFIX + k: v for k, v in metadata.items()}
             properties[TEXT_PROPERTY] = text
-            # Generate a unique id here
-            unique_id = str(uuid.uuid4())
             properties[UNIQUEID_PROPERTY] = unique_id
-            unique_ids.append(unique_id)
             command = {
                 "AddDescriptor": {
                     "set": self.descriptor_set,
@@ -238,7 +232,37 @@ class ApertureDB(VectorStore):
             data.append((query, blobs))
         loader = ParallelLoader(self.connection)
         loader.ingest(data, batchsize=BATCHSIZE)
-        return unique_ids
+        return ids
+
+    @override
+    def add_texts(
+        self,
+        texts: List[str],
+        metadatas: Optional[List[dict]] = None,
+    ) -> List[str]:
+        """Creates embeddings of texts, then adds each text object, its embedding and
+        associated metadata to aperturedb
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        if metadatas is not None:
+            assert len(texts) == len(
+                metadatas
+            ), "Length of texts and metadatas should be the same"
+
+            docs = [
+                Document(page_content=text, metadata=metadata)
+                for text, metadata in zip(texts, metadatas)
+            ]
+        else:
+            docs = [Document(page_content=text) for text in texts]
+
+        return self.add_documents(docs)
 
     @override
     def delete(self, ids: List[str]) -> Optional[bool]:
@@ -271,13 +295,12 @@ class ApertureDB(VectorStore):
 
     def _descriptor_to_document(self, d: dict) -> Document:
         metadata = {}
-        metadata["adb_uniqueid"] = d["_uniqueid"]
         for k, v in d.items():
             if k.startswith(PROPERTY_PREFIX):
                 metadata[k[len(PROPERTY_PREFIX) :]] = v
         text = d[TEXT_PROPERTY]
-        metadata["adb_uniqueid"] = d[UNIQUEID_PROPERTY]
-        doc = Document(page_content=text, metadata=metadata)
+        uniqueid = d[UNIQUEID_PROPERTY]
+        doc = Document(page_content=text, metadata=metadata, id=uniqueid)
         return doc
 
     def _similarity_search_with_score_by_vector(
