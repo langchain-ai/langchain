@@ -405,7 +405,7 @@ async def _to_async_iterator(iterator: Iterable[T]) -> AsyncIterator[T]:
 
 
 async def aindex(
-    docs_source: Union[BaseLoader, Iterable[Document], AsyncIterable[Document]],
+    docs_source: Union[BaseLoader, Iterable[Document], AsyncIterator[Document]],
     record_manager: RecordManager,
     vector_store: VectorStore,
     *,
