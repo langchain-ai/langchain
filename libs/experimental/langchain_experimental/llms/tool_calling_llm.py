@@ -4,11 +4,13 @@ from abc import ABC
 from operator import itemgetter
 from typing import (
     Any,
+    AsyncIterator,
     Callable,
     Dict,
     List,
     Optional,
     Sequence,
+    Tuple,
     Type,
     TypedDict,
     TypeVar,
@@ -23,6 +25,7 @@ from langchain_core.language_models import BaseChatModel, LanguageModelInput
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
+    BaseMessageChunk,
     ToolCall,
 )
 from langchain_core.output_parsers.base import OutputParserLike
@@ -31,9 +34,10 @@ from langchain_core.output_parsers.pydantic import PydanticOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.prompts import SystemMessagePromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnables import Runnable, RunnableLambda
+from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
 from langchain_core.runnables.base import RunnableMap
 from langchain_core.runnables.passthrough import RunnablePassthrough
+from langchain_core.runnables.utils import Input
 from langchain_core.tools import BaseTool
 
 DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
@@ -254,7 +258,9 @@ class ToolCallingLLM(BaseChatModel, ABC):
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        return self.bind(functions=tools, **kwargs)
+        functions = [convert_to_tool_definition(fn) for fn in tools]
+        functions.append(DEFAULT_RESPONSE_FUNCTION)
+        return self.bind(functions=functions, **kwargs)
 
     def with_structured_output(
         self,
@@ -387,13 +393,10 @@ class ToolCallingLLM(BaseChatModel, ABC):
         else:
             return llm | parser_chain
 
-    def _generate(
+    def _generate_system_message_and_functions(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> ChatResult:
+        kwargs: Dict[str, Any],
+    ) -> Tuple[BaseMessage, List]:
         functions = kwargs.get("functions", [])
         if "functions" in kwargs:
             del kwargs["functions"]
@@ -407,17 +410,17 @@ class ToolCallingLLM(BaseChatModel, ABC):
                     "matching function in `functions`."
                 )
             del kwargs["function_call"]
-        functions = [convert_to_tool_definition(fn) for fn in functions]
-        functions.append(DEFAULT_RESPONSE_FUNCTION)
         system_message_prompt_template = SystemMessagePromptTemplate.from_template(
             self.tool_system_prompt_template
         )
         system_message = system_message_prompt_template.format(
             tools=json.dumps(functions, indent=2)
         )
-        response_message = super()._generate(  # type: ignore[safe-super]
-            [system_message] + messages, stop=stop, run_manager=run_manager, **kwargs
-        )
+        return system_message, functions
+
+    def _process_response(
+        self, response_message: ChatResult, functions: List[Dict]
+    ) -> ChatResult:
         chat_generation_content = response_message.generations[0].text
         if not isinstance(chat_generation_content, str):
             raise ValueError("ToolCallingLLM does not support non-string output.")
@@ -485,6 +488,20 @@ class ToolCallingLLM(BaseChatModel, ABC):
             generations=[ChatGeneration(message=response_message_with_functions)]
         )
 
+    def _generate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        system_message, functions = self._generate_system_message_and_functions(kwargs)
+        response_message = super()._generate(  # type: ignore[safe-super]
+            [system_message] + messages, stop=stop, run_manager=run_manager, **kwargs
+        )
+        response = self._process_response(response_message, functions)
+        return response
+
     async def _agenerate(
         self,
         messages: List[BaseMessage],
@@ -492,75 +509,23 @@ class ToolCallingLLM(BaseChatModel, ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        functions = kwargs.get("functions", [])
-        if "functions" in kwargs:
-            del kwargs["functions"]
-        if "function_call" in kwargs:
-            functions = [
-                fn for fn in functions if fn["name"] == kwargs["function_call"]["name"]
-            ]
-            if not functions:
-                raise ValueError(
-                    "If `function_call` is specified, you must also pass a "
-                    "matching function in `functions`."
-                )
-            del kwargs["function_call"]
-        elif not functions:
-            functions.append(DEFAULT_RESPONSE_FUNCTION)
-        if _is_pydantic_class(functions[0]):
-            functions = [convert_to_tool_definition(fn) for fn in functions]
-        system_message_prompt_template = SystemMessagePromptTemplate.from_template(
-            self.tool_system_prompt_template
-        )
-        system_message = system_message_prompt_template.format(
-            tools=json.dumps(functions, indent=2)
-        )
+        system_message, functions = self._generate_system_message_and_functions(kwargs)
         response_message = await super()._agenerate(
             [system_message] + messages, stop=stop, run_manager=run_manager, **kwargs
         )
-        chat_generation_content = response_message.generations[0].text
-        if not isinstance(chat_generation_content, str):
-            raise ValueError("ToolCallingLLM does not support non-string output.")
-        try:
-            parsed_chat_result = json.loads(chat_generation_content)
-        except json.JSONDecodeError:
-            raise ValueError(
-                f"'{self.model}' did not respond with valid JSON.\n"  # type: ignore[attr-defined]
-                "Please try again.\n"
-                f"Response: {chat_generation_content}"
-            )
-        called_tool_name = parsed_chat_result["tool"]
-        called_tool_arguments = parsed_chat_result["tool_input"]
-        called_tool = next(
-            (fn for fn in functions if fn["name"] == called_tool_name), None
-        )
-        if called_tool is None:
-            raise ValueError(
-                f"Failed to parse a function call from {self.model} output: "  # type: ignore[attr-defined]
-                f"{chat_generation_content}"
-            )
-        if called_tool["name"] == DEFAULT_RESPONSE_FUNCTION["name"]:
-            return ChatResult(
-                generations=[
-                    ChatGeneration(
-                        message=AIMessage(
-                            content=called_tool_arguments["response"],
-                        )
-                    )
-                ]
-            )
+        response = self._process_response(response_message, functions)
+        return response
 
-        response_message_with_functions = AIMessage(
-            content="",
-            additional_kwargs={
-                "function_call": {
-                    "name": called_tool_name,
-                    "arguments": json.dumps(called_tool_arguments)
-                    if called_tool_arguments
-                    else "",
-                },
-            },
-        )
-        return ChatResult(
-            generations=[ChatGeneration(message=response_message_with_functions)]
-        )
+    async def astream(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[BaseMessageChunk]:
+        """
+        Default implementation of astream, which calls ainvoke.
+        Subclasses should override this method if they support streaming output.
+        """
+        yield await self.ainvoke(input, config, **kwargs)

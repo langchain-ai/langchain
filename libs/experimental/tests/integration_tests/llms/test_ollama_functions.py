@@ -2,6 +2,7 @@
 
 import unittest
 
+import pytest
 from langchain_community.tools import DuckDuckGoSearchResults
 from langchain_community.tools.pubmed.tool import PubmedQueryRun
 from langchain_core.messages import AIMessage
@@ -140,3 +141,21 @@ class TestOllamaFunctions(unittest.TestCase):
         assert "parsed" in res
         assert isinstance(res["raw"], AIMessage)
         assert isinstance(res["parsed"], Joke)
+
+
+class TestOllamaFunctionsAsync(unittest.IsolatedAsyncioTestCase):
+    @pytest.mark.asyncio
+    async def test_ollama_structured_output_async(self) -> None:
+        model = OllamaFunctions(model="phi3")
+        structured_llm = model.with_structured_output(Joke, include_raw=False)
+
+        res = await structured_llm.ainvoke("Tell me a joke about cats")
+        assert isinstance(res, Joke)
+
+    @pytest.mark.asyncio
+    async def test_ollama_structured_output_astream(self) -> None:
+        model = OllamaFunctions(model="phi3")
+        structured_llm = model.with_structured_output(Joke, include_raw=False)
+
+        async for output in structured_llm.astream("Tell me a joke about cats"):
+            assert isinstance(output, Joke)
