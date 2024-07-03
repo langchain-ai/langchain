@@ -5759,6 +5759,11 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'is_error': dict({
+            'default': False,
+            'title': 'Is Error',
+            'type': 'boolean',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6397,6 +6402,11 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'is_error': dict({
+            'default': False,
+            'title': 'Is Error',
+            'type': 'boolean',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -6949,6 +6959,11 @@
           'id': dict({
             'title': 'Id',
             'type': 'string',
+          }),
+          'is_error': dict({
+            'default': False,
+            'title': 'Is Error',
+            'type': 'boolean',
           }),
           'name': dict({
             'title': 'Name',
@@ -7560,6 +7575,11 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'is_error': dict({
+            'default': False,
+            'title': 'Is Error',
+            'type': 'boolean',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -8169,6 +8189,11 @@
           'id': dict({
             'title': 'Id',
             'type': 'string',
+          }),
+          'is_error': dict({
+            'default': False,
+            'title': 'Is Error',
+            'type': 'boolean',
           }),
           'name': dict({
             'title': 'Name',
@@ -8783,6 +8808,11 @@
             'title': 'Id',
             'type': 'string',
           }),
+          'is_error': dict({
+            'default': False,
+            'title': 'Is Error',
+            'type': 'boolean',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -9342,6 +9372,11 @@
           'id': dict({
             'title': 'Id',
             'type': 'string',
+          }),
+          'is_error': dict({
+            'default': False,
+            'title': 'Is Error',
+            'type': 'boolean',
           }),
           'name': dict({
             'title': 'Name',
