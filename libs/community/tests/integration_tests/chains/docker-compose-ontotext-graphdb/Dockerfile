@@ -1,4 +1,4 @@
-FROM ontotext/graphdb:10.5.1
+FROM ontotext/graphdb:10.6.4
 RUN mkdir -p /opt/graphdb/dist/data/repositories/starwars
 COPY config-starwars.ttl /opt/graphdb/dist/data/repositories/starwars/config.ttl
 RUN mkdir -p /opt/graphdb/dist/data/repositories/langchain

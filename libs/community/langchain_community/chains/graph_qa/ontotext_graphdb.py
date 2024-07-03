@@ -1,11 +1,12 @@
 """Question answering over a graph."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+import json
+import time
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
-    import rdflib
-
+    import SPARQLWrapper
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain_core.callbacks.manager import CallbackManager, CallbackManagerForChainRun
@@ -92,41 +93,120 @@ class OntotextGraphDBQAChain(Chain):
         prompt = inputs[self.input_key]
         ontology_schema = self.graph.get_schema
 
+        start = time.time()
+        _run_manager.on_text(
+            "User question:",
+            color="green",
+            end="\n",
+            verbose=self.verbose,
+        )
+        _run_manager.on_text(
+            f"{prompt}",
+            color="green",
+            end="\n",
+            verbose=self.verbose,
+        )
         sparql_generation_chain_result = self.sparql_generation_chain.invoke(
-            {"prompt": prompt, "schema": ontology_schema}, callbacks=callbacks
+            {
+                "prompt": prompt,
+                "schema": ontology_schema,
+            },
+            callbacks=callbacks,
         )
         generated_sparql = sparql_generation_chain_result[
             self.sparql_generation_chain.output_key
         ]
 
-        generated_sparql = self._get_prepared_sparql_query(
+        query_results = self._execute_query(
             _run_manager, callbacks, generated_sparql, ontology_schema
         )
-        query_results = self._execute_query(generated_sparql)
+        query_results_str = self.query_results_to_json(query_results)
+        _run_manager.on_text(
+            "Query results:",
+            color="green",
+            end="\n",
+            verbose=self.verbose,
+        )
+        _run_manager.on_text(
+            query_results_str,
+            color="green",
+            end="\n",
+            verbose=self.verbose,
+        )
 
         qa_chain_result = self.qa_chain.invoke(
-            {"prompt": prompt, "context": query_results}, callbacks=callbacks
+            {"prompt": prompt, "context": query_results_str},
+            callbacks=callbacks,
         )
         result = qa_chain_result[self.qa_chain.output_key]
+
+        _run_manager.on_text(
+            f"Finished chain for {time.time() - start:.2f} seconds",
+            end="\n",
+            verbose=self.verbose,
+        )
+
         return {self.output_key: result}
 
-    def _get_prepared_sparql_query(
+    def _execute_query(
         self,
         _run_manager: CallbackManagerForChainRun,
         callbacks: CallbackManager,
         generated_sparql: str,
         ontology_schema: str,
-    ) -> str:
+    ) -> Union[
+        Union[
+            SPARQLWrapper.SmartWrapper.Bindings, SPARQLWrapper.SmartWrapper.QueryResult
+        ],
+        SPARQLWrapper.SmartWrapper.QueryResult.ConvertResult,
+    ]:
+        """
+        Executes the generated SPARQL query.
+        In case of invalid SPARQL query in terms of syntax,
+        try to generate the query again up to a certain number of times.
+        """
+
+        from urllib.error import HTTPError
+
+        from SPARQLWrapper.SPARQLExceptions import (
+            EndPointInternalError,
+            EndPointNotFound,
+            QueryBadFormed,
+            Unauthorized,
+            URITooLong,
+        )
+
         try:
-            return self._prepare_sparql_query(_run_manager, generated_sparql)
-        except Exception as e:
-            retries = 0
+            _run_manager.on_text(
+                "Generated query:",
+                end="\n",
+                verbose=self.verbose,
+            )
+            _run_manager.on_text(
+                generated_sparql,
+                end="\n",
+                verbose=self.verbose,
+            )
+            return self.graph.exec_query(generated_sparql)
+        except QueryBadFormed as e:  # status code 400
+            retries = 1
             error_message = str(e)
-            self._log_invalid_sparql_query(
-                _run_manager, generated_sparql, error_message
+            _run_manager.on_text(
+                f"QueryBadFormed (status code 400): {error_message}",
+                color="red",
+                end="\n",
+                verbose=self.verbose,
             )
 
-            while retries < self.max_fix_retries:
+            if retries > self.max_fix_retries:
+                raise e
+            while retries <= self.max_fix_retries:
+                _run_manager.on_text(
+                    f"Retrying to generate the query {retries}/{self.max_fix_retries}",
+                    color="red",
+                    end="\n",
+                    verbose=self.verbose,
+                )
                 try:
                     sparql_fix_chain_result = self.sparql_fix_chain.invoke(
                         {
@@ -139,52 +219,93 @@ class OntotextGraphDBQAChain(Chain):
                     generated_sparql = sparql_fix_chain_result[
                         self.sparql_fix_chain.output_key
                     ]
-                    return self._prepare_sparql_query(_run_manager, generated_sparql)
-                except Exception as e:
-                    retries += 1
-                    parse_exception = str(e)
-                    self._log_invalid_sparql_query(
-                        _run_manager, generated_sparql, parse_exception
+                    _run_manager.on_text(
+                        "Generated query:",
+                        end="\n",
+                        verbose=self.verbose,
                     )
+                    _run_manager.on_text(
+                        generated_sparql,
+                        end="\n",
+                        verbose=self.verbose,
+                    )
+                    return self.graph.exec_query(generated_sparql)
+                except QueryBadFormed as e:
+                    retries += 1
+                    error_message = str(e)
+                    _run_manager.on_text(
+                        f"QueryBadFormed (status code 400): {error_message}",
+                        color="red",
+                        end="\n",
+                        verbose=self.verbose,
+                    )
+                    if retries > self.max_fix_retries:
+                        raise e
 
-        raise ValueError("The generated SPARQL query is invalid.")
+        except Unauthorized as e:  # status code 401
+            _run_manager.on_text(
+                f"Unauthorized (status code 401): {str(e)}",
+                color="red",
+                end="\n",
+                verbose=self.verbose,
+            )
+            raise e
+        except EndPointNotFound as e:  # status code 404
+            _run_manager.on_text(
+                f"EndPointNotFound (status code 404): {str(e)}",
+                color="red",
+                end="\n",
+                verbose=self.verbose,
+            )
+            raise e
+        except URITooLong as e:  # status code 414
+            _run_manager.on_text(
+                f"URITooLong (status code 414): {str(e)}",
+                color="red",
+                end="\n",
+                verbose=self.verbose,
+            )
+            raise e
+        except EndPointInternalError as e:  # status code 500
+            _run_manager.on_text(
+                f"EndPointInternalError (status code 500): {str(e)}",
+                color="red",
+                end="\n",
+                verbose=self.verbose,
+            )
+            raise e
+        # code is different to ``400``, ``401``, ``404``, ``414``, ``500``
+        except HTTPError as e:
+            _run_manager.on_text(
+                f"HTTPError (status code {e.status}): {str(e)}",
+                color="red",
+                end="\n",
+                verbose=self.verbose,
+            )
+            raise e
+        except Exception as e:
+            _run_manager.on_text(
+                f"Exception: {str(e)}",
+                color="red",
+                end="\n",
+                verbose=self.verbose,
+            )
+            raise e
 
-    def _prepare_sparql_query(
-        self, _run_manager: CallbackManagerForChainRun, generated_sparql: str
+    @staticmethod
+    def query_results_to_json(
+        query_results: Union[
+            Union[
+                SPARQLWrapper.SmartWrapper.Bindings,
+                SPARQLWrapper.SmartWrapper.QueryResult,
+            ],
+            SPARQLWrapper.SmartWrapper.QueryResult.ConvertResult,
+        ],
     ) -> str:
-        from rdflib.plugins.sparql import prepareQuery
-
-        prepareQuery(generated_sparql)
-        self._log_prepared_sparql_query(_run_manager, generated_sparql)
-        return generated_sparql
-
-    def _log_prepared_sparql_query(
-        self, _run_manager: CallbackManagerForChainRun, generated_query: str
-    ) -> None:
-        _run_manager.on_text("Generated SPARQL:", end="\n", verbose=self.verbose)
-        _run_manager.on_text(
-            generated_query, color="green", end="\n", verbose=self.verbose
-        )
-
-    def _log_invalid_sparql_query(
-        self,
-        _run_manager: CallbackManagerForChainRun,
-        generated_query: str,
-        error_message: str,
-    ) -> None:
-        _run_manager.on_text("Invalid SPARQL query: ", end="\n", verbose=self.verbose)
-        _run_manager.on_text(
-            generated_query, color="red", end="\n", verbose=self.verbose
-        )
-        _run_manager.on_text(
-            "SPARQL Query Parse Error: ", end="\n", verbose=self.verbose
-        )
-        _run_manager.on_text(
-            error_message, color="red", end="\n\n", verbose=self.verbose
-        )
-
-    def _execute_query(self, query: str) -> List[rdflib.query.ResultRow]:
-        try:
-            return self.graph.query(query)
-        except Exception:
-            raise ValueError("Failed to execute the generated SPARQL query.")
+        """
+        Returns the query results in json format
+        """
+        query_bindings = query_results.bindings  # List[Dict[str, Value]]
+        res = [{k: v.value} for d in query_bindings for k, v in d.items()]
+        query_results_str = json.dumps(res)
+        return query_results_str

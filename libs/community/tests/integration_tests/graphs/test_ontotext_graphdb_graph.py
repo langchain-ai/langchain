@@ -12,12 +12,12 @@ cd libs/community/tests/integration_tests/graphs/docker-compose-ontotext-graphdb
 
 def test_query_method_with_valid_query() -> None:
     graph = OntotextGraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
-        query_ontology="CONSTRUCT {?s ?p ?o}"
+        gdb_repository="http://localhost:7200/repositories/langchain",
+        ontology_query="CONSTRUCT {?s ?p ?o} "
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
 
-    query_results = graph.query(
+    query_results = graph.exec_query(
         "PREFIX voc: <https://swapi.co/vocabulary/> "
         "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
         "SELECT ?eyeColor "
@@ -26,20 +26,26 @@ def test_query_method_with_valid_query() -> None:
         "    voc:eyeColor ?eyeColor ."
         "}"
     )
-    assert len(query_results) == 1
-    assert len(query_results[0]) == 1
-    assert str(query_results[0][0]) == "yellow"
+    query_bindings = query_results.bindings  # List[Dict[str, Value]]
+    res = [
+        {k: v.value} for d in query_bindings for k, v in d.items()
+    ]  # List[Dict[str, str]]
+
+    assert len(res) == 1
+    assert len(res[0]) == 1
+    assert res[0]["eyeColor"] == "yellow"
 
 
 def test_query_method_with_invalid_query() -> None:
     graph = OntotextGraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
-        query_ontology="CONSTRUCT {?s ?p ?o}"
+        gdb_repository="http://localhost:7200/repositories/langchain",
+        ontology_query="CONSTRUCT {?s ?p ?o}"
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
+    from SPARQLWrapper.SPARQLExceptions import QueryBadFormed
 
-    with pytest.raises(ValueError) as e:
-        graph.query(
+    with pytest.raises(QueryBadFormed) as e:
+        graph.exec_query(
             "PREFIX : <https://swapi.co/vocabulary/> "
             "PREFIX owl: <http://www.w3.org/2002/07/owl#> "
             "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "
@@ -54,17 +60,19 @@ def test_query_method_with_invalid_query() -> None:
             "ORDER BY DESC(?maxLifespan) "
             "LIMIT 1"
         )
-
-    assert (
-        str(e.value)
-        == "You did something wrong formulating either the URI or your SPARQL query"
+    assert str(e.value) == (
+        "QueryBadFormed: A bad request has been sent to the endpoint: "
+        "probably the SPARQL query is badly formed. \n\n"
+        "Response:\n"
+        "b\"MALFORMED QUERY: variable 'character' in projection "
+        'not present in GROUP BY."'
     )
 
 
 def test_get_schema_with_query() -> None:
     graph = OntotextGraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
-        query_ontology="CONSTRUCT {?s ?p ?o}"
+        gdb_repository="http://localhost:7200/repositories/langchain",
+        ontology_query="CONSTRUCT {?s ?p ?o}"
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
 
@@ -98,8 +106,8 @@ def test_get_schema_from_file(
     expected_number_of_ontology_statements = 19
 
     graph = OntotextGraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
-        query_ontology="CONSTRUCT {?s ?p ?o}"
+        gdb_repository="http://localhost:7200/repositories/langchain",
+        ontology_query="CONSTRUCT {?s ?p ?o}"
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
 
@@ -120,12 +128,12 @@ def test_get_schema_from_file(
     assert len(ontology_context) == expected_number_of_ontology_statements
     assert len(conjunctive_graph) == expected_number_of_ontology_statements
 
-    local_file = tmp_path / ("starwars-ontology." + file_extension)
-    conjunctive_graph.serialize(local_file, format=rdf_format)
+    ontology_file_path = tmp_path / ("starwars-ontology." + file_extension)
+    conjunctive_graph.serialize(ontology_file_path, format=rdf_format)
 
     graph = OntotextGraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
-        local_file=str(local_file),
+        gdb_repository="http://localhost:7200/repositories/langchain",
+        ontology_file_path=ontology_file_path,
     )
     assert (
         len(Graph().parse(data=graph.get_schema, format="turtle"))
@@ -142,8 +150,8 @@ def test_get_schema_from_file_with_explicit_rdf_format(
     expected_number_of_ontology_statements = 19
 
     graph = OntotextGraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
-        query_ontology="CONSTRUCT {?s ?p ?o}"
+        gdb_repository="http://localhost:7200/repositories/langchain",
+        ontology_query="CONSTRUCT {?s ?p ?o}"
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
 
@@ -164,13 +172,13 @@ def test_get_schema_from_file_with_explicit_rdf_format(
     assert len(ontology_context) == expected_number_of_ontology_statements
     assert len(conjunctive_graph) == expected_number_of_ontology_statements
 
-    local_file = tmp_path / "starwars-ontology.txt"
-    conjunctive_graph.serialize(local_file, format=rdf_format)
+    ontology_file_path = tmp_path / "starwars-ontology.txt"
+    conjunctive_graph.serialize(ontology_file_path, format=rdf_format)
 
     graph = OntotextGraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
-        local_file=str(local_file),
-        local_file_format=rdf_format,
+        gdb_repository="http://localhost:7200/repositories/langchain",
+        ontology_file_path=ontology_file_path,
+        ontology_file_format=rdf_format,
     )
     assert (
         len(Graph().parse(data=graph.get_schema, format="turtle"))
@@ -182,8 +190,8 @@ def test_get_schema_from_file_with_wrong_extension(tmp_path: Path) -> None:
     expected_number_of_ontology_statements = 19
 
     graph = OntotextGraphDBGraph(
-        query_endpoint="http://localhost:7200/repositories/langchain",
-        query_ontology="CONSTRUCT {?s ?p ?o}"
+        gdb_repository="http://localhost:7200/repositories/langchain",
+        ontology_query="CONSTRUCT {?s ?p ?o}"
         "FROM <https://swapi.co/ontology/> WHERE {?s ?p ?o}",
     )
 
@@ -201,11 +209,11 @@ def test_get_schema_from_file_with_wrong_extension(tmp_path: Path) -> None:
     assert len(ontology_context) == expected_number_of_ontology_statements
     assert len(conjunctive_graph) == expected_number_of_ontology_statements
 
-    local_file = tmp_path / "starwars-ontology.trig"
-    conjunctive_graph.serialize(local_file, format="nquads")
+    ontology_file_path = tmp_path / "starwars-ontology.trig"
+    conjunctive_graph.serialize(ontology_file_path, format="nquads")
 
     with pytest.raises(ValueError):
         OntotextGraphDBGraph(
-            query_endpoint="http://localhost:7200/repositories/langchain",
-            local_file=str(local_file),
+            gdb_repository="http://localhost:7200/repositories/langchain",
+            ontology_file_path=ontology_file_path,
         )
