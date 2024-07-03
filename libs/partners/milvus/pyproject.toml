@@ -14,7 +14,11 @@ license = "MIT"
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.2.0"
 pymilvus = "^2.4.3"
-scipy = "^1.7"
+# Support Python 3.8 and 3.12+.
+scipy = [
+  { version = "^1.7", python = "<3.12" },
+  { version = "^1.14", python = ">=3.12" },
+]
 
 [tool.poetry.group.test]
 optional = true
