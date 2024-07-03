@@ -1,4 +1,5 @@
 """Fake LLM wrapper for testing purposes."""
+
 from typing import Any, Dict, List, Mapping, Optional, cast
 
 from langchain_core.callbacks import CallbackManagerForLLMRun

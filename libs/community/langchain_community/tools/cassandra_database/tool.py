@@ -1,4 +1,5 @@
 """Tools for interacting with an Apache Cassandra database."""
+
 from __future__ import annotations
 
 import traceback

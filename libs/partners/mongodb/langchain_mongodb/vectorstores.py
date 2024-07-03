@@ -144,7 +144,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
-    ) -> List:
+    ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
@@ -174,7 +174,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                     size = 0
         if texts_batch:
             result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))  # type: ignore
-        return result_ids
+        return [str(id) for id in result_ids]
 
     def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
         if not texts:
@@ -410,7 +410,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """
         search_params: dict[str, Any] = {}
         if ids:
-            search_params[self._text_key]["$in"] = ids
+            search_params["_id"] = {"$in": [ObjectId(id) for id in ids]}
 
         return self._collection.delete_many({**search_params, **kwargs}).acknowledged
 

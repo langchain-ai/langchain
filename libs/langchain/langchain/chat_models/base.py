@@ -254,7 +254,7 @@ def _init_chat_model_helper(
         _check_pkg("langchain_anthropic")
         from langchain_anthropic import ChatAnthropic
 
-        return ChatAnthropic(model=model, **kwargs)
+        return ChatAnthropic(model=model, **kwargs)  # type: ignore[call-arg]
     elif model_provider == "azure_openai":
         _check_pkg("langchain_openai")
         from langchain_openai import AzureChatOpenAI
@@ -294,7 +294,7 @@ def _init_chat_model_helper(
         _check_pkg("langchain_mistralai")
         from langchain_mistralai import ChatMistralAI
 
-        return ChatMistralAI(model=model, **kwargs)
+        return ChatMistralAI(model=model, **kwargs)  # type: ignore[call-arg]
     elif model_provider == "huggingface":
         _check_pkg("langchain_huggingface")
         from langchain_huggingface import ChatHuggingFace
