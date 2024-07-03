@@ -29,6 +29,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterable,
+    AsyncIterator,
     Callable,
     ClassVar,
     Collection,
@@ -230,7 +231,7 @@ class VectorStore(ABC):
         /,
         batch_size: int,
         **kwargs: Any,
-    ) -> Iterator[UpsertResponse]:
+    ) -> AsyncIterator[UpsertResponse]:
         """Upsert documents in a streaming fashion. Async version of streaming_upsert.
 
         Args:
