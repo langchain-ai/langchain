@@ -137,7 +137,8 @@ class CohereProvider(Provider):
                 if msg.tool_calls and is_force_single_step:
                     continue
                 tool_calls = [self.oci_tool_call(name=tc["name"], parameters=tc["args"]) for tc in msg.tool_calls] if msg.tool_calls else None
-                oci_chat_history.append(self.oci_chat_message[self.get_role(msg)](message=msg.content, tool_calls=tool_calls))
+                msg_content = msg.content if msg.content else ""
+                oci_chat_history.append(self.oci_chat_message[self.get_role(msg)](message=msg_content, tool_calls=tool_calls))
            
 
         # Get the messages for the current chat turn
@@ -373,7 +374,6 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
         
         if "tools" in kwargs:
             oci_params['tools'] = self._provider.tools_to_oci_params(kwargs['tools'])
-            #oci_params['is_force_single_step'] = False
             kwargs.pop("tools")
 
         oci_params['is_force_single_step'] = kwargs.get('is_force_single_step') or False
