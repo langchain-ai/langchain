@@ -4,15 +4,17 @@ from __future__ import annotations
 
 import os
 from time import sleep
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import pytest
+from bson import ObjectId
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from pymongo import MongoClient
 from pymongo.collection import Collection
 
 from langchain_mongodb import MongoDBAtlasVectorSearch
+from langchain_mongodb.utils import oid_to_str
 from tests.utils import ConsistentFakeEmbeddings
 
 INDEX_NAME = "langchain-test-index-vectorstores"
@@ -25,9 +27,14 @@ INTERVAL = 0.5
 
 
 class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
-    def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
+    def bulk_embed_and_insert_texts(
+        self,
+        texts: List[str],
+        metadatas: List[Dict[str, Any]],
+        ids: Optional[List[str]] = None,
+    ) -> List:
         """Patched insert_texts that waits for data to be indexed before returning"""
-        ids = super()._insert_texts(texts, metadatas)
+        ids = super().bulk_embed_and_insert_texts(texts, metadatas)
         timeout = TIMEOUT
         while len(ids) != len(self.similarity_search("sandwich")) and timeout >= 0:
             sleep(INTERVAL)
@@ -43,6 +50,16 @@ def get_collection() -> Collection:
 @pytest.fixture()
 def collection() -> Collection:
     return get_collection()
+
+
+@pytest.fixture
+def texts() -> List[str]:
+    return [
+        "Dogs are tough.",
+        "Cats have fluff.",
+        "What is a sandwich?",
+        "That fence is purple.",
+    ]
 
 
 class TestMongoDBAtlasVectorSearch:
@@ -69,9 +86,7 @@ class TestMongoDBAtlasVectorSearch:
     def embeddings(self) -> Embeddings:
         return ConsistentFakeEmbeddings(DIMENSIONS)
 
-    def test_from_documents(
-        self, embeddings: Embeddings, collection: Any
-    ) -> None:
+    def test_from_documents(self, embeddings: Embeddings, collection: Any) -> None:
         """Test end to end construction and search."""
         documents = [
             Document(page_content="Dogs are tough.", metadata={"a": 1}),
@@ -137,13 +152,7 @@ class TestMongoDBAtlasVectorSearch:
         # Check for the presence of the metadata key
         assert any([key.page_content == output[0].page_content for key in documents])
 
-    def test_from_texts(self, embeddings: Embeddings, collection: Any) -> None:
-        texts = [
-            "Dogs are tough.",
-            "Cats have fluff.",
-            "What is a sandwich?",
-            "That fence is purple.",
-        ]
+    def test_from_texts(self, embeddings, collection, texts) -> None:
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
             embeddings,
@@ -155,14 +164,11 @@ class TestMongoDBAtlasVectorSearch:
         assert len(output) == 1
 
     def test_from_texts_with_metadatas(
-        self, embeddings: Embeddings, collection: Any
+        self,
+        embeddings: Embeddings,
+        collection: Collection,
+        texts: List[str],
     ) -> None:
-        texts = [
-            "Dogs are tough.",
-            "Cats have fluff.",
-            "What is a sandwich?",
-            "The fence is purple.",
-        ]
         metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
         metakeys = ["a", "b", "c", "d", "e"]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
@@ -179,14 +185,8 @@ class TestMongoDBAtlasVectorSearch:
         assert any([key in output[0].metadata for key in metakeys])
 
     def test_from_texts_with_metadatas_and_pre_filter(
-        self, embeddings: Embeddings, collection: Any
+        self, embeddings: Embeddings, collection: Any, texts: List[str]
     ) -> None:
-        texts = [
-            "Dogs are tough.",
-            "Cats have fluff.",
-            "What is a sandwich?",
-            "The fence is purple.",
-        ]
         metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
@@ -216,13 +216,9 @@ class TestMongoDBAtlasVectorSearch:
         assert output[0].page_content == "foo"
         assert output[1].page_content != "foo"
 
-    def test_delete(self, embeddings: Embeddings, collection: Any) -> None:
-        texts = [
-            "Dogs are tough.",
-            "Cats have fluff.",
-            "What is a sandwich?",
-            "That fence is purple.",
-        ]
+    def test_delete(
+        self, embeddings: Embeddings, collection: Any, texts: List[str]
+    ) -> None:
         vectorstore = MongoDBAtlasVectorSearch(  # PatchedMongoDBAtlasVectorSearch(
             collection=collection,
             embedding=embeddings,
@@ -243,3 +239,64 @@ class TestMongoDBAtlasVectorSearch:
         assert all(isinstance(i, str) for i in new_ids)
         assert len(new_ids) == 2
         assert clxn.count_documents({}) == 4
+
+    def test_add_texts(
+        self,
+        embeddings: Embeddings,
+        collection: Collection,
+        texts: List[str],
+    ) -> None:
+        """Tests API of add_texts, focussing on id treatment
+
+        - case with ids
+            - add again with arbitrary strings
+        - case with batch_size
+        """
+        metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
+
+        vectorstore = PatchedMongoDBAtlasVectorSearch(
+            collection=collection, embedding=embeddings, index_name=INDEX_NAME
+        )
+
+        # Case 1. Add texts without ids
+
+        provided_ids = vectorstore.add_texts(texts=texts, metadatas=metadatas)
+        all_docs = list(vectorstore._collection.find({}))
+        assert all("_id" in doc for doc in all_docs)
+        docids = set(doc["_id"] for doc in all_docs)
+        assert all(isinstance(_id, ObjectId) for _id in docids)  #
+        assert set(provided_ids) == set(oid_to_str(oid) for oid in docids)
+
+        # Case 2: Test Document.metadata looks right. i.e. contains _id
+        search_res = vectorstore.similarity_search_with_score("sandwich", k=1)
+        doc, score = search_res[0]
+        assert "_id" in doc.metadata
+
+        # Case 3: Add new ids that are 24-char hex strings
+        # TODO - BEGIN HERE.
+        hex_ids = [oid_to_str(ObjectId()) for _ in range(2)]
+        hex_texts = ["Text for hex_id"] * len(hex_ids)
+        out_ids = vectorstore.add_texts(texts=hex_texts, ids=hex_ids)
+        assert set(out_ids) == set(hex_ids)
+        assert collection.count_documents({}) == len(texts) + len(hex_texts)
+
+        # Case 4: Add new ids that cannot be cast to ObjectId
+        #   - Can we still index and search on them?
+        str_ids = ["Sandwiches are beautiful,", "..sandwiches are fine."]
+        str_texts = str_ids  # No reason for them to differ
+        out_ids = vectorstore.add_texts(texts=str_texts, ids=str_ids)
+        assert set(out_ids) == set(str_ids)
+        assert collection.count_documents({}) == 8
+        search_res = vectorstore.similarity_search_with_score("sandwich", k=3)
+        assert all("sandich" in doc.page_content.lower() for doc in search_res)
+
+        '''
+       def test_add_documents(self):
+           """Tests API of add_documents, focussing on id treatment
+
+
+           - case without ids
+           - case with ids in metadata
+           """
+           raise NotImplementedError
+        '''

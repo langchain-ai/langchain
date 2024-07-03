@@ -104,8 +104,12 @@ def str_to_oid(str_repr: str) -> ObjectId | str:
     try:
         return ObjectId(str_repr)
     except InvalidId:
-        logger.debug("For performance, ids must 12-byte input or a 24-character hex string")
+        logger.debug(
+            "ObjectIds must be 12-character byte or 24-character hex strings. "
+            "Examples: b'heres12bytes', '6f6e6568656c6c6f68656768'"
+        )
         return str_repr
+
 
 def oid_to_str(oid: ObjectId) -> str:
     """Convert MongoDB's internal BSON ObjectId into a simple str for compatibility.
