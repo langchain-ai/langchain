@@ -21,7 +21,7 @@ def all_package_dirs() -> Set[str]:
     return {
         "/".join(path.split("/")[:-1])
         for path in glob.glob("./libs/**/pyproject.toml", recursive=True)
-        if not re.search("libs/cli/.*/.*", path)
+        if "libs/cli" not in path
     }
 
 
