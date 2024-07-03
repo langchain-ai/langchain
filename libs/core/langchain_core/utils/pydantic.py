@@ -1,7 +1,7 @@
 """Utilities for tests."""
 
 from functools import wraps
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 from langchain_core.pydantic_v1 import root_validator
 
@@ -19,7 +19,7 @@ def get_pydantic_major_version() -> int:
 PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
 
 
-def pre_init(func: callable) -> callable:
+def pre_init(func: Callable) -> Callable:
     """Decorator to run a function before model initialization."""
 
     @root_validator(pre=True)
