@@ -8,75 +8,10 @@ from langchain_core.documents import Document
 
 from langchain_community.document_loaders import UnstructuredBaseLoader
 
-class UnstructuredLoader(BaseLoader):
-    # TODO: Replace all TODOs in docstring. See example docstring:
-    # https://github.com/langchain-ai/langchain/blob/869523ad728e6b76d77f170cce13925b4ebc3c1e/libs/community/langchain_community/document_loaders/recursive_url_loader.py#L54
-    """
-    Unstructured document loader integration
-    
-    # TODO: Replace with relevant packages, env vars.
-    Setup:
-        Install ``langchain-unstructured`` and set environment variable ``UNSTRUCTURED_API_KEY``.
-
-        .. code-block:: bash
-
-            pip install -U langchain-unstructured
-            export UNSTRUCTURED_API_KEY="your-api-key"
-
-    # TODO: Replace with relevant init params.
-    Instantiate:
-        .. code-block:: python
-
-            from langchain_community.document_loaders import UnstructuredLoader
-
-            loader = UnstructuredLoader(
-                # required params = ...
-                # other params = ...
-            )
-
-    Lazy load:
-        .. code-block:: python
-
-            docs = []
-            docs_lazy = loader.lazy_load()
-
-            # async variant:
-            # docs_lazy = await loader.alazy_load()
-
-            for doc in docs_lazy:
-                docs.append(doc)
-            print(docs[0].page_content[:100])
-            print(docs[0].metadata)
-
-        .. code-block:: python
-
-            TODO: Example output  
-
-    # TODO: Delete if async load is not implemented
-    Async load:
-        .. code-block:: python
-
-            docs = await loader.aload()
-            print(docs[0].page_content[:100])
-            print(docs[0].metadata)
-
-        .. code-block:: python
-
-            TODO: Example output
-    """
-
-    # TODO: This method must be implemented to load documents.
-    # Do not implement load(), a default implementation is already available.
-    def lazy_load(self) -> Iterator[Document]:
-        raise NotImplementedError()
-    
-    # TODO: Implement if you would like to change default BaseLoader implementation
-    # async def alazy_load(self) -> AsyncIterator[Document]:
-
-# ====================================================================================
-
 class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
-    """Load files using `unstructured-client` sdk to access the Unstructured API.
+    """Unstructured document loader integration.
+    
+    Load files using the `unstructured-client` sdk to the Unstructured API.
 
     By default, the loader makes a call to the hosted Unstructured API. If you are
     running the unstructured API locally, you can change the API rule by passing in the
@@ -94,15 +29,32 @@ class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
     Augmented Generation (RAG). You can pass in additional unstructured kwargs to
     configure different unstructured settings.
 
-    Examples
-    ```python
-    from langchain_community.document_loaders import UnstructuredAPIFileLoader
+    Setup:
+        .. code-block:: bash
+            pip install -U langchain-unstructured
+            pip install -U unstructured-client
+            export UNSTRUCTURED_API_KEY="your-api-key"
 
-    loader = UnstructuredFileAPILoader(
-        "example.pdf", mode="elements", strategy="fast", api_key="MY_API_KEY",
-    )
-    docs = loader.load()
+    Instantiate:
+        .. code-block:: python
+            from langchain_community.document_loaders import UnstructuredSDKFileLoader
 
+            loader = UnstructuredSDKFileLoader(
+                # required params
+                file_path = "example.pdf",
+                # other params
+                mode="elements",
+                strategy="fast",
+                api_key=UNSTRUCTURED_API_KEY,
+            )
+
+    Lazy load:
+        .. code-block:: python
+            docs = loader.lazy_load()
+
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+    
     References
     ----------
     https://docs.unstructured.io/api-reference/api-services/sdk
