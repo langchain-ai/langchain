@@ -1076,6 +1076,7 @@ class Milvus(VectorStore):
             return None
 
         if ids is not None and len(ids):
+            kwargs["ids"] = ids
             try:
                 self.delete(ids=ids)
             except MilvusException:

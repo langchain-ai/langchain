@@ -106,7 +106,7 @@ try:
             """
             return [self.output_key]
 
-        @root_validator(pre=True)
+        @root_validator(pre=False, skip_on_failure=True)
         def validate_api_request_prompt(cls, values: Dict) -> Dict:
             """Check that api request prompt expects the right variables."""
             input_vars = values["api_request_chain"].prompt.input_variables
@@ -120,6 +120,8 @@ try:
         @root_validator(pre=True)
         def validate_limit_to_domains(cls, values: Dict) -> Dict:
             """Check that allowed domains are valid."""
+            # This check must be a pre=True check, so that a default of None
+            # won't be set to limit_to_domains if it's not provided.
             if "limit_to_domains" not in values:
                 raise ValueError(
                     "You must specify a list of domains to limit access using "
@@ -135,7 +137,7 @@ try:
                 )
             return values
 
-        @root_validator(pre=True)
+        @root_validator(pre=False, skip_on_failure=True)
         def validate_api_answer_prompt(cls, values: Dict) -> Dict:
             """Check that api answer prompt expects the right variables."""
             input_vars = values["api_answer_chain"].prompt.input_variables

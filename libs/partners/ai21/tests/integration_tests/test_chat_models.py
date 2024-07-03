@@ -1,6 +1,6 @@
 """Test ChatAI21 chat model."""
 import pytest
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessageChunk, HumanMessage
 from langchain_core.outputs import ChatGeneration
 
 from langchain_ai21.chat_models import ChatAI21
@@ -85,3 +85,21 @@ async def test_ageneration(model: str) -> None:
             assert isinstance(generation, ChatGeneration)
             assert isinstance(generation.text, str)
             assert generation.text == generation.message.content
+
+
+def test__chat_stream() -> None:
+    llm = ChatAI21(model="jamba-instruct")
+    message = HumanMessage(content="What is the meaning of life?")
+
+    for chunk in llm.stream([message]):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, str)
+
+
+def test__j2_chat_stream__should_raise_error() -> None:
+    llm = ChatAI21(model="j2-ultra")
+    message = HumanMessage(content="What is the meaning of life?")
+
+    with pytest.raises(NotImplementedError):
+        for _ in llm.stream([message]):
+            pass

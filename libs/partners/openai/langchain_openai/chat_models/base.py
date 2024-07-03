@@ -481,11 +481,10 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
-
+        kwargs["stream"] = True
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
-        with self.client.create(messages=message_dicts, **params) as response:
+        with self.client.create(**payload) as response:
             for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
@@ -544,19 +543,25 @@ class BaseChatOpenAI(BaseChatModel):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return generate_from_stream(stream_iter)
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
-        response = self.client.create(messages=message_dicts, **params)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        response = self.client.create(**payload)
         return self._create_chat_result(response)
 
-    def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]]
-    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        params = self._default_params
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        messages = self._convert_input(input_).to_messages()
         if stop is not None:
-            params["stop"] = stop
-        message_dicts = [_convert_message_to_dict(m) for m in messages]
-        return message_dicts, params
+            kwargs["stop"] = stop
+        return {
+            "messages": [_convert_message_to_dict(m) for m in messages],
+            **self._default_params,
+            **kwargs,
+        }
 
     def _create_chat_result(
         self, response: Union[dict, openai.BaseModel]
@@ -600,11 +605,10 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
-
+        kwargs["stream"] = True
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
-        response = await self.async_client.create(messages=message_dicts, **params)
+        response = await self.async_client.create(**payload)
         async with response:
             async for chunk in response:
                 if not isinstance(chunk, dict):
@@ -666,10 +670,8 @@ class BaseChatOpenAI(BaseChatModel):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return await agenerate_from_stream(stream_iter)
-
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
-        response = await self.async_client.create(messages=message_dicts, **params)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        response = await self.async_client.create(**payload)
         return self._create_chat_result(response)
 
     @property
@@ -1113,8 +1115,6 @@ class BaseChatOpenAI(BaseChatModel):
         Example: JSON mode, no schema (schema=None, method="json_mode", include_raw=True):
             .. code-block::
 
-                from langchain_openai import ChatOpenAI
-
                 structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
 
                 structured_llm.invoke(
@@ -1142,15 +1142,17 @@ class BaseChatOpenAI(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            llm = self.bind_tools([schema], tool_choice=True, parallel_tool_calls=False)
+            tool_name = convert_to_openai_tool(schema)["function"]["name"]
+            llm = self.bind_tools(
+                [schema], tool_choice=tool_name, parallel_tool_calls=False
+            )
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema], first_tool_only=True
                 )
             else:
-                key_name = convert_to_openai_tool(schema)["function"]["name"]
                 output_parser = JsonOutputKeyToolsParser(
-                    key_name=key_name, first_tool_only=True
+                    key_name=tool_name, first_tool_only=True
                 )
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
@@ -1672,7 +1674,13 @@ class ChatOpenAI(BaseChatOpenAI):
     ) -> Iterator[ChatGenerationChunk]:
         """Set default stream_options."""
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-        kwargs["stream_options"] = {"include_usage": stream_usage}
+        # Note: stream_options is not a valid parameter for Azure OpenAI.
+        # To support users proxying Azure through ChatOpenAI, here we only specify
+        # stream_options if include_usage is set to True.
+        # See https://learn.microsoft.com/en-us/azure/ai-services/openai/whats-new
+        # for release notes.
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
 
         return super()._stream(*args, **kwargs)
 
@@ -1681,7 +1689,8 @@ class ChatOpenAI(BaseChatOpenAI):
     ) -> AsyncIterator[ChatGenerationChunk]:
         """Set default stream_options."""
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
-        kwargs["stream_options"] = {"include_usage": stream_usage}
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
 
         async for chunk in super()._astream(*args, **kwargs):
             yield chunk
