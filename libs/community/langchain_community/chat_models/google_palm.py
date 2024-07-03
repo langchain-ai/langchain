@@ -1,4 +1,5 @@
 """Wrapper around Google's PaLM Chat API."""
+
 from __future__ import annotations
 
 import logging

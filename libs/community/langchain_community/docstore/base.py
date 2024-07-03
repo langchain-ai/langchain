@@ -1,4 +1,5 @@
 """Interface to access to place that stores documents."""
+
 from abc import ABC, abstractmethod
 from typing import Dict, List, Union
 

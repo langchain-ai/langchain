@@ -1,4 +1,5 @@
 """Test Minimax API wrapper."""
+
 from langchain_community.llms.minimax import Minimax
 
 

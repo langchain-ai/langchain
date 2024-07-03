@@ -1,4 +1,5 @@
 """Test LLM PAL functionality."""
+
 import pytest
 
 from langchain_experimental.pal_chain.base import PALChain, PALValidation

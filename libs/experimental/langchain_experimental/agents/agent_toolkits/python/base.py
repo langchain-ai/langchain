@@ -37,16 +37,16 @@ def create_python_agent(
             callback_manager=callback_manager,
         )
         tool_names = [tool.name for tool in tools]
-        agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)
+        agent = ZeroShotAgent(llm_chain=llm_chain, allowed_tools=tool_names, **kwargs)  # type: ignore[arg-type]
     elif agent_type == AgentType.OPENAI_FUNCTIONS:
         system_message = SystemMessage(content=prefix)
         _prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
-        agent = OpenAIFunctionsAgent(
+        agent = OpenAIFunctionsAgent(  # type: ignore[call-arg]
             llm=llm,
             prompt=_prompt,
             tools=tools,
             callback_manager=callback_manager,
-            **kwargs,
+            **kwargs,  # type: ignore[arg-type]
         )
     else:
         raise ValueError(f"Agent type {agent_type} not supported at the moment.")
