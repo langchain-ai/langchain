@@ -2,6 +2,7 @@
 Util that calls several of Polygon's stock market REST APIs.
 Docs: https://polygon.io/docs/stocks/getting-started
 """
+
 import json
 from typing import Any, Dict, Optional
 

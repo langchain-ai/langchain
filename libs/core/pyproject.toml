@@ -62,10 +62,10 @@ optional = true
 optional = true
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
+ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^1"
+mypy = "^1.10"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-jinja2 = "^2.11.9"

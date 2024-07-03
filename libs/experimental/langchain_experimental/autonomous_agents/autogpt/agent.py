@@ -59,7 +59,7 @@ class AutoGPT:
         output_parser: Optional[BaseAutoGPTOutputParser] = None,
         chat_history_memory: Optional[BaseChatMessageHistory] = None,
     ) -> AutoGPT:
-        prompt = AutoGPTPrompt(
+        prompt = AutoGPTPrompt(  # type: ignore[call-arg, call-arg, call-arg, call-arg]
             ai_name=ai_name,
             ai_role=ai_role,
             tools=tools,

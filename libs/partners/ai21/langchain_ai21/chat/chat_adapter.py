@@ -140,8 +140,7 @@ class J2ChatAdapter(ChatAdapter):
         client: Any,
         stream: Literal[True],
         **params: Any,
-    ) -> Iterator[ChatGenerationChunk]:
-        ...
+    ) -> Iterator[ChatGenerationChunk]: ...
 
     @overload
     def call(
@@ -149,8 +148,7 @@ class J2ChatAdapter(ChatAdapter):
         client: Any,
         stream: Literal[False],
         **params: Any,
-    ) -> List[BaseMessage]:
-        ...
+    ) -> List[BaseMessage]: ...
 
     def call(
         self,
@@ -192,8 +190,7 @@ class JambaChatCompletionsAdapter(ChatAdapter):
         client: Any,
         stream: Literal[True],
         **params: Any,
-    ) -> Iterator[ChatGenerationChunk]:
-        ...
+    ) -> Iterator[ChatGenerationChunk]: ...
 
     @overload
     def call(
@@ -201,8 +198,7 @@ class JambaChatCompletionsAdapter(ChatAdapter):
         client: Any,
         stream: Literal[False],
         **params: Any,
-    ) -> List[BaseMessage]:
-        ...
+    ) -> List[BaseMessage]: ...
 
     def call(
         self,
