@@ -1,7 +1,7 @@
 """Test for some custom pydantic decorators."""
-from pydantic import BaseModel
+from langchain_core.pydantic_v1 import BaseModel
 
-from langchain_core.pydantic_v1.decorators import pre_init
+from langchain_core.utils.pydantic import pre_init
 
 
 class Foo(BaseModel):

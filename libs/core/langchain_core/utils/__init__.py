@@ -7,6 +7,7 @@ These functions do not depend on any other LangChain module.
 from langchain_core.utils import image
 from langchain_core.utils.env import get_from_dict_or_env, get_from_env
 from langchain_core.utils.formatting import StrictFormatter, formatter
+from langchain_core.utils.pydantic import pre_init
 from langchain_core.utils.input import (
     get_bolded_text,
     get_color_mapping,
@@ -48,4 +49,5 @@ __all__ = [
     "stringify_dict",
     "comma_list",
     "stringify_value",
+    "pre_init",
 ]
