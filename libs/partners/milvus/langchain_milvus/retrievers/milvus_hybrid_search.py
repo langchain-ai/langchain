@@ -1,3 +1,8 @@
+"""This is the Milvus Hrbrid Search Retriever module.
+
+It is used for hybrid search in Milvus collections.
+"""
+
 from typing import Any, Dict, List, Optional, Union
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
@@ -11,8 +16,9 @@ from langchain_milvus.utils.sparse import BaseSparseEmbedding
 
 
 class MilvusCollectionHybridSearchRetriever(BaseRetriever):
-    """This is a hybrid search retriever
-    that uses Milvus Collection to retrieve documents based on multiple fields.
+    """This is a hybrid search retriever.
+
+    It uses Milvus Collection to retrieve documents based on multiple fields.
     For more information, please refer to:
     https://milvus.io/docs/release_notes.md#Multi-Embedding---Hybrid-Search
     """
@@ -45,6 +51,7 @@ class MilvusCollectionHybridSearchRetriever(BaseRetriever):
     which will be the `metadata` of a `Document` object."""
 
     def __init__(self, **kwargs: Any):
+        """Initialize the MilvusCollectionHybridSearchRetriever."""
         super().__init__(**kwargs)
 
         # If some parameters are not specified, set default values

@@ -1,3 +1,8 @@
+"""This is the Milvus vector store module.
+
+This module provides a vector store implementation using Milvus.
+"""
+
 from __future__ import annotations
 
 import logging
@@ -286,6 +291,7 @@ class Milvus(VectorStore):
 
     @property
     def embeddings(self) -> Embeddings:
+        """Get the Embeddings function used for embedding the text."""
         return self.embedding_func
 
     def _create_connection_alias(self, connection_args: dict) -> str:
@@ -468,7 +474,7 @@ class Milvus(VectorStore):
             raise e
 
     def _extract_fields(self) -> None:
-        """Grab the existing fields from the Collection"""
+        """Grab the existing fields from the Collection."""
         from pymilvus import Collection
 
         if isinstance(self.col, Collection):
@@ -477,7 +483,7 @@ class Milvus(VectorStore):
                 self.fields.append(x.name)
 
     def _get_index(self) -> Optional[dict[str, Any]]:
-        """Return the vector index information if it exists"""
+        """Return the vector index information if it exists."""
         from pymilvus import Collection
 
         if isinstance(self.col, Collection):
@@ -487,7 +493,7 @@ class Milvus(VectorStore):
         return None
 
     def _create_index(self) -> None:
-        """Create a index on the collection"""
+        """Create a index on the collection."""
         from pymilvus import Collection, MilvusException
 
         if isinstance(self.col, Collection) and self._get_index() is None:
@@ -532,7 +538,7 @@ class Milvus(VectorStore):
                 raise e
 
     def _create_search_params(self) -> None:
-        """Generate search params based on the current index type"""
+        """Generate search params based on the current index type."""
         from pymilvus import Collection
 
         if isinstance(self.col, Collection) and self.search_params is None:
@@ -596,6 +602,7 @@ class Milvus(VectorStore):
             batch_size (int, optional): Batch size to use for insertion.
                 Defaults to 1000.
             ids (Optional[List[str]]): List of text ids. The length of each item
+            **kwargs (Any): Additional keyword arguments.
 
         Raises:
             MilvusException: Failure to add texts
@@ -999,6 +1006,7 @@ class Milvus(VectorStore):
         self, ids: Optional[List[str]] = None, expr: Optional[str] = None, **kwargs: str
     ):
         """Delete by vector ID or boolean expression.
+
         Refer to [Milvus documentation](https://milvus.io/docs/delete_data.md)
         for notes and examples of expressions.
 
@@ -1055,6 +1063,7 @@ class Milvus(VectorStore):
             drop_old (Optional[bool], optional): Whether to drop the collection with
                 that name if it exists. Defaults to False.
             ids (Optional[List[str]]): List of text ids. Defaults to None.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             Milvus: Milvus Vector Store
@@ -1085,15 +1094,15 @@ class Milvus(VectorStore):
         )
 
     def get_pks(self, expr: str, **kwargs: Any) -> List[int] | None:
-        """Get primary keys with expression
+        """Get primary keys with expression.
 
         Args:
             expr: Expression - E.g: "id in [1, 2]", or "title LIKE 'Abc%'"
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             List[int]: List of IDs (Primary Keys)
         """
-
         from pymilvus import MilvusException
 
         if self.col is None:
@@ -1119,13 +1128,13 @@ class Milvus(VectorStore):
         """Update/Insert documents to the vectorstore.
 
         Args:
-            ids: IDs to update - Let's call get_pks to get ids with expression \n
+            ids: IDs to update - Let's call get_pks to get ids with expression
             documents (List[Document]): Documents to add to the vectorstore.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             List[str]: IDs of the added texts.
         """
-
         from pymilvus import MilvusException
 
         if documents is None or len(documents) == 0:

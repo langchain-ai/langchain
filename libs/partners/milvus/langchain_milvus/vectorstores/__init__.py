@@ -1,3 +1,5 @@
+"""This is the langchain_milvus vectorstores package."""
+
 from langchain_milvus.vectorstores.milvus import Milvus
 from langchain_milvus.vectorstores.zilliz import Zilliz
 

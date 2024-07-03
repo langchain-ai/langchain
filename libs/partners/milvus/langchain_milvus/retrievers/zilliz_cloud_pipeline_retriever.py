@@ -1,3 +1,8 @@
+"""This is the Zilliz Cloud Pipeline Retriever module.
+
+It is used for retrieving documents from Zilliz Cloud Pipeline.
+"""
+
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -7,7 +12,7 @@ from langchain_core.retrievers import BaseRetriever
 
 
 class ZillizCloudPipelineRetriever(BaseRetriever):
-    """`Zilliz Cloud Pipeline` retriever
+    """Zilliz Cloud Pipeline retriever.
 
     Args:
         pipeline_ids (dict): A dictionary of pipeline ids.
@@ -31,8 +36,7 @@ class ZillizCloudPipelineRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
     ) -> List[Document]:
-        """
-        Get documents relevant to a query.
+        """Get documents relevant to a query.
 
         Args:
             query (str): String to find relevant documents for
@@ -95,8 +99,8 @@ class ZillizCloudPipelineRetriever(BaseRetriever):
     def add_texts(
         self, texts: List[str], metadata: Optional[Dict[str, Any]] = None
     ) -> Dict:
-        """
-        Add documents to store.
+        """Add documents to store.
+
         Only supported by a text ingestion pipeline in Zilliz Cloud.
 
         Args:
@@ -138,8 +142,8 @@ class ZillizCloudPipelineRetriever(BaseRetriever):
     def add_doc_url(
         self, doc_url: str, metadata: Optional[Dict[str, Any]] = None
     ) -> Dict:
-        """
-        Add a document from url.
+        """Add a document from url.
+
         Only supported by a document ingestion pipeline in Zilliz Cloud.
 
         Args:
@@ -179,8 +183,7 @@ class ZillizCloudPipelineRetriever(BaseRetriever):
         return response_data
 
     def delete(self, key: str, value: Any) -> Dict:
-        """
-        Delete documents. Only supported by a deletion pipeline in Zilliz Cloud.
+        """Delete documents. Only supported by a deletion pipeline in Zilliz Cloud.
 
         Args:
             key: input name to run the deletion pipeline

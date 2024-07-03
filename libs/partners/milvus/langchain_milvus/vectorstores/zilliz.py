@@ -1,3 +1,5 @@
+"""This is the zilliz module."""
+
 from __future__ import annotations
 
 import logging
@@ -93,7 +95,7 @@ class Zilliz(Milvus):
     """
 
     def _create_index(self) -> None:
-        """Create a index on the collection"""
+        """Create a index on the collection."""
         from pymilvus import Collection, MilvusException
 
         if isinstance(self.col, Collection) and self._get_index() is None:
@@ -177,6 +179,7 @@ class Zilliz(Milvus):
             auto_id (bool): Whether to enable auto id for primary key. Defaults to
                 False. If False, you needs to provide text ids (string less than 65535
                 bytes). If True, Milvus will generate unique integers as primary keys.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             Zilliz: Zilliz Vector Store
