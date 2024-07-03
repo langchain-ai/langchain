@@ -52,7 +52,7 @@ from langchain_cohere.cohere_agent import (
     _convert_to_cohere_tool,
     _format_to_cohere_tools,
 )
-from langchain_cohere.chat_models import _format_cohere_tool_calls, _convert_cohere_tool_call_to_langchain
+from langchain_cohere.chat_models import _format_cohere_tool_calls, _convert_cohere_tool_call_to_langchain, get_cohere_chat_request
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
@@ -148,6 +148,9 @@ class Provider(ABC):
     ) -> Dict[str, Any]:
         ...
 
+    @abstractmethod
+    def get_oci_params(self, messages: Sequence[ChatMessage], stop: Optional[List[str]], kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        ...
 
 class CohereProvider(Provider):
     stop_sequence_key = "stop_sequences"
