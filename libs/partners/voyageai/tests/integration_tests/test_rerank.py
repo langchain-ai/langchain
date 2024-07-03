@@ -9,12 +9,12 @@ from langchain_voyageai.rerank import VoyageAIRerank
 
 def test_voyageai_reranker_init() -> None:
     """Test the voyageai reranker initializes correctly."""
-    VoyageAIRerank(voyage_api_key="foo", model="foo")  # type: ignore[arg-type]
+    VoyageAIRerank(voyage_api_key="foo", model="foo")
 
 
 def test_sync() -> None:
     rerank = VoyageAIRerank(
-        voyage_api_key=os.environ["VOYAGE_API_KEY"],  # type: ignore[arg-type]
+        voyage_api_key=os.environ["VOYAGE_API_KEY"],
         model="rerank-lite-1",
     )
     doc_list = [
@@ -42,7 +42,7 @@ def test_sync() -> None:
 
 async def test_async() -> None:
     rerank = VoyageAIRerank(
-        voyage_api_key=os.environ["VOYAGE_API_KEY"],  # type: ignore[arg-type]
+        voyage_api_key=os.environ["VOYAGE_API_KEY"],
         model="rerank-lite-1",
     )
     doc_list = [

@@ -1,5 +1,4 @@
 """Fake Chat Model wrapper for testing purposes."""
-
 import json
 from typing import Any, Dict, List, Optional
 
