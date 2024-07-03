@@ -46,15 +46,21 @@ class ReadWriteTestSuite(ABC):
 
     def test_add_documents(self, vectorstore: VectorStore) -> None:
         """Test adding documents into the vectorstore."""
-        documents = [
+        original_documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
         ]
-        ids = vectorstore.add_documents(documents)
+        ids = vectorstore.add_documents(original_documents)
         documents = vectorstore.similarity_search("bar", k=2)
         assert documents == [
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
             Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+        ]
+        # Verify that the original document object does not get mutated!
+        # (e.g., an ID is added to the original document object)
+        assert original_documents == [
+            Document(page_content="foo", metadata={"id": 1}),
+            Document(page_content="bar", metadata={"id": 2}),
         ]
 
     def test_vectorstore_still_empty(self, vectorstore: VectorStore) -> None:
@@ -176,15 +182,22 @@ class AsyncReadWriteTestSuite(ABC):
 
     async def test_add_documents(self, vectorstore: VectorStore) -> None:
         """Test adding documents into the vectorstore."""
-        documents = [
+        original_documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
         ]
-        ids = await vectorstore.aadd_documents(documents)
+        ids = await vectorstore.aadd_documents(original_documents)
         documents = await vectorstore.asimilarity_search("bar", k=2)
         assert documents == [
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
             Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+        ]
+
+        # Verify that the original document object does not get mutated!
+        # (e.g., an ID is added to the original document object)
+        assert original_documents == [
+            Document(page_content="foo", metadata={"id": 1}),
+            Document(page_content="bar", metadata={"id": 2}),
         ]
 
     async def test_vectorstore_still_empty(self, vectorstore: VectorStore) -> None:
