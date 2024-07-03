@@ -1258,8 +1258,13 @@ def _cleanup_llm_representation(serialized: Any, depth: int) -> None:
     """Remove non-serializable objects from a serialized object."""
     if depth > 100:  # Don't cooperate for pathological cases
         return
-    if serialized["type"] == "not_implemented" and "repr" in serialized:
-        del serialized["repr"]
+
+    if not isinstance(serialized, dict):
+        return
+
+    if "type" in serialized and serialized["type"] == "not_implemented":
+        if "repr" in serialized:
+            del serialized["repr"]
 
     if "graph" in serialized:
         del serialized["graph"]
