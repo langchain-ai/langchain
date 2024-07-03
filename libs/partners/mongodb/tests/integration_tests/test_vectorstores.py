@@ -34,12 +34,15 @@ class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
         ids: Optional[List[str]] = None,
     ) -> List:
         """Patched insert_texts that waits for data to be indexed before returning"""
-        ids = super().bulk_embed_and_insert_texts(texts, metadatas)
+        ids_inserted = super().bulk_embed_and_insert_texts(texts, metadatas, ids)
         timeout = TIMEOUT
-        while len(ids) != len(self.similarity_search("sandwich")) and timeout >= 0:
+        while (
+            len(ids_inserted) != len(self.similarity_search("sandwich"))
+            and timeout >= 0
+        ):
             sleep(INTERVAL)
             timeout -= INTERVAL
-        return ids
+        return ids_inserted
 
 
 def get_collection() -> Collection:
@@ -246,12 +249,7 @@ class TestMongoDBAtlasVectorSearch:
         collection: Collection,
         texts: List[str],
     ) -> None:
-        """Tests API of add_texts, focussing on id treatment
-
-        - case with ids
-            - add again with arbitrary strings
-        - case with batch_size
-        """
+        """Tests API of add_texts, focussing on id treatment"""
         metadatas = [{"a": 1}, {"b": 1}, {"c": 1}, {"d": 1, "e": 2}]
 
         vectorstore = PatchedMongoDBAtlasVectorSearch(
@@ -259,7 +257,6 @@ class TestMongoDBAtlasVectorSearch:
         )
 
         # Case 1. Add texts without ids
-
         provided_ids = vectorstore.add_texts(texts=texts, metadatas=metadatas)
         all_docs = list(vectorstore._collection.find({}))
         assert all("_id" in doc for doc in all_docs)
@@ -273,30 +270,43 @@ class TestMongoDBAtlasVectorSearch:
         assert "_id" in doc.metadata
 
         # Case 3: Add new ids that are 24-char hex strings
-        # TODO - BEGIN HERE.
         hex_ids = [oid_to_str(ObjectId()) for _ in range(2)]
         hex_texts = ["Text for hex_id"] * len(hex_ids)
         out_ids = vectorstore.add_texts(texts=hex_texts, ids=hex_ids)
         assert set(out_ids) == set(hex_ids)
         assert collection.count_documents({}) == len(texts) + len(hex_texts)
+        assert all(
+            isinstance(doc["_id"], ObjectId) for doc in vectorstore._collection.find({})
+        )
 
         # Case 4: Add new ids that cannot be cast to ObjectId
-        #   - Can we still index and search on them?
+        #   - We can still index and search on them
         str_ids = ["Sandwiches are beautiful,", "..sandwiches are fine."]
         str_texts = str_ids  # No reason for them to differ
         out_ids = vectorstore.add_texts(texts=str_texts, ids=str_ids)
         assert set(out_ids) == set(str_ids)
         assert collection.count_documents({}) == 8
-        search_res = vectorstore.similarity_search_with_score("sandwich", k=3)
-        assert all("sandich" in doc.page_content.lower() for doc in search_res)
+        search_res = vectorstore.similarity_search("sandwich", k=8)
+        assert any(str_ids[0] in doc.metadata["_id"] for doc in search_res)
+
+        # Case 5: Test adding in multiple batches
+        batch_size = 2
+        batch_ids = [oid_to_str(ObjectId()) for _ in range(2 * batch_size)]
+        batch_texts = [f"Text for batch text {i}" for i in range(2 * batch_size)]
+        out_ids = vectorstore.add_texts(
+            texts=batch_texts, ids=batch_ids, batch_size=batch_size
+        )
+        assert set(out_ids) == set(batch_ids)
+        assert collection.count_documents({}) == 12
 
         '''
        def test_add_documents(self):
            """Tests API of add_documents, focussing on id treatment
-
+             
 
            - case without ids
            - case with ids in metadata
            """
            raise NotImplementedError
+           # TODO - There doesn't appear to be an add_documents!!!
         '''

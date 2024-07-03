@@ -16,7 +16,7 @@ from typing import (
 )
 
 import numpy as np
-from bson import ObjectId, json_util
+from bson import ObjectId
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
@@ -228,7 +228,12 @@ class MongoDBAtlasVectorSearch(VectorStore):
         embeddings = self._embedding.embed_documents(texts)
         if ids:
             to_insert = [
-                {"_id": i, self._text_key: t, self._embedding_key: embedding, **m}
+                {
+                    "_id": str_to_oid(i),
+                    self._text_key: t,
+                    self._embedding_key: embedding,
+                    **m,
+                }
                 for i, t, m, embedding in zip(ids, texts, metadatas, embeddings)
             ]
         else:
