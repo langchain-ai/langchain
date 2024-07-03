@@ -68,16 +68,31 @@ if TYPE_CHECKING:
 
 
 class LangSmithParams(TypedDict, total=False):
+    """LangSmith parameters for tracing."""
+
     ls_provider: str
+    """Provider of the model."""
     ls_model_name: str
+    """Name of the model."""
     ls_model_type: Literal["chat"]
+    """Type of the model. Should be 'chat'."""
     ls_temperature: Optional[float]
+    """Temperature for generation."""
     ls_max_tokens: Optional[int]
+    """Max tokens for generation."""
     ls_stop: Optional[List[str]]
+    """Stop words for generation."""
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
-    """Generate from a stream."""
+    """Generate from a stream.
+
+    Args:
+        stream: Iterator of ChatGenerationChunk.
+
+    Returns:
+        ChatResult: Chat result.
+    """
 
     generation: Optional[ChatGenerationChunk] = None
     for chunk in stream:
@@ -99,7 +114,14 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
 async def agenerate_from_stream(
     stream: AsyncIterator[ChatGenerationChunk],
 ) -> ChatResult:
-    """Async generate from a stream."""
+    """Async generate from a stream.
+
+    Args:
+        stream: Iterator of ChatGenerationChunk.
+
+    Returns:
+        ChatResult: Chat result.
+    """
 
     generation: Optional[ChatGenerationChunk] = None
     async for chunk in stream:
@@ -200,7 +222,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
-        """Raise deprecation warning if callback_manager is used."""
+        """Raise deprecation warning if callback_manager is used.
+
+        Args:
+            values (Dict): Values to validate.
+
+        Returns:
+            Dict: Validated values.
+
+        Raises:
+            DeprecationWarning: If callback_manager is used.
+        """
         if values.get("callback_manager") is not None:
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
