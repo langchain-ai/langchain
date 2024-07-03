@@ -39,13 +39,14 @@ class InMemoryVectorStore(VectorStore):
         self.delete(ids)
 
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
+        vectors = self.embedding.embed_documents([item.page_content for item in items])
         ids = []
-        for item in items:
+        for item, vector in zip(items, vectors):
             doc_id = item.id if item.id else str(uuid.uuid4())
             ids.append(doc_id)
             self.store[doc_id] = {
                 "id": doc_id,
-                "vector": self.embedding.embed_documents([item.page_content])[0],
+                "vector": vector,
                 "text": item.page_content,
                 "metadata": item.metadata,
             }
