@@ -93,7 +93,7 @@ def test__convert_message_to_dict_ai() -> None:
 @pytest.mark.parametrize(
     "pairs", (("{}", "{}"), ("abc", '"abc"'), (123, "123"), ("[]", "[]"))
 )
-def test__convert_message_to_dict_function(pairs) -> None:
+def test__convert_message_to_dict_function(pairs: Any) -> None:
     """Checks if string, that was not JSON was converted to JSON"""
     message = FunctionMessage(content=pairs[0], id="1", name="func")
     expected = Messages(id=None, role=MessagesRole.FUNCTION, content=pairs[1])
