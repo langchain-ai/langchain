@@ -277,9 +277,12 @@ async def async_gen_mock_streaming_response() -> AsyncGenerator[Dict, None]:
 async def test_bedrock_async_streaming_call() -> None:
     # Mock boto3 import
     mock_boto3 = MagicMock()
+    session = MagicMock()
+    session.region_name = "region"
+    mock_boto3.Session.return_value = session
     mock_boto3.Session.return_value.client.return_value = (
-        MagicMock()
-    )  # Mocking the client method of the Session object
+        session  # Mocking the client method of the Session object
+    )
 
     with patch.dict(
         "sys.modules", {"boto3": mock_boto3}
