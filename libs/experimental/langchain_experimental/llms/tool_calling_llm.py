@@ -37,7 +37,6 @@ from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
 from langchain_core.runnables.base import RunnableMap
 from langchain_core.runnables.passthrough import RunnablePassthrough
-from langchain_core.runnables.utils import Input
 from langchain_core.tools import BaseTool
 
 DEFAULT_SYSTEM_TEMPLATE = """You have access to the following tools:
@@ -528,4 +527,4 @@ class ToolCallingLLM(BaseChatModel, ABC):
         Default implementation of astream, which calls ainvoke.
         Subclasses should override this method if they support streaming output.
         """
-        yield await self.ainvoke(input, config, **kwargs)
+        yield await self.ainvoke(input, config, **kwargs)  # type: ignore[misc]
