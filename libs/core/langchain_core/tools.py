@@ -28,7 +28,20 @@ from abc import ABC, abstractmethod
 from contextvars import copy_context
 from functools import partial
 from inspect import signature
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
+
+from typing_extensions import Annotated, get_args, get_origin
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -76,11 +89,32 @@ class SchemaAnnotationError(TypeError):
     """Raised when 'args_schema' is missing or has an incorrect type annotation."""
 
 
+def _is_annotated_type(typ: Type[Any]) -> bool:
+    return get_origin(typ) is Annotated
+
+
+def _get_annotation_description(arg: str, arg_type: Type[Any]) -> str | None:
+    if _is_annotated_type(arg_type):
+        annotated_args = get_args(arg_type)
+        arg_type = annotated_args[0]
+        if len(annotated_args) > 1:
+            for annotation in annotated_args[1:]:
+                if isinstance(annotation, str):
+                    return annotation
+    return None
+
+
 def _create_subset_model(
-    name: str, model: Type[BaseModel], field_names: list
+    name: str,
+    model: Type[BaseModel],
+    field_names: list,
+    *,
+    descriptions: Optional[dict] = None,
+    fn_description: Optional[str] = None,
 ) -> Type[BaseModel]:
     """Create a pydantic model with only a subset of model's fields."""
     fields = {}
+
     for field_name in field_names:
         field = model.__fields__[field_name]
         t = (
@@ -89,19 +123,89 @@ def _create_subset_model(
             if field.required and not field.allow_none
             else Optional[field.outer_type_]
         )
+        if descriptions and field_name in descriptions:
+            field.field_info.description = descriptions[field_name]
         fields[field_name] = (t, field.field_info)
+
     rtn = create_model(name, **fields)  # type: ignore
+    rtn.__doc__ = textwrap.dedent(fn_description or model.__doc__ or "")
     return rtn
 
 
 def _get_filtered_args(
     inferred_model: Type[BaseModel],
     func: Callable,
+    *,
+    filter_args: Sequence[str],
 ) -> dict:
     """Get the arguments from a function's signature."""
     schema = inferred_model.schema()["properties"]
     valid_keys = signature(func).parameters
-    return {k: schema[k] for k in valid_keys if k not in ("run_manager", "callbacks")}
+    return {
+        k: schema[k]
+        for i, (k, param) in enumerate(valid_keys.items())
+        if k not in filter_args and (i > 0 or param.name not in ("self", "cls"))
+    }
+
+
+def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
+    """Parse the function and argument descriptions from the docstring of a function.
+
+    Assumes the function docstring follows Google Python style guide.
+    """
+    docstring = inspect.getdoc(function)
+    if docstring:
+        docstring_blocks = docstring.split("\n\n")
+        descriptors = []
+        args_block = None
+        past_descriptors = False
+        for block in docstring_blocks:
+            if block.startswith("Args:"):
+                args_block = block
+                break
+            elif block.startswith("Returns:") or block.startswith("Example:"):
+                # Don't break in case Args come after
+                past_descriptors = True
+            elif not past_descriptors:
+                descriptors.append(block)
+            else:
+                continue
+        description = " ".join(descriptors)
+    else:
+        description = ""
+        args_block = None
+    arg_descriptions = {}
+    if args_block:
+        arg = None
+        for line in args_block.split("\n")[1:]:
+            if ":" in line:
+                arg, desc = line.split(":", maxsplit=1)
+                arg_descriptions[arg.strip()] = desc.strip()
+            elif arg:
+                arg_descriptions[arg.strip()] += " " + line.strip()
+    return description, arg_descriptions
+
+
+def _infer_arg_descriptions(
+    fn: Callable, *, parse_docstring: bool = False
+) -> Tuple[str, dict]:
+    """Infer argument descriptions from a function's docstring."""
+    if parse_docstring:
+        description, arg_descriptions = _parse_python_function_docstring(fn)
+    else:
+        description = inspect.getdoc(fn) or ""
+        arg_descriptions = {}
+    if hasattr(inspect, "get_annotations"):
+        # This is for python < 3.10
+        annotations = inspect.get_annotations(fn)  # type: ignore
+    else:
+        annotations = getattr(fn, "__annotations__", {})
+    for arg, arg_type in annotations.items():
+        if arg in arg_descriptions:
+            continue
+        if desc := _get_annotation_description(arg, arg_type):
+            arg_descriptions[arg] = desc
+    return description, arg_descriptions
 
 
 class _SchemaConfig:
@@ -114,25 +218,40 @@ class _SchemaConfig:
 def create_schema_from_function(
     model_name: str,
     func: Callable,
+    *,
+    filter_args: Optional[Sequence[str]] = None,
+    parse_docstring: bool = False,
 ) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature.
     Args:
         model_name: Name to assign to the generated pydandic schema
         func: Function to generate the schema from
+        filter_args: Optional list of arguments to exclude from the schema
+        parse_docstring: Whether to parse the function's docstring for descriptions
+             for each argument.
     Returns:
         A pydantic model with the same arguments as the function
     """
     # https://docs.pydantic.dev/latest/usage/validation_decorator/
     validated = validate_arguments(func, config=_SchemaConfig)  # type: ignore
     inferred_model = validated.model  # type: ignore
-    if "run_manager" in inferred_model.__fields__:
-        del inferred_model.__fields__["run_manager"]
-    if "callbacks" in inferred_model.__fields__:
-        del inferred_model.__fields__["callbacks"]
+    filter_args = (
+        filter_args if filter_args is not None else ("run_manager", "callbacks")
+    )
+    for arg in filter_args:
+        if arg in inferred_model.__fields__:
+            del inferred_model.__fields__[arg]
+    description, arg_descriptions = _infer_arg_descriptions(
+        func, parse_docstring=parse_docstring
+    )
     # Pydantic adds placeholder virtual fields we need to strip
-    valid_properties = _get_filtered_args(inferred_model, func)
+    valid_properties = _get_filtered_args(inferred_model, func, filter_args=filter_args)
     return _create_subset_model(
-        f"{model_name}Schema", inferred_model, list(valid_properties)
+        f"{model_name}Schema",
+        inferred_model,
+        list(valid_properties),
+        descriptions=arg_descriptions,
+        fn_description=description,
     )
 
 
