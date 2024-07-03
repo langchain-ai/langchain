@@ -44,6 +44,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
+    pre_init,
 )
 from tenacity import (
     before_sleep_log,
@@ -166,7 +167,7 @@ class ChatYuan2(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["yuan2_api_key"] = get_from_dict_or_env(

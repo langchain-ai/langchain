@@ -49,6 +49,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.utils import (
     get_from_dict_or_env,
     get_pydantic_field_names,
+    pre_init,
 )
 
 from langchain_community.adapters.openai import (
@@ -274,7 +275,7 @@ class ChatOpenAI(BaseChatModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:

@@ -4,7 +4,7 @@ import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
@@ -68,7 +68,7 @@ class SolarCommon(BaseModel):
     def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         api_key = get_from_dict_or_env(values, "solar_api_key", "SOLAR_API_KEY")
         if api_key is None or len(api_key) == 0:
