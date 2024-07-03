@@ -1,4 +1,5 @@
 """Test LLM Bash functionality."""
+
 import sys
 from typing import Type
 

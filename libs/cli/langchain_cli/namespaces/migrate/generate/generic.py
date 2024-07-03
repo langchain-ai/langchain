@@ -1,4 +1,5 @@
 """Generate migrations from langchain to langchain-community or core packages."""
+
 import importlib
 import inspect
 import pkgutil

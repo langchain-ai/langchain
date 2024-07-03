@@ -1,4 +1,5 @@
 """Integration test for DallE API Wrapper."""
+
 from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
 
 

@@ -14,13 +14,17 @@ its dependencies running locally.
 - Install the Python SDK with `pip install unstructured`.
     - You can install document specific dependencies with extras, i.e. `pip install "unstructured[docx]"`.
     - To install the dependencies for all document types, use `pip install "unstructured[all-docs]"`.
-- Install the following system dependencies if they are not already available on your system.
+- Install the following system dependencies if they are not already available on your system with e.g. `brew install` for Mac.
   Depending on what document types you're parsing, you may not need all of these.
     - `libmagic-dev` (filetype detection)
     - `poppler-utils` (images and PDFs)
     - `tesseract-ocr`(images and PDFs)
+    - `qpdf` (PDFs)
     - `libreoffice` (MS Office docs)
     - `pandoc` (EPUBs)
+
+When running locally, Unstructured also recommends using Docker [by following this guide](https://docs.unstructured.io/open-source/installation/docker-installation)
+to ensure all system dependencies are installed correctly.
 
 If you want to get up and running with less set up, you can
 simply run `pip install unstructured` and use `UnstructuredAPIFileLoader` or
