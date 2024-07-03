@@ -7,6 +7,13 @@ This module contains the community chains.
 import importlib
 from typing import TYPE_CHECKING, Any
 
+from langchain_community.chains.enhanced_function import EnhancedFunctionChain
+
+__all__ = [
+    ...,
+    "EnhancedFunctionChain",
+]
+
 if TYPE_CHECKING:
     from langchain_community.chains.pebblo_retrieval.base import PebbloRetrievalQA
 
