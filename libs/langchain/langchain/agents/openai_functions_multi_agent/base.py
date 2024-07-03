@@ -1,4 +1,5 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
+
 import json
 from json import JSONDecodeError
 from typing import Any, List, Optional, Sequence, Tuple, Union
@@ -95,7 +96,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
 
 @deprecated("0.1.0", alternative="create_openai_tools_agent", removal="0.3.0")
 class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
-    """An Agent driven by OpenAIs function powered API.
+    """Agent driven by OpenAIs function powered API.
 
     Args:
         llm: This should be an instance of ChatOpenAI, specifically a model
@@ -131,6 +132,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
 
     @property
     def functions(self) -> List[dict]:
+        """Get the functions for the agent."""
         enum_vals = [t.name for t in self.tools]
         tool_selection = {
             # OpenAI functions returns a single tool invocation
@@ -198,7 +200,9 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         """Given input, decided what to do.
 
         Args:
-            intermediate_steps: Steps the LLM has taken to date, along with observations
+            intermediate_steps: Steps the LLM has taken to date,
+                along with observations.
+            callbacks: Callbacks to use. Default is None.
             **kwargs: User inputs.
 
         Returns:
@@ -223,11 +227,12 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> Union[List[AgentAction], AgentFinish]:
-        """Given input, decided what to do.
+        """Async given input, decided what to do.
 
         Args:
             intermediate_steps: Steps the LLM has taken to date,
-                along with observations
+                along with observations.
+            callbacks: Callbacks to use. Default is None.
             **kwargs: User inputs.
 
         Returns:
@@ -260,7 +265,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
             system_message: Message to use as the system message that will be the
                 first in the prompt.
             extra_prompt_messages: Prompt messages that will be placed between the
-                system message and the new human input.
+                system message and the new human input. Default is None.
 
         Returns:
             A prompt template to pass into this agent.
@@ -293,7 +298,17 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         ),
         **kwargs: Any,
     ) -> BaseMultiActionAgent:
-        """Construct an agent from an LLM and tools."""
+        """Construct an agent from an LLM and tools.
+
+        Args:
+            llm: The language model to use.
+            tools: A list of tools to use.
+            callback_manager: The callback manager to use. Default is None.
+            extra_prompt_messages: Extra prompt messages to use. Default is None.
+            system_message: The system message to use.
+                Default is a default system message.
+            **kwargs: Additional arguments.
+        """
         prompt = cls.create_prompt(
             extra_prompt_messages=extra_prompt_messages,
             system_message=system_message,
