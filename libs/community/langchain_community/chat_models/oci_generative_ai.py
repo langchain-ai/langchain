@@ -15,6 +15,7 @@ from langchain_core.messages import (
     ChatMessage,
     HumanMessage,
     SystemMessage,
+    ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import Extra, BaseModel
@@ -29,7 +30,7 @@ from langchain_cohere.cohere_agent import (
     _convert_to_cohere_tool,
     _format_to_cohere_tools,
 )
-from langchain_cohere.chat_models import _format_cohere_tool_calls, _convert_cohere_tool_call_to_langchain
+from langchain_cohere.chat_models import _format_cohere_tool_calls, _convert_cohere_tool_call_to_langchain, get_cohere_chat_request
 
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
@@ -52,12 +53,16 @@ class Provider(ABC):
     def get_role(self, message: BaseMessage) -> str: ...
 
     @abstractmethod
-    def messages_to_oci_params(self, messages: Any) -> Dict[str, Any]: ...
+    def messages_to_oci_params(self, messages: Any, **kwargs: Any) -> Dict[str, Any]:
+        ...
 
     @abstractmethod
     def tools_to_oci_params(self, tools: Sequence[Dict]) -> Dict[str, Any]:
         ...
 
+    @abstractmethod
+    def get_oci_params(self, messages: Sequence[ChatMessage], stop: Optional[List[str]], kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        ...
 
 class CohereProvider(Provider):
     stop_sequence_key = "stop_sequences"
@@ -68,10 +73,13 @@ class CohereProvider(Provider):
         self.oci_chat_request = models.CohereChatRequest
         self.oci_tool = models.CohereTool
         self.oci_tool_param = models.CohereParameterDefinition
+        self.oci_tool_result = models.CohereToolResult
+        self.oci_tool_call = models.CohereToolCall
         self.oci_chat_message = {
             "USER": models.CohereUserMessage,
             "CHATBOT": models.CohereChatBotMessage,
             "SYSTEM": models.CohereSystemMessage,
+            "TOOL": models.CohereToolMessage,
         }
         self.chat_api_format = models.BaseChatRequest.API_FORMAT_COHERE
 
@@ -106,21 +114,71 @@ class CohereProvider(Provider):
             return "CHATBOT"
         elif isinstance(message, SystemMessage):
             return "SYSTEM"
+        elif isinstance(message, ToolMessage):
+            return "TOOL"
         else:
             raise ValueError(f"Got unknown type {message}")
 
-    def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
-        oci_chat_history = [
-            self.oci_chat_message[self.get_role(msg)](message=msg.content)
-            for msg in messages[:-1]
-        ]
+    def get_oci_params(self, messages: Sequence[ChatMessage], stop: Optional[List[str]], kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        cohere_params = get_cohere_chat_request(messages, stop_sequences=stop, **kwargs)
+        return cohere_params
+    
+    def messages_to_oci_params(self, messages: Sequence[ChatMessage], **kwargs: Any) -> Dict[str, Any]:
+
+        
+        is_force_single_step = kwargs.get('is_force_single_step') or False
+
+        oci_chat_history = []
+        
+        for msg in messages[:-1]:
+            if self.get_role(msg) == "USER" or self.get_role(msg) == "SYSTEM":
+                oci_chat_history.append(self.oci_chat_message[self.get_role(msg)](message=msg.content))
+            elif self.get_role(msg) == "CHATBOT":
+                if msg.tool_calls and is_force_single_step:
+                    continue
+                tool_calls = [self.oci_tool_call(name=tc["name"], parameters=tc["args"]) for tc in msg.tool_calls] if msg.tool_calls else None
+                oci_chat_history.append(self.oci_chat_message[self.get_role(msg)](message=msg.content, tool_calls=tool_calls))
+           
+
+        # Get the messages for the current chat turn
+        current_chat_turn_messages = []
+        for message in messages[::-1]:
+            current_chat_turn_messages.append(message)
+            if isinstance(message, HumanMessage):
+                break
+        current_chat_turn_messages = current_chat_turn_messages[::-1]
+
+        oci_tool_results = []
+        for message in current_chat_turn_messages:
+            if isinstance(message, ToolMessage):
+                tool_message = message
+                previous_ai_msgs = [
+                    message
+                    for message in current_chat_turn_messages
+                    if isinstance(message, AIMessage) and message.tool_calls
+                ]
+                if previous_ai_msgs:
+                    previous_ai_msg = previous_ai_msgs[-1]
+                    for lc_tool_call in previous_ai_msg.tool_calls:
+                        if lc_tool_call["id"] == tool_message.tool_call_id:
+                            tool_result = self.oci_tool_result()
+                            tool_result.call = self.oci_tool_call(name=lc_tool_call["name"], parameters=lc_tool_call["args"])
+                            tool_result.outputs = [{"output": tool_message.content}] # use function convert_to_documents
+                            oci_tool_results.append(tool_result)
+                    
+        if not oci_tool_results:
+            oci_tool_results = None    
+
+        message_str = "" if oci_tool_results else messages[-1].content    
+        
         oci_params = {
-            "message": messages[-1].content,
+            "message": message_str,
             "chat_history": oci_chat_history,
+            "tool_results": oci_tool_results,
             "api_format": self.chat_api_format,
         }
 
-        return oci_params
+        return {k: v for k, v in oci_params.items() if v is not None}
 
     def tools_to_oci_params(self, tools: Sequence[Dict]) -> Dict[str, Any]:
         oci_tools = []
@@ -183,7 +241,7 @@ class MetaProvider(Provider):
         else:
             raise ValueError(f"Got unknown type {message}")
 
-    def messages_to_oci_params(self, messages: List[BaseMessage]) -> Dict[str, Any]:
+    def messages_to_oci_params(self, messages: List[BaseMessage], **kwargs: Any) -> Dict[str, Any]:
         oci_messages = [
             self.oci_chat_message[self.get_role(msg)](
                 content=[self.oci_chat_message_content(text=msg.content)]
@@ -199,6 +257,9 @@ class MetaProvider(Provider):
         return oci_params
 
     def tools_to_oci_params(self, tools: Sequence[Dict]) -> Dict[str, Any]:
+        raise NotImplementedError("Tools not supported for Meta models")
+
+    def get_oci_params(self, messages: Sequence[ChatMessage], stop: Optional[List[str]], kwargs: Dict[str, Any]) -> Dict[str, Any]:
         raise NotImplementedError("Tools not supported for Meta models")
 
 
@@ -295,8 +356,8 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]],
-        kwargs: Dict[str, Any],
         stream: bool,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         try:
             from oci.generative_ai_inference import models
@@ -306,13 +367,17 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
                 "Could not import oci python package. "
                 "Please make sure you have the oci package installed."
             ) from ex
-        oci_params = self._provider.messages_to_oci_params(messages)
+
+        #cohere_params = self._provider.get_oci_params(messages=messages, stop=stop, kwargs=kwargs)
+        oci_params = self._provider.messages_to_oci_params(messages, **kwargs)
         
         if "tools" in kwargs:
             oci_params['tools'] = self._provider.tools_to_oci_params(kwargs['tools'])
-            oci_params['is_force_single_step'] = True
+            #oci_params['is_force_single_step'] = False
             kwargs.pop("tools")
-        
+
+        oci_params['is_force_single_step'] = kwargs.get('is_force_single_step') or False
+                
         oci_params["is_stream"] = stream  # self.is_stream
         _model_kwargs = self.model_kwargs or {}
 
@@ -375,7 +440,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             )
             return generate_from_stream(stream_iter)
 
-        request = self._prepare_request(messages, stop, kwargs, stream=False)
+        request = self._prepare_request(messages, stop=stop, stream=False, **kwargs)
         response = self.client.chat(request)
 
         content = self._provider.chat_response_to_text(response)
@@ -420,7 +485,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        request = self._prepare_request(messages, stop, kwargs, stream=True)
+        request = self._prepare_request(messages, stop=stop, stream=True, **kwargs)
         response = self.client.chat(request)
 
         for event in response.data.events():
