@@ -320,7 +320,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             )
         ).with_config(run_name="RunnableWithMessageHistory")
 
-        if history_factory_config:
+        if history_factory_config is not None:
             _config_specs = history_factory_config
         else:
             # If not provided, then we'll use the default session_id field
@@ -520,7 +520,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         config = super()._merge_configs(*configs)
         expected_keys = [field_spec.id for field_spec in self.history_factory_config]
 
-        configurable = config.get("configurable", {})
+        config.setdefault("configurable", {})
+        configurable = config["configurable"]
 
         missing_keys = set(expected_keys) - set(configurable.keys())
 

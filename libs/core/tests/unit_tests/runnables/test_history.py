@@ -23,6 +23,29 @@ def test_interfaces() -> None:
     assert str(history) == "System: system\nHuman: human 1\nAI: ai\nHuman: human 2"
 
 
+def test_input_messages_no_config() -> None:
+    runnable = RunnableLambda(
+        lambda messages: "you said: "
+        + "\n".join(str(m.content) for m in messages if isinstance(m, HumanMessage))
+    )
+    history = ChatMessageHistory()
+    with_history = RunnableWithMessageHistory(
+        runnable, lambda: history, history_factory_config=[]
+    )
+    output = with_history.invoke([HumanMessage(content="hello")])
+    assert output == "you said: hello"
+    output = with_history.invoke([HumanMessage(content="good bye")])
+    assert output == "you said: hello\ngood bye"
+    assert history == ChatMessageHistory(
+        messages=[
+            HumanMessage(content="hello"),
+            AIMessage(content="you said: hello"),
+            HumanMessage(content="good bye"),
+            AIMessage(content="you said: hello\ngood bye"),
+        ]
+    )
+
+
 def _get_get_session_history(
     *,
     store: Optional[Dict[str, Any]] = None,
