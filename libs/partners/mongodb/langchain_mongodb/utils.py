@@ -10,7 +10,8 @@ are duplicated in this utility respectively from modules:
 from __future__ import annotations
 
 import logging
-from typing import List, Union
+from datetime import date, datetime
+from typing import Any, Dict, List, Union
 
 import numpy as np
 from bson import ObjectId
@@ -123,3 +124,18 @@ def oid_to_str(oid: ObjectId) -> str:
         24 character hex string.
     """
     return str(oid)
+
+
+def make_serializable(
+    obj: Dict[str, Any],
+) -> None:
+    """Recursively cast values in a dict to a form able to json.dump"""
+    for k, v in obj.items():
+        if isinstance(v, dict):
+            make_serializable(v)
+        elif isinstance(v, list) and v and isinstance(v[0], (ObjectId, date, datetime)):
+            obj[k] = [oid_to_str(item) for item in v]
+        elif isinstance(v, ObjectId):
+            obj[k] = oid_to_str(v)
+        elif isinstance(v, (datetime, date)):
+            obj[k] = v.isoformat()

@@ -16,7 +16,6 @@ from typing import (
 )
 
 import numpy as np
-from bson import ObjectId
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
@@ -25,7 +24,12 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.driver_info import DriverInfo
 
-from langchain_mongodb.utils import maximal_marginal_relevance, oid_to_str, str_to_oid
+from langchain_mongodb.utils import (
+    make_serializable,
+    maximal_marginal_relevance,
+    oid_to_str,
+    str_to_oid,
+)
 
 MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 VST = TypeVar("VST", bound=VectorStore)
@@ -280,21 +284,10 @@ class MongoDBAtlasVectorSearch(VectorStore):
         cursor = self._collection.aggregate(pipeline)  # type: ignore[arg-type]
         docs = []
 
-        def _make_serializable(
-            obj: Dict[str, Any],
-        ) -> None:
-            for k, v in obj.items():
-                if isinstance(v, dict):
-                    _make_serializable(v)
-                elif isinstance(v, list) and v and isinstance(v[0], ObjectId):
-                    obj[k] = [oid_to_str(item) for item in v]
-                elif isinstance(v, ObjectId):
-                    obj[k] = oid_to_str(v)
-
         for res in cursor:
             text = res.pop(self._text_key)
             score = res.pop("score")
-            _make_serializable(res)
+            make_serializable(res)
             docs.append((Document(page_content=text, metadata=res), score))
         return docs
 
