@@ -71,6 +71,7 @@ requests-toolbelt>=1.0.0,<2
 rspace_client>=2.5.0,<3
 scikit-learn>=1.2.2,<2
 simsimd>=4.3.1,<5
+sqlite-vec==0.0.1a19
 sqlite-vss>=0.1.2,<0.2
 streamlit>=1.18.0,<2
 sympy>=1.12,<2
