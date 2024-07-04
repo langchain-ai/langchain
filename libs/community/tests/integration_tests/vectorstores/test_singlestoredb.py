@@ -764,7 +764,7 @@ def test_insert(snow_rain_docs: List[Document]) -> None:
         table_name=table_name,
         host=TEST_SINGLESTOREDB_URL,
     )
-    ids = docsearch.add_documents(snow_rain_docs)
+    ids = docsearch.add_documents(snow_rain_docs, return_ids=True)
     assert len(ids) == len(snow_rain_docs)
     for i, id1 in enumerate(ids):
         for j, id2 in enumerate(ids):
@@ -783,7 +783,7 @@ def test_delete(snow_rain_docs: List[Document]) -> None:
         table_name=table_name,
         host=TEST_SINGLESTOREDB_URL,
     )
-    ids = docsearch.add_documents(snow_rain_docs)
+    ids = docsearch.add_documents(snow_rain_docs, return_ids=True)
     output = docsearch.similarity_search(
         "rainstorm in parched desert",
         k=3,

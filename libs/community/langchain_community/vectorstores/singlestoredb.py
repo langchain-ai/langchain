@@ -354,6 +354,7 @@ class SingleStoreDB(VectorStore):
         uris: List[str],
         metadatas: Optional[List[dict]] = None,
         embeddings: Optional[List[List[float]]] = None,
+        return_ids: bool = False,
         **kwargs: Any,
     ) -> List[str]:
         """Run images through the embeddings and add to the vectorstore.
@@ -367,7 +368,8 @@ class SingleStoreDB(VectorStore):
                 embeddings. Defaults to None.
 
         Returns:
-            List[str]: empty list
+            List[str]: list of document ids added to the vectorstore
+                if return_ids is True. Otherwise, an empty list.
         """
         # Set embeddings
         if (
@@ -376,13 +378,16 @@ class SingleStoreDB(VectorStore):
             and hasattr(self.embedding, "embed_image")
         ):
             embeddings = self.embedding.embed_image(uris=uris)
-        return self.add_texts(uris, metadatas, embeddings, **kwargs)
+        return self.add_texts(
+            uris, metadatas, embeddings, return_ids=return_ids, **kwargs
+        )
 
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         embeddings: Optional[List[List[float]]] = None,
+        return_ids: bool = False,
         **kwargs: Any,
     ) -> List[str]:
         """Add more texts to the vectorstore.
@@ -395,7 +400,8 @@ class SingleStoreDB(VectorStore):
                 embeddings. Defaults to None.
 
         Returns:
-            List[str]: empty list
+            List[str]: list of document ids added to the vectorstore
+                if return_ids is True. Otherwise, an empty list.
         """
         ids: List[str] = []
         conn = self.connection_pool.connect()
@@ -425,10 +431,11 @@ class SingleStoreDB(VectorStore):
                             json.dumps(metadata),
                         ),
                     )
-                    cur.execute("SELECT LAST_INSERT_ID();")
-                    row = cur.fetchone()
-                    if row:
-                        ids.append(str(row[0]))
+                    if return_ids:
+                        cur.execute("SELECT LAST_INSERT_ID();")
+                        row = cur.fetchone()
+                        if row:
+                            ids.append(str(row[0]))
                 if self.use_vector_index or self.use_full_text_search:
                     cur.execute("OPTIMIZE TABLE {} FLUSH;".format(self.table_name))
             finally:
