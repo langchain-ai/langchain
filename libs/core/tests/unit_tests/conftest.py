@@ -1,4 +1,5 @@
 """Configuration for unit tests."""
+
 from importlib import util
 from typing import Dict, Sequence
 from uuid import UUID

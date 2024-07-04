@@ -181,7 +181,7 @@ class AI21LLM(BaseLLM, AI21Base):
     ) -> List[Generation]:
         return [
             Generation(
-                text=completion.data.text,
+                text=completion.data.text,  # type: ignore[arg-type]
                 generation_info=completion.to_dict(),
             )
             for completion in response.completions
