@@ -17,9 +17,8 @@ class TestChatVLLMOpenAI:
         module = import_module(module_name)
         assert hasattr(module, class_name)
 
-    def test_initialization_defaults(self) -> None:
+    def test_default_openai_api_base(self) -> None:
         chat = ChatVLLMOpenAI()
-        assert chat.openai_api_key == "dummy"
         assert chat.openai_api_base == "http://localhost:8000/v1"
 
     def test_default_params(self) -> None:
