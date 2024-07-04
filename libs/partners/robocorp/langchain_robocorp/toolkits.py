@@ -1,4 +1,5 @@
 """Robocorp Action Server toolkit."""
+
 from __future__ import annotations
 
 import json
