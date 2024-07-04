@@ -1,5 +1,4 @@
-"""
-Test SingleStoreDB semantic cache. Requires a SingleStore DB database.
+"""Test SingleStoreDB semantic cache. Requires a SingleStore DB database.
 
 Required to run this test:
     - a recent `singlestoredb` Python package available
