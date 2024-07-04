@@ -61,7 +61,7 @@ def test_watsonxllm_invoke_with_params_2() -> None:
 
     watsonxllm = WatsonxLLM(
         model_id=MODEL_ID,
-        url="https://us-south.ml.cloud.ibm.com",
+        url="https://us-south.ml.cloud.ibm.com",  # type: ignore[arg-type]
         project_id=WX_PROJECT_ID,
     )
     response = watsonxllm.invoke("What color sunflower is?", params=parameters)
@@ -81,7 +81,7 @@ def test_watsonxllm_invoke_with_params_3() -> None:
 
     watsonxllm = WatsonxLLM(
         model_id=MODEL_ID,
-        url="https://us-south.ml.cloud.ibm.com",
+        url="https://us-south.ml.cloud.ibm.com",  # type: ignore[arg-type]
         project_id=WX_PROJECT_ID,
         params=parameters_1,
     )
@@ -113,7 +113,7 @@ def test_watsonxllm_generate_with_param() -> None:
     }
     watsonxllm = WatsonxLLM(
         model_id=MODEL_ID,
-        url="https://us-south.ml.cloud.ibm.com",
+        url="https://us-south.ml.cloud.ibm.com",  # type: ignore[arg-type]
         project_id=WX_PROJECT_ID,
     )
     response = watsonxllm.generate(["What color sunflower is?"], params=parameters)

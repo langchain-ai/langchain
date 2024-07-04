@@ -64,7 +64,10 @@ def test_01b_generate_chat_with_invoke_params() -> None:
         GenTextParamsMetaNames.MAX_NEW_TOKENS: 10,
     }
     chat = ChatWatsonx(
-        model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID, params=params_1
+        model_id=MODEL_ID,
+        url=URL,  # type: ignore[arg-type]
+        project_id=WX_PROJECT_ID,
+        params=params_1,  # type: ignore[arg-type]
     )
     messages = [
         ("system", "You are a helpful assistant that translates English to French."),
@@ -107,7 +110,7 @@ def test_05a_generate_chat_with_stream_with_param() -> None:
         GenTextParamsMetaNames.MIN_NEW_TOKENS: 1,
         GenTextParamsMetaNames.MAX_NEW_TOKENS: 10,
     }
-    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)
+    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)  # type: ignore[arg-type]
     response = chat.stream("What's the weather in san francisco", params=params)
     for chunk in response:
         assert isinstance(chunk.content, str)
