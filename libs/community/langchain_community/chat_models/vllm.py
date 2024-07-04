@@ -121,18 +121,18 @@ class ChatVLLMOpenAI(ChatOpenAI):
         return "vllm-openai"
 
     @staticmethod
-    def _get_instructions(schema_str: str, guided_mode: str) -> str:
+    def _get_instructions(schema_str: str, method: str) -> str:
         """Get the instructions to insert into the input."""
-        if guided_mode == "guided_json":
+        if method in ["function_calling", "json_mode", "guided_json"]:
             return "\n" + JSON_FORMAT_INSTRUCTIONS.format(schema=schema_str)
-        elif guided_mode == "guided_regex":
+        elif method == "guided_regex":
             return "\n" + REGEX_FORMAT_INSTRUCTIONS.format(schema=schema_str)
-        elif guided_mode == "guided_choice":
+        elif method == "guided_choice":
             return "\n" + CHOICE_FORMAT_INSTRUCTIONS.format(schema=schema_str)
-        elif guided_mode == "guided_grammar":
+        elif method == "guided_grammar":
             return "\n" + GRAMMAR_FORMAT_INSTRUCTIONS.format(schema=schema_str)
         else:
-            raise ValueError(f"Unsupported guided_mode {guided_mode}")
+            raise ValueError(f"Unsupported method {method}")
 
     @staticmethod
     def _insert_instructions(
@@ -159,6 +159,32 @@ class ChatVLLMOpenAI(ChatOpenAI):
             raise ValueError(f"Unsupported input type {type(_input)}") from e
         return _input
 
+    @staticmethod
+    def get_schema_str(
+        schema: Optional[_StructuredInput],
+        method: Literal[
+            "guided_json", "guided_regex", "guided_choice", "guided_grammar"
+        ],
+    ) -> str:
+        if _is_pydantic_class(schema):
+            return cast(Type[BaseModel], schema).schema_json()
+        elif isinstance(schema, dict) or isinstance(schema, list):
+            return json.dumps(schema)
+        elif isinstance(schema, str):
+            return schema
+        elif schema is None:
+            if method == "guided_json":
+                # Use generic json schema to enforce json output
+                schema = {"type": "object", "additionalProperties": True}
+                return json.dumps(schema)
+            else:
+                raise ValueError(
+                    "Only `guided_json` method is supported for schema=None. "
+                    f"Got {method}."
+                )
+        else:
+            raise ValueError(f"Unsupported schema type {type(schema)}")
+
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
@@ -168,6 +194,9 @@ class ChatVLLMOpenAI(ChatOpenAI):
         ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
+        # remove unsupported arguments
+        for key in ["parallel_tool_calls"]:
+            kwargs.pop(key)
         try:
             return super().bind_tools(tools, tool_choice=tool_choice, **kwargs)
         except NotImplementedError:
@@ -175,15 +204,59 @@ class ChatVLLMOpenAI(ChatOpenAI):
                 "Please install `langchain-openai` to use the `bind_tools` method."
             )
 
+    def with_guided_output(
+        self,
+        schema: Optional[_StructuredInput] = None,
+        *,
+        include_raw: bool = False,
+        method: Literal[
+            "guided_json", "guided_regex", "guided_choice", "guided_grammar"
+        ] = "guided_json",
+    ) -> Runnable[LanguageModelInput, _StructuredOutput]:
+        is_pydantic_class = _is_pydantic_class(schema)
+        schema_str = self.get_schema_str(schema, method)
+        if is_pydantic_class:
+            output_parser: OutputParserLike = PydanticOutputParser(
+                pydantic_object=schema  # type: ignore[arg-type]
+            )
+        elif method == "guided_json":
+            output_parser = JsonOutputParser()
+        else:
+            output_parser = StrOutputParser()
+
+        # Ensure structured output using guidance
+        llm = self.bind(
+            extra_body={
+                **(self.extra_body or {}),
+                method: schema_str if is_pydantic_class else schema,
+            }
+        )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser
+
     def with_structured_output(  # type: ignore[override]
         self,
         schema: Optional[_StructuredInput] = None,
         *,
         include_raw: bool = False,
-        guided_mode: Literal[
-            "guided_json", "guided_regex", "guided_choice", "guided_grammar"
-        ] = "guided_json",
-        guided_decoding_backend: Literal["outlines", "lm-format-enforcer"] = "outlines",
+        method: Literal[
+            "function-calling",
+            "json_mode",
+            "guided_json",
+            "guided_regex",
+            "guided_choice",
+            "guided_grammar",
+        ] = "function_calling",
         instructions: Optional[str] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _StructuredOutput]:
@@ -205,12 +278,9 @@ class ChatVLLMOpenAI(ChatOpenAI):
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys "raw", "parsed", and "parsing_error".
-            guided_mode: The `guided_mode` specifies how to guide the model. It can be
-                one of `guided_json`, `guided_regex`, `guided_choice`, or
-                `guided_grammar`. Defaults to `guided_json`.
-            guided_decoding_backend: The `guided_decoding_backend` specifies the backend
-                to use for decoding the structured output. It can be one of `outlines`
-                or `lm-format-enforcer`. Defaults to `outlines`.
+            method: The `method` specifies how to guide the model. It can be
+                one of `function_calling`, `json_mode`, `guided_json`, `guided_regex`,
+                `guided_choice`, or `guided_grammar`. Defaults to `guided_json`.
             instructions: The `instructions` specifies the instructions to insert into
                 the input. If not provided, it is automatically generated based on the
                 `schema`.
@@ -224,18 +294,18 @@ class ChatVLLMOpenAI(ChatOpenAI):
                     parsing_error: Optional[BaseException]
 
                 If include_raw is False then just _StructuredOutput is returned,
-                where _StructuredOutput depends on the schema and guided_mode.:
+                where _StructuredOutput depends on the schema and method.:
 
-                If guided_mode is "guided_choice", "guided_regex", or "guided_grammar"
+                If method is "guided_choice", "guided_regex", or "guided_grammar"
                 then _StructuredOutput is a str.
 
-                If guided_mode is "guided_json" and schema is a Pydantic class then
+                If method is "guided_json" and schema is a Pydantic class then
                 _StructuredOutput is an instance of that Pydantic class.
 
-                If guided_mode is "guided_json" and schema is a dict or str then
+                If method is "guided_json" and schema is a dict or str then
                 _StructuredOutput is a dict.
 
-        Example: guided_json, Pydantic schema (guided_mode="guided_json", include_raw=False):
+        Example: guided_json, Pydantic schema (method="guided_json", include_raw=False):
             .. code-block:: python
 
                 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -263,61 +333,24 @@ class ChatVLLMOpenAI(ChatOpenAI):
         if kwargs:
             raise ValueError(f"Received unsupported arguments {kwargs}")
 
-        is_pydantic_class = _is_pydantic_class(schema)
-
-        if is_pydantic_class:
-            schema_str = cast(Type[BaseModel], schema).schema_json()
-        elif isinstance(schema, dict) or isinstance(schema, list):
-            schema_str = json.dumps(schema)
-        elif isinstance(schema, str):
-            schema_str = schema
-        elif schema is None:
-            if guided_mode == "guided_json":
-                # Use generic json schema to enforce json output
-                schema = {"type": "object", "additionalProperties": True}
-                schema_str = json.dumps(schema)
-            else:
-                raise ValueError(
-                    "Only `guided_json` guided_mode is supported for schema=None. "
-                    f"Got {guided_mode}."
-                )
-        else:
-            raise ValueError(f"Unsupported schema type {type(schema)}")
-
-        if is_pydantic_class:
-            output_parser: OutputParserLike = PydanticOutputParser(
-                pydantic_object=schema  # type: ignore[arg-type]
+        if method in ["function_calling", "json_mode"]:
+            # rely on ChatOpenAI implementation for these modes
+            structured_llm = super().with_structured_output(
+                schema=schema, include_raw=include_raw, method=method
             )
         else:
-            if guided_mode == "guided_json":
-                output_parser = JsonOutputParser()
-            else:
-                output_parser = StrOutputParser()
-
-        # Ensure structured output using `guided_json`
-        llm = self.bind(
-            extra_body={
-                **(self.extra_body or {}),
-                guided_mode: schema_str if is_pydantic_class else schema,
-                "guided_decoding_backend": guided_decoding_backend,
-            }
-        )
+            # For guided modes, rely on vLLM guidance modes for structured output
+            structured_llm = self.with_guided_output(
+                schema=schema, method=method, include_raw=include_raw
+            )
 
         # Insert instructions into the input so the model knows the expected structure
+        # This is not (currently) handled by vLLM internally, so it is needed here.
         if instructions is None:
-            instructions = self._get_instructions(schema_str, guided_mode)
+            schema_str = self.get_schema_str(schema, method)
+            instructions = self._get_instructions(schema_str, method)
         insert_instructions = partial(
             self._insert_instructions, instructions=instructions
         )
 
-        if include_raw:
-            parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
-            )
-            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
-            parser_with_fallback = parser_assign.with_fallbacks(
-                [parser_none], exception_key="parsing_error"
-            )
-            return RunnableMap(raw=insert_instructions | llm) | parser_with_fallback
-        else:
-            return insert_instructions | llm | output_parser
+        return insert_instructions | structured_llm
