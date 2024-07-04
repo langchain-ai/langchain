@@ -28,9 +28,11 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
     gpt4all_kwargs: Optional[dict] = {}
     client: Any  #: :meta private:
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that GPT4All library is installed."""
+        if "model_name" not in values:
+            raise ValueError("model_name is required for GPT4All embeddings.")
 
         try:
             from gpt4all import Embed4All
