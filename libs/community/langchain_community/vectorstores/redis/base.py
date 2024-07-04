@@ -605,8 +605,9 @@ class Redis(VectorStore):
         client = self.client
         # Check if index exists
         try:
-            client.delete(*ids)
-            logger.info("Entries deleted")
+            if ids:
+                client.delete(*ids)
+                logger.info("Entries deleted")
             return True
         except:  # noqa: E722
             # ids does not exist
