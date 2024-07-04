@@ -9,7 +9,6 @@ from typing import (
     Literal,
     Mapping,
     Optional,
-    Sequence,
     Union,
 )
 
@@ -20,8 +19,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models import BaseLLM
 from langchain_core.outputs import GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Extra
-from ollama import Options, AsyncClient
+from ollama import AsyncClient, Options
 
 
 class OllamaLLM(BaseLLM):
@@ -85,7 +83,7 @@ class OllamaLLM(BaseLLM):
     """The temperature of the model. Increasing the temperature will
     make the model answer more creatively. (Default: 0.8)"""
 
-    stop: Optional[Sequence[str]] = None
+    stop: Optional[List[str]] = None
     """Sets the stop tokens to use."""
 
     tfs_z: Optional[float] = None
@@ -103,12 +101,11 @@ class OllamaLLM(BaseLLM):
     to more diverse text, while a lower value (e.g., 0.5) will
     generate more focused and conservative text. (Default: 0.9)"""
 
-    format: Literal['', 'json'] = ''
+    format: Literal["", "json"] = ""
     """Specify the format of the output (options: json)"""
 
     keep_alive: Optional[Union[int, str]] = None
     """How long the model will stay loaded into memory."""
-
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -159,15 +156,15 @@ class OllamaLLM(BaseLLM):
 
         params["options"]["stop"] = stop
         async for part in await AsyncClient().generate(
-            model=params['model'],
+            model=params["model"],
             prompt=prompt,
             stream=True,
-            options=Options(**params['options']),
+            options=Options(**params["options"]),
             keep_alive=params["keep_alive"],
             format=params["format"],
-        ):
+        ):  # type: ignore
             yield part
-        
+
     def _create_generate_stream(
         self,
         prompt: str,
@@ -187,10 +184,10 @@ class OllamaLLM(BaseLLM):
 
         params["options"]["stop"] = stop
         yield from ollama.generate(
-            model=params['model'],
+            model=params["model"],
             prompt=prompt,
             stream=True,
-            options=Options(**params['options']),
+            options=Options(**params["options"]),
             keep_alive=params["keep_alive"],
             format=params["format"],
         )
@@ -199,7 +196,7 @@ class OllamaLLM(BaseLLM):
         self,
         prompt: str,
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> GenerationChunk:

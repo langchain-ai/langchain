@@ -1,11 +1,23 @@
 """Ollama chat models."""
-from typing import Any, AsyncIterator, Dict, Iterator, List, Literal, Mapping, Optional, Sequence, Union, cast
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
-from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
 import ollama
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
+from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -15,8 +27,8 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from ollama import Message, Options, AsyncClient
-import asyncio
+from ollama import AsyncClient, Message, Options
+
 
 class ChatOllama(BaseChatModel):
     """Ollama chat model integration.
@@ -72,7 +84,7 @@ class ChatOllama(BaseChatModel):
             ]
             for chunk in llm.stream(messages):
                 print(chunk)
-            
+
 
         .. code-block:: python
 
@@ -120,7 +132,7 @@ class ChatOllama(BaseChatModel):
             LO
             WORLD
             !
-        
+
         .. code-block:: python
 
             messages = [
@@ -198,7 +210,7 @@ class ChatOllama(BaseChatModel):
     """The temperature of the model. Increasing the temperature will
     make the model answer more creatively. (Default: 0.8)"""
 
-    stop: Optional[Sequence[str]] = None
+    stop: Optional[List[str]] = None
     """Sets the stop tokens to use."""
 
     tfs_z: Optional[float] = None
@@ -216,12 +228,11 @@ class ChatOllama(BaseChatModel):
     to more diverse text, while a lower value (e.g., 0.5) will
     generate more focused and conservative text. (Default: 0.9)"""
 
-    format: Literal['', 'json'] = ''
+    format: Literal["", "json"] = ""
     """Specify the format of the output (options: json)"""
 
     keep_alive: Optional[Union[int, str]] = None
     """How long the model will stay loaded into memory."""
-
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -247,7 +258,6 @@ class ChatOllama(BaseChatModel):
             },
             "keep_alive": self.keep_alive,
         }
-
 
     def _convert_messages_to_ollama_messages(
         self, messages: List[BaseMessage]
@@ -319,7 +329,7 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
         ollama_messages = self._convert_messages_to_ollama_messages(messages)
-        
+
         if self.stop is not None and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")
         elif self.stop is not None:
@@ -333,13 +343,13 @@ class ChatOllama(BaseChatModel):
 
         params["options"]["stop"] = stop
         async for part in await AsyncClient().chat(
-            model=params['model'],
+            model=params["model"],
             messages=ollama_messages,
             stream=True,
-            options=Options(**params['options']),
+            options=Options(**params["options"]),
             keep_alive=params["keep_alive"],
             format=params["format"],
-        ):
+        ):  # type:ignore
             yield part
 
     def _create_chat_stream(
@@ -349,7 +359,7 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[Union[Mapping[str, Any], str]]:
         ollama_messages = self._convert_messages_to_ollama_messages(messages)
-        
+
         if self.stop is not None and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")
         elif self.stop is not None:
@@ -363,10 +373,10 @@ class ChatOllama(BaseChatModel):
 
         params["options"]["stop"] = stop
         yield from ollama.chat(
-            model=params['model'],
+            model=params["model"],
             messages=ollama_messages,
             stream=True,
-            options=Options(**params['options']),
+            options=Options(**params["options"]),
             keep_alive=params["keep_alive"],
             format=params["format"],
         )
@@ -411,7 +421,7 @@ class ChatOllama(BaseChatModel):
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> ChatGenerationChunk:
