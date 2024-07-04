@@ -48,9 +48,9 @@ def add_links(doc: Document, *links: Union[Link, Iterable[Link]]) -> None:
         doc: The document to add the links to.
         *links: The links to add to the document.
     """
-    doc_links = get_links(doc)
+    links_in_metadata = get_links(doc)
     for link in links:
         if isinstance(link, Iterable):
-            doc_links.extend(link)
+            links_in_metadata.extend(link)
         else:
-            doc_links.append(link)
+            links_in_metadata.append(link)
