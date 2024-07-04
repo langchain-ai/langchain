@@ -10,7 +10,6 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Set,
 )
 
 from langchain_core.callbacks import (
@@ -44,7 +43,7 @@ class Node(Serializable):
     """Text contained by the node."""
     metadata: dict = Field(default_factory=dict)
     """Metadata for the node."""
-    links: Set[Link] = Field(default_factory=set)
+    links: List[Link] = Field(default_factory=list)
     """Links associated with the node."""
 
 
@@ -66,9 +65,9 @@ def _texts_to_nodes(
         except StopIteration:
             raise ValueError("texts iterable longer than ids")
 
-        links = _metadata.pop(METADATA_LINKS_KEY, set())
-        if not isinstance(links, Set):
-            links = set(links)
+        links = _metadata.pop(METADATA_LINKS_KEY, [])
+        if not isinstance(links, list):
+            links = list(links)
         yield Node(
             id=_id,
             metadata=_metadata,
@@ -92,9 +91,9 @@ def _documents_to_nodes(
         except StopIteration:
             raise ValueError("documents iterable longer than ids")
         metadata = doc.metadata.copy()
-        links = metadata.pop(METADATA_LINKS_KEY, set())
-        if not isinstance(links, Set):
-            links = set(links)
+        links = metadata.pop(METADATA_LINKS_KEY, [])
+        if not isinstance(links, list):
+            links = list(links)
         yield Node(
             id=_id,
             metadata=metadata,
@@ -109,11 +108,11 @@ def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
     for node in nodes:
         metadata = node.metadata.copy()
         metadata[METADATA_CONTENT_ID_KEY] = node.id
-        metadata[METADATA_LINKS_KEY] = {
+        metadata[METADATA_LINKS_KEY] = [
             # Convert the core `Link` (from the node) back to the local `Link`.
             Link(kind=link.kind, direction=link.direction, tag=link.tag)
             for link in node.links
-        }
+        ]
 
         yield Document(
             page_content=node.text,

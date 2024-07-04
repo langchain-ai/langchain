@@ -28,7 +28,7 @@ def test_texts_to_nodes() -> None:
             [{"links": {Link.incoming(kind="hyperlink", tag="http://b")}}],
             None,
         )
-    ) == [Node(links={Link.incoming(kind="hyperlink", tag="http://b")}, text="a")]
+    ) == [Node(links=[Link.incoming(kind="hyperlink", tag="http://b")], text="a")]
     with pytest.raises(ValueError):
         list(_texts_to_nodes(["a", "b"], None, ["a"]))
     with pytest.raises(ValueError):
@@ -43,7 +43,7 @@ def test_documents_to_nodes() -> None:
     documents = [
         Document(
             page_content="a",
-            metadata={"links": {Link.incoming(kind="hyperlink", tag="http://b")}},
+            metadata={"links": [Link.incoming(kind="hyperlink", tag="http://b")]},
         ),
         Document(page_content="b", metadata={"c": "d"}),
     ]
@@ -51,13 +51,13 @@ def test_documents_to_nodes() -> None:
         Node(
             id="a",
             metadata={},
-            links={Link.incoming(kind="hyperlink", tag="http://b")},
+            links=[Link.incoming(kind="hyperlink", tag="http://b")],
             text="a",
         ),
         Node(id="b", metadata={"c": "d"}, text="b"),
     ]
     assert list(_documents_to_nodes(documents, None)) == [
-        Node(links={Link.incoming(kind="hyperlink", tag="http://b")}, text="a"),
+        Node(links=[Link.incoming(kind="hyperlink", tag="http://b")], text="a"),
         Node(metadata={"c": "d"}, text="b"),
     ]
     with pytest.raises(ValueError):

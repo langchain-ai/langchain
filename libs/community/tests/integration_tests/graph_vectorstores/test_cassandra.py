@@ -135,9 +135,9 @@ def test_mmr_traversal() -> None:
         page_content="-0.124",
         metadata={
             "content_id": "v0",
-            METADATA_LINKS_KEY: {
+            METADATA_LINKS_KEY: [
                 Link.outgoing(kind="explicit", tag="link"),
-            },
+            ],
         },
     )
     v1 = Document(
@@ -150,18 +150,18 @@ def test_mmr_traversal() -> None:
         page_content="+0.25",
         metadata={
             "content_id": "v2",
-            METADATA_LINKS_KEY: {
+            METADATA_LINKS_KEY: [
                 Link.incoming(kind="explicit", tag="link"),
-            },
+            ],
         },
     )
     v3 = Document(
         page_content="+1.0",
         metadata={
             "content_id": "v3",
-            METADATA_LINKS_KEY: {
+            METADATA_LINKS_KEY: [
                 Link.incoming(kind="explicit", tag="link"),
-            },
+            ],
         },
     )
     store.add_documents([v0, v1, v2, v3])
@@ -194,31 +194,31 @@ def test_write_retrieve_keywords() -> None:
         page_content="Typical Greetings",
         metadata={
             "content_id": "greetings",
-            METADATA_LINKS_KEY: {
+            METADATA_LINKS_KEY: [
                 Link.incoming(kind="parent", tag="parent"),
-            },
+            ],
         },
     )
     doc1 = Document(
         page_content="Hello World",
         metadata={
             "content_id": "doc1",
-            METADATA_LINKS_KEY: {
+            METADATA_LINKS_KEY: [
                 Link.outgoing(kind="parent", tag="parent"),
                 Link.bidir(kind="kw", tag="greeting"),
                 Link.bidir(kind="kw", tag="world"),
-            },
+            ],
         },
     )
     doc2 = Document(
         page_content="Hello Earth",
         metadata={
             "content_id": "doc2",
-            METADATA_LINKS_KEY: {
+            METADATA_LINKS_KEY: [
                 Link.outgoing(kind="parent", tag="parent"),
                 Link.bidir(kind="kw", tag="greeting"),
                 Link.bidir(kind="kw", tag="earth"),
-            },
+            ],
         },
     )
     store = _get_graph_store(OpenAIEmbeddings, [greetings, doc1, doc2])
@@ -255,10 +255,10 @@ def test_metadata() -> None:
                 page_content="A",
                 metadata={
                     METADATA_CONTENT_ID_KEY: "a",
-                    METADATA_LINKS_KEY: {
+                    METADATA_LINKS_KEY: [
                         Link.incoming(kind="hyperlink", tag="http://a"),
                         Link.bidir(kind="other", tag="foo"),
-                    },
+                    ],
                     "other": "some other field",
                 },
             )
