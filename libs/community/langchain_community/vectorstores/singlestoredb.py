@@ -1038,7 +1038,7 @@ class SingleStoreDB(VectorStore):
         return instance
 
     def drop(self) -> None:
-        """Drop table if it exists.
+        """Drop the table and delete all data from the vectorstore.
         Vector store will be unusable after this operation.
         """
         conn = self.connection_pool.connect()
