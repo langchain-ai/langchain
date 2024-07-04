@@ -34,7 +34,9 @@ try:
 except ImportError:
     # Fall back to community version if openai is not installed
     # The community version does not implement `bind_tools`.
-    from langchain_community.chat_models.openai import ChatOpenAI
+    from langchain_community.chat_models.openai import (  # type: ignore[assignment]
+        ChatOpenAI,
+    )
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -251,7 +253,7 @@ class ChatVLLMOpenAI(ChatOpenAI):
         *,
         include_raw: bool = False,
         method: Literal[
-            "function-calling",
+            "function_calling",
             "json_mode",
             "guided_json",
             "guided_regex",
@@ -336,13 +338,20 @@ class ChatVLLMOpenAI(ChatOpenAI):
 
         if method in ["function_calling", "json_mode"]:
             # rely on ChatOpenAI implementation for these modes
-            structured_llm = super().with_structured_output(
+            structured_llm = super().with_structured_output(  # type: ignore[call-overload]
                 schema=schema, include_raw=include_raw, method=method
             )
         else:
             # For guided modes, rely on vLLM guidance modes for structured output
             structured_llm = self.with_guided_output(
-                schema=schema, method=method, include_raw=include_raw
+                schema=schema,
+                include_raw=include_raw,
+                method=cast(
+                    Literal[
+                        "guided_json", "guided_regex", "guided_choice", "guided_grammar"
+                    ],
+                    method,
+                ),
             )
 
         # Insert instructions into the input so the model knows the expected structure
