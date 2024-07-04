@@ -528,3 +528,30 @@ def test_reset_collection(client: chromadb.ClientAPI) -> None:
     assert vectorstore._collection.count() == 0
     # Clean up
     vectorstore.delete_collection()
+
+
+def test_from_existing_collection() -> None:
+    """Tests initializing a Chroma vectorstore from an existing collection."""
+    chroma_persist_dir = "./tests/persist_dir"
+    collection_name = "test_collection"
+    texts = ["foo", "bar", "baz"]
+    docsearch = Chroma.from_texts(
+        collection_name=collection_name,
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        persist_directory=chroma_persist_dir,
+    )
+
+    output = docsearch.similarity_search("foo", k=1)
+    assert output == [Document(page_content="foo")]
+
+    # Get a new VectorStore from the persisted directory
+    docsearch = Chroma.from_existing_collection(
+        collection_name=collection_name,
+        embedding=FakeEmbeddings(),
+        persist_directory=chroma_persist_dir,
+    )
+    output = docsearch.similarity_search("foo", k=1)
+
+    # Clean up
+    docsearch.delete_collection()

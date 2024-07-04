@@ -930,15 +930,7 @@ class Chroma(VectorStore):
             collection_metadata=collection_metadata,
             **kwargs,
         )
-    # chroma_collection = cls(
-    #         collection_name=collection_name,
-    #         embedding_function=embedding,
-    #         persist_directory=persist_directory,
-    #         client_settings=client_settings,
-    #         client=client,
-    #         collection_metadata=collection_metadata,
-    #         **kwargs,
-    #     )
+    
     @classmethod
     def from_existing_collection(
         cls: Type[Chroma],
@@ -946,11 +938,27 @@ class Chroma(VectorStore):
         embedding: Embeddings,
         persist_directory: str,
         client_settings: Optional[chromadb.config.Settings] = None,
-        client: Optional[chromadb.ClientAPI] = None,  # Add this line
+        client: Optional[chromadb.ClientAPI] = None,
         collection_metadata: Optional[Dict] = None,
         **kwargs: Any,
     ) -> Chroma:
+        """Create a Chroma vectorstore from an existing collection.
         
+        Args:
+            collection_name (str): The name of the existing collection to use.
+            embedding (Embeddings): The embedding function to be used.
+            persist_directory (str): The directory where the collection is persisted.
+            client_settings: Chroma client settings.
+            client: Chroma client. Documentation:
+                    https://docs.trychroma.com/reference/js-client#class:-chromaclient
+            collection_metadata: Collection configurations.
+                                                  Defaults to None.
+            **kwargs: Additional keyword arguments to initialize a Chroma client.
+
+        Returns:
+            Chroma: An instance of the Chroma vectorstore initialized from 
+            the existing collection.
+        """    
         return cls(
             collection_name=collection_name,
             embedding_function=embedding,
