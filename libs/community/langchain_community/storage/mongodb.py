@@ -3,6 +3,7 @@ from typing import Iterator, List, Optional, Sequence, Tuple
 from langchain_core.documents import Document
 from langchain_core.stores import BaseStore
 
+
 class MongoDBByteStore(BaseStore[str, bytes]):
     """BaseStore implementation using MongoDB as the underlying store.
 
@@ -65,10 +66,12 @@ class MongoDBByteStore(BaseStore[str, bytes]):
         if not collection_name:
             raise ValueError("collection_name must be provided.")
 
-        self.client = MongoClient(connection_string, **(client_kwargs or {}))
+        self.client: MongoClient = MongoClient(
+            connection_string, **(client_kwargs or {})
+        )
         self.collection = self.client[db_name][collection_name]
 
-    def mget(self, keys: Sequence[str]) -> List[Optional[Document]]:
+    def mget(self, keys: Sequence[str]) -> List[Optional[bytes]]:
         """Get the list of documents associated with the given keys.
 
         Args:
@@ -83,7 +86,7 @@ class MongoDBByteStore(BaseStore[str, bytes]):
         result_dict = {doc["_id"]: doc["value"] for doc in result}
         return [result_dict.get(key) for key in keys]
 
-    def mset(self, key_value_pairs: Sequence[Tuple[str, Document]]) -> None:
+    def mset(self, key_value_pairs: Sequence[Tuple[str, bytes]]) -> None:
         """Set the given key-value pairs.
 
         Args:
@@ -121,6 +124,7 @@ class MongoDBByteStore(BaseStore[str, bytes]):
                 {"_id": {"$regex": f"^{prefix}"}}, projection=["_id"]
             ):
                 yield doc["_id"]
+
 
 class MongoDBStore(BaseStore[str, Document]):
     """BaseStore implementation using MongoDB as the underlying store.
@@ -186,7 +190,9 @@ class MongoDBStore(BaseStore[str, Document]):
         if not collection_name:
             raise ValueError("collection_name must be provided.")
 
-        self.client = MongoClient(connection_string, **(client_kwargs or {}))
+        self.client: MongoClient = MongoClient(
+            connection_string, **(client_kwargs or {})
+        )
         self.collection = self.client[db_name][collection_name]
 
     def mget(self, keys: Sequence[str]) -> List[Optional[Document]]:

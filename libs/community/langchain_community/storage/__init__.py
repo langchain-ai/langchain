@@ -25,9 +25,7 @@ if TYPE_CHECKING:
     from langchain_community.storage.cassandra import (
         CassandraByteStore,
     )
-    from langchain_community.storage.mongodb import (
-        MongoDBStore, MongoDBByteStore
-    )
+    from langchain_community.storage.mongodb import MongoDBByteStore, MongoDBStore
     from langchain_community.storage.redis import (
         RedisStore,
     )
