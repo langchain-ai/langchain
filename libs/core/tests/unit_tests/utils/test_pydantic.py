@@ -16,6 +16,7 @@ def test_pre_init_decorator() -> None:
             v["y"] = v["x"] + 1
             return v
 
+    # Type ignore initialization b/c y is marked as required
     foo = Foo()  # type: ignore
     assert foo.y == 6
     foo = Foo(x=10)  # type: ignore
@@ -26,7 +27,7 @@ def test_pre_init_decorator_with_more_defaults() -> None:
     class Foo(BaseModel):
         a: int = 1
         b: Optional[int] = None
-        c: int = Field(2)
+        c: int = Field(default=2)
         d: int = Field(default_factory=lambda: 3)
 
         @pre_init
@@ -38,7 +39,8 @@ def test_pre_init_decorator_with_more_defaults() -> None:
             return v
 
     # Try to create an instance of Foo
-    Foo()
+    # nothing is required, but mypy can't track the default for `c`
+    Foo()  # type: ignore
 
 
 def test_with_aliases() -> None:
@@ -55,16 +57,19 @@ def test_with_aliases() -> None:
             return v
 
     # Based on defaults
-    foo = Foo()
+    # z is required
+    foo = Foo()  # type: ignore
     assert foo.x == 1
     assert foo.z == 1
 
     # Based on field name
-    foo = Foo(x=2)
+    # z is required
+    foo = Foo(x=2)  # type: ignore
     assert foo.x == 2
     assert foo.z == 2
 
     # Based on alias
-    foo = Foo(y=2)
+    # z is required
+    foo = Foo(y=2)  # type: ignore
     assert foo.x == 2
     assert foo.z == 2

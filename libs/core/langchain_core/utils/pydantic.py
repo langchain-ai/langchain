@@ -1,9 +1,9 @@
 """Utilities for tests."""
 
 from functools import wraps
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Type
 
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.pydantic_v1 import BaseModel, root_validator
 
 
 def get_pydantic_major_version() -> int:
@@ -20,12 +20,12 @@ PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
 
 
 # How to type hint this?
-def pre_init(func: Callable) -> Callable:  # type: ignore
+def pre_init(func: Callable) -> classmethod[Any, Any, Any]:  # type: ignore
     """Decorator to run a function before model initialization."""
 
     @root_validator(pre=True)
     @wraps(func)
-    def wrapper(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def wrapper(cls: Type[BaseModel], values: Dict[str, Any]) -> Dict[str, Any]:
         """Decorator to run a function before model initialization."""
         # Insert default values
         fields = cls.__fields__
