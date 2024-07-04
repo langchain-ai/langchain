@@ -272,14 +272,11 @@ class PebbloRetrievalQA(Chain):
         """
         Validate that the vectorstore of the retriever is supported vectorstores.
         """
-        if not any(
-            isinstance(retriever.vectorstore, supported_class)
-            for supported_class in SUPPORTED_VECTORSTORES
-        ):
+        if retriever.vectorstore.__class__.__name__ not in SUPPORTED_VECTORSTORES:
             raise ValueError(
                 f"Vectorstore must be an instance of one of the supported "
                 f"vectorstores: {SUPPORTED_VECTORSTORES}. "
-                f"Got {type(retriever.vectorstore).__name__} instead."
+                f"Got '{retriever.vectorstore.__class__.__name__}' instead."
             )
         return retriever
 
