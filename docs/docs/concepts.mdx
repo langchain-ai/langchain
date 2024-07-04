@@ -51,8 +51,8 @@ A developer platform that lets you debug, test, evaluate, and monitor LLM applic
 <ThemedImage
   alt="Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers."
   sources={{
-    light: useBaseUrl('/svg/langchain_stack.svg'),
-    dark: useBaseUrl('/svg/langchain_stack_dark.svg'),
+    light: useBaseUrl('/svg/langchain_stack_062024.svg'),
+    dark: useBaseUrl('/svg/langchain_stack_062024_dark.svg'),
   }}
   title="LangChain Framework Overview"
 />
@@ -89,7 +89,7 @@ With LCEL, **all** steps are automatically logged to [LangSmith](https://docs.sm
 Any chain created with LCEL can be easily deployed using [LangServe](/docs/langserve).
 
 ### Runnable interface
-<span data-heading-keywords="invoke"></span>
+<span data-heading-keywords="invoke,runnable"></span>
 
 To make it as easy as possible to create custom chains, we've implemented a ["Runnable"](https://api.python.langchain.com/en/stable/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) protocol. Many LangChain components implement the `Runnable` protocol, including chat models, LLMs, output parsers, retrievers, prompt templates, and more. There are also several useful primitives for working with runnables, which you can read about below.
 
@@ -144,8 +144,19 @@ LangChain does not host any Chat Models, rather we rely on third party integrati
 
 We have some standardized parameters when constructing ChatModels:
 - `model`: the name of the model
+- `temperature`: the sampling temperature
+- `timeout`: request timeout
+- `max_tokens`: max tokens to generate
+- `stop`: default stop sequences
+- `max_retries`: max number of times to retry requests
+- `api_key`: API key for the model provider
+- `base_url`: endpoint to send requests to
 
-ChatModels also accept other parameters that are specific to that integration.
+Some important things to note:
+- standard params only apply to model providers that expose parameters with the intended functionality. For example, some providers do not expose a configuration for maximum output tokens, so max_tokens can't be supported on these.
+- standard params are currently only enforced on integrations that have their own integration packages (e.g. `langchain-openai`, `langchain-anthropic`, etc.), they're not enforced on models in ``langchain-community``.
+
+ChatModels also accept other parameters that are specific to that integration. To find all the parameters supported by a ChatModel head to the API reference for that model.
 
 :::important
 **Tool Calling** Some chat models have been fine-tuned for tool calling and provide a dedicated API for tool calling.
@@ -168,8 +179,15 @@ For a full list of LangChain model providers with multimodal models, [check out 
 ### LLMs
 <span data-heading-keywords="llm,llms"></span>
 
+:::caution
+Pure text-in/text-out LLMs tend to be older or lower-level. Many popular models are best used as [chat completion models](/docs/concepts/#chat-models),
+even for non-chat use cases.
+
+You are probably looking for [the section above instead](/docs/concepts/#chat-models).
+:::
+
 Language models that takes a string as input and returns a string.
-These are traditionally older models (newer models generally are [Chat Models](/docs/concepts/#chat-models), see below).
+These are traditionally older models (newer models generally are [Chat Models](/docs/concepts/#chat-models), see above).
 
 Although the underlying models are string in, string out, the LangChain wrappers also allow these models to take messages as input.
 This gives them the same interface as [Chat Models](/docs/concepts/#chat-models).
@@ -532,6 +550,28 @@ If you are still using AgentExecutor, do not fear: we still have a guide on [how
 It is recommended, however, that you start to transition to LangGraph.
 In order to assist in this we have put together a [transition guide on how to do so](/docs/how_to/migrate_agent).
 
+#### ReAct agents
+<span data-heading-keywords="react,react agent"></span>
+
+One popular architecture for building agents is [**ReAct**](https://arxiv.org/abs/2210.03629).
+ReAct combines reasoning and acting in an iterative process - in fact the name "ReAct" stands for "Reason" and "Act".
+
+The general flow looks like this:
+
+- The model will "think" about what step to take in response to an input and any previous observations.
+- The model will then choose an action from available tools (or choose to respond to the user).
+- The model will generate arguments to that tool.
+- The agent runtime (executor) will parse out the chosen tool and call it with the generated arguments.
+- The executor will return the results of the tool call back to the model as an observation.
+- This process repeats until the agent chooses to respond.
+
+There are general prompting based implementations that do not require any model-specific features, but the most
+reliable implementations use features like [tool calling](/docs/how_to/tool_calling/) to reliably format outputs
+and reduce variance.
+
+Please see the [LangGraph documentation](https://langchain-ai.github.io/langgraph/) for more information,
+or [this how-to guide](/docs/how_to/migrate_agent/) for specific information on migrating to LangGraph.
+
 ### Callbacks
 
 LangChain provides a callbacks system that allows you to hook into the various stages of your LLM application. This is useful for logging, monitoring, streaming, and other tasks.
@@ -736,13 +776,53 @@ a few ways to get structured output from models in LangChain.
 
 #### `.with_structured_output()`
 
-For convenience, some LangChain chat models support a `.with_structured_output()` method.
-This method only requires a schema as input, and returns a dict or Pydantic object.
+For convenience, some LangChain chat models support a [`.with_structured_output()`](/docs/how_to/structured_output/#the-with_structured_output-method)
+method. This method only requires a schema as input, and returns a dict or Pydantic object.
 Generally, this method is only present on models that support one of the more advanced methods described below,
 and will use one of them under the hood. It takes care of importing a suitable output parser and
 formatting the schema in the right format for the model.
 
+Here's an example:
+
+```python
+from typing import Optional
+
+from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+class Joke(BaseModel):
+    """Joke to tell user."""
+
+    setup: str = Field(description="The setup of the joke")
+    punchline: str = Field(description="The punchline to the joke")
+    rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
+structured_llm = llm.with_structured_output(Joke)
+
+structured_llm.invoke("Tell me a joke about cats")
+```
+
+```
+Joke(setup='Why was the cat sitting on the computer?', punchline='To keep an eye on the mouse!', rating=None)
+
+```
+
+We recommend this method as a starting point when working with structured output:
+
+- It uses other model-specific features under the hood, without the need to import an output parser.
+- For the models that use tool calling, no special prompting is needed.
+- If multiple underlying techniques are supported, you can supply a `method` parameter to
+[toggle which one is used](/docs/how_to/structured_output/#advanced-specifying-the-method-for-structuring-outputs).
+
+You may want or need to use other techiniques if:
+
+- The chat model you are using does not support tool calling.
+- You are working with very complex schemas and the model is having trouble generating outputs that conform.
+
 For more information, check out this [how-to guide](/docs/how_to/structured_output/#the-with_structured_output-method).
+
+You can also check out [this table](/docs/integrations/chat/#advanced-features) for a list of models that support
+`with_structured_output()`.
 
 #### Raw prompting
 
@@ -766,9 +846,8 @@ for smooth parsing can be surprisingly difficult and model-specific.
 Some may be better at interpreting [JSON schema](https://json-schema.org/), others may be best with TypeScript definitions,
 and still others may prefer XML.
 
-While we'll next go over some ways that you can take advantage of features offered by
-model providers to increase reliability, prompting techniques remain important for tuning your
-results no matter what method you choose.
+While features offered by model providers may increase reliability, prompting techniques remain important for tuning your
+results no matter which method you choose.
 
 #### JSON mode
 <span data-heading-keywords="json mode"></span>
@@ -778,10 +857,11 @@ Some models, such as [Mistral](/docs/integrations/chat/mistralai/), [OpenAI](/do
 support a feature called **JSON mode**, usually enabled via config.
 
 When enabled, JSON mode will constrain the model's output to always be some sort of valid JSON.
-Often they require some custom prompting, but it's usually much less burdensome and along the lines of,
-`"you must always return JSON"`, and the [output is easier to parse](/docs/how_to/output_parser_json/).
+Often they require some custom prompting, but it's usually much less burdensome than completely raw prompting and
+more along the lines of, `"you must always return JSON"`. The [output also generally easier to parse](/docs/how_to/output_parser_json/).
 
-It's also generally simpler and more commonly available than tool calling.
+It's also generally simpler to use directly and more commonly available than tool calling, and can give
+more flexibility around prompting and shaping results than tool calling.
 
 Here's an example:
 
@@ -857,7 +937,7 @@ The standard interface consists of:
 The following how-to guides are good practical resources for using function/tool calling:
 
 - [How to return structured data from an LLM](/docs/how_to/structured_output/)
-- [How to use a model to call tools](/docs/how_to/tool_calling/)
+- [How to use a model to call tools](/docs/how_to/tool_calling)
 
 For a full list of model providers that support tool calling, [see this table](/docs/integrations/chat/#advanced-features).
 
@@ -1015,7 +1095,7 @@ See several videos and cookbooks showcasing RAG with LangGraph:
 - [Cookbooks for RAG using LangGraph](https://github.com/langchain-ai/langgraph/tree/main/examples/rag)
 
 See our LangGraph RAG recipes with partners:
-- [Meta](https://github.com/meta-llama/llama-recipes/tree/main/recipes/use_cases/agents/langchain) 
+- [Meta](https://github.com/meta-llama/llama-recipes/tree/main/recipes/3p_integrations/langchain)
 - [Mistral](https://github.com/mistralai/cookbook/tree/main/third_party/langchain)
 
 :::
@@ -1061,3 +1141,13 @@ This process is vital for building reliable applications.
 - It allows you to track results over time and automatically run your evaluators on a schedule or as part of CI/Code
 
 To learn more, check out [this LangSmith guide](https://docs.smith.langchain.com/concepts/evaluation).
+
+### Tracing
+<span data-heading-keywords="trace,tracing"></span>
+
+A trace is essentially a series of steps that your application takes to go from input to output.
+Traces contain individual steps called `runs`. These can be individual calls from a model, retriever,
+tool, or sub-chains.
+Tracing gives you observability inside your chains and agents, and is vital in diagnosing issues.
+
+For a deeper dive, check out [this LangSmith conceptual guide](https://docs.smith.langchain.com/concepts/tracing).

@@ -1,3 +1,5 @@
+import base64
+import tempfile
 from pathlib import Path
 from typing import Any, List, Union
 
@@ -559,6 +561,7 @@ async def test_chat_tmpl_from_messages_multipart_text_with_template() -> None:
 
 
 async def test_chat_tmpl_from_messages_multipart_image() -> None:
+    """Test multipart image URL formatting."""
     base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
     other_base64_image = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAA"
     template = ChatPromptTemplate.from_messages(
@@ -641,6 +644,65 @@ async def test_chat_tmpl_from_messages_multipart_image() -> None:
     assert messages == expected
 
 
+async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
+    """Verify that we can pass `path` for an image as a variable."""
+    in_mem = "base64mem"
+    in_file_data = "base64file01"
+
+    with tempfile.NamedTemporaryFile(delete=True, suffix=".jpg") as temp_file:
+        temp_file.write(base64.b64decode(in_file_data))
+        temp_file.flush()
+
+        template = ChatPromptTemplate.from_messages(
+            [
+                ("system", "You are an AI assistant named {name}."),
+                (
+                    "human",
+                    [
+                        {"type": "text", "text": "What's in this image?"},
+                        {
+                            "type": "image_url",
+                            "image_url": "data:image/jpeg;base64,{in_mem}",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"path": "{file_path}"},
+                        },
+                    ],
+                ),
+            ]
+        )
+        expected = [
+            SystemMessage(content="You are an AI assistant named R2D2."),
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "What's in this image?"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{in_mem}"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{in_file_data}"},
+                    },
+                ]
+            ),
+        ]
+        messages = template.format_messages(
+            name="R2D2",
+            in_mem=in_mem,
+            file_path=temp_file.name,
+        )
+        assert messages == expected
+
+        messages = await template.aformat_messages(
+            name="R2D2",
+            in_mem=in_mem,
+            file_path=temp_file.name,
+        )
+        assert messages == expected
+
+
 def test_messages_placeholder() -> None:
     prompt = MessagesPlaceholder("history")
     with pytest.raises(KeyError):
@@ -652,6 +714,21 @@ def test_messages_placeholder() -> None:
     ) == [
         SystemMessage(content="You are an AI assistant."),
         HumanMessage(content="Hello!"),
+    ]
+
+
+def test_messages_placeholder_with_max() -> None:
+    history = [
+        AIMessage(content="1"),
+        AIMessage(content="2"),
+        AIMessage(content="3"),
+    ]
+    prompt = MessagesPlaceholder("history")
+    assert prompt.format_messages(history=history) == history
+    prompt = MessagesPlaceholder("history", n_messages=2)
+    assert prompt.format_messages(history=history) == [
+        AIMessage(content="2"),
+        AIMessage(content="3"),
     ]
 
 

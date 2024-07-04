@@ -9,8 +9,16 @@ class BaseChatLoader(ABC):
 
     @abstractmethod
     def lazy_load(self) -> Iterator[ChatSession]:
-        """Lazy load the chat sessions."""
+        """Lazy load the chat sessions.
+
+        Returns:
+            An iterator of chat sessions.
+        """
 
     def load(self) -> List[ChatSession]:
-        """Eagerly load the chat sessions into memory."""
+        """Eagerly load the chat sessions into memory.
+
+        Returns:
+            A list of chat sessions.
+        """
         return list(self.lazy_load())

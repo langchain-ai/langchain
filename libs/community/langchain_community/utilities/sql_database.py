@@ -1,4 +1,5 @@
 """SQLAlchemy wrapper around a database."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Literal, Optional, Sequence, Union
@@ -201,10 +202,10 @@ class SQLDatabase:
             from dbruntime.databricks_repl_context import get_context
 
             context = get_context()
+            default_host = context.browserHostName
         except ImportError:
-            pass
+            default_host = None
 
-        default_host = context.browserHostName if context else None
         if host is None:
             host = get_from_env("host", "DATABRICKS_HOST", default_host)
 

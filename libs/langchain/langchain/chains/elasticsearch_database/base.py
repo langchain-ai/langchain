@@ -1,4 +1,5 @@
 """Chain for interacting with Elasticsearch Database."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
@@ -56,7 +57,7 @@ class ElasticsearchDatabaseChain(Chain):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_indices(cls, values: dict) -> dict:
         if values["include_indices"] and values["ignore_indices"]:
             raise ValueError(

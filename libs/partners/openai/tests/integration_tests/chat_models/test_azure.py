@@ -12,7 +12,6 @@ from langchain_core.messages import (
     HumanMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
-from langchain_core.pydantic_v1 import BaseModel
 
 from langchain_openai import AzureChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -27,7 +26,7 @@ DEPLOYMENT_NAME = os.environ.get(
 
 
 def _get_llm(**kwargs: Any) -> AzureChatOpenAI:
-    return AzureChatOpenAI(
+    return AzureChatOpenAI(  # type: ignore[call-arg, call-arg, call-arg]
         deployment_name=DEPLOYMENT_NAME,
         openai_api_version=OPENAI_API_VERSION,
         azure_endpoint=OPENAI_API_BASE,
@@ -226,18 +225,3 @@ def test_openai_invoke(llm: AzureChatOpenAI) -> None:
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
     assert result.response_metadata.get("model_name") is not None
-
-
-@pytest.mark.skip(reason="Need tool calling model deployed on azure")
-def test_openai_structured_output(llm: AzureChatOpenAI) -> None:
-    class MyModel(BaseModel):
-        """A Person"""
-
-        name: str
-        age: int
-
-    llm_structure = llm.with_structured_output(MyModel)
-    result = llm_structure.invoke("I'm a 27 year old named Erick")
-    assert isinstance(result, MyModel)
-    assert result.name == "Erick"
-    assert result.age == 27

@@ -1,4 +1,5 @@
 """Test SKLearnVectorStore functionality."""
+
 from pathlib import Path
 
 import pytest

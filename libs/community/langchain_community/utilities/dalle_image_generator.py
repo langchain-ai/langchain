@@ -1,4 +1,5 @@
 """Utility that calls OpenAI's Dall-E Image Generator."""
+
 import logging
 import os
 from typing import Any, Dict, Mapping, Optional, Tuple, Union
@@ -89,7 +90,7 @@ class DallEAPIWrapper(BaseModel):
         values["model_kwargs"] = extra
         return values
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["openai_api_key"] = get_from_dict_or_env(

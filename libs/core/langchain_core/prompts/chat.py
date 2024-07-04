@@ -38,7 +38,7 @@ from langchain_core.prompts.base import BasePromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import StringPromptTemplate, get_template_variables
-from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.pydantic_v1 import Field, PositiveInt, root_validator
 from langchain_core.utils import get_colored_text
 from langchain_core.utils.interactive_env import is_interactive_env
 
@@ -160,6 +160,24 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
             #     AIMessage(content="5 + 2 is 7"),
             #     HumanMessage(content="now multiply that by 4"),
             # ])
+
+    Limiting the number of messages:
+
+        .. code-block:: python
+
+            from langchain_core.prompts import MessagesPlaceholder
+
+            prompt = MessagesPlaceholder("history", n_messages=1)
+
+            prompt.format_messages(
+                history=[
+                    ("system", "You are an AI assistant."),
+                    ("human", "Hello!"),
+                ]
+            )
+            # -> [
+            #     HumanMessage(content="Hello!"),
+            # ]
     """
 
     variable_name: str
@@ -169,6 +187,10 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
     """If True format_messages can be called with no arguments and will return an empty 
         list. If False then a named argument with name `variable_name` must be passed 
         in, even if the value is an empty list."""
+
+    n_messages: Optional[PositiveInt] = None
+    """Maximum number of messages to include. If None, then will include all. 
+    Defaults to None."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -197,7 +219,10 @@ class MessagesPlaceholder(BaseMessagePromptTemplate):
                 f"variable {self.variable_name} should be a list of base messages, "
                 f"got {value}"
             )
-        return convert_to_messages(value)
+        value = convert_to_messages(value)
+        if self.n_messages:
+            value = value[-self.n_messages :]
+        return value
 
     @property
     def input_variables(self) -> List[str]:
@@ -448,6 +473,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                     )
                 elif isinstance(tmpl, dict) and "image_url" in tmpl:
                     img_template = cast(_ImageTemplateParam, tmpl)["image_url"]
+                    input_variables = []
                     if isinstance(img_template, str):
                         vars = get_template_variables(img_template, "f-string")
                         if vars:
@@ -458,20 +484,19 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                                     f"\nFrom: {tmpl}"
                                 )
                             input_variables = [vars[0]]
-                        else:
-                            input_variables = None
                         img_template = {"url": img_template}
                         img_template_obj = ImagePromptTemplate(
                             input_variables=input_variables, template=img_template
                         )
                     elif isinstance(img_template, dict):
                         img_template = dict(img_template)
-                        if "url" in img_template:
-                            input_variables = get_template_variables(
-                                img_template["url"], "f-string"
-                            )
-                        else:
-                            input_variables = None
+                        for key in ["url", "path", "detail"]:
+                            if key in img_template:
+                                input_variables.extend(
+                                    get_template_variables(
+                                        img_template[key], "f-string"
+                                    )
+                                )
                         img_template_obj = ImagePromptTemplate(
                             input_variables=input_variables, template=img_template
                         )
@@ -1093,12 +1118,10 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         self.messages.extend([_convert_to_message(message) for message in messages])
 
     @overload
-    def __getitem__(self, index: int) -> MessageLike:
-        ...
+    def __getitem__(self, index: int) -> MessageLike: ...
 
     @overload
-    def __getitem__(self, index: slice) -> ChatPromptTemplate:
-        ...
+    def __getitem__(self, index: slice) -> ChatPromptTemplate: ...
 
     def __getitem__(
         self, index: Union[int, slice]
