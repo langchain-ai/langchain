@@ -15,7 +15,7 @@ And optionally set the OpenSearch ones if not using defaults:
 - `OPENSEARCH_PASSWORD` - Password for the OpenSearch instance
 - `OPENSEARCH_INDEX_NAME` - Name of the index 
 
-To run the default OpenSeach instance in docker, you can use the command
+To run the default OpenSearch instance in docker, you can use the command
 ```shell
 docker run -p 9200:9200 -p 9600:9600 -e "discovery.type=single-node" --name opensearch-node -d opensearchproject/opensearch:latest
 ```

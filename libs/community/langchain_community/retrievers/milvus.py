@@ -1,4 +1,5 @@
 """Milvus Retriever"""
+
 import warnings
 from typing import Any, Dict, List, Optional
 

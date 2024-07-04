@@ -1,4 +1,5 @@
 """Agent for working with pandas objects."""
+
 from typing import Any, Dict, List, Optional
 
 from langchain.agents.agent import AgentExecutor
@@ -97,7 +98,7 @@ def create_spark_dataframe_agent(
         callback_manager=callback_manager,
     )
     tool_names = [tool.name for tool in tools]
-    agent = ZeroShotAgent(
+    agent = ZeroShotAgent(  # type: ignore[call-arg]
         llm_chain=llm_chain,
         allowed_tools=tool_names,
         callback_manager=callback_manager,
