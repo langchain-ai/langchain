@@ -21,7 +21,7 @@ class MongodbLoader(BaseLoader):
         filter_criteria: Optional[Dict] = None,
         field_names: Optional[Sequence[str]] = None,
         metadata_names: Optional[Sequence[str]] = None,
-        include_db_collection_in_metadata: bool = False,
+        include_db_collection_in_metadata: bool = True,
     ) -> None:
         """
         Initializes the MongoDB loader with necessary database connection
@@ -35,7 +35,7 @@ class MongodbLoader(BaseLoader):
             documents.
             field_names (Optional[Sequence[str]]): List of field names to retrieve
             from documents.
-            metadata (Optional[Sequence[str]]): Additional metadata fields to
+            metadata_names (Optional[Sequence[str]]): Additional metadata fields to
             extract from documents.
             include_db_collection_in_metadata (bool): Flag to include database and
             collection names in metadata.
@@ -63,7 +63,7 @@ class MongodbLoader(BaseLoader):
         self.client = AsyncIOMotorClient(connection_string)
         self.db_name = db_name
         self.collection_name = collection_name
-        self.field_names = field_names or []
+        self.field_names = field_names
         self.filter_criteria = filter_criteria or {}
         self.metadata_names = metadata_names or []
         self.include_db_collection_in_metadata = include_db_collection_in_metadata
