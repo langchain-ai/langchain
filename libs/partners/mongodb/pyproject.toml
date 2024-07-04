@@ -1,20 +1,27 @@
 [tool.poetry]
 name = "gigachain-mongodb"
-version = "0.1.5"
-description = "An integration package connecting MongoDB and LangChain"
+version = "0.1.6"
+description = "An integration package connecting MongoDB and GigaChain"
 authors = []
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
+repository = "https://github.com/ai-forever/gigachain"
 license = "MIT"
+packages = [
+    {include = "langchain_mongodb"}
+]
 
 [tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/mongodb"
+"Source Code" = "https://github.com/ai-forever/gigachain/tree/master/libs/partners/mongodb"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 pymongo = ">=4.6.1,<5.0"
 gigachain-core = ">=0.1.46,<0.3"
-numpy = "^1"
+# Support Python 3.8 and 3.12+.
+numpy = [
+    {version = "^1", python = "<3.12"},
+    {version = "^1.26.0", python = ">=3.12"}
+]
 
 [tool.poetry.group.test]
 optional = true

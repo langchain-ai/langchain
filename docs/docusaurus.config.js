@@ -83,6 +83,7 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          editUrl: "https://github.com/langchain-ai/langchain/edit/master/docs/",
           sidebarPath: require.resolve("./sidebars.js"),
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
@@ -237,10 +238,6 @@ const config = {
                 label: "LangSmith Docs",
               },
               {
-                href: "https://github.com/langchain-ai/langserve",
-                label: "LangServe GitHub",
-              },
-              {
                 href: "https://github.com/langchain-ai/langchain/tree/master/templates",
                 label: "Templates GitHub",
               },
@@ -291,6 +288,10 @@ const config = {
           {
             title: "GitHub",
             items: [
+              {
+                label: "Organization",
+                href: "https://github.com/langchain-ai",
+              },
               {
                 label: "Python",
                 href: "https://github.com/langchain-ai/langchain",

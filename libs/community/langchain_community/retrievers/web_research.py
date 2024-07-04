@@ -78,8 +78,11 @@ class WebResearchRetriever(BaseRetriever):
     url_database: List[str] = Field(
         default_factory=list, description="List of processed URLs"
     )
-    verify_ssl: bool = Field(True, description="Verify SSL certificate")
-    proxies: dict = Field({}, description="Proxies config for requests")
+    trust_env: bool = Field(
+        False,
+        description="Whether to use the http_proxy/https_proxy env variables or "
+        "check .netrc for proxy configuration",
+    )
 
     @classmethod
     def from_llm(
@@ -92,8 +95,7 @@ class WebResearchRetriever(BaseRetriever):
         text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
             chunk_size=1500, chunk_overlap=150
         ),
-        verify_ssl: bool = True,
-        proxies: dict = {},
+        trust_env: bool = False,
     ) -> "WebResearchRetriever":
         """Initialize from llm using default template.
 
@@ -104,9 +106,8 @@ class WebResearchRetriever(BaseRetriever):
             prompt: prompt to generating search questions
             num_search_results: Number of pages per Google search
             text_splitter: Text splitter for splitting web pages into chunks
-            verify_ssl: Verify SSL certificate, while loading web pages
-            proxies: Proxies config for requests library, for example -
-                proxies={"http": "http://localhost:8080", "https": "https://localhost:8443"}
+            trust_env: Whether to use the http_proxy/https_proxy env variables
+                or check .netrc for proxy configuration
 
         Returns:
             WebResearchRetriever
@@ -134,8 +135,7 @@ class WebResearchRetriever(BaseRetriever):
             search=search,
             num_search_results=num_search_results,
             text_splitter=text_splitter,
-            verify_ssl=verify_ssl,
-            proxies=proxies,
+            trust_env=trust_env,
         )
 
     def clean_search_query(self, query: str) -> str:
@@ -204,10 +204,7 @@ class WebResearchRetriever(BaseRetriever):
         # Load, split, and add new urls to vectorstore
         if new_urls:
             loader = AsyncHtmlLoader(
-                new_urls,
-                ignore_load_errors=True,
-                verify_ssl=self.verify_ssl,
-                proxies=self.proxies,
+                new_urls, ignore_load_errors=True, trust_env=self.trust_env
             )
             html2text = Html2TextTransformer()
             logger.info("Indexing new urls...")

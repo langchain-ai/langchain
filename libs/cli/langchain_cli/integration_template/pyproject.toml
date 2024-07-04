@@ -1,18 +1,18 @@
 [tool.poetry]
 name = "__package_name__"
-version = "0.0.1"
-description = "An integration package connecting __ModuleName__ and Gigachain"
+version = "0.1.0"
+description = "An integration package connecting __ModuleName__ and GigaChain"
 authors = []
 readme = "README.md"
-repository = "https://github.com/gigachain-ai/gigachain"
+repository = "https://github.com/ai-forever/gigachain"
 license = "MIT"
 
 [tool.poetry.urls]
-"Source Code" = "https://github.com/gigachain-ai/gigachain/tree/master/libs/partners/__package_name_short__"
+"Source Code" = "https://github.com/ai-forever/gigachain/tree/master/libs/partners/__package_name_short__"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = ">=0.1,<0.3"
+gigachain-core = "^0.2.0"
 
 [tool.poetry.group.test]
 optional = true
@@ -21,7 +21,7 @@ optional = true
 pytest = "^7.4.3"
 pytest-asyncio = "^0.23.2"
 pytest-socket = "^0.7.0"
-gigachain-core = {path = "../../core", develop = true}
+gigachain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.codespell]
 optional = true
@@ -42,19 +42,19 @@ ruff = "^0.1.8"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.7.1"
-gigachain-core = {path = "../../core", develop = true}
+gigachain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-gigachain-core = {path = "../../core", develop = true}
+gigachain-core = { path = "../../core", develop = true }
 
 [tool.ruff.lint]
 select = [
-  "E",  # pycodestyle
-  "F",  # pyflakes
-  "I",  # isort
+  "E",    # pycodestyle
+  "F",    # pyflakes
+  "I",    # isort
   "T201", # print
 ]
 
@@ -62,9 +62,7 @@ select = [
 disallow_untyped_defs = "True"
 
 [tool.coverage.run]
-omit = [
-    "tests/*",
-]
+omit = ["tests/*"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

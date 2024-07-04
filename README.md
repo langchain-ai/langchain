@@ -81,9 +81,9 @@
 
 - Работа с агентами (*Agents*).
 
-  Агент представляет собой LLM, которая принимает решение о дальнейшем действии, отслеживает его результат, и, с учетом результата, принимает следующее решение. Процесс повторяется до завершения. GigaChain предоставляет стандартный интерфейс для работы с агентами, выбор агентов и примеры готовых агентов.
+  Агент представляет собой программу, которая принимает решение о дальнейшем действии, отслеживает его результат, и, с учетом результата, принимает следующее решение. Процесс повторяется до завершения. GigaChain предоставляет стандартный интерфейс для работы с агентами, выбор агентов и примеры готовых агентов.
 
-  Пример — [CAMEL агент для разработки программ](cookbook/camel_role_playing.ipynb)
+  Пример — [Создание ассистента с тремя функциями](docs/docs/cookbook/gigachat_functions_agent.ipynb)
 
 - Создание памяти.
 
@@ -329,6 +329,7 @@ chat = GigaChat(credentials='<авторизационные_данные>', ver
 - Работа с LlamaIndex: [с помощью ретривера и QA цепочки](docs/docs/integrations/retrievers/llama_index_retriever.ipynb) / [с помощью тула и Conversational агента](docs/docs/modules/agents/tools/llama_index_tool.ipynb)
 - [Агент-риелтор на GigaChat functions](cookbook/realestate/realestate.ipynb)
 - [Агент выполняющий код](cookbook/gigachat_code.ipynb)
+- [Получение сгенерированных изображений/видео](cookbook/images_and_videos/gigachat_with_images.ipynb)
 
 ### Развлекательные примеры
 - [Площадка для споров между GigaChat и YandexGPT с судьей GPT-4](docs/docs/use_cases/fun/debates.ipynb)
@@ -337,8 +338,6 @@ chat = GigaChat(credentials='<авторизационные_данные>', ver
 
 ### Примеры работы с другими LLM
 
-- [Агент-менеджер по продажам с автоматическим поиском по каталогу и формированием заказа](docs/docs/modules/agents/how_to/add_memory_openai_functions.ipynb)
-- [Поиск ответов в интернете с автоматическими промежуточными вопросами (self-ask)](docs/docs/modules/agents/agent_types/self_ask_with_search.ipynb)
 - [Пример использования YandexGPT](docs/docs/integrations/chat/yandex.ipynb)
 
 ### Примеры приложений для Streamlit
@@ -362,18 +361,17 @@ GigaChain — это проект с открытым исходным кодо�
 > Полная документация GigaChain находится в процессе перевода.
 > Вы можете также пользоваться [документацией LangChain](https://python.langchain.com), поскольку GigaChain совместим с LangChain:
 
-- [Getting started](https://python.langchain.com/docs/get_started/introduction): installation, setting up the environment, simple examples
-- [Use case](https://python.langchain.com/docs/use_cases/) walkthroughs and best practice [guides](https://python.langchain.com/docs/guides/)
-- Overviews of the [interfaces](https://python.langchain.com/docs/expression_language/), [components](https://python.langchain.com/docs/modules/), and [integrations](https://python.langchain.com/docs/integrations/providers)
-
-You can also check out the full [API Reference docs](https://api.python.langchain.com).
+- [Introduction](https://python.langchain.com/v0.2/docs/introduction/): Overview of the framework and the structure of the docs.
+- [Tutorials](https://python.langchain.com/docs/use_cases/): If you're looking to build something specific or are more of a hands-on learner, check out our tutorials. This is the best place to get started.
+- [How-to guides](https://python.langchain.com/v0.2/docs/how_to/): Answers to “How do I….?” type questions. These guides are goal-oriented and concrete; they're meant to help you complete a specific task.
+- [Conceptual guide](https://python.langchain.com/v0.2/docs/concepts/): Conceptual explanations of the key parts of the framework.
+- [API Reference](https://api.python.langchain.com): Thorough documentation of every class and method.
 
 ## 🌐 Ecosystem
 
-- [🦜🛠️ LangSmith](https://python.langchain.com/docs/langsmith/): Tracing and evaluating your language model applications and intelligent agents to help you move from prototype to production.
-- [🦜🕸️ LangGraph](https://python.langchain.com/docs/langgraph): Creating stateful, multi-actor applications with LLMs, built on top of (and intended to be used with) LangChain primitives.
-- [🦜🏓 LangServe](https://python.langchain.com/docs/langserve): Deploying LangChain runnables and chains as REST APIs.
-  - [LangChain Templates](https://python.langchain.com/docs/templates/): Example applications hosted with LangServe.
+- [🦜🛠️ LangSmith](https://docs.smith.langchain.com/): Trace and evaluate your language model applications and intelligent agents to help you move from prototype to production.
+- [🦜🕸️ LangGraph](https://langchain-ai.github.io/langgraph/): Create stateful, multi-actor applications with LLMs. Integrates smoothly with LangChain, but can be used without it.
+- [🦜🏓 LangServe](https://python.langchain.com/docs/langserve): Deploy LangChain runnables and chains as REST APIs.
 
 ## Лицензия
 

@@ -28,7 +28,18 @@ from abc import ABC, abstractmethod
 from contextvars import copy_context
 from functools import partial
 from inspect import signature
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    get_type_hints,
+)
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -65,9 +76,9 @@ from langchain_core.runnables import (
     ensure_config,
 )
 from langchain_core.runnables.config import (
+    _set_config_context,
     patch_config,
     run_in_executor,
-    var_child_runnable_config,
 )
 from langchain_core.runnables.utils import accepts_context
 
@@ -111,6 +122,25 @@ class _SchemaConfig:
     arbitrary_types_allowed: bool = True
 
 
+def create_return_schema_from_function(
+    model_name: str,
+    func: Callable,
+) -> Optional[Type[BaseModel]]:
+    return_type = get_type_hints(func).get("return", Any)
+    if (
+        return_type is not str
+        and return_type is not int
+        and return_type is not float
+        and return_type is not None
+    ):
+        if return_type is not Any:
+            return create_model(f"{model_name}ReturnSchema", result=(return_type, ...))
+        else:
+            return create_model(f"{model_name}ReturnSchema", result=(Any, ...))
+
+    return None
+
+
 def create_schema_from_function(
     model_name: str,
     func: Callable,
@@ -131,9 +161,11 @@ def create_schema_from_function(
         del inferred_model.__fields__["callbacks"]
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = _get_filtered_args(inferred_model, func)
-    return _create_subset_model(
+    arg_model = _create_subset_model(
         f"{model_name}Schema", inferred_model, list(valid_properties)
     )
+
+    return arg_model
 
 
 class ToolException(Exception):
@@ -185,6 +217,8 @@ class ChildTool(BaseTool):
     """
     args_schema: Optional[Type[BaseModel]] = None
     """Pydantic model class to validate and parse the tool's input arguments."""
+    return_schema: Optional[Type[BaseModel]] = None
+    """Pydantic model class to validate and parse the tool's input arguments."""
     return_direct: bool = False
     """Whether to return the tool's output directly. Setting this to True means
     
@@ -209,6 +243,8 @@ class ChildTool(BaseTool):
     and passed as arguments to the handlers defined in `callbacks`.
     You can use these to eg identify a specific instance of a tool with its use case.
     """
+    few_shot_examples: Optional[List[Dict[str, Any]]] = None
+    """Few-shot examples to help the model understand how to use the tool."""
 
     handle_tool_error: Optional[
         Union[bool, str, Callable[[ToolException], str]]
@@ -309,7 +345,7 @@ class ChildTool(BaseTool):
                 }
         return tool_input
 
-    @root_validator()
+    @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
@@ -402,7 +438,7 @@ class ChildTool(BaseTool):
                 callbacks=run_manager.get_child(),
             )
             context = copy_context()
-            context.run(var_child_runnable_config.set, child_config)
+            context.run(_set_config_context, child_config)
             parsed_input = self._parse_input(tool_input)
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
             observation = (
@@ -502,7 +538,7 @@ class ChildTool(BaseTool):
                 callbacks=run_manager.get_child(),
             )
             context = copy_context()
-            context.run(var_child_runnable_config.set, child_config)
+            context.run(_set_config_context, child_config)
             coro = (
                 context.run(
                     self._arun, *tool_args, run_manager=run_manager, **tool_kwargs
@@ -680,6 +716,7 @@ class Tool(BaseTool):
         description: str,
         return_direct: bool = False,
         args_schema: Optional[Type[BaseModel]] = None,
+        return_schema: Optional[Type[BaseModel]] = None,
         coroutine: Optional[
             Callable[..., Awaitable[Any]]
         ] = None,  # This is last for compatibility, but should be after func
@@ -695,6 +732,7 @@ class Tool(BaseTool):
             description=description,
             return_direct=return_direct,
             args_schema=args_schema,
+            return_schema=return_schema,
             **kwargs,
         )
 
@@ -788,7 +826,9 @@ class StructuredTool(BaseTool):
         description: Optional[str] = None,
         return_direct: bool = False,
         args_schema: Optional[Type[BaseModel]] = None,
+        return_schema: Optional[Type[BaseModel]] = None,
         infer_schema: bool = True,
+        few_shot_examples: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> StructuredTool:
         """Create tool from a given function.
@@ -802,7 +842,9 @@ class StructuredTool(BaseTool):
             description: The description of the tool. Defaults to the function docstring
             return_direct: Whether to return the result directly or as a callback
             args_schema: The schema of the tool's input arguments
+            return_schema: The schema of the tool's return value
             infer_schema: Whether to infer the schema from the function's signature
+            few_shot_examples: Few-shot examples of function usage
             **kwargs: Additional arguments to pass to the tool
 
         Returns:
@@ -827,6 +869,8 @@ class StructuredTool(BaseTool):
             raise ValueError("Function and/or coroutine must be provided")
         name = name or source_function.__name__
         description_ = description or source_function.__doc__
+        if description_ is None and args_schema:
+            description_ = args_schema.__doc__
         if description_ is None:
             raise ValueError(
                 "Function must have a docstring if description not provided."
@@ -839,16 +883,22 @@ class StructuredTool(BaseTool):
         # search_api(query: str) - Searches the API for the query.
         description_ = f"{description_.strip()}"
         _args_schema = args_schema
+        _return_schema = return_schema
         if _args_schema is None and infer_schema:
             # schema name is appended within function
             _args_schema = create_schema_from_function(name, source_function)
+        if _return_schema is None and infer_schema:
+            # schema name is appended within function
+            _return_schema = create_return_schema_from_function(name, source_function)
         return cls(
             name=name,
             func=func,
             coroutine=coroutine,
             args_schema=_args_schema,  # type: ignore[arg-type]
+            return_schema=_return_schema,  # type: ignore[arg-type]
             description=description_,
             return_direct=return_direct,
+            few_shot_examples=few_shot_examples,
             **kwargs,
         )
 
@@ -857,7 +907,9 @@ def tool(
     *args: Union[str, Callable, Runnable],
     return_direct: bool = False,
     args_schema: Optional[Type[BaseModel]] = None,
+    return_schema: Optional[Type[BaseModel]] = None,
     infer_schema: bool = True,
+    few_shot_examples: Optional[List[Dict[str, Any]]] = None,
 ) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -929,7 +981,9 @@ def tool(
                     description=description,
                     return_direct=return_direct,
                     args_schema=schema,
+                    return_schema=return_schema,
                     infer_schema=infer_schema,
+                    few_shot_examples=few_shot_examples,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -944,6 +998,7 @@ def tool(
                 description=f"{tool_name} tool",
                 return_direct=return_direct,
                 coroutine=coroutine,
+                few_shot_examples=few_shot_examples,
             )
 
         return _make_tool

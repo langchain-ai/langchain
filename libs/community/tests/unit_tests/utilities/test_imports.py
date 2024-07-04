@@ -5,6 +5,7 @@ EXPECTED_ALL = [
     "ApifyWrapper",
     "ArceeWrapper",
     "ArxivAPIWrapper",
+    "AskNewsAPIWrapper",
     "BibtexparserWrapper",
     "BingSearchAPIWrapper",
     "BraveSearchWrapper",
@@ -40,7 +41,6 @@ EXPECTED_ALL = [
     "Portkey",
     "PowerBIDataset",
     "PubMedAPIWrapper",
-    "PythonREPL",
     "Requests",
     "RequestsWrapper",
     "RememberizerAPIWrapper",
@@ -61,6 +61,7 @@ EXPECTED_ALL = [
     "ZapierNLAWrapper",
     "MerriamWebsterAPIWrapper",
     "MojeekSearchAPIWrapper",
+    "YandexSearchAPIClient",
 ]
 
 

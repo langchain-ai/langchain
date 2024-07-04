@@ -7,9 +7,14 @@ from langchain_core.pydantic_v1 import BaseModel
 
 
 class ToolsOutputParser(BaseGenerationOutputParser):
+    """Output parser for tool calls."""
+
     first_tool_only: bool = False
+    """Whether to return only the first tool call."""
     args_only: bool = False
+    """Whether to return only the arguments of the tool calls."""
     pydantic_schemas: Optional[List[Type[BaseModel]]] = None
+    """Pydantic schemas to parse tool calls into."""
 
     class Config:
         extra = "forbid"
@@ -59,6 +64,7 @@ class ToolsOutputParser(BaseGenerationOutputParser):
 
 
 def extract_tool_calls(content: List[dict]) -> List[ToolCall]:
+    """Extract tool calls from a list of content blocks."""
     tool_calls = []
     for block in content:
         if block["type"] != "tool_use":

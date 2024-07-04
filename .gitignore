@@ -136,6 +136,7 @@ venv_clear/
 
 # mypy
 .mypy_cache/
+.mypy_cache_test/
 .dmypy.json
 dmypy.json
 
@@ -189,3 +190,4 @@ prof
 *.epub
 smart_merge.py
 file::memory*
+virtualenv/

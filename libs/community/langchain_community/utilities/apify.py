@@ -17,6 +17,7 @@ class ApifyWrapper(BaseModel):
 
     apify_client: Any
     apify_client_async: Any
+    apify_api_token: Optional[str] = None
 
     @root_validator()
     def validate_environment(cls, values: Dict) -> Dict:
@@ -31,8 +32,18 @@ class ApifyWrapper(BaseModel):
         try:
             from apify_client import ApifyClient, ApifyClientAsync
 
-            values["apify_client"] = ApifyClient(apify_api_token)
-            values["apify_client_async"] = ApifyClientAsync(apify_api_token)
+            client = ApifyClient(apify_api_token)
+            if httpx_client := getattr(client.http_client, "httpx_client"):
+                httpx_client.headers["user-agent"] += "; Origin/langchain"
+
+            async_client = ApifyClientAsync(apify_api_token)
+            if httpx_async_client := getattr(
+                async_client.http_client, "httpx_async_client"
+            ):
+                httpx_async_client.headers["user-agent"] += "; Origin/langchain"
+
+            values["apify_client"] = client
+            values["apify_client_async"] = async_client
         except ImportError:
             raise ImportError(
                 "Could not import apify-client Python package. "

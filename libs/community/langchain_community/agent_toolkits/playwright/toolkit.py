@@ -59,6 +59,10 @@ class PlayWrightBrowserToolkit(BaseToolkit):
         tools.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        sync_browser: Optional. The sync browser. Default is None.
+        async_browser: Optional. The async browser. Default is None.
     """
 
     sync_browser: Optional["SyncBrowser"] = None
@@ -104,7 +108,15 @@ class PlayWrightBrowserToolkit(BaseToolkit):
         sync_browser: Optional[SyncBrowser] = None,
         async_browser: Optional[AsyncBrowser] = None,
     ) -> PlayWrightBrowserToolkit:
-        """Instantiate the toolkit."""
+        """Instantiate the toolkit.
+
+        Args:
+            sync_browser: Optional. The sync browser. Default is None.
+            async_browser: Optional. The async browser. Default is None.
+
+        Returns:
+            The toolkit.
+        """
         # This is to raise a better error than the forward ref ones Pydantic would have
         lazy_import_playwright_browsers()
         return cls(sync_browser=sync_browser, async_browser=async_browser)

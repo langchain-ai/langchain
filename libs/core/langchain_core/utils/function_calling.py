@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import logging
 import uuid
 from types import FunctionType, MethodType
 from typing import (
@@ -19,7 +20,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypedDict
+from typing_extensions import Annotated, TypedDict, get_args, get_origin
 
 from langchain_core._api import deprecated
 from langchain_core.messages import (
@@ -33,7 +34,7 @@ from langchain_core.utils.json_schema import dereference_refs
 
 if TYPE_CHECKING:
     from langchain_core.tools import BaseTool
-
+logger = logging.getLogger(__name__)
 PYTHON_TO_JSON_TYPES = {
     "str": "string",
     "int": "integer",
@@ -50,7 +51,15 @@ class FunctionDescription(TypedDict):
     description: str
     """A description of the function."""
     parameters: dict
+
+
+class GigaFunctionDescription(FunctionDescription):
     """The parameters of the function."""
+
+    return_parameters: Optional[dict]
+    """The result settings of the function."""
+    few_shot_examples: Optional[list]
+    """The examples of the function."""
 
 
 class ToolDescription(TypedDict):
@@ -104,20 +113,35 @@ def convert_pydantic_to_gigachat_function(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-) -> FunctionDescription:
+    return_model: Optional[Type[BaseModel]] = None,
+    few_shot_examples: Optional[List[dict]] = None,
+) -> GigaFunctionDescription:
     """Converts a Pydantic model to a function description for the GigaChat API."""
     schema = dereference_refs(model.schema())
     schema.pop("definitions", None)
+    title = schema.pop("title", None)
     if "properties" in schema:
         for key in schema["properties"]:
             if "type" not in schema["properties"][key]:
                 schema["properties"][key]["type"] = "object"
             if "description" not in schema["properties"][key]:
                 schema["properties"][key]["description"] = ""
+
+    return_parameters = None
+    if return_model:
+        return_schema = dereference_refs(return_model.schema())
+        return_schema.pop("definitions", None)
+        if "properties" in return_schema and "result" in return_schema["properties"]:
+            if "type" not in return_schema["properties"]["result"]:
+                return_schema["properties"]["result"]["type"] = "object"
+            return_parameters = return_schema["properties"]["result"]
+
     return {
-        "name": name or schema["title"],
+        "name": name or title,
         "description": description or schema["description"],
         "parameters": schema,
+        "return_parameters": return_parameters,
+        "few_shot_examples": few_shot_examples,
     }
 
 
@@ -182,6 +206,10 @@ def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
     return description, arg_descriptions
 
 
+def _is_annotated_type(typ: Type[Any]) -> bool:
+    return get_origin(typ) is Annotated
+
+
 def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -> dict:
     """Get JsonSchema describing a Python functions arguments.
 
@@ -193,10 +221,27 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
     for arg, arg_type in annotations.items():
         if arg == "return":
             continue
-        if isinstance(arg_type, type) and issubclass(arg_type, BaseModel):
-            # Mypy error:
-            # "type" has no attribute "schema"
-            properties[arg] = arg_type.schema()  # type: ignore[attr-defined]
+
+        if _is_annotated_type(arg_type):
+            annotated_args = get_args(arg_type)
+            arg_type = annotated_args[0]
+            if len(annotated_args) > 1:
+                for annotation in annotated_args[1:]:
+                    if isinstance(annotation, str):
+                        arg_descriptions[arg] = annotation
+                        break
+        if (
+            isinstance(arg_type, type)
+            and hasattr(arg_type, "model_json_schema")
+            and callable(arg_type.model_json_schema)
+        ):
+            properties[arg] = arg_type.model_json_schema()
+        elif (
+            isinstance(arg_type, type)
+            and hasattr(arg_type, "schema")
+            and callable(arg_type.schema)
+        ):
+            properties[arg] = arg_type.schema()
         elif (
             hasattr(arg_type, "__name__")
             and getattr(arg_type, "__name__") in PYTHON_TO_JSON_TYPES
@@ -207,13 +252,20 @@ def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -
             and getattr(arg_type, "__dict__").get("__origin__", None) == Literal
         ):
             properties[arg] = {
-                "enum": list(arg_type.__args__),  # type: ignore
-                "type": PYTHON_TO_JSON_TYPES[arg_type.__args__[0].__class__.__name__],  # type: ignore
+                "enum": list(arg_type.__args__),
+                "type": PYTHON_TO_JSON_TYPES[arg_type.__args__[0].__class__.__name__],
             }
+        else:
+            logger.warning(
+                f"Argument {arg} of type {arg_type} from function {function.__name__} "
+                "could not be not be converted to a JSON schema."
+            )
+
         if arg in arg_descriptions:
             if arg not in properties:
                 properties[arg] = {}
             properties[arg]["description"] = arg_descriptions[arg]
+
     return properties
 
 
@@ -225,9 +277,9 @@ def _get_python_function_required_args(function: Callable) -> List[str]:
 
     is_function_type = isinstance(function, FunctionType)
     is_method_type = isinstance(function, MethodType)
-    if is_function_type and required[0] == "self":
+    if required and is_function_type and required[0] == "self":
         required = required[1:]
-    elif is_method_type and required[0] == "cls":
+    elif required and is_method_type and required[0] == "cls":
         required = required[1:]
     return required
 
@@ -262,11 +314,15 @@ def convert_python_function_to_openai_function(
     "0.1.16",
     removal="0.3.0",
 )
-def format_tool_to_gigachat_function(tool: BaseTool) -> FunctionDescription:
+def format_tool_to_gigachat_function(tool: BaseTool) -> GigaFunctionDescription:
     """Format tool into the OpenAI function API."""
     if tool.args_schema:
         return convert_pydantic_to_gigachat_function(
-            tool.args_schema, name=tool.name, description=tool.description
+            tool.args_schema,
+            name=tool.name,
+            description=tool.description,
+            return_model=tool.return_schema,
+            few_shot_examples=tool.few_shot_examples,
         )
     else:
         return {
@@ -284,6 +340,8 @@ def format_tool_to_gigachat_function(tool: BaseTool) -> FunctionDescription:
                 "required": ["__arg1"],
                 "type": "object",
             },
+            "few_shot_examples": tool.few_shot_examples,
+            "return_parameters": None,
         }
 
 
@@ -361,11 +419,11 @@ def convert_to_openai_function(
             "parameters": function,
         }
     elif isinstance(function, type) and issubclass(function, BaseModel):
-        return cast(Dict, convert_pydantic_to_openai_function(function))
+        res = cast(Dict, convert_pydantic_to_openai_function(function))
     elif isinstance(function, BaseTool):
-        return cast(Dict, format_tool_to_openai_function(function))
+        res = cast(Dict, format_tool_to_openai_function(function))
     elif callable(function):
-        return convert_python_function_to_openai_function(function)
+        res = convert_python_function_to_openai_function(function)
     else:
         raise ValueError(
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
@@ -373,6 +431,10 @@ def convert_to_openai_function(
             " either be in OpenAI function format or valid JSON schema with top-level"
             " 'title' and 'description' keys."
         )
+    # Remove unused keys for openai
+    res.pop("return_parameters", None)
+    res.pop("few_shot_examples", None)
+    return res
 
 
 def flatten_all_of(schema: Any) -> Any:
@@ -380,6 +442,8 @@ def flatten_all_of(schema: Any) -> Any:
     if isinstance(schema, dict):
         obj_out: Any = {}
         for k, v in schema.items():
+            if k == "title":
+                continue
             if k == "allOf":
                 obj = flatten_all_of(v[0])
                 obj_out = {**obj_out, **obj}
@@ -413,10 +477,11 @@ def convert_to_gigachat_function(
     if isinstance(function, dict):
         return function
     elif isinstance(function, type) and issubclass(function, BaseModel):
-        function = cast(Dict, convert_pydantic_to_openai_function(function))
+        function = cast(Dict, convert_pydantic_to_gigachat_function(function))
     elif isinstance(function, BaseTool):
-        function = cast(Dict, format_tool_to_openai_function(function))
+        function = cast(Dict, format_tool_to_gigachat_function(function))
     elif callable(function):
+        # Deprecated mode
         function = convert_python_function_to_openai_function(function)
     else:
         raise ValueError(
@@ -510,7 +575,7 @@ def tool_example_to_messages(
                 '''Information about a person.'''
                 name: Optional[str] = Field(..., description="The name of the person")
                 hair_color: Optional[str] = Field(
-                    ..., description="The color of the peron's eyes if known"
+                    ..., description="The color of the person's hair if known"
                 )
                 height_in_meters: Optional[str] = Field(
                     ..., description="Height in METERs"

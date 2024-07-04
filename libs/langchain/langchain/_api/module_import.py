@@ -127,6 +127,9 @@ def create_importer(
                                 f">> from {package} import {name}\n\n"
                                 "with new imports of:\n\n"
                                 f">> from {new_module} import {name}\n"
+                                "You can use the langchain cli to **automatically** "
+                                "upgrade many imports. Please see documentation here "
+                                "<https://python.langchain.com/v0.2/docs/versions/v0_2/>"
                             ),
                         )
                 return result
@@ -139,7 +142,7 @@ def create_importer(
             try:
                 module = importlib.import_module(fallback_module)
                 result = getattr(module, name)
-                if not is_interactive_env() and _should_deprecate_for_package(package):
+                if not is_interactive_env():
                     # Depth 3:
                     # internal.py
                     # module_import.py
@@ -156,6 +159,9 @@ def create_importer(
                                 f">> from {package} import {name}\n\n"
                                 "with new imports of:\n\n"
                                 f">> from {fallback_module} import {name}\n"
+                                "You can use the langchain cli to **automatically** "
+                                "upgrade many imports. Please see documentation here "
+                                "<https://python.langchain.com/v0.2/docs/versions/v0_2/>"
                             ),
                         )
                 return result

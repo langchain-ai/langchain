@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -23,7 +24,6 @@ from typing import (
 )
 from uuid import uuid4
 
-from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -41,6 +41,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
+    FunctionInProgressMessageChunk,
     FunctionMessage,
     FunctionMessageChunk,
     HumanMessage,
@@ -72,6 +73,23 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+IMAGE_SEARCH_REGEX = re.compile(
+    '<img\ssrc="(?P<UUID>.+?)"\sfuse=".+?"/>(?P<postfix>.+)?'
+)
+VIDEO_SEARCH_REGEX = re.compile(
+    '<video\scover="(?P<cover_UUID>.+?)"\ssrc="(?P<UUID>.+?)"\sfuse="true"/>(?P<postfix>.+)?'
+)
+
+
+def _validate_content(content: Any) -> Any:
+    """If content is string, but not JSON - convert string to json-string"""
+    if isinstance(content, str):
+        try:
+            json.loads(content)
+        except ValueError:
+            content = json.dumps(content, ensure_ascii=False)
+    return content
+
 
 def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
     from gigachat.models import FunctionCall, MessagesRole
@@ -91,7 +109,17 @@ def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
                     id=str(uuid4()),
                 )
             ]
-
+    if message.functions_state_id:
+        additional_kwargs["functions_state_id"] = message.functions_state_id
+        match = IMAGE_SEARCH_REGEX.search(message.content)
+        if match:
+            additional_kwargs["image_uuid"] = match.group("UUID")
+            additional_kwargs["postfix_message"] = match.group("postfix")
+        match = VIDEO_SEARCH_REGEX.search(message.content)
+        if match:
+            additional_kwargs["cover_uuid"] = match.group("cover_UUID")
+            additional_kwargs["video_uuid"] = match.group("UUID")
+            additional_kwargs["postfix_message"] = match.group("postfix")
     if message.role == MessagesRole.SYSTEM:
         return SystemMessage(content=message.content)
     elif message.role == MessagesRole.USER:
@@ -101,6 +129,10 @@ def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
             content=message.content,
             additional_kwargs=additional_kwargs,
             tool_calls=tool_calls,
+        )
+    elif message.role == MessagesRole.FUNCTION:
+        return FunctionMessage(
+            name=message.name or "", content=_validate_content(message.content)
         )
     else:
         raise TypeError(f"Got unknown role {message.role} {message}")
@@ -114,6 +146,9 @@ def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
     attachments = message.additional_kwargs.get("attachments", None)
     if attachments:
         kwargs["attachments"] = attachments
+    functions_state_id = message.additional_kwargs.get("functions_state_id", None)
+    if functions_state_id:
+        kwargs["functions_state_id"] = functions_state_id
 
     if isinstance(message, SystemMessage):
         kwargs["role"] = MessagesRole.SYSTEM
@@ -136,10 +171,11 @@ def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
         kwargs["content"] = message.content
     elif isinstance(message, FunctionMessage):
         kwargs["role"] = MessagesRole.FUNCTION
-        kwargs["content"] = message.content
+        # TODO Switch to using 'result' field in future GigaChat models
+        kwargs["content"] = _validate_content(message.content)
     elif isinstance(message, ToolMessage):
         kwargs["role"] = MessagesRole.FUNCTION
-        kwargs["content"] = message.content
+        kwargs["content"] = _validate_content(message.content)
     else:
         raise TypeError(f"Got unknown type {message}")
     return Messages(**kwargs)
@@ -166,10 +202,31 @@ def _convert_delta_to_message_chunk(
                     index=0,
                 )
             ]
+    if _dict.get("functions_state_id"):
+        additional_kwargs["functions_state_id"] = _dict["functions_state_id"]
+    match = IMAGE_SEARCH_REGEX.search(content)
+    if match:
+        additional_kwargs["image_uuid"] = match.group("UUID")
+        additional_kwargs["postfix_message"] = match.group("postfix")
+    match = VIDEO_SEARCH_REGEX.search(content)
+    if match:
+        additional_kwargs["cover_uuid"] = match.group("cover_UUID")
+        additional_kwargs["video_uuid"] = match.group("UUID")
+        additional_kwargs["postfix_message"] = match.group("postfix")
+
+    if (
+        role == "function_in_progress"
+        or default_class == FunctionInProgressMessageChunk
+    ):
+        return FunctionInProgressMessageChunk(content=content)
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
-    elif role == "assistant" or default_class == AIMessageChunk:
+    elif (
+        role == "assistant"
+        or default_class == AIMessageChunk
+        or "functions_state_id" in _dict
+    ):
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -178,7 +235,9 @@ def _convert_delta_to_message_chunk(
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
     elif role == "function" or default_class == FunctionMessageChunk:
-        return FunctionMessageChunk(content=content, name=_dict["name"])
+        return FunctionMessageChunk(
+            content=_validate_content(content), name=_dict["name"]
+        )
     elif role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)  # type: ignore[arg-type]
     else:
@@ -244,35 +303,52 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
     def _build_payload(self, messages: List[BaseMessage], **kwargs: Any) -> gm.Chat:
         from gigachat.models import Chat
 
-        payload = Chat(
-            messages=[_convert_message_to_dict(m) for m in messages],
-        )
+        messages_dicts = [_convert_message_to_dict(m) for m in messages]
+        kwargs.pop("messages", None)
 
-        payload.functions = kwargs.get("functions", [])
-        payload.function_call = kwargs.get("function_call", None)
+        functions = kwargs.pop("functions", [])
+        for tool in kwargs.pop("tools", []):
+            if tool.get("type", None) == "function" and isinstance(functions, List):
+                functions.append(tool["function"])
 
-        for tool in kwargs.get("tools", []):
-            if tool.get("type", None) == "function" and isinstance(
-                payload.functions, List
-            ):
-                payload.functions.append(tool["function"])
+        function_call = kwargs.pop("function_call", None)
 
-        if self.profanity_check is not None:
-            payload.profanity_check = self.profanity_check
-        if self.temperature is not None:
-            payload.temperature = self.temperature
-        if self.top_p is not None:
-            payload.top_p = self.top_p
-        if self.max_tokens is not None:
-            payload.max_tokens = self.max_tokens
-        if self.repetition_penalty is not None:
-            payload.repetition_penalty = self.repetition_penalty
-        if self.update_interval is not None:
-            payload.update_interval = self.update_interval
+        payload_dict = {
+            "messages": messages_dicts,
+            "functions": functions,
+            "function_call": function_call,
+            "profanity_check": self.profanity_check,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "max_tokens": self.max_tokens,
+            "repetition_penalty": self.repetition_penalty,
+            "update_interval": self.update_interval,
+            **kwargs,
+        }
+
+        # Iterative remove title keys from the payload.
+        # It is not needed for the GigaChat API.
+        def _remove_title_keys(payload_dict: dict[str, Any]) -> dict[str, Any]:
+            if isinstance(payload_dict, dict):
+                payload_dict.pop("title", None)
+
+                for value in payload_dict.values():
+                    _remove_title_keys(value)
+            elif isinstance(payload_dict, list):
+                for item in payload_dict:
+                    _remove_title_keys(item)
+
+            return payload_dict
+
+        payload_dict = _remove_title_keys(payload_dict)
+        payload = Chat.parse_obj(payload_dict)
 
         if self.verbose:
             logger.warning(
-                "Giga request: %s", json.dumps(payload.dict(), ensure_ascii=False)
+                "Giga request: %s",
+                json.dumps(
+                    payload.dict(exclude_none=True, by_alias=True), ensure_ascii=False
+                ),
             )
 
         return payload
@@ -444,7 +520,8 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             **kwargs,
         )
 
-    @overload
+    # TODO: Fix typing.
+    @overload  # type: ignore[override]
     def with_structured_output(
         self,
         schema: Optional[_DictOrPydanticClass] = None,
@@ -466,11 +543,11 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         ...
 
-    @beta()
     def with_structured_output(
         self,
         schema: Optional[_DictOrPydanticClass] = None,
         *,
+        method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:

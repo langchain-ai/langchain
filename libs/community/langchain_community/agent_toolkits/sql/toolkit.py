@@ -17,7 +17,12 @@ from langchain_community.utilities.sql_database import SQLDatabase
 
 
 class SQLDatabaseToolkit(BaseToolkit):
-    """Toolkit for interacting with SQL databases."""
+    """Toolkit for interacting with SQL databases.
+
+    Parameters:
+        db: SQLDatabase. The SQL database.
+        llm: BaseLanguageModel. The language model.
+    """
 
     db: SQLDatabase = Field(exclude=True)
     llm: BaseLanguageModel = Field(exclude=True)
