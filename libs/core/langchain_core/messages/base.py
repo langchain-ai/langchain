@@ -57,17 +57,29 @@ class BaseMessage(Serializable):
     def __init__(
         self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
     ) -> None:
-        """Pass in content as positional arg."""
+        """Pass in content as positional arg.
+
+        Args:
+            content: The string contents of the message.
+            **kwargs: Additional fields to pass to the
+        """
         super().__init__(content=content, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable."""
+        """Return whether this class is serializable. This is used to determine
+        whether the class should be included in the langchain schema.
+
+        Returns:
+            True if the class is serializable, False otherwise.
+        """
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+        Default is ["langchain", "schema", "messages"].
+        """
         return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
@@ -78,6 +90,15 @@ class BaseMessage(Serializable):
         return prompt + other
 
     def pretty_repr(self, html: bool = False) -> str:
+        """Get a pretty representation of the message.
+
+        Args:
+            html: Whether to format the message as HTML. If True, the message will be
+                formatted with HTML tags. Default is False.
+
+        Returns:
+            A pretty representation of the message.
+        """
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
         # TODO: handle non-string content.
         if self.name is not None:
@@ -95,8 +116,8 @@ def merge_content(
     """Merge two message contents.
 
     Args:
-        first_content: The first content.
-        second_content: The second content.
+        first_content: The first content. Can be a string or a list.
+        second_content: The second content. Can be a string or a list.
 
     Returns:
         The merged content.
@@ -133,7 +154,9 @@ class BaseMessageChunk(BaseMessage):
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+        Default is ["langchain", "schema", "messages"].
+        """
         return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
@@ -141,6 +164,16 @@ class BaseMessageChunk(BaseMessage):
 
         This functionality is useful to combine message chunks yielded from
         a streaming model into a complete message.
+
+        Args:
+            other: Another message chunk to concatenate with this one.
+
+        Returns:
+            A new message chunk that is the concatenation of this message chunk
+            and the other message chunk.
+
+        Raises:
+            TypeError: If the other object is not a message chunk.
 
         For example,
 
@@ -177,7 +210,8 @@ def message_to_dict(message: BaseMessage) -> dict:
         message: Message to convert.
 
     Returns:
-        Message as a dict.
+        Message as a dict. The dict will have a "type" key with the message type
+        and a "data" key with the message data as a dict.
     """
     return {"type": message.type, "data": message.dict()}
 
@@ -199,7 +233,7 @@ def get_msg_title_repr(title: str, *, bold: bool = False) -> str:
 
     Args:
         title: The title.
-        bold: Whether to bold the title.
+        bold: Whether to bold the title. Default is False.
 
     Returns:
         The title representation.

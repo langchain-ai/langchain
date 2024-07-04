@@ -1,4 +1,5 @@
 """Test Base Schema of documents."""
+
 from typing import Iterator, List
 
 import pytest

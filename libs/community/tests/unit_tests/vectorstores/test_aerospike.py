@@ -368,7 +368,7 @@ def test_select_relevance_score_fn(
         distance_strategy=distance_strategy,
     )
 
-    if expected_fn == ValueError:
+    if expected_fn is ValueError:
         with pytest.raises(ValueError):
             aerospike._select_relevance_score_fn()
 

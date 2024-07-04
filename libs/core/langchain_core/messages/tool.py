@@ -37,16 +37,23 @@ class ToolMessage(BaseMessage):
     # """Whether the tool errored."""
 
     type: Literal["tool"] = "tool"
+    """The type of the message (used for serialization). Defaults to "tool"."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+        Default is ["langchain", "schema", "messages"]."""
         return ["langchain", "schema", "messages"]
 
     def __init__(
         self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
     ) -> None:
-        """Pass in content as positional arg."""
+        """Pass in content as positional arg.
+
+        Args:
+            content: The string contents of the message.
+            **kwargs: Additional fields to pass to the message
+        """
         super().__init__(content=content, **kwargs)
 
 
