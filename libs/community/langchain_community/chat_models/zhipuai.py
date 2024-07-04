@@ -43,10 +43,6 @@ from langchain_core.messages import (
     SystemMessage,
     SystemMessageChunk,
 )
-from langchain_core.output_parsers import (
-    JsonOutputParser,
-    PydanticOutputParser,
-)
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -639,7 +635,7 @@ class ChatZhipuAI(BaseChatModel):
                 :class:`~langchain.runnable.Runnable` constructor.
         """
         if self.model_name == "glm-4v":
-            raise ValueError(f"glm-4v currently does not support tool calling")
+            raise ValueError("glm-4v currently does not support tool calling")
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice and tool_choice != "auto":
