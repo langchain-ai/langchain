@@ -54,6 +54,8 @@ Here is the output schema you must conform to:
 {schema}
 ```"""  # noqa E501
 
+JSON_MODE_FORMAT_INSTRUCTIONS = """The output should be formatted as a JSON instance."""
+
 REGEX_FORMAT_INSTRUCTIONS = """The output should be formatted as a string that conforms to the regex below.
 
 As an example, for the regex `[a-z]+` the string `abc` is a well-formatted instance of the regex. The string `123` is not well-formatted.
@@ -123,8 +125,10 @@ class ChatVLLMOpenAI(ChatOpenAI):
     @staticmethod
     def _get_instructions(schema_str: str, method: str) -> str:
         """Get the instructions to insert into the input."""
-        if method in ["function_calling", "json_mode", "guided_json"]:
+        if method in ["function_calling", "guided_json"]:
             return "\n" + JSON_FORMAT_INSTRUCTIONS.format(schema=schema_str)
+        elif method == "json_mode":
+            return "\n" + JSON_MODE_FORMAT_INSTRUCTIONS
         elif method == "guided_regex":
             return "\n" + REGEX_FORMAT_INSTRUCTIONS.format(schema=schema_str)
         elif method == "guided_choice":
@@ -138,10 +142,7 @@ class ChatVLLMOpenAI(ChatOpenAI):
     def _insert_instructions(
         input: LanguageModelInput, instructions: str
     ) -> LanguageModelInput:
-        """Insert instructions into the input.
-        While `guided_json` ensures structured output by post-processing of the logits,
-        we still need to pass the instructions to the model such that it knows what
-        structure is expected for increased accuracy."""
+        """Insert instructions into the input"""
         _input = deepcopy(input)
         try:
             if isinstance(_input, StringPromptValue):
@@ -160,10 +161,15 @@ class ChatVLLMOpenAI(ChatOpenAI):
         return _input
 
     @staticmethod
-    def get_schema_str(
+    def _get_schema_str(
         schema: Optional[_StructuredInput],
         method: Literal[
-            "guided_json", "guided_regex", "guided_choice", "guided_grammar"
+            "function_calling",
+            "json_mode",
+            "guided_json",
+            "guided_regex",
+            "guided_choice",
+            "guided_grammar",
         ],
     ) -> str:
         if _is_pydantic_class(schema):
@@ -173,15 +179,7 @@ class ChatVLLMOpenAI(ChatOpenAI):
         elif isinstance(schema, str):
             return schema
         elif schema is None:
-            if method == "guided_json":
-                # Use generic json schema to enforce json output
-                schema = {"type": "object", "additionalProperties": True}
-                return json.dumps(schema)
-            else:
-                raise ValueError(
-                    "Only `guided_json` method is supported for schema=None. "
-                    f"Got {method}."
-                )
+            return ""
         else:
             raise ValueError(f"Unsupported schema type {type(schema)}")
 
@@ -196,7 +194,7 @@ class ChatVLLMOpenAI(ChatOpenAI):
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         # remove unsupported arguments
         for key in ["parallel_tool_calls"]:
-            kwargs.pop(key)
+            kwargs.pop(key, None)
         try:
             return super().bind_tools(tools, tool_choice=tool_choice, **kwargs)
         except NotImplementedError:
@@ -214,7 +212,6 @@ class ChatVLLMOpenAI(ChatOpenAI):
         ] = "guided_json",
     ) -> Runnable[LanguageModelInput, _StructuredOutput]:
         is_pydantic_class = _is_pydantic_class(schema)
-        schema_str = self.get_schema_str(schema, method)
         if is_pydantic_class:
             output_parser: OutputParserLike = PydanticOutputParser(
                 pydantic_object=schema  # type: ignore[arg-type]
@@ -228,7 +225,11 @@ class ChatVLLMOpenAI(ChatOpenAI):
         llm = self.bind(
             extra_body={
                 **(self.extra_body or {}),
-                method: schema_str if is_pydantic_class else schema,
+                method: (
+                    cast(Type[BaseModel], schema).schema_json()
+                    if is_pydantic_class
+                    else schema
+                ),
             }
         )
 
@@ -347,7 +348,7 @@ class ChatVLLMOpenAI(ChatOpenAI):
         # Insert instructions into the input so the model knows the expected structure
         # This is not (currently) handled by vLLM internally, so it is needed here.
         if instructions is None:
-            schema_str = self.get_schema_str(schema, method)
+            schema_str = self._get_schema_str(schema, method)
             instructions = self._get_instructions(schema_str, method)
         insert_instructions = partial(
             self._insert_instructions, instructions=instructions
