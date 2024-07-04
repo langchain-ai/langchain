@@ -1,3 +1,7 @@
+[build-system]
+requires = [ "poetry-core>=1.0.0",]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "langchain-experimental"
 version = "0.0.62"
@@ -7,106 +11,117 @@ license = "MIT"
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
+[tool.mypy]
+ignore_missing_imports = "True"
+disallow_untyped_defs = "True"
+exclude = [ "notebooks", "examples", "example_data",]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.2.10"
 langchain-community = "^0.2.6"
 
+[tool.ruff.lint]
+select = [ "E", "F", "I", "T201",]
+
+[tool.coverage.run]
+omit = [ "tests/*",]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5"
+markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
+asyncio_mode = "auto"
+
 [tool.poetry.group.lint]
 optional = true
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
 
 [tool.poetry.group.typing]
 optional = true
 
-[tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
-types-pyyaml = "^6.0.12.2"
-types-requests = "^2.28.11.5"
-langchain = { path = "../langchain", develop = true }
-langchain-core = { path = "../core", develop = true }
-langchain-community = { path = "../community", develop = true }
-
 [tool.poetry.group.dev]
 optional = true
-
-[tool.poetry.group.dev.dependencies]
-jupyter = "^1.0.0"
-setuptools = "^67.6.1"
-langchain = { path = "../langchain", develop = true }
-langchain-core = { path = "../core", develop = true }
-langchain-community = { path = "../community", develop = true }
 
 [tool.poetry.group.test]
 optional = true
 
-[tool.poetry.group.test.dependencies]
-# The only dependencies that should be added are
-# dependencies used for running tests (e.g., pytest, freezegun, response).
-# Any dependencies that do not meet that criteria will be removed.
-pytest = "^7.3.0"
-pytest-asyncio = "^0.20.3"
-langchain = { path = "../langchain", develop = true }
-langchain-core = { path = "../core", develop = true }
-langchain-community = { path = "../community", develop = true }
-langchain-text-splitters = { path = "../text-splitters", develop = true }
-
-# Support Python 3.8 and 3.12+.
-# Can be removed once the numpy version is fixed in langchain-community.
-numpy = [
-  { version = "^1.24.0", python = "<3.12" },
-  { version = "^1.26.0", python = ">=3.12" },
-]
-
-
 [tool.poetry.group.test_integration]
 optional = true
 
-[tool.poetry.group.test_integration.dependencies]
-langchain = { path = "../langchain", develop = true }
-langchain-core = { path = "../core", develop = true }
-langchain-community = { path = "../community", develop = true }
-langchain-openai = { path = "../partners/openai", develop = true }
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.5"
 
-[tool.ruff.lint]
-select = [
-  "E",    # pycodestyle
-  "F",    # pyflakes
-  "I",    # isort
-  "T201", # print
-]
+[tool.poetry.group.typing.dependencies]
+mypy = "^1.10"
+types-pyyaml = "^6.0.12.2"
+types-requests = "^2.28.11.5"
 
-[tool.mypy]
-ignore_missing_imports = "True"
-disallow_untyped_defs = "True"
-exclude = ["notebooks", "examples", "example_data"]
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
+setuptools = "^67.6.1"
 
-[tool.coverage.run]
-omit = ["tests/*"]
+[tool.poetry.group.test.dependencies]
+pytest = "^7.3.0"
+pytest-asyncio = "^0.20.3"
+[[tool.poetry.group.test.dependencies.numpy]]
+version = "^1.24.0"
+python = "<3.12"
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[[tool.poetry.group.test.dependencies.numpy]]
+version = "^1.26.0"
+python = ">=3.12"
 
-[tool.pytest.ini_options]
-# --strict-markers will raise errors on unknown marks.
-# https://docs.pytest.org/en/7.1.x/how-to/mark.html#raising-errors-on-unknown-marks
-#
-# https://docs.pytest.org/en/7.1.x/reference/reference.html
-# --strict-config       any warnings encountered while parsing the `pytest`
-#                       section of the configuration file raise errors.
-#
-# https://github.com/tophat/syrupy
-# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
-addopts = "--strict-markers --strict-config --durations=5"
-# Registering custom markers.
-# https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
-markers = [
-  "requires: mark tests as requiring a specific library",
-  "asyncio: mark tests as requiring asyncio",
-  "compile: mark placeholder test used to compile integration tests without running them",
-]
-asyncio_mode = "auto"
+[tool.poetry.group.typing.dependencies.langchain]
+path = "../langchain"
+develop = true
+
+[tool.poetry.group.typing.dependencies.langchain-core]
+path = "../core"
+develop = true
+
+[tool.poetry.group.typing.dependencies.langchain-community]
+path = "../community"
+develop = true
+
+[tool.poetry.group.dev.dependencies.langchain]
+path = "../langchain"
+develop = true
+
+[tool.poetry.group.dev.dependencies.langchain-core]
+path = "../core"
+develop = true
+
+[tool.poetry.group.dev.dependencies.langchain-community]
+path = "../community"
+develop = true
+
+[tool.poetry.group.test.dependencies.langchain]
+path = "../langchain"
+develop = true
+
+[tool.poetry.group.test.dependencies.langchain-core]
+path = "../core"
+develop = true
+
+[tool.poetry.group.test.dependencies.langchain-community]
+path = "../community"
+develop = true
+
+[tool.poetry.group.test.dependencies.langchain-text-splitters]
+path = "../text-splitters"
+develop = true
+
+[tool.poetry.group.test_integration.dependencies.langchain]
+path = "../langchain"
+develop = true
+
+[tool.poetry.group.test_integration.dependencies.langchain-core]
+path = "../core"
+develop = true
+
+[tool.poetry.group.test_integration.dependencies.langchain-community]
+path = "../community"
+develop = true
+
+[tool.poetry.group.test_integration.dependencies.langchain-openai]
+path = "../partners/openai"
+develop = true

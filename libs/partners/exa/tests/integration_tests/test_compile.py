@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore[import-not-found, import-not-found]
 
 
 @pytest.mark.compile

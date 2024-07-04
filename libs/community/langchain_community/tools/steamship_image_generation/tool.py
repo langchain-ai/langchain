@@ -11,6 +11,7 @@ To use this tool, you must first set as environment variables:
     STEAMSHIP_API_KEY
 ```
 """
+
 from __future__ import annotations
 
 from enum import Enum
@@ -41,7 +42,6 @@ SUPPORTED_IMAGE_SIZES = {
 
 
 class SteamshipImageGenerationTool(BaseTool):
-
     """Tool used to generate images from a text-prompt."""
 
     model_name: ModelName

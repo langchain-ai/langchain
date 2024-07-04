@@ -1,4 +1,5 @@
 """Test ChatAI21 chat model."""
+
 import pytest
 from langchain_core.messages import AIMessageChunk, HumanMessage
 from langchain_core.outputs import ChatGeneration
@@ -20,7 +21,7 @@ from tests.unit_tests.conftest import J2_CHAT_MODEL_NAME, JAMBA_CHAT_MODEL_NAME
 )
 def test_invoke(model: str) -> None:
     """Test invoke tokens from AI21."""
-    llm = ChatAI21(model=model)
+    llm = ChatAI21(model=model)  # type: ignore[call-arg]
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
@@ -47,7 +48,7 @@ def test_generation(model: str, num_results: int) -> None:
     config_key = "n" if model == JAMBA_CHAT_MODEL_NAME else "num_results"
 
     # Create the model instance using the appropriate key for the result count
-    llm = ChatAI21(model=model, **{config_key: num_results})
+    llm = ChatAI21(model=model, **{config_key: num_results})  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
 
     message = HumanMessage(content="Hello, this is a test. Can you help me please?")
 
@@ -74,7 +75,7 @@ def test_generation(model: str, num_results: int) -> None:
 )
 async def test_ageneration(model: str) -> None:
     """Test invoke tokens from AI21."""
-    llm = ChatAI21(model=model)
+    llm = ChatAI21(model=model)  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
 
     result = await llm.agenerate([[message], [message]], config=dict(tags=["foo"]))
@@ -88,7 +89,7 @@ async def test_ageneration(model: str) -> None:
 
 
 def test__chat_stream() -> None:
-    llm = ChatAI21(model="jamba-instruct")
+    llm = ChatAI21(model="jamba-instruct")  # type: ignore[call-arg]
     message = HumanMessage(content="What is the meaning of life?")
 
     for chunk in llm.stream([message]):
@@ -97,7 +98,7 @@ def test__chat_stream() -> None:
 
 
 def test__j2_chat_stream__should_raise_error() -> None:
-    llm = ChatAI21(model="j2-ultra")
+    llm = ChatAI21(model="j2-ultra")  # type: ignore[call-arg]
     message = HumanMessage(content="What is the meaning of life?")
 
     with pytest.raises(NotImplementedError):
