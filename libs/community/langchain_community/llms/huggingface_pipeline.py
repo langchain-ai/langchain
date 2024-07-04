@@ -321,6 +321,7 @@ class HuggingFacePipeline(BaseLLM):
         )
 
         pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
+        skip_prompt = kwargs.get("skip_prompt", True)
         stopping_ids_list = stop or []
 
         class StopOnTokens(StoppingCriteria):
@@ -341,7 +342,7 @@ class HuggingFacePipeline(BaseLLM):
         streamer = TextIteratorStreamer(
             self.pipeline.tokenizer,
             timeout=60.0,
-            skip_prompt=True,
+            skip_prompt=skip_prompt,
             skip_special_tokens=True,
         )
         generation_kwargs = dict(
