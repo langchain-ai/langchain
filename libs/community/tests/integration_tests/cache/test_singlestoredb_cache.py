@@ -4,6 +4,7 @@ Required to run this test:
     - a recent `singlestoredb` Python package available
     - a SingleStore DB instance;
 """
+
 from importlib.util import find_spec
 
 import pytest
