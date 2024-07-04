@@ -97,16 +97,18 @@ def mustache_template_vars(
 ) -> Set[str]:
     """Get the variables from a mustache template."""
     vars: Set[str] = set()
-    in_section = False
+    section_depth = 0
     for type, key in mustache.tokenize(template):
         if type == "end":
-            in_section = False
-        elif in_section:
-            continue
-        elif type in ("variable", "section") and key != ".":
+            section_depth -= 1
+        elif (
+            type in ("variable", "section", "inverted section", "no escape")
+            and key != "."
+            and section_depth == 0
+        ):
             vars.add(key.split(".")[0])
-            if type == "section":
-                in_section = True
+        if type in ("section", "inverted section"):
+            section_depth += 1
     return vars
 
 
@@ -117,24 +119,28 @@ def mustache_schema(
     template: str,
 ) -> Type[BaseModel]:
     """Get the variables from a mustache template."""
-    fields = set()
+    fields = {}
     prefix: Tuple[str, ...] = ()
+    section_stack: List[Tuple[str, ...]] = []
     for type, key in mustache.tokenize(template):
         if key == ".":
             continue
         if type == "end":
-            prefix = prefix[: -key.count(".")]
-        elif type == "section":
+            if section_stack:
+                prefix = section_stack.pop()
+        elif type in ("section", "inverted section"):
+            section_stack.append(prefix)
             prefix = prefix + tuple(key.split("."))
-        elif type == "variable":
-            fields.add(prefix + tuple(key.split(".")))
+            fields[prefix] = False
+        elif type in ("variable", "no escape"):
+            fields[prefix + tuple(key.split("."))] = True
     defs: Defs = {}  # None means leaf node
     while fields:
-        field = fields.pop()
+        field, is_leaf = fields.popitem()
         current = defs
         for part in field[:-1]:
             current = current.setdefault(part, {})
-        current[field[-1]] = {}
+        current.setdefault(field[-1], "" if is_leaf else {})  # type: ignore[arg-type]
     return _create_model_recursive("PromptInput", defs)
 
 
@@ -142,7 +148,7 @@ def _create_model_recursive(name: str, defs: Defs) -> Type:
     return create_model(  # type: ignore[call-overload]
         name,
         **{
-            k: (_create_model_recursive(k, v), None) if v else (str, None)
+            k: (_create_model_recursive(k, v), None) if v else (type(v), None)
             for k, v in defs.items()
         },
     )

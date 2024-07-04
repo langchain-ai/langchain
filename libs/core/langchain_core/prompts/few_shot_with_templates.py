@@ -1,4 +1,5 @@
 """Prompt template that contains few shot examples."""
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -64,7 +65,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
         return values
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix, and input variables are consistent."""
         if values["validate_template"]:

@@ -1,4 +1,5 @@
 """Base classes for LLM-powered router chains."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Type, cast
@@ -24,7 +25,7 @@ class LLMRouterChain(RouterChain):
     llm_chain: LLMChain
     """LLM chain used to perform routing"""
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_prompt(cls, values: dict) -> dict:
         prompt = values["llm_chain"].prompt
         if prompt.output_parser is None:

@@ -1,4 +1,5 @@
 """Integration tests for the TensorFlow Dataset Loader."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -12,7 +13,7 @@ from langchain_community.document_loaders.tensorflow_datasets import (
 )
 
 if TYPE_CHECKING:
-    import tensorflow as tf  # noqa: E402
+    import tensorflow as tf
 
 
 def decode_to_str(item: tf.Tensor) -> str:

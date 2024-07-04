@@ -482,7 +482,7 @@ def _get_standardized_inputs(
 
 
 def _get_standardized_outputs(
-    run: Run, schema_format: Literal["original", "streaming_events"]
+    run: Run, schema_format: Literal["original", "streaming_events", "original+chat"]
 ) -> Optional[Any]:
     """Extract standardized output from a run.
 
@@ -523,8 +523,7 @@ def _astream_log_implementation(
     diff: Literal[True] = True,
     with_streamed_output_list: bool = True,
     **kwargs: Any,
-) -> AsyncIterator[RunLogPatch]:
-    ...
+) -> AsyncIterator[RunLogPatch]: ...
 
 
 @overload
@@ -537,8 +536,7 @@ def _astream_log_implementation(
     diff: Literal[False],
     with_streamed_output_list: bool = True,
     **kwargs: Any,
-) -> AsyncIterator[RunLog]:
-    ...
+) -> AsyncIterator[RunLog]: ...
 
 
 async def _astream_log_implementation(

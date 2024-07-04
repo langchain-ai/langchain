@@ -1,7 +1,7 @@
 from json import dumps, loads
 from typing import Any, Optional
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from bson import ObjectId, json_util
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -46,7 +46,7 @@ class TestMongoDBAtlasVectorSearch:
     def setup_class(cls) -> None:
         # ensure the test collection is empty
         collection = get_collection()
-        assert collection.count_documents({}) == 0  # type: ignore[index]  # noqa: E501
+        assert collection.count_documents({}) == 0  # type: ignore[index]
 
     @classmethod
     def teardown_class(cls) -> None:

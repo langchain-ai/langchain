@@ -1,4 +1,5 @@
 """Reorder documents"""
+
 from typing import Any, List, Sequence
 
 from langchain_core.documents import BaseDocumentTransformer, Document
@@ -42,4 +43,4 @@ class LongContextReorder(BaseDocumentTransformer, BaseModel):
     async def atransform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
-        raise NotImplementedError
+        return _litm_reordering(list(documents))

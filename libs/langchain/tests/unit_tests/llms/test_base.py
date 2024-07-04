@@ -1,4 +1,5 @@
 """Test base LLM functionality."""
+
 from langchain_core.caches import InMemoryCache
 from langchain_core.outputs import Generation, LLMResult
 

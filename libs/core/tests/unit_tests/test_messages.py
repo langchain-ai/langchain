@@ -12,6 +12,7 @@ from langchain_core.messages import (
     FunctionMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    RemoveMessage,
     SystemMessage,
     ToolCall,
     ToolCallChunk,
@@ -120,6 +121,22 @@ def test_message_chunks() -> None:
     assert ai_msg_chunk + tool_calls_msg_chunk == tool_calls_msg_chunk
     assert tool_calls_msg_chunk + ai_msg_chunk == tool_calls_msg_chunk
 
+    # Test token usage
+    left = AIMessageChunk(
+        content="",
+        usage_metadata={"input_tokens": 1, "output_tokens": 2, "total_tokens": 3},
+    )
+    right = AIMessageChunk(
+        content="",
+        usage_metadata={"input_tokens": 4, "output_tokens": 5, "total_tokens": 9},
+    )
+    assert left + right == AIMessageChunk(
+        content="",
+        usage_metadata={"input_tokens": 5, "output_tokens": 7, "total_tokens": 12},
+    )
+    assert AIMessageChunk(content="") + left == left
+    assert right + AIMessageChunk(content="") == right
+
 
 def test_chat_message_chunks() -> None:
     assert ChatMessageChunk(role="User", content="I am", id="ai4") + ChatMessageChunk(
@@ -143,7 +160,78 @@ def test_chat_message_chunks() -> None:
         role="User", content=" indeed."
     ) == AIMessageChunk(
         content="I am indeed."
-    ), "Other MessageChunk + ChatMessageChunk should be a MessageChunk as the left side"  # noqa: E501
+    ), "Other MessageChunk + ChatMessageChunk should be a MessageChunk as the left side"
+
+
+def test_complex_ai_message_chunks() -> None:
+    assert AIMessageChunk(content=["I am"], id="ai4") + AIMessageChunk(
+        content=[" indeed."]
+    ) == AIMessageChunk(
+        id="ai4", content=["I am", " indeed."]
+    ), "Content concatenation with arrays of strings should naively combine"
+
+    assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
+        content=" indeed."
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am"}, " indeed."]
+    ), "Concatenating mixed content arrays should naively combine them"
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am"}])
+        + AIMessageChunk(content=[{"index": 0, "text": " indeed."}])
+        == AIMessageChunk(content=[{"index": 0, "text": "I am indeed."}])
+    ), "Concatenating when both content arrays are dicts with the same index should merge"  # noqa: E501
+
+    assert AIMessageChunk(content=[{"index": 0, "text": "I am"}]) + AIMessageChunk(
+        content=[{"text": " indeed."}]
+    ) == AIMessageChunk(
+        content=[{"index": 0, "text": "I am"}, {"text": " indeed."}]
+    ), "Concatenating when one chunk is missing an index should not merge or throw"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am"}])
+        + AIMessageChunk(content=[{"index": 2, "text": " indeed."}])
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am"}, {"index": 2, "text": " indeed."}]
+        )
+    ), "Concatenating when both content arrays are dicts with a gap between indexes should not result in a holey array"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am"}])
+        + AIMessageChunk(content=[{"index": 1, "text": " indeed."}])
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am"}, {"index": 1, "text": " indeed."}]
+        )
+    ), "Concatenating when both content arrays are dicts with separate indexes should not merge"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
+        + AIMessageChunk(
+            content=[{"index": 0, "text": " indeed.", "type": "text_block"}]
+        )
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
+        )
+    ), "Concatenating when both content arrays are dicts with the same index and type should merge"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
+        + AIMessageChunk(
+            content=[{"index": 0, "text": " indeed.", "type": "text_block_delta"}]
+        )
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
+        )
+    ), "Concatenating when both content arrays are dicts with the same index and different types should merge without updating type"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
+        + AIMessageChunk(content="", response_metadata={"extra": "value"})
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am", "type": "text_block"}],
+            response_metadata={"extra": "value"},
+        )
+    ), "Concatenating when one content is an array and one is an empty string should not add a new item, but should concat other fields"  # noqa: E501
 
 
 def test_function_message_chunks() -> None:
@@ -562,6 +650,7 @@ def test_convert_to_messages() -> None:
                 ],
             },
             {"role": "tool", "tool_call_id": "tool_id", "content": "Hi!"},
+            {"role": "remove", "id": "message_to_remove", "content": ""},
         ]
     ) == [
         SystemMessage(content="You are a helpful assistant."),
@@ -581,6 +670,7 @@ def test_convert_to_messages() -> None:
             tool_calls=[ToolCall(name="greet", args={"name": "Jane"}, id="tool_id")],
         ),
         ToolMessage(tool_call_id="tool_id", content="Hi!"),
+        RemoveMessage(id="message_to_remove"),
     ]
 
     # tuples

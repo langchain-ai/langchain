@@ -1,4 +1,5 @@
 """Simple reader that reads weather data from OpenWeatherMap API"""
+
 from __future__ import annotations
 
 from datetime import datetime

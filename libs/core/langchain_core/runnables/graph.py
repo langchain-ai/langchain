@@ -11,6 +11,7 @@ from typing import (
     List,
     NamedTuple,
     Optional,
+    Protocol,
     Tuple,
     Type,
     TypedDict,
@@ -23,6 +24,10 @@ from langchain_core.pydantic_v1 import BaseModel
 
 if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable as RunnableType
+
+
+class Stringifiable(Protocol):
+    def __str__(self) -> str: ...
 
 
 class LabelsDict(TypedDict):
@@ -55,7 +60,7 @@ class Edge(NamedTuple):
 
     source: str
     target: str
-    data: Optional[str] = None
+    data: Optional[Stringifiable] = None
     conditional: bool = False
 
 
@@ -253,7 +258,7 @@ class Graph:
         self,
         source: Node,
         target: Node,
-        data: Optional[str] = None,
+        data: Optional[Stringifiable] = None,
         conditional: bool = False,
     ) -> Edge:
         """Add an edge to the graph and return it."""
@@ -365,8 +370,7 @@ class Graph:
         output_file_path: str,
         fontname: Optional[str] = None,
         labels: Optional[LabelsDict] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     def draw_png(
@@ -374,8 +378,7 @@ class Graph:
         output_file_path: None,
         fontname: Optional[str] = None,
         labels: Optional[LabelsDict] = None,
-    ) -> bytes:
-        ...
+    ) -> bytes: ...
 
     def draw_png(
         self,

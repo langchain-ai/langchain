@@ -1,4 +1,5 @@
 """Test formatting functionality."""
+
 from typing import Union
 
 import pytest
@@ -99,7 +100,7 @@ def test_serialization_of_wellknown_objects() -> None:
         d = lc_object.dict()
         assert "type" in d, f"Missing key `type` for {type(lc_object)}"
         obj1 = WellKnownLCObject.parse_obj(d)
-        assert type(obj1.__root__) == type(lc_object), f"failed for {type(lc_object)}"
+        assert type(obj1.__root__) is type(lc_object), f"failed for {type(lc_object)}"
 
     with pytest.raises(ValidationError):
         # Make sure that specifically validation error is raised

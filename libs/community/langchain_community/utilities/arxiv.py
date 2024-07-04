@@ -1,4 +1,5 @@
 """Util that calls Arxiv."""
+
 import logging
 import os
 import re
@@ -72,7 +73,7 @@ class ArxivAPIWrapper(BaseModel):
                 return False
         return True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:
@@ -103,7 +104,7 @@ class ArxivAPIWrapper(BaseModel):
 
         Args:
             query: a plaintext search query
-        """  # noqa: E501
+        """
         try:
             if self.is_arxiv_identifier(query):
                 results = self.arxiv_search(
@@ -142,7 +143,7 @@ class ArxivAPIWrapper(BaseModel):
 
         Args:
             query: a plaintext search query
-        """  # noqa: E501
+        """
         try:
             if self.is_arxiv_identifier(query):
                 results = self.arxiv_search(

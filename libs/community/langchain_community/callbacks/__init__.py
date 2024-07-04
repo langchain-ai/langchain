@@ -6,6 +6,7 @@
 
     BaseCallbackHandler --> <name>CallbackHandler  # Example: AimCallbackHandler
 """
+
 import importlib
 from typing import TYPE_CHECKING, Any
 
@@ -72,6 +73,10 @@ if TYPE_CHECKING:
     from langchain_community.callbacks.trubrics_callback import (
         TrubricsCallbackHandler,
     )
+    from langchain_community.callbacks.upstash_ratelimit_callback import (
+        UpstashRatelimitError,
+        UpstashRatelimitHandler,  # noqa: F401
+    )
     from langchain_community.callbacks.uptrain_callback import (
         UpTrainCallbackHandler,
     )
@@ -104,6 +109,8 @@ _module_lookup = {
     "SageMakerCallbackHandler": "langchain_community.callbacks.sagemaker_callback",
     "StreamlitCallbackHandler": "langchain_community.callbacks.streamlit",
     "TrubricsCallbackHandler": "langchain_community.callbacks.trubrics_callback",
+    "UpstashRatelimitError": "langchain_community.callbacks.upstash_ratelimit_callback",
+    "UpstashRatelimitHandler": "langchain_community.callbacks.upstash_ratelimit_callback",  # noqa
     "UpTrainCallbackHandler": "langchain_community.callbacks.uptrain_callback",
     "WandbCallbackHandler": "langchain_community.callbacks.wandb_callback",
     "WhyLabsCallbackHandler": "langchain_community.callbacks.whylabs_callback",
@@ -140,6 +147,8 @@ __all__ = [
     "SageMakerCallbackHandler",
     "StreamlitCallbackHandler",
     "TrubricsCallbackHandler",
+    "UpstashRatelimitError",
+    "UpstashRatelimitHandler",
     "UpTrainCallbackHandler",
     "WandbCallbackHandler",
     "WhyLabsCallbackHandler",

@@ -1,6 +1,7 @@
 """Test the base tool implementation."""
 
 import asyncio
+import inspect
 import json
 import sys
 import textwrap
@@ -10,6 +11,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import pytest
+from typing_extensions import Annotated
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -44,6 +46,8 @@ def test_unnamed_decorator() -> None:
 
 
 class _MockSchema(BaseModel):
+    """Return the arguments directly."""
+
     arg1: int
     arg2: bool
     arg3: Optional[dict] = None
@@ -133,7 +137,6 @@ def test_decorator_with_specified_schema() -> None:
 
     @tool(args_schema=_MockSchema)
     def tool_func(arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
-        """Return the arguments directly."""
         return f"{arg1} {arg2} {arg3}"
 
     assert isinstance(tool_func, BaseTool)
@@ -309,9 +312,10 @@ def test_structured_tool_from_function_docstring() -> None:
 
     def foo(bar: int, baz: str) -> str:
         """Docstring
+
         Args:
-            bar: int
-            baz: str
+            bar: the bar value
+            baz: the baz value
         """
         raise NotImplementedError()
 
@@ -327,6 +331,7 @@ def test_structured_tool_from_function_docstring() -> None:
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "string"},
         },
+        "description": inspect.getdoc(foo),
         "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
@@ -341,6 +346,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
 
     def foo(bar: int, baz: List[str]) -> str:
         """Docstring
+
         Args:
             bar: int
             baz: List[str]
@@ -351,14 +357,23 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
     assert structured_tool.name == "foo"
     assert structured_tool.args == {
         "bar": {"title": "Bar", "type": "integer"},
-        "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
+        "baz": {
+            "title": "Baz",
+            "type": "array",
+            "items": {"type": "string"},
+        },
     }
 
     assert structured_tool.args_schema.schema() == {
         "properties": {
             "bar": {"title": "Bar", "type": "integer"},
-            "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
+            "baz": {
+                "title": "Baz",
+                "type": "array",
+                "items": {"type": "string"},
+            },
         },
+        "description": inspect.getdoc(foo),
         "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
@@ -438,6 +453,7 @@ def test_structured_tool_from_function_with_run_manager() -> None:
         bar: int, baz: str, callbacks: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Docstring
+
         Args:
             bar: int
             baz: str
@@ -458,6 +474,7 @@ def test_structured_tool_from_function_with_run_manager() -> None:
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "string"},
         },
+        "description": inspect.getdoc(foo),
         "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
@@ -626,7 +643,7 @@ def test_exception_handling_callable() -> None:
     expected = "foo bar"
 
     def handling(e: ToolException) -> str:
-        return expected  # noqa: E731
+        return expected
 
     _tool = _FakeExceptionTool(handle_tool_error=handling)
     actual = _tool.run({})
@@ -657,7 +674,7 @@ async def test_async_exception_handling_callable() -> None:
     expected = "foo bar"
 
     def handling(e: ToolException) -> str:
-        return expected  # noqa: E731
+        return expected
 
     _tool = _FakeExceptionTool(handle_tool_error=handling)
     actual = await _tool.arun({})
@@ -674,10 +691,11 @@ def test_structured_tool_from_function() -> None:
     """Test that structured tools can be created from functions."""
 
     def foo(bar: int, baz: str) -> str:
-        """Docstring
+        """Docstring thing.
+
         Args:
-            bar: int
-            baz: str
+            bar: the bar value
+            baz: the baz value
         """
         raise NotImplementedError()
 
@@ -691,6 +709,7 @@ def test_structured_tool_from_function() -> None:
     assert structured_tool.args_schema.schema() == {
         "title": "fooSchema",
         "type": "object",
+        "description": inspect.getdoc(foo),
         "properties": {
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "string"},
@@ -723,7 +742,7 @@ def test_validation_error_handling_callable() -> None:
     expected = "foo bar"
 
     def handling(e: ValidationError) -> str:
-        return expected  # noqa: E731
+        return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
     actual = _tool.run({})
@@ -744,8 +763,8 @@ def test_validation_error_handling_non_validation_error(
     """Test that validation errors are handled correctly."""
 
     class _RaiseNonValidationErrorTool(BaseTool):
-        name = "raise_non_validation_error_tool"
-        description = "A tool that raises a non-validation error"
+        name: str = "raise_non_validation_error_tool"
+        description: str = "A tool that raises a non-validation error"
 
         def _parse_input(
             self,
@@ -785,7 +804,7 @@ async def test_async_validation_error_handling_callable() -> None:
     expected = "foo bar"
 
     def handling(e: ValidationError) -> str:
-        return expected  # noqa: E731
+        return expected
 
     _tool = _MockStructuredTool(handle_validation_error=handling)
     actual = await _tool.arun({})
@@ -806,8 +825,8 @@ async def test_async_validation_error_handling_non_validation_error(
     """Test that validation errors are handled correctly."""
 
     class _RaiseNonValidationErrorTool(BaseTool):
-        name = "raise_non_validation_error_tool"
-        description = "A tool that raises a non-validation error"
+        name: str = "raise_non_validation_error_tool"
+        description: str = "A tool that raises a non-validation error"
 
         def _parse_input(
             self,
@@ -915,3 +934,56 @@ def test_tool_description() -> None:
 
     foo2 = StructuredTool.from_function(foo)
     assert foo2.description == "The foo."
+
+
+def test_tool_arg_descriptions() -> None:
+    def foo(bar: str, baz: int) -> str:
+        """The foo.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    foo1 = tool(foo)
+    args_schema = foo1.args_schema.schema()  # type: ignore
+    assert args_schema == {
+        "title": "fooSchema",
+        "type": "object",
+        "description": inspect.getdoc(foo),
+        "properties": {
+            "bar": {"title": "Bar", "type": "string"},
+            "baz": {"title": "Baz", "type": "integer"},
+        },
+        "required": ["bar", "baz"],
+    }
+
+
+def test_tool_annotated_descriptions() -> None:
+    def foo(
+        bar: Annotated[str, "this is the bar"], baz: Annotated[int, "this is the baz"]
+    ) -> str:
+        """The foo.
+
+        Returns:
+            The bar only.
+        """
+        return bar
+
+    foo1 = tool(foo)
+    args_schema = foo1.args_schema.schema()  # type: ignore
+    assert args_schema == {
+        "title": "fooSchema",
+        "type": "object",
+        "description": inspect.getdoc(foo),
+        "properties": {
+            "bar": {"title": "Bar", "type": "string", "description": "this is the bar"},
+            "baz": {
+                "title": "Baz",
+                "type": "integer",
+                "description": "this is the baz",
+            },
+        },
+        "required": ["bar", "baz"],
+    }

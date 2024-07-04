@@ -23,7 +23,7 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
             merged[right_k] = right_v
         elif right_v is None:
             continue
-        elif type(merged[right_k]) != type(right_v):
+        elif type(merged[right_k]) is not type(right_v):
             raise TypeError(
                 f'additional_kwargs["{right_k}"] already exists in this message,'
                 " but with a different type."
@@ -60,6 +60,10 @@ def merge_lists(left: Optional[List], right: Optional[List]) -> Optional[List]:
                     if e_left["index"] == e["index"]
                 ]
                 if to_merge:
+                    # If a top-level "type" has been set for a chunk, it should no
+                    # longer be overridden by the "type" field in future chunks.
+                    if "type" in merged[to_merge[0]] and "type" in e:
+                        e.pop("type")
                     merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], e)
                 else:
                     merged = merged + [e]

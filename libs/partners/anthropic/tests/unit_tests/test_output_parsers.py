@@ -19,7 +19,7 @@ _CONTENT: List = [
     {"type": "tool_use", "input": {"baz": "a"}, "id": "2", "name": "_Foo2"},
 ]
 
-_RESULT: List = [ChatGeneration(message=AIMessage(_CONTENT))]
+_RESULT: List = [ChatGeneration(message=AIMessage(_CONTENT))]  # type: ignore[misc]
 
 
 class _Foo1(BaseModel):
@@ -50,7 +50,7 @@ def test_tools_output_parser_args_only() -> None:
     assert expected == actual
 
     expected = []
-    actual = output_parser.parse_result([ChatGeneration(message=AIMessage(""))])
+    actual = output_parser.parse_result([ChatGeneration(message=AIMessage(""))])  # type: ignore[misc]
     assert expected == actual
 
 
@@ -61,7 +61,7 @@ def test_tools_output_parser_first_tool_only() -> None:
     assert expected == actual
 
     expected = None
-    actual = output_parser.parse_result([ChatGeneration(message=AIMessage(""))])
+    actual = output_parser.parse_result([ChatGeneration(message=AIMessage(""))])  # type: ignore[misc]
     assert expected == actual
 
 
@@ -69,4 +69,20 @@ def test_tools_output_parser_pydantic() -> None:
     output_parser = ToolsOutputParser(pydantic_schemas=[_Foo1, _Foo2])
     expected = [_Foo1(bar=0), _Foo2(baz="a")]
     actual = output_parser.parse_result(_RESULT)
+    assert expected == actual
+
+
+def test_tools_output_parser_empty_content() -> None:
+    class ChartType(BaseModel):
+        chart_type: Literal["pie", "line", "bar"]
+
+    output_parser = ToolsOutputParser(
+        first_tool_only=True, pydantic_schemas=[ChartType]
+    )
+    message = AIMessage(
+        "",
+        tool_calls=[{"name": "ChartType", "args": {"chart_type": "pie"}, "id": "foo"}],
+    )
+    actual = output_parser.invoke(message)
+    expected = ChartType(chart_type="pie")
     assert expected == actual
