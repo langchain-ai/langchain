@@ -1,6 +1,3 @@
-# flake8: noqa
-from langchain_core.prompts.prompt import PromptTemplate
-
 from typing import TYPE_CHECKING, Any
 
 from langchain._api import create_importer

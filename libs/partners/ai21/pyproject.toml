@@ -1,16 +1,24 @@
 
 [tool.poetry]
 name = "gigachain-ai21"
-version = "0.1.5"
-description = "An integration package connecting AI21 and LangChain"
+version = "0.1.6"
+description = "An integration package connecting AI21 and GigaChain"
 authors = []
 readme = "README.md"
+repository = "https://github.com/ai-forever/gigachain"
+license = "MIT"
+packages = [
+    {include = "langchain_ai21"}
+]
+
+[tool.poetry.urls]
+"Source Code" = "https://github.com/ai-forever/gigachain/tree/master/libs/partners/ai21"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-gigachain-core = ">=0.1.48,<0.3"
-gigachain-text-splitters = ">=0.0.1,<0.2"
-ai21 = "^2.2.5"
+gigachain-core = "^0.2.4"
+gigachain-text-splitters = "^0.2.0"
+ai21 = "^2.4.1"
 
 [tool.poetry.group.test]
 optional = true

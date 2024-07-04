@@ -1,4 +1,7 @@
-from typing import Any, Dict, List, Literal, Union
+import json
+from typing import Any, Dict, List, Literal, Optional, Union
+
+from typing_extensions import TypedDict
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -19,20 +22,64 @@ from langchain_core.utils.json import (
 )
 
 
+class UsageMetadata(TypedDict):
+    """Usage metadata for a message, such as token counts.
+
+    This is a standard representation of token usage that is consistent across models.
+
+    Example:
+
+        .. code-block:: python
+
+            {
+                "input_tokens": 10,
+                "output_tokens": 20,
+                "total_tokens": 30
+            }
+    """
+
+    input_tokens: int
+    """Count of input (or prompt) tokens."""
+    output_tokens: int
+    """Count of output (or completion) tokens."""
+    total_tokens: int
+    """Total token count."""
+
+
 class AIMessage(BaseMessage):
-    """Message from an AI."""
+    """Message from an AI.
+
+    AIMessage is returned from a chat model as a response to a prompt.
+
+    This message represents the output of the model and consists of both
+    the raw output as returned by the model together standardized fields
+    (e.g., tool calls, usage metadata) added by the LangChain framework.
+    """
 
     example: bool = False
-    """Whether this Message is being passed in to the model as part of an example 
-        conversation.
+    """Use to denote that a message is part of an example conversation.
+    
+    At the moment, this is ignored by most models. Usage is discouraged.
     """
 
     tool_calls: List[ToolCall] = []
     """If provided, tool calls associated with the message."""
     invalid_tool_calls: List[InvalidToolCall] = []
     """If provided, tool calls with parsing errors associated with the message."""
+    usage_metadata: Optional[UsageMetadata] = None
+    """If provided, usage metadata for a message, such as token counts.
+
+    This is a standard representation of token usage that is consistent across models.
+    """
 
     type: Literal["ai"] = "ai"
+    """The type of the message (used for deserialization)."""
+
+    def __init__(
+        self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
+    ) -> None:
+        """Pass in content as positional arg."""
+        super().__init__(content=content, **kwargs)
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -47,7 +94,7 @@ class AIMessage(BaseMessage):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
-    @root_validator()
+    @root_validator(pre=True)
     def _backwards_compat_tool_calls(cls, values: dict) -> dict:
         raw_tool_calls = values.get("additional_kwargs", {}).get("tool_calls")
         tool_calls = (
@@ -110,7 +157,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment] # noqa: E501
+    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
 
     tool_call_chunks: List[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
@@ -128,11 +175,31 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def init_tool_calls(cls, values: dict) -> dict:
         if not values["tool_call_chunks"]:
-            values["tool_calls"] = []
-            values["invalid_tool_calls"] = []
+            if values["tool_calls"]:
+                values["tool_call_chunks"] = [
+                    ToolCallChunk(
+                        name=tc["name"],
+                        args=json.dumps(tc["args"]),
+                        id=tc["id"],
+                        index=None,
+                    )
+                    for tc in values["tool_calls"]
+                ]
+            if values["invalid_tool_calls"]:
+                tool_call_chunks = values.get("tool_call_chunks", [])
+                tool_call_chunks.extend(
+                    [
+                        ToolCallChunk(
+                            name=tc["name"], args=tc["args"], id=tc["id"], index=None
+                        )
+                        for tc in values["invalid_tool_calls"]
+                    ]
+                )
+                values["tool_call_chunks"] = tool_call_chunks
+
             return values
         tool_calls = []
         invalid_tool_calls = []
@@ -198,12 +265,29 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             else:
                 tool_call_chunks = []
 
+            # Token usage
+            if self.usage_metadata or other.usage_metadata:
+                left: UsageMetadata = self.usage_metadata or UsageMetadata(
+                    input_tokens=0, output_tokens=0, total_tokens=0
+                )
+                right: UsageMetadata = other.usage_metadata or UsageMetadata(
+                    input_tokens=0, output_tokens=0, total_tokens=0
+                )
+                usage_metadata: Optional[UsageMetadata] = {
+                    "input_tokens": left["input_tokens"] + right["input_tokens"],
+                    "output_tokens": left["output_tokens"] + right["output_tokens"],
+                    "total_tokens": left["total_tokens"] + right["total_tokens"],
+                }
+            else:
+                usage_metadata = None
+
             return self.__class__(
                 example=self.example,
                 content=content,
                 additional_kwargs=additional_kwargs,
                 tool_call_chunks=tool_call_chunks,
                 response_metadata=response_metadata,
+                usage_metadata=usage_metadata,
                 id=self.id,
             )
 

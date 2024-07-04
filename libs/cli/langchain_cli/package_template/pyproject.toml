@@ -16,7 +16,7 @@ gigachain-cli = ">=0.0.4"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
 
-[tool.gigaserve]
+[tool.langserve]
 export_module = "__module_name__"
 export_attr = "chain"
 

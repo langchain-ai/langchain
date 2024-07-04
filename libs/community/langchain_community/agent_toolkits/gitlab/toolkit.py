@@ -30,6 +30,9 @@ class GitLabToolkit(BaseToolkit):
         and comments on GitLab.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        tools: List[BaseTool]. The tools in the toolkit. Default is an empty list.
     """
 
     tools: List[BaseTool] = []
@@ -38,6 +41,15 @@ class GitLabToolkit(BaseToolkit):
     def from_gitlab_api_wrapper(
         cls, gitlab_api_wrapper: GitLabAPIWrapper
     ) -> "GitLabToolkit":
+        """Create a GitLabToolkit from a GitLabAPIWrapper.
+
+        Args:
+            gitlab_api_wrapper: GitLabAPIWrapper. The GitLab API wrapper.
+
+        Returns:
+            GitLabToolkit. The GitLab toolkit.
+        """
+
         operations: List[Dict] = [
             {
                 "mode": "get_issues",

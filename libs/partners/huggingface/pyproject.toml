@@ -1,22 +1,24 @@
 [tool.poetry]
-name = "langchain-huggingface"
-version = "0.0.1"
-description = "An integration package connecting Hugging Face and LangChain"
+name = "gigachain-huggingface"
+version = "0.0.3"
+description = "An integration package connecting Hugging Face and GigaChain"
 authors = []
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
+repository = "https://github.com/ai-forever/gigachain"
 license = "MIT"
+packages = [
+    {include = "langchain_huggingface"}
+]
 
 [tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/huggingface"
+"Source Code" = "https://github.com/ai-forever/gigachain/tree/master/libs/partners/huggingface"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.52,<0.3"
+gigachain-core = ">=0.1.52,<0.3"
 tokenizers = ">=0.19.1"
 transformers = ">=4.39.0"
 sentence-transformers = ">=2.6.0"
-text-generation = "^0.7.0"
 huggingface-hub = ">=0.23.0"
 
 [tool.poetry.group.test]
@@ -25,9 +27,18 @@ optional = true
 [tool.poetry.group.test.dependencies]
 pytest = "^7.3.0"
 pytest-asyncio = "^0.21.1"
-langchain-core = { path = "../../core", develop = true }
-langchain-standard-tests = { path = "../../standard-tests", develop = true }
-langchain-community = { path = "../../community", develop = true }
+gigachain-core = { path = "../../core", develop = true }
+gigachain-standard-tests = { path = "../../standard-tests", develop = true }
+gigachain-community = { path = "../../community", develop = true }
+# Support Python 3.8 and 3.12+.
+scipy = [
+    {version = "^1", python = "<3.12"},
+    {version = "^1.7.0", python = ">=3.12"}
+]
+numpy = [
+    {version = "^1", python = "<3.12"},
+    {version = "^1.26.0", python = ">=3.12"}
+]
 
 [tool.poetry.group.codespell]
 optional = true
@@ -43,13 +54,13 @@ ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1"
-langchain-core = { path = "../../core", develop = true }
+gigachain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-langchain-core = { path = "../../core", develop = true }
+gigachain-core = { path = "../../core", develop = true }
 ipykernel = "^6.29.2"
 
 [tool.poetry.group.test_integration]

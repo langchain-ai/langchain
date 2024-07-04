@@ -11,7 +11,11 @@ from langchain_community.utilities.zapier import ZapierNLAWrapper
 
 
 class ZapierToolkit(BaseToolkit):
-    """Zapier Toolkit."""
+    """Zapier Toolkit.
+
+    Parameters:
+        tools: List[BaseTool]. The tools in the toolkit. Default is an empty list.
+    """
 
     tools: List[BaseTool] = []
 
@@ -19,7 +23,14 @@ class ZapierToolkit(BaseToolkit):
     def from_zapier_nla_wrapper(
         cls, zapier_nla_wrapper: ZapierNLAWrapper
     ) -> "ZapierToolkit":
-        """Create a toolkit from a ZapierNLAWrapper."""
+        """Create a toolkit from a ZapierNLAWrapper.
+
+        Args:
+            zapier_nla_wrapper: ZapierNLAWrapper. The Zapier NLA wrapper.
+
+        Returns:
+            ZapierToolkit. The Zapier toolkit.
+        """
         actions = zapier_nla_wrapper.list()
         tools = [
             ZapierNLARunAction(
@@ -36,7 +47,14 @@ class ZapierToolkit(BaseToolkit):
     async def async_from_zapier_nla_wrapper(
         cls, zapier_nla_wrapper: ZapierNLAWrapper
     ) -> "ZapierToolkit":
-        """Create a toolkit from a ZapierNLAWrapper."""
+        """Async create a toolkit from a ZapierNLAWrapper.
+
+        Args:
+            zapier_nla_wrapper: ZapierNLAWrapper. The Zapier NLA wrapper.
+
+        Returns:
+            ZapierToolkit. The Zapier toolkit.
+        """
         actions = await zapier_nla_wrapper.alist()
         tools = [
             ZapierNLARunAction(
@@ -55,7 +73,7 @@ class ZapierToolkit(BaseToolkit):
             since="0.0.319",
             message=(
                 "This tool will be deprecated on 2023-11-17. See "
-                "https://nla.zapier.com/sunset/ for details"
+                "<https://nla.zapier.com/sunset/> for details"
             ),
         )
         return self.tools

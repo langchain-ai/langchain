@@ -1,33 +1,47 @@
 {
 	"folders": [
 		{
+			"name": "gigachain",
+			"path": ".."
+		},
+		{
+			"name": "cli",
 			"path": "../libs/cli"
 		},
 		{
+			"name": "community",
 			"path": "../libs/community"
 		},
 		{
+			"name": "core",
 			"path": "../libs/core"
 		},
 		{
+			"name": "experimental",
 			"path": "../libs/experimental"
 		},
 		{
+			"name": "external_tools",
 			"path": "../libs/external_tools"
 		},
 		{
+			"name": "langchain",
 			"path": "../libs/langchain"
 		},
 		{
+			"name": "partners",
 			"path": "../libs/partners"
 		},
 		{
+			"name": "standard-tests",
 			"path": "../libs/standard-tests"
 		},
 		{
+			"name": "streamlit_agent",
 			"path": "../libs/streamlit_agent"
 		},
 		{
+			"name": "text-splitters",
 			"path": "../libs/text-splitters"
 		}
 	],
