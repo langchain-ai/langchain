@@ -127,7 +127,7 @@ class App(BaseModel):
 
 class Context(BaseModel):
     retrieved_from: Optional[str]
-    doc: Optional[str]
+    content_checksum: Optional[str]
     vector_db: str
 
 
