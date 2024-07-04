@@ -4,7 +4,7 @@ from typing import Type
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.runnables import RunnableBinding
-from langchain_standard_tests.unit_tests.chat_models import (
+from langchain_standard_tests.unit_tests.chat_models import (  # type: ignore[import-not-found]
     ChatModelUnitTests,
     Person,
     my_adder_tool,

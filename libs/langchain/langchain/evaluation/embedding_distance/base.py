@@ -1,4 +1,5 @@
 """A chain for comparing the output of two models using embeddings."""
+
 from enum import Enum
 from typing import Any, Dict, List, Optional
 

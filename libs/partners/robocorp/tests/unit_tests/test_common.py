@@ -1,4 +1,5 @@
 """Test common functions."""
+
 import json
 import unittest
 from pathlib import Path
