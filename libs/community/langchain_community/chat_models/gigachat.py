@@ -73,9 +73,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-IMAGE_SEARCH_REGEX = re.compile('<img\ssrc="(?P<UUID>.+?)"\sfuse=".+?"/>')
+IMAGE_SEARCH_REGEX = re.compile(
+    '<img\ssrc="(?P<UUID>.+?)"\sfuse=".+?"/>(?P<postfix>.+)?'
+)
 VIDEO_SEARCH_REGEX = re.compile(
-    '<video\scover="(?P<cover_UUID>.+?)"\ssrc="(?P<UUID>.+?)"\sfuse="true"/>'
+    '<video\scover="(?P<cover_UUID>.+?)"\ssrc="(?P<UUID>.+?)"\sfuse="true"/>(?P<postfix>.+)?'
 )
 
 
@@ -107,26 +109,17 @@ def _convert_dict_to_message(message: gm.Messages) -> BaseMessage:
                     id=str(uuid4()),
                 )
             ]
-    if message.data_for_context:
-        additional_kwargs["data_for_context"] = [
-            _convert_dict_to_message(m) for m in message.data_for_context
-        ]
-        if len(message.data_for_context) > 1:
-            if (
-                message.data_for_context[0].function_call
-                and message.data_for_context[0].function_call.name == "text2image"
-            ):
-                match = IMAGE_SEARCH_REGEX.search(message.content)
-                if match:
-                    additional_kwargs["image_uuid"] = match.group("UUID")
-            elif (
-                message.data_for_context[0].function_call
-                and message.data_for_context[0].function_call.name == "text2video"
-            ):
-                match = VIDEO_SEARCH_REGEX.search(message.content)
-                if match:
-                    additional_kwargs["cover_uuid"] = match.group("cover_UUID")
-                    additional_kwargs["video_uuid"] = match.group("UUID")
+    if message.functions_state_id:
+        additional_kwargs["functions_state_id"] = message.functions_state_id
+        match = IMAGE_SEARCH_REGEX.search(message.content)
+        if match:
+            additional_kwargs["image_uuid"] = match.group("UUID")
+            additional_kwargs["postfix_message"] = match.group("postfix")
+        match = VIDEO_SEARCH_REGEX.search(message.content)
+        if match:
+            additional_kwargs["cover_uuid"] = match.group("cover_UUID")
+            additional_kwargs["video_uuid"] = match.group("UUID")
+            additional_kwargs["postfix_message"] = match.group("postfix")
     if message.role == MessagesRole.SYSTEM:
         return SystemMessage(content=message.content)
     elif message.role == MessagesRole.USER:
@@ -153,9 +146,9 @@ def _convert_message_to_dict(message: BaseMessage) -> gm.Messages:
     attachments = message.additional_kwargs.get("attachments", None)
     if attachments:
         kwargs["attachments"] = attachments
-    context = message.additional_kwargs.get("data_for_context", [])
-    if context:
-        kwargs["data_for_context"] = [_convert_message_to_dict(m) for m in context]
+    functions_state_id = message.additional_kwargs.get("functions_state_id", None)
+    if functions_state_id:
+        kwargs["functions_state_id"] = functions_state_id
 
     if isinstance(message, SystemMessage):
         kwargs["role"] = MessagesRole.SYSTEM
@@ -209,15 +202,17 @@ def _convert_delta_to_message_chunk(
                     index=0,
                 )
             ]
-    if _dict.get("data_for_context"):
-        additional_kwargs["data_for_context"] = _dict["data_for_context"]
+    if _dict.get("functions_state_id"):
+        additional_kwargs["functions_state_id"] = _dict["functions_state_id"]
     match = IMAGE_SEARCH_REGEX.search(content)
     if match:
         additional_kwargs["image_uuid"] = match.group("UUID")
+        additional_kwargs["postfix_message"] = match.group("postfix")
     match = VIDEO_SEARCH_REGEX.search(content)
     if match:
         additional_kwargs["cover_uuid"] = match.group("cover_UUID")
         additional_kwargs["video_uuid"] = match.group("UUID")
+        additional_kwargs["postfix_message"] = match.group("postfix")
 
     if (
         role == "function_in_progress"
@@ -230,7 +225,7 @@ def _convert_delta_to_message_chunk(
     elif (
         role == "assistant"
         or default_class == AIMessageChunk
-        or "data_for_context" in _dict
+        or "functions_state_id" in _dict
     ):
         return AIMessageChunk(
             content=content,

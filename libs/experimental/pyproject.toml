@@ -55,7 +55,7 @@ gigachain = { path = "../langchain", develop = true }
 gigachain-core = { path = "../core", develop = true }
 gigachain-community = { path = "../community", develop = true }
 gigachain-text-splitters = { path = "../text-splitters", develop = true }
-gigachat = "^0.1.29"
+gigachat = "^0.1.31"
 
 # Support Python 3.8 and 3.12+.
 # Can be removed once the numpy version is fixed in langchain-community.
