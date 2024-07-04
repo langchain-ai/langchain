@@ -5,7 +5,7 @@ import logging
 import os
 import uuid
 from http import HTTPStatus
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional
 
 import requests  # type: ignore
 from langchain_core.documents import Document
@@ -38,16 +38,16 @@ class PebbloSafeLoader(BaseLoader):
     _loader_sent: bool = False
 
     def __init__(
-        self,
-        langchain_loader: BaseLoader,
-        name: str,
-        owner: str = "",
-        description: str = "",
-        api_key: Optional[str] = None,
-        load_semantic: bool = False,
-        classifier_url: Optional[str] = None,
-        *,
-        classifier_location: str = "local",
+            self,
+            langchain_loader: BaseLoader,
+            name: str,
+            owner: str = "",
+            description: str = "",
+            api_key: Optional[str] = None,
+            load_semantic: bool = False,
+            classifier_url: Optional[str] = None,
+            *,
+            classifier_location: str = "local",
     ):
         if not name or not isinstance(name, str):
             raise NameError("Must specify a valid name.")
@@ -61,7 +61,7 @@ class PebbloSafeLoader(BaseLoader):
         self.source_path = get_loader_full_path(self.loader)
         self.source_owner = PebbloSafeLoader.get_file_owner_from_path(self.source_path)
         self.docs: List[Document] = []
-        self.docs_with_id: Union[List[IndexedDocument], List[Document], List] = []
+        self.docs_with_id: List[IndexedDocument] = []
         loader_name = str(type(self.loader)).split(".")[-1].split("'")[0]
         self.source_type = get_loader_type(loader_name)
         self.source_path_size = self.get_source_size(self.source_path)
@@ -89,6 +89,7 @@ class PebbloSafeLoader(BaseLoader):
             list: Documents fetched from load method of the wrapped `loader`.
         """
         self.docs = self.loader.load()
+        self.docs_with_id = self._index_docs()
         classified_docs = self._classify_doc(loading_end=True)
         self._add_pebblo_specific_metadata(classified_docs)
         if self.load_semantic:
@@ -137,13 +138,12 @@ class PebbloSafeLoader(BaseLoader):
     def set_loader_sent(cls) -> None:
         cls._loader_sent = True
 
-    def _classify_doc(self, loaded_docs: list, loading_end: bool = False) -> list:
+    def _classify_doc(self, loading_end: bool = False) -> dict:
         """Send documents fetched from loader to pebblo-server. Then send
         classified documents to Daxa cloud(If api_key is present). Internal method.
 
         Args:
 
-            loaded_docs (list): List of documents fetched from loader's load operation.
             loading_end (bool, optional): Flag indicating the halt of data
                                           loading by loader. Defaults to False.
         """
@@ -153,9 +153,8 @@ class PebbloSafeLoader(BaseLoader):
         }
         if loading_end is True:
             PebbloSafeLoader.set_loader_sent()
-        doc_content = [doc.dict() for doc in loaded_docs]
+        doc_content = [doc.dict() for doc in self.docs_with_id]
         docs = []
-        classified_docs = []
         for doc in doc_content:
             doc_metadata = doc.get("metadata", {})
             doc_authorized_identities = doc_metadata.get("authorized_identities", [])
@@ -173,12 +172,12 @@ class PebbloSafeLoader(BaseLoader):
             page_content = str(doc.get("page_content"))
             page_content_size = self.calculate_content_size(page_content)
             self.source_aggregate_size += page_content_size
-            doc_id = doc.get("id", None) or 0
+            doc_id = doc.get("pb_id", None) or 0
             docs.append(
                 {
                     "doc": page_content,
                     "source_path": doc_source_path,
-                    "id": doc_id,
+                    "pb_id": doc_id,
                     "last_modified": doc.get("metadata", {}).get("last_modified"),
                     "file_owner": doc_source_owner,
                     **(
@@ -211,6 +210,7 @@ class PebbloSafeLoader(BaseLoader):
                     self.source_aggregate_size
                 )
         payload = Doc(**payload).dict(exclude_unset=True)
+        classified_docs = {}
         # Raw payload to be sent to classifier
         if self.classifier_location == "local":
             load_doc_url = f"{self.classifier_url}{LOADER_DOC_URL}"
@@ -218,7 +218,10 @@ class PebbloSafeLoader(BaseLoader):
                 pebblo_resp = requests.post(
                     load_doc_url, headers=headers, json=payload, timeout=300
                 )
-                classified_docs = json.loads(pebblo_resp.text).get("docs", None)
+
+                # Updating the structure of pebblo response docs for efficient searching
+                for classified_doc in json.loads(pebblo_resp.text).get("docs", []):
+                    classified_docs.update({classified_doc["pb_id"]: classified_doc})
                 if pebblo_resp.status_code not in [
                     HTTPStatus.OK,
                     HTTPStatus.BAD_GATEWAY,
@@ -459,33 +462,29 @@ class PebbloSafeLoader(BaseLoader):
             List[IndexedDocument]: A list of IndexedDocument objects with unique IDs.
         """
         docs_with_id = [
-            IndexedDocument(id=hex(i)[2:], **doc.dict())
+            IndexedDocument(pb_id=str(i), **doc.dict())
             for i, doc in enumerate(self.docs)
         ]
         return docs_with_id
 
-    def _add_semantic_to_docs(
-        self, docs_with_id: List[IndexedDocument], classified_docs: List[dict]
-    ) -> List[Document]:
+    def _add_semantic_to_docs(self, classified_docs: Dict) -> List[Document]:
         """
         Adds semantic metadata to the given list of documents.
 
         Args:
-            docs_with_id (List[IndexedDocument]): A list of IndexedDocument objects
-                containing the documents with their IDs.
-            classified_docs (List[dict]): A list of dictionaries containing the
-                classified documents.
+            classified_docs (Dict): A dictionary of dictionaries containing the
+                classified documents with pb_id as key.
 
         Returns:
             List[Document]: A list of Document objects with added semantic metadata.
         """
         indexed_docs = {
-            doc.id: Document(page_content=doc.page_content, metadata=doc.metadata)
-            for doc in docs_with_id
+            doc.pb_id: Document(page_content=doc.page_content, metadata=doc.metadata)
+            for doc in self.docs_with_id
         }
 
-        for classified_doc in classified_docs:
-            doc_id = classified_doc.get("id")
+        for classified_doc in classified_docs.values():
+            doc_id = classified_doc.get("pb_id")
             if doc_id in indexed_docs:
                 self._add_semantic_to_doc(indexed_docs[doc_id], classified_doc)
 
@@ -493,19 +492,16 @@ class PebbloSafeLoader(BaseLoader):
 
         return semantic_metadata_docs
 
-    def _unindex_docs(self, docs_with_id: List[IndexedDocument]) -> List[Document]:
+    def _unindex_docs(self) -> List[Document]:
         """
         Converts a list of IndexedDocument objects to a list of Document objects.
-
-        Args:
-            docs_with_id (List[IndexedDocument]): A list of IndexedDocument objects.
 
         Returns:
             List[Document]: A list of Document objects.
         """
         docs = [
             Document(page_content=doc.page_content, metadata=doc.metadata)
-            for i, doc in enumerate(docs_with_id)
+            for i, doc in enumerate(self.docs_with_id)
         ]
         return docs
 
@@ -528,12 +524,16 @@ class PebbloSafeLoader(BaseLoader):
         )
         return doc
 
-    def _add_pebblo_specific_metadata(self) -> None:
+    def _add_pebblo_specific_metadata(self, classified_docs: dict) -> None:
         """Add Pebblo specific metadata to documents."""
-        for doc in self.docs:
+        for doc in self.docs_with_id:
             doc_metadata = doc.metadata
             doc_metadata["full_path"] = get_full_path(
                 doc_metadata.get(
                     "full_path", doc_metadata.get("source", self.source_path)
                 )
+            )
+            doc_metadata["pb_id"] = doc.pb_id
+            doc_metadata["content_checksum"] = classified_docs.get(doc.pb_id, {}).get(
+                "content_checksum", None
             )
