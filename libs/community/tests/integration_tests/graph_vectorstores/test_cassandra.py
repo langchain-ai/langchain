@@ -4,17 +4,17 @@ from typing import Iterable, List, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.graph_stores.base import METADATA_CONTENT_ID_KEY
-from langchain_core.graph_stores.links import METADATA_LINKS_KEY, Link
+from langchain_core.graph_vectorstores.base import METADATA_CONTENT_ID_KEY
+from langchain_core.graph_vectorstores.links import METADATA_LINKS_KEY, Link
 
-from langchain_community.graph_stores import CassandraGraphStore
+from langchain_community.graph_vectorstores import CassandraGraphVectorStore
 
 CASSANDRA_DEFAULT_KEYSPACE = "graph_test_keyspace"
 
 
 def _get_graph_store(
     embedding_class: Type[Embeddings], documents: Iterable[Document] = ()
-) -> CassandraGraphStore:
+) -> CassandraGraphVectorStore:
     import cassio
     from cassandra.cluster import Cluster
     from cassio.config import check_resolve_session, resolve_keyspace
@@ -46,7 +46,7 @@ def _get_graph_store(
     )
     session.execute(f"DROP TABLE IF EXISTS {keyspace}.{node_table}")
     session.execute(f"DROP TABLE IF EXISTS {keyspace}.{edge_table}")
-    store = CassandraGraphStore.from_documents(
+    store = CassandraGraphVectorStore.from_documents(
         documents,
         embedding=embedding_class(),
         session=session,

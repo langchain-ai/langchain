@@ -11,7 +11,11 @@ from typing import (
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.graph_stores.base import GraphStore, Node, nodes_to_documents
+from langchain_core.graph_vectorstores.base import (
+    GraphVectorStore,
+    Node,
+    nodes_to_documents,
+)
 
 from langchain_community.utilities.cassandra import SetupMode
 
@@ -19,7 +23,7 @@ if TYPE_CHECKING:
     from cassandra.cluster import Session
 
 
-class CassandraGraphStore(GraphStore):
+class CassandraGraphVectorStore(GraphVectorStore):
     def __init__(
         self,
         embedding: Embeddings,
@@ -92,27 +96,28 @@ class CassandraGraphStore(GraphStore):
 
     @classmethod
     def from_texts(
-        cls: Type["CassandraGraphStore"],
+        cls: Type["CassandraGraphVectorStore"],
         texts: Iterable[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         ids: Optional[Iterable[str]] = None,
         **kwargs: Any,
-    ) -> "CassandraGraphStore":
-        """Return CassandraGraphStore initialized from texts and embeddings."""
+    ) -> "CassandraGraphVectorStore":
+        """Return CassandraGraphVectorStore initialized from texts and embeddings."""
         store = cls(embedding, **kwargs)
         store.add_texts(texts, metadatas, ids=ids)
         return store
 
     @classmethod
     def from_documents(
-        cls: Type["CassandraGraphStore"],
+        cls: Type["CassandraGraphVectorStore"],
         documents: Iterable[Document],
         embedding: Embeddings,
         ids: Optional[Iterable[str]] = None,
         **kwargs: Any,
-    ) -> "CassandraGraphStore":
-        """Return CassandraGraphStore initialized from documents and embeddings."""
+    ) -> "CassandraGraphVectorStore":
+        """Return CassandraGraphVectorStore initialized from documents and
+        embeddings."""
         store = cls(embedding, **kwargs)
         store.add_documents(documents, ids=ids)
         return store
