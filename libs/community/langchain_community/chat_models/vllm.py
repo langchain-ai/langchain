@@ -4,6 +4,7 @@ from functools import partial
 from operator import itemgetter
 from typing import (
     Any,
+    Callable,
     Dict,
     List,
     Literal,
@@ -16,7 +17,7 @@ from typing import (
 )
 
 from langchain_core.language_models import LanguageModelInput
-from langchain_core.messages import MessageLikeRepresentation
+from langchain_core.messages import BaseMessage, MessageLikeRepresentation
 from langchain_core.output_parsers import (
     JsonOutputParser,
     PydanticOutputParser,
@@ -26,8 +27,14 @@ from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.tools import BaseTool
 
-from langchain_community.chat_models.openai import ChatOpenAI
+try:
+    from langchain_openai import ChatOpenAI
+except ImportError:
+    # Fall back to community version if openai is not installed
+    # The community version does not implement `bind_tools`.
+    from langchain_community.chat_models.openai import ChatOpenAI
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -151,6 +158,22 @@ class ChatVLLMOpenAI(ChatOpenAI):
         except Exception as e:
             raise ValueError(f"Unsupported input type {type(_input)}") from e
         return _input
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "none", "required", "any"], bool]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        try:
+            return super().bind_tools(tools, tool_choice=tool_choice, **kwargs)
+        except NotImplementedError:
+            raise ImportError(
+                "Please install `langchain-openai` to use the `bind_tools` method."
+            )
 
     def with_structured_output(  # type: ignore[override]
         self,
