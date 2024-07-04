@@ -237,6 +237,5 @@ def create_sql_agent(
         max_iterations=max_iterations,
         max_execution_time=max_execution_time,
         early_stopping_method=early_stopping_method,
-        handle_parsing_errors=True,
         **(agent_executor_kwargs or {}),
     )
