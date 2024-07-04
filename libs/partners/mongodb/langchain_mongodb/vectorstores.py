@@ -259,6 +259,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         include_ids: bool = False,
         **kwargs: Any,
     ) -> List[Tuple[Document, float]]:
+        """Core implementation."""
         params = {
             "queryVector": embedding,
             "path": self._embedding_key,
