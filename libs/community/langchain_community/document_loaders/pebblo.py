@@ -123,7 +123,7 @@ class PebbloSafeLoader(BaseLoader):
                 break
             self.docs = list((doc,))
             self.docs_with_id = self._index_docs()
-            classified_doc = self._classify_doc(self.docs)
+            classified_doc = self._classify_doc(self.docs_with_id)
             self._add_pebblo_specific_metadata(classified_doc)
             if self.load_semantic:
                 self.docs_with_id = self._add_semantic_to_docs(
