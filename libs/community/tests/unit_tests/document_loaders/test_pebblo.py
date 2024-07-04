@@ -62,14 +62,15 @@ def test_csv_loader_load_valid_data(mocker: MockerFixture) -> None:
         post=MockResponse(json_data={"data": ""}, status_code=200),
     )
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "test_nominal.csv")
+    full_file_path = os.path.abspath(file_path)
     expected_docs = [
         Document(
             page_content="column1: value1\ncolumn2: value2\ncolumn3: value3",
-            metadata={"source": file_path, "row": 0},
+            metadata={"source": file_path, "row": 0, "full_path": full_file_path},
         ),
         Document(
             page_content="column1: value4\ncolumn2: value5\ncolumn3: value6",
-            metadata={"source": file_path, "row": 1},
+            metadata={"source": file_path, "row": 1, "full_path": full_file_path},
         ),
     ]
 

@@ -38,10 +38,10 @@ optional = true
 optional = true
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.8"
+ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^1.7.1"
+mypy = "^1.10"
 langchain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]

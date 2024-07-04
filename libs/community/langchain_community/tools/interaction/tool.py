@@ -1,6 +1,5 @@
 """Tools for interacting with the user."""
 
-
 import warnings
 from typing import Any
 

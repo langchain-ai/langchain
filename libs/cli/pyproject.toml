@@ -29,7 +29,7 @@ pytest = "^7.4.2"
 pytest-watch = "^4.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
+ruff = "^0.5"
 
 [tool.poetry.group.test.dependencies]
 
@@ -62,9 +62,9 @@ _bump_2.uses = { version = "version" }
 
 _bump_1 = "poetry version patch"
 _check_formatting = "poetry run ruff format . --diff"
-_lint = "poetry run ruff ."
+_lint = "poetry run ruff check ."
 _format = "poetry run ruff format ."
-_lint_fix = "poetry run ruff . --fix"
+_lint_fix = "poetry run ruff check . --fix"
 
 [build-system]
 requires = ["poetry-core"]

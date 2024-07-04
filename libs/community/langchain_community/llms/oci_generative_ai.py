@@ -18,12 +18,10 @@ CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 class Provider(ABC):
     @property
     @abstractmethod
-    def stop_sequence_key(self) -> str:
-        ...
+    def stop_sequence_key(self) -> str: ...
 
     @abstractmethod
-    def completion_response_to_text(self, response: Any) -> str:
-        ...
+    def completion_response_to_text(self, response: Any) -> str: ...
 
 
 class CohereProvider(Provider):
@@ -144,13 +142,13 @@ class OCIGenAIBase(BaseModel, ABC):
                     oci_config=client_kwargs["config"]
                 )
             elif values["auth_type"] == OCIAuthType(3).name:
-                client_kwargs[
-                    "signer"
-                ] = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+                client_kwargs["signer"] = (
+                    oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+                )
             elif values["auth_type"] == OCIAuthType(4).name:
-                client_kwargs[
-                    "signer"
-                ] = oci.auth.signers.get_resource_principals_signer()
+                client_kwargs["signer"] = (
+                    oci.auth.signers.get_resource_principals_signer()
+                )
             else:
                 raise ValueError(
                     "Please provide valid value to auth_type, "

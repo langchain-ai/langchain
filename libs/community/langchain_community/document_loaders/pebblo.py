@@ -124,6 +124,7 @@ class PebbloSafeLoader(BaseLoader):
             self.docs = list((doc,))
             self.docs_with_id = self._index_docs()
             classified_doc = self._classify_doc(self.docs)
+            self._add_pebblo_specific_metadata(classified_doc)
             if self.load_semantic:
                 self.docs_with_id = self._add_semantic_to_docs(
                     self.docs_with_id, classified_doc
@@ -209,9 +210,9 @@ class PebbloSafeLoader(BaseLoader):
         if loading_end is True:
             payload["loading_end"] = "true"
             if "loader_details" in payload:
-                payload["loader_details"][
-                    "source_aggregate_size"
-                ] = self.source_aggregate_size
+                payload["loader_details"]["source_aggregate_size"] = (
+                    self.source_aggregate_size
+                )
         payload = Doc(**payload).dict(exclude_unset=True)
         # Raw payload to be sent to classifier
         if self.classifier_location == "local":
@@ -533,6 +534,11 @@ class PebbloSafeLoader(BaseLoader):
         """Add Pebblo specific metadata to documents."""
         for doc in self.docs_with_id:
             doc_metadata = doc.metadata
+            doc_metadata["full_path"] = get_full_path(
+                doc_metadata.get(
+                    "full_path", doc_metadata.get("source", self.source_path)
+                )
+            )
             doc_metadata["pb_id"] = doc.pb_id
             for doc_data in classified_docs:
                 if doc_data["pb_id"] == doc_metadata["pb_id"]:
