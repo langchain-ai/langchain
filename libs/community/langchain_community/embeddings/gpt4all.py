@@ -22,7 +22,7 @@ class GPT4AllEmbeddings(BaseModel, Embeddings):
             )
     """
 
-    model_name: str
+    model_name: Optional[str] = "all-MiniLM-L6-v2-f16.gguf"
     n_threads: Optional[int] = None
     device: Optional[str] = "cpu"
     gpt4all_kwargs: Optional[dict] = {}
