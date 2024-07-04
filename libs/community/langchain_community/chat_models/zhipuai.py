@@ -614,7 +614,16 @@ class ChatZhipuAI(BaseChatModel):
         ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """ """
+        """Bind tool-like objects to this chat model.
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Currently this can only be auto for this chat model.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice and tool_choice != "auto":
             raise ValueError("ChatZhipuAI currently only supports `auto` tool choice")
