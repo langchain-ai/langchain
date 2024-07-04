@@ -260,7 +260,7 @@ class ChatVLLMOpenAI(ChatOpenAI):
             "guided_choice",
             "guided_grammar",
         ] = "function_calling",
-        instructions: Optional[str] = None,
+        inject_instructions: bool = True,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _StructuredOutput]:
         """Model wrapper that returns outputs formatted to match the given schema.
@@ -284,9 +284,8 @@ class ChatVLLMOpenAI(ChatOpenAI):
             method: The `method` specifies how to guide the model. It can be
                 one of `function_calling`, `json_mode`, `guided_json`, `guided_regex`,
                 `guided_choice`, or `guided_grammar`. Defaults to `guided_json`.
-            instructions: The `instructions` specifies the instructions to insert into
-                the input. If not provided, it is automatically generated based on the
-                `schema`.
+            inject_instructions: Whether to inject instructions based on the schema
+                and method into the prompt.
 
         Returns:
             A Runnable that takes any ChatModel input and returns as output:
@@ -355,12 +354,14 @@ class ChatVLLMOpenAI(ChatOpenAI):
             )
 
         # Insert instructions into the input so the model knows the expected structure
-        # This is not (currently) handled by vLLM internally, so it is needed here.
-        if instructions is None:
+        # This is not (currently) handled by vLLM internally.
+        if inject_instructions:
             schema_str = self._get_schema_str(schema, method)
             instructions = self._get_instructions(schema_str, method)
-        insert_instructions = partial(
-            self._insert_instructions, instructions=instructions
-        )
+            insert_instructions = partial(
+                self._insert_instructions, instructions=instructions
+            )
 
-        return insert_instructions | structured_llm
+            return insert_instructions | structured_llm
+        else:
+            return structured_llm
