@@ -40,7 +40,7 @@ class ArxivLoader(BaseLoader):
             print(docs[0].metadata)
 
         .. code-block:: python
-
+        
             Understanding the Reasoning Ability of Language Models
             From the Perspective of Reasoning Paths Aggre
             {
@@ -90,7 +90,7 @@ class ArxivLoader(BaseLoader):
             print(docs[0].metadata)
 
         .. code-block:: python
-        
+
             Understanding the Reasoning Ability of Language Models
             From the Perspective of Reasoning Paths Aggre
             {
