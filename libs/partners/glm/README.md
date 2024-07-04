@@ -24,7 +24,7 @@ and text-to-image models) to accomplish intricate tasks.
 | [utils](https://github.com/MetaGLM/langchain-zhipuai/tree/main/langchain_glm/utils) | Various session tools.                                         |
 
 
-## 快速使用
+## Usage
 
 - Install from the repository
   https://github.com/MetaGLM/langchain-glm/releases
