@@ -322,6 +322,9 @@ class HuggingFacePipeline(BaseLLM):
 
         pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
         skip_prompt = kwargs.get("skip_prompt", True)
+
+        if stop is not None:
+            stop = self.pipeline.tokenizer.convert_tokens_to_ids(stop)
         stopping_ids_list = stop or []
 
         class StopOnTokens(StoppingCriteria):
