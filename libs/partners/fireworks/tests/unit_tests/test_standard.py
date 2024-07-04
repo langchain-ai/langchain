@@ -3,7 +3,9 @@
 from typing import Type
 
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.unit_tests import ChatModelUnitTests
+from langchain_standard_tests.unit_tests import (  # type: ignore[import-not-found]
+    ChatModelUnitTests,  # type: ignore[import-not-found]
+)
 
 from langchain_fireworks import ChatFireworks
 
