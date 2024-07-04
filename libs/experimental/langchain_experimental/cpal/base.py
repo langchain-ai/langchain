@@ -1,6 +1,7 @@
 """
 CPAL Chain and its subchains
 """
+
 from __future__ import annotations
 
 import json
@@ -40,9 +41,9 @@ class _BaseStoryElementChain(Chain):
     chain: LLMChain
     input_key: str = Constant.narrative_input.value  #: :meta private:
     output_key: str = Constant.chain_answer.value  #: :meta private:
-    pydantic_model: ClassVar[
-        Optional[Type[pydantic.BaseModel]]
-    ] = None  #: :meta private:
+    pydantic_model: ClassVar[Optional[Type[pydantic.BaseModel]]] = (
+        None  #: :meta private:
+    )
     template: ClassVar[Optional[str]] = None  #: :meta private:
 
     @classmethod

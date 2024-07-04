@@ -1,4 +1,5 @@
 """Apache Cassandra database wrapper."""
+
 from __future__ import annotations
 
 import re

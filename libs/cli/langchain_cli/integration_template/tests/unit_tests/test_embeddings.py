@@ -1,6 +1,5 @@
 """Test embedding model integration."""
 
-
 from __module_name__.embeddings import __ModuleName__Embeddings
 
 
