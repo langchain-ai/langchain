@@ -254,7 +254,7 @@ class HuggingFacePipeline(BaseLLM):
     def _generate(
         self,
         prompts: List[str],
-        stop: Optional[List[str, int]] = None,
+        stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
