@@ -1,6 +1,5 @@
 """Test the criteria eval chain."""
 
-
 import pytest
 
 from langchain.evaluation.criteria.eval_chain import (

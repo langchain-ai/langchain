@@ -35,7 +35,6 @@ if TYPE_CHECKING:
 # This is for backwards compatibility
 # We can remove after `langchain` stops importing it
 _response_to_generation = None
-completion_with_retry = None
 stream_completion_with_retry = None
 
 

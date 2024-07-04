@@ -260,8 +260,8 @@ class OllamaFunctions(ChatOllama):
             )
         llm = self.bind_tools(tools=[schema], format="json")
         if is_pydantic_schema:
-            output_parser: OutputParserLike = PydanticOutputParser(
-                pydantic_object=schema
+            output_parser: OutputParserLike = PydanticOutputParser(  # type: ignore[type-var]
+                pydantic_object=schema  # type: ignore[arg-type]
             )
         else:
             output_parser = JsonOutputParser()

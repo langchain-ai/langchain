@@ -12,6 +12,7 @@ from langchain_core.messages import (
     FunctionMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    RemoveMessage,
     SystemMessage,
     ToolCall,
     ToolCallChunk,
@@ -649,6 +650,7 @@ def test_convert_to_messages() -> None:
                 ],
             },
             {"role": "tool", "tool_call_id": "tool_id", "content": "Hi!"},
+            {"role": "remove", "id": "message_to_remove", "content": ""},
         ]
     ) == [
         SystemMessage(content="You are a helpful assistant."),
@@ -668,6 +670,7 @@ def test_convert_to_messages() -> None:
             tool_calls=[ToolCall(name="greet", args={"name": "Jane"}, id="tool_id")],
         ),
         ToolMessage(tool_call_id="tool_id", content="Hi!"),
+        RemoveMessage(id="message_to_remove"),
     ]
 
     # tuples
