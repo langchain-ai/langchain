@@ -109,11 +109,6 @@ CHAT_MODEL_FEAT_TABLE = {
         "package": "langchain-community",
         "link": "/docs/integrations/chat/llamacpp",
     },
-    "ChatWatsonx": {
-        "tool_calling": True,
-        "package": "langchain-ibm",
-        "link": "/docs/integrations/chat/ibm_watsonx",
-    },
 }
 
 for feats in CHAT_MODEL_FEAT_TABLE.values():
