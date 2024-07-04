@@ -1,10 +1,9 @@
 import math
 import os
-from typing import Iterable, List, Type
+from typing import Iterable, List, Optional, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_core.graph_vectorstores.base import METADATA_CONTENT_ID_KEY
 from langchain_core.graph_vectorstores.links import METADATA_LINKS_KEY, Link
 
 from langchain_community.graph_vectorstores import CassandraGraphVectorStore
@@ -105,8 +104,8 @@ class AngularTwoDimensionalEmbeddings(Embeddings):
             return [0.0, 0.0]
 
 
-def _result_ids(docs: Iterable[Document]) -> List[str]:
-    return list(map(lambda d: d.metadata[METADATA_CONTENT_ID_KEY], docs))
+def _result_ids(docs: Iterable[Document]) -> List[Optional[str]]:
+    return [doc.id for doc in docs]
 
 
 def test_mmr_traversal() -> None:
@@ -132,33 +131,31 @@ def test_mmr_traversal() -> None:
     store = _get_graph_store(AngularTwoDimensionalEmbeddings)
 
     v0 = Document(
+        id="v0",
         page_content="-0.124",
         metadata={
-            "content_id": "v0",
             METADATA_LINKS_KEY: [
                 Link.outgoing(kind="explicit", tag="link"),
             ],
         },
     )
     v1 = Document(
+        id="v1",
         page_content="+0.127",
-        metadata={
-            "content_id": "v1",
-        },
     )
     v2 = Document(
+        id="v2",
         page_content="+0.25",
         metadata={
-            "content_id": "v2",
             METADATA_LINKS_KEY: [
                 Link.incoming(kind="explicit", tag="link"),
             ],
         },
     )
     v3 = Document(
+        id="v3",
         page_content="+1.0",
         metadata={
-            "content_id": "v3",
             METADATA_LINKS_KEY: [
                 Link.incoming(kind="explicit", tag="link"),
             ],
@@ -191,18 +188,18 @@ def test_write_retrieve_keywords() -> None:
     from langchain_openai import OpenAIEmbeddings
 
     greetings = Document(
+        id="greetings",
         page_content="Typical Greetings",
         metadata={
-            "content_id": "greetings",
             METADATA_LINKS_KEY: [
                 Link.incoming(kind="parent", tag="parent"),
             ],
         },
     )
     doc1 = Document(
+        id="doc1",
         page_content="Hello World",
         metadata={
-            "content_id": "doc1",
             METADATA_LINKS_KEY: [
                 Link.outgoing(kind="parent", tag="parent"),
                 Link.bidir(kind="kw", tag="greeting"),
@@ -211,9 +208,9 @@ def test_write_retrieve_keywords() -> None:
         },
     )
     doc2 = Document(
+        id="doc2",
         page_content="Hello Earth",
         metadata={
-            "content_id": "doc2",
             METADATA_LINKS_KEY: [
                 Link.outgoing(kind="parent", tag="parent"),
                 Link.bidir(kind="kw", tag="greeting"),
@@ -252,9 +249,9 @@ def test_metadata() -> None:
     store.add_documents(
         [
             Document(
+                id="a",
                 page_content="A",
                 metadata={
-                    METADATA_CONTENT_ID_KEY: "a",
                     METADATA_LINKS_KEY: [
                         Link.incoming(kind="hyperlink", tag="http://a"),
                         Link.bidir(kind="other", tag="foo"),
@@ -266,9 +263,9 @@ def test_metadata() -> None:
     )
     results = store.similarity_search("A")
     assert len(results) == 1
+    assert results[0].id == "a"
     metadata = results[0].metadata
     assert metadata["other"] == "some other field"
-    assert metadata[METADATA_CONTENT_ID_KEY] == "a"
     assert set(metadata[METADATA_LINKS_KEY]) == {
         Link.incoming(kind="hyperlink", tag="http://a"),
         Link.bidir(kind="other", tag="foo"),

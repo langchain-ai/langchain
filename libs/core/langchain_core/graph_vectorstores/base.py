@@ -31,9 +31,6 @@ def _has_next(iterator: Iterator) -> bool:
     return next(iterator, sentinel) is not sentinel
 
 
-METADATA_CONTENT_ID_KEY = "content_id"
-
-
 class Node(Serializable):
     """Node in the GraphVectorStore."""
 
@@ -61,7 +58,6 @@ def _texts_to_nodes(
             raise ValueError("texts iterable longer than metadatas")
         try:
             _id = next(ids_it) if ids_it else None
-            _id = _id or _metadata.pop(METADATA_CONTENT_ID_KEY, None)
         except StopIteration:
             raise ValueError("texts iterable longer than ids")
 
@@ -87,7 +83,7 @@ def _documents_to_nodes(
     for doc in documents:
         try:
             _id = next(ids_it) if ids_it else None
-            _id = _id or doc.metadata.pop(METADATA_CONTENT_ID_KEY, None)
+            _id = _id or doc.id
         except StopIteration:
             raise ValueError("documents iterable longer than ids")
         metadata = doc.metadata.copy()
@@ -107,7 +103,6 @@ def _documents_to_nodes(
 def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
     for node in nodes:
         metadata = node.metadata.copy()
-        metadata[METADATA_CONTENT_ID_KEY] = node.id
         metadata[METADATA_LINKS_KEY] = [
             # Convert the core `Link` (from the node) back to the local `Link`.
             Link(kind=link.kind, direction=link.direction, tag=link.tag)
@@ -115,6 +110,7 @@ def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
         ]
 
         yield Document(
+            id=node.id,
             page_content=node.text,
             metadata=metadata,
         )
