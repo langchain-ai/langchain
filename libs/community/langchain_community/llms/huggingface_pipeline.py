@@ -1,13 +1,12 @@
-from __future__ import annotations
+from __future__ import annotations  # type: ignore[import-not-found]
 
 import importlib.util
 import logging
-from typing import Any, List, Mapping, Optional
+from typing import Any, Iterator, List, Mapping, Optional
 
-from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
-from langchain_core.outputs import Generation, LLMResult
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Extra
 
 DEFAULT_MODEL_ID = "gpt2"
@@ -23,11 +22,6 @@ DEFAULT_BATCH_SIZE = 4
 logger = logging.getLogger(__name__)
 
 
-@deprecated(
-    since="0.0.37",
-    removal="0.3",
-    alternative_import="langchain_huggingface.HuggingFacePipeline",
-)
 class HuggingFacePipeline(BaseLLM):
     """HuggingFace Pipeline API.
 
@@ -39,7 +33,7 @@ class HuggingFacePipeline(BaseLLM):
     Example using from_model_id:
         .. code-block:: python
 
-            from langchain_community.llms import HuggingFacePipeline
+            from langchain_huggingface import HuggingFacePipeline
             hf = HuggingFacePipeline.from_model_id(
                 model_id="gpt2",
                 task="text-generation",
@@ -48,7 +42,7 @@ class HuggingFacePipeline(BaseLLM):
     Example passing pipeline in directly:
         .. code-block:: python
 
-            from langchain_community.llms import HuggingFacePipeline
+            from langchain_huggingface import HuggingFacePipeline
             from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
             model_id = "gpt2"
@@ -90,15 +84,15 @@ class HuggingFacePipeline(BaseLLM):
     ) -> HuggingFacePipeline:
         """Construct the pipeline object from model_id and task."""
         try:
-            from transformers import (
+            from transformers import (  # type: ignore[import]
                 AutoModelForCausalLM,
                 AutoModelForSeq2SeqLM,
                 AutoTokenizer,
             )
-            from transformers import pipeline as hf_pipeline
+            from transformers import pipeline as hf_pipeline  # type: ignore[import]
 
         except ImportError:
-            raise ImportError(
+            raise ValueError(
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
@@ -110,10 +104,12 @@ class HuggingFacePipeline(BaseLLM):
             if task == "text-generation":
                 if backend == "openvino":
                     try:
-                        from optimum.intel.openvino import OVModelForCausalLM
+                        from optimum.intel.openvino import (  # type: ignore[import]
+                            OVModelForCausalLM,
+                        )
 
                     except ImportError:
-                        raise ImportError(
+                        raise ValueError(
                             "Could not import optimum-intel python package. "
                             "Please install it with: "
                             "pip install 'optimum[openvino,nncf]' "
@@ -139,7 +135,7 @@ class HuggingFacePipeline(BaseLLM):
                         from optimum.intel.openvino import OVModelForSeq2SeqLM
 
                     except ImportError:
-                        raise ImportError(
+                        raise ValueError(
                             "Could not import optimum-intel python package. "
                             "Please install it with: "
                             "pip install 'optimum[openvino,nncf]' "
@@ -165,7 +161,7 @@ class HuggingFacePipeline(BaseLLM):
                     f"currently only {VALID_TASKS} are supported"
                 )
         except ImportError as e:
-            raise ImportError(
+            raise ValueError(
                 f"Could not load the {task} model due to missing dependencies."
             ) from e
 
@@ -303,3 +299,59 @@ class HuggingFacePipeline(BaseLLM):
         return LLMResult(
             generations=[[Generation(text=text)] for text in text_generations]
         )
+
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        from threading import Thread
+
+        import torch
+        from transformers import (
+            StoppingCriteria,
+            StoppingCriteriaList,
+            TextIteratorStreamer,
+        )
+
+        pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
+        stopping_ids_list = stop or []
+
+        class StopOnTokens(StoppingCriteria):
+            def __call__(
+                self,
+                input_ids: torch.LongTensor,
+                scores: torch.FloatTensor,
+                **kwargs: Any,
+            ) -> bool:
+                for stop_id in stopping_ids_list:
+                    if input_ids[0][-1] == stop_id:
+                        return True
+                return False
+
+        stopping_criteria = StoppingCriteriaList([StopOnTokens()])
+
+        inputs = self.pipeline.tokenizer(prompt, return_tensors="pt")
+        streamer = TextIteratorStreamer(
+            self.pipeline.tokenizer,
+            timeout=60.0,
+            skip_prompt=True,
+            skip_special_tokens=True,
+        )
+        generation_kwargs = dict(
+            inputs,
+            streamer=streamer,
+            stopping_criteria=stopping_criteria,
+            **pipeline_kwargs,
+        )
+        t1 = Thread(target=self.pipeline.model.generate, kwargs=generation_kwargs)
+        t1.start()
+
+        for char in streamer:
+            chunk = GenerationChunk(text=char)
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+
+            yield chunk
