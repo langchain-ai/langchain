@@ -78,7 +78,7 @@ class SQLiteVec(VectorStore):
         self._connection.execute(
             f"""
                 CREATE VIRTUAL TABLE IF NOT EXISTS vec_{self._table} USING vec0(
-                  text_embedding float({self.get_dimensionality()})
+                  text_embedding FLOAT[{self.get_dimensionality()}]
                 );
             """
         )
@@ -143,9 +143,8 @@ class SQLiteVec(VectorStore):
             FROM {self._table} e
             INNER JOIN vec_{self._table} v on v.rowid = e.rowid  
             WHERE v.text_embedding MATCH '{json.dumps(embedding)}'
+            AND k = {k}
             ORDER BY distance
-            LIMIT {k}
-            )
         """
         cursor = self._connection.cursor()
         cursor.execute(sql_query)
