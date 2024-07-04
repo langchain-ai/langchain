@@ -7,12 +7,24 @@ import logging
 import time
 from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     agenerate_from_stream,
@@ -32,7 +44,10 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
 from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 logger = logging.getLogger(__name__)
 
@@ -589,3 +604,20 @@ class ChatZhipuAI(BaseChatModel):
 
                     if finish_reason is not None:
                         break
+
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "any", "none"], bool]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """ """
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if tool_choice and tool_choice != "auto":
+            raise ValueError("ChatZhipuAI currently only supports `auto` tool choice")
+        elif tool_choice and tool_choice == "auto":
+            kwargs["tool_choice"] = tool_choice
+        return self.bind(tools=formatted_tools, **kwargs)
