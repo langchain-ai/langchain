@@ -24,7 +24,6 @@ from typing import (
 )
 from uuid import uuid4
 
-from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -512,7 +511,8 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
             **kwargs,
         )
 
-    @overload
+    # TODO: Fix typing.
+    @overload  # type: ignore[override]
     def with_structured_output(
         self,
         schema: Optional[_DictOrPydanticClass] = None,
@@ -534,11 +534,11 @@ class GigaChat(_BaseGigaChat, BaseChatModel):
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         ...
 
-    @beta()
     def with_structured_output(
         self,
         schema: Optional[_DictOrPydanticClass] = None,
         *,
+        method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
