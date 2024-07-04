@@ -9,6 +9,8 @@ from urllib.parse import urljoin
 
 import requests
 
+from langchain_core._api.deprecation import deprecated
+
 DEFAULT_REF = os.environ.get("LANGCHAIN_HUB_DEFAULT_REF", "master")
 URL_BASE = os.environ.get(
     "LANGCHAIN_HUB_URL_BASE",
@@ -19,6 +21,15 @@ HUB_PATH_RE = re.compile(r"lc(?P<ref>@[^:]+)?://(?P<path>.*)")
 T = TypeVar("T")
 
 
+@deprecated(
+    since="0.1.30",
+    removal="0.3",
+    message=(
+        "Using the hwchase17/langchain-hub "
+        "repo for prompts is deprecated. Please use "
+        "<https://smith.langchain.com/hub> instead."
+    ),
+)
 def try_load_from_hub(
     path: Union[str, Path],
     loader: Callable[[str], T],

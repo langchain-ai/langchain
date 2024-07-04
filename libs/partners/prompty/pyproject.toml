@@ -1,18 +1,21 @@
 [tool.poetry]
-name = "langchain-prompty"
+name = "gigachain-prompty"
 version = "0.0.2"
-description = "An integration package connecting Prompty and LangChain"
+description = "An integration package connecting Prompty and GigaChain"
 authors = []
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
+repository = "https://github.com/ai-forever/gigachain"
 license = "MIT"
+packages = [
+    {include = "langchain_prompty"}
+]
 
 [tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/prompty"
+"Source Code" = "https://github.com/ai-forever/gigachain/tree/master/libs/partners/prompty"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.52,<0.3"
+gigachain-core = ">=0.1.52,<0.3"
 pyyaml = "^6.0.1"
 types-pyyaml = "^6.0.12.20240311"
 
@@ -26,9 +29,9 @@ pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-langchain-core = { path = "../../core", develop = true }
-langchain = { path = "../../langchain", develop = true }
-langchain-text-splitters = { path = "../../text-splitters", develop = true }
+gigachain-core = { path = "../../core", develop = true }
+gigachain = { path = "../../langchain", develop = true }
+gigachain-text-splitters = { path = "../../text-splitters", develop = true }
 
 [tool.poetry.group.codespell]
 optional = true
@@ -49,13 +52,13 @@ ruff = "^0.1.5"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
-langchain-core = { path = "../../core", develop = true }
+gigachain-core = { path = "../../core", develop = true }
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-langchain-core = { path = "../../core", develop = true }
+gigachain-core = { path = "../../core", develop = true }
 types-pyyaml = "^6.0.12.20240311"
 
 [tool.ruff]

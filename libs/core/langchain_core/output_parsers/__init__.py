@@ -25,6 +25,11 @@ from langchain_core.output_parsers.list import (
     MarkdownListOutputParser,
     NumberedListOutputParser,
 )
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    JsonOutputToolsParser,
+    PydanticToolsParser,
+)
 from langchain_core.output_parsers.pydantic import PydanticOutputParser
 from langchain_core.output_parsers.string import StrOutputParser
 from langchain_core.output_parsers.transform import (
@@ -48,4 +53,7 @@ __all__ = [
     "XMLOutputParser",
     "JsonOutputParser",
     "PydanticOutputParser",
+    "JsonOutputToolsParser",
+    "JsonOutputKeyToolsParser",
+    "PydanticToolsParser",
 ]

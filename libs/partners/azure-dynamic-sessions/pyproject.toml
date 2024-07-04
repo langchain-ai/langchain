@@ -1,18 +1,21 @@
 [tool.poetry]
-name = "langchain-azure-dynamic-sessions"
+name = "gigachain-azure-dynamic-sessions"
 version = "0.1.0"
-description = "An integration package connecting Azure Container Apps dynamic sessions and LangChain"
+description = "An integration package connecting Azure Container Apps dynamic sessions and GigaChain"
 authors = []
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
+repository = "https://github.com/ai-forever/gigachain"
 license = "MIT"
+packages = [
+    {include = "langchain_azure_dynamic_sessions"}
+]
 
 [tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/azure-dynamic-sessions"
+"Source Code" = "https://github.com/ai-forever/gigachain/tree/master/libs/partners/azure-dynamic-sessions"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.52,<0.3"
+gigachain-core = ">=0.1.52,<0.3"
 azure-identity = "^1.16.0"
 requests = "^2.31.0"
 
@@ -26,7 +29,7 @@ pytest-mock = "^3.10.0"
 syrupy = "^4.0.2"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
-langchain-core = { path = "../../core", develop = true }
+gigachain-core = { path = "../../core", develop = true }
 python-dotenv = "^1.0.1"
 
 [tool.poetry.group.test_integration]
@@ -52,24 +55,32 @@ pytest = "^7.3.0"
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^0.991"
-langchain-core = { path = "../../core", develop = true }
+gigachain-core = { path = "../../core", develop = true }
 types-requests = "^2.31.0.20240406"
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-langchain-core = { path = "../../core", develop = true }
+gigachain-core = { path = "../../core", develop = true }
 ipykernel = "^6.29.4"
-langchain-openai = { path = "../openai", develop = true }
+gigachain-openai = { path = "../openai", develop = true }
 langchainhub = "^0.1.15"
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
   "E", # pycodestyle
   "F", # pyflakes
   "I", # isort
+  "D", # pydocstyle
+
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]  # ignore docstring checks for tests
 
 [tool.mypy]
 disallow_untyped_defs = "True"

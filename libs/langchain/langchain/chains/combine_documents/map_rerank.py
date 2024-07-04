@@ -106,7 +106,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
             _output_keys += self.metadata_keys
         return _output_keys
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_llm_output(cls, values: Dict) -> Dict:
         """Validate that the combine chain outputs a dictionary."""
         output_parser = values["llm_chain"].prompt.output_parser
@@ -131,8 +131,11 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     @root_validator(pre=True)
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
         """Get default document variable name, if not provided."""
+        if "llm_chain" not in values:
+            raise ValueError("llm_chain must be provided")
+
+        llm_chain_variables = values["llm_chain"].prompt.input_variables
         if "document_variable_name" not in values:
-            llm_chain_variables = values["llm_chain"].prompt.input_variables
             if len(llm_chain_variables) == 1:
                 values["document_variable_name"] = llm_chain_variables[0]
             else:
@@ -141,7 +144,6 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
                     "multiple llm_chain input_variables"
                 )
         else:
-            llm_chain_variables = values["llm_chain"].prompt.input_variables
             if values["document_variable_name"] not in llm_chain_variables:
                 raise ValueError(
                     f"document_variable_name {values['document_variable_name']} was "

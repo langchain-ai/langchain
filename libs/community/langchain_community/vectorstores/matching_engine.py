@@ -491,7 +491,11 @@ class MatchingEngine(VectorStore):
 
     @classmethod
     def _create_index_by_id(
-        cls, index_id: str, project_id: str, region: str, credentials: "Credentials"
+        cls,
+        index_id: str,
+        project_id: str,
+        region: str,
+        credentials: Optional["Credentials"],
     ) -> MatchingEngineIndex:
         """Creates a MatchingEngineIndex object by id.
 
@@ -517,7 +521,11 @@ class MatchingEngine(VectorStore):
 
     @classmethod
     def _create_endpoint_by_id(
-        cls, endpoint_id: str, project_id: str, region: str, credentials: "Credentials"
+        cls,
+        endpoint_id: str,
+        project_id: str,
+        region: str,
+        credentials: Optional["Credentials"],
     ) -> MatchingEngineIndexEndpoint:
         """Creates a MatchingEngineIndexEndpoint object by id.
 
@@ -543,7 +551,7 @@ class MatchingEngine(VectorStore):
 
     @classmethod
     def _get_gcs_client(
-        cls, credentials: "Credentials", project_id: str
+        cls, credentials: Optional["Credentials"], project_id: str
     ) -> "storage.Client":
         """Lazily creates a GCS client.
 
@@ -565,7 +573,7 @@ class MatchingEngine(VectorStore):
         project_id: str,
         region: str,
         gcs_bucket_name: str,
-        credentials: "Credentials",
+        credentials: Optional["Credentials"],
     ) -> None:
         """Configures the aiplatform library.
 

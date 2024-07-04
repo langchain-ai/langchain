@@ -15,6 +15,8 @@ from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
 
 class WatsonxEmbeddings(BaseModel, LangChainEmbeddings):
+    """IBM WatsonX.ai embedding models."""
+
     model_id: str = ""
     """Type of model to use."""
 

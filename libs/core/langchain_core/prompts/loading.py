@@ -1,8 +1,9 @@
 """Load prompts."""
+
 import json
 import logging
 from pathlib import Path
-from typing import Callable, Dict, Union
+from typing import Callable, Dict, Optional, Union
 
 import yaml
 
@@ -134,7 +135,9 @@ def load_prompt(path: Union[str, Path]) -> BasePromptTemplate:
         return _load_prompt_from_file(path)
 
 
-def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
+def _load_prompt_from_file(
+    file: Union[str, Path], encoding: Optional[str] = None
+) -> BasePromptTemplate:
     """Load prompt from file."""
     # Convert file to a Path object.
     if isinstance(file, str):
@@ -143,10 +146,10 @@ def _load_prompt_from_file(file: Union[str, Path]) -> BasePromptTemplate:
         file_path = file
     # Load from either json or yaml.
     if file_path.suffix == ".json":
-        with open(file_path, encoding="utf-8") as f:
+        with open(file_path, encoding=encoding) as f:
             config = json.load(f)
     elif file_path.suffix.endswith((".yaml", ".yml")):
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, mode="r", encoding=encoding) as f:
             config = yaml.safe_load(f)
     else:
         raise ValueError(f"Got unsupported file type {file_path.suffix}")

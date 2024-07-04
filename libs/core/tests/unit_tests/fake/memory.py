@@ -17,6 +17,8 @@ class ChatMessageHistory(BaseChatMessageHistory, BaseModel):
 
     def add_message(self, message: BaseMessage) -> None:
         """Add a self-created message to the store"""
+        if not isinstance(message, BaseMessage):
+            raise ValueError
         self.messages.append(message)
 
     def clear(self) -> None:
