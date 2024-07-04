@@ -96,8 +96,7 @@ CHAT_MODEL_FEAT_TABLE = {
     "vLLM Chat": {
         "local": True,
         "json_mode": True,
-        "structured_output": True,
-        "tool_calling": False,
+        "tool_calling": True,
         "multimodal": True,
         "package": "langchain-community",
         "link": "/docs/integrations/chat/vllm/",
@@ -116,8 +115,7 @@ CHAT_MODEL_FEAT_TABLE = {
 }
 
 for feats in CHAT_MODEL_FEAT_TABLE.values():
-    if "structured_output" not in feats:
-        feats["structured_output"] = feats.get("tool_calling", False)
+    feats["structured_output"] = feats.get("tool_calling", False)
 
 
 LLM_TEMPLATE = """\
