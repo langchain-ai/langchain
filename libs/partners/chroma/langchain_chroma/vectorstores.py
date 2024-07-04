@@ -2,6 +2,7 @@
 
 It contains the Chroma class which is a vector store for handling various tasks.
 """
+
 from __future__ import annotations
 
 import base64

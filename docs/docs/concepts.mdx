@@ -776,13 +776,53 @@ a few ways to get structured output from models in LangChain.
 
 #### `.with_structured_output()`
 
-For convenience, some LangChain chat models support a `.with_structured_output()` method.
-This method only requires a schema as input, and returns a dict or Pydantic object.
+For convenience, some LangChain chat models support a [`.with_structured_output()`](/docs/how_to/structured_output/#the-with_structured_output-method)
+method. This method only requires a schema as input, and returns a dict or Pydantic object.
 Generally, this method is only present on models that support one of the more advanced methods described below,
 and will use one of them under the hood. It takes care of importing a suitable output parser and
 formatting the schema in the right format for the model.
 
+Here's an example:
+
+```python
+from typing import Optional
+
+from langchain_core.pydantic_v1 import BaseModel, Field
+
+
+class Joke(BaseModel):
+    """Joke to tell user."""
+
+    setup: str = Field(description="The setup of the joke")
+    punchline: str = Field(description="The punchline to the joke")
+    rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
+structured_llm = llm.with_structured_output(Joke)
+
+structured_llm.invoke("Tell me a joke about cats")
+```
+
+```
+Joke(setup='Why was the cat sitting on the computer?', punchline='To keep an eye on the mouse!', rating=None)
+
+```
+
+We recommend this method as a starting point when working with structured output:
+
+- It uses other model-specific features under the hood, without the need to import an output parser.
+- For the models that use tool calling, no special prompting is needed.
+- If multiple underlying techniques are supported, you can supply a `method` parameter to
+[toggle which one is used](/docs/how_to/structured_output/#advanced-specifying-the-method-for-structuring-outputs).
+
+You may want or need to use other techiniques if:
+
+- The chat model you are using does not support tool calling.
+- You are working with very complex schemas and the model is having trouble generating outputs that conform.
+
 For more information, check out this [how-to guide](/docs/how_to/structured_output/#the-with_structured_output-method).
+
+You can also check out [this table](/docs/integrations/chat/#advanced-features) for a list of models that support
+`with_structured_output()`.
 
 #### Raw prompting
 
@@ -806,9 +846,8 @@ for smooth parsing can be surprisingly difficult and model-specific.
 Some may be better at interpreting [JSON schema](https://json-schema.org/), others may be best with TypeScript definitions,
 and still others may prefer XML.
 
-While we'll next go over some ways that you can take advantage of features offered by
-model providers to increase reliability, prompting techniques remain important for tuning your
-results no matter what method you choose.
+While features offered by model providers may increase reliability, prompting techniques remain important for tuning your
+results no matter which method you choose.
 
 #### JSON mode
 <span data-heading-keywords="json mode"></span>
@@ -818,10 +857,11 @@ Some models, such as [Mistral](/docs/integrations/chat/mistralai/), [OpenAI](/do
 support a feature called **JSON mode**, usually enabled via config.
 
 When enabled, JSON mode will constrain the model's output to always be some sort of valid JSON.
-Often they require some custom prompting, but it's usually much less burdensome and along the lines of,
-`"you must always return JSON"`, and the [output is easier to parse](/docs/how_to/output_parser_json/).
+Often they require some custom prompting, but it's usually much less burdensome than completely raw prompting and
+more along the lines of, `"you must always return JSON"`. The [output also generally easier to parse](/docs/how_to/output_parser_json/).
 
-It's also generally simpler and more commonly available than tool calling.
+It's also generally simpler to use directly and more commonly available than tool calling, and can give
+more flexibility around prompting and shaping results than tool calling.
 
 Here's an example:
 
