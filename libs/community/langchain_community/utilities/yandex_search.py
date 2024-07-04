@@ -97,7 +97,7 @@ class YandexSearchAPIClient:
             from parsel import Selector
         except ImportError as e:
             raise ImportError(
-                "Could not import httpx python package. "
+                "Could not import parsel python package. "
                 "Please install it with `pip install parsel`."
             ) from e
 
