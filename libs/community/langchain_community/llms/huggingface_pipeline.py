@@ -1,9 +1,10 @@
-from __future__ import annotations  # type: ignore[import-not-found]
+from __future__ import annotations
 
 import importlib.util
 import logging
 from typing import Any, Iterator, List, Mapping, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
@@ -22,6 +23,11 @@ DEFAULT_BATCH_SIZE = 4
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    since="0.0.37",
+    removal="0.3",
+    alternative_import="langchain_huggingface.HuggingFacePipeline",
+)
 class HuggingFacePipeline(BaseLLM):
     """HuggingFace Pipeline API.
 
@@ -33,7 +39,7 @@ class HuggingFacePipeline(BaseLLM):
     Example using from_model_id:
         .. code-block:: python
 
-            from langchain_huggingface import HuggingFacePipeline
+            from langchain_community.llms import HuggingFacePipeline
             hf = HuggingFacePipeline.from_model_id(
                 model_id="gpt2",
                 task="text-generation",
@@ -42,7 +48,7 @@ class HuggingFacePipeline(BaseLLM):
     Example passing pipeline in directly:
         .. code-block:: python
 
-            from langchain_huggingface import HuggingFacePipeline
+            from langchain_community.llms import HuggingFacePipeline
             from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
             model_id = "gpt2"
@@ -84,15 +90,15 @@ class HuggingFacePipeline(BaseLLM):
     ) -> HuggingFacePipeline:
         """Construct the pipeline object from model_id and task."""
         try:
-            from transformers import (  # type: ignore[import]
+            from transformers import (
                 AutoModelForCausalLM,
                 AutoModelForSeq2SeqLM,
                 AutoTokenizer,
             )
-            from transformers import pipeline as hf_pipeline  # type: ignore[import]
+            from transformers import pipeline as hf_pipeline
 
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
@@ -104,12 +110,10 @@ class HuggingFacePipeline(BaseLLM):
             if task == "text-generation":
                 if backend == "openvino":
                     try:
-                        from optimum.intel.openvino import (  # type: ignore[import]
-                            OVModelForCausalLM,
-                        )
+                        from optimum.intel.openvino import OVModelForCausalLM
 
                     except ImportError:
-                        raise ValueError(
+                        raise ImportError(
                             "Could not import optimum-intel python package. "
                             "Please install it with: "
                             "pip install 'optimum[openvino,nncf]' "
@@ -135,7 +139,7 @@ class HuggingFacePipeline(BaseLLM):
                         from optimum.intel.openvino import OVModelForSeq2SeqLM
 
                     except ImportError:
-                        raise ValueError(
+                        raise ImportError(
                             "Could not import optimum-intel python package. "
                             "Please install it with: "
                             "pip install 'optimum[openvino,nncf]' "
@@ -161,7 +165,7 @@ class HuggingFacePipeline(BaseLLM):
                     f"currently only {VALID_TASKS} are supported"
                 )
         except ImportError as e:
-            raise ValueError(
+            raise ImportError(
                 f"Could not load the {task} model due to missing dependencies."
             ) from e
 
