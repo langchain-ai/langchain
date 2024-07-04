@@ -137,6 +137,7 @@ def test_uses_actual_secret_value_from_secret_str() -> None:
 
 def test_chat_baichuan_with_base_url() -> None:
     chat = ChatBaichuan(  # type: ignore[call-arg]
-        api_key="your-api-key", base_url="https://exmaple.com"  # type: ignore[arg-type]
+        api_key="your-api-key",  # type: ignore[arg-type]
+        base_url="https://exmaple.com",  # type: ignore[arg-type]
     )
     assert chat.baichuan_api_base == "https://exmaple.com"
