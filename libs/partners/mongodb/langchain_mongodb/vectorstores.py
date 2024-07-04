@@ -413,7 +413,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         embedding: Embeddings,
         metadatas: Optional[List[Dict]] = None,
         collection: Optional[Collection[MongoDBDocumentType]] = None,
-        ids: List[str] = None,
+        ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> MongoDBAtlasVectorSearch:
         """Construct a `MongoDB Atlas Vector Search` vector store from raw documents.

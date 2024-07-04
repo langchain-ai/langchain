@@ -155,7 +155,9 @@ class TestMongoDBAtlasVectorSearch:
         # Check for the presence of the metadata key
         assert any([key.page_content == output[0].page_content for key in documents])
 
-    def test_from_texts(self, embeddings, collection, texts) -> None:
+    def test_from_texts(
+        self, embeddings: Embeddings, collection: Collection, texts: List[str]
+    ) -> None:
         vectorstore = PatchedMongoDBAtlasVectorSearch.from_texts(
             texts,
             embeddings,
