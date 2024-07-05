@@ -21,7 +21,7 @@ from langchain.chains.qa_generation.prompt import PROMPT_SELECTOR
         "example in API reference with more detail: "
         "https://api.python.langchain.com/en/latest/chains/langchain.chains.qa_generation.base.QAGenerationChain.html"  # noqa: E501
     ),
-    removal="0.4.0",
+    removal="1.0",
 )
 class QAGenerationChain(Chain):
     """Base class for question-answer generation chains.
