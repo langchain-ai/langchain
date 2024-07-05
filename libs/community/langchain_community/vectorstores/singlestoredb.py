@@ -276,7 +276,7 @@ class SingleStoreDB(VectorStore):
             self.connection_kwargs["conn_attrs"] = dict()
 
         self.connection_kwargs["conn_attrs"]["_connector_name"] = "langchain python sdk"
-        self.connection_kwargs["conn_attrs"]["_connector_version"] = "2.0.0"
+        self.connection_kwargs["conn_attrs"]["_connector_version"] = "2.1.0"
 
         # Create connection pool.
         self.connection_pool = QueuePool(
@@ -354,6 +354,7 @@ class SingleStoreDB(VectorStore):
         uris: List[str],
         metadatas: Optional[List[dict]] = None,
         embeddings: Optional[List[List[float]]] = None,
+        return_ids: bool = False,
         **kwargs: Any,
     ) -> List[str]:
         """Run images through the embeddings and add to the vectorstore.
@@ -367,7 +368,8 @@ class SingleStoreDB(VectorStore):
                 embeddings. Defaults to None.
 
         Returns:
-            List[str]: empty list
+            List[str]: list of document ids added to the vectorstore
+                if return_ids is True. Otherwise, an empty list.
         """
         # Set embeddings
         if (
@@ -376,13 +378,16 @@ class SingleStoreDB(VectorStore):
             and hasattr(self.embedding, "embed_image")
         ):
             embeddings = self.embedding.embed_image(uris=uris)
-        return self.add_texts(uris, metadatas, embeddings, **kwargs)
+        return self.add_texts(
+            uris, metadatas, embeddings, return_ids=return_ids, **kwargs
+        )
 
     def add_texts(
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
         embeddings: Optional[List[List[float]]] = None,
+        return_ids: bool = False,
         **kwargs: Any,
     ) -> List[str]:
         """Add more texts to the vectorstore.
@@ -395,8 +400,10 @@ class SingleStoreDB(VectorStore):
                 embeddings. Defaults to None.
 
         Returns:
-            List[str]: empty list
+            List[str]: list of document ids added to the vectorstore
+                if return_ids is True. Otherwise, an empty list.
         """
+        ids: List[str] = []
         conn = self.connection_pool.connect()
         try:
             cur = conn.cursor()
@@ -424,13 +431,48 @@ class SingleStoreDB(VectorStore):
                             json.dumps(metadata),
                         ),
                     )
+                    if return_ids:
+                        cur.execute("SELECT LAST_INSERT_ID();")
+                        row = cur.fetchone()
+                        if row:
+                            ids.append(str(row[0]))
                 if self.use_vector_index or self.use_full_text_search:
                     cur.execute("OPTIMIZE TABLE {} FLUSH;".format(self.table_name))
             finally:
                 cur.close()
         finally:
             conn.close()
-        return []
+        return ids
+
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> bool | None:
+        """Delete documents from the vectorstore.
+
+        Args:
+            ids (List[str], optional): List of document ids to delete.
+                If None, all documents will be deleted. Defaults to None.
+
+        Returns:
+            bool: True if deletion was successful, False otherwise.
+        """
+        if ids is None:
+            return True
+
+        conn = self.connection_pool.connect()
+        try:
+            cur = conn.cursor()
+            try:
+                cur.execute(
+                    "DELETE FROM {} WHERE {} IN ({})".format(
+                        self.table_name, self.id_field, ",".join(ids)
+                    )
+                )
+                if self.use_vector_index or self.use_full_text_search:
+                    cur.execute("OPTIMIZE TABLE {} FLUSH;".format(self.table_name))
+            finally:
+                cur.close()
+        finally:
+            conn.close()
+        return True
 
     def similarity_search(
         self,
@@ -994,6 +1036,20 @@ class SingleStoreDB(VectorStore):
         )
         instance.add_texts(texts, metadatas, embedding.embed_documents(texts), **kwargs)
         return instance
+
+    def drop(self) -> None:
+        """Drop the table and delete all data from the vectorstore.
+        Vector store will be unusable after this operation.
+        """
+        conn = self.connection_pool.connect()
+        try:
+            cur = conn.cursor()
+            try:
+                cur.execute("DROP TABLE IF EXISTS {}".format(self.table_name))
+            finally:
+                cur.close()
+        finally:
+            conn.close()
 
 
 # SingleStoreDBRetriever is not needed, but we keep it for backwards compatibility
