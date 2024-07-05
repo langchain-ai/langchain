@@ -421,7 +421,7 @@ class Milvus(VectorStore):
                         key in self.field_schema
                         and field_type in self.field_schema[key]  # type: ignore
                     ):
-                        dtype = self.field_schema[key]["dtype"]
+                        dtype = self.field_schema[key]["dtype"]  # type: ignore
                     else:
                         dtype = infer_dtype_bydata(value)
 
@@ -441,7 +441,7 @@ class Milvus(VectorStore):
                             FieldSchema(key, DataType.VARCHAR, max_length=65_535)
                         )
                     elif dtype == DataType.ARRAY:
-                        kwargs = self.field_schema[key]["kwargs"]
+                        kwargs = self.field_schema[key]["kwargs"]  # type: ignore
                         fields.append(
                             FieldSchema(name=key, dtype=DataType.ARRAY, **kwargs)
                         )
