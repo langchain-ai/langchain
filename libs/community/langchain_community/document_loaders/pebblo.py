@@ -89,6 +89,8 @@ class PebbloSafeLoader(BaseLoader):
             list: Documents fetched from load method of the wrapped `loader`.
         """
         self.docs = self.loader.load()
+        # Add pebblo-specific metadata to docs
+        self._add_pebblo_specific_metadata()
         if not self.load_semantic:
             self._classify_doc(self.docs, loading_end=True)
             return self.docs
@@ -123,6 +125,8 @@ class PebbloSafeLoader(BaseLoader):
                 self.docs = []
                 break
             self.docs = list((doc,))
+            # Add pebblo-specific metadata to docs
+            self._add_pebblo_specific_metadata()
             if not self.load_semantic:
                 self._classify_doc(self.docs, loading_end=True)
                 yield self.docs[0]
@@ -517,3 +521,13 @@ class PebbloSafeLoader(BaseLoader):
             classified_doc.get("topics", {}).keys()
         )
         return doc
+
+    def _add_pebblo_specific_metadata(self) -> None:
+        """Add Pebblo specific metadata to documents."""
+        for doc in self.docs:
+            doc_metadata = doc.metadata
+            doc_metadata["full_path"] = get_full_path(
+                doc_metadata.get(
+                    "full_path", doc_metadata.get("source", self.source_path)
+                )
+            )
