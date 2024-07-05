@@ -225,7 +225,7 @@ class Milvus(VectorStore):
         replica_number: int = 1,
         timeout: Optional[float] = None,
         num_shards: Optional[int] = None,
-        field_schema: Optional[dict[str, dict[str, Any]]] = None,
+        field_schema: Optional[dict[str, Any]] = None,
     ):
         """Initialize the Milvus vector store."""
         try:
@@ -419,7 +419,7 @@ class Milvus(VectorStore):
                     field_type = "dtype"
                     if (
                         key in self.field_schema
-                        and field_type in self.field_schema[key]
+                        and field_type in self.field_schema[key] #type: ignore
                     ):
                         dtype = self.field_schema[key]["dtype"]
                     else:
