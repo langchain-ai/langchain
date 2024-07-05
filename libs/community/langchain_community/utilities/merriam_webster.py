@@ -1,4 +1,5 @@
 """Util that calls Merriam-Webster."""
+
 import json
 from typing import Dict, Iterator, List, Optional
 from urllib.parse import quote
@@ -32,7 +33,7 @@ class MerriamWebsterAPIWrapper(BaseModel):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key exists in environment."""
         merriam_webster_api_key = get_from_dict_or_env(

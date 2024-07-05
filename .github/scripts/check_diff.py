@@ -1,11 +1,12 @@
+import glob
 import json
-import sys
 import os
-from typing import Dict, List, Set
-
+import re
+import sys
 import tomllib
 from collections import defaultdict
-import glob
+from typing import Dict, List, Set
+
 
 LANGCHAIN_DIRS = [
     "libs/core",
@@ -15,8 +16,13 @@ LANGCHAIN_DIRS = [
     "libs/experimental",
 ]
 
+
 def all_package_dirs() -> Set[str]:
-    return {"/".join(path.split("/")[:-1]) for path in glob.glob("./libs/**/pyproject.toml", recursive=True)}
+    return {
+        "/".join(path.split("/")[:-1]).lstrip("./")
+        for path in glob.glob("./libs/**/pyproject.toml", recursive=True)
+        if "libs/cli" not in path and "libs/standard-tests" not in path
+    }
 
 
 def dependents_graph() -> dict:
@@ -26,9 +32,9 @@ def dependents_graph() -> dict:
         if "template" in path:
             continue
         with open(path, "rb") as f:
-            pyproject = tomllib.load(f)['tool']['poetry']
+            pyproject = tomllib.load(f)["tool"]["poetry"]
         pkg_dir = "libs" + "/".join(path.split("libs")[1].split("/")[:-1])
-        for dep in pyproject['dependencies']:
+        for dep in pyproject["dependencies"]:
             if "langchain" in dep:
                 dependents[dep].add(pkg_dir)
     return dependents
@@ -122,9 +128,12 @@ if __name__ == "__main__":
 
     outputs = {
         "dirs-to-lint": add_dependents(
-            dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
+            dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"],
+            dependents,
         ),
-        "dirs-to-test": add_dependents(dirs_to_run["test"] | dirs_to_run["extended-test"], dependents),
+        "dirs-to-test": add_dependents(
+            dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
+        ),
         "dirs-to-extended-test": list(dirs_to_run["extended-test"]),
         "docs-edited": "true" if docs_edited else "",
     }

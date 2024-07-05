@@ -69,7 +69,7 @@ class GoogleSearchAPIWrapper(BaseModel):
         res = cse.list(q=search_term, cx=self.google_cse_id, **kwargs).execute()
         return res.get("items", [])
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         google_api_key = get_from_dict_or_env(
