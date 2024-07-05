@@ -43,7 +43,10 @@ class BasePromptTemplate(
     """Base class for all prompt templates, returning a prompt."""
 
     input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
+    """A list of the names of the variables whose values are required as inputs to the 
+    prompt."""
+    optional_variables: List[str] = Field(default=[])
+    """A list of the names of the variables that are optional in the prompt."""
     input_types: Dict[str, Any] = Field(default_factory=dict)
     """A dictionary of the types of the variables the prompt template expects.
     If not provided, all variables are assumed to be strings."""
@@ -105,9 +108,14 @@ class BasePromptTemplate(
         self, config: Optional[RunnableConfig] = None
     ) -> Type[BaseModel]:
         # This is correct, but pydantic typings/mypy don't think so.
-        return create_model(  # type: ignore[call-overload]
-            "PromptInput",
-            **{k: (self.input_types.get(k, str), None) for k in self.input_variables},
+        required_input_variables = {
+            k: (self.input_types.get(k, str), ...) for k in self.input_variables
+        }
+        optional_input_variables = {
+            k: (self.input_types.get(k, str), None) for k in self.optional_variables
+        }
+        return create_model(
+            "PromptInput", **{**required_input_variables, **optional_input_variables}
         )
 
     def _validate_input(self, inner_input: Dict) -> Dict:
