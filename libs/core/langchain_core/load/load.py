@@ -36,6 +36,17 @@ class Reviver:
         valid_namespaces: Optional[List[str]] = None,
         secrets_from_env: bool = True,
     ) -> None:
+        """Initialize the reviver.
+
+        Args:
+            secrets_map: A map of secrets to load. If a secret is not found in
+                the map, it will be loaded from the environment if `secrets_from_env`
+                is True. Defaults to None.
+            valid_namespaces: A list of additional namespaces (modules)
+                to allow to be deserialized. Defaults to None.
+            secrets_from_env: Whether to load secrets from the environment.
+                Defaults to True.
+        """
         self.secrets_from_env = secrets_from_env
         self.secrets_map = secrets_map or dict()
         # By default only support langchain, but user can pass in additional namespaces
@@ -130,9 +141,13 @@ def loads(
 
     Args:
         text: The string to load.
-        secrets_map: A map of secrets to load.
+        secrets_map: A map of secrets to load. If a secret is not found in
+            the map, it will be loaded from the environment if `secrets_from_env`
+            is True. Defaults to None.
         valid_namespaces: A list of additional namespaces (modules)
-            to allow to be deserialized.
+            to allow to be deserialized. Defaults to None.
+        secrets_from_env: Whether to load secrets from the environment.
+            Defaults to True.
 
     Returns:
         Revived LangChain objects.
@@ -155,9 +170,13 @@ def load(
 
     Args:
         obj: The object to load.
-        secrets_map: A map of secrets to load.
+        secrets_map: A map of secrets to load. If a secret is not found in
+            the map, it will be loaded from the environment if `secrets_from_env`
+            is True. Defaults to None.
         valid_namespaces: A list of additional namespaces (modules)
-            to allow to be deserialized.
+            to allow to be deserialized. Defaults to None.
+        secrets_from_env: Whether to load secrets from the environment.
+            Defaults to True.
 
     Returns:
         Revived LangChain objects.
