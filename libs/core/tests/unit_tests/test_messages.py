@@ -121,6 +121,12 @@ def test_message_chunks() -> None:
     assert ai_msg_chunk + tool_calls_msg_chunk == tool_calls_msg_chunk
     assert tool_calls_msg_chunk + ai_msg_chunk == tool_calls_msg_chunk
 
+    ai_msg_chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[ToolCallChunk(name="tool1", args="", id="1", index=0)],
+    )
+    assert ai_msg_chunk.tool_calls == [ToolCall(name="tool1", args={}, id="1")]
+
     # Test token usage
     left = AIMessageChunk(
         content="",

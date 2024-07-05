@@ -34,6 +34,12 @@ class TestGroqMixtral(BaseTestGroq):
     def test_structured_output(self, model: BaseChatModel) -> None:
         super().test_structured_output(model)
 
+    @pytest.mark.xfail(
+        reason=("May pass arguments: {'properties': {}, 'type': 'object'}")
+    )
+    def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
+        super().test_tool_calling_with_no_arguments(model)
+
 
 class TestGroqLlama(BaseTestGroq):
     @property

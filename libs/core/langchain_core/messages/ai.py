@@ -241,7 +241,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         invalid_tool_calls = []
         for chunk in values["tool_call_chunks"]:
             try:
-                args_ = parse_partial_json(chunk["args"])
+                args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}
                 if isinstance(args_, dict):
                     tool_calls.append(
                         ToolCall(
