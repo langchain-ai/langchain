@@ -253,14 +253,23 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 else:
                     raise ValueError("Malformed args.")
             except Exception:
-                invalid_tool_calls.append(
-                    InvalidToolCall(
-                        name=chunk["name"],
-                        args=chunk["args"],
-                        id=chunk["id"],
-                        error=None,
+                if chunk["args"] == "":
+                    tool_calls.append(
+                        ToolCall(
+                            name=chunk["name"] or "",
+                            args={},
+                            id=chunk["id"],
+                        )
                     )
-                )
+                else:
+                    invalid_tool_calls.append(
+                        InvalidToolCall(
+                            name=chunk["name"],
+                            args=chunk["args"],
+                            id=chunk["id"],
+                            error=None,
+                        )
+                    )
         values["tool_calls"] = tool_calls
         values["invalid_tool_calls"] = invalid_tool_calls
         return values
