@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings

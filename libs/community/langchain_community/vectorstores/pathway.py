@@ -16,7 +16,7 @@ instance as described at https://pathway.com/developers/user-guide/llm-xpack/vec
 
 import json
 import logging
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import requests
 from langchain_core.documents import Document

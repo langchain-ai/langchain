@@ -4,7 +4,7 @@ import base64
 import os
 import uuid
 import warnings
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Type
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type
 
 import numpy as np
 from langchain_core.documents import Document

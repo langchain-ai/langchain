@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 from functools import partial
 from threading import Lock, Thread
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
 
 import numpy as np
 from langchain_core._api.deprecation import deprecated

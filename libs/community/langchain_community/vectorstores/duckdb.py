@@ -5,7 +5,7 @@ import json
 import logging
 import uuid
 import warnings
-from typing import Any, Iterable, List, Optional, Type
+from typing import Any, Dict, List, Optional, Sequence, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings

@@ -4,7 +4,7 @@ import json
 import logging
 import uuid
 from hashlib import sha1
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Type
+from typing import Any, Dict, List, Optional, Sequence, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings

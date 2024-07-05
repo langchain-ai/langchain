@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import Any, Iterable, List, Optional, Tuple, Type, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
 import requests
 from langchain_core.documents import Document

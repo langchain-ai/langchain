@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import uuid
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import requests
 from langchain_core.documents import Document

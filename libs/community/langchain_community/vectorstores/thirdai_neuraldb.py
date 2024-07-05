@@ -2,7 +2,7 @@ import importlib
 import os
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
