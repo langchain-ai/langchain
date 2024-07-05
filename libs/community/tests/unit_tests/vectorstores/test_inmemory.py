@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import pytest
 from langchain_core.documents import Document
@@ -11,6 +12,11 @@ from langchain_community.vectorstores.inmemory import InMemoryVectorStore
 from tests.integration_tests.vectorstores.fake_embeddings import (
     ConsistentFakeEmbeddings,
 )
+
+
+class AnyStr(str):
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, str)
 
 
 class TestInMemoryReadWriteTestSuite(ReadWriteTestSuite):
@@ -31,10 +37,13 @@ async def test_inmemory() -> None:
         ["foo", "bar", "baz"], ConsistentFakeEmbeddings()
     )
     output = await store.asimilarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    assert output == [Document(page_content="foo", id=AnyStr())]
 
     output = await store.asimilarity_search("bar", k=2)
-    assert output == [Document(page_content="bar"), Document(page_content="baz")]
+    assert output == [
+        Document(page_content="bar", id=AnyStr()),
+        Document(page_content="baz", id=AnyStr()),
+    ]
 
     output2 = await store.asimilarity_search_with_score("bar", k=2)
     assert output2[0][1] > output2[1][1]
@@ -61,8 +70,8 @@ async def test_inmemory_mmr() -> None:
         "foo", k=10, lambda_mult=0.1
     )
     assert len(output) == len(texts)
-    assert output[0] == Document(page_content="foo")
-    assert output[1] == Document(page_content="foy")
+    assert output[0] == Document(page_content="foo", id=AnyStr())
+    assert output[1] == Document(page_content="foy", id=AnyStr())
 
 
 async def test_inmemory_dump_load(tmp_path: Path) -> None:
@@ -90,4 +99,4 @@ async def test_inmemory_filter() -> None:
     output = await store.asimilarity_search(
         "baz", filter=lambda doc: doc.metadata["id"] == 1
     )
-    assert output == [Document(page_content="foo", metadata={"id": 1})]
+    assert output == [Document(page_content="foo", metadata={"id": 1}, id=AnyStr())]

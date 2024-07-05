@@ -421,3 +421,16 @@ class InMemoryRecordManager(RecordManager):
             keys: A list of keys to delete.
         """
         self.delete_keys(keys)
+
+
+class UpsertResponse(TypedDict):
+    """A generic response for upsert operations.
+
+    The upsert response will be used by abstractions that implement an upsert
+    operation for content that can be upserted by ID.
+    """
+
+    succeeded: List[str]
+    """The IDs that were successfully indexed."""
+    failed: List[str]
+    """The IDs that failed to index."""
