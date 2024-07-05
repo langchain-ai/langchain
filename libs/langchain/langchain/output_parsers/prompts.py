@@ -7,7 +7,7 @@ NAIVE_FIX = """Instructions:
 --------------
 Completion:
 --------------
-{completion}
+{input}
 --------------
 
 Above, the Completion did not satisfy the constraints given in the Instructions.
