@@ -1,3 +1,7 @@
+[build-system]
+requires = [ "poetry-core>=1.0.0",]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "langchain"
 version = "0.2.6"
@@ -6,6 +10,19 @@ authors = []
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
+
+[tool.ruff]
+exclude = [ "tests/integration_tests/examples/non-utf8-encoding.py",]
+
+[tool.mypy]
+ignore_missing_imports = "True"
+disallow_untyped_defs = "True"
+exclude = [ "notebooks", "examples", "example_data",]
+
+[tool.codespell]
+skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
+ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
+ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
 
 [tool.poetry.scripts]
 langchain-server = "langchain.server:main"
@@ -21,21 +38,48 @@ requests = "^2"
 PyYAML = ">=5.3"
 aiohttp = "^3.8.3"
 tenacity = "^8.1.0,!=8.4.0"
-async-timeout = { version = "^4.0.0", python = "<3.11" }
+[[tool.poetry.dependencies.numpy]]
+version = "^1"
+python = "<3.12"
 
-# Support Python 3.8 and 3.12+.
-numpy = [
-  { version = "^1", python = "<3.12" },
-  { version = "^1.26.0", python = ">=3.12" },
-]
+[[tool.poetry.dependencies.numpy]]
+version = "^1.26.0"
+python = ">=3.12"
+
+[tool.ruff.lint]
+select = [ "E", "F", "I", "T201",]
+
+[tool.coverage.run]
+omit = [ "tests/*",]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
+markers = [ "requires: mark tests as requiring a specific library", "scheduled: mark tests to run in scheduled testing", "compile: mark placeholder test used to compile integration tests without running them",]
+asyncio_mode = "auto"
+
+[tool.poetry.dependencies.async-timeout]
+version = "^4.0.0"
+python = "<3.11"
 
 [tool.poetry.group.test]
 optional = true
 
+[tool.poetry.group.codespell]
+optional = true
+
+[tool.poetry.group.test_integration]
+optional = true
+
+[tool.poetry.group.lint]
+optional = true
+
+[tool.poetry.group.typing]
+optional = true
+
+[tool.poetry.group.dev]
+optional = true
+
 [tool.poetry.group.test.dependencies]
-# The only dependencies that should be added are
-# dependencies used for running tests (e.g., pytest, freezegun, response).
-# Any dependencies that do not meet that criteria will be removed.
 pytest = "^7.3.0"
 pytest-cov = "^4.0.0"
 pytest-dotenv = "^0.5.2"
@@ -50,43 +94,22 @@ pytest-mock = "^3.10.0"
 pytest-socket = "^0.6.0"
 syrupy = "^4.0.2"
 requests-mock = "^1.11.0"
-langchain-core = { path = "../core", develop = true }
-langchain-text-splitters = { path = "../text-splitters", develop = true }
-langchain-openai = { path = "../partners/openai", optional = true, develop = true }
-
-[tool.poetry.group.codespell]
-optional = true
 
 [tool.poetry.group.codespell.dependencies]
 codespell = "^2.2.0"
 
-[tool.poetry.group.test_integration]
-optional = true
-
 [tool.poetry.group.test_integration.dependencies]
-
-
-# Instead read the following link:
-# https://python.langchain.com/docs/contributing/code#working-with-optional-dependencies
 pytest-vcr = "^1.0.2"
 wrapt = "^1.15.0"
 python-dotenv = "^1.0.0"
 cassio = "^0.1.0"
-langchain-core = { path = "../core", develop = true }
-langchain-text-splitters = { path = "../text-splitters", develop = true }
 langchainhub = "^0.1.16"
 
-[tool.poetry.group.lint]
-optional = true
-
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
-
-[tool.poetry.group.typing]
-optional = true
+ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^1"
+mypy = "^1.10"
 types-pyyaml = "^6.0.12.2"
 types-requests = "^2.28.11.5"
 types-toml = "^0.10.8.1"
@@ -94,66 +117,45 @@ types-redis = "^4.3.21.6"
 types-pytz = "^2023.3.0.0"
 types-chardet = "^5.0.4.6"
 mypy-protobuf = "^3.0.0"
-langchain-core = { path = "../core", develop = true }
-langchain-text-splitters = { path = "../text-splitters", develop = true }
-
-[tool.poetry.group.dev]
-optional = true
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
 playwright = "^1.28.0"
 setuptools = "^67.6.1"
-langchain-core = { path = "../core", develop = true }
-langchain-text-splitters = { path = "../text-splitters", develop = true }
-[tool.ruff]
-exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
 
-[tool.ruff.lint]
-select = [
-  "E",    # pycodestyle
-  "F",    # pyflakes
-  "I",    # isort
-  "T201", # print
-]
+[tool.poetry.group.test.dependencies.langchain-core]
+path = "../core"
+develop = true
 
-[tool.mypy]
-ignore_missing_imports = "True"
-disallow_untyped_defs = "True"
-exclude = ["notebooks", "examples", "example_data"]
+[tool.poetry.group.test.dependencies.langchain-text-splitters]
+path = "../text-splitters"
+develop = true
 
-[tool.coverage.run]
-omit = ["tests/*"]
+[tool.poetry.group.test.dependencies.langchain-openai]
+path = "../partners/openai"
+optional = true
+develop = true
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.poetry.group.test_integration.dependencies.langchain-core]
+path = "../core"
+develop = true
 
-[tool.pytest.ini_options]
-# --strict-markers will raise errors on unknown marks.
-# https://docs.pytest.org/en/7.1.x/how-to/mark.html#raising-errors-on-unknown-marks
-#
-# https://docs.pytest.org/en/7.1.x/reference/reference.html
-# --strict-config       any warnings encountered while parsing the `pytest`
-#                       section of the configuration file raise errors.
-#
-# https://github.com/tophat/syrupy
-# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
-addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
-# Registering custom markers.
-# https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
-markers = [
-  "requires: mark tests as requiring a specific library",
-  "scheduled: mark tests to run in scheduled testing",
-  "compile: mark placeholder test used to compile integration tests without running them",
-]
-asyncio_mode = "auto"
+[tool.poetry.group.test_integration.dependencies.langchain-text-splitters]
+path = "../text-splitters"
+develop = true
 
-[tool.codespell]
-skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig'
-# Ignore latin etc
-ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
-# whats is a typo but used frequently in queries so kept as is
-# aapply - async apply
-# unsecure - typo but part of API, decided to not bother for now
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin'
+[tool.poetry.group.typing.dependencies.langchain-core]
+path = "../core"
+develop = true
+
+[tool.poetry.group.typing.dependencies.langchain-text-splitters]
+path = "../text-splitters"
+develop = true
+
+[tool.poetry.group.dev.dependencies.langchain-core]
+path = "../core"
+develop = true
+
+[tool.poetry.group.dev.dependencies.langchain-text-splitters]
+path = "../text-splitters"
+develop = true

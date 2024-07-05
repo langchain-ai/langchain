@@ -1,4 +1,5 @@
 """Methods for creating chains that use OpenAI function-calling APIs."""
+
 from typing import (
     Any,
     Callable,

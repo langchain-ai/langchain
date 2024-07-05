@@ -408,7 +408,7 @@ class PickBest(base.RLChain[PickBestEvent]):
     ) -> PickBest:
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         if selection_scorer is SENTINEL:
-            selection_scorer = base.AutoSelectionScorer(llm=llm_chain.llm)
+            selection_scorer = base.AutoSelectionScorer(llm=llm_chain.llm)  # type: ignore[call-arg]
 
         return PickBest(
             llm_chain=llm_chain,
