@@ -73,7 +73,7 @@ class VectorStore(ABC):
     def add_texts(
         self,
         texts: Sequence[str],
-        metadatas: Optional[Sequence[Dict[str, Any]] = None,
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         # One of the kwargs should be `ids` which is a list of ids
         # associated with the texts.
         # This is not yet enforced in the type signature for backwards compatibility
@@ -375,7 +375,7 @@ class VectorStore(ABC):
     async def aadd_texts(
         self,
         texts: Sequence[str],
-        metadatas: Optional[Sequence[Dict[str, Any]] = None,
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
