@@ -75,7 +75,7 @@ class TestLiteLLMFunctions(unittest.TestCase):
     def test_litellm_functions_tools(self) -> None:
         base_model = LiteLLMFunctions(model="ollama/phi3")
         model = base_model.bind_tools(
-            tools=[PubmedQueryRun(), DuckDuckGoSearchResults(max_results=2)]
+            tools=[PubmedQueryRun(), DuckDuckGoSearchResults(num_results=2)]
         )
         res = model.invoke("What causes lung cancer?")
         self.assertIsInstance(res, AIMessage)

@@ -75,7 +75,7 @@ class TestNVIDIAFunctions(unittest.TestCase):
     def test_nvidia_functions_functions_tools(self) -> None:
         base_model = NVIDIAFunctions(model="microsoft/phi-3-mini-4k-instruct")
         model = base_model.bind_tools(
-            tools=[PubmedQueryRun(), DuckDuckGoSearchResults(max_results=2)]
+            tools=[PubmedQueryRun(), DuckDuckGoSearchResults(num_results=2)]
         )
         res = model.invoke("What causes lung cancer?")
         self.assertIsInstance(res, AIMessage)
