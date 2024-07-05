@@ -507,7 +507,7 @@ class VectorStore(ABC):
             else:
                 documents_ = documents
 
-            # If upsert has been implemented, we can use it to add documents
+            # The default implementation of aupsert delegates to upsert.
             upsert_response = await self.aupsert(documents_, **kwargs)
             return upsert_response["succeeded"]
 
