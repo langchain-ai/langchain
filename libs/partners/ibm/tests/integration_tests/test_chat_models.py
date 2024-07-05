@@ -52,6 +52,34 @@ def test_01a_generate_chat_with_invoke_params() -> None:
     assert response
 
 
+def test_01b_generate_chat_with_invoke_params() -> None:
+    from ibm_watsonx_ai.metanames import GenTextParamsMetaNames
+
+    params_1 = {
+        GenTextParamsMetaNames.MIN_NEW_TOKENS: 1,
+        GenTextParamsMetaNames.MAX_NEW_TOKENS: 10,
+    }
+    params_2 = {
+        GenTextParamsMetaNames.MIN_NEW_TOKENS: 1,
+        GenTextParamsMetaNames.MAX_NEW_TOKENS: 10,
+    }
+    chat = ChatWatsonx(
+        model_id=MODEL_ID,
+        url=URL,  # type: ignore[arg-type]
+        project_id=WX_PROJECT_ID,
+        params=params_1,  # type: ignore[arg-type]
+    )
+    messages = [
+        ("system", "You are a helpful assistant that translates English to French."),
+        (
+            "human",
+            "Translate this sentence from English to French. I love programming.",
+        ),
+    ]
+    response = chat.invoke(messages, params=params_2)
+    assert response
+
+
 def test_02_generate_chat_with_few_inputs() -> None:
     chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)  # type: ignore[arg-type]
     message = HumanMessage(content="Hello")
@@ -71,6 +99,19 @@ def test_03_generate_chat_with_few_various_inputs() -> None:
 def test_05_generate_chat_with_stream() -> None:
     chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)  # type: ignore[arg-type]
     response = chat.stream("What's the weather in san francisco")
+    for chunk in response:
+        assert isinstance(chunk.content, str)
+
+
+def test_05a_generate_chat_with_stream_with_param() -> None:
+    from ibm_watsonx_ai.metanames import GenTextParamsMetaNames
+
+    params = {
+        GenTextParamsMetaNames.MIN_NEW_TOKENS: 1,
+        GenTextParamsMetaNames.MAX_NEW_TOKENS: 10,
+    }
+    chat = ChatWatsonx(model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID)  # type: ignore[arg-type]
+    response = chat.stream("What's the weather in san francisco", params=params)
     for chunk in response:
         assert isinstance(chunk.content, str)
 

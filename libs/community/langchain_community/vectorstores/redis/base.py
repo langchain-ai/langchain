@@ -582,8 +582,8 @@ class Redis(VectorStore):
         with open(path, "w+") as f:
             yaml.dump(self.schema, f)
 
-    @staticmethod
     def delete(
+        self,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> bool:
@@ -602,30 +602,12 @@ class Redis(VectorStore):
             ValueError: If the redis python package is not installed.
             ValueError: If the ids (keys in redis) are not provided
         """
-        redis_url = get_from_dict_or_env(kwargs, "redis_url", "REDIS_URL")
-
-        if ids is None:
-            raise ValueError("'ids' (keys)() were not provided.")
-
-        try:
-            import redis  # noqa: F401
-        except ImportError:
-            raise ImportError(
-                "Could not import redis python package. "
-                "Please install it with `pip install redis`."
-            )
-        try:
-            # We need to first remove redis_url from kwargs,
-            # otherwise passing it to Redis will result in an error.
-            if "redis_url" in kwargs:
-                kwargs.pop("redis_url")
-            client = get_client(redis_url=redis_url, **kwargs)
-        except ValueError as e:
-            raise ValueError(f"Your redis connected error: {e}")
+        client = self.client
         # Check if index exists
         try:
-            client.delete(*ids)
-            logger.info("Entries deleted")
+            if ids:
+                client.delete(*ids)
+                logger.info("Entries deleted")
             return True
         except:  # noqa: E722
             # ids does not exist
