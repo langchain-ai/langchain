@@ -156,6 +156,14 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
 
     async def aformat(self, **kwargs: Any) -> str:
+        """Async format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+        """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.
         examples = await self._aget_examples(**kwargs)
@@ -197,6 +205,14 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         return "few_shot_with_templates"
 
     def save(self, file_path: Union[Path, str]) -> None:
+        """Save the prompt to a file.
+
+        Args:
+            file_path: The path to save the prompt to.
+
+        Raises:
+            ValueError: If example_selector is provided.
+        """
         if self.example_selector:
             raise ValueError("Saving an example selector is not currently supported")
         return super().save(file_path)
