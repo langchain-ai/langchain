@@ -1,4 +1,5 @@
-from typing import Optional, Dict, List, Tuple, Any, Mapping
+import json
+from typing import Optional, Dict, List, Tuple, Any, Mapping, Union
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -11,12 +12,24 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from pydantic import Field
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_community.utilities.requests import Requests
+import io
 
 
 class ChatStraico(BaseChatModel):
-    model: str = "google/gemini-pro"
-
+    model: Optional[str] = Field(default="openai/gpt-3.5-turbo-0125")
+    """Model name to use."""
     straico_api_key: Optional[str] = Field(None, alias="api_key")
+    """Automatically inferred from env var `STRAICO_API_KEY` if not provided."""
+    request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
+        default=None, alias="timeout"
+    )
+    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+        None."""
+    max_retries: int = Field(default=2)
+    """Maximum number of retries to make when generating."""
+    # max_tokens: Optional[int] = None
+    # """Maximum number of tokens to generate."""
 
     @root_validator(allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
@@ -24,34 +37,15 @@ class ChatStraico(BaseChatModel):
         values["straico_api_key"] = get_from_dict_or_env(
             values, "straico_api_key", "STRAICO_API_KEY"
         )
-        try:
-            import openai
-        except ImportError:
-            raise ImportError(
-                "Could not import openai python package. "
-                "Please install it with `pip install openai`."
-            )
-        try:
-            values["client"] = openai.OpenAI(
-                api_key=values["straico_api_key"],
-                base_url="https://api.straico.com/v0/",
-            )
-        except AttributeError:
-            raise ValueError(
-                "`openai` has no `ChatCompletion` attribute, this is likely "
-                "due to an old version of the openai package. Try upgrading it "
-                "with `pip install --upgrade openai`."
-            )
         return values
 
-    def _generate(self, messages, stop=None, run_manager=None, **kwargs) -> ChatResult:
+    def _generate(self, messages, stop=None, run_manager=None) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
-        response = self.client.chat.completions.create(
-            model=params["model"], messages=message_dicts
-        )
+        params = {**params}
+        response = self._completion_with_retry(messages=message_dicts, params=params)
+        print("RESPONSE", response)
         message = AIMessage(
-            content=response.data["completion"]["choices"][0]["message"]["content"]
+            content=response["data"]["completion"]["choices"][0]["message"]["content"]
         )
         return ChatResult(generations=[ChatGeneration(message=message)])
 
@@ -70,10 +64,9 @@ class ChatStraico(BaseChatModel):
     def _default_params(self) -> Dict[str, Any]:
         """Get the default parameters for calling PerplexityChat API."""
         return {
-            # "request_timeout": self.request_timeout,
+            "request_timeout": self.request_timeout,
+            "max_retries": self.max_retries,
             # "max_tokens": self.max_tokens,
-            # "stream": self.streaming,
-            # **self.model_kwargs,
         }
 
     def _convert_message_to_dict(self, message: BaseMessage) -> Dict[str, Any]:
@@ -105,7 +98,7 @@ class ChatStraico(BaseChatModel):
         """Get the parameters used to invoke the model."""
         straico_creds: Dict[str, Any] = {
             "api_key": self.straico_api_key,
-            "api_base": "https://api.straico.com/v0/prompt/completion",
+            "url": "https://api.straico.com/v0/prompt/completion",
             "model": self.model,
         }
         return {**straico_creds, **self._default_params}
@@ -114,3 +107,31 @@ class ChatStraico(BaseChatModel):
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "straicochat"
+
+    def _completion_with_retry(
+        self, messages: List[Dict[str, Any]], params: Dict[str, Any]
+    ) -> Any:
+        retries = params["max_retries"]
+        auth_header = {"Authorization": f"Bearer {params['api_key']}"}
+        for attempt in range(retries):
+            try:
+                request = Requests(headers=auth_header)
+                # Create a payload dictionary
+                payloadStruct = {"model": params["model"], "message": str(messages)}
+                response = request.post(url=params["url"], data=payloadStruct)
+                self._handle_status(response.status_code, response.text)
+                response_data = json.loads(response._content)
+                return response_data
+            except Exception as e:
+                if attempt == retries - 1:
+                    raise e
+
+    def _handle_status(self, status_code: int, text: str) -> None:
+        if status_code >= 500:
+            raise Exception(f"Straico Server: Error {status_code}")
+        elif status_code >= 400:
+            raise ValueError(f"Straico received an invalid payload: {text}")
+        elif status_code != 201:  # straico returns 201 for success
+            raise Exception(
+                f"Straico returned an unexpected response with status {status_code}: {text}"
+            )
