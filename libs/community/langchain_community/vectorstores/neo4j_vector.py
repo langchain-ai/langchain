@@ -1110,7 +1110,7 @@ class Neo4jVector(VectorStore):
             List of Documents most similar to the query vector.
         """
         docs_and_scores = self.similarity_search_with_score_by_vector(
-            embedding=embedding, k=k, filter=filter, **kwargs
+            embedding=embedding, k=k, filter=filter, params=params, **kwargs
         )
         return [doc for doc, _ in docs_and_scores]
 
