@@ -6,20 +6,32 @@ from langchain_core.documents import Document
 
 @dataclass(frozen=True)
 class Link:
+    """A link to/from a tag of a given tag.
+
+    Edges exist from nodes with an outgoing link to nodes with a matching incoming link.
+    """
+
     kind: str
+    """The kind of link. Allows different extractors to use the same tag name without 
+    creating collisions between extractors. For example “keyword” vs “url”."""
     direction: Literal["in", "out", "bidir"]
+    """The direction of the link."""
     tag: str
+    """The tag of the link."""
 
     @staticmethod
     def incoming(kind: str, tag: str) -> "Link":
+        """Create an incoming link."""
         return Link(kind=kind, direction="in", tag=tag)
 
     @staticmethod
     def outgoing(kind: str, tag: str) -> "Link":
+        """Create an outgoing link."""
         return Link(kind=kind, direction="out", tag=tag)
 
     @staticmethod
     def bidir(kind: str, tag: str) -> "Link":
+        """Create a bidirectional link."""
         return Link(kind=kind, direction="bidir", tag=tag)
 
 

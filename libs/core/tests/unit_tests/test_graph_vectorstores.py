@@ -42,25 +42,18 @@ def test_texts_to_nodes() -> None:
 def test_documents_to_nodes() -> None:
     documents = [
         Document(
-            page_content="a",
+            id="a",
+            page_content="some text a",
             metadata={"links": [Link.incoming(kind="hyperlink", tag="http://b")]},
         ),
-        Document(page_content="b", metadata={"c": "d"}),
+        Document(id="b", page_content="some text b", metadata={"c": "d"}),
     ]
-    assert list(_documents_to_nodes(documents, ["a", "b"])) == [
+    assert list(_documents_to_nodes(documents)) == [
         Node(
             id="a",
             metadata={},
             links=[Link.incoming(kind="hyperlink", tag="http://b")],
-            text="a",
+            text="some text a",
         ),
-        Node(id="b", metadata={"c": "d"}, text="b"),
+        Node(id="b", metadata={"c": "d"}, text="some text b"),
     ]
-    assert list(_documents_to_nodes(documents, None)) == [
-        Node(links=[Link.incoming(kind="hyperlink", tag="http://b")], text="a"),
-        Node(metadata={"c": "d"}, text="b"),
-    ]
-    with pytest.raises(ValueError):
-        list(_documents_to_nodes(documents, ["a"]))
-    with pytest.raises(ValueError):
-        list(_documents_to_nodes(documents[1:], ["a", "b"]))
