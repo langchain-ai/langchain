@@ -174,8 +174,8 @@ class Epsilla(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         collection_name: Optional[str] = "",
         drop_old: Optional[bool] = False,
         **kwargs: Any,

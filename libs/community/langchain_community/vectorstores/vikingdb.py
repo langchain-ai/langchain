@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -176,8 +176,8 @@ class VikingDB(VectorStore):
 
     def add_texts(  # type: ignore[override]
         self,
-        texts: List[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         batch_size: int = 1000,
         **kwargs: Any,
     ) -> List[str]:

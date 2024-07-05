@@ -16,6 +16,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
 )
@@ -306,8 +307,8 @@ class Yellowbrick(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         batch_size = 10000

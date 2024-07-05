@@ -5,7 +5,7 @@ import os
 import traceback
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import requests
 from langchain_core.documents import Document
@@ -84,8 +84,8 @@ class Clarifai(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:

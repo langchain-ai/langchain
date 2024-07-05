@@ -15,6 +15,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -557,8 +558,8 @@ class OracleVS(VectorStore):
     @_handle_exceptions
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 import warnings
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -586,8 +586,8 @@ class OpenSearchVectorSearch(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         bulk_size: int = 500,
         **kwargs: Any,
@@ -622,8 +622,8 @@ class OpenSearchVectorSearch(VectorStore):
 
     async def aadd_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         bulk_size: int = 500,
         **kwargs: Any,

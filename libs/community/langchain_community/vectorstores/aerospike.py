@@ -7,9 +7,11 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     TypeVar,
     Union,
@@ -154,8 +156,8 @@ class Aerospike(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         set_name: Optional[str] = None,
         embedding_chunk_size: int = 1000,

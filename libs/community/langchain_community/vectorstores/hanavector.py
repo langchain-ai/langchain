@@ -256,8 +256,8 @@ class HanaDB(VectorStore):
 
     def add_texts(  # type: ignore[override]
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         embeddings: Optional[List[List[float]]] = None,
         **kwargs: Any,
     ) -> List[str]:

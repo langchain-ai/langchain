@@ -16,7 +16,7 @@ instance as described at https://pathway.com/developers/user-guide/llm-xpack/vec
 
 import json
 import logging
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import requests
 from langchain_core.documents import Document
@@ -149,8 +149,8 @@ class PathwayVectorClient(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Pathway is not suitable for this method."""

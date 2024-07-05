@@ -9,7 +9,7 @@ import uuid
 from collections import OrderedDict
 from enum import Enum
 from functools import partial
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type
 
 import numpy as np
 from langchain_core.documents import Document
@@ -350,8 +350,8 @@ class Kinetica(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:

@@ -7,7 +7,7 @@ import json
 import math
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Type
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Type
 from uuid import uuid4
 
 from langchain_core.documents import Document
@@ -196,8 +196,8 @@ class SKLearnVectorStore(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:

@@ -52,8 +52,8 @@ class LLMRails(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -236,7 +236,7 @@ class LLMRailsRetriever(VectorStoreRetriever):
         alpha: parameter for hybrid search .
     """
 
-    def add_texts(self, texts: List[str]) -> None:
+    def add_texts(self, texts: Sequence[str]) -> None:
         """Add text to the datastore.
 
         Args:

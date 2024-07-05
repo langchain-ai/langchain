@@ -14,6 +14,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Sized,
     Tuple,
     Union,
@@ -208,8 +209,8 @@ class FAISS(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -229,8 +230,8 @@ class FAISS(VectorStore):
 
     async def aadd_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:

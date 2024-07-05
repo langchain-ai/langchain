@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import warnings
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -172,8 +172,8 @@ class ZepVectorStore(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[Dict[str, Any]]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         document_ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -200,8 +200,8 @@ class ZepVectorStore(VectorStore):
 
     async def aadd_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[Dict[str, Any]]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         document_ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Iterable, List, Optional, Type
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Type
 
 import numpy as np
 from langchain_core.documents import Document
@@ -92,8 +92,8 @@ class AtlasDB(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         refresh: bool = True,
         **kwargs: Any,

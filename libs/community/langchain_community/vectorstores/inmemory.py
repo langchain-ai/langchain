@@ -39,8 +39,8 @@ class InMemoryVectorStore(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -61,8 +61,8 @@ class InMemoryVectorStore(VectorStore):
 
     async def aadd_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         return self.add_texts(texts, metadatas, **kwargs)

@@ -73,8 +73,8 @@ class Vald(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         grpc_metadata: Optional[Any] = None,
         skip_strict_exist_check: bool = False,
         **kwargs: Any,

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 from uuid import uuid4
 
 import numpy as np
@@ -511,8 +511,8 @@ class Milvus(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         timeout: Optional[float] = None,
         batch_size: int = 1000,
         *,

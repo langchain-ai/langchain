@@ -6,9 +6,11 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
+    Dict,
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
 )
@@ -97,8 +99,8 @@ class SQLiteVSS(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Add more texts to the vectorstore index.

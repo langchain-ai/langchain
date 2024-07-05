@@ -4,7 +4,7 @@ import json
 import logging
 from hashlib import sha1
 from threading import Thread
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -221,8 +221,8 @@ class MyScale(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         batch_size: int = 32,
         ids: Optional[Iterable[str]] = None,
         **kwargs: Any,

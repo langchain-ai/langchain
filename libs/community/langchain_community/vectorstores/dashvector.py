@@ -4,9 +4,11 @@ import logging
 import uuid
 from typing import (
     Any,
+    Dict,
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
 )
 
@@ -98,8 +100,8 @@ class DashVector(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = 25,
         partition: str = "default",

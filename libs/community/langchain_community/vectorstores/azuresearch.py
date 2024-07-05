@@ -16,6 +16,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -372,8 +373,8 @@ class AzureSearch(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         *,
         keys: Optional[List[str]] = None,
         **kwargs: Any,
@@ -396,8 +397,8 @@ class AzureSearch(VectorStore):
 
     async def aadd_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         *,
         keys: Optional[List[str]] = None,
         **kwargs: Any,

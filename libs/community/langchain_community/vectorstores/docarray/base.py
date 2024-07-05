@@ -1,5 +1,15 @@
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+)
 
 import numpy as np
 from langchain_core.documents import Document
@@ -65,8 +75,8 @@ class DocArrayIndex(VectorStore, ABC):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Embed texts and add to the vector store.

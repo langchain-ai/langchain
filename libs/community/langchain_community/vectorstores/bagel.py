@@ -9,6 +9,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
 )
@@ -125,8 +126,8 @@ class Bagel(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         embeddings: Optional[List[List[float]]] = None,
         **kwargs: Any,

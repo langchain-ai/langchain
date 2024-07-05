@@ -10,6 +10,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Union,
 )
@@ -183,8 +184,8 @@ class ElasticVectorSearch(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         refresh_indices: bool = True,
         **kwargs: Any,
@@ -687,8 +688,8 @@ class ElasticKnnSearch(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         model_id: Optional[str] = None,
         refresh_indices: bool = False,
         **kwargs: Any,

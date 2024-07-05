@@ -10,6 +10,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Union,
 )
@@ -308,8 +309,8 @@ class AzureCosmosDBVectorSearch(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[Dict[str, Any]]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List:
         batch_size = kwargs.get("batch_size", DEFAULT_INSERT_BATCH_SIZE)

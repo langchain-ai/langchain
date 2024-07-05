@@ -209,8 +209,8 @@ repeated float %s = 1;
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         last_vector: Optional[List[float]] = None,
         **kwargs: Any,
     ) -> List[str]:

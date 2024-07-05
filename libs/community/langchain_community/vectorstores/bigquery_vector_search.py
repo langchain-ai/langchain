@@ -302,8 +302,8 @@ class BigQueryVectorSearch(VectorStore):
 
     def add_texts(  # type: ignore[override]
         self,
-        texts: List[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
@@ -320,9 +320,9 @@ class BigQueryVectorSearch(VectorStore):
 
     def add_texts_with_embeddings(
         self,
-        texts: List[str],
+        texts: Sequence[str],
         embs: List[List[float]],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.

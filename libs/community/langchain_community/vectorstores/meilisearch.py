@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+)
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -106,8 +116,8 @@ class Meilisearch(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         embedder_name: Optional[str] = "default",
         **kwargs: Any,

@@ -5,6 +5,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
 )
 
@@ -104,8 +105,8 @@ class SurrealDBStore(VectorStore):
 
     async def aadd_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Add list of text along with embeddings to the vector store asynchronously
@@ -133,8 +134,8 @@ class SurrealDBStore(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Add list of text along with embeddings to the vector store
@@ -147,8 +148,8 @@ class SurrealDBStore(VectorStore):
         """
 
         async def _add_texts(
-            texts: Iterable[str],
-            metadatas: Optional[List[dict]] = None,
+            texts: Sequence[str],
+            metadatas: Optional[Sequence[Dict[str, Any]]] = None,
             **kwargs: Any,
         ) -> List[str]:
             await self.initialize()

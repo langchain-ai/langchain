@@ -13,6 +13,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Sequence,
     Sized,
     Tuple,
     Type,
@@ -557,8 +558,8 @@ class VDMS(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
         **kwargs: Any,

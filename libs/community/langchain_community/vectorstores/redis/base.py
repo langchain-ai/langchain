@@ -674,8 +674,8 @@ class Redis(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         embeddings: Optional[List[List[float]]] = None,
         batch_size: int = 1000,
         clean_metadata: bool = True,

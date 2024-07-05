@@ -10,6 +10,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Sequence,
     Tuple,
     Union,
 )
@@ -1016,8 +1017,8 @@ class ElasticsearchStore(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[Dict[Any, Any]]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         refresh_indices: bool = True,
         create_index_if_not_exists: bool = True,

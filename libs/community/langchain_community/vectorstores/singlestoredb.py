@@ -6,9 +6,11 @@ from enum import Enum
 from typing import (
     Any,
     Callable,
+    Dict,
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
 )
@@ -384,8 +386,8 @@ class SingleStoreDB(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         embeddings: Optional[List[List[float]]] = None,
         return_ids: bool = False,
         **kwargs: Any,

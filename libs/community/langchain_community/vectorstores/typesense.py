@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -111,8 +121,8 @@ class Typesense(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:

@@ -11,6 +11,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -233,8 +234,8 @@ class Cassandra(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = 16,
         ttl_seconds: Optional[int] = None,
@@ -282,8 +283,8 @@ class Cassandra(VectorStore):
 
     async def aadd_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         concurrency: int = 16,
         ttl_seconds: Optional[int] = None,

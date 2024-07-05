@@ -166,8 +166,8 @@ class Qdrant(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[Sequence[str]] = None,
         batch_size: int = 64,
         **kwargs: Any,
@@ -201,8 +201,8 @@ class Qdrant(VectorStore):
     @sync_call_fallback
     async def aadd_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         ids: Optional[Sequence[str]] = None,
         batch_size: int = 64,
         **kwargs: Any,

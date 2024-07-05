@@ -6,7 +6,7 @@ import os
 import warnings
 from dataclasses import dataclass, field
 from hashlib import md5
-from typing import Any, Iterable, Iterator, List, Optional, Tuple, Type
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Type
 
 import requests
 from langchain_core.callbacks.manager import (
@@ -359,8 +359,8 @@ class Vectara(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         doc_metadata: Optional[dict] = None,
         **kwargs: Any,
     ) -> List[str]:

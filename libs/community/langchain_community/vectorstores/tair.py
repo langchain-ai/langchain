@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import Any, Iterable, List, Optional, Type
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -78,8 +78,8 @@ class Tair(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        texts: Sequence[str],
+        metadatas: Optional[Sequence[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List[str]:
         """Add texts data to an existing index."""
