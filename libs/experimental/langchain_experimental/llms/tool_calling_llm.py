@@ -373,7 +373,7 @@ class ToolCallingLLM(BaseChatModel, ABC):
         llm = self.bind_tools(tools=[schema])
         if is_pydantic_schema:
             output_parser: OutputParserLike = PydanticOutputParser(  # type: ignore[type-var]
-                pydantic_object=schema  # type: ignore[type-var]
+                pydantic_object=schema  # type: ignore[arg-type]
             )
         else:
             output_parser = JsonOutputParser()
