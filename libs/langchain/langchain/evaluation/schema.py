@@ -1,4 +1,5 @@
 """Interfaces to be implemented by general evaluators."""
+
 from __future__ import annotations
 
 import logging

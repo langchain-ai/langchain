@@ -200,7 +200,7 @@ class AnthropicFunctions(BaseChatModel):
 
             kwargs = {
                 "function_call": {
-                    "name": function_call_name,
+                    "name": function_call_name,  # type: ignore[has-type]
                     "arguments": arguments,
                 }
             }

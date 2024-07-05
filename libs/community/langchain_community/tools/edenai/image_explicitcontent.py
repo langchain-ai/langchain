@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class EdenAiExplicitImageTool(EdenaiTool):
-
     """Tool that queries the Eden AI Explicit image detection.
 
     for api reference check edenai documentation:
