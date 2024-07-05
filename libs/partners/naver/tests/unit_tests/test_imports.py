@@ -2,7 +2,7 @@ from langchain_naver import __all__
 
 EXPECTED_ALL = [
     "ChatNaver",
-    "NaverEmbeddings",
+    "ClovaStudioEmbeddings"
 ]
 
 
