@@ -32,7 +32,17 @@ class ChatGeneration(Generation):
 
     @root_validator(pre=False, skip_on_failure=True)
     def set_text(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Set the text attribute to be the contents of the message."""
+        """Set the text attribute to be the contents of the message.
+
+        Args:
+            values: The values of the object.
+
+        Returns:
+            The values of the object with the text attribute set.
+
+        Raises:
+            ValueError: If the message is not a string or a list.
+        """
         try:
             text = ""
             if isinstance(values["message"].content, str):
@@ -64,13 +74,11 @@ class ChatGeneration(Generation):
 
 class ChatGenerationChunk(ChatGeneration):
     """ChatGeneration chunk, which can be concatenated with other
-      ChatGeneration chunks.
-
-    Attributes:
-        message: The message chunk output by the chat model.
+    ChatGeneration chunks.
     """
 
     message: BaseMessageChunk
+    """The message chunk output by the chat model."""
     # Override type to be ChatGeneration, ignore mypy error as this is intentional
     type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
