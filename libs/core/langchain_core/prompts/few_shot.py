@@ -18,7 +18,7 @@ from langchain_core.prompts.string import (
     check_valid_template,
     get_template_variables,
 )
-from langchain_core.pydantic_v1 import BaseModel, Extra, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
 
 
 class _FewShotPromptTemplateMixin(BaseModel):
@@ -102,9 +102,6 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
 
     validate_template: bool = False
     """Whether or not to try validating the template."""
-
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
 
     example_prompt: PromptTemplate
     """PromptTemplate used to format an individual example."""
@@ -314,9 +311,6 @@ class FewShotChatMessagePromptTemplate(
         """Return whether or not the class is serializable."""
         return False
 
-    input_variables: List[str] = Field(default_factory=list)
-    """A list of the names of the variables the prompt template will use
-    to pass to the example_selector, if provided."""
     example_prompt: Union[BaseMessagePromptTemplate, BaseChatPromptTemplate]
     """The class to format each example."""
 

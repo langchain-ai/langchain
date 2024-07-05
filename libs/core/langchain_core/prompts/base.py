@@ -114,7 +114,7 @@ class BasePromptTemplate(
         optional_input_variables = {
             k: (self.input_types.get(k, str), None) for k in self.optional_variables
         }
-        return create_model(  # type: ignore[call-overload]
+        return create_model(
             "PromptInput", **{**required_input_variables, **optional_input_variables}
         )
 

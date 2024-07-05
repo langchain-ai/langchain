@@ -28,9 +28,6 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     suffix: StringPromptTemplate
     """A PromptTemplate to put after the examples."""
 
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
-
     example_separator: str = "\n\n"
     """String separator used to join the prefix, the examples, and suffix."""
 

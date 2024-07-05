@@ -834,8 +834,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     """  # noqa: E501
 
-    input_variables: List[str]
-    """List of input variables in template messages. Used for validation."""
     messages: List[MessageLike]
     """List of messages consisting of either message prompt templates or messages."""
     validate_template: bool = False

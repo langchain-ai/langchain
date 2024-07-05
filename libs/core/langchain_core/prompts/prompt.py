@@ -62,9 +62,6 @@ class PromptTemplate(StringPromptTemplate):
         """Get the namespace of the langchain object."""
         return ["langchain", "prompts", "prompt"]
 
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
-
     template: str
     """The prompt template."""
 
