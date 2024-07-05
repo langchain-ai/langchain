@@ -116,7 +116,7 @@ class ReadWriteTestSuite(ABC):
         assert documents == [
             Document(page_content="bar", metadata={"id": 2}, id="2"),
             Document(page_content="foo", metadata={"id": 1}, id="1"),
-        ], repr(documents)
+        ]
 
     def test_add_documents_by_id_with_mutation(self, vectorstore: VectorStore) -> None:
         """Test that we can overwrite by ID using add_documents."""
