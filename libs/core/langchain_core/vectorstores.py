@@ -191,7 +191,7 @@ class VectorStore(ABC):
         #  to take in additional data per document.
         #
         #  This data **SHOULD NOT** be part of the **kwargs** parameter, instead
-        #  a sub-classes can use a Union type on `documents` to include additional
+        #  sub-classes can use a Union type on `documents` to include additional
         #  supported formats for the input data stream.
         #
         #  For example,
@@ -442,7 +442,7 @@ class VectorStore(ABC):
                 ids = kwargs.pop("ids")
                 if ids and len(ids) != len(documents):
                     raise ValueError(
-                        "The number of ids must match the number of documents."
+                        "The number of ids must match the number of documents. "
                         "Got {len(ids)} ids and {len(documents)} documents."
                     )
 
