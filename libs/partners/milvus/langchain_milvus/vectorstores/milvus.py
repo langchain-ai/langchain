@@ -419,7 +419,7 @@ class Milvus(VectorStore):
                     field_type = "dtype"
                     if (
                         key in self.field_schema
-                        and field_type in self.field_schema[key] #type: ignore
+                        and field_type in self.field_schema[key]  # type: ignore
                     ):
                         dtype = self.field_schema[key]["dtype"]
                     else:
