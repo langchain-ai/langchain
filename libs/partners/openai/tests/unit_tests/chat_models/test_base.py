@@ -27,7 +27,7 @@ from langchain_openai.chat_models.base import (
 def test_openai_model_param() -> None:
     llm = ChatOpenAI(model="foo")
     assert llm.model_name == "foo"
-    llm = ChatOpenAI(model_name="foo")
+    llm = ChatOpenAI(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
 
 
