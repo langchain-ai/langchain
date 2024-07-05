@@ -428,6 +428,19 @@ class UpsertResponse(TypedDict):
 
     The upsert response will be used by abstractions that implement an upsert
     operation for content that can be upserted by ID.
+
+    Upsert APIs that accept inputs with IDs and generate IDs internally
+    will return a response that includes the IDs that succeeded and the IDs
+    that failed.
+
+    If there are no failures, the failed list will be empty, and the order
+    of the IDs in the succeeded list will match the order of the input documents.
+
+    If there are failures, the response becomes ill defined, and a user of the API
+    cannot determine which generated ID corresponds to which input document.
+
+    It is recommended for users explicitly attach the IDs to the items being
+    indexed to avoid this issue.
     """
 
     succeeded: List[str]
