@@ -179,7 +179,7 @@ class ReadWriteTestSuite(ABC):
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
         ]
 
-    def test_upsert_with_existing_ids(self, vectorstore: VectorStore):
+    def test_upsert_with_existing_ids(self, vectorstore: VectorStore) -> None:
         """Test that upserting with existing IDs is idempotent."""
         documents = [
             Document(id="foo", page_content="foo", metadata={"id": 1}),
@@ -194,7 +194,7 @@ class ReadWriteTestSuite(ABC):
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
         ]
 
-    def test_upsert_documents_has_no_ids(self, vectorstore: VectorStore):
+    def test_upsert_documents_has_no_ids(self, vectorstore: VectorStore) -> None:
         """Verify that there is not parameter called ids in upsert"""
         signature = inspect.signature(vectorstore.upsert)
         assert "ids" not in signature.parameters
@@ -384,7 +384,7 @@ class AsyncReadWriteTestSuite(ABC):
             Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
         ]
 
-    async def test_upsert_documents_has_no_ids(self, vectorstore: VectorStore):
+    async def test_upsert_documents_has_no_ids(self, vectorstore: VectorStore) -> None:
         """Verify that there is not parameter called ids in upsert"""
         signature = inspect.signature(vectorstore.aupsert)
         assert "ids" not in signature.parameters
