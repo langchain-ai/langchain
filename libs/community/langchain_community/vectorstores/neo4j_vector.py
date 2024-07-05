@@ -911,7 +911,9 @@ class Neo4jVector(VectorStore):
             k (int): Number of results to return. Defaults to 4.
             params (Dict[str, Any]): The search params for the index type.
                 Defaults to empty dict.
-            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to filter on metadata. Defaults to None.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
 
         Returns:
             List of Documents most similar to the query.
@@ -941,7 +943,9 @@ class Neo4jVector(VectorStore):
             k: Number of Documents to return. Defaults to 4.
             params (Dict[str, Any]): The search params for the index type.
                 Defaults to empty dict.
-            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to filter on metadata. Defaults to None.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
 
         Returns:
             List of Documents most similar to the query and score for each
@@ -978,7 +982,9 @@ class Neo4jVector(VectorStore):
         Args:
             embedding (List[float]): The embedding vector to compare against.
             k (int, optional): The number of top similar documents to retrieve.
-            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to filter on metadata. Defaults to None.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
             params (Dict[str, Any]): The search params for the index type.
                 Defaults to empty dict.
 
@@ -1094,7 +1100,9 @@ class Neo4jVector(VectorStore):
         Args:
             embedding: Embedding to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
-            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to filter on metadata. Defaults to None.
+            filter (Optional[Dict[str, Any]]): Dictionary of argument(s) to
+                    filter on metadata.
+                Defaults to None.
             params (Dict[str, Any]): The search params for the index type.
                 Defaults to empty dict.
 
