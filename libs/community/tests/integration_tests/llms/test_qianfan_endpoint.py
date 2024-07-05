@@ -1,4 +1,5 @@
 """Test Baidu Qianfan LLM Endpoint."""
+
 from typing import Generator
 
 from langchain_core.outputs import LLMResult

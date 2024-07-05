@@ -1,4 +1,6 @@
-from langchain_exa import ExaFindSimilarResults
+from langchain_exa import (
+    ExaFindSimilarResults,  # type: ignore[import-not-found, import-not-found]
+)
 
 
 def test_similarity_tool() -> None:

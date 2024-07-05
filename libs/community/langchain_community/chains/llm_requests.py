@@ -1,4 +1,5 @@
 """Chain that hits a URL and then uses an LLM to parse results."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional

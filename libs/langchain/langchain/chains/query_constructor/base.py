@@ -1,4 +1,5 @@
 """LLM Chain for turning a user text query into a structured query."""
+
 from __future__ import annotations
 
 import json

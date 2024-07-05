@@ -1,4 +1,5 @@
 """Test the scoring chains."""
+
 import re
 
 import pytest

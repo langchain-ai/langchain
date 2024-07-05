@@ -329,9 +329,9 @@ class ChildTool(BaseTool):
     You can use these to eg identify a specific instance of a tool with its use case.
     """
 
-    handle_tool_error: Optional[
-        Union[bool, str, Callable[[ToolException], str]]
-    ] = False
+    handle_tool_error: Optional[Union[bool, str, Callable[[ToolException], str]]] = (
+        False
+    )
     """Handle the content of the ToolException thrown."""
 
     handle_validation_error: Optional[
