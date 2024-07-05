@@ -304,6 +304,8 @@ class ChatGroq(BaseChatModel):
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
+    stop: Optional[Union[List[str], str]] = Field(None, alias="stop_sequences")
+    """Default stop sequences."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     groq_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
@@ -326,8 +328,6 @@ class ChatGroq(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
-    stop: Optional[List[str]] = Field(None, alias="stop_sequences")
-    """Default stop sequences."""
     default_headers: Union[Mapping[str, str], None] = None
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
@@ -449,7 +449,7 @@ class ChatGroq(BaseChatModel):
         if ls_max_tokens := params.get("max_tokens", self.max_tokens):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None) or self.stop:
-            ls_params["ls_stop"] = ls_stop
+            ls_params["ls_stop"] = ls_stop if isinstance(ls_stop, list) else [ls_stop]
         return ls_params
 
     def _generate(
@@ -804,10 +804,19 @@ class ChatGroq(BaseChatModel):
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
+            if tool_choice == "any":
+                if len(tools) > 1:
+                    raise ValueError(
+                        f"Groq does not currently support {tool_choice=}. Should "
+                        f"be one of 'auto', 'none', or the name of the tool to call."
+                    )
+                else:
+                    tool_choice = convert_to_openai_tool(tools[0])["function"]["name"]
             if isinstance(tool_choice, str) and (
                 tool_choice not in ("auto", "any", "none")
             ):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
+            # TODO: Remove this update once 'any' is supported.
             if isinstance(tool_choice, dict) and (len(formatted_tools) != 1):
                 raise ValueError(
                     "When specifying `tool_choice`, you must provide exactly one "
