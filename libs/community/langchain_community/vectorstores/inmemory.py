@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 import numpy as np
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.indexing import UpsertResponse
 from langchain_core.load import dumpd, load
 from langchain_core.vectorstores import VectorStore
 
@@ -37,27 +38,41 @@ class InMemoryVectorStore(VectorStore):
     async def adelete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         self.delete(ids)
 
-    def add_texts(
-        self,
-        texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
-        ids: Optional[Sequence[str]] = None,
-        **kwargs: Any,
-    ) -> List[str]:
-        """Add texts to the store."""
-        vectors = self.embedding.embed_documents(list(texts))
-        ids_ = []
-
-        for i, text in enumerate(texts):
-            doc_id = ids[i] if ids else str(uuid.uuid4())
-            ids_.append(doc_id)
+    def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
+        vectors = self.embedding.embed_documents([item.page_content for item in items])
+        ids = []
+        for item, vector in zip(items, vectors):
+            doc_id = item.id if item.id else str(uuid.uuid4())
+            ids.append(doc_id)
             self.store[doc_id] = {
                 "id": doc_id,
-                "vector": vectors[i],
-                "text": text,
-                "metadata": metadatas[i] if metadatas else {},
+                "vector": vector,
+                "text": item.page_content,
+                "metadata": item.metadata,
             }
-        return ids_
+        return {
+            "succeeded": ids,
+            "failed": [],
+        }
+
+    def get_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+        """Get documents by their ids."""
+        documents = []
+
+        for doc_id in ids:
+            doc = self.store.get(doc_id)
+            if doc:
+                documents.append(
+                    Document(
+                        id=doc["id"],
+                        page_content=doc["text"],
+                        metadata=doc["metadata"],
+                    )
+                )
+        return documents
+
+    async def aget_by_ids(self, ids: Sequence[str], /) -> List[Document]:
+        return self.get_by_ids(ids)
 
     async def aadd_texts(
         self,
@@ -80,7 +95,9 @@ class InMemoryVectorStore(VectorStore):
             similarity = float(cosine_similarity([embedding], [vector]).item(0))
             result.append(
                 (
-                    Document(page_content=doc["text"], metadata=doc["metadata"]),
+                    Document(
+                        id=doc["id"], page_content=doc["text"], metadata=doc["metadata"]
+                    ),
                     similarity,
                     vector,
                 )

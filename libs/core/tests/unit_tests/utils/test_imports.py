@@ -6,6 +6,8 @@ EXPECTED_ALL = [
     "convert_to_secret_str",
     "formatter",
     "get_bolded_text",
+    "abatch_iterate",
+    "batch_iterate",
     "get_color_mapping",
     "get_colored_text",
     "get_pydantic_field_names",
