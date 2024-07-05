@@ -186,15 +186,20 @@ class MiniMaxChat(BaseChatModel):
                 "MINIMAX_API_KEY",
             )
         )
-        values["minimax_group_id"] = get_from_dict_or_env(
-            values, ["minimax_group_id", "group_id"], "MINIMAX_GROUP_ID"
-        )
+
+        default_values = {
+            name: field.default
+            for name, field in cls.__fields__.items()
+            if field.default is not None
+        }
+        default_values.update(values)
+
         # Get custom api url from environment.
         values["minimax_api_host"] = get_from_dict_or_env(
             values,
-            "minimax_api_host",
+            ["minimax_api_host", "base_url"],
             "MINIMAX_API_HOST",
-            values["minimax_api_host"],
+            default_values["minimax_api_host"],
         )
         return values
 
@@ -316,9 +321,10 @@ class MiniMaxChat(BaseChatModel):
                     chunk = ChatGenerationChunk(
                         message=chunk, generation_info=generation_info
                     )
-                    yield chunk
                     if run_manager:
                         run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                    yield chunk
+
                     if finish_reason is not None:
                         break
 
@@ -394,8 +400,9 @@ class MiniMaxChat(BaseChatModel):
                     chunk = ChatGenerationChunk(
                         message=chunk, generation_info=generation_info
                     )
-                    yield chunk
                     if run_manager:
                         await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                    yield chunk
+
                     if finish_reason is not None:
                         break

@@ -28,6 +28,14 @@ pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 langchain-core = { path = "../../core", develop = true }
 
+[[tool.poetry.group.test.dependencies.numpy]]
+version = "^1.24.0"
+python = "<3.12"
+
+[[tool.poetry.group.test.dependencies.numpy]]
+version = "^1.26.0"
+python = ">=3.12"
+
 [tool.poetry.group.codespell]
 optional = true
 
