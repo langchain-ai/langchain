@@ -156,13 +156,16 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
 
-        # Test tool with no arguments
+    def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
+        if not self.has_tool_calling:
+            pytest.skip("Test requires tool calling.")
+
         model_with_tools = model.bind_tools([magic_function_no_args])
         query = "What is the value of magic_function()? Use the tool."
         result = model_with_tools.invoke(query)
         _validate_tool_call_message_no_args(result)
 
-        full = None
+        full: Optional[BaseMessageChunk] = None
         for chunk in model_with_tools.stream(query):
             full = chunk if full is None else full + chunk  # type: ignore
         assert isinstance(full, AIMessage)
