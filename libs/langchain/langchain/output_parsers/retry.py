@@ -12,7 +12,7 @@ from langchain_core.runnables import RunnableSerializable
 NAIVE_COMPLETION_RETRY = """Prompt:
 {prompt}
 Completion:
-{completion}
+{input}
 
 Above, the Completion did not satisfy the constraints given in the Prompt.
 Please try again:"""
@@ -20,7 +20,7 @@ Please try again:"""
 NAIVE_COMPLETION_RETRY_WITH_ERROR = """Prompt:
 {prompt}
 Completion:
-{completion}
+{input}
 
 Above, the Completion did not satisfy the constraints given in the Prompt.
 Details: {error}
@@ -96,16 +96,16 @@ class RetryOutputParser(BaseOutputParser[T]):
                     if self.legacy and hasattr(self.retry_chain, "run"):
                         completion = self.retry_chain.run(
                             prompt=prompt_value.to_string(),
-                            completion=completion,
+                            input=completion,
                             error=repr(e),
-                        )
+                        ).content
                     else:
                         completion = self.retry_chain.invoke(
                             dict(
                                 prompt=prompt_value.to_string(),
                                 input=completion,
                             )
-                        )
+                        ).content
 
         raise OutputParserException("Failed to parse")
 
@@ -132,16 +132,16 @@ class RetryOutputParser(BaseOutputParser[T]):
                     if self.legacy and hasattr(self.retry_chain, "arun"):
                         completion = await self.retry_chain.arun(
                             prompt=prompt_value.to_string(),
-                            completion=completion,
+                            input=completion,
                             error=repr(e),
-                        )
+                        ).content
                     else:
                         completion = await self.retry_chain.ainvoke(
                             dict(
                                 prompt=prompt_value.to_string(),
                                 input=completion,
                             )
-                        )
+                        ).content
 
         raise OutputParserException("Failed to parse")
 
@@ -217,10 +217,10 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                     retries += 1
                     if self.legacy and hasattr(self.retry_chain, "run"):
                         completion = self.retry_chain.run(
+                            input=completion,
                             prompt=prompt_value.to_string(),
-                            completion=completion,
                             error=repr(e),
-                        )
+                        ).content
                     else:
                         completion = self.retry_chain.invoke(
                             dict(
@@ -228,7 +228,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                                 prompt=prompt_value.to_string(),
                                 error=repr(e),
                             )
-                        )
+                        ).content
 
         raise OutputParserException("Failed to parse")
 
@@ -246,9 +246,9 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                     if self.legacy and hasattr(self.retry_chain, "arun"):
                         completion = await self.retry_chain.arun(
                             prompt=prompt_value.to_string(),
-                            completion=completion,
+                            input=completion,
                             error=repr(e),
-                        )
+                        ).content
                     else:
                         completion = await self.retry_chain.ainvoke(
                             dict(
@@ -256,7 +256,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                                 input=completion,
                                 error=repr(e),
                             )
-                        )
+                        ).content
 
         raise OutputParserException("Failed to parse")
 
