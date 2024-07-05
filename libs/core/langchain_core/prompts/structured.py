@@ -138,6 +138,19 @@ class StructuredPrompt(ChatPromptTemplate):
         *others: Union[Runnable[Any, Other], Callable[[Any], Other]],
         name: Optional[str] = None,
     ) -> RunnableSerializable[Dict, Other]:
+        """Pipe the structured prompt to a language model.
+
+        Args:
+            others: The language model to pipe the structured prompt to.
+            name: The name of the pipeline. Defaults to None.
+
+        Returns:
+            A RunnableSequence object.
+
+        Raises:
+            NotImplementedError: If the first element of `others`
+            is not a language model.
+        """
         if (
             others
             and isinstance(others[0], BaseLanguageModel)
