@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Dict, List, Tuple, Any, Mapping, Union
+from typing import Optional, Callable, Dict, List, Tuple, Any, Mapping, Union
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -8,6 +8,14 @@ from langchain_core.messages import (
     SystemMessage,
     HumanMessage,
 )
+import requests
+
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain_core.language_models.llms import create_base_retry_decorator
+
 from langchain_core.outputs import ChatGeneration, ChatResult
 from pydantic import Field
 from langchain_core.pydantic_v1 import Field, root_validator
@@ -39,26 +47,40 @@ class ChatStraico(BaseChatModel):
         )
         return values
 
-    def _generate(self, messages, stop=None, run_manager=None) -> ChatResult:
+    def _generate(
+        self,
+        messages,
+        stop=None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+    ) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params}
-        response = self._completion_with_retry(messages=message_dicts, params=params)
-        print("RESPONSE", response)
-        message = AIMessage(
-            content=response["data"]["completion"]["choices"][0]["message"]["content"]
+        response = self._completion_with_retry(
+            messages=message_dicts, run_manager=run_manager, params=params
         )
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        return self._create_chat_result(response["data"]["completion"])
 
-    async def _agenerate(
-        self, messages, stop=None, run_manager=None, **kwargs
-    ) -> ChatResult:
-        # Simulate asynchronous response generation
-        responses = [f"Async response to: {msg.content}" for msg in messages]
-        chat_generations = [
-            ChatGeneration(message=AIMessage(content=response))
-            for response in responses
-        ]
-        return ChatResult(generations=chat_generations)
+    async def _agenerate(self, messages, stop=None, run_manager=None) -> ChatResult:
+        message_dicts, params = self._create_message_dicts(messages, stop)
+        params = {**params}
+        response = self._acompletion_with_retry(
+            messages=message_dicts, run_manager=run_manager, params=params
+        )
+        return self._create_chat_result(response["data"]["completion"])
+
+    def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
+        generations = []
+        for res in response["choices"]:
+            message = _convert_dict_to_message(res["message"])
+            gen = ChatGeneration(
+                message=message,
+                generation_info=dict(finish_reason=res.get("finish_reason")),
+            )
+            generations.append(gen)
+        token_usage = response["usage"]
+        llm_output = {"token_usage": token_usage, "model": self.model}
+        res = ChatResult(generations=generations, llm_output=llm_output)
+        return res
 
     @property
     def _default_params(self) -> Dict[str, Any]:
@@ -109,11 +131,52 @@ class ChatStraico(BaseChatModel):
         return "straicochat"
 
     def _completion_with_retry(
-        self, messages: List[Dict[str, Any]], params: Dict[str, Any]
+        self,
+        messages: List[Dict[str, Any]],
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        params: Dict[str, Any] = {},
     ) -> Any:
-        retries = params["max_retries"]
-        auth_header = {"Authorization": f"Bearer {params['api_key']}"}
-        for attempt in range(retries):
+        """Use tenacity to retry the completion call."""
+        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
+
+        @retry_decorator
+        def _completion_with_retry(
+            messages: List[Dict[str, Any]], params: Dict[str, Any]
+        ) -> Any:
+            auth_header = {"Authorization": f"Bearer {params['api_key']}"}
+            try:
+                request_timeout = params.get("request_timeout", None)
+                request = Requests(headers=auth_header)
+                # Create a payload dictionary
+                payloadStruct = {
+                    "model": params["model"],
+                    "message": str(messages),
+                }
+                response = request.post(
+                    url=params["url"], data=payloadStruct, timeout=request_timeout
+                )
+                self._handle_status(response.status_code, response.text)
+                response_data = json.loads(response._content)
+                return response_data
+            except Exception as e:
+                raise e
+
+        return _completion_with_retry(messages=messages, params=params)
+
+    async def _acompletion_with_retry(
+        self,
+        messages: List[Dict[str, Any]],
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        params: Dict[str, Any] = {},
+    ) -> Any:
+        """Use tenacity to retry the completion call."""
+        retry_decorator = _create_retry_decorator(self, run_manager=run_manager)
+
+        @retry_decorator
+        async def _completion_with_retry(
+            messages: List[Dict[str, Any]], params: Dict[str, Any]
+        ) -> Any:
+            auth_header = {"Authorization": f"Bearer {params['api_key']}"}
             try:
                 request = Requests(headers=auth_header)
                 # Create a payload dictionary
@@ -123,8 +186,9 @@ class ChatStraico(BaseChatModel):
                 response_data = json.loads(response._content)
                 return response_data
             except Exception as e:
-                if attempt == retries - 1:
-                    raise e
+                raise e
+
+        return await _completion_with_retry(messages=messages, params=params)
 
     def _handle_status(self, status_code: int, text: str) -> None:
         if status_code >= 500:
@@ -135,3 +199,49 @@ class ChatStraico(BaseChatModel):
             raise Exception(
                 f"Straico returned an unexpected response with status {status_code}: {text}"
             )
+
+    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+        """Custom method to combine the llm_output information for batched call."""
+        overall_token_usage: dict = {}
+        for output in llm_outputs:
+            token_usage = output["token_usage"]
+            if token_usage is not None:
+                for k, v in token_usage.items():
+                    if k in overall_token_usage:
+                        overall_token_usage[k] += v
+                    else:
+                        overall_token_usage[k] = v
+        combined = {"token_usage": overall_token_usage, "model_name": self.model}
+        return combined
+
+
+def _create_retry_decorator(
+    llm: ChatStraico,
+    run_manager: Optional[
+        Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
+    ] = None,
+) -> Callable[[Any], Any]:
+    return create_base_retry_decorator(
+        error_types=[requests.exceptions.ConnectTimeout],
+        max_retries=llm.max_retries,
+        run_manager=run_manager,
+    )
+
+
+def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
+    role = _dict["role"]
+    if role == "user":
+        return HumanMessage(content=_dict["content"])
+    elif role == "assistant":
+        content = _dict.get("content", "") or ""
+        # if _dict.get("function_call"):
+        #     additional_kwargs = {"function_call": dict(_dict["function_call"])}
+        # else:
+        #     additional_kwargs = {}
+        return AIMessage(content=content)
+    elif role == "system":
+        return SystemMessage(content=_dict["content"])
+    # elif role == "function":
+    #     return FunctionMessage(content=_dict["content"], name=_dict["name"])
+    else:
+        return ChatMessage(content=_dict["content"], role=role)
