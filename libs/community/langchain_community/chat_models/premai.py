@@ -220,6 +220,12 @@ def _messages_to_prompt_dict(
                         json=ai_msg_to_json,
                     )}
                 )
+        elif isinstance(input_msg, ToolMessage):
+            pass 
+
+        else:
+            raise ChatPremAPIError("No such role explicitly exists")
+        
     # do a seperate search for tool calls
     tool_prompt = ""
     for input_msg in input_messages:
