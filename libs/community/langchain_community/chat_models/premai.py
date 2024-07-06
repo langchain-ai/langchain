@@ -15,6 +15,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    Sequence
 )
 
 from langchain_core.callbacks import (
@@ -341,7 +342,6 @@ class ChatPremAI(BaseChatModel, BaseModel):
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         kwargs_to_ignore = [
             "top_p",
-            "tools",
             "frequency_penalty",
             "presence_penalty",
             "logit_bias",
@@ -443,7 +443,14 @@ class ChatPremAI(BaseChatModel, BaseModel):
                 yield cg_chunk
             except Exception as _:
                 continue
-
+    
+    def bind_tools(
+        self, 
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools] 
+        return super().bind(tools=formatted_tools, **kwargs)
 
 def create_prem_retry_decorator(
     llm: ChatPremAI,
