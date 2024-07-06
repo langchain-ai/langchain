@@ -184,41 +184,59 @@ def _messages_to_prompt_dict(
     system_prompt: Optional[str] = None
     examples_and_messages: List[Dict[str, Any]] = []
 
-    if template_id is not None:
-        params: Dict[str, str] = {}
-        for input_msg in input_messages:
-            if isinstance(input_msg, SystemMessage):
-                system_prompt = str(input_msg.content)
+    for input_msg in input_messages:
+        if isinstance(input_msg, SystemMessage):
+            system_prompt = str(input_msg.content)
+        
+        elif isinstance(input_msg, HumanMessage):
+            if template_id is None:
+                examples_and_messages.append(
+                    {"role": "assistant", "content": str(input_msg.content)}
+                )
             else:
+                params: Dict[str, str] = {}
                 assert (input_msg.id is not None) and (input_msg.id != ""), ValueError(
                     "When using prompt template there should be id associated ",
                     "with each HumanMessage",
                 )
                 params[str(input_msg.id)] = str(input_msg.content)
-
+                examples_and_messages.append(
+                    {"role":"user", "template_id": template_id, "params": params}
+                )
+        elif isinstance(input_msg, AIMessage):
+            if input_msg.tool_calls is None or len(input_msg.tool_calls) == 0:
+                examples_and_messages.append(
+                    {"role": "assistant", "content": str(input_msg.content)}
+                ) 
+            else:
+                ai_msg_to_json = {
+                    "id": input_msg.id,
+                    "content": input_msg.content,
+                    "response_metadata": input_msg.response_metadata,
+                    "tool_calls": input_msg.tool_calls
+                }
+                examples_and_messages.append(
+                    {"role":"assistant", "content": INTERMEDIATE_TOOL_RESULT_TEMPLATE.format(
+                        json=ai_msg_to_json,
+                    )}
+                )
+    # do a seperate search for tool calls
+    tool_prompt = ""
+    for input_msg in input_messages:
+        if isinstance(input_msg, ToolMessage):
+            tool_id = input_msg.tool_call_id
+            tool_result = input_msg.content
+            tool_prompt += SINGLE_TOOL_PROMPT_TEMPLATE.format(
+                tool_id=tool_id,
+                tool_response=tool_result
+            )
+    if tool_prompt != "":
+        prompt = "Given the set of tools you used and the response, provide the final answer\n"
+        prompt += tool_prompt
         examples_and_messages.append(
-            {"role": "user", "template_id": template_id, "params": params}
+            {"role":"user", "content": prompt}
         )
 
-        for input_msg in input_messages:
-            if isinstance(input_msg, AIMessage):
-                examples_and_messages.append(
-                    {"role": "assistant", "content": str(input_msg.content)}
-                )
-    else:
-        for input_msg in input_messages:
-            if isinstance(input_msg, SystemMessage):
-                system_prompt = str(input_msg.content)
-            elif isinstance(input_msg, HumanMessage):
-                examples_and_messages.append(
-                    {"role": "user", "content": str(input_msg.content)}
-                )
-            elif isinstance(input_msg, AIMessage):
-                examples_and_messages.append(
-                    {"role": "assistant", "content": str(input_msg.content)}
-                )
-            else:
-                raise ChatPremAPIError("No such role explicitly exists")
     return system_prompt, examples_and_messages
 
 
