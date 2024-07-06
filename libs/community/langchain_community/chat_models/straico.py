@@ -1,24 +1,22 @@
 import json
-from typing import Optional, Callable, Dict, List, Tuple, Any, Mapping, Union
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import BaseMessage
-import requests
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 
+import requests
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import create_base_retry_decorator
+from langchain_core.messages import BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
+from langchain_core.utils import get_from_dict_or_env
+
 from langchain_community.adapters.openai import (
     convert_dict_to_message,
     convert_message_to_dict,
 )
-
-from langchain_core.outputs import ChatGeneration, ChatResult
-from pydantic import Field, SecretStr
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
 from langchain_community.utilities.requests import Requests
 
 
@@ -181,9 +179,7 @@ class ChatStraico(BaseChatModel):
         elif status_code >= 400:
             raise ValueError(f"Straico received an invalid payload: {text}")
         elif status_code != 201:  # straico returns 201 for success
-            raise Exception(
-                f"Straico returned an unexpected response with status {status_code}: {text}"
-            )
+            raise Exception(f"Request failed with status code {status_code}: {text}")
 
     def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
         """Custom method to combine the llm_output information for batched call."""

@@ -1,25 +1,28 @@
 """Test Straico Chat API wrapper."""
 
 import os
-import pytest
 
-from langchain_community.chat_models import ChatStraico
+import pytest
 from langchain_core.messages import (
     AIMessage,
-    SystemMessage,
     HumanMessage,
+    SystemMessage,
 )
+from langchain_core.pydantic_v1 import SecretStr
+
 from langchain_community.adapters.openai import (
     convert_dict_to_message,
 )
-from pydantic import SecretStr
+from langchain_community.chat_models import ChatStraico
 
 os.environ["STRAICO_API_KEY"] = "foo"
+
 
 @pytest.mark.requires("openai")
 def test_straico_model_name_param() -> None:
     llm = ChatStraico(model="foo")
     assert llm.model == "foo"
+
 
 @pytest.mark.requires("openai")
 def test_straico_initialization() -> None:

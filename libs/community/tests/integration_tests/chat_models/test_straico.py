@@ -6,8 +6,9 @@ from langchain_core.outputs import (
     ChatGeneration,
     LLMResult,
 )
-import os
+
 from langchain_community.chat_models import ChatStraico
+
 
 @pytest.mark.scheduled
 def test_chat_straico() -> None:
