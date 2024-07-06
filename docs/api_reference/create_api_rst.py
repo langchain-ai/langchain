@@ -143,7 +143,15 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
 def _merge_module_members(
     module_members: Sequence[ModuleMembers],
 ) -> ModuleMembers:
-    """Merge module members."""
+    """Merge module members.
+    
+    Args:
+        module_members (Sequence[ModuleMembers]): A list of module members.
+
+    Returns:
+        ModuleMembers: Returns the merged ModuleMembers object.
+
+    """
     classes_: List[ClassInfo] = []
     functions: List[FunctionInfo] = []
     for module in module_members:
