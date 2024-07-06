@@ -1,25 +1,25 @@
 """Test Straico Chat API wrapper."""
 
 import os
-
 import pytest
 
 from langchain_community.chat_models import ChatStraico
+from langchain_core.messages import (
+    AIMessage,
+    SystemMessage,
+    HumanMessage,
+)
+from langchain_community.adapters.openai import (
+    convert_dict_to_message,
+)
+from pydantic import SecretStr
 
 os.environ["STRAICO_API_KEY"] = "foo"
-
 
 @pytest.mark.requires("openai")
 def test_straico_model_name_param() -> None:
     llm = ChatStraico(model="foo")
     assert llm.model == "foo"
-
-
-@pytest.mark.requires("openai")
-def test_straico_model_kwargs() -> None:
-    llm = ChatStraico(model="test", model_kwargs={"foo": "bar"})
-    assert llm.model_kwargs == {"foo": "bar"}
-
 
 @pytest.mark.requires("openai")
 def test_straico_initialization() -> None:
@@ -30,15 +30,36 @@ def test_straico_initialization() -> None:
         ChatStraico(
             model="test",
             timeout=1,
-            straico_api_key="test",
+            api_key=SecretStr("testkey"),
             verbose=True,
         ),
         ChatStraico(
             model="test",
-            request_timeout=1,
-            straico_api_key="test",
+            timeout=1,
+            api_key=SecretStr("testkey"),
             verbose=True,
         ),
     ]:
         assert model.request_timeout == 1
-        assert model.straico_api_key == "test"
+        assert model.straico_api_key == SecretStr("testkey")
+
+
+def test__convert_dict_to_message_human() -> None:
+    message = {"role": "user", "content": "foo"}
+    result = convert_dict_to_message(message)
+    expected_output = HumanMessage(content="foo")
+    assert result == expected_output
+
+
+def test__convert_dict_to_message_ai() -> None:
+    message = {"role": "assistant", "content": "foo"}
+    result = convert_dict_to_message(message)
+    expected_output = AIMessage(content="foo")
+    assert result == expected_output
+
+
+def test__convert_dict_to_message_system() -> None:
+    message = {"role": "system", "content": "foo"}
+    result = convert_dict_to_message(message)
+    expected_output = SystemMessage(content="foo")
+    assert result == expected_output

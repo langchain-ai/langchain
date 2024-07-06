@@ -1,33 +1,31 @@
 import json
 from typing import Optional, Callable, Dict, List, Tuple, Any, Mapping, Union
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    BaseMessage,
-    ChatMessage,
-    SystemMessage,
-    HumanMessage,
-)
+from langchain_core.messages import BaseMessage
 import requests
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+
 from langchain_core.language_models.llms import create_base_retry_decorator
+from langchain_community.adapters.openai import (
+    convert_dict_to_message,
+    convert_message_to_dict,
+)
 
 from langchain_core.outputs import ChatGeneration, ChatResult
-from pydantic import Field
+from pydantic import Field, SecretStr
 from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import get_from_dict_or_env
 from langchain_community.utilities.requests import Requests
-import io
 
 
 class ChatStraico(BaseChatModel):
     model: Optional[str] = Field(default="openai/gpt-3.5-turbo-0125")
     """Model name to use."""
-    straico_api_key: Optional[str] = Field(None, alias="api_key")
+    straico_api_key: Optional[SecretStr] = Field(None, alias="api_key")
     """Automatically inferred from env var `STRAICO_API_KEY` if not provided."""
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
@@ -63,7 +61,7 @@ class ChatStraico(BaseChatModel):
     async def _agenerate(self, messages, stop=None, run_manager=None) -> ChatResult:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params}
-        response = self._acompletion_with_retry(
+        response = await self._acompletion_with_retry(
             messages=message_dicts, run_manager=run_manager, params=params
         )
         return self._create_chat_result(response["data"]["completion"])
@@ -71,7 +69,7 @@ class ChatStraico(BaseChatModel):
     def _create_chat_result(self, response: Mapping[str, Any]) -> ChatResult:
         generations = []
         for res in response["choices"]:
-            message = _convert_dict_to_message(res["message"])
+            message = convert_dict_to_message(res["message"])
             gen = ChatGeneration(
                 message=message,
                 generation_info=dict(finish_reason=res.get("finish_reason")),
@@ -91,19 +89,6 @@ class ChatStraico(BaseChatModel):
             # "max_tokens": self.max_tokens,
         }
 
-    def _convert_message_to_dict(self, message: BaseMessage) -> Dict[str, Any]:
-        if isinstance(message, ChatMessage):
-            message_dict = {"role": message.role, "content": message.content}
-        elif isinstance(message, SystemMessage):
-            message_dict = {"role": "system", "content": message.content}
-        elif isinstance(message, HumanMessage):
-            message_dict = {"role": "user", "content": message.content}
-        elif isinstance(message, AIMessage):
-            message_dict = {"role": "assistant", "content": message.content}
-        else:
-            raise TypeError(f"Got unknown type {message}")
-        return message_dict
-
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
@@ -112,7 +97,7 @@ class ChatStraico(BaseChatModel):
             if "stop" in params:
                 raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
-        message_dicts = [self._convert_message_to_dict(m) for m in messages]
+        message_dicts = [convert_message_to_dict(m) for m in messages]
         return message_dicts, params
 
     @property
@@ -226,22 +211,3 @@ def _create_retry_decorator(
         max_retries=llm.max_retries,
         run_manager=run_manager,
     )
-
-
-def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
-    role = _dict["role"]
-    if role == "user":
-        return HumanMessage(content=_dict["content"])
-    elif role == "assistant":
-        content = _dict.get("content", "") or ""
-        # if _dict.get("function_call"):
-        #     additional_kwargs = {"function_call": dict(_dict["function_call"])}
-        # else:
-        #     additional_kwargs = {}
-        return AIMessage(content=content)
-    elif role == "system":
-        return SystemMessage(content=_dict["content"])
-    # elif role == "function":
-    #     return FunctionMessage(content=_dict["content"], name=_dict["name"])
-    else:
-        return ChatMessage(content=_dict["content"], role=role)
