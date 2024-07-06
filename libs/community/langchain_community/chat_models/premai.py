@@ -197,7 +197,7 @@ def _messages_to_prompt_dict(
         elif isinstance(input_msg, HumanMessage):
             if template_id is None:
                 examples_and_messages.append(
-                    {"role": "assistant", "content": str(input_msg.content)}
+                    {"role": "user", "content": str(input_msg.content)}
                 )
             else:
                 params: Dict[str, str] = {}
