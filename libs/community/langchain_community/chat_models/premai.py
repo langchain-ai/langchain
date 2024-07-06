@@ -107,8 +107,20 @@ def _response_to_result(
             raise ChatPremAPIError(f"ChatResponse must have a content: {content}")
 
         if role == "assistant":
+            tool_calls = choice.message["tool_calls"]
+            if tool_calls is None:
+                tools = []
+            else:
+                tools = [{
+                    "id": tool_call["id"],
+                    "name": tool_call["function"]["name"],
+                    "args": tool_call["function"]["arguments"]
+                } for tool_call in tool_calls]
             generations.append(
-                ChatGeneration(text=content, message=AIMessage(content=content))
+                ChatGeneration(
+                    text=content,
+                    message=AIMessage(content=content, tool_calls=tools)
+                )
             )
         elif role == "user":
             generations.append(
