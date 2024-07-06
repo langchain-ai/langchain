@@ -116,18 +116,127 @@ def _convert_delta_to_message_chunk(
 
 
 class MiniMaxChat(BaseChatModel):
-    """MiniMax large language models.
+    """MiniMax chat model integration.
 
-    To use, you should have the environment variable``MINIMAX_API_KEY`` set with
-    your API token, or pass it as a named parameter to the constructor.
+    Setup:
+        Set environment variable ``MINIMAX_API_KEY``.
 
-    Example:
+    Key init args — completion params:
+        model: Optional[str]
+            Name of MiniMax model to use.
+        max_tokens: Optional[int]
+            Max number of tokens to generate.
+        temperature: Optional[float]
+            Sampling temperature.
+        top_p: Optional[float]
+            Total probability mass of tokens to consider at each step
+
+    Key init args — client params:
+        api_key: Optional[str]
+            MiniMax API key. If not passed in will be read from env var MINIMAX_API_KEY.
+        base_url: Optional[str]
+            Base URL for API requests.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_community.chat_models import MiniMaxChat
-            llm = MiniMaxChat(model="abab5-chat")
 
-    """
+            chat = MiniMaxChat(
+                api_key="your-api-key",
+                model="abab6.5-chat",
+                # temperature=0.5,
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            messages = [
+                ("system", "你是一名专业的翻译家，可以将用户的中文翻译为英文。"),
+                ("human", "我喜欢编程。"),
+            ]
+            chat.invoke(messages)
+
+        .. code-block:: python
+
+            AIMessage(
+                content='I like programming.',
+                response_metadata={
+                    'token_usage': {'total_tokens': 48},
+                    'model_name': 'abab6.5-chat',
+                    'finish_reason': 'stop'
+                },
+                id='run-4b4ba253-6469-4322-9fb5-f39825cb9822-0'
+            )
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in chat.stream(messages):
+                print(chunk)
+
+        .. code-block:: python
+
+            content='I' id='run-db0d40ff-5408-423d-a801-5fd95f88b86d'
+            content=' enjoy programming.' response_metadata={'finish_reason': 'stop'} id='run-db0d40ff-5408-423d-a801-5fd95f88b86d'
+
+        .. code-block:: python
+
+            stream = chat.stream(messages)
+            full = next(stream)
+            for chunk in stream:
+                full += chunk
+            full
+
+        .. code-block:: python
+
+            AIMessageChunk(
+                content='I enjoy programming.',
+                response_metadata={'finish_reason': 'stop'},
+                id='run-09c72709-4979-486f-aae1-da6ea01af1b1'
+            )
+
+    Async:
+        .. code-block:: python
+
+            await chat.ainvoke(messages)
+
+            # stream:
+            # async for chunk in chat.astream(messages):
+            #    print(chunk)
+
+            # batch:
+            # await chat.abatch([messages])
+
+        .. code-block:: python
+        
+            AIMessage(
+                content='I enjoy programming.',
+                response_metadata={
+                    'token_usage': {'total_tokens': 48},
+                    'model_name': 'abab6.5-chat', 'finish_reason': 'stop'
+                },
+                id='run-fe36e36e-f80f-471c-8f1b-50e7da67fa7e-0'
+            )
+
+    Response metadata
+        .. code-block:: python
+
+            ai_msg = chat.invoke(messages)
+            ai_msg.response_metadata
+
+        .. code-block:: python
+        
+            {
+                'token_usage': {'total_tokens': 48},
+                'model_name': 'abab6.5-chat',
+                'finish_reason': 'stop'
+            }
+
+    """  # noqa: E501
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
