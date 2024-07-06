@@ -1,4 +1,5 @@
 """Azure OpenAI chat wrapper."""
+
 from __future__ import annotations
 
 import logging
@@ -548,8 +549,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
         values["openai_api_key"] = (
             convert_to_secret_str(openai_api_key) if openai_api_key else None
         )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
+        values["openai_api_base"] = (
+            values["openai_api_base"]
+            if "openai_api_base" in values
+            else os.getenv("OPENAI_API_BASE")
         )
         values["openai_api_version"] = values["openai_api_version"] or os.getenv(
             "OPENAI_API_VERSION"
@@ -601,12 +604,16 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "api_version": values["openai_api_version"],
             "azure_endpoint": values["azure_endpoint"],
             "azure_deployment": values["deployment_name"],
-            "api_key": values["openai_api_key"].get_secret_value()
-            if values["openai_api_key"]
-            else None,
-            "azure_ad_token": values["azure_ad_token"].get_secret_value()
-            if values["azure_ad_token"]
-            else None,
+            "api_key": (
+                values["openai_api_key"].get_secret_value()
+                if values["openai_api_key"]
+                else None
+            ),
+            "azure_ad_token": (
+                values["azure_ad_token"].get_secret_value()
+                if values["azure_ad_token"]
+                else None
+            ),
             "azure_ad_token_provider": values["azure_ad_token_provider"],
             "organization": values["openai_organization"],
             "base_url": values["openai_api_base"],
@@ -657,8 +664,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[True] = True,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]:
-        ...
+    ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
 
     @overload
     def with_structured_output(
@@ -668,8 +674,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[False] = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        ...
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
 
     def with_structured_output(
         self,
@@ -861,7 +866,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
             llm = self.bind_tools([schema], tool_choice=tool_name)
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], first_tool_only=True
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,  # type: ignore[list-item]
                 )
             else:
                 output_parser = JsonOutputKeyToolsParser(
@@ -870,7 +876,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )

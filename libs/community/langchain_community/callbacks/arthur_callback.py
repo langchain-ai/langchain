@@ -1,4 +1,5 @@
 """ArthurAI's Callback Handler."""
+
 from __future__ import annotations
 
 import os

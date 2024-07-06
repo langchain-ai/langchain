@@ -1,4 +1,5 @@
 """Wrapper around YandexGPT embedding models."""
+
 from __future__ import annotations
 
 import logging
@@ -105,15 +106,15 @@ class YandexGPTEmbeddings(BaseModel, Embeddings):
         if not values.get("doc_model_uri"):
             if values["folder_id"] == "":
                 raise ValueError("'doc_model_uri' or 'folder_id' must be provided.")
-            values[
-                "doc_model_uri"
-            ] = f"emb://{values['folder_id']}/{values['doc_model_name']}/{values['model_version']}"
+            values["doc_model_uri"] = (
+                f"emb://{values['folder_id']}/{values['doc_model_name']}/{values['model_version']}"
+            )
         if not values.get("model_uri"):
             if values["folder_id"] == "":
                 raise ValueError("'model_uri' or 'folder_id' must be provided.")
-            values[
-                "model_uri"
-            ] = f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+            values["model_uri"] = (
+                f"emb://{values['folder_id']}/{values['model_name']}/{values['model_version']}"
+            )
         if values["disable_request_logging"]:
             values["_grpc_metadata"].append(
                 (

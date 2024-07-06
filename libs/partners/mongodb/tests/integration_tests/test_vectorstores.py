@@ -6,7 +6,7 @@ import os
 from time import monotonic, sleep
 from typing import Any, Dict, List, Optional
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from pymongo import MongoClient

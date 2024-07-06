@@ -1,4 +1,5 @@
 """Sagemaker InvokeEndpoint API."""
+
 import io
 import json
 from abc import abstractmethod
