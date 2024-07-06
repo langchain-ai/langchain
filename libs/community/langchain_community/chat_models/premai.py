@@ -45,6 +45,11 @@ from langchain_core.pydantic_v1 import (
 )
 from langchain_core.utils import get_from_dict_or_env
 
+from langchain_core.tools import BaseTool
+from langchain_core.runnables import Runnable
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.utils.function_calling import convert_to_openai_tool
+
 if TYPE_CHECKING:
     from premai.api.chat_completions.v1_chat_completions_create import (
         ChatCompletionResponseStream,
