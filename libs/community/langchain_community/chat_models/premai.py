@@ -33,6 +33,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
+    ToolMessage
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import (
@@ -52,6 +53,15 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
+INTERMEDIATE_TOOL_RESULT_TEMPLATE = """
+{json}
+"""
+
+SINGLE_TOOL_PROMPT_TEMPLATE = """
+tool id: {tool_id}
+tool_response: {tool_response}
+"""
 
 class ChatPremAPIError(Exception):
     """Error with the `PremAI` API."""
