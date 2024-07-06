@@ -58,7 +58,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-TOOL_PROMPT_HEADER="""
+TOOL_PROMPT_HEADER = """
 Given the set of tools you used and the response, provide the final answer\n
 """
 
