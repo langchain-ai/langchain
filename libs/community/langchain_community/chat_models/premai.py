@@ -12,15 +12,16 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
-    Sequence
 )
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
@@ -34,7 +35,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     SystemMessage,
     SystemMessageChunk,
-    ToolMessage
+    ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import (
@@ -44,11 +45,9 @@ from langchain_core.pydantic_v1 import (
     SecretStr,
     root_validator,
 )
-from langchain_core.utils import get_from_dict_or_env
-
-from langchain_core.tools import BaseTool
 from langchain_core.runnables import Runnable
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.tools import BaseTool
+from langchain_core.utils import get_from_dict_or_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 if TYPE_CHECKING:
@@ -59,6 +58,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+TOOL_PROMPT_HEADER="""
+Given the set of tools you used and the response, provide the final answer\n
+"""
 
 INTERMEDIATE_TOOL_RESULT_TEMPLATE = """
 {json}
@@ -68,6 +70,7 @@ SINGLE_TOOL_PROMPT_TEMPLATE = """
 tool id: {tool_id}
 tool_response: {tool_response}
 """
+
 
 class ChatPremAPIError(Exception):
     """Error with the `PremAI` API."""
@@ -112,15 +115,17 @@ def _response_to_result(
             if tool_calls is None:
                 tools = []
             else:
-                tools = [{
-                    "id": tool_call["id"],
-                    "name": tool_call["function"]["name"],
-                    "args": tool_call["function"]["arguments"]
-                } for tool_call in tool_calls]
+                tools = [
+                    {
+                        "id": tool_call["id"],
+                        "name": tool_call["function"]["name"],
+                        "args": tool_call["function"]["arguments"],
+                    }
+                    for tool_call in tool_calls
+                ]
             generations.append(
                 ChatGeneration(
-                    text=content,
-                    message=AIMessage(content=content, tool_calls=tools)
+                    text=content, message=AIMessage(content=content, tool_calls=tools)
                 )
             )
         elif role == "user":
@@ -188,7 +193,7 @@ def _messages_to_prompt_dict(
     for input_msg in input_messages:
         if isinstance(input_msg, SystemMessage):
             system_prompt = str(input_msg.content)
-        
+
         elif isinstance(input_msg, HumanMessage):
             if template_id is None:
                 examples_and_messages.append(
@@ -202,31 +207,34 @@ def _messages_to_prompt_dict(
                 )
                 params[str(input_msg.id)] = str(input_msg.content)
                 examples_and_messages.append(
-                    {"role":"user", "template_id": template_id, "params": params}
+                    {"role": "user", "template_id": template_id, "params": params}
                 )
         elif isinstance(input_msg, AIMessage):
             if input_msg.tool_calls is None or len(input_msg.tool_calls) == 0:
                 examples_and_messages.append(
                     {"role": "assistant", "content": str(input_msg.content)}
-                ) 
+                )
             else:
                 ai_msg_to_json = {
                     "id": input_msg.id,
                     "content": input_msg.content,
                     "response_metadata": input_msg.response_metadata,
-                    "tool_calls": input_msg.tool_calls
+                    "tool_calls": input_msg.tool_calls,
                 }
                 examples_and_messages.append(
-                    {"role":"assistant", "content": INTERMEDIATE_TOOL_RESULT_TEMPLATE.format(
-                        json=ai_msg_to_json,
-                    )}
+                    {
+                        "role": "assistant",
+                        "content": INTERMEDIATE_TOOL_RESULT_TEMPLATE.format(
+                            json=ai_msg_to_json,
+                        ),
+                    }
                 )
         elif isinstance(input_msg, ToolMessage):
-            pass 
+            pass
 
         else:
             raise ChatPremAPIError("No such role explicitly exists")
-        
+
     # do a seperate search for tool calls
     tool_prompt = ""
     for input_msg in input_messages:
@@ -234,15 +242,12 @@ def _messages_to_prompt_dict(
             tool_id = input_msg.tool_call_id
             tool_result = input_msg.content
             tool_prompt += SINGLE_TOOL_PROMPT_TEMPLATE.format(
-                tool_id=tool_id,
-                tool_response=tool_result
+                tool_id=tool_id, tool_response=tool_result
             )
     if tool_prompt != "":
-        prompt = "Given the set of tools you used and the response, provide the final answer\n"
+        prompt = TOOL_PROMPT_HEADER
         prompt += tool_prompt
-        examples_and_messages.append(
-            {"role":"user", "content": prompt}
-        )
+        examples_and_messages.append({"role": "user", "content": prompt})
 
     return system_prompt, examples_and_messages
 
@@ -443,14 +448,15 @@ class ChatPremAI(BaseChatModel, BaseModel):
                 yield cg_chunk
             except Exception as _:
                 continue
-    
+
     def bind_tools(
-        self, 
+        self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        formatted_tools = [convert_to_openai_tool(tool) for tool in tools] 
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
+
 
 def create_prem_retry_decorator(
     llm: ChatPremAI,
