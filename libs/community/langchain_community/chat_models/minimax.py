@@ -212,7 +212,7 @@ class MiniMaxChat(BaseChatModel):
             # await chat.abatch([messages])
 
         .. code-block:: python
-        
+
             AIMessage(
                 content='I enjoy programming.',
                 response_metadata={
@@ -229,7 +229,7 @@ class MiniMaxChat(BaseChatModel):
             ai_msg.response_metadata
 
         .. code-block:: python
-        
+
             {
                 'token_usage': {'total_tokens': 48},
                 'model_name': 'abab6.5-chat',
