@@ -301,14 +301,75 @@ class TestMongoDBAtlasVectorSearch:
         assert set(out_ids) == set(batch_ids)
         assert collection.count_documents({}) == 12
 
-        '''
-       def test_add_documents(self):
-           """Tests API of add_documents, focussing on id treatment
-             
+        # Case 6: _ids in metadata
+        collection.delete_many({})
+        # 6a. Unique _id in metadata, but ids=None
+        # Will be added as if ids kwarg provided
+        i = 0
+        n = len(texts)
+        assert len(metadatas) == n
+        _ids = [str(i) for i in range(n)]
+        for md in metadatas:
+            md["_id"] = _ids[i]
+            i += 1
+        returned_ids = vectorstore.add_texts(texts=texts, metadatas=metadatas)
+        assert returned_ids == ["0", "1", "2", "3"]
+        assert set(d["_id"] for d in vectorstore._collection.find({})) == set(_ids)
 
-           - case without ids
-           - case with ids in metadata
-           """
-           raise NotImplementedError
-           # TODO - There doesn't appear to be an add_documents!!!
-        '''
+        # 6b. Unique "id", not "_id", but ids=None
+        # New ids will be assigned
+        i = 1
+        for md in metadatas:
+            md.pop("_id")
+            md["id"] = f"{1}"
+            i += 1
+        returned_ids = vectorstore.add_texts(texts=texts, metadatas=metadatas)
+        assert len(set(returned_ids).intersection(set(_ids))) == 0
+
+    def test_add_documents(
+        self,
+        embeddings: Embeddings,
+        collection: Collection,
+        index_name: str = INDEX_NAME,
+    ) -> None:
+        """Tests add_documents."""
+        vectorstore = PatchedMongoDBAtlasVectorSearch(
+            collection=collection, embedding=embeddings, index_name=INDEX_NAME
+        )
+
+        # Case 1: No ids
+        n_docs = 10
+        batch_size = 3
+        docs = [
+            Document(page_content=f"document {i}", metadata={"i": i})
+            for i in range(n_docs)
+        ]
+        result_ids = vectorstore.add_documents(docs, batch_size=batch_size)
+        assert len(result_ids) == n_docs
+        assert collection.count_documents({}) == n_docs
+
+        # Case 2: ids
+        collection.delete_many({})
+        n_docs = 10
+        batch_size = 3
+        docs = [
+            Document(page_content=f"document {i}", metadata={"i": i})
+            for i in range(n_docs)
+        ]
+        ids = [str(i) for i in range(n_docs)]
+        result_ids = vectorstore.add_documents(docs, ids, batch_size=batch_size)
+        assert len(result_ids) == n_docs
+        assert set(ids) == set(collection.distinct("_id"))
+
+        # Case 3: Single batch
+        collection.delete_many({})
+        n_docs = 3
+        batch_size = 10
+        docs = [
+            Document(page_content=f"document {i}", metadata={"i": i})
+            for i in range(n_docs)
+        ]
+        ids = [str(i) for i in range(n_docs)]
+        result_ids = vectorstore.add_documents(docs, ids, batch_size=batch_size)
+        assert len(result_ids) == n_docs
+        assert set(ids) == set(collection.distinct("_id"))

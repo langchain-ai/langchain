@@ -8,6 +8,7 @@ from langchain_core.embeddings import Embeddings
 from pymongo.collection import Collection
 
 from langchain_mongodb import MongoDBAtlasVectorSearch
+from langchain_mongodb.utils import str_to_oid
 from tests.utils import ConsistentFakeEmbeddings, MockCollection
 
 INDEX_NAME = "langchain-test-index"
@@ -81,7 +82,7 @@ class TestMongoDBAtlasVectorSearch:
         assert loads(dumps(output[0].page_content)) == output[0].page_content
         assert loads(dumps(output[0].metadata)) == output[0].metadata
         json_metadata = dumps(output[0].metadata)  # normal json.dumps
-        assert isinstance(json_util.loads(json_metadata)["_id"], ObjectId)
+        isinstance(str_to_oid(json_util.loads(json_metadata)["_id"]), ObjectId)
 
     def test_from_documents(
         self, embedding_openai: Embeddings, collection: MockCollection

@@ -249,6 +249,47 @@ class MongoDBAtlasVectorSearch(VectorStore):
         insert_result = self._collection.insert_many(to_insert)  # type: ignore
         return [oid_to_str(_id) for _id in insert_result.inserted_ids]
 
+    def add_documents(
+        self,
+        documents: List[Document],
+        ids: Optional[List[str]] = None,
+        batch_size: Optional[int] = DEFAULT_INSERT_BATCH_SIZE,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Add documents to the vectorstore.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+            ids: Optional list of unique ids that will be used as index in VectorStore.
+                See note on ids in add_texts.
+            batch_size: Number of documents to insert at a time.
+                Tuning this may help with performance and sidestep MongoDB limits.
+
+        Returns:
+            List of IDs of the added texts.
+        """
+        n_docs = len(documents)
+        if ids:
+            assert len(ids) == n_docs, "Number of ids must equal number of documents."
+        result_ids = []
+        start = 0
+        for end in range(batch_size, n_docs + batch_size, batch_size):
+            texts, metadatas = zip(
+                *[(doc.page_content, doc.metadata) for doc in documents[start:end]]
+            )
+            if ids:
+                result_ids.extend(
+                    self.bulk_embed_and_insert_texts(
+                        texts=texts, metadatas=metadatas, ids=ids[start:end]
+                    )
+                )
+            else:
+                result_ids.extend(
+                    self.bulk_embed_and_insert_texts(texts=texts, metadatas=metadatas)
+                )
+            start = end
+        return result_ids
+
     def _similarity_search_with_score(
         self,
         embedding: List[float],
