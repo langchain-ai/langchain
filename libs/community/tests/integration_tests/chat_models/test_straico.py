@@ -83,7 +83,7 @@ async def test_async_chat_straico() -> None:
 @pytest.mark.asyncio
 async def test_openai_abatch_tags() -> None:
     """Test batch tokens from ChatStraico."""
-    llm = ChatStraico(max_tokens=10)
+    llm = ChatStraico()
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -104,7 +104,7 @@ def test_openai_batch() -> None:
 @pytest.mark.asyncio
 async def test_openai_ainvoke() -> None:
     """Test invoke tokens from ChatStraico."""
-    llm = ChatStraico(max_tokens=10)
+    llm = ChatStraico()
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -113,7 +113,7 @@ async def test_openai_ainvoke() -> None:
 @pytest.mark.scheduled
 def test_openai_invoke() -> None:
     """Test invoke tokens from ChatStraico."""
-    llm = ChatStraico(max_tokens=10)
+    llm = ChatStraico()
 
     result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
