@@ -56,7 +56,7 @@ Use [LangGraph](/docs/concepts/#langgraph) to build stateful agents with first-c
 ### Deployment:
 - **[LangGraph Cloud](https://langchain-ai.github.io/langgraph/cloud/)**: Turn your LangGraph applications into production-ready APIs and Assistants.
 
-![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](docs/static/svg/langchain_stack_june_2024.svg "LangChain Architecture Overview")
+![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](docs/static/svg/langchain_stack_062024.svg "LangChain Architecture Overview")
 
 ## 🧱 What can you build with LangChain?
 

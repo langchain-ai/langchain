@@ -37,9 +37,25 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         return ["langchain", "prompts", "image"]
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
+        """Format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+        """
         return ImagePromptValue(image_url=self.format(**kwargs))
 
     async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
+        """Async format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+        """
         return ImagePromptValue(image_url=await self.aformat(**kwargs))
 
     def format(
@@ -53,6 +69,10 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
 
         Returns:
             A formatted string.
+
+        Raises:
+            ValueError: If the url or path is not provided.
+            ValueError: If the path or url is not a string.
 
         Example:
 
@@ -84,7 +104,27 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         return output
 
     async def aformat(self, **kwargs: Any) -> ImageURL:
+        """Async format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+
+        Raises:
+            ValueError: If the url or path is not provided.
+            ValueError: If the path or url is not a string.
+        """
         return await run_in_executor(None, self.format, **kwargs)
 
     def pretty_repr(self, html: bool = False) -> str:
+        """Return a pretty representation of the prompt.
+
+        Args:
+            html: Whether to return an html formatted string.
+
+        Returns:
+            A pretty representation of the prompt.
+        """
         raise NotImplementedError()

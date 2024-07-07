@@ -1,4 +1,5 @@
 """A tracer that runs evaluators over completed runs."""
+
 from __future__ import annotations
 
 import logging
