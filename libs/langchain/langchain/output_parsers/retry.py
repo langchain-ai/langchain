@@ -4,6 +4,7 @@ from typing import Any, TypeVar, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
@@ -87,6 +88,8 @@ class RetryOutputParser(BaseOutputParser[T]):
 
         while retries <= self.max_retries:
             try:
+                if isinstance(completion, BaseMessage):
+                    completion = completion.content
                 return self.parser.parse(completion)
             except OutputParserException as e:
                 if retries == self.max_retries:
@@ -123,6 +126,8 @@ class RetryOutputParser(BaseOutputParser[T]):
 
         while retries <= self.max_retries:
             try:
+                if isinstance(completion, BaseMessage):
+                    completion = completion.content
                 return await self.parser.aparse(completion)
             except OutputParserException as e:
                 if retries == self.max_retries:
@@ -134,14 +139,14 @@ class RetryOutputParser(BaseOutputParser[T]):
                             prompt=prompt_value.to_string(),
                             input=completion,
                             error=repr(e),
-                        ).content
+                        )
                     else:
                         completion = await self.retry_chain.ainvoke(
                             dict(
                                 prompt=prompt_value.to_string(),
                                 input=completion,
                             )
-                        ).content
+                        )
 
         raise OutputParserException("Failed to parse")
 
@@ -209,6 +214,8 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
 
         while retries <= self.max_retries:
             try:
+                if isinstance(completion, BaseMessage):
+                    completion = completion.content
                 return self.parser.parse(completion)
             except OutputParserException as e:
                 if retries == self.max_retries:
@@ -220,7 +227,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                             input=completion,
                             prompt=prompt_value.to_string(),
                             error=repr(e),
-                        ).content
+                        )
                     else:
                         completion = self.retry_chain.invoke(
                             dict(
@@ -228,7 +235,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                                 prompt=prompt_value.to_string(),
                                 error=repr(e),
                             )
-                        ).content
+                        )
 
         raise OutputParserException("Failed to parse")
 
@@ -237,6 +244,8 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
 
         while retries <= self.max_retries:
             try:
+                if isinstance(completion, BaseMessage):
+                    completion = completion.content
                 return await self.parser.aparse(completion)
             except OutputParserException as e:
                 if retries == self.max_retries:
@@ -248,7 +257,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                             prompt=prompt_value.to_string(),
                             input=completion,
                             error=repr(e),
-                        ).content
+                        )
                     else:
                         completion = await self.retry_chain.ainvoke(
                             dict(
@@ -256,7 +265,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                                 input=completion,
                                 error=repr(e),
                             )
-                        ).content
+                        )
 
         raise OutputParserException("Failed to parse")
 

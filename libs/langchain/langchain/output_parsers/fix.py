@@ -4,6 +4,7 @@ from typing import Any, TypeVar, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
+from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import RunnableSerializable
@@ -57,6 +58,8 @@ class OutputFixingParser(BaseOutputParser[T]):
 
         while retries <= self.max_retries:
             try:
+                if isinstance(completion, BaseMessage):
+                    completion = completion.content
                 return self.parser.parse(completion)
             except OutputParserException as e:
                 if retries == self.max_retries:
@@ -77,7 +80,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                                     input=completion,
                                     error=repr(e),
                                 )
-                            ).content
+                            )
                         except (NotImplementedError, AttributeError):
                             # Case: self.parser does not have get_format_instructions  # noqa: E501
                             completion = self.retry_chain.invoke(
@@ -85,7 +88,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                                     input=completion,
                                     error=repr(e),
                                 )
-                            ).content
+                            )
 
         raise OutputParserException("Failed to parse")
 
@@ -94,6 +97,8 @@ class OutputFixingParser(BaseOutputParser[T]):
 
         while retries <= self.max_retries:
             try:
+                if isinstance(completion, BaseMessage):
+                    completion = completion.content
                 return await self.parser.aparse(completion)
             except OutputParserException as e:
                 if retries == self.max_retries:
@@ -114,7 +119,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                                     input=completion,
                                     error=repr(e),
                                 )
-                            ).content
+                            )
                         except (NotImplementedError, AttributeError):
                             # Case: self.parser does not have get_format_instructions  # noqa: E501
                             completion = await self.retry_chain.ainvoke(
@@ -122,7 +127,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                                     input=completion,
                                     error=repr(e),
                                 )
-                            ).content
+                            )
 
         raise OutputParserException("Failed to parse")
 
