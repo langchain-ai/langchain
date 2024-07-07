@@ -85,8 +85,13 @@ Input and output schemas give every LCEL chain Pydantic and JSONSchema schemas i
 As your chains get more and more complex, it becomes increasingly important to understand what exactly is happening at every step.
 With LCEL, **all** steps are automatically logged to [LangSmith](https://docs.smith.langchain.com/) for maximum observability and debuggability.
 
-[**Seamless LangServe deployment**](/docs/langserve)
-Any chain created with LCEL can be easily deployed using [LangServe](/docs/langserve).
+LCEL aims to provide consistency around behavior and customization over legacy subclassed chains such as `LLMChain` and
+`ConversationalRetrievalChain`. Many of these legacy chains hide important details like prompts, and as a wider variety
+of viable models emerge, customization has become more and more important.
+
+If you are currently using one of these legacy chains, please see [this guide for guidance on how to migrate](/docs/how_to/migrate_chains/).
+
+For guides on how to do specific tasks with LCEL, check out [the relevant how-to guides](/docs/how_to/#langchain-expression-language-lcel).
 
 ### Runnable interface
 <span data-heading-keywords="invoke,runnable"></span>
