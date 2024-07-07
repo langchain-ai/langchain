@@ -246,7 +246,7 @@ def _format_schema(schema: Dict, is_enhanced: bool) -> str:
                         )
                 elif prop["type"] == "LIST":
                     # Skip embeddings
-                    if prop["min_size"] > LIST_LIMIT:
+                    if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
                         continue
                     example = (
                         f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
