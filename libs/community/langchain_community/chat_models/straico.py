@@ -21,6 +21,18 @@ from langchain_community.utilities.requests import Requests
 
 
 class ChatStraico(BaseChatModel):
+    """
+    Straico is a platform that provides access to a variety of popular LLMs
+    for text, images and audio generation under one coin-based pricing system.
+    Straico's API supports text completion.
+
+    More information on the API:
+    https://documenter.getpostman.com/view/5900072/2s9YyzddrR
+
+    To use this chat model, set your API key as `STRAICO_API_KEY`
+    or pass it as `api_key`.
+    """
+
     model: Optional[str] = Field(default="openai/gpt-3.5-turbo-0125")
     """Model name to use."""
     straico_api_key: Optional[SecretStr] = Field(None, alias="api_key")
@@ -28,7 +40,7 @@ class ChatStraico(BaseChatModel):
     request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+    """Timeout for requests to Straico completion API. Can be float, httpx.Timeout or 
         None."""
     max_retries: int = Field(default=2)
     """Maximum number of retries to make when generating."""
@@ -80,7 +92,7 @@ class ChatStraico(BaseChatModel):
 
     @property
     def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling PerplexityChat API."""
+        """Get the default parameters for calling Straico API."""
         return {
             "request_timeout": self.request_timeout,
             "max_retries": self.max_retries,
