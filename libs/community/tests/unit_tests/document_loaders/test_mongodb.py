@@ -45,7 +45,7 @@ def mock_collection() -> MagicMock:
 
 
 @pytest.fixture
-def loader(mock_client, mock_db, mock_collection) -> MongodbLoader:
+def loader(mock_client: MagicMock, mock_db: MagicMock, mock_collection: MagicMock) -> MongodbLoader:
     mock_client.get_database.return_value = mock_db
     mock_db.get_collection.return_value = mock_collection
 
@@ -68,7 +68,7 @@ def test_constructor(loader: MongodbLoader) -> None:
 
 @pytest.mark.requires("motor")
 async def test_aload(
-    mock_collection, loader: MongodbLoader, raw_docs, expected_documents: List[Document]
+    mock_collection: MagicMock, loader: MongodbLoader, raw_docs: List[Dict], expected_documents: List[Document]
 ) -> None:
     mock_collection.count_documents.return_value = len(raw_docs)
     mock_collection.find.return_value = iter(raw_docs)
@@ -91,7 +91,7 @@ def test_construct_projection(loader: MongodbLoader) -> None:
 
 @pytest.mark.requires("motor")
 async def test_load_method(
-    mock_collection, loader: MongodbLoader, raw_docs, expected_documents: List[Document]
+    mock_collection: MagicMock, loader: MongodbLoader, raw_docs: List[Dict], expected_documents: List[Document]
 ) -> None:
     mock_collection.count_documents.return_value = len(raw_docs)
     mock_collection.find.return_value = iter(raw_docs)
@@ -104,7 +104,9 @@ async def test_load_method(
 
 
 @pytest.mark.requires("motor")
-async def test_filter_criteria(mock_collection, raw_docs) -> None:
+async def test_filter_criteria(
+    mock_collection: MagicMock, raw_docs: List[Dict]
+) -> None:
     mock_client = MagicMock()
     mock_client.get_database.return_value = MagicMock()
     mock_db = mock_client.get_database()
@@ -127,7 +129,9 @@ async def test_filter_criteria(mock_collection, raw_docs) -> None:
 
 
 @pytest.mark.requires("motor")
-async def test_include_db_collection_in_metadata(mock_collection, raw_docs) -> None:
+async def test_include_db_collection_in_metadata(
+    mock_collection: MagicMock, raw_docs: List[Dict]
+) -> None:
     mock_client = MagicMock()
     mock_client.get_database.return_value = MagicMock()
     mock_db = mock_client.get_database()
