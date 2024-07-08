@@ -72,7 +72,7 @@ class VectorStore(ABC):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         # One of the kwargs should be `ids` which is a list of ids
         # associated with the texts.
@@ -374,7 +374,7 @@ class VectorStore(ABC):
 
     async def aadd_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
