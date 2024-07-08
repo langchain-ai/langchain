@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "langchain-core"
-version = "0.2.11"
+version = "0.2.12"
 description = "Building applications with LLMs through composability"
 authors = []
 license = "MIT"
