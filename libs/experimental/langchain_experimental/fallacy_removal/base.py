@@ -1,4 +1,5 @@
 """Chain for applying removals of logical fallacies."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
@@ -167,9 +168,9 @@ class FallacyChain(Chain):
         final_output: Dict[str, Any] = {"output": response}
         if self.return_intermediate_steps:
             final_output["initial_output"] = initial_response
-            final_output[
-                "fallacy_critiques_and_revisions"
-            ] = fallacy_critiques_and_revisions
+            final_output["fallacy_critiques_and_revisions"] = (
+                fallacy_critiques_and_revisions
+            )
         return final_output
 
     @staticmethod

@@ -30,7 +30,7 @@ sphinx-copybutton = "^0.5.1"
 nbdoc = "^0.0.82"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.4.0"
+ruff = "^0.5.0"
 langchain-core = { path = "libs/core/", develop = true }
 langchain-text-splitters = { path = "libs/text-splitters", develop = true }
 langchain-community = { path = "libs/community/", develop = true }

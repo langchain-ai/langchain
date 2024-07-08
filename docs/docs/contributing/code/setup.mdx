@@ -1,36 +1,9 @@
----
-sidebar_position: 1
----
-# Contribute Code
+# Setup
 
-To contribute to this project, please follow the ["fork and pull request"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow.
-Please do not try to push directly to this repo unless you are a maintainer.
-
-Please follow the checked-in pull request template when opening pull requests. Note related issues and tag relevant
-maintainers.
-
-Pull requests cannot land without passing the formatting, linting, and testing checks first. See [Testing](#testing) and
-[Formatting and Linting](#formatting-and-linting) for how to run these checks locally.
-
-It's essential that we maintain great documentation and testing. If you:
-- Fix a bug
-  - Add a relevant unit or integration test when possible. These live in `tests/unit_tests` and `tests/integration_tests`.
-- Make an improvement
-  - Update any affected example notebooks and documentation. These live in `docs`.
-  - Update unit and integration tests when relevant.
-- Add a feature
-  - Add a demo notebook in `docs/docs/`.
-  - Add unit and integration tests.
-
-We are a small, progress-oriented team. If there's something you'd like to add or change, opening a pull request is the
-best way to get our attention.
-
-## 🚀 Quick Start
-
-This quick start guide explains how to run the repository locally.
+This guide walks through how to run the repository locally and check in your first code.
 For a [development container](https://containers.dev/), see the [.devcontainer folder](https://github.com/langchain-ai/langchain/tree/master/.devcontainer).
 
-### Dependency Management: Poetry and other env/dependency managers
+## Dependency Management: Poetry and other env/dependency managers
 
 This project utilizes [Poetry](https://python-poetry.org/) v1.7.1+ as a dependency manager.
 
@@ -41,7 +14,7 @@ Install Poetry: **[documentation on how to install it](https://python-poetry.org
 ❗Note: If you use `Conda` or `Pyenv` as your environment/package manager, after installing Poetry,
 tell Poetry to use the virtualenv python environment (`poetry config virtualenvs.prefer-active-python true`)
 
-### Different packages
+## Different packages
 
 This repository contains multiple packages:
 - `langchain-core`: Base interfaces for key abstractions as well as logic for combining them in chains (LangChain Expression Language).
@@ -59,7 +32,7 @@ For this quickstart, start with langchain-community:
 cd libs/community
 ```
 
-### Local Development Dependencies
+## Local Development Dependencies
 
 Install langchain-community development requirements (for running langchain, running examples, linting, formatting, tests, and coverage):
 
@@ -79,9 +52,9 @@ If you are still seeing this bug on v1.6.1+, you may also try disabling "modern 
 (`poetry config installer.modern-installation false`) and re-installing requirements.
 See [this `debugpy` issue](https://github.com/microsoft/debugpy/issues/1246) for more details.
 
-### Testing
+## Testing
 
-_In `langchain`, `langchain-community`, and `langchain-experimental`, some test dependencies are optional; see section about optional dependencies_.
+**Note:** In `langchain`, `langchain-community`, and `langchain-experimental`, some test dependencies are optional. See the following section about optional dependencies.
 
 Unit tests cover modular logic that does not require calls to outside APIs.
 If you add new logic, please add a unit test.
@@ -118,11 +91,11 @@ poetry install --with test
 make test
 ```
 
-### Formatting and Linting
+## Formatting and Linting
 
 Run these locally before submitting a PR; the CI system will check also.
 
-#### Code Formatting
+### Code Formatting
 
 Formatting for this project is done via [ruff](https://docs.astral.sh/ruff/rules/).
 
@@ -174,7 +147,7 @@ This can be very helpful when you've made changes to only certain parts of the p
 
 We recognize linting can be annoying - if you do not want to do it, please contact a project maintainer, and they can help you with it. We do not want this to be a blocker for good code getting contributed.
 
-#### Spellcheck
+### Spellcheck
 
 Spellchecking for this project is done via [codespell](https://github.com/codespell-project/codespell).
 Note that `codespell` finds common typos, so it could have false-positive (correctly spelled but rarely used) and false-negatives (not finding misspelled) words.

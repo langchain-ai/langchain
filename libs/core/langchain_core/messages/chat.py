@@ -15,11 +15,13 @@ class ChatMessage(BaseMessage):
     """The speaker / role of the Message."""
 
     type: Literal["chat"] = "chat"
-    """The type of the message (used during serialization)."""
+    """The type of the message (used during serialization). Defaults to "chat"."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+        Default is ["langchain", "schema", "messages"].
+        """
         return ["langchain", "schema", "messages"]
 
 
@@ -33,11 +35,14 @@ class ChatMessageChunk(ChatMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["ChatMessageChunk"] = "ChatMessageChunk"  # type: ignore
-    """The type of the message (used during serialization)."""
+    """The type of the message (used during serialization). 
+    Defaults to "ChatMessageChunk"."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+        Default is ["langchain", "schema", "messages"].
+        """
         return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore

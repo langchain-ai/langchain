@@ -135,6 +135,7 @@ jobs:
       - release-notes
     uses:
       ./.github/workflows/_test_release.yml
+    permissions: write-all
     with:
       working-directory: ${{ inputs.working-directory }}
       dangerous-nonmaster-release: ${{ inputs.dangerous-nonmaster-release }}
