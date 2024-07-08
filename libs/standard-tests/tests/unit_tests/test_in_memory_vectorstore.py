@@ -1,14 +1,12 @@
 import pytest
-from langchain_core.vectorstores import VectorStore
+from langchain_core.vectorstores import (
+    InMemoryVectorStore,
+    VectorStore,
+)
 
 from langchain_standard_tests.integration_tests.vectorstores import (
     AsyncReadWriteTestSuite,
     ReadWriteTestSuite,
-)
-
-
-from langchain_core.vectorstores import (
-    InMemoryVectorStore,
 )
 
 
