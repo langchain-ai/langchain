@@ -439,7 +439,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         )
         self._config_prefix = (
             config_prefix + "_"
-            if config_prefix and not config_prefix.endswith("_/")
+            if config_prefix and not config_prefix.endswith("_")
             else config_prefix
         )
         self._queued_declarative_operations: List[Tuple[str, Tuple, Dict]] = list(
