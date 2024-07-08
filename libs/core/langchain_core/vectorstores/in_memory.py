@@ -3,8 +3,6 @@ import uuid
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
-import numpy as np
-
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.indexing import UpsertResponse
@@ -187,6 +185,14 @@ class InMemoryVectorStore(VectorStore):
             k=fetch_k,
             **kwargs,
         )
+
+        try:
+            import numpy as np
+        except ImportError:
+            raise ImportError(
+                "numpy must be installed to use max_marginal_relevance_search "
+                "pip install numpy"
+            )
 
         mmr_chosen_indices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),

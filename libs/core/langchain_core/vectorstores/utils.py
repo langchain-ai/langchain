@@ -65,6 +65,14 @@ def _maximal_marginal_relevance(
     k: int = 4,
 ) -> List[int]:
     """Calculate maximal marginal relevance."""
+    try:
+        import numpy as np
+    except ImportError:
+        raise ImportError(
+            "maximal_marginal_relevance requires numpy to be installed. "
+            "Please install numpy with `pip install numpy`."
+        )
+
     if min(k, len(embedding_list)) <= 0:
         return []
     if query_embedding.ndim == 1:

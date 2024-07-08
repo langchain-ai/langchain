@@ -27,7 +27,7 @@ class TestAsyncInMemoryReadWriteTestSuite(AsyncReadWriteTestSuite):
 async def test_inmemory() -> None:
     """Test end to end construction and search."""
     store = await InMemoryVectorStore.afrom_texts(
-        ["foo", "bar", "baz"], DeterministicFakeEmbedding()
+        ["foo", "bar", "baz"], DeterministicFakeEmbedding(size=6)
     )
     output = await store.asimilarity_search("foo", k=1)
     assert output == [Document(page_content="foo", id=AnyStr())]
@@ -43,7 +43,7 @@ async def test_inmemory() -> None:
 
 
 async def test_add_by_ids() -> None:
-    vectorstore = InMemoryVectorStore(embedding=DeterministicFakeEmbedding())
+    vectorstore = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=6))
 
     # Check sync version
     ids1 = vectorstore.add_texts(["foo", "bar", "baz"], ids=["1", "2", "3"])
@@ -58,7 +58,7 @@ async def test_add_by_ids() -> None:
 async def test_inmemory_mmr() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     docsearch = await InMemoryVectorStore.afrom_texts(
-        texts, DeterministicFakeEmbedding()
+        texts, DeterministicFakeEmbedding(size=6)
     )
     # make sure we can k > docstore size
     output = await docsearch.amax_marginal_relevance_search(
@@ -71,7 +71,7 @@ async def test_inmemory_mmr() -> None:
 
 async def test_inmemory_dump_load(tmp_path: Path) -> None:
     """Test end to end construction and search."""
-    embedding = DeterministicFakeEmbedding()
+    embedding = DeterministicFakeEmbedding(size=6)
     store = await InMemoryVectorStore.afrom_texts(["foo", "bar", "baz"], embedding)
     output = await store.asimilarity_search("foo", k=1)
 
@@ -88,7 +88,7 @@ async def test_inmemory_filter() -> None:
     """Test end to end construction and search."""
     store = await InMemoryVectorStore.afrom_texts(
         ["foo", "bar"],
-        DeterministicFakeEmbedding(),
+        DeterministicFakeEmbedding(size=6),
         [{"id": 1}, {"id": 2}],
     )
     output = await store.asimilarity_search(
