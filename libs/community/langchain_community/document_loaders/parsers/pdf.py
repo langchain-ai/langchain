@@ -168,11 +168,6 @@ class PDFMinerParser(BaseBlobParser):
 
                     pages = PDFPage.get_pages(pdf_file_obj)
                     for i, _ in enumerate(pages):
-                        # MediaBox attribute process
-                        mediabox = resolve1(page.mediabox) if 'MediaBox' in page.attrs else None
-                        if isinstance(mediabox, list):
-                            mediabox = [resolve1(x) for x in mediabox]
-                        # page-number-base-text-extraction
                         text = extract_text(pdf_file_obj, page_numbers=[i])
                         metadata = {"source": blob.source, "page": str(i)}  # type: ignore[attr-defined]
                         yield Document(page_content=text, metadata=metadata)
