@@ -39,7 +39,6 @@ from langchain_core.callbacks.base import (
     RunManagerMixin,
     ToolManagerMixin,
 )
-from langchain_core.callbacks.schema import GenericCallbackHandler
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.tracers.schemas import Run
@@ -260,6 +259,11 @@ def handle_event(
     """
     coros: List[Coroutine[Any, Any, Any]] = []
 
+    # if '_event' in kwargs:
+    #     event = kwargs['_event']
+    #
+    #
+
     try:
         message_strings: Optional[List[str]] = None
         for handler in handlers:
@@ -354,8 +358,9 @@ async def _ahandle_event_for_handler(
     *args: Any,
     **kwargs: Any,
 ) -> None:
+    from langchain_core.callbacks.schema import GenericCallbackHandler
     if isinstance(handler, GenericCallbackHandler):
-        raise ValueError('here')
+        raise ValueError("here")
 
     try:
         if ignore_condition_name is None or not getattr(handler, ignore_condition_name):
@@ -2005,6 +2010,7 @@ T = TypeVar("T", CallbackManager, AsyncCallbackManager)
 
 H = TypeVar("H", bound=BaseCallbackHandler, covariant=True)
 
+
 def _configure(
     callback_manager_cls: Type[T],
     inheritable_callbacks: Callbacks = None,
@@ -2014,6 +2020,7 @@ def _configure(
     local_tags: Optional[List[str]] = None,
     inheritable_metadata: Optional[Dict[str, Any]] = None,
     local_metadata: Optional[Dict[str, Any]] = None,
+    run_id: Optional[UUID] = None,
 ) -> T:
     """Configure the callback manager.
 
@@ -2041,7 +2048,9 @@ def _configure(
         _tracing_v2_is_enabled,
         tracing_v2_callback_var,
     )
+    run_id = run_id or uuid.uuid4()
 
+    # This can pick up run tree context from trace(), but not traceable?
     run_tree = get_run_tree_context()  # Why is this here?
     parent_run_id = None if run_tree is None else run_tree.id
     if inheritable_callbacks or local_callbacks:
@@ -2051,6 +2060,7 @@ def _configure(
                 handlers=inheritable_callbacks_.copy(),
                 inheritable_handlers=inheritable_callbacks_.copy(),
                 parent_run_id=parent_run_id,
+                run_id=run_id,
             )
         elif isinstance(inheritable_callbacks, BaseCallbackManager):
             parent_run_id_ = inheritable_callbacks.parent_run_id
@@ -2073,6 +2083,7 @@ def _configure(
                 inheritable_tags=inheritable_callbacks.inheritable_tags.copy(),
                 metadata=inheritable_callbacks.metadata.copy(),
                 inheritable_metadata=inheritable_callbacks.inheritable_metadata.copy(),
+                run_id=run_id,
             )
         else:
             raise TypeError(

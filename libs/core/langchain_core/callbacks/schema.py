@@ -1,8 +1,10 @@
 import abc
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Dict, Any, Union
 from typing import TypedDict, NotRequired, List, Optional, Literal, Set, cast
+from uuid import UUID
 
-from langchain_core.callbacks.events import Event
+from langchain_core.callbacks import CallbackManager, BaseCallbackHandler
+from langchain_core.callbacks.events import Event, ChainStartEvent, ChainEndEvent, ChainErrorEvent
 from langchain_core.runnables import RunnableConfig
 
 CallbackEvent = Literal[
@@ -69,7 +71,7 @@ T = TypeVar("T")
 
 
 class GenericCallbackHandler(abc.ABC, Generic[T]):
-    @abc.abstractmethod
+    # @abc.abstractmethod
     @property
     def accepts_events(self) -> Optional[Set[CallbackEvent]]:
         raise NotImplementedError()
@@ -83,42 +85,102 @@ class GenericCallbackHandler(abc.ABC, Generic[T]):
         """Handle an event asynchronously."""
 
 
-class CallbackDispatcher(abc.ABC):
+# TODO(Eugene): This inherits from a bunch of stuff
+# for backwards compatibility reasons, but prior to merging
+# we need to clean a bunch of those stuff.
+class CallbackDispatcher(CallbackManager):
     """Interface to dispatch callbacks to all registered handlers."""
 
     def __init__(
         self,
         *,
-        inheritable_callbacks: Optional[List[GenericCallbackHandler]] = None,
-        local_callbacks: Optional[List[GenericCallbackHandler]] = None,
+        handlers: List[Union[BaseCallbackHandler, GenericCallbackHandler]],
+        inheritable_handlers: Optional[
+            List[Union[BaseCallbackHandler, GenericCallbackHandler]]
+        ] = None,
         parent_run_id: Optional[str],
         run_id: Optional[str],
+        tags: Optional[List[str]] = None,
+        inheritable_tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        inheritable_metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
-        self.inheritable_callbacks = inheritable_callbacks or []
-        self.local_callbacks = local_callbacks or []
-        self.parent_run_id = parent_run_id
+        super().__init__(
+            handlers=handlers,
+            inheritable_handlers=inheritable_handlers,
+            parent_run_id=parent_run_id,
+            tags=tags,
+            inheritable_tags=inheritable_tags,
+            metadata=metadata,
+            inheritable_metadata=inheritable_metadata,
+        )
         self.run_id = run_id
 
     def dispatch_event(self, event: Event) -> None:
         """Handle an event."""
         # Delegate to handle event
-        callback_with_data = event.copy()
-        callback_with_data["run_id"] = self.run_id
-        callback_with_data["parent_id"] = self.parent_run_id
-
         callback_event = _convert_event_to_callback(
-            event, run_id=self.run_id, parent_id=self.parent_run_id
+            event,
+            run_id=self.run_id,
+            parent_id=self.parent_run_id,
+            tags=self.tags,
+            metadata=self.metadata,
         )
-        handlers = self.inheritable_callbacks + self.local_callbacks
-
-        for handler in self.inheritable_callbacks:
-            if callback_event["type"] not in handler.accepts_events:
-                continue
-            handler.handle_callback(callback_with_data)
+        # handle_event(
+        #     self.handlers,
+        #     event_name=event["type"],
+        #     ignore_condition_name=None,
+        #     _event=callback_event,
+        # )
+        # if isinstance(handler, GenericCallbackHandler):
+        #     if callback_event["type"] not in handler.accepts_events:
+        #         continue
+        #     handler.handle_callback(callback_with_data)
+        # else:
+        #     handler.handle_callback(callback_with_data)
+        #
 
     async def adispatch_event(self, event: Event) -> None:
         """Delegate to the handler"""
         raise NotImplementedError()
+
+    def on_chain_start(
+        self,
+        serialized: Dict[str, Any],
+        inputs: Union[Dict[str, Any], Any],
+        **kwargs: Any,
+    ) -> None:
+        """Handle a chain start event."""
+        event: ChainStartEvent = {
+            "type": "on_chain_start",
+            "serialized": serialized,
+            "inputs": inputs,
+            "kwargs": kwargs,
+        }
+        self.dispatch_event(event)
+
+    def on_chain_end(
+        self,
+        outputs: Dict[str, Any],
+        **kwargs: Any,
+    ) -> None:
+        event: ChainEndEvent = {
+            "type": "on_chain_end",
+            "kwargs": kwargs
+        }
+        self.dispatch_event(event)
+
+    def on_chain_error(
+        self,
+        error: BaseException,
+        **kwargs: Any,
+    ) -> None:
+        event: ChainErrorEvent = {
+            "type": "on_chain_error",
+            "error": error,
+            "kwargs": kwargs
+        }
+        self.dispatch_event(event)
 
     def get_child(
         self,
@@ -130,8 +192,8 @@ class CallbackDispatcher(abc.ABC):
         return CallbackDispatcher(
             parent_run_id=self.run_id,
             run_id=run_id,
-            inheritable_callbacks=self.inheritable_callbacks,
-            local_callbacks=[],  # Populate from config
+            inheritable_handlers=self.inheritable_handlers,
+            handlers=[],
         )
 
     @classmethod

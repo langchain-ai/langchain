@@ -10,115 +10,115 @@ from langchain_core.outputs import GenerationChunk, LLMResult, ChatGenerationChu
 
 
 class RetrieverErrorEvent(TypedDict):
-    type: Literal["retriever_error"]
+    type: Literal["on_retriever_error"]
     error: BaseException
 
 
 class RetrieverEndEvent(TypedDict):
-    type: Literal["retriever_end"]
+    type: Literal["on_retriever_end"]
     documents: List[Document]
 
 
 class LLMNewTokenEvent(TypedDict):
-    type: Literal["llm_new_token"]
+    type: Literal["on_llm_new_token"]
     token: str
     chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]]
 
 
 class LLMEndEvent(TypedDict):
-    type: Literal["llm_end"]
+    type: Literal["on_llm_end"]
     response: LLMResult
 
 
 class LLMErrorEvent(TypedDict):
-    type: Literal["llm_error"]
+    type: Literal["on_llm_error"]
     error: BaseException
 
 
 class ChainEndEvent(TypedDict):
-    type: Literal["chain_end"]
+    type: Literal["on_chain_end"]
     outputs: Dict[str, Any]
 
 
 class ChainErrorEvent(TypedDict):
     """Event for a chain error."""
 
-    type: Literal["chain_error"]
+    type: Literal["on_chain_error"]
     error: BaseException
 
 
 class AgentActionEvent(TypedDict):
     """Event for an agent action."""
 
-    type: Literal["agent_action"]
+    type: Literal["on_agent_action"]
     action: AgentAction
 
 
 class AgentFinishEvent(TypedDict):
     """Event for an agent action."""
 
-    type: Literal["agent_finish"]
+    type: Literal["on_agent_finish"]
     finish: AgentFinish
 
 
 class ToolEndEvent(TypedDict):
     """Event for a tool end."""
 
-    type: Literal["tool_end"]
+    type: Literal["on_tool_end"]
     output: Any
 
 
 class ToolErrorEvent(TypedDict):
     """Event for a tool error."""
 
-    type: Literal["tool_error"]
+    type: Literal["on_tool_error"]
     error: BaseException
 
 
 class LLMStartEvent(TypedDict):
-    type: Literal["llm_start"]
+    type: Literal["on_llm_start"]
     serialized: Dict[str, Any]
     prompts: List[str]
 
 
 class ChatModelStartEvent(TypedDict):
-    type: Literal["chat_model_start"]
+    type: Literal["on_chat_model_start"]
     serialized: Dict[str, Any]
     messages: List[List[BaseMessage]]
 
 
 class AdHocEvent(TypedDict):
     """Ad hoc event."""
-    type: Literal["ad_hoc"]
+    type: Literal["on_ad_hoc"]
     data: Any
 
 
 class RetrieverStartEvent(TypedDict):
-    type: Literal["retriever_start"]
+    type: Literal["on_retriever_start"]
     serialized: Dict[str, Any]
     query: str
 
 
 class ChainStartEvent(TypedDict):
-    type: Literal["chain_start"]
+    type: Literal["on_chain_start"]
     serialized: Dict[str, Any]
     inputs: Dict[str, Any]
 
 
 class ToolStartEvent(TypedDict):
-    type: Literal["tool_start"]
+    type: Literal["on_tool_start"]
     serialized: Dict[str, Any]
     input_str: str
     inputs: Optional[Dict[str, Any]]
 
 
 class TextEvent(TypedDict):
-    type: Literal["text"]
+    type: Literal["on_text"]
     text: str
 
 
 class RetryEvent(TypedDict):
-    type: Literal["retry"]
+    type: Literal["on_retry"]
     retry_state: RetryCallState
 
 
