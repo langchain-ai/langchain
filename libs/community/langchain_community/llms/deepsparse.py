@@ -1,12 +1,18 @@
 # flake8: noqa
+from langchain_core.utils import pre_init
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
+from langchain_core.utils import pre_init
 from langchain_core.pydantic_v1 import root_validator
+from langchain_core.utils import pre_init
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.utils import pre_init
 from langchain_core.language_models.llms import LLM
+from langchain_core.utils import pre_init
 from langchain_community.llms.utils import enforce_stop_tokens
+from langchain_core.utils import pre_init
 from langchain_core.outputs import GenerationChunk
 
 
@@ -55,7 +61,7 @@ class DeepSparse(LLM):
         """Return type of llm."""
         return "deepsparse"
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that ``deepsparse`` package is installed."""
         try:
