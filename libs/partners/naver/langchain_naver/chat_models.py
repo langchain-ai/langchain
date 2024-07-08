@@ -164,7 +164,7 @@ class ChatClovaX(BaseChatModel):
     include_ai_filters: Optional[bool] = None
     seed: Optional[int] = None
 
-    timeout: int = 60
+    timeout: int = 90
     max_retries: int = 3
 
     class Config:
@@ -246,8 +246,8 @@ class ChatClovaX(BaseChatModel):
         if values["max_tokens"] is not None and not 0 <= values["max_tokens"] <= 4096:
             raise ValueError("max_tokens must be in the range [0, 4096]")
 
-        if values["seed"] is not None and not 0 <= values["temperature"] <= 4294967295:
-            raise ValueError("temperature must be in the range [0, 4294967295]")
+        if values["seed"] is not None and not 0 <= values["seed"] <= 4294967295:
+            raise ValueError("seed must be in the range [0, 4294967295]")
 
         if not (values["model_name"] or values["task_id"]):
             raise ValueError("either model_name or task_id must be assigned a value.")
