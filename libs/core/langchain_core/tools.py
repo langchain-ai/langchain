@@ -1223,8 +1223,7 @@ class BaseToolkit(BaseModel, ABC):
 def _get_description_from_runnable(runnable: Runnable) -> str:
     """Generate a placeholder description of a runnable."""
     input_schema = runnable.input_schema.schema()
-    output_schema = runnable.output_schema.schema()
-    return f"Takes {input_schema} and returns {output_schema}"
+    return f"Takes {input_schema}."
 
 
 def _get_args_schema_for_runnable(runnable: Runnable) -> Type[BaseModel]:
