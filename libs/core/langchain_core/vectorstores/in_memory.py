@@ -4,6 +4,7 @@ import json
 import uuid
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -12,7 +13,6 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    TYPE_CHECKING,
 )
 
 from langchain_core.documents import Document
