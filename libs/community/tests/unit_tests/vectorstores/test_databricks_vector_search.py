@@ -370,7 +370,7 @@ def test_add_texts_handle_single_text() -> None:
     )
     vectors = DEFAULT_EMBEDDING_MODEL.embed_documents(fake_texts)
 
-    added_ids = vectorsearch.add_texts(fake_texts[0])
+    added_ids = vectorsearch.add_texts(fake_texts)[0]
     index.upsert.assert_called_once_with(
         [
             {
