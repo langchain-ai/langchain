@@ -21,7 +21,9 @@ DOCUMENTS = ["What is a generative ai?", "What is a loan and how does it works?"
 
 def test_01_generate_embed_documents() -> None:
     watsonx_embedding = WatsonxEmbeddings(
-        model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID
+        model_id=MODEL_ID,
+        url=URL,  # type: ignore[arg-type]
+        project_id=WX_PROJECT_ID,  # type: ignore[arg-type]
     )
     generate_embedding = watsonx_embedding.embed_documents(texts=DOCUMENTS)
     assert len(generate_embedding) == len(DOCUMENTS)
@@ -31,7 +33,7 @@ def test_01_generate_embed_documents() -> None:
 def test_02_generate_embed_query() -> None:
     watsonx_embedding = WatsonxEmbeddings(
         model_id=MODEL_ID,
-        url=URL,
+        url=URL,  # type: ignore[arg-type]
         project_id=WX_PROJECT_ID,
     )
     generate_embedding = watsonx_embedding.embed_query(text=DOCUMENTS[0])
@@ -45,7 +47,10 @@ def test_03_generate_embed_documents_with_param() -> None:
         EmbedTextParamsMetaNames.TRUNCATE_INPUT_TOKENS: 3,
     }
     watsonx_embedding = WatsonxEmbeddings(
-        model_id=MODEL_ID, url=URL, project_id=WX_PROJECT_ID, params=embed_params
+        model_id=MODEL_ID,
+        url=URL,  # type: ignore[arg-type]
+        project_id=WX_PROJECT_ID,
+        params=embed_params,  # type: ignore[arg-type]
     )
     generate_embedding = watsonx_embedding.embed_documents(texts=DOCUMENTS)
     assert len(generate_embedding) == len(DOCUMENTS)

@@ -1,4 +1,5 @@
 """Abstract interface for document loader implementations."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

@@ -1,4 +1,5 @@
 """Util that calls Google Search using the Serper.dev API."""
+
 from typing import Any, Dict, List, Optional
 
 import aiohttp

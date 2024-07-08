@@ -1,4 +1,5 @@
 """Test ChatOpenAI chat model."""
+
 from typing import Any, AsyncIterator, List, Optional, cast
 
 import pytest
@@ -47,7 +48,7 @@ def test_chat_openai_model() -> None:
     """Test ChatOpenAI wrapper handles model_name."""
     chat = ChatOpenAI(model="foo")
     assert chat.model_name == "foo"
-    chat = ChatOpenAI(model_name="bar")
+    chat = ChatOpenAI(model_name="bar")  # type: ignore[call-arg]
     assert chat.model_name == "bar"
 
 
@@ -230,17 +231,17 @@ async def test_async_chat_openai_bind_functions() -> None:
 def test_chat_openai_extra_kwargs() -> None:
     """Test extra kwargs to chat openai."""
     # Check that foo is saved in extra_kwargs.
-    llm = ChatOpenAI(foo=3, max_tokens=10)
+    llm = ChatOpenAI(foo=3, max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
     assert llm.model_kwargs == {"foo": 3}
 
     # Test that if extra_kwargs are provided, they are added to it.
-    llm = ChatOpenAI(foo=3, model_kwargs={"bar": 2})
+    llm = ChatOpenAI(foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": 3, "bar": 2}
 
     # Test that if provided twice it errors
     with pytest.raises(ValueError):
-        ChatOpenAI(foo=3, model_kwargs={"foo": 2})
+        ChatOpenAI(foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
 
     # Test that if explicit param is specified in kwargs it errors
     with pytest.raises(ValueError):

@@ -108,8 +108,9 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
         # replace newlines, which can negatively affect performance.
         texts = [text.replace("\n", " ") for text in texts]
         _model_kwargs = self.model_kwargs or {}
+        #  api doc: https://huggingface.github.io/text-embeddings-inference/#/Text%20Embeddings%20Inference/embed
         responses = self.client.post(
-            json={"inputs": texts, "parameters": _model_kwargs}, task=self.task
+            json={"inputs": texts, **_model_kwargs}, task=self.task
         )
         return json.loads(responses.decode())
 

@@ -23,7 +23,7 @@ def merge_dicts(left: Dict[str, Any], right: Dict[str, Any]) -> Dict[str, Any]:
             merged[right_k] = right_v
         elif right_v is None:
             continue
-        elif type(merged[right_k]) != type(right_v):
+        elif type(merged[right_k]) is not type(right_v):
             raise TypeError(
                 f'additional_kwargs["{right_k}"] already exists in this message,'
                 " but with a different type."
