@@ -54,11 +54,14 @@ class ChatPerplexity(BaseChatModel):
 
             from langchain_community.chat_models import ChatPerplexity
 
-            chat = ChatPerplexity(model="pplx-70b-online", temperature=0.7)
+            chat = ChatPerplexity(
+                model="llama-3-sonar-small-32k-online",
+                temperature=0.7,
+            )
     """
 
     client: Any  #: :meta private:
-    model: str = "pplx-70b-online"
+    model: str = "llama-3-sonar-small-32k-online"
     """Model name."""
     temperature: float = 0.7
     """What sampling temperature to use."""

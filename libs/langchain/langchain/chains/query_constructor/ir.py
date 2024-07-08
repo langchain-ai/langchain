@@ -1,4 +1,5 @@
 """Internal representation of a structured query language."""
+
 from langchain_core.structured_query import (
     Comparator,
     Comparison,

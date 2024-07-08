@@ -42,7 +42,7 @@ def mock_client_with_embeddings(mocker: MockerFixture) -> Mock:
 
 
 def test_embed_query(mock_client_with_embeddings: Mock) -> None:
-    llm = AI21Embeddings(client=mock_client_with_embeddings, api_key=DUMMY_API_KEY)
+    llm = AI21Embeddings(client=mock_client_with_embeddings, api_key=DUMMY_API_KEY)  # type: ignore[arg-type]
 
     text = "Hello embeddings world!"
     response = llm.embed_query(text=text)
@@ -54,7 +54,7 @@ def test_embed_query(mock_client_with_embeddings: Mock) -> None:
 
 
 def test_embed_documents(mock_client_with_embeddings: Mock) -> None:
-    llm = AI21Embeddings(client=mock_client_with_embeddings, api_key=DUMMY_API_KEY)
+    llm = AI21Embeddings(client=mock_client_with_embeddings, api_key=DUMMY_API_KEY)  # type: ignore[arg-type]
 
     texts = ["Hello embeddings world!", "Some other text", "Some more text"]
     response = llm.embed_documents(texts=texts)
@@ -94,7 +94,7 @@ def test_get_len_safe_embeddings(
     chunk_size: int,
     expected_internal_embeddings_calls: int,
 ) -> None:
-    llm = AI21Embeddings(client=mock_client_with_embeddings, api_key=DUMMY_API_KEY)
+    llm = AI21Embeddings(client=mock_client_with_embeddings, api_key=DUMMY_API_KEY)  # type: ignore[arg-type]
     llm.embed_documents(texts=texts, batch_size=chunk_size)
     assert (
         mock_client_with_embeddings.embed.create.call_count
