@@ -29,8 +29,8 @@ def expected_documents() -> List[Document]:
     ]
 
 
-@pytest.mark.asyncio
-async def test_load_with_filters(expected_documents: List[Document]) -> None:
+@pytest.mark.requires("motor")
+async def test_load_mocked_with_filters(expected_documents: List[Document]) -> None:
     filter_criteria = {"address.building": {"$eq": "1"}}
     field_names = ["address.building", "address.room"]
     metadata_names = ["_id"]
@@ -62,7 +62,7 @@ async def test_load_with_filters(expected_documents: List[Document]) -> None:
             filter_criteria=filter_criteria,
             field_names=field_names,
             metadata_names=metadata_names,
-            include_db_collection_in_metadata=include_db_collection_in_metadata
+            include_db_collection_in_metadata=include_db_collection_in_metadata,
         )
         loader.collection = mock_collection
         documents = await loader.aload()
