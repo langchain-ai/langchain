@@ -1,6 +1,7 @@
 """
 Question answering over an RDF or OWL graph using SPARQL.
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional

@@ -137,6 +137,9 @@ class BaseOpenAI(BaseLLM):
     http_async_client: Union[Any, None] = None
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
+    extra_body: Optional[Mapping[str, Any]] = None
+    """Optional additional JSON properties to include in the request parameters when
+    making requests to OpenAI compatible APIs, such as vLLM."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -221,6 +224,9 @@ class BaseOpenAI(BaseLLM):
 
         if self.max_tokens is not None:
             normal_params["max_tokens"] = self.max_tokens
+
+        if self.extra_body is not None:
+            normal_params["extra_body"] = self.extra_body
 
         # Azure gpt-35-turbo doesn't support best_of
         # don't specify best_of if it is 1

@@ -3,6 +3,7 @@
 Prompt values are used to represent different pieces of prompts.
 They can be used to represent text, images, or chat message pieces.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -103,15 +104,15 @@ class ImagePromptValue(PromptValue):
     """Image prompt value."""
 
     image_url: ImageURL
-    """Prompt image."""
+    """Image URL."""
     type: Literal["ImagePromptValue"] = "ImagePromptValue"
 
     def to_string(self) -> str:
-        """Return prompt as string."""
+        """Return prompt (image URL) as string."""
         return self.image_url["url"]
 
     def to_messages(self) -> List[BaseMessage]:
-        """Return prompt as messages."""
+        """Return prompt (image URL) as messages."""
         return [HumanMessage(content=[cast(dict, self.image_url)])]
 
 
@@ -120,6 +121,7 @@ class ChatPromptValueConcrete(ChatPromptValue):
     For use in external schemas."""
 
     messages: Sequence[AnyMessage]
+    """Sequence of messages."""
 
     type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
 

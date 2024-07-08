@@ -1,6 +1,5 @@
 """Wrapper around wikipedia API."""
 
-
 from typing import Union
 
 from langchain_core.documents import Document

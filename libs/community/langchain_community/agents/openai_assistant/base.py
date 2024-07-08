@@ -209,7 +209,7 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
     as_agent: bool = False
     """Use as a LangChain agent, compatible with the AgentExecutor."""
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_async_client(cls, values: dict) -> dict:
         if values["async_client"] is None:
             import openai
@@ -288,6 +288,9 @@ class OpenAIAssistantV2Runnable(OpenAIAssistantRunnable):
                 Union[List[OpenAIAssistantAction], OpenAIAssistantFinish]. Otherwise,
                 will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
+
+        Raises:
+            BaseException: If an error occurs during the invocation.
         """
 
         config = ensure_config(config)
