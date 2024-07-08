@@ -34,16 +34,22 @@ async def _araise_on_error(response: httpx.Response) -> None:
             response=response,
         )
 
-class ClovaStudioEmbeddings(BaseModel, Embeddings):
-    """NaverEmbeddings embedding model.
+class ClovaXEmbeddings(BaseModel, Embeddings):
+    """`NCP ClovaStudio` Embedding API.
 
+    following environment variables set or passed in constructor in lower case:
+    - ``NCP_CLOVASTUDIO_API_KEY``
+    - ``NCP_APIGW_API_KEY``
+    - ``NCP_CLOVASTUDIO_APP_ID``
+    
     Example:
         .. code-block:: python
 
-            from langchain_naver import NaverEmbeddings
+            from langchain_naver import ClovaXEmbeddings
 
-            model = NaverEmbeddings()
-    """
+            model = ClovaXEmbeddings(model="clir-emb-dolphin")
+            output = embedding.embed_documents(documents)
+    """  # noqa: E501
     client: httpx.Client = Field(default=None)  #: :meta private:
     async_client: httpx.AsyncClient = Field(default=None)  #: :meta private:
     
@@ -81,7 +87,8 @@ class ClovaStudioEmbeddings(BaseModel, Embeddings):
     def _api_url(self) -> str:
         """GET embedding api url"""
         app_type = "serviceapp" if self.service_app else "testapp"
-        return f"{self.base_url}/{app_type}/v1/api-tools/embedding/{self.model_name}/{self.app_id}"
+        model_name = self.model_name if self.model_name != "bge-m3" else "v2"
+        return f"{self.base_url}/{app_type}/v1/api-tools/embedding/{model_name}/{self.app_id}"
 
     @root_validator(allow_reuse=True)
     def  validate_environment(cls, values: Dict) -> Dict:
@@ -127,7 +134,6 @@ class ClovaStudioEmbeddings(BaseModel, Embeddings):
         
     def _embed_text(self, text: str) -> List[float]:
         payload = {"text":text}
-        print(self._api_url)
         response = self.client.post(url=self._api_url, json=payload)
         _raise_on_error(response)
         return response.json()
