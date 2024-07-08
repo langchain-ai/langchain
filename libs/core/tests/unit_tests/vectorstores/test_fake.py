@@ -1,5 +1,5 @@
-from langchain.docstore.document import Document
-from langchain.vectorstores.fake import FakeVectorStore
+from langchain_core.documents import Document
+from langchain_core.vectorstores import FakeVectorStore
 
 
 def test_add_texts() -> None:

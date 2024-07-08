@@ -1,10 +1,11 @@
 """Fake vectorstore to test retriaval chains."""
+
 from itertools import cycle, zip_longest
 from typing import Any, Iterable, List, Optional, Type
 
-from langchain.docstore.document import Document
-from langchain.embeddings.base import Embeddings
-from langchain.vectorstores.base import VectorStore
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+from langchain_core.vectorstores.vectorstores import VectorStore
 
 
 class FakeVectorStore(VectorStore):
