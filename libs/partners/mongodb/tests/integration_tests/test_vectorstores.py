@@ -5,8 +5,9 @@ from __future__ import annotations
 import os
 from time import monotonic, sleep
 from typing import Any, Dict, List, Optional
-from bson import ObjectId
+
 import pytest  # type: ignore[import-not-found]
+from bson import ObjectId
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from pymongo import MongoClient
@@ -14,9 +15,8 @@ from pymongo.collection import Collection
 from pymongo.errors import OperationFailure
 
 from langchain_mongodb import MongoDBAtlasVectorSearch
-from langchain_mongodb.utils import oid_to_str
-
 from langchain_mongodb.index import drop_vector_search_index
+from langchain_mongodb.utils import oid_to_str
 from tests.utils import ConsistentFakeEmbeddings
 
 INDEX_NAME = "langchain-test-index-vectorstores"
@@ -93,6 +93,7 @@ def get_collection(
 def collection() -> Collection:
     return get_collection()
 
+
 @pytest.fixture
 def texts() -> List[str]:
     return [
@@ -101,6 +102,7 @@ def texts() -> List[str]:
         "What is a sandwich?",
         "That fence is purple.",
     ]
+
 
 @pytest.fixture()
 def index_collection() -> Collection:
@@ -263,7 +265,6 @@ class TestMongoDBAtlasVectorSearch:
         assert output[0].page_content == "foo"
         assert output[1].page_content != "foo"
 
-
     def test_delete(
         self, embeddings: Embeddings, collection: Any, texts: List[str]
     ) -> None:
@@ -425,9 +426,7 @@ class TestMongoDBAtlasVectorSearch:
         )
         vectorstore.create_vector_search_index(dimensions=1536)
 
-    def test_index_update(
-        self, embeddings: Embeddings, index_collection: Any
-    ) -> None:
+    def test_index_update(self, embeddings: Embeddings, index_collection: Any) -> None:
         vectorstore = PatchedMongoDBAtlasVectorSearch(
             index_collection, embeddings, index_name=INDEX_CREATION_NAME
         )

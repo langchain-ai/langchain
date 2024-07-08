@@ -25,18 +25,16 @@ from pymongo.collection import Collection
 from pymongo.driver_info import DriverInfo
 from pymongo.errors import CollectionInvalid
 
-
+from langchain_mongodb.index import (
+    create_vector_search_index,
+    update_vector_search_index,
+)
 from langchain_mongodb.utils import (
     make_serializable,
     maximal_marginal_relevance,
     oid_to_str,
     str_to_oid,
 )
-from langchain_mongodb.index import (
-    create_vector_search_index,
-    update_vector_search_index,
-)
-
 
 MongoDBDocumentType = TypeVar("MongoDBDocumentType", bound=Dict[str, Any])
 VST = TypeVar("VST", bound=VectorStore)
