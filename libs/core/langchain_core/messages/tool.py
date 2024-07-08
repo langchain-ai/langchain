@@ -32,7 +32,7 @@ class ToolMessage(BaseMessage):
             tool_output = {
                 "stdout": "From the graph we can see that the correlation between x and y is ...",
                 "stderr": None,
-                "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU...",
+                "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
             }
 
             ToolMessage(
