@@ -77,7 +77,7 @@ def test_configurable() -> None:
 
     # Doesn't have access non-configurable, non-declarative methods until a config is
     # provided.
-    for method in ("get_num_tokens", "get_num_tokens_from_messages", "dict"):
+    for method in ("get_num_tokens", "get_num_tokens_from_messages"):
         with pytest.raises(AttributeError):
             getattr(model, method)
 
@@ -86,12 +86,16 @@ def test_configurable() -> None:
         [{"name": "foo", "description": "foo", "parameters": {}}]
     )
 
+    # Check that original model wasn't mutated by declarative operation.
+    assert model._queued_declarative_operations == []
+
     # Can iteratively call declarative methods.
     model_with_config = model_with_tools.with_config(
         RunnableConfig(tags=["foo"]), configurable={"model": "gpt-4o"}
     )
+    assert model_with_config.model_name == "gpt-4o"  # type: ignore[attr-defined]
 
-    for method in ("get_num_tokens", "get_num_tokens_from_messages", "dict"):
+    for method in ("get_num_tokens", "get_num_tokens_from_messages"):
         assert hasattr(model_with_config, method)
 
     assert model_with_config.dict() == {  # type: ignore[attr-defined]

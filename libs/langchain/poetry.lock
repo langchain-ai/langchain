@@ -1784,7 +1784,7 @@ url = "../core"
 
 [[package]]
 name = "langchain-openai"
-version = "0.1.13"
+version = "0.1.14"
 description = "An integration package connecting OpenAI and LangChain"
 optional = true
 python-versions = ">=3.8.1,<4.0"
@@ -1799,6 +1799,24 @@ tiktoken = ">=0.7,<1"
 [package.source]
 type = "directory"
 url = "../partners/openai"
+
+[[package]]
+name = "langchain-standard-tests"
+version = "0.1.1"
+description = "Standard tests for LangChain implementations"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = true
+
+[package.dependencies]
+httpx = "^0.27.0"
+langchain-core = ">=0.1.40,<0.3"
+pytest = ">=7,<9"
+
+[package.source]
+type = "directory"
+url = "../standard-tests"
 
 [[package]]
 name = "langchain-text-splitters"
@@ -4521,4 +4539,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "3993302576e47a346c3361728e09c3c069d1bbeeedafcb4e245a911e1fafb182"
+content-hash = "a8247edc2b25b6911290e4c3259b1f9e5f68fc55d9e4822722f5a09dc71cbdb4"

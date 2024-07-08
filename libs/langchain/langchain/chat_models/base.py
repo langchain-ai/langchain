@@ -1,25 +1,41 @@
 from __future__ import annotations
 
-import inspect
 import warnings
 from importlib import util
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union, cast, \
-    Iterator, AsyncIterator
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+    overload,
+)
 
 from langchain_core._api import beta
 from langchain_core.language_models import (
     BaseChatModel,
-    SimpleChatModel, LanguageModelInput,
+    LanguageModelInput,
+    SimpleChatModel,
 )
 from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
+from langchain_core.messages import AnyMessage, BaseMessage
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.runnables.schema import StreamEvent
-from langchain_core.runnables.utils import is_async_generator, is_async_callable
-
-from langchain_core.tracers import RunLogPatch
+from langchain_core.tools import BaseTool
+from langchain_core.tracers import RunLog, RunLogPatch
+from typing_extensions import TypeAlias
 
 __all__ = [
     "init_chat_model",
@@ -30,6 +46,38 @@ __all__ = [
     "agenerate_from_stream",
 ]
 
+
+@overload
+def init_chat_model(  # type: ignore[overload-overlap]
+    model: str,
+    *,
+    model_provider: Optional[str] = None,
+    configurable_fields: Literal[None] = None,
+    config_prefix: Optional[str] = None,
+    **kwargs: Any,
+) -> BaseChatModel: ...
+
+
+@overload
+def init_chat_model(
+    model: Literal[None] = None,
+    *,
+    model_provider: Optional[str] = None,
+    configurable_fields: Literal[None] = None,
+    config_prefix: Optional[str] = None,
+    **kwargs: Any,
+) -> _ConfigurableModel: ...
+
+
+@overload
+def init_chat_model(
+    model: Optional[str] = None,
+    *,
+    model_provider: Optional[str] = None,
+    configurable_fields: Union[Literal["any"], List[str], Tuple[str, ...]] = ...,
+    config_prefix: Optional[str] = None,
+    **kwargs: Any,
+) -> _ConfigurableModel: ...
 
 
 # FOR CONTRIBUTORS: If adding support for a new provider, please append the provider
@@ -45,7 +93,7 @@ def init_chat_model(
     ] = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
-) -> BaseChatModel:
+) -> Union[BaseChatModel, _ConfigurableModel]:
     """Initialize a ChatModel from the model name and provider.
 
     Must have the integration package corresponding to the model provider installed.
@@ -231,13 +279,10 @@ def init_chat_model(
             kwargs["model"] = model
         if model_provider:
             kwargs["model_provider"] = model_provider
-        return cast(
-            BaseChatModel,
-            _ConfigurableModel(
-                default_config=kwargs,
-                config_prefix=config_prefix,
-                configurable_fields=configurable_fields,
-            ),
+        return _ConfigurableModel(
+            default_config=kwargs,
+            config_prefix=config_prefix,
+            configurable_fields=configurable_fields,
         )
 
 
@@ -374,37 +419,10 @@ def _remove_prefix(s: str, prefix: str) -> str:
     return s
 
 
-_SYNC_CHAT_MODEL_METHODS_TAKE_CONFIG = tuple(
-    name
-    for name, func in inspect.getmembers(BaseChatModel, inspect.isfunction)
-    if "config" in inspect.signature(func).parameters and not (is_async_callable(func) or is_async_generator(func))
-)
-
-_ASYNC_CHAT_MODEL_METHODS_TAKE_CONFIG = tuple(
-    name
-    for name, func in inspect.getmembers(BaseChatModel, inspect.isfunction)
-    if "config" in inspect.signature(func).parameters and (is_async_callable(func) or is_async_generator(func))
-)
-
-_DECLARATIVE_METHODS = (
-    "assign",
-    "bind",
-    "map",
-    "pick",
-    "pipe",
-    "with_alisteners",
-    "with_fallbacks",
-    "with_listeners",
-    "with_retry",
-    "with_types",
-    "bind_tools",
-    "with_structured_output",
-    "configurable_fields",
-    "configurable_alternatives",
-)
+_DECLARATIVE_METHODS = ("bind_tools", "with_structured_output")
 
 
-class _ConfigurableModel(Runnable):
+class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     def __init__(
         self,
         *,
@@ -413,42 +431,41 @@ class _ConfigurableModel(Runnable):
         config_prefix: str = "",
         queued_declarative_operations: Sequence[Tuple[str, Tuple, Dict]] = (),
     ) -> None:
-        self._default_config = default_config or {}
-        self._configurable_fields = configurable_fields
-        self._config_prefix = config_prefix + "_" if config_prefix else config_prefix
+        self._default_config: dict = default_config or {}
+        self._configurable_fields: Union[Literal["any"], List[str]] = (
+            configurable_fields
+            if configurable_fields == "any"
+            else list(configurable_fields)
+        )
+        self._config_prefix = (
+            config_prefix + "_"
+            if config_prefix and not config_prefix.endswith("_/")
+            else config_prefix
+        )
         self._queued_declarative_operations: List[Tuple[str, Tuple, Dict]] = list(
             queued_declarative_operations
         )
 
     def __getattr__(self, name: str) -> Any:
-        if name in _SYNC_CHAT_MODEL_METHODS_TAKE_CONFIG:
-
-            def from_config(
-                *args: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
-            ) -> Any:
-                func = getattr(self._model(config), name)
-                return func(*args, config=config, **kwargs)
-
-            return from_config
-        elif name in _ASYNC_CHAT_MODEL_METHODS_TAKE_CONFIG:
-
-            async def from_config(
-                *args: Any, config: Optional[RunnableConfig] = None,
-                **kwargs: Any
-            ) -> Any:
-                func = getattr(self._model(config), name)
-                async for x in func(*args, config=config, **kwargs):
-                    yield x
-            return from_config
-        elif name in _DECLARATIVE_METHODS:
-            # Declarative operations cannot be applied until after an actual model
+        if name in _DECLARATIVE_METHODS:
+            # Declarative operations that cannot be applied until after an actual model
             # object is instantiated. So instead of returning the actual operation,
             # we record the operation and its arguments in a queue. This queue is
             # then applied in order whenever we actually instantiate the model (in
             # self._model()).
             def queue(*args: Any, **kwargs: Any) -> _ConfigurableModel:
-                self._queued_declarative_operations.append((name, args, kwargs))
-                return self
+                queued_declarative_operations = list(
+                    self._queued_declarative_operations
+                )
+                queued_declarative_operations.append((name, args, kwargs))
+                return _ConfigurableModel(
+                    default_config=dict(self._default_config),
+                    configurable_fields=list(self._configurable_fields)
+                    if isinstance(self._configurable_fields, list)
+                    else self._configurable_fields,
+                    config_prefix=self._config_prefix,
+                    queued_declarative_operations=queued_declarative_operations,
+                )
 
             return queue
         elif self._default_config and (model := self._model()) and hasattr(model, name):
@@ -501,18 +518,45 @@ class _ConfigurableModel(Runnable):
             )
         return _ConfigurableModel(
             default_config={**self._default_config, **model_params},
-            configurable_fields=self._configurable_fields,
+            configurable_fields=list(self._configurable_fields)
+            if isinstance(self._configurable_fields, list)
+            else self._configurable_fields,
             config_prefix=self._config_prefix,
             queued_declarative_operations=queued_declarative_operations,
         )
 
-    def invoke(self, input: LanguageModelInput, config: Optional[RunnableConfig] = None) -> Any:
-        return self.__getattr__("invoke")(input, config=config)
+    @property
+    def InputType(self) -> TypeAlias:
+        """Get the input type for this runnable."""
+        from langchain_core.prompt_values import (
+            ChatPromptValueConcrete,
+            StringPromptValue,
+        )
+
+        # This is a version of LanguageModelInput which replaces the abstract
+        # base class BaseMessage with a union of its subclasses, which makes
+        # for a much better schema.
+        return Union[
+            str,
+            Union[StringPromptValue, ChatPromptValueConcrete],
+            List[AnyMessage],
+        ]
+
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> Any:
+        return self._model(config).invoke(input, config=config, **kwargs)
 
     async def ainvoke(
-        self, input: LanguageModelInput, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> Any:
-        return await self.__getattr__("ainvoke")(input, config=config)
+        return await self._model(config).ainvoke(input, config=config, **kwargs)
 
     def stream(
         self,
@@ -520,7 +564,7 @@ class _ConfigurableModel(Runnable):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Any]:
-        return self.__getattr__("stream")(input, config=config, **kwargs)
+        yield from self._model(config).stream(input, config=config, **kwargs)
 
     async def astream(
         self,
@@ -528,7 +572,8 @@ class _ConfigurableModel(Runnable):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Any]:
-        return await self.__getattr__("astream")(input, config=config, **kwargs)
+        async for x in self._model(config).astream(input, config=config, **kwargs):
+            yield x
 
     def batch(
         self,
@@ -538,7 +583,20 @@ class _ConfigurableModel(Runnable):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Any]:
-        return self.__getattr__("batch")(inputs, config=config, return_exceptions=return_exceptions, **kwargs)
+        config = config or None
+        # If <= 1 config use the underlying models batch implementation.
+        if config is None or isinstance(config, dict) or len(config) <= 1:
+            if isinstance(config, list):
+                config = config[0]
+            return self._model(config).batch(
+                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+            )
+        # If multiple configs default to Runnable.batch which uses executor to invoke
+        # in parallel.
+        else:
+            return super().batch(
+                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+            )
 
     async def abatch(
         self,
@@ -548,27 +606,70 @@ class _ConfigurableModel(Runnable):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> List[Any]:
-        return await self.__getattr__("abatch")(inputs, config=config, return_exceptions=return_exceptions, **kwargs)
+        config = config or None
+        # If <= 1 config use the underlying models batch implementation.
+        if config is None or isinstance(config, dict) or len(config) <= 1:
+            if isinstance(config, list):
+                config = config[0]
+            return await self._model(config).abatch(
+                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+            )
+        # If multiple configs default to Runnable.batch which uses executor to invoke
+        # in parallel.
+        else:
+            return await super().abatch(
+                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+            )
 
     def batch_as_completed(
         self,
         inputs: Sequence[LanguageModelInput],
         config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
-        return_exceptions: Literal[False] = False,
+        return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Any]]:
-        return self.__getattr__("batch_as_completed")(inputs, config=config, return_exceptions=return_exceptions, **kwargs)
+    ) -> Iterator[Tuple[int, Union[Any, Exception]]]:
+        config = config or None
+        # If <= 1 config use the underlying models batch implementation.
+        if config is None or isinstance(config, dict) or len(config) <= 1:
+            if isinstance(config, list):
+                config = config[0]
+            yield from self._model(cast(RunnableConfig, config)).batch_as_completed(  # type: ignore[call-overload]
+                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+            )
+        # If multiple configs default to Runnable.batch which uses executor to invoke
+        # in parallel.
+        else:
+            yield from super().batch_as_completed(  # type: ignore[call-overload]
+                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+            )
 
     async def abatch_as_completed(
         self,
         inputs: Sequence[LanguageModelInput],
         config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
         *,
-        return_exceptions: Literal[False] = False,
-        **kwargs: Optional[Any],
+        return_exceptions: bool = False,
+        **kwargs: Any,
     ) -> AsyncIterator[Tuple[int, Any]]:
-        return await self.__getattr__("abatch_as_completed")(inputs, config=config, return_exceptions=return_exceptions, **kwargs)
+        config = config or None
+        # If <= 1 config use the underlying models batch implementation.
+        if config is None or isinstance(config, dict) or len(config) <= 1:
+            if isinstance(config, list):
+                config = config[0]
+            async for x in self._model(
+                cast(RunnableConfig, config)
+            ).abatch_as_completed(  # type: ignore[call-overload]
+                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+            ):
+                yield x
+        # If multiple configs default to Runnable.batch which uses executor to invoke
+        # in parallel.
+        else:
+            async for x in super().abatch_as_completed(  # type: ignore[call-overload]
+                inputs, config=config, return_exceptions=return_exceptions, **kwargs
+            ):
+                yield x
 
     def transform(
         self,
@@ -576,7 +677,8 @@ class _ConfigurableModel(Runnable):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Any]:
-        return self.__getattr__("transform")(input, config=config, **kwargs)
+        for x in self._model(config).transform(input, config=config, **kwargs):
+            yield x
 
     async def atransform(
         self,
@@ -584,9 +686,11 @@ class _ConfigurableModel(Runnable):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Any]:
-        return self.__getattr__("atransform")(input, config=config, **kwargs)
+        async for x in self._model(config).atransform(input, config=config, **kwargs):
+            yield x
 
-    async def astream_log(
+    @overload
+    def astream_log(
         self,
         input: Any,
         config: Optional[RunnableConfig] = None,
@@ -600,8 +704,54 @@ class _ConfigurableModel(Runnable):
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[RunLogPatch]:
-        return self.__getattr__("astream_log")(input, config=config, diff=diff, with_streamed_output_list=with_streamed_output_list, include_names=include_names, include_types=include_types, include_tags=include_tags, exclude_tags=exclude_tags, exclude_types=exclude_types, exclude_names=exclude_names, **kwargs)
+    ) -> AsyncIterator[RunLogPatch]: ...
+
+    @overload
+    def astream_log(
+        self,
+        input: Any,
+        config: Optional[RunnableConfig] = None,
+        *,
+        diff: Literal[False],
+        with_streamed_output_list: bool = True,
+        include_names: Optional[Sequence[str]] = None,
+        include_types: Optional[Sequence[str]] = None,
+        include_tags: Optional[Sequence[str]] = None,
+        exclude_names: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[str]] = None,
+        exclude_tags: Optional[Sequence[str]] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[RunLog]: ...
+
+    async def astream_log(
+        self,
+        input: Any,
+        config: Optional[RunnableConfig] = None,
+        *,
+        diff: bool = True,
+        with_streamed_output_list: bool = True,
+        include_names: Optional[Sequence[str]] = None,
+        include_types: Optional[Sequence[str]] = None,
+        include_tags: Optional[Sequence[str]] = None,
+        exclude_names: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[str]] = None,
+        exclude_tags: Optional[Sequence[str]] = None,
+        **kwargs: Any,
+    ) -> Union[AsyncIterator[RunLogPatch], AsyncIterator[RunLog]]:
+        async for x in self._model(config).astream_log(  # type: ignore[call-overload, misc]
+            input,
+            config=config,
+            diff=diff,
+            with_streamed_output_list=with_streamed_output_list,
+            include_names=include_names,
+            include_types=include_types,
+            include_tags=include_tags,
+            exclude_tags=exclude_tags,
+            exclude_types=exclude_types,
+            exclude_names=exclude_names,
+            **kwargs,
+        ):
+            yield x
 
     async def astream_events(
         self,
@@ -617,6 +767,30 @@ class _ConfigurableModel(Runnable):
         exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[StreamEvent]:
-        return self.__getattr__("astream_events")(input, config=config, version=version, include_names=include_names, include_types=include_types, include_tags=include_tags, exclude_tags=exclude_tags, exclude_types=exclude_types, exclude_names=exclude_names, **kwargs)
+        async for x in self._model(config).astream_events(
+            input,
+            config=config,
+            version=version,
+            include_names=include_names,
+            include_types=include_types,
+            include_tags=include_tags,
+            exclude_tags=exclude_tags,
+            exclude_types=exclude_types,
+            exclude_names=exclude_names,
+            **kwargs,
+        ):
+            yield x
 
+    # Explicitly added to satisfy downstream linters.
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        return self.__getattr__("bind_tools")(tools, **kwargs)
 
+    # Explicitly added to satisfy downstream linters.
+    def with_structured_output(
+        self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        return self.__getattr__("with_structured_output")(schema, **kwargs)
