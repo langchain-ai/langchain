@@ -121,7 +121,7 @@ async def _araise_on_error(response: httpx.Response) -> None:
         )
 
 
-class ChatNaver(BaseChatModel):
+class ChatClovaX(BaseChatModel):
     """`NCP ClovaStudio` Chat Completion API.
 
     following environment variables set or passed in constructor in lower case:
@@ -446,7 +446,7 @@ class ChatNaver(BaseChatModel):
 
 
 def _create_retry_decorator(
-    llm: ChatNaver,
+    llm: ChatClovaX,
     run_manager: Optional[
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,

@@ -15,7 +15,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 
-from langchain_naver import ChatNaver
+from langchain_naver import ChatClovaX
 from langchain_naver.chat_models import (
     _convert_naver_chat_message_to_message,
     _convert_message_to_naver_chat_message
@@ -27,15 +27,15 @@ os.environ["NCP_APIGW_API_KEY"] = "test_gw_key"
 
 def test_initialization_api_key() -> None:
     """Test chat model initialization."""
-    chat_model = ChatNaver(clovastudio_api_key="foo", apigw_api_key="bar")
+    chat_model = ChatClovaX(clovastudio_api_key="foo", apigw_api_key="bar")
     assert cast(SecretStr, chat_model.ncp_clovastudio_api_key).get_secret_value() == "foo"
     assert cast(SecretStr, chat_model.ncp_apigw_api_key).get_secret_value() == "bar"
 
 
 def test_initialization_model_name() -> None:
-    llm = ChatNaver(model="HCX-DASH-001")
+    llm = ChatClovaX(model="HCX-DASH-001")
     assert llm.model_name == "HCX-DASH-001"
-    llm = ChatNaver(model_name="HCX-DASH-001")
+    llm = ChatClovaX(model_name="HCX-DASH-001")
     assert llm.model_name == "HCX-DASH-001"
 
 
@@ -101,7 +101,7 @@ def mock_chat_completion_response() -> dict:
 
 
 def test_naver_invoke(mock_chat_completion_response: dict) -> None:
-    llm = ChatNaver()
+    llm = ChatClovaX()
     completed = False
 
     def mock_completion_with_retry(*args: Any, **kwargs: Any) -> Any:
@@ -109,7 +109,7 @@ def test_naver_invoke(mock_chat_completion_response: dict) -> None:
         completed = True
         return mock_chat_completion_response
 
-    with (patch.object(ChatNaver, '_completion_with_retry', mock_completion_with_retry)):
+    with (patch.object(ChatClovaX, '_completion_with_retry', mock_completion_with_retry)):
         res = llm.invoke("Let's test it.")
         assert res.content == \
                "Phrases: Record what happened today and prepare for tomorrow. The diary will make your life richer."
@@ -117,7 +117,7 @@ def test_naver_invoke(mock_chat_completion_response: dict) -> None:
 
 
 async def test_naver_ainvoke(mock_chat_completion_response: dict) -> None:
-    llm = ChatNaver()
+    llm = ChatClovaX()
     completed = False
 
     async def mock_acompletion_with_retry(*args: Any, **kwargs: Any) -> Any:
@@ -125,7 +125,7 @@ async def test_naver_ainvoke(mock_chat_completion_response: dict) -> None:
         completed = True
         return mock_chat_completion_response
 
-    with patch.object(ChatNaver, "_acompletion_with_retry", mock_acompletion_with_retry):
+    with patch.object(ChatClovaX, "_acompletion_with_retry", mock_acompletion_with_retry):
         res = await llm.ainvoke("Let's test it.")
         assert res.content == \
                "Phrases: Record what happened today and prepare for tomorrow. The diary will make your life richer."
@@ -175,7 +175,7 @@ class MyCustomHandler(BaseCallbackHandler):
 @patch("langchain_naver.chat_models.ChatNaver._completion_with_retry", new=mock_chat_stream)
 def test_stream_with_callback() -> None:
     callback = MyCustomHandler()
-    chat = ChatNaver(callbacks=[callback])
+    chat = ChatClovaX(callbacks=[callback])
     for token in chat.stream("Hello"):
         assert callback.last_token == token.content
 
@@ -183,6 +183,6 @@ def test_stream_with_callback() -> None:
 @patch("langchain_naver.chat_models.ChatNaver._acompletion_with_retry", new=mock_chat_astream)
 async def test_astream_with_callback() -> None:
     callback = MyCustomHandler()
-    chat = ChatNaver(callbacks=[callback])
+    chat = ChatClovaX(callbacks=[callback])
     async for token in chat.astream("Hello"):
         assert callback.last_token == token.content
