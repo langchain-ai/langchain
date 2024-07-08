@@ -45,7 +45,11 @@ class RetryOutputParser(BaseOutputParser[T]):
     """The parser to use to parse the output."""
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
     retry_chain: Union[RunnableSerializable, Any]
-    """The RunnableSerializable to use to retry the completion (Legacy: LLMChain)."""
+    f"""The RunnableSerializable to use to retry the completion (Legacy: LLMChain).
+    InputType should be dict[str, Any] with 'prompt' and 'completion keys,'
+    and OutputType should be str. The details of the input schema are as follows:
+    {NAIVE_RETRY_PROMPT.get_input_schema().schema()}
+    """
     max_retries: int = 1
     """The maximum number of times to retry the parse."""
     legacy: bool = True
@@ -97,13 +101,12 @@ class RetryOutputParser(BaseOutputParser[T]):
                         completion = self.retry_chain.run(
                             prompt=prompt_value.to_string(),
                             completion=completion,
-                            error=repr(e),
                         )
                     else:
                         completion = self.retry_chain.invoke(
                             dict(
                                 prompt=prompt_value.to_string(),
-                                input=completion,
+                                completion=completion,
                             )
                         )
 
@@ -139,7 +142,7 @@ class RetryOutputParser(BaseOutputParser[T]):
                         completion = await self.retry_chain.ainvoke(
                             dict(
                                 prompt=prompt_value.to_string(),
-                                input=completion,
+                                completion=completion,
                             )
                         )
 
@@ -176,7 +179,11 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
     """The parser to use to parse the output."""
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains  # noqa: E501
     retry_chain: Union[RunnableSerializable, Any]
-    """The RunnableSerializable to use to retry the completion (Legacy: LLMChain)."""
+    f"""The RunnableSerializable to use to retry the completion (Legacy: LLMChain).
+    InputType should be dict[str, Any] with 'prompt', 'completion' and 'error' keys,
+    and OutputType should be str. The details of the input schema are as follows:
+    {NAIVE_RETRY_WITH_ERROR_PROMPT.get_input_schema().schema()}
+    """
     max_retries: int = 1
     """The maximum number of times to retry the parse."""
     legacy: bool = True
@@ -224,7 +231,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                     else:
                         completion = self.retry_chain.invoke(
                             dict(
-                                input=completion,
+                                completion=completion,
                                 prompt=prompt_value.to_string(),
                                 error=repr(e),
                             )
@@ -253,7 +260,7 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
                         completion = await self.retry_chain.ainvoke(
                             dict(
                                 prompt=prompt_value.to_string(),
-                                input=completion,
+                                completion=completion,
                                 error=repr(e),
                             )
                         )

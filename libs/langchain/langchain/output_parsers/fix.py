@@ -24,7 +24,11 @@ class OutputFixingParser(BaseOutputParser[T]):
     """The parser to use to parse the output."""
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
     retry_chain: Union[RunnableSerializable, Any]
-    """The RunnableSerializable to use to retry the completion (Legacy: LLMChain)."""
+    f"""The RunnableSerializable to use to retry the completion (Legacy: LLMChain).
+    InputType should be dict[str, Any] with 'prompt', 'completion' and 'error' keys,
+    and OutputType should be str. The details of the input schema are as follows:
+    {NAIVE_FIX_PROMPT.get_input_schema().schema()}
+    """
     max_retries: int = 1
     """The maximum number of times to retry the parse."""
     legacy: bool = True
@@ -74,7 +78,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                             completion = self.retry_chain.invoke(
                                 dict(
                                     instructions=self.parser.get_format_instructions(),  # noqa: E501
-                                    input=completion,
+                                    completion=completion,
                                     error=repr(e),
                                 )
                             )
@@ -82,7 +86,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                             # Case: self.parser does not have get_format_instructions  # noqa: E501
                             completion = self.retry_chain.invoke(
                                 dict(
-                                    input=completion,
+                                    completion=completion,
                                     error=repr(e),
                                 )
                             )
@@ -111,7 +115,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                             completion = await self.retry_chain.ainvoke(
                                 dict(
                                     instructions=self.parser.get_format_instructions(),  # noqa: E501
-                                    input=completion,
+                                    completion=completion,
                                     error=repr(e),
                                 )
                             )
@@ -119,7 +123,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                             # Case: self.parser does not have get_format_instructions  # noqa: E501
                             completion = await self.retry_chain.ainvoke(
                                 dict(
-                                    input=completion,
+                                    completion=completion,
                                     error=repr(e),
                                 )
                             )
