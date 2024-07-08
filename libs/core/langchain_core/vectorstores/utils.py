@@ -4,17 +4,18 @@ These are part of a private API and users should not used them directly
 as they can change without notice.
 """
 
-import logging
-from typing import List, Union
+from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import logging
+from typing import TYPE_CHECKING, List, Union
 
 if TYPE_CHECKING:
     import numpy as np
 
+    Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
+
 logger = logging.getLogger(__name__)
 
-Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
 
 def _cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
     """Row-wise cosine similarity between two equal-width matrices."""
@@ -37,7 +38,7 @@ def _cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
             f"and Y has shape {Y.shape}."
         )
     try:
-        import simsimd as simd
+        import simsimd as simd  # type: ignore
 
         X = np.array(X, dtype=np.float32)
         Y = np.array(Y, dtype=np.float32)

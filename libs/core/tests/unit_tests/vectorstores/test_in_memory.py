@@ -1,18 +1,15 @@
 from pathlib import Path
-from typing import Any
 
 import pytest
-from langchain_core.documents import Document
-from langchain_core.vectorstores.inmemory import InMemoryVectorStore
 from langchain_standard_tests.integration_tests.vectorstores import (
     AsyncReadWriteTestSuite,
     ReadWriteTestSuite,
 )
 
-
-class AnyStr(str):
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, str)
+from langchain_core.documents import Document
+from langchain_core.embeddings.fake import DeterministicFakeEmbedding
+from langchain_core.vectorstores import InMemoryVectorStore
+from tests.unit_tests.stubs import AnyStr
 
 
 class TestInMemoryReadWriteTestSuite(ReadWriteTestSuite):
@@ -30,7 +27,7 @@ class TestAsyncInMemoryReadWriteTestSuite(AsyncReadWriteTestSuite):
 async def test_inmemory() -> None:
     """Test end to end construction and search."""
     store = await InMemoryVectorStore.afrom_texts(
-        ["foo", "bar", "baz"], DeterministicFakeEmbeddings()
+        ["foo", "bar", "baz"], DeterministicFakeEmbedding()
     )
     output = await store.asimilarity_search("foo", k=1)
     assert output == [Document(page_content="foo", id=AnyStr())]
@@ -46,7 +43,7 @@ async def test_inmemory() -> None:
 
 
 async def test_add_by_ids() -> None:
-    vectorstore = InMemoryVectorStore(embedding=DeterministicFakeEmbeddings())
+    vectorstore = InMemoryVectorStore(embedding=DeterministicFakeEmbedding())
 
     # Check sync version
     ids1 = vectorstore.add_texts(["foo", "bar", "baz"], ids=["1", "2", "3"])
@@ -61,7 +58,7 @@ async def test_add_by_ids() -> None:
 async def test_inmemory_mmr() -> None:
     texts = ["foo", "foo", "fou", "foy"]
     docsearch = await InMemoryVectorStore.afrom_texts(
-        texts, DeterministicFakeEmbeddings()
+        texts, DeterministicFakeEmbedding()
     )
     # make sure we can k > docstore size
     output = await docsearch.amax_marginal_relevance_search(
@@ -74,7 +71,7 @@ async def test_inmemory_mmr() -> None:
 
 async def test_inmemory_dump_load(tmp_path: Path) -> None:
     """Test end to end construction and search."""
-    embedding = DeterministicFakeEmbeddings()
+    embedding = DeterministicFakeEmbedding()
     store = await InMemoryVectorStore.afrom_texts(["foo", "bar", "baz"], embedding)
     output = await store.asimilarity_search("foo", k=1)
 
@@ -91,7 +88,7 @@ async def test_inmemory_filter() -> None:
     """Test end to end construction and search."""
     store = await InMemoryVectorStore.afrom_texts(
         ["foo", "bar"],
-        DeterministicFakeEmbeddings(),
+        DeterministicFakeEmbedding(),
         [{"id": 1}, {"id": 2}],
     )
     output = await store.asimilarity_search(

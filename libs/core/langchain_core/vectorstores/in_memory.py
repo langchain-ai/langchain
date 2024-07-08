@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
+
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.indexing import UpsertResponse
