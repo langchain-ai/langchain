@@ -1,5 +1,5 @@
 from typing import Dict, List
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from langchain_core.documents import Document
