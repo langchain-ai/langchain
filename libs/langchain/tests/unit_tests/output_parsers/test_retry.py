@@ -23,7 +23,9 @@ T = TypeVar("T")
 
 class SuccessfulParseAfterRetries(BaseOutputParser[str]):
     parse_count: int = 0  # Number of times parse has been called
-    attemp_count_before_success: int  # Number of times to fail before succeeding  # noqa
+    attemp_count_before_success: (
+        int  # Number of times to fail before succeeding  # noqa
+    )
     error_msg: str = "error"
 
     def parse(self, *args: Any, **kwargs: Any) -> str:

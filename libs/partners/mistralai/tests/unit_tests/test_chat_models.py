@@ -27,7 +27,7 @@ os.environ["MISTRAL_API_KEY"] = "foo"
 
 
 def test_mistralai_model_param() -> None:
-    llm = ChatMistralAI(model="foo")
+    llm = ChatMistralAI(model="foo")  # type: ignore[call-arg]
     assert llm.model == "foo"
 
 
@@ -36,8 +36,8 @@ def test_mistralai_initialization() -> None:
     # Verify that ChatMistralAI can be initialized using a secret key provided
     # as a parameter rather than an environment variable.
     for model in [
-        ChatMistralAI(model="test", mistral_api_key="test"),
-        ChatMistralAI(model="test", api_key="test"),
+        ChatMistralAI(model="test", mistral_api_key="test"),  # type: ignore[call-arg, call-arg]
+        ChatMistralAI(model="test", api_key="test"),  # type: ignore[call-arg, arg-type]
     ]:
         assert cast(SecretStr, model.mistral_api_key).get_secret_value() == "test"
 

@@ -1,4 +1,5 @@
 """Tool for the identification of prompt injection attacks."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Union
