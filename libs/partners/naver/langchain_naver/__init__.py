@@ -1,6 +1,6 @@
 from importlib import metadata
 
-from langchain_naver.chat_models import ChatNaver
+from langchain_naver.chat_models import ChatClovaX
 from langchain_naver.embeddings import ClovaXEmbeddings
 
 try:
@@ -11,6 +11,7 @@ except metadata.PackageNotFoundError:
 del metadata  # optional, avoids polluting the results of dir(__package__)
 
 __all__ = [
-    "ChatNaver",
+    "ChatClovaX",
     "ClovaXEmbeddings"
 ]
+    

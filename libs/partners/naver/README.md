@@ -17,9 +17,9 @@ And you should configure credentials by setting the following environment variab
 `ChatNaver` class exposes chat models from Naver.
 
 ```python
-from langchain_naver import ChatNaver
+from langchain_naver import ChatClovaX
 
-llm = ChatNaver()
+llm = ChatClovaX()
 llm.invoke("Sing a ballad of LangChain.")
 ```
 
