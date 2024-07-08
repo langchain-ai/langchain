@@ -704,13 +704,13 @@ class LLMGraphTransformer:
             prompt = prompt or default_prompt
             self.chain = prompt | structured_llm
 
-    def process_response(self, document: Document) -> GraphDocument:
+    def process_response(self, document: Document, config) -> GraphDocument:
         """
         Processes a single document, transforming it into a graph document using
         an LLM based on the model's schema and constraints.
         """
         text = document.page_content
-        raw_schema = self.chain.invoke({"input": text})
+        raw_schema = self.chain.invoke({"input": text}, config=config)
         if self._function_call:
             raw_schema = cast(Dict[Any, Any], raw_schema)
             nodes, relationships = _convert_to_graph_document(raw_schema)
@@ -759,7 +759,7 @@ class LLMGraphTransformer:
         return GraphDocument(nodes=nodes, relationships=relationships, source=document)
 
     def convert_to_graph_documents(
-        self, documents: Sequence[Document]
+        self, documents: Sequence[Document], config
     ) -> List[GraphDocument]:
         """Convert a sequence of documents into graph documents.
 
@@ -770,7 +770,7 @@ class LLMGraphTransformer:
         Returns:
             Sequence[GraphDocument]: The transformed documents as graphs.
         """
-        return [self.process_response(document) for document in documents]
+        return [self.process_response(document, config) for document in documents]
 
     async def aprocess_response(self, document: Document) -> GraphDocument:
         """
