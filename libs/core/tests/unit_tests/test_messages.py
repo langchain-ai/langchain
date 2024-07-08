@@ -836,3 +836,19 @@ def test_tool_message_to_dict() -> None:
     }
     actual = message_to_dict(message)
     assert actual == expected
+
+
+def test_tool_message_repr() -> None:
+    message = ToolMessage("foo", raw_output={"bar": {"baz": 123}}, tool_call_id="1")
+    expected = (
+        "ToolMessage(content='foo', tool_call_id='1', raw_output={'bar': {'baz': 123}})"
+    )
+    actual = repr(message)
+    assert expected == actual
+
+
+def test_tool_message_str() -> None:
+    message = ToolMessage("foo", raw_output={"bar": {"baz": 123}}, tool_call_id="1")
+    expected = "content='foo' tool_call_id='1' raw_output={'bar': {'baz': 123}}"
+    actual = str(message)
+    assert expected == actual
