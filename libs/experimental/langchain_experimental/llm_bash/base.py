@@ -1,4 +1,5 @@
 """Chain that interprets a prompt and executes bash operations."""
+
 from __future__ import annotations
 
 import logging
