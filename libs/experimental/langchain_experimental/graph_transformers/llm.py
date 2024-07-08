@@ -13,6 +13,7 @@ from langchain_core.prompts import (
     PromptTemplate,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field, create_model
+from langchain_core.runnables import RunnableConfig
 
 examples = [
     {
@@ -704,7 +705,7 @@ class LLMGraphTransformer:
             prompt = prompt or default_prompt
             self.chain = prompt | structured_llm
 
-    def process_response(self, document: Document, config) -> GraphDocument:
+    def process_response(self, document: Document, config: Optional[RunnableConfig] = None) -> GraphDocument:
         """
         Processes a single document, transforming it into a graph document using
         an LLM based on the model's schema and constraints.
@@ -759,7 +760,7 @@ class LLMGraphTransformer:
         return GraphDocument(nodes=nodes, relationships=relationships, source=document)
 
     def convert_to_graph_documents(
-        self, documents: Sequence[Document], config
+        self, documents: Sequence[Document], config: Optional[RunnableConfig] = None
     ) -> List[GraphDocument]:
         """Convert a sequence of documents into graph documents.
 
