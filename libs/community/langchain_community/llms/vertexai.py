@@ -10,7 +10,8 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.utils import pre_init
 
 from langchain_community.utilities.vertexai import (
     create_retry_decorator,
@@ -222,7 +223,7 @@ class VertexAI(_VertexAICommon, BaseLLM):
         """Get the namespace of the langchain object."""
         return ["langchain", "llms", "vertexai"]
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         tuned_model_name = values.get("tuned_model_name")
@@ -409,7 +410,7 @@ class VertexAIModelGarden(_VertexAIBase, BaseLLM):
     "Set result_arg to None if output of the model is expected to be a string."
     "Otherwise, if it's a dict, provided an argument that contains the result."
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         try:
