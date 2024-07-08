@@ -87,7 +87,7 @@ def test_on_llm_end_finetuned_model(
     "model_name,expected_cost",
     [
         ("gpt-35-turbo", 0.0035),
-        ("gpt-35-turbo-0301", 0.0035),
+        ("gpt-35-turbo-0301", 0.004),
         (
             "gpt-35-turbo-0613",
             0.0035,

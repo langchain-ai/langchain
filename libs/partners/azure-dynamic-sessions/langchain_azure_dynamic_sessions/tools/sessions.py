@@ -118,9 +118,9 @@ class SessionsPythonREPLTool(BaseTool):
     pool_management_endpoint: str
     """The management endpoint of the session pool. Should end with a '/'."""
 
-    access_token_provider: Callable[
-        [], Optional[str]
-    ] = _access_token_provider_factory()
+    access_token_provider: Callable[[], Optional[str]] = (
+        _access_token_provider_factory()
+    )
     """A function that returns the access token to use for the session pool."""
 
     session_id: str = str(uuid4())

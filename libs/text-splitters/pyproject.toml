@@ -1,3 +1,7 @@
+[build-system]
+requires = [ "poetry-core>=1.0.0",]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "langchain-text-splitters"
 version = "0.2.2"
@@ -7,97 +11,70 @@ license = "MIT"
 readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
+[tool.mypy]
+disallow_untyped_defs = "True"
+[[tool.mypy.overrides]]
+module = [ "transformers", "sentence_transformers", "nltk.tokenize", "konlpy.tag", "bs4", "pytest",]
+ignore_missing_imports = "True"
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
 langchain-core = "^0.2.10"
 
+[tool.ruff.lint]
+select = [ "E", "F", "I", "T201",]
+
+[tool.coverage.run]
+omit = [ "tests/*",]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5"
+markers = [ "requires: mark tests as requiring a specific library", "asyncio: mark tests as requiring asyncio", "compile: mark placeholder test used to compile integration tests without running them",]
+asyncio_mode = "auto"
+
 [tool.poetry.group.lint]
 optional = true
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
-langchain-core = { path = "../core", develop = true }
 
 [tool.poetry.group.typing]
 optional = true
 
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.lint.dependencies]
+ruff = "^0.5"
+
 [tool.poetry.group.typing.dependencies]
-mypy = "^1"
+mypy = "^1.10"
 lxml-stubs = "^0.5.1"
 types-requests = "^2.31.0.20240218"
 tiktoken = "^0.6.0"
 spacy = "^3.7.4"
 
-[tool.poetry.group.dev]
-optional = true
-
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
-langchain-core = { path = "../core", develop = true }
-
-[tool.poetry.group.test]
-optional = true
 
 [tool.poetry.group.test.dependencies]
-# The only dependencies that should be added are
-# dependencies used for running tests (e.g., pytest, freezegun, response).
-# Any dependencies that do not meet that criteria will be removed.
 pytest = "^7.3.0"
 freezegun = "^1.2.2"
 pytest-mock = "^3.10.0"
 pytest-watcher = "^0.3.4"
 pytest-asyncio = "^0.21.1"
 pytest-profiling = "^1.7.0"
-langchain-core = { path = "../core", develop = true }
 
+[tool.poetry.group.test_integration.dependencies]
 
-[tool.poetry.group.test_integration]
-dependencies = {}
+[tool.poetry.group.lint.dependencies.langchain-core]
+path = "../core"
+develop = true
 
-[tool.ruff.lint]
-select = [
-  "E",    # pycodestyle
-  "F",    # pyflakes
-  "I",    # isort
-  "T201", # print
-]
+[tool.poetry.group.dev.dependencies.langchain-core]
+path = "../core"
+develop = true
 
-[tool.mypy]
-disallow_untyped_defs = "True"
-
-[[tool.mypy.overrides]]
-module = [
-  "transformers",
-  "sentence_transformers",
-  "nltk.tokenize",
-  "konlpy.tag",
-  "bs4",
-  "pytest",
-]
-ignore_missing_imports = "True"
-
-[tool.coverage.run]
-omit = ["tests/*"]
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.pytest.ini_options]
-# --strict-markers will raise errors on unknown marks.
-# https://docs.pytest.org/en/7.1.x/how-to/mark.html#raising-errors-on-unknown-marks
-#
-# https://docs.pytest.org/en/7.1.x/reference/reference.html
-# --strict-config       any warnings encountered while parsing the `pytest`
-#                       section of the configuration file raise errors.
-#
-addopts = "--strict-markers --strict-config --durations=5"
-# Registering custom markers.
-# https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
-markers = [
-  "requires: mark tests as requiring a specific library",
-  "asyncio: mark tests as requiring asyncio",
-  "compile: mark placeholder test used to compile integration tests without running them",
-]
-asyncio_mode = "auto"
+[tool.poetry.group.test.dependencies.langchain-core]
+path = "../core"
+develop = true

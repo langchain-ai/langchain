@@ -1,4 +1,5 @@
 """Base classes for scoring the output of a model on a scale of 1-10."""
+
 from __future__ import annotations
 
 import logging
