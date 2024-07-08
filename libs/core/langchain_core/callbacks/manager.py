@@ -1648,7 +1648,7 @@ class AsyncCallbackManager(BaseCallbackManager):
 
             for handler in self.handlers:
                 task = ahandle_event(
-                    [handler],  # Pass a list with just this handler
+                    [handler],
                     "on_llm_start",
                     "ignore_llm",
                     serialized,
