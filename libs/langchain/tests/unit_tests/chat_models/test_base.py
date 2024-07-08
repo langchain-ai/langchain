@@ -4,7 +4,8 @@ from unittest import mock
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
-from langchain_core.runnables import RunnableConfig
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableConfig, RunnableSequence
 
 from langchain.chat_models.base import __all__, init_chat_model
 
@@ -179,3 +180,6 @@ def test_configurable_with_default() -> None:
         "custom_input_type": None,
         "custom_output_type": None,
     }
+    prompt = ChatPromptTemplate.from_messages([("system", "foo")])
+    chain = prompt | model_with_config
+    assert isinstance(chain, RunnableSequence)
