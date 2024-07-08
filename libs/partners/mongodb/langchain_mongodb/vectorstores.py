@@ -486,7 +486,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         if collection is None:
             raise ValueError("Must provide 'collection' named parameter.")
         vectorstore = cls(collection, embedding, **kwargs)
-        vectorstore.add_texts(texts, metadatas=metadatas)
+        vectorstore.add_texts(texts=texts, metadatas=metadatas, ids=ids, **kwargs)
         return vectorstore
 
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
