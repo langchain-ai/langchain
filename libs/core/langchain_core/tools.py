@@ -1218,3 +1218,33 @@ class BaseToolkit(BaseModel, ABC):
     @abstractmethod
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
+
+
+def _get_description_from_runnable(runnable: Runnable) -> str:
+    """Generate a placeholder description of a runnable."""
+    input_schema = runnable.input_schema.schema()
+    output_schema = runnable.output_schema.schema()
+    return f"Takes {input_schema} and returns {output_schema}"
+
+
+def _get_args_schema_for_runnable(runnable: Runnable) -> Type[BaseModel]:
+    """Get object schema from runnable input schema."""
+    schema_name = f"{runnable.get_name()}Schema"
+    input_name = "input"
+    fields = {input_name: (runnable.InputType, Field(...))}
+    return create_model(schema_name, **fields)  # type: ignore
+
+
+def convert_runnable_to_tool(
+    runnable: Runnable, description: Optional[str] = None
+) -> BaseTool:
+    """Convert a Runnable into a BaseTool."""
+    description = description or _get_description_from_runnable(runnable)
+    args_schema = _get_args_schema_for_runnable(runnable)
+    return StructuredTool.from_function(
+        name=runnable.get_name(),
+        func=runnable.invoke,
+        coroutine=runnable.ainvoke,
+        description=description,
+        args_schema=args_schema,
+    )

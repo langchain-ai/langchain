@@ -18,7 +18,7 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
-from langchain_core.runnables import ensure_config
+from langchain_core.runnables import RunnableLambda, ensure_config
 from langchain_core.tools import (
     BaseTool,
     SchemaAnnotationError,
@@ -26,6 +26,7 @@ from langchain_core.tools import (
     Tool,
     ToolException,
     _create_subset_model,
+    convert_runnable_to_tool,
     tool,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -987,3 +988,33 @@ def test_tool_annotated_descriptions() -> None:
         },
         "required": ["bar", "baz"],
     }
+
+
+def test_convert_from_runnable() -> None:
+    def f(x: List[int]) -> int:
+        """Calculate a maximum."""
+        return max(x)
+
+    def g(x: int) -> str:
+        """Do thing."""
+        return str(x + 2)
+
+    runnable = RunnableLambda(f) | g
+    as_tool = convert_runnable_to_tool(runnable)
+    args_schema = as_tool.args_schema
+    assert args_schema is not None
+    assert args_schema.schema() == {
+        "title": "RunnableSequenceSchema",
+        "type": "object",
+        "properties": {
+            "input": {"title": "Input", "type": "array", "items": {"type": "integer"}}
+        },
+        "required": ["input"],
+    }
+    assert as_tool.description
+
+    result = as_tool.invoke({"input": [3, 4]})
+    assert result == "6"
+
+    as_tool = convert_runnable_to_tool(runnable, "test description")
+    assert as_tool.description == "test description"
