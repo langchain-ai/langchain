@@ -5,7 +5,7 @@ import json
 import logging
 import uuid
 import warnings
-from typing import Any, Iterable, List, Optional, Type
+from typing import Any, List, Optional, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -131,7 +131,7 @@ class DuckDB(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:

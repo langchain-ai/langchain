@@ -6,7 +6,7 @@ import json
 import logging
 import time
 from enum import Enum
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
 from langchain_core.documents import Document
@@ -342,7 +342,7 @@ class TencentVectorDB(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         timeout: Optional[int] = None,
         batch_size: int = 1000,

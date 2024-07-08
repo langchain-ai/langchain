@@ -7,7 +7,6 @@ from typing import (
     Callable,
     Dict,
     Generator,
-    Iterable,
     List,
     Optional,
     Tuple,
@@ -144,7 +143,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> List:

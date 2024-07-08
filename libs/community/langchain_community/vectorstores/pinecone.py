@@ -4,7 +4,16 @@ import logging
 import os
 import uuid
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 from langchain_core._api.deprecation import deprecated
@@ -100,7 +109,7 @@ class Pinecone(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         namespace: Optional[str] = None,

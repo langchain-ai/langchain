@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import Any, Iterable, List, Optional, Tuple, Type, cast
+from typing import Any, List, Optional, Tuple, Type, cast
 
 import requests
 from langchain_core.documents import Document
@@ -209,7 +209,7 @@ repeated float %s = 1;
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         last_vector: Optional[List[float]] = None,
         **kwargs: Any,

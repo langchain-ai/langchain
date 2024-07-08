@@ -322,7 +322,7 @@ class Clickhouse(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         batch_size: int = 32,
         ids: Optional[Iterable[str]] = None,

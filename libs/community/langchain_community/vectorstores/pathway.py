@@ -16,7 +16,7 @@ instance as described at https://pathway.com/developers/user-guide/llm-xpack/vec
 
 import json
 import logging
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
 import requests
 from langchain_core.documents import Document
@@ -149,7 +149,7 @@ class PathwayVectorClient(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:

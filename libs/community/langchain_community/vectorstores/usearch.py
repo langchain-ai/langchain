@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -40,7 +40,7 @@ class USearch(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[Dict]] = None,
         ids: Optional[np.ndarray] = None,
         **kwargs: Any,

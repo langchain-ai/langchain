@@ -12,7 +12,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
     List,
     Optional,
     Tuple,
@@ -557,7 +556,7 @@ class OracleVS(VectorStore):
     @_handle_exceptions
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[Dict[Any, Any]]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,
@@ -992,7 +991,7 @@ class OracleVS(VectorStore):
     @_handle_exceptions
     def from_texts(
         cls: Type[OracleVS],
-        texts: Iterable[str],
+        texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,

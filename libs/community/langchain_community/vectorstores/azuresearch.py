@@ -372,7 +372,7 @@ class AzureSearch(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         *,
         keys: Optional[List[str]] = None,

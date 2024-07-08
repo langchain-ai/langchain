@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Type
+from typing import TYPE_CHECKING, Any, List, Optional, Type
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -174,7 +174,7 @@ class Epsilla(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         collection_name: Optional[str] = "",
         drop_old: Optional[bool] = False,

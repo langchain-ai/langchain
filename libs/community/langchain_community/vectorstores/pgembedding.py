@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 import sqlalchemy
 from sqlalchemy import func
@@ -282,7 +282,7 @@ class PGEmbedding(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,

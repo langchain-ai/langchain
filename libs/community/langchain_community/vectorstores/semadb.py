@@ -1,4 +1,4 @@
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 from uuid import uuid4
 
 import numpy as np
@@ -91,7 +91,7 @@ class SemaDB(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         batch_size: int = 1000,
         **kwargs: Any,

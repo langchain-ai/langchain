@@ -359,7 +359,7 @@ class Vectara(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         doc_metadata: Optional[dict] = None,
         **kwargs: Any,

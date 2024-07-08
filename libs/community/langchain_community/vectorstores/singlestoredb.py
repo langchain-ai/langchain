@@ -6,7 +6,6 @@ from enum import Enum
 from typing import (
     Any,
     Callable,
-    Iterable,
     List,
     Optional,
     Tuple,
@@ -384,7 +383,7 @@ class SingleStoreDB(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         embeddings: Optional[List[List[float]]] = None,
         return_ids: bool = False,

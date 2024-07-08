@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -73,7 +73,7 @@ class VespaStore(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,

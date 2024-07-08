@@ -241,7 +241,7 @@ CREATE TABLE IF NOT EXISTS {self.config.database}.{self.config.table}(
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         batch_size: int = 32,
         ids: Optional[Iterable[str]] = None,

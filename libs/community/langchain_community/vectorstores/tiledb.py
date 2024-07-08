@@ -5,7 +5,7 @@ from __future__ import annotations
 import pickle
 import random
 import sys
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -633,7 +633,7 @@ class TileDB(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         timestamp: int = 0,

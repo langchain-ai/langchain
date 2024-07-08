@@ -154,7 +154,7 @@ class Aerospike(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         set_name: Optional[str] = None,

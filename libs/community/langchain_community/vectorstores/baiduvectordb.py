@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -241,7 +241,7 @@ class BaiduVectorDB(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         batch_size: int = 1000,
         **kwargs: Any,

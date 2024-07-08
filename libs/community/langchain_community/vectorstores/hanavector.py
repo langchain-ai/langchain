@@ -10,7 +10,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
     List,
     Optional,
     Tuple,
@@ -256,7 +255,7 @@ class HanaDB(VectorStore):
 
     def add_texts(  # type: ignore[override]
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         embeddings: Optional[List[List[float]]] = None,
         **kwargs: Any,

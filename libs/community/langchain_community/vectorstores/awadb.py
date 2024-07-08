@@ -2,7 +2,17 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+)
 
 import numpy as np
 from langchain_core.documents import Document
@@ -80,7 +90,7 @@ class AwaDB(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         is_duplicate_texts: Optional[bool] = None,
         **kwargs: Any,

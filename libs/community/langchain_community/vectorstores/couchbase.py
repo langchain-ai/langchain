@@ -1,7 +1,15 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
@@ -229,7 +237,7 @@ class CouchbaseVectorStore(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[Dict[str, Any]]] = None,
         ids: Optional[List[str]] = None,
         batch_size: Optional[int] = None,

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, List, Optional, Tuple, Type
+from typing import Any, List, Optional, Tuple, Type
 
 import numpy as np
 from langchain_core.documents import Document
@@ -73,7 +73,7 @@ class Vald(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         grpc_metadata: Optional[Any] = None,
         skip_strict_exist_check: bool = False,

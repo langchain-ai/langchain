@@ -4,7 +4,14 @@ import json
 import logging
 import time
 import uuid
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
@@ -120,7 +127,7 @@ class MatchingEngine(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:

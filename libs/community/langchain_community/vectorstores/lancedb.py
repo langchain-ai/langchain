@@ -4,7 +4,7 @@ import base64
 import os
 import uuid
 import warnings
-from typing import Any, Callable, Dict, Iterable, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type
 
 import numpy as np
 from langchain_core.documents import Document
@@ -177,7 +177,7 @@ class LanceDB(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         **kwargs: Any,

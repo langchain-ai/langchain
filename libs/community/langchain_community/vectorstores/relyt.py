@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
 
 from sqlalchemy import Column, String, Table, create_engine, insert, text
 from sqlalchemy.dialects.postgresql import JSON, TEXT
@@ -198,7 +198,7 @@ class Relyt(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = 500,

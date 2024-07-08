@@ -2,7 +2,6 @@ import asyncio
 from typing import (
     Any,
     Dict,
-    Iterable,
     List,
     Optional,
     Tuple,
@@ -104,7 +103,7 @@ class SurrealDBStore(VectorStore):
 
     async def aadd_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -133,7 +132,7 @@ class SurrealDBStore(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:
@@ -147,7 +146,7 @@ class SurrealDBStore(VectorStore):
         """
 
         async def _add_texts(
-            texts: Iterable[str],
+            texts: List[str],
             metadatas: Optional[List[dict]] = None,
             **kwargs: Any,
         ) -> List[str]:

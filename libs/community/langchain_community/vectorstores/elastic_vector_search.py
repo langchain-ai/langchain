@@ -6,7 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    Iterable,
     List,
     Mapping,
     Optional,
@@ -183,7 +182,7 @@ class ElasticVectorSearch(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         refresh_indices: bool = True,
@@ -687,7 +686,7 @@ class ElasticKnnSearch(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[Dict[Any, Any]]] = None,
         model_id: Optional[str] = None,
         refresh_indices: bool = False,

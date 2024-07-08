@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from langchain_core.documents import Document
@@ -124,7 +124,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> List[str]:

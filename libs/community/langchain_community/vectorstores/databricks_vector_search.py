@@ -3,7 +3,15 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
 
 import numpy as np
 from langchain_core.documents import Document
@@ -203,7 +211,7 @@ class DatabricksVectorSearch(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[Any]] = None,
         **kwargs: Any,

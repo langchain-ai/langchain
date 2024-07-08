@@ -9,7 +9,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
     List,
     Literal,
     Optional,
@@ -557,7 +556,7 @@ class VDMS(VectorStore):
 
     def add_texts(
         self,
-        texts: Iterable[str],
+        texts: List[str],
         metadatas: Optional[List[dict]] = None,
         ids: Optional[List[str]] = None,
         batch_size: int = DEFAULT_INSERT_BATCH_SIZE,
