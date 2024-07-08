@@ -1,4 +1,5 @@
 """VectorStore agent."""
+
 from typing import Any, Dict, Optional
 
 from langchain_core.callbacks.base import BaseCallbackManager

@@ -1,4 +1,5 @@
 """Networkx wrapper for graph operations."""
+
 from __future__ import annotations
 
 from typing import Any, List, NamedTuple, Optional, Tuple

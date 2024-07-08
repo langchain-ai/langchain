@@ -1,5 +1,6 @@
 # flake8: noqa
 """Global values and configuration that apply to all of LangChain."""
+
 import warnings
 from typing import TYPE_CHECKING, Optional
 
@@ -135,7 +136,11 @@ def get_debug() -> bool:
 
 
 def set_llm_cache(value: Optional["BaseCache"]) -> None:
-    """Set a new LLM cache, overwriting the previous value, if any."""
+    """Set a new LLM cache, overwriting the previous value, if any.
+
+    Args:
+        value: The new LLM cache to use. If `None`, the LLM cache is disabled.
+    """
     try:
         import langchain  # type: ignore[import]
 

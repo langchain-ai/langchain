@@ -1,4 +1,5 @@
 """Wrapper around in-memory storage."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Optional

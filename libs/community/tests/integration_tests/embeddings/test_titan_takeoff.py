@@ -1,6 +1,5 @@
 """Test Titan Takeoff Embedding wrapper."""
 
-
 import json
 from typing import Any
 

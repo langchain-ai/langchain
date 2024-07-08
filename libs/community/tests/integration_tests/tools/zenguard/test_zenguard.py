@@ -3,13 +3,13 @@ from typing import Any, Dict, List
 
 import pytest
 
-from langchain_community.tools.zenguard.tools import Detector, ZenGuardTool
+from langchain_community.tools.zenguard.tool import Detector, ZenGuardTool
 
 
 @pytest.fixture()
 def zenguard_tool() -> ZenGuardTool:
     if os.getenv("ZENGUARD_API_KEY") is None:
-        raise ValueError("ZENGUARD_API_KEY is not set in enviroment varibale")
+        raise ValueError("ZENGUARD_API_KEY is not set in environment varibale")
     return ZenGuardTool()
 
 
