@@ -5,8 +5,9 @@ This index manager will provide a control plane for existing indexes.
 It also provides a path toward providing implementations the ability to
 take care of schema migrations!
 """
+
 import abc
-from typing import Any, TypedDict, List
+from typing import Any, List, TypedDict
 
 
 class CreateResponse(TypedDict):
