@@ -5,18 +5,19 @@ Documentation: https://docs.riza.io
 API keys:      https://dashboard.riza.io
 """
 
-from typing import Type, Optional, Any
+from typing import Optional, Type
 
 from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool, ToolException
-
 from rizaio import Riza
+
 
 class ExecPythonInput(BaseModel):
     code: str = Field(description="the Python code to execute")
+
 
 class ExecPython(BaseTool):
     name: str = "riza_exec_python"
@@ -34,17 +35,20 @@ class ExecPython(BaseTool):
         self.client = Riza()
 
     def _run(
-        self,
-        code: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None
+        self, code: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         output = self.client.command.exec(language="PYTHON", code=code)
         if output.exit_code > 0:
-            raise ToolException(f"Riza code execution returned this error with a non-zero exit code: {output.stderr}")
+            raise ToolException(
+                f"Riza code execution returned a non-zero exit code. "
+                f"The output captured from stderr was:\n{output.stderr}"
+            )
         return output.stdout
+
 
 class ExecJavaScriptInput(BaseModel):
     code: str = Field(description="the JavaScript code to execute")
+
 
 class ExecJavaScript(BaseTool):
     name: str = "riza_exec_javascript"
@@ -63,11 +67,12 @@ class ExecJavaScript(BaseTool):
         self.client = Riza()
 
     def _run(
-        self,
-        code: str,
-        run_manager: Optional[CallbackManagerForToolRun] = None
+        self, code: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         output = self.client.command.exec(language="JAVASCRIPT", code=code)
         if output.exit_code > 0:
-            raise ToolException(f"Riza code execution returned this error with a non-zero exit code: {output.stderr}")
+            raise ToolException(
+                f"Riza code execution returned a non-zero exit code. "
+                f"The output captured from stderr was:\n{output.stderr}"
+            )
         return output.stdout
