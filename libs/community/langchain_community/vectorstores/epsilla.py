@@ -1,4 +1,5 @@
 """Wrapper around Epsilla vector database."""
+
 from __future__ import annotations
 
 import logging
