@@ -9,7 +9,6 @@ from langchain_core.output_parsers.xml import XMLOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables.base import Runnable, RunnableConfig
 from langchain_core.runnables.graph_mermaid import _escape_node_label
-from tests.unit_tests.stubs import AnyStr
 
 
 def test_graph_single_runnable(snapshot: SnapshotAssertion) -> None:
@@ -258,7 +257,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "AIMessage": {
                             "title": "AIMessage",
-                            "description": AnyStr(),
+                            "description": "Message from an AI.\n\nAIMessage is returned from a chat model as a response to a prompt.\n\nThis message represents the output of the model and consists of both\nthe raw output as returned by the model together standardized fields\n(e.g., tool calls, usage metadata) added by the LangChain framework.",
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -317,7 +316,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "HumanMessage": {
                             "title": "HumanMessage",
-                            "description": AnyStr(),
+                            "description": 'Message from a human.\n\nHumanMessages are messages that are passed in from a human to the model.\n\nExample:\n\n    .. code-block:: python\n\n        from langchain_core.messages import HumanMessage, SystemMessage\n\n        messages = [\n            SystemMessage(\n                content="You are a helpful assistant! Your name is Bob."\n            ),\n            HumanMessage(\n                content="What is your name?"\n            )\n        ]\n\n        # Instantiate a chat model and invoke it with the messages\n        model = ...\n        print(model.invoke(messages))',
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -361,7 +360,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "ChatMessage": {
                             "title": "ChatMessage",
-                            "description": AnyStr(),
+                            "description": "Message that can be assigned an arbitrary speaker (i.e. role).",
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -401,7 +400,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "SystemMessage": {
                             "title": "SystemMessage",
-                            "description": AnyStr(),
+                            "description": 'Message for priming AI behavior.\n\nThe system message is usually passed in as the first of a sequence\nof input messages.\n\nExample:\n\n    .. code-block:: python\n\n        from langchain_core.messages import HumanMessage, SystemMessage\n\n        messages = [\n            SystemMessage(\n                content="You are a helpful assistant! Your name is Bob."\n            ),\n            HumanMessage(\n                content="What is your name?"\n            )\n        ]\n\n        # Define a chat model and invoke it with the messages\n        print(model.invoke(messages))',
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -440,7 +439,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "FunctionMessage": {
                             "title": "FunctionMessage",
-                            "description": AnyStr(),
+                            "description": "Message for passing the result of executing a tool back to a model.\n\nFunctionMessage are an older version of the ToolMessage schema, and\ndo not contain the tool_call_id field.\n\nThe tool_call_id field is used to associate the tool call request with the\ntool call response. This is useful in situations where a chat model is able\nto request multiple tool calls in parallel.",
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -479,7 +478,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                         },
                         "ToolMessage": {
                             "title": "ToolMessage",
-                            "description": AnyStr(),
+                            "description": 'Message for passing the result of executing a tool back to a model.\n\nToolMessages contain the result of a tool invocation. Typically, the result\nis encoded inside the `content` field.\n\nExample: A ToolMessage representing a result of 42 from a tool call with id\n\n    .. code-block:: python\n\n        from langchain_core.messages import ToolMessage\n\n        ToolMessage(content=\'42\', tool_call_id=\'call_Jja7J89XsjrOLA5r!MEOW!SL\')\n\nExample: A ToolMessage where only part of the full tool output is sent to the model\n    and the full output is passed in to raw_output.\n\n    .. code-block:: python\n\n        from langchain_core.messages import ToolMessage\n\n        tool_output = {\n            "stdout": "From the graph we can see that the correlation between x and y is ...",\n            "stderr": None,\n            "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},\n        }\n\n        ToolMessage(\n            content=tool_output["stdout"],\n            raw_output=tool_output,\n            tool_call_id=\'call_Jja7J89XsjrOLA5r!MEOW!SL\',\n        )\n\nThe tool_call_id field is used to associate the tool call request with the\ntool call response. This is useful in situations where a chat model is able\nto request multiple tool calls in parallel.',
                             "type": "object",
                             "properties": {
                                 "content": {
@@ -517,6 +516,7 @@ def test_graph_sequence_map(snapshot: SnapshotAssertion) -> None:
                                     "title": "Tool Call Id",
                                     "type": "string",
                                 },
+                                "raw_output": {"title": "Raw Output", "type": "object"},
                             },
                             "required": ["content", "tool_call_id"],
                         },

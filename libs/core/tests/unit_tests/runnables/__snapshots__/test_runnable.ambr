@@ -5717,13 +5717,32 @@
           ToolMessages contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A TooMessage representing a result of 42 from a tool call with id
+          Example: A ToolMessage representing a result of 42 from a tool call with id
           
               .. code-block:: python
           
                   from langchain_core.messages import ToolMessage
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          Example: A ToolMessage where only part of the full tool output is sent to the model
+              and the full output is passed in to raw_output.
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  tool_output = {
+                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stderr": None,
+                      "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+                  }
+          
+                  ToolMessage(
+                      content=tool_output["stdout"],
+                      raw_output=tool_output,
+                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                  )
           
           The tool_call_id field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
@@ -5762,6 +5781,10 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
+          }),
+          'raw_output': dict({
+            'title': 'Raw Output',
+            'type': 'object',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -6355,13 +6378,32 @@
           ToolMessages contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A TooMessage representing a result of 42 from a tool call with id
+          Example: A ToolMessage representing a result of 42 from a tool call with id
           
               .. code-block:: python
           
                   from langchain_core.messages import ToolMessage
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          Example: A ToolMessage where only part of the full tool output is sent to the model
+              and the full output is passed in to raw_output.
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  tool_output = {
+                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stderr": None,
+                      "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+                  }
+          
+                  ToolMessage(
+                      content=tool_output["stdout"],
+                      raw_output=tool_output,
+                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                  )
           
           The tool_call_id field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
@@ -6400,6 +6442,10 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
+          }),
+          'raw_output': dict({
+            'title': 'Raw Output',
+            'type': 'object',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -6908,13 +6954,32 @@
           ToolMessages contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A TooMessage representing a result of 42 from a tool call with id
+          Example: A ToolMessage representing a result of 42 from a tool call with id
           
               .. code-block:: python
           
                   from langchain_core.messages import ToolMessage
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          Example: A ToolMessage where only part of the full tool output is sent to the model
+              and the full output is passed in to raw_output.
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  tool_output = {
+                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stderr": None,
+                      "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+                  }
+          
+                  ToolMessage(
+                      content=tool_output["stdout"],
+                      raw_output=tool_output,
+                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                  )
           
           The tool_call_id field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
@@ -6953,6 +7018,10 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
+          }),
+          'raw_output': dict({
+            'title': 'Raw Output',
+            'type': 'object',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -7518,13 +7587,32 @@
           ToolMessages contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A TooMessage representing a result of 42 from a tool call with id
+          Example: A ToolMessage representing a result of 42 from a tool call with id
           
               .. code-block:: python
           
                   from langchain_core.messages import ToolMessage
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          Example: A ToolMessage where only part of the full tool output is sent to the model
+              and the full output is passed in to raw_output.
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  tool_output = {
+                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stderr": None,
+                      "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+                  }
+          
+                  ToolMessage(
+                      content=tool_output["stdout"],
+                      raw_output=tool_output,
+                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                  )
           
           The tool_call_id field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
@@ -7563,6 +7651,10 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
+          }),
+          'raw_output': dict({
+            'title': 'Raw Output',
+            'type': 'object',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -8128,13 +8220,32 @@
           ToolMessages contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A TooMessage representing a result of 42 from a tool call with id
+          Example: A ToolMessage representing a result of 42 from a tool call with id
           
               .. code-block:: python
           
                   from langchain_core.messages import ToolMessage
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          Example: A ToolMessage where only part of the full tool output is sent to the model
+              and the full output is passed in to raw_output.
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  tool_output = {
+                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stderr": None,
+                      "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+                  }
+          
+                  ToolMessage(
+                      content=tool_output["stdout"],
+                      raw_output=tool_output,
+                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                  )
           
           The tool_call_id field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
@@ -8173,6 +8284,10 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
+          }),
+          'raw_output': dict({
+            'title': 'Raw Output',
+            'type': 'object',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -8741,13 +8856,32 @@
           ToolMessages contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A TooMessage representing a result of 42 from a tool call with id
+          Example: A ToolMessage representing a result of 42 from a tool call with id
           
               .. code-block:: python
           
                   from langchain_core.messages import ToolMessage
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          Example: A ToolMessage where only part of the full tool output is sent to the model
+              and the full output is passed in to raw_output.
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  tool_output = {
+                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stderr": None,
+                      "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+                  }
+          
+                  ToolMessage(
+                      content=tool_output["stdout"],
+                      raw_output=tool_output,
+                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                  )
           
           The tool_call_id field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
@@ -8786,6 +8920,10 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
+          }),
+          'raw_output': dict({
+            'title': 'Raw Output',
+            'type': 'object',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
@@ -9301,13 +9439,32 @@
           ToolMessages contain the result of a tool invocation. Typically, the result
           is encoded inside the `content` field.
           
-          Example: A TooMessage representing a result of 42 from a tool call with id
+          Example: A ToolMessage representing a result of 42 from a tool call with id
           
               .. code-block:: python
           
                   from langchain_core.messages import ToolMessage
           
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          Example: A ToolMessage where only part of the full tool output is sent to the model
+              and the full output is passed in to raw_output.
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  tool_output = {
+                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stderr": None,
+                      "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+                  }
+          
+                  ToolMessage(
+                      content=tool_output["stdout"],
+                      raw_output=tool_output,
+                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                  )
           
           The tool_call_id field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
@@ -9346,6 +9503,10 @@
           'name': dict({
             'title': 'Name',
             'type': 'string',
+          }),
+          'raw_output': dict({
+            'title': 'Raw Output',
+            'type': 'object',
           }),
           'response_metadata': dict({
             'title': 'Response Metadata',
