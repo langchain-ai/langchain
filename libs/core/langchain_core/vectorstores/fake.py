@@ -9,13 +9,13 @@ from langchain_core.vectorstores.vectorstores import VectorStore
 
 
 class FakeVectorStore(VectorStore):
-    """A fake VectroStore to test retriaval chains.
+    """A fake VectroStore to test retrieval chains.
 
     It runs through a list of provided documents in an infinite cycle and
         returns them sequentially.
     """
 
-    def __init__(self, documents: Optional[List[Document]] = None):
+    def __init__(self, *, documents: Optional[List[Document]] = None):
         self._documents: List[Document] = documents if documents else []
         self._iterator = cycle(self._documents)
 
