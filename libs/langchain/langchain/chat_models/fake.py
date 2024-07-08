@@ -1,70 +1,30 @@
-"""Fake ChatModel for testing purposes."""
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForLLMRun,
-    CallbackManagerForLLMRun,
-)
-from langchain.chat_models.base import SimpleChatModel
-from langchain.schema.messages import AIMessageChunk, BaseMessage
-from langchain.schema.output import ChatGenerationChunk
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.chat_models.fake import (
+        FakeListChatModel,
+        FakeMessagesListChatModel,
+    )
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "FakeMessagesListChatModel": "langchain_community.chat_models.fake",
+    "FakeListChatModel": "langchain_community.chat_models.fake",
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class FakeListChatModel(SimpleChatModel):
-    """Fake ChatModel for testing purposes."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    responses: List
-    i: int = 0
 
-    @property
-    def _llm_type(self) -> str:
-        return "fake-list-chat-model"
-
-    def _call(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
-        **kwargs: Any,
-    ) -> str:
-        """First try to lookup in queries, else return 'foo' or 'bar'."""
-        response = self.responses[self.i]
-        if self.i < len(self.responses) - 1:
-            self.i += 1
-        else:
-            self.i = 0
-        return response
-
-    def _stream(
-        self,
-        messages: List[BaseMessage],
-        stop: Union[List[str], None] = None,
-        run_manager: Union[CallbackManagerForLLMRun, None] = None,
-        **kwargs: Any,
-    ) -> Iterator[ChatGenerationChunk]:
-        response = self.responses[self.i]
-        if self.i < len(self.responses) - 1:
-            self.i += 1
-        else:
-            self.i = 0
-        for c in response:
-            yield ChatGenerationChunk(message=AIMessageChunk(content=c))
-
-    async def _astream(
-        self,
-        messages: List[BaseMessage],
-        stop: Union[List[str], None] = None,
-        run_manager: Union[AsyncCallbackManagerForLLMRun, None] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[ChatGenerationChunk]:
-        response = self.responses[self.i]
-        if self.i < len(self.responses) - 1:
-            self.i += 1
-        else:
-            self.i = 0
-        for c in response:
-            yield ChatGenerationChunk(message=AIMessageChunk(content=c))
-
-    @property
-    def _identifying_params(self) -> Dict[str, Any]:
-        return {"responses": self.responses}
+__all__ = [
+    "FakeMessagesListChatModel",
+    "FakeListChatModel",
+]

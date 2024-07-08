@@ -1,6 +1,5 @@
 """Test the comparison chains."""
 
-
 import re
 
 import pytest
@@ -34,7 +33,7 @@ def test_PairwiseStringResultOutputParser_parse() -> None:
 [[A]]"""
     got = output_parser.parse(text)
     want = {
-        "reasoning": "I like pie better than cake.",
+        "reasoning": text,
         "value": "A",
         "score": 1,
     }
@@ -46,7 +45,7 @@ def test_PairwiseStringResultOutputParser_parse() -> None:
 [[B]]"""
     got = output_parser.parse(text)
     want = {
-        "reasoning": "I like cake better than pie.",
+        "reasoning": text,
         "value": "B",
         "score": 0,
     }
@@ -58,7 +57,7 @@ def test_PairwiseStringResultOutputParser_parse() -> None:
 [[C]]"""
     got = output_parser.parse(text)
     want = {
-        "reasoning": "I like cake and pie.",
+        "reasoning": text,
         "value": None,
         "score": 0.5,
     }
@@ -84,7 +83,7 @@ def test_pairwise_string_comparison_chain() -> None:
     )
     assert res["value"] is None
     assert res["score"] == 0.5
-    assert res["reasoning"] == "The values are the same."
+    assert res["reasoning"] == "The values are the same.\n[[C]]"
     res = chain.evaluate_string_pairs(
         prediction="I like pie.",
         prediction_b="I like pie.",

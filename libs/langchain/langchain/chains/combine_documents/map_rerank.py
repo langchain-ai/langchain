@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union, cast
 
-from pydantic_v1 import Extra, root_validator
+from langchain_core.callbacks import Callbacks
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.runnables.config import RunnableConfig
+from langchain_core.runnables.utils import create_model
 
-from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
-from langchain.docstore.document import Document
 from langchain.output_parsers.regex import RegexParser
 
 
@@ -24,8 +26,8 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         .. code-block:: python
 
             from langchain.chains import StuffDocumentsChain, LLMChain
-            from langchain.prompts import PromptTemplate
-            from langchain.llms import OpenAI
+            from langchain_core.prompts import PromptTemplate
+            from langchain_community.llms import OpenAI
             from langchain.output_parsers.regex import RegexParser
 
             document_variable_name = "context"
@@ -78,6 +80,19 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
+    def get_output_schema(
+        self, config: Optional[RunnableConfig] = None
+    ) -> Type[BaseModel]:
+        schema: Dict[str, Any] = {
+            self.output_key: (str, None),
+        }
+        if self.return_intermediate_steps:
+            schema["intermediate_steps"] = (List[str], None)
+        if self.metadata_keys:
+            schema.update({key: (Any, None) for key in self.metadata_keys})
+
+        return create_model("MapRerankOutput", **schema)
+
     @property
     def output_keys(self) -> List[str]:
         """Expect input key.
@@ -91,7 +106,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
             _output_keys += self.metadata_keys
         return _output_keys
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_llm_output(cls, values: Dict) -> Dict:
         """Validate that the combine chain outputs a dictionary."""
         output_parser = values["llm_chain"].prompt.output_parser
@@ -116,8 +131,11 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
     @root_validator(pre=True)
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
         """Get default document variable name, if not provided."""
+        if "llm_chain" not in values:
+            raise ValueError("llm_chain must be provided")
+
+        llm_chain_variables = values["llm_chain"].prompt.input_variables
         if "document_variable_name" not in values:
-            llm_chain_variables = values["llm_chain"].prompt.input_variables
             if len(llm_chain_variables) == 1:
                 values["document_variable_name"] = llm_chain_variables[0]
             else:
@@ -126,7 +144,6 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
                     "multiple llm_chain input_variables"
                 )
         else:
-            llm_chain_variables = values["llm_chain"].prompt.input_variables
             if values["document_variable_name"] not in llm_chain_variables:
                 raise ValueError(
                     f"document_variable_name {values['document_variable_name']} was "

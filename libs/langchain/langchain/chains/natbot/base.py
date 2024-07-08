@@ -1,26 +1,39 @@
 """Implement an LLM driven browser."""
+
 from __future__ import annotations
 
 import warnings
 from typing import Any, Dict, List, Optional
 
-from pydantic_v1 import Extra, root_validator
+from langchain_core.callbacks import CallbackManagerForChainRun
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.pydantic_v1 import Extra, root_validator
 
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.natbot.prompt import PROMPT
-from langchain.llms.openai import OpenAI
-from langchain.schema.language_model import BaseLanguageModel
 
 
 class NatBotChain(Chain):
     """Implement an LLM driven browser.
 
+    **Security Note**: This toolkit provides code to control a web-browser.
+
+        The web-browser can be used to navigate to:
+
+        - Any URL (including any internal network URLs)
+        - And local files
+
+        Exercise care if exposing this chain to end-users. Control who is able to
+        access and use this chain, and isolate the network access of the server
+        that hosts this chain.
+
+        See https://python.langchain.com/docs/security for more information.
+
     Example:
         .. code-block:: python
 
-            from langchain import NatBotChain
+            from langchain.chains import NatBotChain
             natbot = NatBotChain.from_default("Buy me a new hat.")
     """
 
@@ -55,8 +68,11 @@ class NatBotChain(Chain):
     @classmethod
     def from_default(cls, objective: str, **kwargs: Any) -> NatBotChain:
         """Load with default LLMChain."""
-        llm = OpenAI(temperature=0.5, best_of=10, n=3, max_tokens=50)
-        return cls.from_llm(llm, objective, **kwargs)
+        raise NotImplementedError(
+            "This method is no longer implemented. Please use from_llm."
+            "llm = OpenAI(temperature=0.5, best_of=10, n=3, max_tokens=50)"
+            "For example, NatBotChain.from_llm(llm, objective)"
+        )
 
     @classmethod
     def from_llm(

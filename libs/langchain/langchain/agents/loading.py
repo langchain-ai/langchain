@@ -1,17 +1,18 @@
 """Functionality for loading agents."""
+
 import json
 import logging
 from pathlib import Path
 from typing import Any, List, Optional, Union
 
 import yaml
+from langchain_core._api import deprecated
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.tools import Tool
 
 from langchain.agents.agent import BaseMultiActionAgent, BaseSingleActionAgent
-from langchain.agents.tools import Tool
 from langchain.agents.types import AGENT_TO_CLASS
 from langchain.chains.loading import load_chain, load_chain_from_config
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.utilities.loading import try_load_from_hub
 
 logger = logging.getLogger(__file__)
 
@@ -30,6 +31,7 @@ def _load_agent_from_tools(
     return agent_cls.from_llm_and_tools(llm, tools, **combined_config)
 
 
+@deprecated("0.1.0", removal="0.3.0")
 def load_agent_from_config(
     config: dict,
     llm: Optional[BaseLanguageModel] = None,
@@ -42,10 +44,13 @@ def load_agent_from_config(
         config: Config dict to load agent from.
         llm: Language model to use as the agent.
         tools: List of tools this agent has access to.
-        **kwargs: Additional key word arguments passed to the agent executor.
+        **kwargs: Additional keyword arguments passed to the agent executor.
 
     Returns:
         An agent executor.
+
+    Raises:
+        ValueError: If agent type is not specified in the config.
     """
     if "_type" not in config:
         raise ValueError("Must specify an agent Type in config")
@@ -85,6 +90,7 @@ def load_agent_from_config(
     return agent_cls(**combined_config)  # type: ignore
 
 
+@deprecated("0.1.0", removal="0.3.0")
 def load_agent(
     path: Union[str, Path], **kwargs: Any
 ) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
@@ -92,36 +98,42 @@ def load_agent(
 
     Args:
         path: Path to the agent file.
-        **kwargs: Additional key word arguments passed to the agent executor.
+        **kwargs: Additional keyword arguments passed to the agent executor.
 
     Returns:
         An agent executor.
+
+    Raises:
+        RuntimeError: If loading from the deprecated github-based
+            Hub is attempted.
     """
-    if hub_result := try_load_from_hub(
-        path, _load_agent_from_file, "agents", {"json", "yaml"}
-    ):
-        return hub_result
-    else:
-        return _load_agent_from_file(path, **kwargs)
+    if isinstance(path, str) and path.startswith("lc://"):
+        raise RuntimeError(
+            "Loading from the deprecated github-based Hub is no longer supported. "
+            "Please use the new LangChain Hub at https://smith.langchain.com/hub "
+            "instead."
+        )
+    return _load_agent_from_file(path, **kwargs)
 
 
 def _load_agent_from_file(
     file: Union[str, Path], **kwargs: Any
 ) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
     """Load agent from file."""
+    valid_suffixes = {"json", "yaml"}
     # Convert file to Path object.
     if isinstance(file, str):
         file_path = Path(file)
     else:
         file_path = file
     # Load from either json or yaml.
-    if file_path.suffix == ".json":
+    if file_path.suffix[1:] == "json":
         with open(file_path) as f:
             config = json.load(f)
-    elif file_path.suffix == ".yaml":
+    elif file_path.suffix[1:] == "yaml":
         with open(file_path, "r") as f:
             config = yaml.safe_load(f)
     else:
-        raise ValueError("File type must be json or yaml")
+        raise ValueError(f"Unsupported file type, must be one of {valid_suffixes}.")
     # Load the agent from the config now.
     return load_agent_from_config(config, **kwargs)

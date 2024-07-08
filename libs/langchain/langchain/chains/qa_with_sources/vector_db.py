@@ -3,16 +3,16 @@
 import warnings
 from typing import Any, Dict, List
 
-from pydantic_v1 import Field, root_validator
-
-from langchain.callbacks.manager import (
+from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import Field, root_validator
+from langchain_core.vectorstores import VectorStore
+
 from langchain.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain.chains.qa_with_sources.base import BaseQAWithSourcesChain
-from langchain.docstore.document import Document
-from langchain.vectorstores.base import VectorStore
 
 
 class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
@@ -37,9 +37,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
             self.combine_documents_chain, StuffDocumentsChain
         ):
             tokens = [
-                self.combine_documents_chain.llm_chain.llm.get_num_tokens(
-                    doc.page_content
-                )
+                self.combine_documents_chain.llm_chain._get_num_tokens(doc.page_content)
                 for doc in docs
             ]
             token_count = sum(tokens[:num_docs])
@@ -63,7 +61,7 @@ class VectorDBQAWithSourcesChain(BaseQAWithSourcesChain):
     ) -> List[Document]:
         raise NotImplementedError("VectorDBQAWithSourcesChain does not support async")
 
-    @root_validator()
+    @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
         warnings.warn(
             "`VectorDBQAWithSourcesChain` is deprecated - "

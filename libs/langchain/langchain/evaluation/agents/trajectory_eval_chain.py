@@ -18,23 +18,25 @@ from typing import (
     cast,
 )
 
-from pydantic_v1 import Extra, Field
-
-from langchain.callbacks.manager import (
+from langchain_core.agents import AgentAction
+from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
     Callbacks,
 )
+from langchain_core.exceptions import OutputParserException
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.pydantic_v1 import Extra, Field
+from langchain_core.tools import BaseTool
+
 from langchain.chains.llm import LLMChain
-from langchain.chat_models.base import BaseChatModel
 from langchain.evaluation.agents.trajectory_eval_prompt import (
     EVAL_CHAT_PROMPT,
     TOOL_FREE_EVAL_CHAT_PROMPT,
 )
 from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
-from langchain.schema import AgentAction, BaseOutputParser, OutputParserException
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.tools.base import BaseTool
 
 
 class TrajectoryEval(TypedDict):
@@ -101,13 +103,15 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
 
     This chain is used to evaluate ReAct style agents by reasoning about
     the sequence of actions taken and their outcomes.
+    Based on the paper "ReAct: Synergizing Reasoning and Acting in Language Models"
+    (https://arxiv.org/abs/2210.03629)
 
     Example:
 
     .. code-block:: python
 
         from langchain.agents import AgentType, initialize_agent
-        from langchain.chat_models import ChatOpenAI
+        from langchain_community.chat_models import ChatOpenAI
         from langchain.evaluation import TrajectoryEvalChain
         from langchain.tools import tool
 
@@ -137,9 +141,9 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
             prediction=response["output"],
             reference="Paris",
         )
-        print(result["score"])
+        print(result["score"])  # noqa: T201
         # 0
-    """  # noqa: E501
+    """
 
     agent_tools: Optional[List[BaseTool]] = None
     """A list of tools available to the agent."""
@@ -181,7 +185,7 @@ Description: {tool.description}"""
 
     @staticmethod
     def get_agent_trajectory(
-        steps: Union[str, Sequence[Tuple[AgentAction, str]]]
+        steps: Union[str, Sequence[Tuple[AgentAction, str]]],
     ) -> str:
         """Get the agent trajectory as a formatted string.
 
@@ -253,7 +257,7 @@ The following is the expected answer. Use this to measure correctness:
             prompt = TOOL_FREE_EVAL_CHAT_PROMPT
         eval_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(
-            agent_tools=agent_tools,
+            agent_tools=agent_tools,  # type: ignore[arg-type]
             eval_chain=eval_chain,
             output_parser=output_parser or TrajectoryOutputParser(),
             **kwargs,

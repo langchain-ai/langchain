@@ -1,9 +1,0 @@
-```python
-class BaseCombineDocumentsChain(Chain, ABC):
-    """Base interface for chains combining documents."""
-
-    @abstractmethod
-    def combine_docs(self, docs: List[Document], **kwargs: Any) -> Tuple[str, dict]:
-        """Combine documents into a single string."""
-
-```

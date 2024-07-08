@@ -1,0 +1,182 @@
+# serializer version: 1
+# name: test_graph_sequence[ascii]
+  '''
+              +-------------+              
+              | PromptInput |              
+              +-------------+              
+                      *                    
+                      *                    
+                      *                    
+             +----------------+            
+             | PromptTemplate |            
+             +----------------+            
+                      *                    
+                      *                    
+                      *                    
+              +-------------+              
+              | FakeListLLM |              
+              +-------------+              
+                      *                    
+                      *                    
+                      *                    
+     +--------------------------------+    
+     | CommaSeparatedListOutputParser |    
+     +--------------------------------+    
+                      *                    
+                      *                    
+                      *                    
+  +--------------------------------------+ 
+  | CommaSeparatedListOutputParserOutput | 
+  +--------------------------------------+ 
+  '''
+# ---
+# name: test_graph_sequence[mermaid]
+  '''
+  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  graph TD;
+  	PromptInput[PromptInput]:::startclass;
+  	PromptTemplate([PromptTemplate]):::otherclass;
+  	FakeListLLM([FakeListLLM]):::otherclass;
+  	CommaSeparatedListOutputParser([CommaSeparatedListOutputParser]):::otherclass;
+  	CommaSeparatedListOutputParserOutput[CommaSeparatedListOutputParserOutput]:::endclass;
+  	PromptInput --> PromptTemplate;
+  	PromptTemplate --> FakeListLLM;
+  	CommaSeparatedListOutputParser --> CommaSeparatedListOutputParserOutput;
+  	FakeListLLM --> CommaSeparatedListOutputParser;
+  	classDef startclass fill:#ffdfba;
+  	classDef endclass fill:#baffc9;
+  	classDef otherclass fill:#fad7de;
+  
+  '''
+# ---
+# name: test_graph_sequence_map[ascii]
+  '''
+                                             +-------------+                                                 
+                                             | PromptInput |                                                 
+                                             +-------------+                                                 
+                                                     *                                                       
+                                                     *                                                       
+                                                     *                                                       
+                                            +----------------+                                               
+                                            | PromptTemplate |                                               
+                                            +----------------+                                               
+                                                     *                                                       
+                                                     *                                                       
+                                                     *                                                       
+                                             +-------------+                                                 
+                                             | FakeListLLM |                                                 
+                                             +-------------+                                                 
+                                                     *                                                       
+                                                     *                                                       
+                                                     *                                                       
+                                    +-------------------------------+                                        
+                                    | Parallel<as_list,as_str>Input |                                        
+                                    +-------------------------------+                                        
+                                       *****                         ******                                  
+                                    ***                                    ******                            
+                                 ***                                             ******                      
+            +------------------------------+                                           ****                  
+            | conditional_str_parser_input |                                              *                  
+            +------------------------------+                                              *                  
+                   ***              ***                                                   *                  
+                ***                    ***                                                *                  
+              **                          **                                              *                  
+  +-----------------+               +-----------------+                                   *                  
+  | StrOutputParser |               | XMLOutputParser |                                   *                  
+  +-----------------+               +-----------------+                                   *                  
+                   ***              ***                                                   *                  
+                      ***        ***                                                      *                  
+                         **    **                                                         *                  
+            +-------------------------------+                            +--------------------------------+  
+            | conditional_str_parser_output |                            | CommaSeparatedListOutputParser |  
+            +-------------------------------+                            +--------------------------------+  
+                                       *****                         ******                                  
+                                            ***                ******                                        
+                                               ***         ****                                              
+                                    +--------------------------------+                                       
+                                    | Parallel<as_list,as_str>Output |                                       
+                                    +--------------------------------+                                       
+  '''
+# ---
+# name: test_graph_sequence_map[mermaid-simple]
+  '''
+  graph TD;
+  	PromptInput --> PromptTemplate;
+  	PromptTemplate --> FakeListLLM;
+  	Parallel_as_list_as_str_Input --> CommaSeparatedListOutputParser;
+  	CommaSeparatedListOutputParser --> Parallel_as_list_as_str_Output;
+  	conditional_str_parser_input --> StrOutputParser;
+  	StrOutputParser --> conditional_str_parser_output;
+  	conditional_str_parser_input --> XMLOutputParser;
+  	XMLOutputParser --> conditional_str_parser_output;
+  	Parallel_as_list_as_str_Input --> conditional_str_parser_input;
+  	conditional_str_parser_output --> Parallel_as_list_as_str_Output;
+  	FakeListLLM --> Parallel_as_list_as_str_Input;
+  
+  '''
+# ---
+# name: test_graph_sequence_map[mermaid]
+  '''
+  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  graph TD;
+  	PromptInput[PromptInput]:::startclass;
+  	PromptTemplate([PromptTemplate]):::otherclass;
+  	FakeListLLM([FakeListLLM]):::otherclass;
+  	Parallel_as_list_as_str_Input([Parallel<as_list,as_str>Input]):::otherclass;
+  	Parallel_as_list_as_str_Output[Parallel_as_list_as_str_Output]:::endclass;
+  	CommaSeparatedListOutputParser([CommaSeparatedListOutputParser]):::otherclass;
+  	conditional_str_parser_input([conditional_str_parser_input]):::otherclass;
+  	conditional_str_parser_output([conditional_str_parser_output]):::otherclass;
+  	StrOutputParser([StrOutputParser]):::otherclass;
+  	XMLOutputParser([XMLOutputParser]):::otherclass;
+  	PromptInput --> PromptTemplate;
+  	PromptTemplate --> FakeListLLM;
+  	Parallel_as_list_as_str_Input --> CommaSeparatedListOutputParser;
+  	CommaSeparatedListOutputParser --> Parallel_as_list_as_str_Output;
+  	conditional_str_parser_input --> StrOutputParser;
+  	StrOutputParser --> conditional_str_parser_output;
+  	conditional_str_parser_input --> XMLOutputParser;
+  	XMLOutputParser --> conditional_str_parser_output;
+  	Parallel_as_list_as_str_Input --> conditional_str_parser_input;
+  	conditional_str_parser_output --> Parallel_as_list_as_str_Output;
+  	FakeListLLM --> Parallel_as_list_as_str_Input;
+  	classDef startclass fill:#ffdfba;
+  	classDef endclass fill:#baffc9;
+  	classDef otherclass fill:#fad7de;
+  
+  '''
+# ---
+# name: test_graph_single_runnable[ascii]
+  '''
+  +----------------------+   
+  | StrOutputParserInput |   
+  +----------------------+   
+              *              
+              *              
+              *              
+     +-----------------+     
+     | StrOutputParser |     
+     +-----------------+     
+              *              
+              *              
+              *              
+  +-----------------------+  
+  | StrOutputParserOutput |  
+  +-----------------------+  
+  '''
+# ---
+# name: test_graph_single_runnable[mermaid]
+  '''
+  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  graph TD;
+  	StrOutputParserInput[StrOutputParserInput]:::startclass;
+  	StrOutputParser([StrOutputParser]):::otherclass;
+  	StrOutputParserOutput[StrOutputParserOutput]:::endclass;
+  	StrOutputParserInput --> StrOutputParser;
+  	StrOutputParser --> StrOutputParserOutput;
+  	classDef startclass fill:#ffdfba;
+  	classDef endclass fill:#baffc9;
+  	classDef otherclass fill:#fad7de;
+  
+  '''
+# ---

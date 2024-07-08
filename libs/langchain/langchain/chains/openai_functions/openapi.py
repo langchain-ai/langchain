@@ -1,24 +1,25 @@
+from __future__ import annotations
+
 import json
 import re
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
-from openapi_schema_pydantic import Parameter
+from langchain_core.callbacks import CallbackManagerForChainRun
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
+from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
+from langchain_core.utils.input import get_colored_text
 from requests import Response
 
-from langchain import LLMChain
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
+from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
-from langchain.chat_models import ChatOpenAI
-from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import BasePromptTemplate
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.tools import APIOperation
-from langchain.utilities.openapi import OpenAPISpec
-from langchain.utils.input import get_colored_text
+
+if TYPE_CHECKING:
+    from langchain_community.utilities.openapi import OpenAPISpec
+    from openapi_pydantic import Parameter
 
 
 def _get_description(o: Any, prefer_short: bool) -> Optional[str]:
@@ -75,7 +76,7 @@ def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -
         if p.param_schema:
             schema = spec.get_schema(p.param_schema)
         else:
-            media_type_schema = list(p.content.values())[0].media_type_schema  # type: ignore  # noqa: E501
+            media_type_schema = list(p.content.values())[0].media_type_schema  # type: ignore
             schema = spec.get_schema(media_type_schema)
         if p.description and not schema.description:
             schema.description = p.description
@@ -98,6 +99,14 @@ def openapi_spec_to_openai_fn(
         Tuple of the OpenAI functions JSON schema and a default function for executing
             a request based on the OpenAI function schema.
     """
+    try:
+        from langchain_community.tools import APIOperation
+    except ImportError:
+        raise ImportError(
+            "Could not import langchain_community.tools. "
+            "Please install it with `pip install langchain-community`."
+        )
+
     if not spec.paths:
         return [], lambda: None
     functions = []
@@ -223,12 +232,12 @@ class SimpleRequestChain(Chain):
             response = (
                 f"{api_response.status_code}: {api_response.reason}"
                 + f"\nFor {name} "
-                + f"Called with args: {args['params']}"
+                + f"Called with args: {args.get('params','')}"
             )
         else:
             try:
                 response = api_response.json()
-            except Exception:  # noqa: E722
+            except Exception:
                 response = api_response.text
         return {self.output_key: response}
 
@@ -253,6 +262,13 @@ def get_openapi_chain(
         prompt: Main prompt template to use.
         request_chain: Chain for taking the functions output and executing the request.
     """
+    try:
+        from langchain_community.utilities.openapi import OpenAPISpec
+    except ImportError as e:
+        raise ImportError(
+            "Could not import langchain_community.utilities.openapi. "
+            "Please install it with `pip install langchain-community`."
+        ) from e
     if isinstance(spec, str):
         for conversion in (
             OpenAPISpec.from_url,
@@ -262,14 +278,19 @@ def get_openapi_chain(
             try:
                 spec = conversion(spec)  # type: ignore[arg-type]
                 break
-            except Exception:  # noqa: E722
+            except ImportError as e:
+                raise e
+            except Exception:
                 pass
         if isinstance(spec, str):
             raise ValueError(f"Unable to parse spec from source {spec}")
     openai_fns, call_api_fn = openapi_spec_to_openai_fn(spec)
-    llm = llm or ChatOpenAI(
-        model="gpt-3.5-turbo-0613",
-    )
+    if not llm:
+        raise ValueError(
+            "Must provide an LLM for this chain.For example,\n"
+            "from langchain_openai import ChatOpenAI\n"
+            "llm = ChatOpenAI()\n"
+        )
     prompt = prompt or ChatPromptTemplate.from_template(
         "Use the provided API's to respond to this user query:\n\n{query}"
     )

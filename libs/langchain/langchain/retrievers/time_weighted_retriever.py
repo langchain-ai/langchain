@@ -2,15 +2,18 @@ import datetime
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic_v1 import Field
-
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
-from langchain.schema import BaseRetriever, Document
-from langchain.vectorstores.base import VectorStore
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForRetrieverRun,
+)
+from langchain_core.documents import Document
+from langchain_core.pydantic_v1 import Field
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.vectorstores import VectorStore
 
 
 def _get_hours_passed(time: datetime.datetime, ref_time: datetime.datetime) -> float:
-    """Get the hours passed between two datetime objects."""
+    """Get the hours passed between two datetimes."""
     return (time - ref_time).total_seconds() / 3600
 
 
@@ -48,6 +51,14 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
 
         arbitrary_types_allowed = True
 
+    def _document_get_date(self, field: str, document: Document) -> datetime.datetime:
+        """Return the value of the date field of a document."""
+        if field in document.metadata:
+            if isinstance(document.metadata[field], float):
+                return datetime.datetime.fromtimestamp(document.metadata[field])
+            return document.metadata[field]
+        return datetime.datetime.now()
+
     def _get_combined_score(
         self,
         document: Document,
@@ -57,7 +68,7 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
         """Return the combined score for a document."""
         hours_passed = _get_hours_passed(
             current_time,
-            document.metadata["last_accessed_at"],
+            self._document_get_date("last_accessed_at", document),
         )
         score = (1.0 - self.decay_rate) ** hours_passed
         for key in self.other_score_keys:
@@ -81,17 +92,26 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
                 results[buffer_idx] = (doc, relevance)
         return results
 
-    def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    async def aget_salient_docs(self, query: str) -> Dict[int, Tuple[Document, float]]:
+        """Return documents that are salient to the query."""
+        docs_and_scores: List[Tuple[Document, float]]
+        docs_and_scores = (
+            await self.vectorstore.asimilarity_search_with_relevance_scores(
+                query, **self.search_kwargs
+            )
+        )
+        results = {}
+        for fetched_doc, relevance in docs_and_scores:
+            if "buffer_idx" in fetched_doc.metadata:
+                buffer_idx = fetched_doc.metadata["buffer_idx"]
+                doc = self.memory_stream[buffer_idx]
+                results[buffer_idx] = (doc, relevance)
+        return results
+
+    def _get_rescored_docs(
+        self, docs_and_scores: Dict[Any, Tuple[Document, Optional[float]]]
     ) -> List[Document]:
-        """Return documents that are relevant to the query."""
         current_time = datetime.datetime.now()
-        docs_and_scores = {
-            doc.metadata["buffer_idx"]: (doc, self.default_salience)
-            for doc in self.memory_stream[-self.k :]
-        }
-        # If a doc is considered salient, update the salience score
-        docs_and_scores.update(self.get_salient_docs(query))
         rescored_docs = [
             (doc, self._get_combined_score(doc, relevance, current_time))
             for doc, relevance in docs_and_scores.values()
@@ -105,6 +125,28 @@ class TimeWeightedVectorStoreRetriever(BaseRetriever):
             buffered_doc.metadata["last_accessed_at"] = current_time
             result.append(buffered_doc)
         return result
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        docs_and_scores = {
+            doc.metadata["buffer_idx"]: (doc, self.default_salience)
+            for doc in self.memory_stream[-self.k :]
+        }
+        # If a doc is considered salient, update the salience score
+        docs_and_scores.update(self.get_salient_docs(query))
+        return self._get_rescored_docs(docs_and_scores)
+
+    async def _aget_relevant_documents(
+        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        docs_and_scores = {
+            doc.metadata["buffer_idx"]: (doc, self.default_salience)
+            for doc in self.memory_stream[-self.k :]
+        }
+        # If a doc is considered salient, update the salience score
+        docs_and_scores.update(await self.aget_salient_docs(query))
+        return self._get_rescored_docs(docs_and_scores)
 
     def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Add documents to vectorstore."""

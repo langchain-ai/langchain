@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "extraction-openai-functions"
+version = "0.1.0"
+description = "Use OpenAI function calling for tasks like extraction or tagging"
+authors = [
+    "Lance Martin <lance@langchain.dev>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "extraction_openai_functions"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "extraction"
+author = "LangChain"
+integrations = ["OpenAI", "Function Calling"]
+tags = ["function-calling", "tagging", "extraction"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

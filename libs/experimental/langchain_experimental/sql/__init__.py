@@ -1,4 +1,5 @@
-"""Chain for interacting with SQL Database."""
-from langchain_experimental.sql.base import SQLDatabaseChain
+"""**SQL Chain** interacts with `SQL` Database."""
 
-__all__ = ["SQLDatabaseChain"]
+from langchain_experimental.sql.base import SQLDatabaseChain, SQLDatabaseSequentialChain
+
+__all__ = ["SQLDatabaseChain", "SQLDatabaseSequentialChain"]

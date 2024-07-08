@@ -1,25 +1,25 @@
 import json
 from collections import defaultdict
 from html.parser import HTMLParser
-from typing import Any, DefaultDict, Dict, List, Optional
+from typing import Any, DefaultDict, Dict, List, Optional, cast
 
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun,
-    Callbacks,
-)
-from langchain.chat_models.anthropic import ChatAnthropic
-from langchain.chat_models.base import BaseChatModel
 from langchain.schema import (
     ChatGeneration,
     ChatResult,
-    LLMResult,
 )
-from langchain.schema.messages import (
+from langchain_community.chat_models.anthropic import ChatAnthropic
+from langchain_core._api.deprecation import deprecated
+from langchain_core.callbacks.manager import (
+    CallbackManagerForLLMRun,
+)
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     SystemMessage,
 )
-from pydantic import root_validator
+
+from langchain_experimental.pydantic_v1 import root_validator
 
 prompt = """In addition to responding, you can use tools. \
 You have access to the following tools.
@@ -42,6 +42,8 @@ for the weather in SF you would respond:
 
 
 class TagParser(HTMLParser):
+    """Parser for the tool tags."""
+
     def __init__(self) -> None:
         """A heavy-handed solution, but it's fast for prototyping.
 
@@ -122,12 +124,25 @@ def _destrip(tool_input: Any) -> Any:
         raise ValueError
 
 
+@deprecated(
+    since="0.0.54",
+    removal="0.3",
+    alternative_import="langchain_anthropic.experimental.ChatAnthropicTools",
+)
 class AnthropicFunctions(BaseChatModel):
-    model: ChatAnthropic
+    """Chat model for interacting with Anthropic functions."""
+
+    llm: BaseChatModel
 
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
-        return {"model": ChatAnthropic(**values)}
+        values["llm"] = values.get("llm") or ChatAnthropic(**values)
+        return values
+
+    @property
+    def model(self) -> BaseChatModel:
+        """For backwards compatibility."""
+        return self.llm
 
     def _generate(
         self,
@@ -139,36 +154,54 @@ class AnthropicFunctions(BaseChatModel):
         forced = False
         function_call = ""
         if "functions" in kwargs:
-            content = prompt.format(tools=json.dumps(kwargs["functions"], indent=2))
-            system = SystemMessage(content=content)
-            messages = [system] + messages
+            # get the function call method
+            if "function_call" in kwargs:
+                function_call = kwargs["function_call"]
+                del kwargs["function_call"]
+            else:
+                function_call = "auto"
+
+            # should function calling be used
+            if function_call != "none":
+                content = prompt.format(tools=json.dumps(kwargs["functions"], indent=2))
+                system = SystemMessage(content=content)
+                messages = [system] + messages
+
+            # is the function call a dictionary (forced function calling)
+            if isinstance(function_call, dict):
+                forced = True
+                function_call_name = function_call["name"]
+                messages.append(AIMessage(content=f"<tool>{function_call_name}</tool>"))
+
             del kwargs["functions"]
             if stop is None:
                 stop = ["</tool_input>"]
             else:
                 stop.append("</tool_input>")
-            if "function_call" in kwargs:
-                forced = True
-                function_call = kwargs["function_call"]["name"]
-                AIMessage(content=f"<tool>{function_call}</tool>")
-                del kwargs["function_call"]
         else:
             if "function_call" in kwargs:
                 raise ValueError(
                     "if `function_call` provided, `functions` must also be"
                 )
-        response = self.model.predict_messages(
+        response = self.model.invoke(
             messages, stop=stop, callbacks=run_manager, **kwargs
         )
-        completion = response.content
+        completion = cast(str, response.content)
         if forced:
             tag_parser = TagParser()
-            tag_parser.feed(completion.strip() + "</tool_input>")
-            v1 = tag_parser.parse_data["tool_input"][0]
+
+            if "<tool_input>" in completion:
+                tag_parser.feed(completion.strip() + "</tool_input>")
+                v1 = tag_parser.parse_data["tool_input"][0]
+                arguments = json.dumps(_destrip(v1))
+            else:
+                v1 = completion
+                arguments = ""
+
             kwargs = {
                 "function_call": {
-                    "name": function_call,
-                    "arguments": json.dumps(_destrip(v1)),
+                    "name": function_call_name,  # type: ignore[has-type]
+                    "arguments": arguments,
                 }
             }
             message = AIMessage(content="", additional_kwargs=kwargs)
@@ -176,7 +209,7 @@ class AnthropicFunctions(BaseChatModel):
         elif "<tool>" in completion:
             tag_parser = TagParser()
             tag_parser.feed(completion.strip() + "</tool_input>")
-            msg = completion.split("<tool>")[0]
+            msg = completion.split("<tool>")[0].strip()
             v1 = tag_parser.parse_data["tool_input"][0]
             kwargs = {
                 "function_call": {
@@ -187,19 +220,8 @@ class AnthropicFunctions(BaseChatModel):
             message = AIMessage(content=msg, additional_kwargs=kwargs)
             return ChatResult(generations=[ChatGeneration(message=message)])
         else:
+            response.content = cast(str, response.content).strip()
             return ChatResult(generations=[ChatGeneration(message=response)])
-
-    async def agenerate(
-        self,
-        messages: List[List[BaseMessage]],
-        stop: Optional[List[str]] = None,
-        callbacks: Callbacks = None,
-        *,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> LLMResult:
-        raise NotImplementedError
 
     @property
     def _llm_type(self) -> str:

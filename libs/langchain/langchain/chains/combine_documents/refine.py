@@ -4,16 +4,16 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
 
-from pydantic_v1 import Extra, Field, root_validator
+from langchain_core.callbacks import Callbacks
+from langchain_core.documents import Document
+from langchain_core.prompts import BasePromptTemplate, format_document
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.pydantic_v1 import Extra, Field, root_validator
 
-from langchain.callbacks.manager import Callbacks
 from langchain.chains.combine_documents.base import (
     BaseCombineDocumentsChain,
 )
 from langchain.chains.llm import LLMChain
-from langchain.docstore.document import Document
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import BasePromptTemplate, format_document
 
 
 def _get_default_document_prompt() -> PromptTemplate:
@@ -36,8 +36,8 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
         .. code-block:: python
 
             from langchain.chains import RefineDocumentsChain, LLMChain
-            from langchain.prompts import PromptTemplate
-            from langchain.llms import OpenAI
+            from langchain_core.prompts import PromptTemplate
+            from langchain_community.llms import OpenAI
 
             # This controls how each document will be formatted. Specifically,
             # it will be passed to `format_document` - see that function for more
@@ -115,8 +115,11 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
     @root_validator(pre=True)
     def get_default_document_variable_name(cls, values: Dict) -> Dict:
         """Get default document variable name, if not provided."""
+        if "initial_llm_chain" not in values:
+            raise ValueError("initial_llm_chain must be provided")
+
+        llm_chain_variables = values["initial_llm_chain"].prompt.input_variables
         if "document_variable_name" not in values:
-            llm_chain_variables = values["initial_llm_chain"].prompt.input_variables
             if len(llm_chain_variables) == 1:
                 values["document_variable_name"] = llm_chain_variables[0]
             else:
@@ -125,7 +128,6 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
                     "multiple llm_chain input_variables"
                 )
         else:
-            llm_chain_variables = values["initial_llm_chain"].prompt.input_variables
             if values["document_variable_name"] not in llm_chain_variables:
                 raise ValueError(
                     f"document_variable_name {values['document_variable_name']} was "

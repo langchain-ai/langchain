@@ -20,6 +20,7 @@ def fake_llm_math_chain() -> LLMMathChain:
     return LLMMathChain.from_llm(fake_llm, input_key="q", output_key="a")
 
 
+@pytest.mark.requires("numexpr")
 def test_simple_question(fake_llm_math_chain: LLMMathChain) -> None:
     """Test simple question that should not need python."""
     question = "What is 1 plus 1?"
@@ -27,6 +28,7 @@ def test_simple_question(fake_llm_math_chain: LLMMathChain) -> None:
     assert output == "Answer: 2"
 
 
+@pytest.mark.requires("numexpr")
 def test_complex_question(fake_llm_math_chain: LLMMathChain) -> None:
     """Test complex question that should need python."""
     question = "What is the square root of 2?"
@@ -34,6 +36,7 @@ def test_complex_question(fake_llm_math_chain: LLMMathChain) -> None:
     assert output == f"Answer: {2**.5}"
 
 
+@pytest.mark.requires("numexpr")
 def test_error(fake_llm_math_chain: LLMMathChain) -> None:
     """Test question that raises error."""
     with pytest.raises(ValueError):

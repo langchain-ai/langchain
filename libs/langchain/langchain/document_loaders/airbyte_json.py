@@ -1,23 +1,23 @@
-import json
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
-from langchain.utils import stringify_dict
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import AirbyteJSONLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"AirbyteJSONLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class AirbyteJSONLoader(BaseLoader):
-    """Load local `Airbyte` json files."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, file_path: str):
-        """Initialize with a file path. This should start with '/tmp/airbyte_local/'."""
-        self.file_path = file_path
-        """Path to the directory containing the json files."""
 
-    def load(self) -> List[Document]:
-        text = ""
-        for line in open(self.file_path, "r"):
-            data = json.loads(line)["_airbyte_data"]
-            text += stringify_dict(data)
-        metadata = {"source": self.file_path}
-        return [Document(page_content=text, metadata=metadata)]
+__all__ = [
+    "AirbyteJSONLoader",
+]

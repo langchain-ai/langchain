@@ -1,72 +1,23 @@
-import re
-from pathlib import Path
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import ObsidianLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"ObsidianLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class ObsidianLoader(BaseLoader):
-    """Load `Obsidian` files from directory."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    FRONT_MATTER_REGEX = re.compile(r"^---\n(.*?)\n---\n", re.MULTILINE | re.DOTALL)
 
-    def __init__(
-        self, path: str, encoding: str = "UTF-8", collect_metadata: bool = True
-    ):
-        """Initialize with a path.
-
-        Args:
-            path: Path to the directory containing the Obsidian files.
-            encoding: Charset encoding, defaults to "UTF-8"
-            collect_metadata: Whether to collect metadata from the front matter.
-                Defaults to True.
-        """
-        self.file_path = path
-        self.encoding = encoding
-        self.collect_metadata = collect_metadata
-
-    def _parse_front_matter(self, content: str) -> dict:
-        """Parse front matter metadata from the content and return it as a dict."""
-        if not self.collect_metadata:
-            return {}
-        match = self.FRONT_MATTER_REGEX.search(content)
-        front_matter = {}
-        if match:
-            lines = match.group(1).split("\n")
-            for line in lines:
-                if ":" in line:
-                    key, value = line.split(":", 1)
-                    front_matter[key.strip()] = value.strip()
-                else:
-                    # Skip lines without a colon
-                    continue
-        return front_matter
-
-    def _remove_front_matter(self, content: str) -> str:
-        """Remove front matter metadata from the given content."""
-        if not self.collect_metadata:
-            return content
-        return self.FRONT_MATTER_REGEX.sub("", content)
-
-    def load(self) -> List[Document]:
-        """Load documents."""
-        ps = list(Path(self.file_path).glob("**/*.md"))
-        docs = []
-        for p in ps:
-            with open(p, encoding=self.encoding) as f:
-                text = f.read()
-
-            front_matter = self._parse_front_matter(text)
-            text = self._remove_front_matter(text)
-            metadata = {
-                "source": str(p.name),
-                "path": str(p),
-                "created": p.stat().st_ctime,
-                "last_modified": p.stat().st_mtime,
-                "last_accessed": p.stat().st_atime,
-                **front_matter,
-            }
-            docs.append(Document(page_content=text, metadata=metadata))
-
-        return docs
+__all__ = [
+    "ObsidianLoader",
+]

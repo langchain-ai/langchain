@@ -1,11 +1,11 @@
 # flake8: noqa
 from langchain.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
-from langchain.prompts.chat import (
+from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts.prompt import PromptTemplate
 
 templ1 = """You are a smart assistant designed to help high school teachers come up with reading comprehension questions.
 Given a piece of text, you must come up with a question and answer pair that can be used to test a student's reading comprehension abilities.

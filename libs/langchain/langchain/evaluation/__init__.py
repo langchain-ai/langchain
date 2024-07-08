@@ -38,7 +38,7 @@ name of the dataset to load.
 - Comparing the output of two models: :class:`PairwiseStringEvalChain <langchain.evaluation.comparison.eval_chain.PairwiseStringEvalChain>` or :class:`LabeledPairwiseStringEvalChain <langchain.evaluation.comparison.eval_chain.LabeledPairwiseStringEvalChain>` when there is additionally a reference label.
 - Judging the efficacy of an agent's tool usage: :class:`TrajectoryEvalChain <langchain.evaluation.agents.trajectory_eval_chain.TrajectoryEvalChain>`
 - Checking whether an output complies with a set of criteria: :class:`CriteriaEvalChain <langchain.evaluation.criteria.eval_chain.CriteriaEvalChain>` or :class:`LabeledCriteriaEvalChain <langchain.evaluation.criteria.eval_chain.LabeledCriteriaEvalChain>` when there is additionally a reference label.
-- Computing semantic difference between a prediction and reference: :class:`EmbeddingDistanceEvalChain <langchain.evaluation.embedding_distance.base.EmbeddingDistanceEvalChain>` or between two predictions: :class:`PairwiseEmbeddingDistanceEvalChain <langchain.evaluation.embedding_distance.base.PairwiseEmbeddingDistanceEvalChain>` 
+- Computing semantic difference between a prediction and reference: :class:`EmbeddingDistanceEvalChain <langchain.evaluation.embedding_distance.base.EmbeddingDistanceEvalChain>` or between two predictions: :class:`PairwiseEmbeddingDistanceEvalChain <langchain.evaluation.embedding_distance.base.PairwiseEmbeddingDistanceEvalChain>`
 - Measuring the string distance between a prediction and reference :class:`StringDistanceEvalChain <langchain.evaluation.string_distance.base.StringDistanceEvalChain>` or between two predictions :class:`PairwiseStringDistanceEvalChain <langchain.evaluation.string_distance.base.PairwiseStringDistanceEvalChain>`
 
 **Low-level API**
@@ -52,6 +52,7 @@ These evaluators implement one of the following interfaces:
 These interfaces enable easier composability and usage within a higher level evaluation framework.
 
 """  # noqa: E501
+
 from langchain.evaluation.agents import TrajectoryEvalChain
 from langchain.evaluation.comparison import (
     LabeledPairwiseStringEvalChain,
@@ -67,13 +68,25 @@ from langchain.evaluation.embedding_distance import (
     EmbeddingDistanceEvalChain,
     PairwiseEmbeddingDistanceEvalChain,
 )
+from langchain.evaluation.exact_match.base import ExactMatchStringEvaluator
 from langchain.evaluation.loading import load_dataset, load_evaluator, load_evaluators
+from langchain.evaluation.parsing.base import (
+    JsonEqualityEvaluator,
+    JsonValidityEvaluator,
+)
+from langchain.evaluation.parsing.json_distance import JsonEditDistanceEvaluator
+from langchain.evaluation.parsing.json_schema import JsonSchemaEvaluator
 from langchain.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
+from langchain.evaluation.regex_match.base import RegexMatchStringEvaluator
 from langchain.evaluation.schema import (
     AgentTrajectoryEvaluator,
     EvaluatorType,
     PairwiseStringEvaluator,
     StringEvaluator,
+)
+from langchain.evaluation.scoring import (
+    LabeledScoreStringEvalChain,
+    ScoreStringEvalChain,
 )
 from langchain.evaluation.string_distance import (
     PairwiseStringDistanceEvalChain,
@@ -83,6 +96,8 @@ from langchain.evaluation.string_distance import (
 
 __all__ = [
     "EvaluatorType",
+    "ExactMatchStringEvaluator",
+    "RegexMatchStringEvaluator",
     "PairwiseStringEvalChain",
     "LabeledPairwiseStringEvalChain",
     "QAEvalChain",
@@ -104,4 +119,10 @@ __all__ = [
     "load_evaluator",
     "load_dataset",
     "AgentTrajectoryEvaluator",
+    "ScoreStringEvalChain",
+    "LabeledScoreStringEvalChain",
+    "JsonValidityEvaluator",
+    "JsonEqualityEvaluator",
+    "JsonEditDistanceEvaluator",
+    "JsonSchemaEvaluator",
 ]

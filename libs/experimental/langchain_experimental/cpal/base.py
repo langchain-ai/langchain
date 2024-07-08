@@ -1,19 +1,20 @@
 """
 CPAL Chain and its subchains
 """
+
 from __future__ import annotations
 
 import json
 from typing import Any, ClassVar, Dict, List, Optional, Type
 
-import pydantic
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import CallbackManagerForChainRun
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers import PydanticOutputParser
-from langchain.prompts.prompt import PromptTemplate
+from langchain_core.callbacks.manager import CallbackManagerForChainRun
+from langchain_core.prompts.prompt import PromptTemplate
 
+from langchain_experimental import pydantic_v1 as pydantic
 from langchain_experimental.cpal.constants import Constant
 from langchain_experimental.cpal.models import (
     CausalModel,
@@ -40,9 +41,9 @@ class _BaseStoryElementChain(Chain):
     chain: LLMChain
     input_key: str = Constant.narrative_input.value  #: :meta private:
     output_key: str = Constant.chain_answer.value  #: :meta private:
-    pydantic_model: ClassVar[
-        Optional[Type[pydantic.BaseModel]]
-    ] = None  #: :meta private:
+    pydantic_model: ClassVar[Optional[Type[pydantic.BaseModel]]] = (
+        None  #: :meta private:
+    )
     template: ClassVar[Optional[str]] = None  #: :meta private:
 
     @classmethod
@@ -105,7 +106,7 @@ class _BaseStoryElementChain(Chain):
 
 
 class NarrativeChain(_BaseStoryElementChain):
-    """Decompose the narrative into its story elements
+    """Decompose the narrative into its story elements.
 
     - causal model
     - query
@@ -131,13 +132,34 @@ class InterventionChain(_BaseStoryElementChain):
 
 
 class QueryChain(_BaseStoryElementChain):
-    """Query the outcome table using SQL."""
+    """Query the outcome table using SQL.
+
+    *Security note*: This class implements an AI technique that generates SQL code.
+        If those SQL commands are executed, it's critical to ensure they use credentials
+        that are narrowly-scoped to only include the permissions this chain needs.
+        Failure to do so may result in data corruption or loss, since this chain may
+        attempt commands like `DROP TABLE` or `INSERT` if appropriately prompted.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this chain.
+    """
 
     pydantic_model: ClassVar[Type[pydantic.BaseModel]] = QueryModel
     template: ClassVar[str] = query_template  # TODO: incl. table schema
 
 
 class CPALChain(_BaseStoryElementChain):
+    """Causal program-aided language (CPAL) chain implementation.
+
+    *Security note*: The building blocks of this class include the implementation
+        of an AI technique that generates SQL code. If those SQL commands
+        are executed, it's critical to ensure they use credentials that
+        are narrowly-scoped to only include the permissions this chain needs.
+        Failure to do so may result in data corruption or loss, since this chain may
+        attempt commands like `DROP TABLE` or `INSERT` if appropriately prompted.
+        The best way to guard against such negative outcomes is to (as appropriate)
+        limit the permissions granted to the credentials used with this chain.
+    """
+
     llm: BaseLanguageModel
     narrative_chain: Optional[NarrativeChain] = None
     causal_chain: Optional[CausalChain] = None
@@ -151,7 +173,17 @@ class CPALChain(_BaseStoryElementChain):
         llm: BaseLanguageModel,
         **kwargs: Any,
     ) -> CPALChain:
-        """instantiation depends on component chains"""
+        """instantiation depends on component chains
+
+        *Security note*: The building blocks of this class include the implementation
+            of an AI technique that generates SQL code. If those SQL commands
+            are executed, it's critical to ensure they use credentials that
+            are narrowly-scoped to only include the permissions this chain needs.
+            Failure to do so may result in data corruption or loss, since this chain may
+            attempt commands like `DROP TABLE` or `INSERT` if appropriately prompted.
+            The best way to guard against such negative outcomes is to (as appropriate)
+            limit the permissions granted to the credentials used with this chain.
+        """
         return cls(
             llm=llm,
             chain=LLMChain(

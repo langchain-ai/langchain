@@ -1,36 +1,23 @@
-from typing import List
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
-from langchain.document_loaders.s3_file import S3FileLoader
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import S3DirectoryLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"S3DirectoryLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class S3DirectoryLoader(BaseLoader):
-    """Load from `Amazon AWS S3` directory."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, bucket: str, prefix: str = ""):
-        """Initialize with bucket and key name.
 
-        Args:
-            bucket: The name of the S3 bucket.
-            prefix: The prefix of the S3 key. Defaults to "".
-        """
-        self.bucket = bucket
-        self.prefix = prefix
-
-    def load(self) -> List[Document]:
-        """Load documents."""
-        try:
-            import boto3
-        except ImportError:
-            raise ImportError(
-                "Could not import boto3 python package. "
-                "Please install it with `pip install boto3`."
-            )
-        s3 = boto3.resource("s3")
-        bucket = s3.Bucket(self.bucket)
-        docs = []
-        for obj in bucket.objects.filter(Prefix=self.prefix):
-            loader = S3FileLoader(self.bucket, obj.key)
-            docs.extend(loader.load())
-        return docs
+__all__ = [
+    "S3DirectoryLoader",
+]

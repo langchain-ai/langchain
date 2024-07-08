@@ -1,32 +1,23 @@
-from typing import Iterator, List, Optional
+from typing import TYPE_CHECKING, Any
 
-from langchain.docstore.document import Document
-from langchain.document_loaders.base import BaseLoader
-from langchain.utilities.brave_search import BraveSearchWrapper
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.document_loaders import BraveSearchLoader
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"BraveSearchLoader": "langchain_community.document_loaders"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class BraveSearchLoader(BaseLoader):
-    """Load with `Brave Search` engine."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    def __init__(self, query: str, api_key: str, search_kwargs: Optional[dict] = None):
-        """Initializes the BraveLoader.
 
-        Args:
-            query: The query to search for.
-            api_key: The API key to use.
-            search_kwargs: The search kwargs to use.
-        """
-        self.query = query
-        self.api_key = api_key
-        self.search_kwargs = search_kwargs or {}
-
-    def load(self) -> List[Document]:
-        brave_client = BraveSearchWrapper(
-            api_key=self.api_key,
-            search_kwargs=self.search_kwargs,
-        )
-        return brave_client.download_documents(self.query)
-
-    def lazy_load(self) -> Iterator[Document]:
-        for doc in self.load():
-            yield doc
+__all__ = [
+    "BraveSearchLoader",
+]

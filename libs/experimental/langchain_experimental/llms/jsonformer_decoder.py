@@ -1,19 +1,21 @@
 """Experimental implementation of jsonformer wrapped LLM."""
+
 from __future__ import annotations
 
 import json
 from typing import TYPE_CHECKING, Any, List, Optional, cast
 
-from langchain.callbacks.manager import CallbackManagerForLLMRun
-from langchain.llms.huggingface_pipeline import HuggingFacePipeline
-from pydantic import Field, root_validator
+from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
+from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+
+from langchain_experimental.pydantic_v1 import Field, root_validator
 
 if TYPE_CHECKING:
     import jsonformer
 
 
 def import_jsonformer() -> jsonformer:
-    """Lazily import jsonformer."""
+    """Lazily import of the jsonformer package."""
     try:
         import jsonformer
     except ImportError:
@@ -36,7 +38,9 @@ class JsonFormer(HuggingFacePipeline):
     )
     debug: bool = Field(default=False, description="Debug mode.")
 
-    @root_validator
+    # TODO: move away from `root_validator` since it is deprecated in pydantic v2
+    #       and causes mypy type-checking failures (hence the `type: ignore`)
+    @root_validator  # type: ignore[call-overload]
     def check_jsonformer_installation(cls, values: dict) -> dict:
         import_jsonformer()
         return values

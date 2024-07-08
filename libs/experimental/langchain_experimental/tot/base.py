@@ -1,27 +1,16 @@
-"""
-This a Tree of Thought (ToT) chain based on the paper "Large Language Model
-Guided Tree-of-Thought"
-
-https://arxiv.org/pdf/2305.08291.pdf
-
-The Tree of Thought (ToT) chain uses a tree structure to explore the space of
-possible solutions to a problem.
-
-"""
-
 from __future__ import annotations
 
 from textwrap import indent
 from typing import Any, Dict, List, Optional, Type
 
 from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.manager import (
+from langchain.chains.base import Chain
+from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
 )
-from langchain.chains.base import Chain
-from pydantic import Extra
 
+from langchain_experimental.pydantic_v1 import Extra
 from langchain_experimental.tot.checker import ToTChecker
 from langchain_experimental.tot.controller import ToTController
 from langchain_experimental.tot.memory import ToTDFSMemory
@@ -34,7 +23,7 @@ from langchain_experimental.tot.thought_generation import (
 
 class ToTChain(Chain):
     """
-    A Chain implementing the Tree of Thought (ToT).
+    Chain implementing the Tree of Thought (ToT).
     """
 
     llm: BaseLanguageModel
@@ -46,7 +35,7 @@ class ToTChain(Chain):
     """ToT Checker to use."""
     output_key: str = "response"  #: :meta private:
     k: int = 10
-    """The maximmum number of conversation rounds"""
+    """The maximum number of conversation rounds"""
     c: int = 3
     """The number of children to explore at each node"""
     tot_memory: ToTDFSMemory = ToTDFSMemory()
@@ -119,7 +108,7 @@ class ToTChain(Chain):
         problem_description = inputs["problem_description"]
         checker_inputs = {"problem_description": problem_description}
         thoughts_path: tuple[str, ...] = ()
-        thought_generator = self.tot_strategy_class(
+        thought_generator = self.tot_strategy_class(  # type: ignore[call-arg]
             llm=self.llm, c=self.c, verbose=self.verbose_llm
         )
 

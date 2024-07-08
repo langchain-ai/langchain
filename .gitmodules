@@ -1,4 +1,0 @@
-[submodule "docs/_docs_skeleton"]
-	path = docs/_docs_skeleton
-	url = https://github.com/langchain-ai/langchain-shared-docs
-	branch = main

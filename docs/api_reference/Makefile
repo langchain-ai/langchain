@@ -3,7 +3,7 @@
 
 # You can set these variables from the command line, and also
 # from the environment for the first two.
-SPHINXOPTS    ?= 
+SPHINXOPTS    ?= -j auto 
 SPHINXBUILD   ?= sphinx-build
 SPHINXAUTOBUILD   ?= sphinx-autobuild
 SOURCEDIR     = .

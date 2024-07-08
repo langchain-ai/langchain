@@ -1,38 +1,25 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import TYPE_CHECKING, List
-
-from pydantic_v1 import Field
-
-from langchain.agents.agent_toolkits.base import BaseToolkit
-from langchain.tools import BaseTool
-from langchain.tools.office365.create_draft_message import O365CreateDraftMessage
-from langchain.tools.office365.events_search import O365SearchEvents
-from langchain.tools.office365.messages_search import O365SearchEmails
-from langchain.tools.office365.send_event import O365SendEvent
-from langchain.tools.office365.send_message import O365SendMessage
-from langchain.tools.office365.utils import authenticate
+from langchain._api import create_importer
 
 if TYPE_CHECKING:
-    from O365 import Account
+    from langchain_community.agent_toolkits.office365.toolkit import O365Toolkit
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "O365Toolkit": "langchain_community.agent_toolkits.office365.toolkit"
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class O365Toolkit(BaseToolkit):
-    """Toolkit for interacting with Office 365."""
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    account: Account = Field(default_factory=authenticate)
 
-    class Config:
-        """Pydantic config."""
-
-        arbitrary_types_allowed = True
-
-    def get_tools(self) -> List[BaseTool]:
-        """Get the tools in the toolkit."""
-        return [
-            O365SearchEvents(),
-            O365CreateDraftMessage(),
-            O365SearchEmails(),
-            O365SendEvent(),
-            O365SendMessage(),
-        ]
+__all__ = [
+    "O365Toolkit",
+]

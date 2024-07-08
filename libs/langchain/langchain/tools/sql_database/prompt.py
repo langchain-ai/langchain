@@ -1,18 +1,24 @@
-# flake8: noqa
-QUERY_CHECKER = """
-{query}
-Double check the {dialect} query above for common mistakes, including:
-- Using NOT IN with NULL values
-- Using UNION when UNION ALL should have been used
-- Using BETWEEN for exclusive ranges
-- Data type mismatch in predicates
-- Properly quoting identifiers
-- Using the correct number of arguments for functions
-- Casting to the correct data type
-- Using the proper columns for joins
+"""For backwards compatibility."""
 
-If there are any of the above mistakes, rewrite the query. If there are no mistakes, just reproduce the original query.
+from typing import TYPE_CHECKING, Any
 
-Output the final SQL query only.
+from langchain._api import create_importer
 
-SQL Query: """
+if TYPE_CHECKING:
+    from langchain_community.tools.sql_database.prompt import QUERY_CHECKER
+
+
+_importer = create_importer(
+    __package__,
+    deprecated_lookups={
+        "QUERY_CHECKER": "langchain_community.tools.sql_database.prompt",
+    },
+)
+
+
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _importer(name)
+
+
+__all__ = ["QUERY_CHECKER"]

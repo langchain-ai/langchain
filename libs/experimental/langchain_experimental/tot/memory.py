@@ -7,12 +7,14 @@ from langchain_experimental.tot.thought import Thought
 
 class ToTDFSMemory:
     """
-    Memory for the Tree of Thought (ToT) chain. Implemented as a stack of
+    Memory for the Tree of Thought (ToT) chain.
+
+    It is implemented as a stack of
     thoughts. This allows for a depth first search (DFS) of the ToT.
     """
 
     def __init__(self, stack: Optional[List[Thought]] = None):
-        self.stack: list[Thought] = stack or []
+        self.stack: List[Thought] = stack or []
 
     def top(self) -> Optional[Thought]:
         "Get the top of the stack without popping it."

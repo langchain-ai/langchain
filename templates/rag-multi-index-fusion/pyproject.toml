@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "rag-multi-index-fusion"
+version = "0.0.1"
+description = "RAG with routing and fusion between different domain-specific retrievers"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+openai = "<2"
+xmltodict = "^0.13.0"
+kay = "^0.1.2"
+wikipedia = "^1.4.0"
+arxiv = "^2.0.0"
+tiktoken = "^0.5.1"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+fastapi = ">=0.104.0,<1"
+sse-starlette = "^1.6.5"
+
+[tool.langserve]
+export_module = "rag_multi_index_fusion"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "rag"
+author = "LangChain"
+integrations = ["OpenAI", "Wikipedia", "Arxiv"]
+tags = ["vectordbs", "routing"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "elastic-query-generator"
+version = "0.0.1"
+description = "Interact with Elasticsearch analytics databases using natural language"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+langchain = "^0.1"
+elasticsearch = "^8.10.1"
+openai = "<2"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.21"
+
+[tool.langserve]
+export_module = "elastic_query_generator"
+export_attr = "chain"
+
+[tool.templates-hub]
+use-case = "query"
+author = "LangChain"
+integrations = ["Elasticsearch", "OpenAI"]
+tags = ["query-generation"]
+
+[build-system]
+requires = [
+    "poetry-core",
+]
+build-backend = "poetry.core.masonry.api"

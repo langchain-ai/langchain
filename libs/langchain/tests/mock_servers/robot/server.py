@@ -1,4 +1,5 @@
 """A mock Robot server."""
+
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from uuid import uuid4
@@ -7,7 +8,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 PORT = 7289
 
@@ -126,7 +127,7 @@ async def goto(x: int, y: int, z: int, cautiousness: Cautiousness) -> Dict[str, 
 
 @app.get("/get_state", description="Get the robot's state")
 async def get_state(
-    fields: List[StateItems] = Query(..., description="List of state items to return")
+    fields: List[StateItems] = Query(..., description="List of state items to return"),
 ) -> Dict[str, Any]:
     state = {}
     for field in fields:
@@ -148,7 +149,7 @@ async def ask_for_passphrase(said_please: bool) -> Dict[str, Any]:
     " Requires knowledge of the pass phrase.",
 )
 async def recycle(password: SecretPassPhrase) -> Dict[str, Any]:
-    # Checks API chain handling of endpoints with depenedencies
+    # Checks API chain handling of endpoints with dependencies
     if password.pw == PASS_PHRASE:
         _ROBOT_STATE["destruct"] = True
         return {"status": "Self-destruct initiated", "state": _ROBOT_STATE}
