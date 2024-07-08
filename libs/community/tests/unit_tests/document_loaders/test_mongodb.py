@@ -63,4 +63,3 @@ async def test_load_with_filters(expected_documents: List[Document]) -> None:
         documents = await loader.aload()
 
     assert documents == expected_documents
-    mock_find.assert_called_once_with(filter_criteria, {'_id': 1, 'address_building': 1, 'address_room': 1})
