@@ -138,6 +138,7 @@ EXPECTED_ALL = [
     "RocksetLoader",
     "S3DirectoryLoader",
     "S3FileLoader",
+    "ScrapflyLoader",
     "SQLDatabaseLoader",
     "SRTLoader",
     "SeleniumURLLoader",

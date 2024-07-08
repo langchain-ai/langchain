@@ -101,6 +101,7 @@ def test_handle_kwargs_top_level_parameters(monkeypatch: MonkeyPatch) -> None:
             "system": "Test system prompt",
             "template": None,
             "keep_alive": None,
+            "raw": None,
         }
         assert stream is True
         assert timeout == 300
@@ -149,6 +150,7 @@ def test_handle_kwargs_with_unknown_param(monkeypatch: MonkeyPatch) -> None:
             "system": None,
             "template": None,
             "keep_alive": None,
+            "raw": None,
         }
         assert stream is True
         assert timeout == 300
@@ -181,6 +183,7 @@ def test_handle_kwargs_with_options(monkeypatch: MonkeyPatch) -> None:
             "system": None,
             "template": None,
             "keep_alive": None,
+            "raw": None,
         }
         assert stream is True
         assert timeout == 300

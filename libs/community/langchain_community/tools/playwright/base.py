@@ -54,4 +54,4 @@ class BaseBrowserTool(BaseTool):
     ) -> BaseBrowserTool:
         """Instantiate the tool."""
         lazy_import_playwright_browsers()
-        return cls(sync_browser=sync_browser, async_browser=async_browser)
+        return cls(sync_browser=sync_browser, async_browser=async_browser)  # type: ignore[call-arg]

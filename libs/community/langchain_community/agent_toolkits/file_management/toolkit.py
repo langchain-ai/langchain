@@ -49,6 +49,13 @@ class FileManagementToolkit(BaseToolkit):
         - Sandbox the agent by running it in a container.
 
         See https://python.langchain.com/docs/security for more information.
+
+    Parameters:
+        root_dir: Optional. The root directory to perform file operations.
+            If not provided, file operations are performed relative to the current
+            working directory.
+        selected_tools: Optional. The tools to include in the toolkit. If not
+            provided, all tools are included.
     """
 
     root_dir: Optional[str] = None
@@ -73,7 +80,7 @@ class FileManagementToolkit(BaseToolkit):
         tools: List[BaseTool] = []
         for tool in allowed_tools:
             tool_cls = _FILE_TOOLS_MAP[tool]
-            tools.append(tool_cls(root_dir=self.root_dir))
+            tools.append(tool_cls(root_dir=self.root_dir))  # type: ignore[call-arg]
         return tools
 
 

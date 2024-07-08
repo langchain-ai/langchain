@@ -1,4 +1,5 @@
 """Integration test for self ask with search."""
+
 from langchain.agents.self_ask_with_search.base import SelfAskWithSearchChain
 
 from langchain_community.llms.openai import OpenAI

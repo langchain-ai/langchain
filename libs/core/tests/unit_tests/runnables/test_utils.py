@@ -42,7 +42,7 @@ def test_indent_lines_after_first(text: str, prefix: str, expected_output: str) 
 
 
 def test_nonlocals() -> None:
-    agent = RunnableLambda(lambda x: x * 2)  # noqa: F841
+    agent = RunnableLambda(lambda x: x * 2)
 
     def my_func(input: str, agent: Dict[str, str]) -> str:
         return agent.get("agent_name", input)

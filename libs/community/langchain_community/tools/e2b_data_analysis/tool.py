@@ -96,7 +96,7 @@ class E2BDataAnalysisToolArguments(BaseModel):
 class E2BDataAnalysisTool(BaseTool):
     """Tool for running python code in a sandboxed environment for data analysis."""
 
-    name = "e2b_data_analysis"
+    name: str = "e2b_data_analysis"
     args_schema: Type[BaseModel] = E2BDataAnalysisToolArguments
     session: Any
     description: str

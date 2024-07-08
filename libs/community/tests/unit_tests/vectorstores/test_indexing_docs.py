@@ -46,9 +46,11 @@ def test_compatible_vectorstore_documentation() -> None:
 
     # These are mentioned in the indexing.ipynb documentation
     documented = {
+        "Aerospike",
         "AnalyticDB",
         "AstraDB",
         "AzureCosmosDBVectorSearch",
+        "AzureCosmosDBNoSqlVectorSearch",
         "AzureSearch",
         "AwaDB",
         "Bagel",
@@ -82,6 +84,7 @@ def test_compatible_vectorstore_documentation() -> None:
         "Rockset",
         "ScaNN",
         "SemaDB",
+        "SingleStoreDB",
         "SupabaseVectorStore",
         "SurrealDBStore",
         "TileDB",
@@ -92,11 +95,13 @@ def test_compatible_vectorstore_documentation() -> None:
         "Vald",
         "VDMS",
         "Vearch",
+        "Vectara",
         "VespaStore",
         "VLite",
         "Weaviate",
         "Yellowbrick",
         "ZepVectorStore",
+        "ZepCloudVectorStore",
         "Zilliz",
         "Lantern",
         "OpenSearchVectorSearch",

@@ -10,12 +10,21 @@ from pathlib import Path
 from typing import Dict, List, Literal, Optional, Sequence, TypedDict, Union
 
 import toml
+import typing_extensions
+from langchain_core.runnables import Runnable, RunnableSerializable
 from pydantic import BaseModel
 
 ROOT_DIR = Path(__file__).parents[2].absolute()
 HERE = Path(__file__).parent
 
-ClassKind = Literal["TypedDict", "Regular", "Pydantic", "enum"]
+ClassKind = Literal[
+    "TypedDict",
+    "Regular",
+    "Pydantic",
+    "enum",
+    "RunnablePydantic",
+    "RunnableNonPydantic",
+]
 
 
 class ClassInfo(TypedDict):
@@ -69,8 +78,36 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
             continue
 
         if inspect.isclass(type_):
-            if type(type_) == typing._TypedDictMeta:  # type: ignore
+            # The clasification of the class is used to select a template
+            # for the object when rendering the documentation.
+            # See `templates` directory for defined templates.
+            # This is a hacky solution to distinguish between different
+            # kinds of thing that we want to render.
+            if type(type_) is typing_extensions._TypedDictMeta:  # type: ignore
                 kind: ClassKind = "TypedDict"
+            elif type(type_) is typing._TypedDictMeta:  # type: ignore
+                kind: ClassKind = "TypedDict"
+            elif (
+                issubclass(type_, Runnable)
+                and issubclass(type_, BaseModel)
+                and type_ is not Runnable
+            ):
+                # RunnableSerializable subclasses from Pydantic which
+                # for which we use autodoc_pydantic for rendering.
+                # We need to distinguish these from regular Pydantic
+                # classes so we can hide inherited Runnable methods
+                # and provide a link to the Runnable interface from
+                # the template.
+                kind = "RunnablePydantic"
+            elif (
+                issubclass(type_, Runnable)
+                and not issubclass(type_, BaseModel)
+                and type_ is not Runnable
+            ):
+                # These are not pydantic classes but are Runnable.
+                # We'll hide all the inherited methods from Runnable
+                # but use a regular class template to render.
+                kind = "RunnableNonPydantic"
             elif issubclass(type_, Enum):
                 kind = "enum"
             elif issubclass(type_, BaseModel):
@@ -128,11 +165,11 @@ def _load_package_modules(
     of the modules/packages are part of the package vs. 3rd party or built-in.
 
     Parameters:
-        package_directory: Path to the package directory.
-        submodule: Optional name of submodule to load.
+        package_directory (Union[str, Path]): Path to the package directory.
+        submodule (Optional[str]): Optional name of submodule to load.
 
     Returns:
-        list: A list of loaded module objects.
+        Dict[str, ModuleMembers]: A dictionary where keys are module names and values are ModuleMembers objects.
     """
     package_path = (
         Path(package_directory)
@@ -187,7 +224,7 @@ def _load_package_modules(
             modules_by_namespace[top_namespace] = _module_members
 
         except ImportError as e:
-            print(f"Error: Unable to import module '{namespace}' with error: {e}")  # noqa: T201
+            print(f"Error: Unable to import module '{namespace}' with error: {e}")
 
     return modules_by_namespace
 
@@ -251,6 +288,10 @@ Classes
                     template = "enum.rst"
                 elif class_["kind"] == "Pydantic":
                     template = "pydantic.rst"
+                elif class_["kind"] == "RunnablePydantic":
+                    template = "runnable_pydantic.rst"
+                elif class_["kind"] == "RunnableNonPydantic":
+                    template = "runnable_non_pydantic.rst"
                 else:
                     template = "class.rst"
 
@@ -359,9 +400,14 @@ def main(dirs: Optional[list] = None) -> None:
         dirs = [
             dir_
             for dir_ in os.listdir(ROOT_DIR / "libs")
-            if dir_ not in ("cli", "partners")
+            if dir_ not in ("cli", "partners", "standard-tests")
         ]
-        dirs += os.listdir(ROOT_DIR / "libs" / "partners")
+        dirs += [
+            dir_
+            for dir_ in os.listdir(ROOT_DIR / "libs" / "partners")
+            if os.path.isdir(ROOT_DIR / "libs" / "partners" / dir_)
+            and "pyproject.toml" in os.listdir(ROOT_DIR / "libs" / "partners" / dir_)
+        ]
     for dir_ in dirs:
         # Skip any hidden directories
         # Some of these could be present by mistake in the code base

@@ -4,7 +4,7 @@ from langchain_community.utilities.openweathermap import OpenWeatherMapAPIWrappe
 def test_openweathermap_api_wrapper() -> None:
     """Test that OpenWeatherMapAPIWrapper returns correct data for London, GB."""
 
-    weather = OpenWeatherMapAPIWrapper()
+    weather = OpenWeatherMapAPIWrapper()  # type: ignore[call-arg]
     weather_data = weather.run("London,GB")
 
     assert weather_data is not None

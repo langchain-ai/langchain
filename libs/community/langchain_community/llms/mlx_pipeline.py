@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Iterator, List, Mapping, Optional
+from typing import Any, Callable, Iterator, List, Mapping, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
@@ -24,7 +24,7 @@ class MLXPipeline(LLM):
             from langchain_community.llms import MLXPipeline
             pipe = MLXPipeline.from_model_id(
                 model_id="mlx-community/quantized-gemma-2b",
-                pipeline_kwargs={"max_tokens": 10},
+                pipeline_kwargs={"max_tokens": 10, "temp": 0.7},
             )
     Example passing model and tokenizer in directly:
         .. code-block:: python
@@ -59,7 +59,21 @@ class MLXPipeline(LLM):
         when needed. Default: ``False``
     """
     pipeline_kwargs: Optional[dict] = None
-    """Keyword arguments passed to the pipeline."""
+    """
+    Keyword arguments passed to the pipeline. Defaults include:
+        - temp (float): Temperature for generation, default is 0.0.
+        - max_tokens (int): Maximum tokens to generate, default is 100.
+        - verbose (bool): Whether to output verbose logging, default is False.
+        - formatter (Optional[Callable]): A callable to format the output.
+          Default is None.
+        - repetition_penalty (Optional[float]): The penalty factor for
+          repeated sequences, default is None.
+        - repetition_context_size (Optional[int]): Size of the context
+          for applying repetition penalty, default is None.
+        - top_p (float): The cumulative probability threshold for
+          top-p filtering, default is 1.0.
+
+    """
 
     class Config:
         """Configuration for this pydantic object."""
@@ -135,9 +149,32 @@ class MLXPipeline(LLM):
                 "Please install it with `pip install mlx_lm`."
             )
 
-        pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
+        pipeline_kwargs = kwargs.get("pipeline_kwargs", self.pipeline_kwargs)
 
-        return generate(self.model, self.tokenizer, prompt=prompt, **pipeline_kwargs)
+        temp: float = pipeline_kwargs.get("temp", 0.0)
+        max_tokens: int = pipeline_kwargs.get("max_tokens", 100)
+        verbose: bool = pipeline_kwargs.get("verbose", False)
+        formatter: Optional[Callable] = pipeline_kwargs.get("formatter", None)
+        repetition_penalty: Optional[float] = pipeline_kwargs.get(
+            "repetition_penalty", None
+        )
+        repetition_context_size: Optional[int] = pipeline_kwargs.get(
+            "repetition_context_size", None
+        )
+        top_p: float = pipeline_kwargs.get("top_p", 1.0)
+
+        return generate(
+            model=self.model,
+            tokenizer=self.tokenizer,
+            prompt=prompt,
+            temp=temp,
+            max_tokens=max_tokens,
+            verbose=verbose,
+            formatter=formatter,
+            repetition_penalty=repetition_penalty,
+            repetition_context_size=repetition_context_size,
+            top_p=top_p,
+        )
 
     def _stream(
         self,
@@ -166,26 +203,32 @@ class MLXPipeline(LLM):
         repetition_context_size: Optional[int] = pipeline_kwargs.get(
             "repetition_context_size", None
         )
+        top_p: float = pipeline_kwargs.get("top_p", 1.0)
 
         prompt = self.tokenizer.encode(prompt, return_tensors="np")
 
         prompt_tokens = mx.array(prompt[0])
 
         eos_token_id = self.tokenizer.eos_token_id
+        detokenizer = self.tokenizer.detokenizer
+        detokenizer.reset()
 
         for (token, prob), n in zip(
             generate_step(
-                prompt_tokens,
-                self.model,
-                temp,
-                repetition_penalty,
-                repetition_context_size,
+                prompt=prompt_tokens,
+                model=self.model,
+                temp=temp,
+                repetition_penalty=repetition_penalty,
+                repetition_context_size=repetition_context_size,
+                top_p=top_p,
             ),
             range(max_new_tokens),
         ):
             # identify text to yield
             text: Optional[str] = None
-            text = self.tokenizer.decode(token.item())
+            detokenizer.add_token(token)
+            detokenizer.finalize()
+            text = detokenizer.last_segment
 
             # yield text, if any
             if text:

@@ -137,6 +137,9 @@ class BaseOpenAI(BaseLLM):
     http_async_client: Union[Any, None] = None
     """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
         http_client as well if you'd like a custom client for sync invocations."""
+    extra_body: Optional[Mapping[str, Any]] = None
+    """Optional additional JSON properties to include in the request parameters when
+    making requests to OpenAI compatible APIs, such as vLLM."""
 
     class Config:
         """Configuration for this pydantic object."""
@@ -173,10 +176,7 @@ class BaseOpenAI(BaseLLM):
             "OPENAI_API_BASE"
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
         values["openai_organization"] = (
             values["openai_organization"]
@@ -224,6 +224,9 @@ class BaseOpenAI(BaseLLM):
 
         if self.max_tokens is not None:
             normal_params["max_tokens"] = self.max_tokens
+
+        if self.extra_body is not None:
+            normal_params["extra_body"] = self.extra_body
 
         # Azure gpt-35-turbo doesn't support best_of
         # don't specify best_of if it is 1
@@ -365,11 +368,7 @@ class BaseOpenAI(BaseLLM):
                 if not system_fingerprint:
                     system_fingerprint = response.get("system_fingerprint")
         return self.create_llm_result(
-            choices,
-            prompts,
-            params,
-            token_usage,
-            system_fingerprint=system_fingerprint,
+            choices, prompts, params, token_usage, system_fingerprint=system_fingerprint
         )
 
     async def _agenerate(
@@ -425,11 +424,7 @@ class BaseOpenAI(BaseLLM):
                 choices.extend(response["choices"])
                 _update_token_usage(_keys, response, token_usage)
         return self.create_llm_result(
-            choices,
-            prompts,
-            params,
-            token_usage,
-            system_fingerprint=system_fingerprint,
+            choices, prompts, params, token_usage, system_fingerprint=system_fingerprint
         )
 
     def get_sub_prompts(
@@ -440,8 +435,6 @@ class BaseOpenAI(BaseLLM):
     ) -> List[List[str]]:
         """Get the sub prompts for llm call."""
         if stop is not None:
-            if "stop" in params:
-                raise ValueError("`stop` found in both the input and default params.")
             params["stop"] = stop
         if params["max_tokens"] == -1:
             if len(prompts) != 1:
@@ -537,6 +530,8 @@ class BaseOpenAI(BaseLLM):
                 max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
         """
         model_token_mapping = {
+            "gpt-4o": 128_000,
+            "gpt-4o-2024-05-13": 128_000,
             "gpt-4": 8192,
             "gpt-4-0314": 8192,
             "gpt-4-0613": 8192,

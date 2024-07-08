@@ -1,4 +1,5 @@
 """Question answering over a graph."""
+
 from __future__ import annotations
 
 import re
@@ -92,15 +93,36 @@ class KuzuQAChain(Chain):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLanguageModel,
+        llm: Optional[BaseLanguageModel] = None,
         *,
         qa_prompt: BasePromptTemplate = CYPHER_QA_PROMPT,
         cypher_prompt: BasePromptTemplate = KUZU_GENERATION_PROMPT,
+        cypher_llm: Optional[BaseLanguageModel] = None,
+        qa_llm: Optional[BaseLanguageModel] = None,
         **kwargs: Any,
     ) -> KuzuQAChain:
         """Initialize from LLM."""
-        qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
-        cypher_generation_chain = LLMChain(llm=llm, prompt=cypher_prompt)
+        if not cypher_llm and not llm:
+            raise ValueError("Either `llm` or `cypher_llm` parameters must be provided")
+        if not qa_llm and not llm:
+            raise ValueError(
+                "Either `llm` or `qa_llm` parameters must be provided along with"
+                " `cypher_llm`"
+            )
+        if cypher_llm and qa_llm and llm:
+            raise ValueError(
+                "You can specify up to two of 'cypher_llm', 'qa_llm'"
+                ", and 'llm', but not all three simultaneously."
+            )
+
+        qa_chain = LLMChain(
+            llm=qa_llm or llm,  # type: ignore[arg-type]
+            prompt=qa_prompt,
+        )
+        cypher_generation_chain = LLMChain(
+            llm=cypher_llm or llm,  # type: ignore[arg-type]
+            prompt=cypher_prompt,
+        )
 
         return cls(
             qa_chain=qa_chain,

@@ -1,4 +1,5 @@
 """Test AzureCosmosDBVectorSearch functionality."""
+
 import logging
 import os
 from time import sleep
@@ -74,7 +75,7 @@ class TestAzureCosmosDBVectorSearch:
 
         # insure the test collection is empty
         collection = prepare_collection()
-        assert collection.count_documents({}) == 0  # type: ignore[index]  # noqa: E501
+        assert collection.count_documents({}) == 0  # type: ignore[index]
 
     @classmethod
     def teardown_class(cls) -> None:

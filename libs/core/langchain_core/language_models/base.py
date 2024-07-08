@@ -39,6 +39,11 @@ if TYPE_CHECKING:
 
 @lru_cache(maxsize=None)  # Cache the tokenizer
 def get_tokenizer() -> Any:
+    """Get a GPT-2 tokenizer instance.
+
+    This function is cached to avoid re-loading the tokenizer
+    every time it is called.
+    """
     try:
         from transformers import GPT2TokenizerFast  # type: ignore[import]
     except ImportError:
@@ -77,7 +82,7 @@ class BaseLanguageModel(
 ):
     """Abstract base class for interfacing with language models.
 
-    All language model wrappers inherit from BaseLanguageModel.
+    All language model wrappers inherited from BaseLanguageModel.
     """
 
     cache: Union[BaseCache, bool, None] = None
@@ -103,11 +108,17 @@ class BaseLanguageModel(
     )
     """Optional encoder to use for counting tokens."""
 
-    @validator("verbose", pre=True, always=True)
+    @validator("verbose", pre=True, always=True, allow_reuse=True)
     def set_verbose(cls, verbose: Optional[bool]) -> bool:
         """If verbose is None, set it.
 
         This allows users to pass in None as verbose to access the global setting.
+
+        Args:
+            verbose: The verbosity setting to use.
+
+        Returns:
+            The verbosity setting to use.
         """
         if verbose is None:
             return _get_verbosity()
@@ -204,7 +215,9 @@ class BaseLanguageModel(
     def with_structured_output(
         self, schema: Union[Dict, Type[BaseModel]], **kwargs: Any
     ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
-        """Implement this if there is a way of steering the model to generate responses that match a given schema."""  # noqa: E501
+        """Not implemented on this class."""
+        # Implement this on child class if there is a way of steering the model to
+        # generate responses that match a given schema.
         raise NotImplementedError()
 
     @deprecated("0.1.7", alternative="invoke", removal="0.3.0")
@@ -322,7 +335,7 @@ class BaseLanguageModel(
     def get_num_tokens(self, text: str) -> int:
         """Get the number of tokens present in the text.
 
-        Useful for checking if an input will fit in a model's context window.
+        Useful for checking if an input fits in a model's context window.
 
         Args:
             text: The string input to tokenize.
@@ -335,7 +348,7 @@ class BaseLanguageModel(
     def get_num_tokens_from_messages(self, messages: List[BaseMessage]) -> int:
         """Get the number of tokens in the messages.
 
-        Useful for checking if an input will fit in a model's context window.
+        Useful for checking if an input fits in a model's context window.
 
         Args:
             messages: The message inputs to tokenize.

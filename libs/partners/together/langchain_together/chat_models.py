@@ -9,6 +9,7 @@ from typing import (
 )
 
 import openai
+from langchain_core.language_models.chat_models import LangSmithParams
 from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
@@ -34,14 +35,24 @@ class ChatTogether(BaseChatOpenAI):
 
     @property
     def lc_secrets(self) -> Dict[str, str]:
+        """A map of constructor argument names to secret ids.
+
+        For example,
+            {"together_api_key": "TOGETHER_API_KEY"}
+        """
         return {"together_api_key": "TOGETHER_API_KEY"}
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
+        """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "together"]
 
     @property
     def lc_attributes(self) -> Dict[str, Any]:
+        """List of attribute names that should be included in the serialized kwargs.
+
+        These attributes must be accepted by the constructor.
+        """
         attributes: Dict[str, Any] = {}
 
         if self.together_api_base:
@@ -53,6 +64,14 @@ class ChatTogether(BaseChatOpenAI):
     def _llm_type(self) -> str:
         """Return type of chat model."""
         return "together-chat"
+
+    def _get_ls_params(
+        self, stop: Optional[List[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get the parameters used to invoke the model."""
+        params = super()._get_ls_params(stop=stop, **kwargs)
+        params["ls_provider"] = "together"
+        return params
 
     model_name: str = Field(default="meta-llama/Llama-3-8b-chat-hf", alias="model")
     """Model name to use."""

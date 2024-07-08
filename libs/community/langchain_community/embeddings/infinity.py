@@ -182,7 +182,7 @@ class TinyAsyncOpenAIInfinityEmbeddingClient:  #: :meta private:
         length_sorted_idx = np.argsort([-sorter(sen) for sen in texts])
         texts_sorted = [texts[idx] for idx in length_sorted_idx]
 
-        return texts_sorted, lambda unsorted_embeddings: [  # noqa E731
+        return texts_sorted, lambda unsorted_embeddings: [  # E731
             unsorted_embeddings[idx] for idx in np.argsort(length_sorted_idx)
         ]
 

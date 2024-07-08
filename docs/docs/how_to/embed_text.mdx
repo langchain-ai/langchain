@@ -78,6 +78,31 @@ embeddings_model = CohereEmbeddings()
 ```
 
   </TabItem>
+  <TabItem value="huggingface" label="Hugging Face">
+
+To start we'll need to install the Hugging Face partner package:
+
+```bash
+pip install langchain-huggingface
+```
+
+You can then load any [Sentence Transformers model](https://huggingface.co/models?library=sentence-transformers) from the Hugging Face Hub.
+
+```python
+from langchain_huggingface import HuggingFaceEmbeddings
+
+embeddings_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+```
+
+You can also leave the `model_name` blank to use the default [sentence-transformers/all-mpnet-base-v2](https://huggingface.co/sentence-transformers/all-mpnet-base-v2) model.
+
+```python
+from langchain_huggingface import HuggingFaceEmbeddings
+
+embeddings_model = HuggingFaceEmbeddings()
+```
+
+  </TabItem>
 </Tabs>
 
 ### `embed_documents`

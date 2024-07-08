@@ -1,4 +1,5 @@
 """Prompt template that contains few shot examples."""
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -26,9 +27,6 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
     suffix: StringPromptTemplate
     """A PromptTemplate to put after the examples."""
-
-    input_variables: List[str]
-    """A list of the names of the variables the prompt template expects."""
 
     example_separator: str = "\n\n"
     """String separator used to join the prefix, the examples, and suffix."""
@@ -64,7 +62,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
         return values
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def template_is_valid(cls, values: Dict) -> Dict:
         """Check that prefix, suffix, and input variables are consistent."""
         if values["validate_template"]:
@@ -158,6 +156,14 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         return DEFAULT_FORMATTER_MAPPING[self.template_format](template, **kwargs)
 
     async def aformat(self, **kwargs: Any) -> str:
+        """Async format the prompt with the inputs.
+
+        Args:
+            kwargs: Any arguments to be passed to the prompt template.
+
+        Returns:
+            A formatted string.
+        """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.
         examples = await self._aget_examples(**kwargs)
@@ -199,6 +205,14 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         return "few_shot_with_templates"
 
     def save(self, file_path: Union[Path, str]) -> None:
+        """Save the prompt to a file.
+
+        Args:
+            file_path: The path to save the prompt to.
+
+        Raises:
+            ValueError: If example_selector is provided.
+        """
         if self.example_selector:
             raise ValueError("Saving an example selector is not currently supported")
         return super().save(file_path)

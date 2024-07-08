@@ -9,16 +9,26 @@ from langchain_core.utils._merge import merge_dicts
 
 
 class FunctionMessage(BaseMessage):
-    """Message for passing the result of executing a function back to a model."""
+    """Message for passing the result of executing a tool back to a model.
+
+    FunctionMessage are an older version of the ToolMessage schema, and
+    do not contain the tool_call_id field.
+
+    The tool_call_id field is used to associate the tool call request with the
+    tool call response. This is useful in situations where a chat model is able
+    to request multiple tool calls in parallel.
+    """
 
     name: str
     """The name of the function that was executed."""
 
     type: Literal["function"] = "function"
+    """The type of the message (used for serialization). Defaults to "function"."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+        Default is ["langchain", "schema", "messages"]."""
         return ["langchain", "schema", "messages"]
 
 
@@ -32,10 +42,13 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["FunctionMessageChunk"] = "FunctionMessageChunk"  # type: ignore[assignment]
+    """The type of the message (used for serialization). 
+    Defaults to "FunctionMessageChunk"."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+        Default is ["langchain", "schema", "messages"]."""
         return ["langchain", "schema", "messages"]
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore

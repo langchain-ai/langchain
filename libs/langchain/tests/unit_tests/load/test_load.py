@@ -7,12 +7,12 @@ from langchain_core.prompts.prompt import PromptTemplate
 
 from langchain.chains.llm import LLMChain
 
-pytest.importorskip(
-    "langchain_community",
+pytest.importorskip("langchain_openai", reason="langchain_openai not installed")
+pytest.importorskip("langchain_community", reason="langchain_community not installed")
+
+from langchain_community.llms.openai import (  # noqa: E402 # ignore: community-import
+    OpenAI as CommunityOpenAI,
 )
-
-
-from langchain_community.llms.openai import OpenAI as CommunityOpenAI  # noqa: E402
 
 
 class NotSerializable:
