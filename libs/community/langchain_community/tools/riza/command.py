@@ -5,14 +5,13 @@ Documentation: https://docs.riza.io
 API keys:      https://dashboard.riza.io
 """
 
-from typing import Optional, Type
+from typing import Any, Optional, Type
 
 from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool, ToolException
-from rizaio import Riza
 
 
 class ExecPythonInput(BaseModel):
@@ -28,9 +27,16 @@ class ExecPython(BaseTool):
     args_schema: Type[BaseModel] = ExecPythonInput
     handle_tool_error: bool = True
 
-    client: Riza = None
+    client: Any = None
 
     def __init__(self, **kwargs):
+        try:
+            from rizaio import Riza
+        except ImportError as e:
+            raise ImportError(
+                "Couldn't import the `rizaio` package. "
+                "Try running `pip install rizaio`."
+            ) from e
         super().__init__(**kwargs)
         self.client = Riza()
 
@@ -60,9 +66,16 @@ class ExecJavaScript(BaseTool):
     args_schema: Type[BaseModel] = ExecJavaScriptInput
     handle_tool_error: bool = True
 
-    client: Riza = None
+    client: Any = None
 
     def __init__(self, **kwargs):
+        try:
+            from rizaio import Riza
+        except ImportError as e:
+            raise ImportError(
+                "Couldn't import the `rizaio` package. "
+                "Try running `pip install rizaio`."
+            ) from e
         super().__init__(**kwargs)
         self.client = Riza()
 
