@@ -5,6 +5,7 @@ These functions do not depend on any other LangChain module.
 """
 
 from langchain_core.utils import image
+from langchain_core.utils.aiter import abatch_iterate
 from langchain_core.utils.env import get_from_dict_or_env, get_from_env
 from langchain_core.utils.formatting import StrictFormatter, formatter
 from langchain_core.utils.input import (
@@ -13,6 +14,7 @@ from langchain_core.utils.input import (
     get_colored_text,
     print_text,
 )
+from langchain_core.utils.iter import batch_iterate
 from langchain_core.utils.loading import try_load_from_hub
 from langchain_core.utils.strings import comma_list, stringify_dict, stringify_value
 from langchain_core.utils.utils import (
@@ -48,4 +50,6 @@ __all__ = [
     "stringify_dict",
     "comma_list",
     "stringify_value",
+    "batch_iterate",
+    "abatch_iterate",
 ]
