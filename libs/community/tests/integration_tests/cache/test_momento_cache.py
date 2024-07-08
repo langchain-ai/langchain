@@ -4,6 +4,7 @@ To run tests, set the environment variable MOMENTO_AUTH_TOKEN to a valid
 Momento auth token. This can be obtained by signing up for a free
 Momento account at https://gomomento.com/.
 """
+
 from __future__ import annotations
 
 import uuid

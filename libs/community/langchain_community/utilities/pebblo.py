@@ -63,93 +63,86 @@ logger = logging.getLogger(__name__)
 
 
 class IndexedDocument(Document):
+    """Pebblo Indexed Document."""
+
     id: str
+    """Unique ID of the document."""
 
 
 class Runtime(BaseModel):
-    """Pebblo Runtime.
-
-    Args:
-        type (Optional[str]): Runtime type. Defaults to ""
-        host (str): Hostname of runtime.
-        path (str): Current working directory path.
-        ip (Optional[str]): Ip of current runtime. Defaults to ""
-        platform (str): Platform details of current runtime.
-        os (str): OS name.
-        os_version (str): OS version.
-        language (str): Runtime kernel.
-        language_version (str): version of current runtime kernel.
-        runtime (Optional[str]) More runtime details. Defaults to ""
-    """
+    """Pebblo Runtime."""
 
     type: str = "local"
+    """Runtime type. Defaults to 'local'."""
     host: str
+    """Host name of the runtime."""
     path: str
+    """Current working directory path."""
     ip: Optional[str] = ""
+    """IP address of the runtime. Defaults to ''."""
     platform: str
+    """Platform details of the runtime."""
     os: str
+    """OS name."""
     os_version: str
+    """OS version."""
     language: str
+    """Runtime kernel."""
     language_version: str
+    """Version of the runtime kernel."""
     runtime: str = "local"
+    """More runtime details. Defaults to 'local'."""
 
 
 class Framework(BaseModel):
-    """Pebblo Framework instance.
-
-    Args:
-        name (str): Name of the Framework.
-        version (str): Version of the Framework.
-    """
+    """Pebblo Framework instance."""
 
     name: str
+    """Name of the Framework."""
     version: str
+    """Version of the Framework."""
 
 
 class App(BaseModel):
-    """Pebblo AI application.
-
-    Args:
-        name (str): Name of the app.
-        owner (str): Owner of the app.
-        description (Optional[str]): Description of the app.
-        load_id (str): Unique load_id of the app instance.
-        runtime (Runtime): Runtime details of app.
-        framework (Framework): Framework details of the app
-        plugin_version (str): Plugin version used for the app.
-    """
+    """Pebblo AI application."""
 
     name: str
+    """Name of the app."""
     owner: str
+    """Owner of the app."""
     description: Optional[str]
+    """Description of the app."""
     load_id: str
+    """Unique load_id of the app instance."""
     runtime: Runtime
+    """Runtime details of the app."""
     framework: Framework
+    """Framework details of the app."""
     plugin_version: str
+    """Plugin version used for the app."""
 
 
 class Doc(BaseModel):
-    """Pebblo document.
-
-    Args:
-        name (str): Name of app originating this document.
-        owner (str): Owner of app.
-        docs (list): List of documents with its metadata.
-        plugin_version (str): Pebblo plugin Version
-        load_id (str): Unique load_id of the app instance.
-        loader_details (dict): Loader details with its metadata.
-        loading_end (bool): Boolean, specifying end of loading of source.
-        source_owner (str): Owner of the source of the loader.
-    """
+    """Pebblo document."""
 
     name: str
+    """Name of app originating this document."""
     owner: str
+    """Owner of app."""
     docs: list
+    """List of documents with its metadata."""
     plugin_version: str
+    """Pebblo plugin Version"""
     load_id: str
+    """Unique load_id of the app instance."""
     loader_details: dict
+    """Loader details with its metadata."""
     loading_end: bool
+    """Boolean, specifying end of loading of source."""
     source_owner: str
+    """Owner of the source of the loader."""
+    classifier_location: str
+    """Location of the classifier."""
 
 
 def get_full_path(path: str) -> str:

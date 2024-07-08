@@ -1,33 +1,27 @@
-"""
-**Agent** is a class that uses an LLM to choose a sequence of actions to take.
+"""Schema definitions for representing agent actions, observations, and return values.
 
-In Chains, a sequence of actions is hardcoded. In Agents,
-a language model is used as a reasoning engine to determine which actions
-to take and in which order.
+**ATTENTION** The schema definitions are provided for backwards compatibility.
 
-Agents select and use **Tools** and **Toolkits** for actions.
+    New agents should be built using the langgraph library
+    (https://github.com/langchain-ai/langgraph)), which provides a simpler
+    and more flexible way to define agents.
 
-**Class hierarchy:**
+    Please see the migration guide for information on how to migrate existing
+    agents to modern langgraph agents:
+    https://python.langchain.com/v0.2/docs/how_to/migrate_agent/
 
-.. code-block::
+Agents use language models to choose a sequence of actions to take.
 
-    BaseSingleActionAgent --> LLMSingleActionAgent
-                              OpenAIFunctionsAgent
-                              XMLAgent
-                              Agent --> <name>Agent  # Examples: ZeroShotAgent, ChatAgent
+A basic agent works in the following manner:
 
+1. Given a prompt an agent uses an LLM to request an action to take (e.g., a tool to run).
+2. The agent executes the action (e.g., runs the tool), and receives an observation.
+3. The agent returns the observation to the LLM, which can then be used to generate the next action.
+4. When the agent reaches a stopping condition, it returns a final return value.
 
-    BaseMultiActionAgent  --> OpenAIMultiFunctionsAgent
-
-
-**Main helpers:**
-
-.. code-block::
-
-    AgentType, AgentExecutor, AgentOutputParser, AgentExecutorIterator,
-    AgentAction, AgentFinish, AgentStep
-
+The schemas for the agents themselves are defined in langchain.agents.agent.
 """  # noqa: E501
+
 from __future__ import annotations
 
 import json
@@ -43,7 +37,11 @@ from langchain_core.messages import (
 
 
 class AgentAction(Serializable):
-    """A full description of an action for an ActionAgent to execute."""
+    """Represents a request to execute an action by an agent.
+
+    The action consists of the name of the tool to execute and the input to pass
+    to the tool. The log is used to pass along extra information about the action.
+    """
 
     tool: str
     """The name of the Tool to execute."""
@@ -59,10 +57,10 @@ class AgentAction(Serializable):
     before the tool/tool_input)."""
     type: Literal["AgentAction"] = "AgentAction"
 
+    # Override init to support instantiation by position for backward compat.
     def __init__(
         self, tool: str, tool_input: Union[str, dict], log: str, **kwargs: Any
     ):
-        """Override init to support instantiation by position for backward compat."""
         super().__init__(tool=tool, tool_input=tool_input, log=log, **kwargs)
 
     @classmethod
@@ -82,6 +80,13 @@ class AgentAction(Serializable):
 
 
 class AgentActionMessageLog(AgentAction):
+    """A representation of an action to be executed by an agent.
+
+    This is similar to AgentAction, but includes a message log consisting of
+    chat messages. This is useful when working with ChatModels, and is used
+    to reconstruct conversation history from the agent's perspective.
+    """
+
     message_log: Sequence[BaseMessage]
     """Similar to log, this can be used to pass along extra
     information about what exact messages were predicted by the LLM
@@ -111,7 +116,10 @@ class AgentStep(Serializable):
 
 
 class AgentFinish(Serializable):
-    """The final return value of an ActionAgent."""
+    """The final return value of an ActionAgent.
+
+    Agents return an AgentFinish when they have reached a stopping condition.
+    """
 
     return_values: dict
     """Dictionary of return values."""
@@ -186,9 +194,11 @@ def _create_function_message(
     agent_action: AgentAction, observation: Any
 ) -> FunctionMessage:
     """Convert agent action and observation into a function message.
+
     Args:
         agent_action: the tool invocation request from the agent
         observation: the result of the tool invocation
+
     Returns:
         FunctionMessage that corresponds to the original tool invocation
     """

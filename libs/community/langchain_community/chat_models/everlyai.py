@@ -1,4 +1,5 @@
 """EverlyAI Endpoints chat wrapper. Relies heavily on ChatOpenAI."""
+
 from __future__ import annotations
 
 import logging

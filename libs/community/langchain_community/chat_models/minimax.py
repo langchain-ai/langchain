@@ -1,4 +1,5 @@
 """Wrapper around Minimax chat models."""
+
 import json
 import logging
 from contextlib import asynccontextmanager, contextmanager
@@ -32,6 +33,17 @@ logger = logging.getLogger(__name__)
 
 @contextmanager
 def connect_httpx_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iterator:
+    """Context manager for connecting to an SSE stream.
+
+    Args:
+        client: The httpx client.
+        method: The HTTP method.
+        url: The URL to connect to.
+        kwargs: Additional keyword arguments to pass to the client.
+
+    Yields:
+        An EventSource object.
+    """
     from httpx_sse import EventSource
 
     with client.stream(method, url, **kwargs) as response:
@@ -42,6 +54,17 @@ def connect_httpx_sse(client: Any, method: str, url: str, **kwargs: Any) -> Iter
 async def aconnect_httpx_sse(
     client: Any, method: str, url: str, **kwargs: Any
 ) -> AsyncIterator:
+    """Async context manager for connecting to an SSE stream.
+
+    Args:
+        client: The httpx client.
+        method: The HTTP method.
+        url: The URL to connect to.
+        kwargs: Additional keyword arguments to pass to the client.
+
+    Yields:
+        An EventSource object.
+    """
     from httpx_sse import EventSource
 
     async with client.stream(method, url, **kwargs) as response:
@@ -143,7 +166,7 @@ class MiniMaxChat(BaseChatModel):
     )
     minimax_group_id: Optional[str] = Field(default=None, alias="group_id")
     """[DEPRECATED, keeping it for for backward compatibility] Group Id"""
-    minimax_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
+    minimax_api_key: SecretStr = Field(alias="api_key")
     """Minimax API Key"""
     streaming: bool = False
     """Whether to stream the results or not."""
@@ -153,21 +176,30 @@ class MiniMaxChat(BaseChatModel):
 
         allow_population_by_field_name = True
 
-    @root_validator(allow_reuse=True)
+    @root_validator(pre=True, allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["minimax_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "minimax_api_key", "MINIMAX_API_KEY")
+            get_from_dict_or_env(
+                values,
+                ["minimax_api_key", "api_key"],
+                "MINIMAX_API_KEY",
+            )
         )
-        values["minimax_group_id"] = get_from_dict_or_env(
-            values, "minimax_group_id", "MINIMAX_GROUP_ID"
-        )
+
+        default_values = {
+            name: field.default
+            for name, field in cls.__fields__.items()
+            if field.default is not None
+        }
+        default_values.update(values)
+
         # Get custom api url from environment.
         values["minimax_api_host"] = get_from_dict_or_env(
             values,
-            "minimax_api_host",
+            ["minimax_api_host", "base_url"],
             "MINIMAX_API_HOST",
-            values["minimax_api_host"],
+            default_values["minimax_api_host"],
         )
         return values
 
@@ -289,9 +321,10 @@ class MiniMaxChat(BaseChatModel):
                     chunk = ChatGenerationChunk(
                         message=chunk, generation_info=generation_info
                     )
-                    yield chunk
                     if run_manager:
                         run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                    yield chunk
+
                     if finish_reason is not None:
                         break
 
@@ -367,8 +400,9 @@ class MiniMaxChat(BaseChatModel):
                     chunk = ChatGenerationChunk(
                         message=chunk, generation_info=generation_info
                     )
-                    yield chunk
                     if run_manager:
                         await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                    yield chunk
+
                     if finish_reason is not None:
                         break

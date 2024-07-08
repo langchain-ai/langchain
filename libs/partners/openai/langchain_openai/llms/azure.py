@@ -117,10 +117,7 @@ class AzureOpenAI(BaseOpenAI):
             "OPENAI_API_BASE"
         )
         values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
+            values, "openai_proxy", "OPENAI_PROXY", default=""
         )
         values["openai_organization"] = (
             values["openai_organization"]

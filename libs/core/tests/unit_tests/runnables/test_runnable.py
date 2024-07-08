@@ -306,11 +306,15 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "definitions": {
             "Document": {
                 "title": "Document",
-                "description": "Class for storing a piece of text and associated metadata.",  # noqa: E501
+                "description": AnyStr(),
                 "type": "object",
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "id": {
+                        "title": "Id",
+                        "type": "string",
+                    },
                     "type": {
                         "title": "Type",
                         "enum": ["Document"],
@@ -362,6 +366,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 },
             }
         },
+        "required": ["history"],
         "definitions": {
             "ToolCall": {
                 "title": "ToolCall",
@@ -396,7 +401,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "AIMessage": {
                 "title": "AIMessage",
-                "description": "Message from an AI.",
+                "description": "Message from an AI.\n\nAIMessage is returned from a chat model as a response to a prompt.\n\nThis message represents the output of the model and consists of both\nthe raw output as returned by the model together standardized fields\n(e.g., tool calls, usage metadata) added by the LangChain framework.",  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {
@@ -450,7 +455,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "HumanMessage": {
                 "title": "HumanMessage",
-                "description": "Message from a human.",
+                "description": 'Message from a human.\n\nHumanMessages are messages that are passed in from a human to the model.\n\nExample:\n\n    .. code-block:: python\n\n        from langchain_core.messages import HumanMessage, SystemMessage\n\n        messages = [\n            SystemMessage(\n                content="You are a helpful assistant! Your name is Bob."\n            ),\n            HumanMessage(\n                content="What is your name?"\n            )\n        ]\n\n        # Instantiate a chat model and invoke it with the messages\n        model = ...\n        print(model.invoke(messages))',  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {
@@ -528,7 +533,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "SystemMessage": {
                 "title": "SystemMessage",
-                "description": "Message for priming AI behavior, usually passed in as the first of a sequence\nof input messages.",  # noqa: E501
+                "description": 'Message for priming AI behavior.\n\nThe system message is usually passed in as the first of a sequence\nof input messages.\n\nExample:\n\n    .. code-block:: python\n\n        from langchain_core.messages import HumanMessage, SystemMessage\n\n        messages = [\n            SystemMessage(\n                content="You are a helpful assistant! Your name is Bob."\n            ),\n            HumanMessage(\n                content="What is your name?"\n            )\n        ]\n\n        # Define a chat model and invoke it with the messages\n        print(model.invoke(messages))',  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {
@@ -564,7 +569,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "FunctionMessage": {
                 "title": "FunctionMessage",
-                "description": "Message for passing the result of executing a function back to a model.",  # noqa: E501
+                "description": "Message for passing the result of executing a tool back to a model.\n\nFunctionMessage are an older version of the ToolMessage schema, and\ndo not contain the tool_call_id field.\n\nThe tool_call_id field is used to associate the tool call request with the\ntool call response. This is useful in situations where a chat model is able\nto request multiple tool calls in parallel.",  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {
@@ -600,7 +605,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
             },
             "ToolMessage": {
                 "title": "ToolMessage",
-                "description": "Message for passing the result of executing a tool back to a model.",  # noqa: E501
+                "description": "Message for passing the result of executing a tool back to a model.\n\nToolMessages contain the result of a tool invocation. Typically, the result\nis encoded inside the `content` field.\n\nExample: A TooMessage representing a result of 42 from a tool call with id\n\n    .. code-block:: python\n\n        from langchain_core.messages import ToolMessage\n\n        ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')\n\nThe tool_call_id field is used to associate the tool call request with the\ntool call response. This is useful in situations where a chat model is able\nto request multiple tool calls in parallel.",  # noqa: E501
                 "type": "object",
                 "properties": {
                     "content": {
@@ -645,6 +650,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"name": {"title": "Name", "type": "string"}},
+        "required": ["name"],
     }
     assert prompt.output_schema.schema() == snapshot
 
@@ -654,6 +660,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "definitions": {
             "PromptInput": {
                 "properties": {"name": {"title": "Name", "type": "string"}},
+                "required": ["name"],
                 "title": "PromptInput",
                 "type": "object",
             }
@@ -679,6 +686,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"name": {"title": "Name", "type": "string"}},
+        "required": ["name"],
     }
     assert seq.output_schema.schema() == {
         "type": "array",
@@ -719,6 +727,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"name": {"title": "Name", "type": "string"}},
+        "required": ["name"],
     }
     assert seq_w_map.output_schema.schema() == {
         "title": "RunnableParallel<original,as_list,length>Output",
@@ -1052,6 +1061,7 @@ def test_configurable_fields() -> None:
             "lang": {"title": "Lang", "type": "string"},
             "name": {"title": "Name", "type": "string"},
         },
+        "required": ["lang", "name"],
     }
 
     chain_configurable = prompt_configurable | fake_llm_configurable | StrOutputParser()
@@ -1107,6 +1117,7 @@ def test_configurable_fields() -> None:
             "lang": {"title": "Lang", "type": "string"},
             "name": {"title": "Name", "type": "string"},
         },
+        "required": ["lang", "name"],
     }
 
     chain_with_map_configurable: Runnable = prompt_configurable | {
@@ -3790,6 +3801,7 @@ def test_deep_stream_assign() -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
+        "required": ["question"],
     }
     assert chain_with_assign.output_schema.schema() == {
         "title": "RunnableSequenceOutput",
@@ -3840,6 +3852,7 @@ def test_deep_stream_assign() -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
+        "required": ["question"],
     }
     assert chain_with_assign_shadow.output_schema.schema() == {
         "title": "RunnableSequenceOutput",
@@ -3914,6 +3927,7 @@ async def test_deep_astream_assign() -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
+        "required": ["question"],
     }
     assert chain_with_assign.output_schema.schema() == {
         "title": "RunnableSequenceOutput",
@@ -3964,6 +3978,7 @@ async def test_deep_astream_assign() -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
+        "required": ["question"],
     }
     assert chain_with_assign_shadow.output_schema.schema() == {
         "title": "RunnableSequenceOutput",
@@ -4965,6 +4980,7 @@ async def test_tool_from_runnable() -> None:
         "properties": {"question": {"title": "Question", "type": "string"}},
         "title": "PromptInput",
         "type": "object",
+        "required": ["question"],
     }
 
 
@@ -5702,3 +5718,39 @@ async def test_listeners_async() -> None:
     assert len(shared_state) == 2
     assert value1 in shared_state.values(), "Value not found in the dictionary."
     assert value2 in shared_state.values(), "Value not found in the dictionary."
+
+
+async def test_closing_iterator_doesnt_raise_error() -> None:
+    """Test that closing an iterator calls on_chain_end rather than on_chain_error."""
+    import time
+
+    from langchain_core.callbacks import BaseCallbackHandler
+    from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+    from langchain_core.output_parsers import StrOutputParser
+
+    on_chain_error_triggered = False
+
+    class MyHandler(BaseCallbackHandler):
+        async def on_chain_error(
+            self,
+            error: BaseException,
+            *,
+            run_id: UUID,
+            parent_run_id: Optional[UUID] = None,
+            tags: Optional[List[str]] = None,
+            **kwargs: Any,
+        ) -> None:
+            """Run when chain errors."""
+            nonlocal on_chain_error_triggered
+            on_chain_error_triggered = True
+
+    llm = GenericFakeChatModel(messages=iter(["hi there"]))
+    chain = llm | StrOutputParser()
+    chain_ = chain.with_config({"callbacks": [MyHandler()]})
+    st = chain_.stream("hello")
+    next(st)
+    # This is a generator so close is defined on it.
+    st.close()  # type: ignore
+    # Wait for a bit to make sure that the callback is called.
+    time.sleep(0.05)
+    assert on_chain_error_triggered is False

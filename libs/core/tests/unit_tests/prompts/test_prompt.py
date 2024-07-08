@@ -67,7 +67,7 @@ def test_mustache_prompt_from_template() -> None:
     }
 
     # Multiple input variables with repeats.
-    template = "This {{bar}} is a {{foo}} test {{foo}}."
+    template = "This {{bar}} is a {{foo}} test {{&foo}}."
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(bar="baz", foo="bar") == "This baz is a bar test bar."
     assert prompt.input_variables == ["bar", "foo"]
@@ -81,7 +81,7 @@ def test_mustache_prompt_from_template() -> None:
     }
 
     # Nested variables.
-    template = "This {{obj.bar}} is a {{obj.foo}} test {{foo}}."
+    template = "This {{obj.bar}} is a {{obj.foo}} test {{{foo}}}."
     prompt = PromptTemplate.from_template(template, template_format="mustache")
     assert prompt.format(obj={"bar": "foo", "foo": "bar"}, foo="baz") == (
         "This foo is a bar test baz."
@@ -141,6 +141,115 @@ def test_mustache_prompt_from_template() -> None:
         },
     }
 
+    # more complex nested section/context variables
+    template = """This{{#foo}}
+        {{bar}}
+        {{#baz}}
+            {{qux}}
+        {{/baz}}
+        {{quux}}
+    {{/foo}}is a test."""
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(
+        foo={"bar": "yo", "baz": [{"qux": "wassup"}], "quux": "hello"}
+    ) == (
+        """This
+        yo
+            wassup
+        hello
+    is a test."""
+    )
+    assert prompt.input_variables == ["foo"]
+    assert prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"foo": {"$ref": "#/definitions/foo"}},
+        "definitions": {
+            "foo": {
+                "title": "foo",
+                "type": "object",
+                "properties": {
+                    "bar": {"title": "Bar", "type": "string"},
+                    "baz": {"$ref": "#/definitions/baz"},
+                    "quux": {"title": "Quux", "type": "string"},
+                },
+            },
+            "baz": {
+                "title": "baz",
+                "type": "object",
+                "properties": {"qux": {"title": "Qux", "type": "string"}},
+            },
+        },
+    }
+
+    # triply nested section/context variables
+    template = """This{{#foo}}
+        {{bar}}
+        {{#baz.qux}}
+            {{#barfoo}}
+                {{foobar}}
+            {{/barfoo}}
+            {{foobar}}
+        {{/baz.qux}}
+        {{quux}}
+    {{/foo}}is a test."""
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(
+        foo={
+            "bar": "yo",
+            "baz": {
+                "qux": [
+                    {"foobar": "wassup"},
+                    {"foobar": "yoyo", "barfoo": {"foobar": "hello there"}},
+                ]
+            },
+            "quux": "hello",
+        }
+    ) == (
+        """This
+        yo
+            wassup
+                hello there
+            yoyo
+        hello
+    is a test."""
+    )
+    assert prompt.input_variables == ["foo"]
+    assert prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"foo": {"$ref": "#/definitions/foo"}},
+        "definitions": {
+            "foo": {
+                "title": "foo",
+                "type": "object",
+                "properties": {
+                    "bar": {"title": "Bar", "type": "string"},
+                    "baz": {"$ref": "#/definitions/baz"},
+                    "quux": {"title": "Quux", "type": "string"},
+                },
+            },
+            "baz": {
+                "title": "baz",
+                "type": "object",
+                "properties": {"qux": {"$ref": "#/definitions/qux"}},
+            },
+            "qux": {
+                "title": "qux",
+                "type": "object",
+                "properties": {
+                    "foobar": {"title": "Foobar", "type": "string"},
+                    "barfoo": {"$ref": "#/definitions/barfoo"},
+                },
+            },
+            "barfoo": {
+                "title": "barfoo",
+                "type": "object",
+                "properties": {"foobar": {"title": "Foobar", "type": "string"}},
+            },
+        },
+    }
+
     # section/context variables with repeats
     template = """This{{#foo}}
         {{bar}}
@@ -165,6 +274,22 @@ def test_mustache_prompt_from_template() -> None:
                 "properties": {"bar": {"title": "Bar", "type": "string"}},
             }
         },
+    }
+
+    template = """This{{^foo}}
+        no foos
+    {{/foo}}is a test."""
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format() == (
+        """This
+        no foos
+    is a test."""
+    )
+    assert prompt.input_variables == ["foo"]
+    assert prompt.input_schema.schema() == {
+        "title": "PromptInput",
+        "type": "object",
+        "properties": {"foo": {"title": "Foo", "type": "object"}},
     }
 
 

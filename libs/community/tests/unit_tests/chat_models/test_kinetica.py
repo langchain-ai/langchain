@@ -1,6 +1,5 @@
 """Test `Kinetica` chat models"""
 
-
 import logging
 from typing import Any
 

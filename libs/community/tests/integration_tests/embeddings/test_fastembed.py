@@ -1,4 +1,5 @@
 """Test FastEmbed embeddings."""
+
 import pytest
 
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings

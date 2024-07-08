@@ -318,6 +318,11 @@ if TYPE_CHECKING:
         ZapierNLAListActions,
         ZapierNLARunAction,
     )
+    from langchain_community.tools.zenguard.tool import (
+        Detector,
+        ZenGuardInput,
+        ZenGuardTool,
+    )
 
 __all__ = [
     "AINAppOps",
@@ -456,6 +461,9 @@ __all__ = [
     "YouTubeSearchTool",
     "ZapierNLAListActions",
     "ZapierNLARunAction",
+    "Detector",
+    "ZenGuardInput",
+    "ZenGuardTool",
     "authenticate",
     "format_tool_to_openai_function",
     "tool",
@@ -503,6 +511,7 @@ _module_lookup = {
     "CurrentWebPageTool": "langchain_community.tools.playwright",
     "DataheraldTextToSQL": "langchain_community.tools.dataherald.tool",
     "DeleteFileTool": "langchain_community.tools.file_management",
+    "Detector": "langchain_community.tools.zenguard.tool",
     "DuckDuckGoSearchResults": "langchain_community.tools.ddg_search.tool",
     "DuckDuckGoSearchRun": "langchain_community.tools.ddg_search.tool",
     "E2BDataAnalysisTool": "langchain_community.tools.e2b_data_analysis.tool",
@@ -601,6 +610,8 @@ _module_lookup = {
     "YouTubeSearchTool": "langchain_community.tools.youtube.search",
     "ZapierNLAListActions": "langchain_community.tools.zapier.tool",
     "ZapierNLARunAction": "langchain_community.tools.zapier.tool",
+    "ZenGuardInput": "langchain_community.tools.zenguard.tool",
+    "ZenGuardTool": "langchain_community.tools.zenguard.tool",
     "authenticate": "langchain_community.tools.office365.utils",
     "format_tool_to_openai_function": "langchain_community.tools.convert_to_openai",
     "tool": "langchain_core.tools",

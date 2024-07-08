@@ -304,6 +304,8 @@ class ChatGroq(BaseChatModel):
     """Model name to use."""
     temperature: float = 0.7
     """What sampling temperature to use."""
+    stop: Optional[Union[List[str], str]] = Field(None, alias="stop_sequences")
+    """Default stop sequences."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     groq_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
@@ -326,8 +328,6 @@ class ChatGroq(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
     max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
-    stop: Optional[List[str]] = Field(None, alias="stop_sequences")
-    """Default stop sequences."""
     default_headers: Union[Mapping[str, str], None] = None
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
@@ -449,7 +449,7 @@ class ChatGroq(BaseChatModel):
         if ls_max_tokens := params.get("max_tokens", self.max_tokens):
             ls_params["ls_max_tokens"] = ls_max_tokens
         if ls_stop := stop or params.get("stop", None) or self.stop:
-            ls_params["ls_stop"] = ls_stop
+            ls_params["ls_stop"] = ls_stop if isinstance(ls_stop, list) else [ls_stop]
         return ls_params
 
     def _generate(
@@ -523,7 +523,7 @@ class ChatGroq(BaseChatModel):
                 message=AIMessageChunk(
                     content=message.content,
                     additional_kwargs=message.additional_kwargs,
-                    tool_call_chunks=tool_call_chunks,
+                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
                     usage_metadata=message.usage_metadata,
                 ),
                 generation_info=generation.generation_info,
@@ -595,7 +595,7 @@ class ChatGroq(BaseChatModel):
                 message=AIMessageChunk(
                     content=message.content,
                     additional_kwargs=message.additional_kwargs,
-                    tool_call_chunks=tool_call_chunks,
+                    tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
                     usage_metadata=message.usage_metadata,
                 ),
                 generation_info=generation.generation_info,
@@ -804,10 +804,19 @@ class ChatGroq(BaseChatModel):
 
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
+            if tool_choice == "any":
+                if len(tools) > 1:
+                    raise ValueError(
+                        f"Groq does not currently support {tool_choice=}. Should "
+                        f"be one of 'auto', 'none', or the name of the tool to call."
+                    )
+                else:
+                    tool_choice = convert_to_openai_tool(tools[0])["function"]["name"]
             if isinstance(tool_choice, str) and (
                 tool_choice not in ("auto", "any", "none")
             ):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
+            # TODO: Remove this update once 'any' is supported.
             if isinstance(tool_choice, dict) and (len(formatted_tools) != 1):
                 raise ValueError(
                     "When specifying `tool_choice`, you must provide exactly one "
@@ -1005,27 +1014,28 @@ class ChatGroq(BaseChatModel):
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            llm = self.bind_tools([schema], tool_choice=True)
+            tool_name = convert_to_openai_tool(schema)["function"]["name"]
+            llm = self.bind_tools([schema], tool_choice=tool_name)
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], first_tool_only=True
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,  # type: ignore[list-item]
                 )
             else:
-                key_name = convert_to_openai_tool(schema)["function"]["name"]
                 output_parser = JsonOutputKeyToolsParser(
-                    key_name=key_name, first_tool_only=True
+                    key_name=tool_name, first_tool_only=True
                 )
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )
         else:
             raise ValueError(
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_format'. Received: '{method}'"
+                f"'json_mode'. Received: '{method}'"
             )
 
         if include_raw:
@@ -1138,7 +1148,7 @@ def _convert_chunk_to_message_chunk(
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
-            usage_metadata=usage_metadata,
+            usage_metadata=usage_metadata,  # type: ignore[arg-type]
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -1191,7 +1201,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     elif role == "system":
         return SystemMessage(content=_dict.get("content", ""))
     elif role == "function":
-        return FunctionMessage(content=_dict.get("content", ""), name=_dict.get("name"))
+        return FunctionMessage(content=_dict.get("content", ""), name=_dict.get("name"))  # type: ignore[arg-type]
     elif role == "tool":
         additional_kwargs = {}
         if "name" in _dict:
@@ -1202,7 +1212,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs=additional_kwargs,
         )
     else:
-        return ChatMessage(content=_dict.get("content", ""), role=role)
+        return ChatMessage(content=_dict.get("content", ""), role=role)  # type: ignore[arg-type]
 
 
 def _lc_tool_call_to_groq_tool_call(tool_call: ToolCall) -> dict:
