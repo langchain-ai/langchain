@@ -1,4 +1,5 @@
 """Test suite to test vectostores."""
+import inspect
 from abc import ABC, abstractmethod
 
 import pytest
@@ -46,15 +47,21 @@ class ReadWriteTestSuite(ABC):
 
     def test_add_documents(self, vectorstore: VectorStore) -> None:
         """Test adding documents into the vectorstore."""
-        documents = [
+        original_documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
         ]
-        vectorstore.add_documents(documents)
+        ids = vectorstore.add_documents(original_documents)
         documents = vectorstore.similarity_search("bar", k=2)
         assert documents == [
-            Document(page_content="bar", metadata={"id": 2}),
+            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+            Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+        ]
+        # Verify that the original document object does not get mutated!
+        # (e.g., an ID is added to the original document object)
+        assert original_documents == [
             Document(page_content="foo", metadata={"id": 1}),
+            Document(page_content="bar", metadata={"id": 2}),
         ]
 
     def test_vectorstore_still_empty(self, vectorstore: VectorStore) -> None:
@@ -71,10 +78,11 @@ class ReadWriteTestSuite(ABC):
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
         ]
-        vectorstore.add_documents(documents, ids=["1", "2"])
+        ids = vectorstore.add_documents(documents, ids=["1", "2"])
+        assert ids == ["1", "2"]
         vectorstore.delete(["1"])
         documents = vectorstore.similarity_search("foo", k=1)
-        assert documents == [Document(page_content="bar", metadata={"id": 2})]
+        assert documents == [Document(page_content="bar", metadata={"id": 2}, id="2")]
 
     def test_deleting_bulk_documents(self, vectorstore: VectorStore) -> None:
         """Test that we can delete several documents at once."""
@@ -87,7 +95,7 @@ class ReadWriteTestSuite(ABC):
         vectorstore.add_documents(documents, ids=["1", "2", "3"])
         vectorstore.delete(["1", "2"])
         documents = vectorstore.similarity_search("foo", k=1)
-        assert documents == [Document(page_content="baz", metadata={"id": 3})]
+        assert documents == [Document(page_content="baz", metadata={"id": 3}, id="3")]
 
     def test_delete_missing_content(self, vectorstore: VectorStore) -> None:
         """Deleting missing content should not raise an exception."""
@@ -106,25 +114,8 @@ class ReadWriteTestSuite(ABC):
         vectorstore.add_documents(documents, ids=["1", "2"])
         documents = vectorstore.similarity_search("bar", k=2)
         assert documents == [
-            Document(page_content="bar", metadata={"id": 2}),
-            Document(page_content="foo", metadata={"id": 1}),
-        ]
-
-    def test_add_documents_without_ids_gets_duplicated(
-        self, vectorstore: VectorStore
-    ) -> None:
-        """Adding documents without specifying IDs should duplicate content."""
-        documents = [
-            Document(page_content="foo", metadata={"id": 1}),
-            Document(page_content="bar", metadata={"id": 2}),
-        ]
-
-        vectorstore.add_documents(documents)
-        vectorstore.add_documents(documents)
-        documents = vectorstore.similarity_search("bar", k=2)
-        assert documents == [
-            Document(page_content="bar", metadata={"id": 2}),
-            Document(page_content="bar", metadata={"id": 2}),
+            Document(page_content="bar", metadata={"id": 2}, id="2"),
+            Document(page_content="foo", metadata={"id": 1}, id="1"),
         ]
 
     def test_add_documents_by_id_with_mutation(self, vectorstore: VectorStore) -> None:
@@ -149,10 +140,64 @@ class ReadWriteTestSuite(ABC):
         documents = vectorstore.similarity_search("new foo", k=2)
         assert documents == [
             Document(
-                page_content="new foo", metadata={"id": 1, "some_other_field": "foo"}
+                id="1",
+                page_content="new foo",
+                metadata={"id": 1, "some_other_field": "foo"},
             ),
+            Document(id="2", page_content="bar", metadata={"id": 2}),
+        ]
+
+    def test_get_by_ids(self, vectorstore: VectorStore) -> None:
+        """Test get by IDs."""
+        documents = [
+            Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
         ]
+        ids = vectorstore.add_documents(documents, ids=["1", "2"])
+        retrieved_documents = vectorstore.get_by_ids(ids)
+        assert retrieved_documents == [
+            Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+        ]
+
+    def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
+        """Test get by IDs with missing IDs."""
+        # This should not raise an exception
+        documents = vectorstore.get_by_ids(["1", "2", "3"])
+        assert documents == []
+
+    def test_upsert_documents(self, vectorstore: VectorStore) -> None:
+        """Run upsert tests."""
+        documents = [
+            Document(page_content="foo", metadata={"id": 1}),
+            Document(page_content="bar", metadata={"id": 2}),
+        ]
+        response = vectorstore.upsert(documents)
+        ids = response["succeeded"]
+        assert vectorstore.get_by_ids(ids) == [
+            Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+        ]
+
+    def test_upsert_with_existing_ids(self, vectorstore: VectorStore) -> None:
+        """Test that upserting with existing IDs is idempotent."""
+        documents = [
+            Document(id="foo", page_content="foo", metadata={"id": 1}),
+            Document(page_content="bar", metadata={"id": 2}),
+        ]
+        response = vectorstore.upsert(documents)
+        ids = response["succeeded"]
+        assert response["failed"] == []
+        assert "foo" in ids
+        assert vectorstore.get_by_ids(ids) == [
+            Document(page_content="foo", metadata={"id": 1}, id="foo"),
+            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+        ]
+
+    def test_upsert_documents_has_no_ids(self, vectorstore: VectorStore) -> None:
+        """Verify that there is not parameter called ids in upsert"""
+        signature = inspect.signature(vectorstore.upsert)
+        assert "ids" not in signature.parameters
 
 
 class AsyncReadWriteTestSuite(ABC):
@@ -190,15 +235,22 @@ class AsyncReadWriteTestSuite(ABC):
 
     async def test_add_documents(self, vectorstore: VectorStore) -> None:
         """Test adding documents into the vectorstore."""
-        documents = [
+        original_documents = [
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
         ]
-        await vectorstore.aadd_documents(documents)
+        ids = await vectorstore.aadd_documents(original_documents)
         documents = await vectorstore.asimilarity_search("bar", k=2)
         assert documents == [
-            Document(page_content="bar", metadata={"id": 2}),
+            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+            Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+        ]
+
+        # Verify that the original document object does not get mutated!
+        # (e.g., an ID is added to the original document object)
+        assert original_documents == [
             Document(page_content="foo", metadata={"id": 1}),
+            Document(page_content="bar", metadata={"id": 2}),
         ]
 
     async def test_vectorstore_still_empty(self, vectorstore: VectorStore) -> None:
@@ -215,10 +267,11 @@ class AsyncReadWriteTestSuite(ABC):
             Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
         ]
-        await vectorstore.aadd_documents(documents, ids=["1", "2"])
+        ids = await vectorstore.aadd_documents(documents, ids=["1", "2"])
+        assert ids == ["1", "2"]
         await vectorstore.adelete(["1"])
         documents = await vectorstore.asimilarity_search("foo", k=1)
-        assert documents == [Document(page_content="bar", metadata={"id": 2})]
+        assert documents == [Document(page_content="bar", metadata={"id": 2}, id="2")]
 
     async def test_deleting_bulk_documents(self, vectorstore: VectorStore) -> None:
         """Test that we can delete several documents at once."""
@@ -231,7 +284,7 @@ class AsyncReadWriteTestSuite(ABC):
         await vectorstore.aadd_documents(documents, ids=["1", "2", "3"])
         await vectorstore.adelete(["1", "2"])
         documents = await vectorstore.asimilarity_search("foo", k=1)
-        assert documents == [Document(page_content="baz", metadata={"id": 3})]
+        assert documents == [Document(page_content="baz", metadata={"id": 3}, id="3")]
 
     async def test_delete_missing_content(self, vectorstore: VectorStore) -> None:
         """Deleting missing content should not raise an exception."""
@@ -250,25 +303,8 @@ class AsyncReadWriteTestSuite(ABC):
         await vectorstore.aadd_documents(documents, ids=["1", "2"])
         documents = await vectorstore.asimilarity_search("bar", k=2)
         assert documents == [
-            Document(page_content="bar", metadata={"id": 2}),
-            Document(page_content="foo", metadata={"id": 1}),
-        ]
-
-    async def test_add_documents_without_ids_gets_duplicated(
-        self, vectorstore: VectorStore
-    ) -> None:
-        """Adding documents without specifying IDs should duplicate content."""
-        documents = [
-            Document(page_content="foo", metadata={"id": 1}),
-            Document(page_content="bar", metadata={"id": 2}),
-        ]
-
-        await vectorstore.aadd_documents(documents)
-        await vectorstore.aadd_documents(documents)
-        documents = await vectorstore.asimilarity_search("bar", k=2)
-        assert documents == [
-            Document(page_content="bar", metadata={"id": 2}),
-            Document(page_content="bar", metadata={"id": 2}),
+            Document(page_content="bar", metadata={"id": 2}, id="2"),
+            Document(page_content="foo", metadata={"id": 1}, id="1"),
         ]
 
     async def test_add_documents_by_id_with_mutation(
@@ -295,7 +331,60 @@ class AsyncReadWriteTestSuite(ABC):
         documents = await vectorstore.asimilarity_search("new foo", k=2)
         assert documents == [
             Document(
-                page_content="new foo", metadata={"id": 1, "some_other_field": "foo"}
+                id="1",
+                page_content="new foo",
+                metadata={"id": 1, "some_other_field": "foo"},
             ),
+            Document(id="2", page_content="bar", metadata={"id": 2}),
+        ]
+
+    async def test_get_by_ids(self, vectorstore: VectorStore) -> None:
+        """Test get by IDs."""
+        documents = [
+            Document(page_content="foo", metadata={"id": 1}),
             Document(page_content="bar", metadata={"id": 2}),
         ]
+        ids = await vectorstore.aadd_documents(documents, ids=["1", "2"])
+        retrieved_documents = await vectorstore.aget_by_ids(ids)
+        assert retrieved_documents == [
+            Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+        ]
+
+    async def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
+        """Test get by IDs with missing IDs."""
+        # This should not raise an exception
+        assert await vectorstore.aget_by_ids(["1", "2", "3"]) == []
+
+    async def test_upsert_documents(self, vectorstore: VectorStore) -> None:
+        """Run upsert tests."""
+        documents = [
+            Document(page_content="foo", metadata={"id": 1}),
+            Document(page_content="bar", metadata={"id": 2}),
+        ]
+        response = await vectorstore.aupsert(documents)
+        ids = response["succeeded"]
+        assert await vectorstore.aget_by_ids(ids) == [
+            Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+        ]
+
+    async def test_upsert_with_existing_ids(self, vectorstore: VectorStore) -> None:
+        """Test that upserting with existing IDs is idempotent."""
+        documents = [
+            Document(id="foo", page_content="foo", metadata={"id": 1}),
+            Document(page_content="bar", metadata={"id": 2}),
+        ]
+        response = await vectorstore.aupsert(documents)
+        ids = response["succeeded"]
+        assert response["failed"] == []
+        assert "foo" in ids
+        assert await vectorstore.aget_by_ids(ids) == [
+            Document(page_content="foo", metadata={"id": 1}, id="foo"),
+            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+        ]
+
+    async def test_upsert_documents_has_no_ids(self, vectorstore: VectorStore) -> None:
+        """Verify that there is not parameter called ids in upsert"""
+        signature = inspect.signature(vectorstore.aupsert)
+        assert "ids" not in signature.parameters

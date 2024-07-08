@@ -52,6 +52,45 @@ def test_watsonxllm_invoke_with_params() -> None:
     assert len(response) > 0
 
 
+def test_watsonxllm_invoke_with_params_2() -> None:
+    parameters = {
+        GenTextParamsMetaNames.DECODING_METHOD: "sample",
+        GenTextParamsMetaNames.MAX_NEW_TOKENS: 10,
+        GenTextParamsMetaNames.MIN_NEW_TOKENS: 5,
+    }
+
+    watsonxllm = WatsonxLLM(
+        model_id=MODEL_ID,
+        url="https://us-south.ml.cloud.ibm.com",  # type: ignore[arg-type]
+        project_id=WX_PROJECT_ID,
+    )
+    response = watsonxllm.invoke("What color sunflower is?", params=parameters)
+    print(f"\nResponse: {response}")
+    assert isinstance(response, str)
+    assert len(response) > 0
+
+
+def test_watsonxllm_invoke_with_params_3() -> None:
+    parameters_1 = {
+        GenTextParamsMetaNames.DECODING_METHOD: "sample",
+        GenTextParamsMetaNames.MAX_NEW_TOKENS: 10,
+    }
+    parameters_2 = {
+        GenTextParamsMetaNames.MIN_NEW_TOKENS: 5,
+    }
+
+    watsonxllm = WatsonxLLM(
+        model_id=MODEL_ID,
+        url="https://us-south.ml.cloud.ibm.com",  # type: ignore[arg-type]
+        project_id=WX_PROJECT_ID,
+        params=parameters_1,
+    )
+    response = watsonxllm.invoke("What color sunflower is?", params=parameters_2)
+    print(f"\nResponse: {response}")
+    assert isinstance(response, str)
+    assert len(response) > 0
+
+
 def test_watsonxllm_generate() -> None:
     watsonxllm = WatsonxLLM(
         model_id=MODEL_ID,
@@ -59,6 +98,25 @@ def test_watsonxllm_generate() -> None:
         project_id=WX_PROJECT_ID,
     )
     response = watsonxllm.generate(["What color sunflower is?"])
+    print(f"\nResponse: {response}")
+    response_text = response.generations[0][0].text
+    print(f"Response text: {response_text}")
+    assert isinstance(response, LLMResult)
+    assert len(response_text) > 0
+
+
+def test_watsonxllm_generate_with_param() -> None:
+    parameters = {
+        GenTextParamsMetaNames.DECODING_METHOD: "sample",
+        GenTextParamsMetaNames.MAX_NEW_TOKENS: 10,
+        GenTextParamsMetaNames.MIN_NEW_TOKENS: 5,
+    }
+    watsonxllm = WatsonxLLM(
+        model_id=MODEL_ID,
+        url="https://us-south.ml.cloud.ibm.com",  # type: ignore[arg-type]
+        project_id=WX_PROJECT_ID,
+    )
+    response = watsonxllm.generate(["What color sunflower is?"], params=parameters)
     print(f"\nResponse: {response}")
     response_text = response.generations[0][0].text
     print(f"Response text: {response_text}")
