@@ -3,18 +3,23 @@ from __future__ import annotations
 import inspect
 import warnings
 from importlib import util
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union, cast, \
+    Iterator, AsyncIterator
 
 from langchain_core._api import beta
 from langchain_core.language_models import (
     BaseChatModel,
-    SimpleChatModel,
+    SimpleChatModel, LanguageModelInput,
 )
 from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
 from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.runnables.schema import StreamEvent
+from langchain_core.runnables.utils import is_async_generator, is_async_callable
+
+from langchain_core.tracers import RunLogPatch
 
 __all__ = [
     "init_chat_model",
@@ -24,6 +29,7 @@ __all__ = [
     "generate_from_stream",
     "agenerate_from_stream",
 ]
+
 
 
 # FOR CONTRIBUTORS: If adding support for a new provider, please append the provider
@@ -368,10 +374,16 @@ def _remove_prefix(s: str, prefix: str) -> str:
     return s
 
 
-_CHAT_MODEL_METHODS_TAKE_CONFIG = tuple(
+_SYNC_CHAT_MODEL_METHODS_TAKE_CONFIG = tuple(
     name
     for name, func in inspect.getmembers(BaseChatModel, inspect.isfunction)
-    if "config" in inspect.signature(func).parameters
+    if "config" in inspect.signature(func).parameters and not (is_async_callable(func) or is_async_generator(func))
+)
+
+_ASYNC_CHAT_MODEL_METHODS_TAKE_CONFIG = tuple(
+    name
+    for name, func in inspect.getmembers(BaseChatModel, inspect.isfunction)
+    if "config" in inspect.signature(func).parameters and (is_async_callable(func) or is_async_generator(func))
 )
 
 _DECLARATIVE_METHODS = (
@@ -392,7 +404,7 @@ _DECLARATIVE_METHODS = (
 )
 
 
-class _ConfigurableModel:
+class _ConfigurableModel(Runnable):
     def __init__(
         self,
         *,
@@ -409,15 +421,24 @@ class _ConfigurableModel:
         )
 
     def __getattr__(self, name: str) -> Any:
-        if name in _CHAT_MODEL_METHODS_TAKE_CONFIG:
+        if name in _SYNC_CHAT_MODEL_METHODS_TAKE_CONFIG:
 
             def from_config(
                 *args: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
             ) -> Any:
-                return getattr(self._model(config), name)(
-                    *args, config=config, **kwargs
-                )
+                func = getattr(self._model(config), name)
+                return func(*args, config=config, **kwargs)
 
+            return from_config
+        elif name in _ASYNC_CHAT_MODEL_METHODS_TAKE_CONFIG:
+
+            async def from_config(
+                *args: Any, config: Optional[RunnableConfig] = None,
+                **kwargs: Any
+            ) -> Any:
+                func = getattr(self._model(config), name)
+                async for x in func(*args, config=config, **kwargs):
+                    yield x
             return from_config
         elif name in _DECLARATIVE_METHODS:
             # Declarative operations cannot be applied until after an actual model
@@ -484,3 +505,118 @@ class _ConfigurableModel:
             config_prefix=self._config_prefix,
             queued_declarative_operations=queued_declarative_operations,
         )
+
+    def invoke(self, input: LanguageModelInput, config: Optional[RunnableConfig] = None) -> Any:
+        return self.__getattr__("invoke")(input, config=config)
+
+    async def ainvoke(
+        self, input: LanguageModelInput, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> Any:
+        return await self.__getattr__("ainvoke")(input, config=config)
+
+    def stream(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Any]:
+        return self.__getattr__("stream")(input, config=config, **kwargs)
+
+    async def astream(
+        self,
+        input: LanguageModelInput,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Any]:
+        return await self.__getattr__("astream")(input, config=config, **kwargs)
+
+    def batch(
+        self,
+        inputs: List[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> List[Any]:
+        return self.__getattr__("batch")(inputs, config=config, return_exceptions=return_exceptions, **kwargs)
+
+    async def abatch(
+        self,
+        inputs: List[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        *,
+        return_exceptions: bool = False,
+        **kwargs: Optional[Any],
+    ) -> List[Any]:
+        return await self.__getattr__("abatch")(inputs, config=config, return_exceptions=return_exceptions, **kwargs)
+
+    def batch_as_completed(
+        self,
+        inputs: Sequence[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[False] = False,
+        **kwargs: Any,
+    ) -> Iterator[Tuple[int, Any]]:
+        return self.__getattr__("batch_as_completed")(inputs, config=config, return_exceptions=return_exceptions, **kwargs)
+
+    async def abatch_as_completed(
+        self,
+        inputs: Sequence[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, Sequence[RunnableConfig]]] = None,
+        *,
+        return_exceptions: Literal[False] = False,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Tuple[int, Any]]:
+        return await self.__getattr__("abatch_as_completed")(inputs, config=config, return_exceptions=return_exceptions, **kwargs)
+
+    def transform(
+        self,
+        input: Iterator[LanguageModelInput],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> Iterator[Any]:
+        return self.__getattr__("transform")(input, config=config, **kwargs)
+
+    async def atransform(
+        self,
+        input: AsyncIterator[LanguageModelInput],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Optional[Any],
+    ) -> AsyncIterator[Any]:
+        return self.__getattr__("atransform")(input, config=config, **kwargs)
+
+    async def astream_log(
+        self,
+        input: Any,
+        config: Optional[RunnableConfig] = None,
+        *,
+        diff: Literal[True] = True,
+        with_streamed_output_list: bool = True,
+        include_names: Optional[Sequence[str]] = None,
+        include_types: Optional[Sequence[str]] = None,
+        include_tags: Optional[Sequence[str]] = None,
+        exclude_names: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[str]] = None,
+        exclude_tags: Optional[Sequence[str]] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[RunLogPatch]:
+        return self.__getattr__("astream_log")(input, config=config, diff=diff, with_streamed_output_list=with_streamed_output_list, include_names=include_names, include_types=include_types, include_tags=include_tags, exclude_tags=exclude_tags, exclude_types=exclude_types, exclude_names=exclude_names, **kwargs)
+
+    async def astream_events(
+        self,
+        input: Any,
+        config: Optional[RunnableConfig] = None,
+        *,
+        version: Literal["v1", "v2"],
+        include_names: Optional[Sequence[str]] = None,
+        include_types: Optional[Sequence[str]] = None,
+        include_tags: Optional[Sequence[str]] = None,
+        exclude_names: Optional[Sequence[str]] = None,
+        exclude_types: Optional[Sequence[str]] = None,
+        exclude_tags: Optional[Sequence[str]] = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[StreamEvent]:
+        return self.__getattr__("astream_events")(input, config=config, version=version, include_names=include_names, include_types=include_types, include_tags=include_tags, exclude_tags=exclude_tags, exclude_types=exclude_types, exclude_names=exclude_names, **kwargs)
+
+

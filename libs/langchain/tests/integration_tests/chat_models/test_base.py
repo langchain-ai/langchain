@@ -1,3 +1,5 @@
+import pytest
+
 from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel
@@ -13,7 +15,8 @@ class multiply(BaseModel):
     y: int
 
 
-def test_init_chat_model() -> None:
+@pytest.mark.requires("langchain_openai", "langchain_anthropic")
+async def test_init_chat_model() -> None:
     model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
     model_with_tools = model.bind_tools([multiply])
 
@@ -25,3 +28,7 @@ def test_init_chat_model() -> None:
     chain = prompt | model_with_config
     output = chain.invoke({"input": "bar"})
     assert isinstance(output, AIMessage)
+    events = []
+    async for event in chain.astream_events({"input": "bar"}, version="v2"):
+        events.append(event)
+    assert events
