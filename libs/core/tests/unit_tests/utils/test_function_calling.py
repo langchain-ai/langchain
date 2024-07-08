@@ -252,7 +252,7 @@ def test_function_no_params() -> None:
         pass
 
     func = convert_to_openai_function(nullary_function)
-    req = func["parameters"]["required"]
+    req = func["parameters"].get("required")
     assert not req
 
 

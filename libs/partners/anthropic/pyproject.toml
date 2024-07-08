@@ -67,10 +67,10 @@ defusedxml = "^0.7.1"
 codespell = "^2.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = ">=0.2.2,<1"
+ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^1"
+mypy = "^1.10"
 
 [tool.poetry.group.test.dependencies.langchain-core]
 path = "../../core"

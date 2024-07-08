@@ -1,4 +1,5 @@
 """Util that calls bibtexparser."""
+
 import logging
 from typing import Any, Dict, List, Mapping
 

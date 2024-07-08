@@ -1,4 +1,4 @@
-import json
+import json  # type: ignore[import-not-found]
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
 

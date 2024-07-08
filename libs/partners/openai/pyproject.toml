@@ -76,7 +76,7 @@ python = ">=3.12"
 codespell = "^2.2.0"
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
+ruff = "^0.5"
 
 [tool.poetry.group.test_integration.dependencies]
 httpx = "^0.27.0"
@@ -90,7 +90,7 @@ version = "^1.26.0"
 python = ">=3.12"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
+mypy = "^1.10"
 types-tqdm = "^4.66.0.5"
 
 [tool.poetry.group.test.dependencies.langchain-core]

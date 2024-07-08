@@ -27,8 +27,7 @@ if TYPE_CHECKING:
 
 
 class Stringifiable(Protocol):
-    def __str__(self) -> str:
-        ...
+    def __str__(self) -> str: ...
 
 
 class LabelsDict(TypedDict):
@@ -247,7 +246,7 @@ class Graph:
         return node
 
     def remove_node(self, node: Node) -> None:
-        """Remove a node from the graphm and all edges connected to it."""
+        """Remove a node from the graph and all edges connected to it."""
         self.nodes.pop(node.id)
         self.edges = [
             edge
@@ -371,8 +370,7 @@ class Graph:
         output_file_path: str,
         fontname: Optional[str] = None,
         labels: Optional[LabelsDict] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @overload
     def draw_png(
@@ -380,8 +378,7 @@ class Graph:
         output_file_path: None,
         fontname: Optional[str] = None,
         labels: Optional[LabelsDict] = None,
-    ) -> bytes:
-        ...
+    ) -> bytes: ...
 
     def draw_png(
         self,
