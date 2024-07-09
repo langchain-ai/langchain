@@ -2,7 +2,8 @@ from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import BaseModel, Extra, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.utils import pre_init
 
 
 class FastEmbedEmbeddings(BaseModel, Embeddings):
@@ -54,7 +55,7 @@ class FastEmbedEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that FastEmbed has been installed."""
         model_name = values.get("model_name")
