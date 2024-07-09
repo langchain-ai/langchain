@@ -26,7 +26,6 @@ from langchain_core.tools import (
     Tool,
     ToolException,
     _create_subset_model,
-    convert_runnable_to_tool,
     tool,
 )
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -999,7 +998,7 @@ def test_convert_from_runnable_dict() -> None:
         return str(x["key"] * 2)
 
     runnable: RunnableLambda = RunnableLambda(f)
-    as_tool = convert_runnable_to_tool(runnable)
+    as_tool = runnable.as_tool()
     args_schema = as_tool.args_schema
     assert args_schema is not None
     assert args_schema.schema() == {
@@ -1012,7 +1011,8 @@ def test_convert_from_runnable_dict() -> None:
     result = as_tool.invoke({"key": 3})
     assert result == "6"
 
-    as_tool = convert_runnable_to_tool(runnable, description="test description")
+    as_tool = runnable.as_tool(name="my tool", description="test description")
+    assert as_tool.name == "my tool"
     assert as_tool.description == "test description"
 
     # Dict without typed input-- must supply arg types
@@ -1020,7 +1020,7 @@ def test_convert_from_runnable_dict() -> None:
         return str(x["key"] * 2)
 
     runnable = RunnableLambda(g)
-    as_tool = convert_runnable_to_tool(runnable, arg_types={"key": int})
+    as_tool = runnable.as_tool(arg_types={"key": int})
     result = as_tool.invoke({"key": 3})
 
 
@@ -1035,7 +1035,7 @@ def test_convert_from_runnable_other() -> None:
         return x + "z"
 
     runnable = RunnableLambda(f) | g
-    as_tool = convert_runnable_to_tool(runnable)
+    as_tool = runnable.as_tool()
     args_schema = as_tool.args_schema
     assert args_schema is None
     assert as_tool.description

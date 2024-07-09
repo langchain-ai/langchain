@@ -92,6 +92,7 @@ if TYPE_CHECKING:
     from langchain_core.runnables.fallbacks import (
         RunnableWithFallbacks as RunnableWithFallbacksT,
     )
+    from langchain_core.tools import BaseTool
     from langchain_core.tracers.log_stream import (
         RunLog,
         RunLogPatch,
@@ -2005,6 +2006,19 @@ class Runnable(Generic[Input, Output], ABC):
         finally:
             if hasattr(iterator_, "aclose"):
                 await iterator_.aclose()
+
+    def as_tool(
+        self,
+        *,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        arg_types: Optional[Dict[str, Type]] = None,
+    ) -> BaseTool:
+        from langchain_core.tools import convert_runnable_to_tool
+
+        return convert_runnable_to_tool(
+            self, name=name, description=description, arg_types=arg_types
+        )
 
 
 class RunnableSerializable(Serializable, Runnable[Input, Output]):
