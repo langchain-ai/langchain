@@ -255,9 +255,7 @@ class PebbloSafeLoader(BaseLoader):
                     classified_data = classified_docs.get(doc_data["pb_id"], {})
                     doc_data.update(
                         {
-                            "pb_checksum": classified_data.get(
-                                "pb_checksum", None
-                            ),
+                            "pb_checksum": classified_data.get("pb_checksum", None),
                             "loader_source_path": classified_data.get(
                                 "loader_source_path", None
                             ),
