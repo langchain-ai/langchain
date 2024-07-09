@@ -41,7 +41,7 @@ from typing import (
     Union,
 )
 
-from typing_extensions import Annotated, get_args, get_origin
+from typing_extensions import Annotated, cast, get_args, get_origin
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -55,6 +55,8 @@ from langchain_core.callbacks.manager import (
     Callbacks,
 )
 from langchain_core.load.serializable import Serializable
+from langchain_core.messages.base import Content
+from langchain_core.messages.tool import ToolMessage, TypedToolCall
 from langchain_core.prompts import (
     BasePromptTemplate,
     PromptTemplate,
@@ -408,8 +410,7 @@ class ChildTool(BaseTool):
     # --- Tool ---
 
     def _parse_input(
-        self,
-        tool_input: Union[str, Dict],
+        self, tool_input: Union[str, Dict, TypedToolCall]
     ) -> Union[str, Dict[str, Any]]:
         """Convert tool input to pydantic model."""
         input_args = self.args_schema
@@ -419,6 +420,8 @@ class ChildTool(BaseTool):
                 input_args.validate({key_: tool_input})
             return tool_input
         else:
+            if _is_tool_call(tool_input):
+                tool_input = tool_input["args"]
             if input_args is not None:
                 result = input_args.parse_obj(tool_input)
                 return {
@@ -426,7 +429,7 @@ class ChildTool(BaseTool):
                     for k, v in result.dict().items()
                     if k in tool_input
                 }
-        return tool_input
+        return cast(dict, tool_input)
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -439,23 +442,22 @@ class ChildTool(BaseTool):
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
-    @abstractmethod
-    def _run(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def _run(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool.
 
         Add run_manager: Optional[CallbackManagerForToolRun] = None
         to child implementations to enable tracing,
         """
+        raise NotImplementedError()
 
-    async def _arun(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    # TODO: Come up with real name
+    def _run_foo(
+        self, *args: Any, run_manager: CallbackManagerForToolRun, **kwargs: Any
+    ) -> Tuple[Content, Any]:
+        """Return a repr of the result to pass to a model and the raw result."""
+        raise NotImplementedError()
+
+    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool asynchronously.
 
         Add run_manager: Optional[AsyncCallbackManagerForToolRun] = None
@@ -463,7 +465,16 @@ class ChildTool(BaseTool):
         """
         return await run_in_executor(None, self._run, *args, **kwargs)
 
+    async def _arun_foo(
+        self, *args: Any, run_manager: AsyncCallbackManagerForToolRun, **kwargs: Any
+    ) -> Tuple[Content, Any]:
+        """Return a repr of the result to pass to a model and the raw result."""
+        return await run_in_executor(
+            None, self._run_foo, *args, run_manager=run_manager.get_sync(), **kwargs
+        )
+
     def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
+        tool_input = self._parse_input(tool_input)
         # For backwards compatibility, if run_input is a string,
         # pass as a positional argument.
         if isinstance(tool_input, str):
@@ -473,7 +484,7 @@ class ChildTool(BaseTool):
 
     def run(
         self,
-        tool_input: Union[str, Dict[str, Any]],
+        tool_input: Union[str, Dict[str, Any], TypedToolCall],
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
@@ -487,21 +498,15 @@ class ChildTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
-        if not self.verbose and verbose is not None:
-            verbose_ = verbose
-        else:
-            verbose_ = self.verbose
         callback_manager = CallbackManager.configure(
             callbacks,
             self.callbacks,
-            verbose_,
+            self.verbose or bool(verbose),
             tags,
             self.tags,
             metadata,
             self.metadata,
         )
-        # TODO: maybe also pass through run_manager is _run supports kwargs
-        new_arg_supported = signature(self._run).parameters.get("run_manager")
         run_manager = callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
@@ -515,67 +520,42 @@ class ChildTool(BaseTool):
             inputs=None if isinstance(tool_input, str) else tool_input,
             **kwargs,
         )
+        raw = None
         try:
-            child_config = patch_config(
-                config,
-                callbacks=run_manager.get_child(),
-            )
+            child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
             context.run(_set_config_context, child_config)
-            parsed_input = self._parse_input(tool_input)
-            tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
-            observation = (
-                context.run(
-                    self._run, *tool_args, run_manager=run_manager, **tool_kwargs
+            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+            if self._run_foo != BaseTool._run_foo:
+                content, raw = context.run(
+                    self._run_foo, *tool_args, run_manager=run_manager, **tool_kwargs
                 )
-                if new_arg_supported
-                else context.run(self._run, *tool_args, **tool_kwargs)
-            )
-        except ValidationError as e:
-            if not self.handle_validation_error:
-                raise e
-            elif isinstance(self.handle_validation_error, bool):
-                observation = "Tool input validation error"
-            elif isinstance(self.handle_validation_error, str):
-                observation = self.handle_validation_error
-            elif callable(self.handle_validation_error):
-                observation = self.handle_validation_error(e)
             else:
-                raise ValueError(
-                    f"Got unexpected type of `handle_validation_error`. Expected bool, "
-                    f"str or callable. Received: {self.handle_validation_error}"
-                )
-            return observation
+                if signature(self._run).parameters.get("run_manager"):
+                    tool_kwargs["run_manager"] = run_manager
+                content = context.run(self._run, *tool_args, **tool_kwargs)
+        except ValidationError as e:
+            content = _handle_validation_error(e, flag=self.handle_validation_error)
         except ToolException as e:
             if not self.handle_tool_error:
                 run_manager.on_tool_error(e)
                 raise e
-            elif isinstance(self.handle_tool_error, bool):
-                if e.args:
-                    observation = e.args[0]
-                else:
-                    observation = "Tool execution error"
-            elif isinstance(self.handle_tool_error, str):
-                observation = self.handle_tool_error
-            elif callable(self.handle_tool_error):
-                observation = self.handle_tool_error(e)
-            else:
-                raise ValueError(
-                    f"Got unexpected type of `handle_tool_error`. Expected bool, str "
-                    f"or callable. Received: {self.handle_tool_error}"
-                )
-            run_manager.on_tool_end(observation, color="red", name=self.name, **kwargs)
-            return observation
+            content = _handle_tool_error(e, flag=self.handle_tool_error)
+            run_manager.on_tool_end(content, color="red", name=self.name, **kwargs)
         except (Exception, KeyboardInterrupt) as e:
             run_manager.on_tool_error(e)
             raise e
         else:
-            run_manager.on_tool_end(observation, color=color, name=self.name, **kwargs)
-            return observation
+            run_manager.on_tool_end(content, color=color, name=self.name, **kwargs)
+
+        if _is_tool_call(tool_input):
+            return ToolMessage(content, raw_output=raw, tool_call_id=tool_input["id"])
+        else:
+            return content
 
     async def arun(
         self,
-        tool_input: Union[str, Dict],
+        tool_input: Union[str, Dict, TypedToolCall],
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
@@ -589,20 +569,15 @@ class ChildTool(BaseTool):
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
-        if not self.verbose and verbose is not None:
-            verbose_ = verbose
-        else:
-            verbose_ = self.verbose
         callback_manager = AsyncCallbackManager.configure(
             callbacks,
             self.callbacks,
-            verbose_,
+            self.verbose or bool(verbose),
             tags,
             self.tags,
             metadata,
             self.metadata,
         )
-        new_arg_supported = signature(self._arun).parameters.get("run_manager")
         run_manager = await callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
@@ -612,73 +587,57 @@ class ChildTool(BaseTool):
             run_id=run_id,
             **kwargs,
         )
+        raw = None
         try:
-            parsed_input = self._parse_input(tool_input)
-            # We then call the tool on the tool input to get an observation
-            tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
-            child_config = patch_config(
-                config,
-                callbacks=run_manager.get_child(),
-            )
+            tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
+            child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
             context.run(_set_config_context, child_config)
-            coro = (
-                context.run(
-                    self._arun, *tool_args, run_manager=run_manager, **tool_kwargs
-                )
-                if new_arg_supported
-                else context.run(self._arun, *tool_args, **tool_kwargs)
+            use_run_foo = (
+                self._run_foo != BaseTool._run_foo
+                or self._arun_foo != BaseTool._arun_foo
             )
-            if accepts_context(asyncio.create_task):
-                observation = await asyncio.create_task(coro, context=context)  # type: ignore
+            if use_run_foo:
+                coro = context.run(
+                    self._arun_foo, *tool_args, run_manager=run_manager, **tool_kwargs
+                )
             else:
-                observation = await coro
+                if signature(self._arun).parameters.get("run_manager"):
+                    tool_kwargs["run_manager"] = run_manager
+                coro = context.run(self._arun, *tool_args, **tool_kwargs)
+
+            if accepts_context(asyncio.create_task):
+                output = await asyncio.create_task(coro, context=context)  # type: ignore
+            else:
+                output = await coro
+
+            if use_run_foo:
+                content, raw = output
+            else:
+                content = output
 
         except ValidationError as e:
-            if not self.handle_validation_error:
-                raise e
-            elif isinstance(self.handle_validation_error, bool):
-                observation = "Tool input validation error"
-            elif isinstance(self.handle_validation_error, str):
-                observation = self.handle_validation_error
-            elif callable(self.handle_validation_error):
-                observation = self.handle_validation_error(e)
-            else:
-                raise ValueError(
-                    f"Got unexpected type of `handle_validation_error`. Expected bool, "
-                    f"str or callable. Received: {self.handle_validation_error}"
-                )
-            return observation
+            # TODO: Add async handler
+            content = _handle_validation_error(e, flag=self.handle_validation_error)
         except ToolException as e:
             if not self.handle_tool_error:
                 await run_manager.on_tool_error(e)
                 raise e
-            elif isinstance(self.handle_tool_error, bool):
-                if e.args:
-                    observation = e.args[0]
-                else:
-                    observation = "Tool execution error"
-            elif isinstance(self.handle_tool_error, str):
-                observation = self.handle_tool_error
-            elif callable(self.handle_tool_error):
-                observation = self.handle_tool_error(e)
-            else:
-                raise ValueError(
-                    f"Got unexpected type of `handle_tool_error`. Expected bool, str "
-                    f"or callable. Received: {self.handle_tool_error}"
-                )
+            content = _handle_tool_error(e, flag=self.handle_tool_error)
             await run_manager.on_tool_end(
-                observation, color="red", name=self.name, **kwargs
+                content, color="red", name=self.name, **kwargs
             )
-            return observation
         except (Exception, KeyboardInterrupt) as e:
             await run_manager.on_tool_error(e)
             raise e
         else:
             await run_manager.on_tool_end(
-                observation, color=color, name=self.name, **kwargs
+                content, color=color, name=self.name, **kwargs
             )
-            return observation
+        if _is_tool_call(tool_input):
+            return ToolMessage(content, raw_output=raw, tool_call_id=tool_input["id"])
+        else:
+            return content
 
     @deprecated("0.1.47", alternative="invoke", removal="0.3.0")
     def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
@@ -1218,3 +1177,50 @@ class BaseToolkit(BaseModel, ABC):
     @abstractmethod
     def get_tools(self) -> List[BaseTool]:
         """Get the tools in the toolkit."""
+
+
+def _is_tool_call(x: Any) -> bool:
+    return isinstance(x, dict) and x.get("type") == "tool_call"
+
+
+def _handle_validation_error(
+    e: ValidationError,
+    *,
+    flag: Optional[Union[bool, str, Callable[[ValidationError], str]]],
+) -> str:
+    if not flag:
+        raise e
+    elif isinstance(flag, bool):
+        content = "Tool input validation error"
+    elif isinstance(flag, str):
+        content = flag
+    elif callable(flag):
+        content = flag(e)
+    else:
+        raise ValueError(
+            f"Got unexpected type of `handle_validation_error`. Expected bool, "
+            f"str or callable. Received: {flag}"
+        )
+    return content
+
+
+def _handle_tool_error(
+    e: ToolException,
+    *,
+    flag: Optional[Union[bool, str, Callable[[ToolException], str]]],
+) -> str:
+    if isinstance(flag, bool):
+        if e.args:
+            content = e.args[0]
+        else:
+            content = "Tool execution error"
+    elif isinstance(flag, str):
+        content = flag
+    elif callable(flag):
+        content = flag(e)
+    else:
+        raise ValueError(
+            f"Got unexpected type of `handle_tool_error`. Expected bool, str "
+            f"or callable. Received: {flag}"
+        )
+    return content

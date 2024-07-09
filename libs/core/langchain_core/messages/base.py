@@ -11,6 +11,8 @@ from langchain_core.utils.interactive_env import is_interactive_env
 if TYPE_CHECKING:
     from langchain_core.prompts.chat import ChatPromptTemplate
 
+Content = Union[str, List[Union[str, Dict]]]
+
 
 class BaseMessage(Serializable):
     """Base abstract message class.

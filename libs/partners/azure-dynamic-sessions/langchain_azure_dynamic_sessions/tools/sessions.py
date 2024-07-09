@@ -12,12 +12,14 @@ import urllib
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
-from typing import Any, BinaryIO, Callable, List, Optional
+from typing import Any, BinaryIO, Callable, List, Optional, Tuple
 from uuid import uuid4
 
 import requests
 from azure.core.credentials import AccessToken
 from azure.identity import DefaultAzureCredential
+from langchain_core.callbacks import CallbackManagerForToolRun
+from langchain_core.messages.base import Content
 from langchain_core.tools import BaseTool
 
 try:
@@ -164,7 +166,9 @@ class SessionsPythonREPLTool(BaseTool):
         properties = response_json.get("properties", {})
         return properties
 
-    def _run(self, python_code: str) -> Any:
+    def _run_foo(
+        self, python_code: str, run_manager: CallbackManagerForToolRun
+    ) -> Tuple[Content, Any]:
         response = self.execute(python_code)
 
         # if the result is an image, remove the base64 data
@@ -173,7 +177,7 @@ class SessionsPythonREPLTool(BaseTool):
             if result.get("type") == "image" and "base64_data" in result:
                 result.pop("base64_data")
 
-        return json.dumps(
+        content = json.dumps(
             {
                 "result": result,
                 "stdout": response.get("stdout"),
@@ -181,6 +185,7 @@ class SessionsPythonREPLTool(BaseTool):
             },
             indent=2,
         )
+        return content, response
 
     def upload_file(
         self,

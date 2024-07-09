@@ -124,6 +124,10 @@ class ToolCall(TypedDict):
     """
 
 
+class TypedToolCall(ToolCall):
+    type: Literal["tool_call"]
+
+
 class ToolCallChunk(TypedDict):
     """A chunk of a tool call (e.g., as part of a stream).
 
