@@ -18,7 +18,7 @@ from langchain_core.callbacks import (
     CallbackManagerForToolRun,
 )
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
-from langchain_core.runnables import RunnableLambda, ensure_config
+from langchain_core.runnables import Runnable, RunnableLambda, ensure_config
 from langchain_core.tools import (
     BaseTool,
     SchemaAnnotationError,
@@ -997,7 +997,7 @@ def test_convert_from_runnable_dict() -> None:
     def f(x: Args) -> str:
         return str(x["key"] * 2)
 
-    runnable: RunnableLambda = RunnableLambda(f)
+    runnable: Runnable = RunnableLambda(f)
     as_tool = runnable.as_tool()
     args_schema = as_tool.args_schema
     assert args_schema is not None
@@ -1046,7 +1046,7 @@ def test_convert_from_runnable_other() -> None:
         """Do thing."""
         return x + "z"
 
-    runnable = RunnableLambda(f) | g
+    runnable: Runnable = RunnableLambda(f) | g
     as_tool = runnable.as_tool()
     args_schema = as_tool.args_schema
     assert args_schema is None
