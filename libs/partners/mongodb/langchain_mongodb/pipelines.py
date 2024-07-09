@@ -92,7 +92,7 @@ def reciprocal_rank_stage(
 
     Args:
         text_field: Collection field containing relevant to text per VectorStore API
-        score_field: A unique string to indentify the search being ranked
+        score_field: A unique string to identify the search being ranked
         penalty: A non-negative float.
         extra_fields: Any fields other than text_field that one wishes to keep.
 
