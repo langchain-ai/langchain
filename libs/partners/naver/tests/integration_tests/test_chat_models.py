@@ -3,7 +3,7 @@ from langchain_naver.chat_models import ChatClovaX
 
 
 def test_stream() -> None:
-    """Test streaming tokens from ChatNaver."""
+    """Test streaming tokens from ChatClovaX."""
     llm = ChatClovaX()
 
     for token in llm.stream("I'm Clova"):
@@ -11,7 +11,7 @@ def test_stream() -> None:
 
 
 async def test_astream() -> None:
-    """Test streaming tokens from ChatNaver."""
+    """Test streaming tokens from ChatClovaX."""
     llm = ChatClovaX()
 
     async for token in llm.astream("I'm Clova"):
@@ -19,7 +19,7 @@ async def test_astream() -> None:
 
 
 async def test_abatch() -> None:
-    """Test streaming tokens from ChatNaver."""
+    """Test streaming tokens from ChatClovaX."""
     llm = ChatClovaX()
 
     result = await llm.abatch(["I'm Clova", "I'm not Clova"])
@@ -28,7 +28,7 @@ async def test_abatch() -> None:
 
 
 async def test_abatch_tags() -> None:
-    """Test batch tokens from ChatNaver."""
+    """Test batch tokens from ChatClovaX."""
     llm = ChatClovaX()
 
     result = await llm.abatch(
@@ -39,7 +39,7 @@ async def test_abatch_tags() -> None:
 
 
 def test_batch() -> None:
-    """Test batch tokens from ChatNaver."""
+    """Test batch tokens from ChatClovaX."""
     llm = ChatClovaX()
 
     result = llm.batch(["I'm Clova", "I'm not Clova"])
@@ -48,7 +48,7 @@ def test_batch() -> None:
 
 
 async def test_ainvoke() -> None:
-    """Test invoke tokens from ChatNaver."""
+    """Test invoke tokens from ChatClovaX."""
     llm = ChatClovaX()
 
     result = await llm.ainvoke("I'm Clova", config={"tags": ["foo"]})
@@ -56,7 +56,7 @@ async def test_ainvoke() -> None:
 
 
 def test_invoke() -> None:
-    """Test invoke tokens from ChatNaver."""
+    """Test invoke tokens from ChatClovaX."""
     llm = ChatClovaX()
 
     result = llm.invoke("I'm Clova", config=dict(tags=["foo"]))
