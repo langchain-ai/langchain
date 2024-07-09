@@ -11,7 +11,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import pytest
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypedDict
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
@@ -990,31 +990,55 @@ def test_tool_annotated_descriptions() -> None:
     }
 
 
-def test_convert_from_runnable() -> None:
-    def f(x: List[int]) -> int:
-        """Calculate a maximum."""
-        return max(x)
+def test_convert_from_runnable_dict() -> None:
+    # Test with typed dict input
+    class Args(TypedDict):
+        key: int
 
-    def g(x: int) -> str:
-        """Do thing."""
-        return str(x + 2)
+    def f(x: Args) -> str:
+        return str(x["key"] * 2)
 
-    runnable = RunnableLambda(f) | g
+    runnable: RunnableLambda = RunnableLambda(f)
     as_tool = convert_runnable_to_tool(runnable)
     args_schema = as_tool.args_schema
     assert args_schema is not None
     assert args_schema.schema() == {
-        "title": "RunnableSequenceSchema",
+        "title": "fSchema",
         "type": "object",
-        "properties": {
-            "input": {"title": "Input", "type": "array", "items": {"type": "integer"}}
-        },
-        "required": ["input"],
+        "properties": {"key": {"title": "Key", "type": "integer"}},
+        "required": ["key"],
     }
     assert as_tool.description
-
-    result = as_tool.invoke({"input": [3, 4]})
+    result = as_tool.invoke({"key": 3})
     assert result == "6"
 
-    as_tool = convert_runnable_to_tool(runnable, "test description")
+    as_tool = convert_runnable_to_tool(runnable, description="test description")
     assert as_tool.description == "test description"
+
+    # Dict without typed input-- must supply arg types
+    def g(x: Dict[str, Any]) -> str:
+        return str(x["key"] * 2)
+
+    runnable = RunnableLambda(g)
+    as_tool = convert_runnable_to_tool(runnable, arg_types={"key": int})
+    result = as_tool.invoke({"key": 3})
+
+
+def test_convert_from_runnable_other() -> None:
+    # String input
+    def f(x: str) -> str:
+        """Calculate a maximum."""
+        return x + "a"
+
+    def g(x: str) -> str:
+        """Do thing."""
+        return x + "z"
+
+    runnable = RunnableLambda(f) | g
+    as_tool = convert_runnable_to_tool(runnable)
+    args_schema = as_tool.args_schema
+    assert args_schema is None
+    assert as_tool.description
+
+    result = as_tool.invoke("b")
+    assert result == "baz"

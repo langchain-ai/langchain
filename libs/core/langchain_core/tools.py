@@ -39,6 +39,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    get_type_hints,
 )
 
 from typing_extensions import Annotated, get_args, get_origin
@@ -1226,24 +1227,52 @@ def _get_description_from_runnable(runnable: Runnable) -> str:
     return f"Takes {input_schema}."
 
 
-def _get_args_schema_for_runnable(runnable: Runnable) -> Type[BaseModel]:
-    """Get object schema from runnable input schema."""
+def _get_schema_from_runnable_and_arg_types(
+    runnable: Runnable, arg_types: Optional[Dict[str, Type]] = None
+) -> Type[BaseModel]:
+    """Infer args_schema for tool."""
     schema_name = f"{runnable.get_name()}Schema"
-    input_name = "input"
-    fields = {input_name: (runnable.InputType, Field(...))}
+    if arg_types is None:
+        arg_types = get_type_hints(runnable.InputType)
+    fields = {key: (key_type, Field(...)) for key, key_type in arg_types.items()}
     return create_model(schema_name, **fields)  # type: ignore
 
 
 def convert_runnable_to_tool(
-    runnable: Runnable, description: Optional[str] = None
+    runnable: Runnable,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    arg_types: Optional[Dict[str, Type]] = None,
 ) -> BaseTool:
     """Convert a Runnable into a BaseTool."""
     description = description or _get_description_from_runnable(runnable)
-    args_schema = _get_args_schema_for_runnable(runnable)
-    return StructuredTool.from_function(
-        name=runnable.get_name(),
-        func=runnable.invoke,
-        coroutine=runnable.ainvoke,
-        description=description,
-        args_schema=args_schema,
-    )
+    name = name or runnable.get_name()
+
+    args_schema = _get_schema_from_runnable_and_arg_types(runnable, arg_types=arg_types)
+    schema = args_schema.schema()
+
+    if schema.get("type") == "object" and schema.get("properties"):  # dict input
+
+        async def ainvoke_wrapper(
+            callbacks: Optional[Callbacks] = None, **kwargs: Any
+        ) -> Any:
+            return await runnable.ainvoke(kwargs, {"callbacks": callbacks})
+
+        def invoke_wrapper(callbacks: Optional[Callbacks] = None, **kwargs: Any) -> Any:
+            return runnable.invoke(kwargs, {"callbacks": callbacks})
+
+        return StructuredTool.from_function(
+            name=name,
+            func=invoke_wrapper,
+            coroutine=ainvoke_wrapper,
+            description=description,
+            args_schema=args_schema,
+        )
+
+    else:  # string input
+        return Tool(
+            name=name,
+            func=runnable.invoke,
+            coroutine=runnable.ainvoke,
+            description=description,
+        )

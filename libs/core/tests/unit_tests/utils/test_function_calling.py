@@ -192,16 +192,13 @@ def test_convert_to_openai_function(
     parameters = {
         "type": "object",
         "properties": {
-            "input": {
-                "type": "object",
-                "properties": {
-                    "arg1": {"type": "integer"},
-                    "arg2": {"enum": ["bar", "baz"], "type": "string"},
-                },
-                "required": ["arg1", "arg2"],
-            }
+            "arg1": {"type": "integer"},
+            "arg2": {
+                "enum": ["bar", "baz"],
+                "type": "string",
+            },
         },
-        "required": ["input"],
+        "required": ["arg1", "arg2"],
     }
     runnable_expected = expected.copy()
     runnable_expected["parameters"] = parameters
