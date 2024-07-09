@@ -131,7 +131,7 @@ def merge_content(
                 merged = cast(str, merged) + content
             # If the next chunk is a list, add the current to the start of the list
             else:
-                merged = [merged] + content
+                merged = [merged] + content  # type: ignore
         elif isinstance(content, list):
             # If both are lists
             merged = merge_lists(cast(List, merged), content)  # type: ignore
