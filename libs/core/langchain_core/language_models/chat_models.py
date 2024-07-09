@@ -94,13 +94,9 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
         ChatResult: Chat result.
     """
 
-    generation: Optional[ChatGenerationChunk] = None
-    for chunk in stream:
-        if generation is None:
-            generation = chunk
-        else:
-            generation += chunk
-    assert generation is not None
+    generation = next(stream, None)
+    if generation:
+        generation += list(stream)
     return ChatResult(
         generations=[
             ChatGeneration(

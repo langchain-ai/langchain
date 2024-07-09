@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Union
 
 from typing_extensions import TypedDict
 
@@ -266,56 +266,63 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         return values
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
-        if isinstance(other, AIMessageChunk):
-            if self.example != other.example:
-                raise ValueError(
-                    "Cannot concatenate AIMessageChunks with different example values."
+        def _merge_ai_chunks(chunks: Sequence[AIMessageChunk]) -> AIMessageChunk:
+            content = self.content
+            additional_kwargs = self.additional_kwargs
+            response_metadata = self.response_metadata
+            usage_metadata = self.usage_metadata
+            tool_call_chunks = self.tool_call_chunks
+            for other in chunks:
+                if self.example != other.example:
+                    raise ValueError(
+                        "Cannot concatenate AIMessageChunks with different"
+                        " example values."
+                    )
+
+                content = merge_content(content, other.content)
+                additional_kwargs = merge_dicts(
+                    additional_kwargs, other.additional_kwargs
+                )
+                response_metadata = merge_dicts(
+                    response_metadata, other.response_metadata
                 )
 
-            content = merge_content(self.content, other.content)
-            additional_kwargs = merge_dicts(
-                self.additional_kwargs, other.additional_kwargs
-            )
-            response_metadata = merge_dicts(
-                self.response_metadata, other.response_metadata
-            )
-
-            # Merge tool call chunks
-            if self.tool_call_chunks or other.tool_call_chunks:
-                raw_tool_calls = merge_lists(
-                    self.tool_call_chunks,
-                    other.tool_call_chunks,
-                )
-                if raw_tool_calls:
-                    tool_call_chunks = [
-                        ToolCallChunk(
-                            name=rtc.get("name"),
-                            args=rtc.get("args"),
-                            index=rtc.get("index"),
-                            id=rtc.get("id"),
-                        )
-                        for rtc in raw_tool_calls
-                    ]
+                # Merge tool call chunks
+                if tool_call_chunks or other.tool_call_chunks:
+                    raw_tool_calls = merge_lists(
+                        tool_call_chunks,
+                        other.tool_call_chunks,
+                    )
+                    if raw_tool_calls:
+                        tool_call_chunks = [
+                            ToolCallChunk(
+                                name=rtc.get("name"),
+                                args=rtc.get("args"),
+                                index=rtc.get("index"),
+                                id=rtc.get("id"),
+                            )
+                            for rtc in raw_tool_calls
+                        ]
+                    else:
+                        tool_call_chunks = []
                 else:
                     tool_call_chunks = []
-            else:
-                tool_call_chunks = []
 
-            # Token usage
-            if self.usage_metadata or other.usage_metadata:
-                left: UsageMetadata = self.usage_metadata or UsageMetadata(
-                    input_tokens=0, output_tokens=0, total_tokens=0
-                )
-                right: UsageMetadata = other.usage_metadata or UsageMetadata(
-                    input_tokens=0, output_tokens=0, total_tokens=0
-                )
-                usage_metadata: Optional[UsageMetadata] = {
-                    "input_tokens": left["input_tokens"] + right["input_tokens"],
-                    "output_tokens": left["output_tokens"] + right["output_tokens"],
-                    "total_tokens": left["total_tokens"] + right["total_tokens"],
-                }
-            else:
-                usage_metadata = None
+                # Token usage
+                if usage_metadata or other.usage_metadata:
+                    left: UsageMetadata = usage_metadata or UsageMetadata(
+                        input_tokens=0, output_tokens=0, total_tokens=0
+                    )
+                    right: UsageMetadata = other.usage_metadata or UsageMetadata(
+                        input_tokens=0, output_tokens=0, total_tokens=0
+                    )
+                    usage_metadata: Optional[UsageMetadata] = {
+                        "input_tokens": left["input_tokens"] + right["input_tokens"],
+                        "output_tokens": left["output_tokens"] + right["output_tokens"],
+                        "total_tokens": left["total_tokens"] + right["total_tokens"],
+                    }
+                else:
+                    usage_metadata = None
 
             return self.__class__(
                 example=self.example,
@@ -327,4 +334,10 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 id=self.id,
             )
 
+        if isinstance(other, AIMessageChunk):
+            return _merge_ai_chunks((other,))
+        elif isinstance(other, (list, tuple)) and all(
+            isinstance(o, AIMessageChunk) for o in other
+        ):
+            return _merge_ai_chunks(other)
         return super().__add__(other)
