@@ -36,7 +36,9 @@ def _send_pipeline_to_device(pipeline: Any, device: int) -> Any:
     """Send a pipeline to a device on the cluster."""
     if isinstance(pipeline, str):
         with open(pipeline, "rb") as f:
-            pipeline = pickle.load(f)
+            # This code path can only be triggered if the user
+            # passed allow_dangerous_deserialization=True
+            pipeline = pickle.load(f)  # ignore[pickle]: explicit-opt-in
 
     if importlib.util.find_spec("torch") is not None:
         import torch

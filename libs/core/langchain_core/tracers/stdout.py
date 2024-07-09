@@ -156,7 +156,7 @@ class FunctionCallbackHandler(BaseTracer):
                 + get_bolded_text(
                     f"[{crumbs}] [{elapsed(run)}] Exiting Tool run with output:\n"
                 )
-                + f'"{run.outputs["output"].strip()}"'
+                + f'"{str(run.outputs["output"]).strip()}"'
             )
 
     def _on_tool_error(self, run: Run) -> None:

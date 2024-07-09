@@ -1,4 +1,5 @@
 """Implement an LLM driven browser."""
+
 from __future__ import annotations
 
 import warnings

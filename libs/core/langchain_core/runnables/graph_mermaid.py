@@ -81,7 +81,7 @@ def draw_mermaid(
         # Add BR every wrap_label_n_words words
         if edge.data is not None:
             edge_data = edge.data
-            words = edge_data.split()  # Split the string into words
+            words = str(edge_data).split()  # Split the string into words
             # Group words into chunks of wrap_label_n_words size
             if len(words) > wrap_label_n_words:
                 edge_data = "<br>".join(
@@ -114,7 +114,7 @@ def draw_mermaid(
 
 def _escape_node_label(node_label: str) -> str:
     """Escapes the node label for Mermaid syntax."""
-    return re.sub(r"[^a-zA-Z-_]", "_", node_label)
+    return re.sub(r"[^a-zA-Z-_0-9]", "_", node_label)
 
 
 def _adjust_mermaid_edge(

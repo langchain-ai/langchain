@@ -16,7 +16,12 @@ if TYPE_CHECKING:
 
 
 class AmadeusToolkit(BaseToolkit):
-    """Toolkit for interacting with Amadeus which offers APIs for travel."""
+    """Toolkit for interacting with Amadeus which offers APIs for travel.
+
+    Parameters:
+        client: Optional. The Amadeus client. Default is None.
+        llm: Optional. The language model to use. Default is None.
+    """
 
     client: Client = Field(default_factory=authenticate)
     llm: Optional[BaseLanguageModel] = Field(default=None)
@@ -24,6 +29,7 @@ class AmadeusToolkit(BaseToolkit):
     class Config:
         """Pydantic config."""
 
+        # Allow extra fields. This is needed for the `client` field.
         arbitrary_types_allowed = True
 
     def get_tools(self) -> List[BaseTool]:

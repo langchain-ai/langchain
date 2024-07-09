@@ -9,7 +9,18 @@ from langchain_core.utils._merge import merge_dicts
 
 
 class ChatGeneration(Generation):
-    """A single chat generation output."""
+    """A single chat generation output.
+
+    A subclass of Generation that represents the response from a chat model
+    that generates chat messages.
+
+    The `message` attribute is a structured representation of the chat message.
+    Most of the time, the message will be of type `AIMessage`.
+
+    Users working with chat models will usually access information via either
+    `AIMessage` (returned from runnable interfaces) or `LLMResult` (available
+    via callbacks).
+    """
 
     text: str = ""
     """*SHOULD NOT BE SET DIRECTLY* The text contents of the output message."""
@@ -19,9 +30,19 @@ class ChatGeneration(Generation):
     type: Literal["ChatGeneration"] = "ChatGeneration"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
-    @root_validator
+    @root_validator(pre=False, skip_on_failure=True)
     def set_text(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Set the text attribute to be the contents of the message."""
+        """Set the text attribute to be the contents of the message.
+
+        Args:
+            values: The values of the object.
+
+        Returns:
+            The values of the object with the text attribute set.
+
+        Raises:
+            ValueError: If the message is not a string or a list.
+        """
         try:
             text = ""
             if isinstance(values["message"].content, str):
@@ -53,13 +74,11 @@ class ChatGeneration(Generation):
 
 class ChatGenerationChunk(ChatGeneration):
     """ChatGeneration chunk, which can be concatenated with other
-      ChatGeneration chunks.
-
-    Attributes:
-        message: The message chunk output by the chat model.
+    ChatGeneration chunks.
     """
 
     message: BaseMessageChunk
+    """The message chunk output by the chat model."""
     # Override type to be ChatGeneration, ignore mypy error as this is intentional
     type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""

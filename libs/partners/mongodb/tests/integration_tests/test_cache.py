@@ -2,7 +2,7 @@ import os
 import uuid
 from typing import Any, List, Union
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from langchain_core.caches import BaseCache
 from langchain_core.globals import get_llm_cache, set_llm_cache
 from langchain_core.load.dump import dumps

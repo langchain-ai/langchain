@@ -10,6 +10,7 @@ env:
 
 jobs:
   build:
+    if: github.repository_owner == 'langchain-ai'
     name: Python ${{ matrix.python-version }} - ${{ matrix.working-directory }}
     runs-on: ubuntu-latest
     strategy:
@@ -26,11 +27,9 @@ jobs:
           - "libs/partners/groq"
           - "libs/partners/mistralai"
           - "libs/partners/together"
-          - "libs/partners/cohere"
           - "libs/partners/google-vertexai"
           - "libs/partners/google-genai"
           - "libs/partners/aws"
-          - "libs/partners/nvidia-ai-endpoints"
 
     steps:
       - uses: actions/checkout@v4
@@ -42,14 +41,6 @@ jobs:
           path: langchain-google
       - uses: actions/checkout@v4
         with:
-          repository: langchain-ai/langchain-nvidia
-          path: langchain-nvidia
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-cohere
-          path: langchain-cohere
-      - uses: actions/checkout@v4
-        with:
           repository: langchain-ai/langchain-aws
           path: langchain-aws
 
@@ -57,13 +48,9 @@ jobs:
         run: |
           rm -rf \
             langchain/libs/partners/google-genai \
-            langchain/libs/partners/google-vertexai \
-            langchain/libs/partners/nvidia-ai-endpoints \
-            langchain/libs/partners/cohere
+            langchain/libs/partners/google-vertexai
           mv langchain-google/libs/genai langchain/libs/partners/google-genai
           mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
-          mv langchain-nvidia/libs/ai-endpoints langchain/libs/partners/nvidia-ai-endpoints
-          mv langchain-cohere/libs/cohere langchain/libs/partners/cohere
           mv langchain-aws/libs/aws langchain/libs/partners/aws
 
       - name: Set up Python ${{ matrix.python-version }}
@@ -122,8 +109,6 @@ jobs:
           rm -rf \
             langchain/libs/partners/google-genai \
             langchain/libs/partners/google-vertexai \
-            langchain/libs/partners/nvidia-ai-endpoints \
-            langchain/libs/partners/cohere \
             langchain/libs/partners/aws
 
       - name: Ensure the tests did not create any additional files

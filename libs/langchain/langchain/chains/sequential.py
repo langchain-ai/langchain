@@ -1,4 +1,5 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
+
 from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import (
@@ -152,7 +153,7 @@ class SimpleSequentialChain(Chain):
         """
         return [self.output_key]
 
-    @root_validator()
+    @root_validator(pre=False, skip_on_failure=True)
     def validate_chains(cls, values: Dict) -> Dict:
         """Validate that chains are all single input/output."""
         for chain in values["chains"]:

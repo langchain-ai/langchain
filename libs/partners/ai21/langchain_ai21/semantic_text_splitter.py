@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class AI21SemanticTextSplitter(TextSplitter):
     """Splitting text into coherent and readable units,
-    based on distinct topics and lines
+    based on distinct topics and lines.
     """
 
     def __init__(

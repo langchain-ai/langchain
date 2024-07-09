@@ -13,6 +13,7 @@ from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     AsyncIterator,
     Awaitable,
     Callable,
@@ -79,7 +80,7 @@ from langchain_core.runnables.utils import (
     is_async_callable,
     is_async_generator,
 )
-from langchain_core.utils.aiter import atee, py_anext
+from langchain_core.utils.aiter import aclosing, atee, py_anext
 from langchain_core.utils.iter import safetee
 
 if TYPE_CHECKING:
@@ -648,8 +649,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Output]]:
-        ...
+    ) -> Iterator[Tuple[int, Output]]: ...
 
     @overload
     def batch_as_completed(
@@ -659,8 +659,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: Literal[True],
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
-        ...
+    ) -> Iterator[Tuple[int, Union[Output, Exception]]]: ...
 
     def batch_as_completed(
         self,
@@ -752,8 +751,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[int, Output]]:
-        ...
+    ) -> AsyncIterator[Tuple[int, Output]]: ...
 
     @overload
     def abatch_as_completed(
@@ -763,8 +761,7 @@ class Runnable(Generic[Input, Output], ABC):
         *,
         return_exceptions: Literal[True],
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
-        ...
+    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]: ...
 
     async def abatch_as_completed(
         self,
@@ -841,8 +838,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[RunLogPatch]:
-        ...
+    ) -> AsyncIterator[RunLogPatch]: ...
 
     @overload
     def astream_log(
@@ -859,8 +855,7 @@ class Runnable(Generic[Input, Output], ABC):
         exclude_types: Optional[Sequence[str]] = None,
         exclude_tags: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[RunLog]:
-        ...
+    ) -> AsyncIterator[RunLog]: ...
 
     async def astream_log(
         self,
@@ -1141,8 +1136,9 @@ class Runnable(Generic[Input, Output], ABC):
                 'Only versions "v1" and "v2" of the schema is currently supported.'
             )
 
-        async for event in event_stream:
-            yield event
+        async with aclosing(event_stream):
+            async for event in event_stream:
+                yield event
 
     def transform(
         self,
@@ -1355,6 +1351,7 @@ class Runnable(Generic[Input, Output], ABC):
         Example:
 
         .. code-block:: python
+
             from langchain_core.runnables import RunnableLambda
             import time
 
@@ -1875,7 +1872,7 @@ class Runnable(Generic[Input, Output], ABC):
                                 final_output_supported = False
                     else:
                         final_output = chunk
-            except StopIteration:
+            except (StopIteration, GeneratorExit):
                 pass
             for ichunk in input_for_tracing:
                 if final_input_supported:
@@ -1948,7 +1945,7 @@ class Runnable(Generic[Input, Output], ABC):
                 kwargs["run_manager"] = run_manager
             context = copy_context()
             context.run(_set_config_context, child_config)
-            iterator = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
+            iterator_ = context.run(transformer, input_for_transform, **kwargs)  # type: ignore[arg-type]
 
             if stream_handler := next(
                 (
@@ -1960,7 +1957,11 @@ class Runnable(Generic[Input, Output], ABC):
                 None,
             ):
                 # populates streamed_output in astream_log() output if needed
-                iterator = stream_handler.tap_output_aiter(run_manager.run_id, iterator)
+                iterator = stream_handler.tap_output_aiter(
+                    run_manager.run_id, iterator_
+                )
+            else:
+                iterator = iterator_
             try:
                 while True:
                     if accepts_context(asyncio.create_task):
@@ -2001,6 +2002,9 @@ class Runnable(Generic[Input, Output], ABC):
             raise
         else:
             await run_manager.on_chain_end(final_output, inputs=final_input)
+        finally:
+            if hasattr(iterator_, "aclose"):
+                await iterator_.aclose()
 
 
 class RunnableSerializable(Serializable, Runnable[Input, Output]):
@@ -3379,6 +3383,7 @@ class RunnableGenerator(Runnable[Input, Output]):
 
     RunnableGenerator makes it easy to implement custom behavior within a streaming
     context. Below we show an example:
+
         .. code-block:: python
 
             from langchain_core.prompts import ChatPromptTemplate
@@ -3566,6 +3571,11 @@ class RunnableLambda(Runnable[Input, Output]):
 
     RunnableLambda can be composed as any other Runnable and provides
     seamless integration with LangChain tracing.
+
+    `RunnableLambda` is best suited for code that does not need to support
+    streaming. If you need to support streaming (i.e., be able to operate
+    on chunks of inputs and yield chunks of outputs), use `RunnableGenerator`
+    instead.
 
     Examples:
 
@@ -3907,23 +3917,29 @@ class RunnableLambda(Runnable[Input, Output]):
 
         if is_async_generator(afunc):
             output: Optional[Output] = None
-            async for chunk in cast(
-                AsyncIterator[Output],
-                acall_func_with_variable_args(
-                    cast(Callable, afunc),
-                    input,
-                    config,
-                    run_manager,
-                    **kwargs,
-                ),
-            ):
-                if output is None:
-                    output = chunk
-                else:
-                    try:
-                        output = output + chunk  # type: ignore[operator]
-                    except TypeError:
+            async with aclosing(
+                cast(
+                    AsyncGenerator[Any, Any],
+                    acall_func_with_variable_args(
+                        cast(Callable, afunc),
+                        input,
+                        config,
+                        run_manager,
+                        **kwargs,
+                    ),
+                )
+            ) as stream:
+                async for chunk in cast(
+                    AsyncIterator[Output],
+                    stream,
+                ):
+                    if output is None:
                         output = chunk
+                    else:
+                        try:
+                            output = output + chunk  # type: ignore[operator]
+                        except TypeError:
+                            output = chunk
         else:
             output = await acall_func_with_variable_args(
                 cast(Callable, afunc), input, config, run_manager, **kwargs
@@ -4364,12 +4380,15 @@ class RunnableEach(RunnableEachBase[Input, Output]):
             Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
         ] = None,
     ) -> RunnableEach[Input, Output]:
-        """
-        Bind lifecycle listeners to a Runnable, returning a new Runnable.
+        """Bind lifecycle listeners to a Runnable, returning a new Runnable.
 
-        on_start: Called before the runnable starts running, with the Run object.
-        on_end: Called after the runnable finishes running, with the Run object.
-        on_error: Called if the runnable throws an error, with the Run object.
+        Args:
+            on_start: Called before the runnable starts running, with the Run object.
+            on_end: Called after the runnable finishes running, with the Run object.
+            on_error: Called if the runnable throws an error, with the Run object.
+
+        Returns:
+            A new Runnable with the listeners bound.
 
         The Run object contains information about the run, including its id,
         type, input, output, error, start_time, end_time, and any tags or metadata
@@ -4388,15 +4407,18 @@ class RunnableEach(RunnableEachBase[Input, Output]):
         on_end: Optional[AsyncListener] = None,
         on_error: Optional[AsyncListener] = None,
     ) -> RunnableEach[Input, Output]:
-        """
-        Bind async lifecycle listeners to a Runnable, returning a new Runnable.
+        """Bind async lifecycle listeners to a Runnable, returning a new Runnable.
 
-        on_start: Called asynchronously before the runnable starts running,
-                  with the Run object.
-        on_end: Called asynchronously after the runnable finishes running,
-                with the Run object.
-        on_error: Called asynchronously if the runnable throws an error,
-                with the Run object.
+        Args:
+            on_start: Called asynchronously before the runnable starts running,
+                      with the Run object.
+            on_end: Called asynchronously after the runnable finishes running,
+                    with the Run object.
+            on_error: Called asynchronously if the runnable throws an error,
+                    with the Run object.
+
+        Returns:
+            A new Runnable with the listeners bound.
 
         The Run object contains information about the run, including its id,
         type, input, output, error, start_time, end_time, and any tags or metadata
@@ -4625,8 +4647,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Output]]:
-        ...
+    ) -> Iterator[Tuple[int, Output]]: ...
 
     @overload
     def batch_as_completed(
@@ -4636,8 +4657,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: Literal[True],
         **kwargs: Any,
-    ) -> Iterator[Tuple[int, Union[Output, Exception]]]:
-        ...
+    ) -> Iterator[Tuple[int, Union[Output, Exception]]]: ...
 
     def batch_as_completed(
         self,
@@ -4678,8 +4698,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: Literal[False] = False,
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[int, Output]]:
-        ...
+    ) -> AsyncIterator[Tuple[int, Output]]: ...
 
     @overload
     def abatch_as_completed(
@@ -4689,8 +4708,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
         *,
         return_exceptions: Literal[True],
         **kwargs: Optional[Any],
-    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]:
-        ...
+    ) -> AsyncIterator[Tuple[int, Union[Output, Exception]]]: ...
 
     async def abatch_as_completed(
         self,
@@ -5022,29 +5040,25 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable[Input, Output]:
 @overload
 def chain(
     func: Callable[[Input], Coroutine[Any, Any, Output]],
-) -> Runnable[Input, Output]:
-    ...
+) -> Runnable[Input, Output]: ...
 
 
 @overload
 def chain(
     func: Callable[[Input], Iterator[Output]],
-) -> Runnable[Input, Output]:
-    ...
+) -> Runnable[Input, Output]: ...
 
 
 @overload
 def chain(
     func: Callable[[Input], AsyncIterator[Output]],
-) -> Runnable[Input, Output]:
-    ...
+) -> Runnable[Input, Output]: ...
 
 
 @overload
 def chain(
     func: Callable[[Input], Output],
-) -> Runnable[Input, Output]:
-    ...
+) -> Runnable[Input, Output]: ...
 
 
 def chain(

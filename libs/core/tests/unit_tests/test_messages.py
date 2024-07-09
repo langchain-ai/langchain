@@ -12,6 +12,7 @@ from langchain_core.messages import (
     FunctionMessageChunk,
     HumanMessage,
     HumanMessageChunk,
+    RemoveMessage,
     SystemMessage,
     ToolCall,
     ToolCallChunk,
@@ -120,6 +121,12 @@ def test_message_chunks() -> None:
     assert ai_msg_chunk + tool_calls_msg_chunk == tool_calls_msg_chunk
     assert tool_calls_msg_chunk + ai_msg_chunk == tool_calls_msg_chunk
 
+    ai_msg_chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[ToolCallChunk(name="tool1", args="", id="1", index=0)],
+    )
+    assert ai_msg_chunk.tool_calls == [ToolCall(name="tool1", args={}, id="1")]
+
     # Test token usage
     left = AIMessageChunk(
         content="",
@@ -202,6 +209,35 @@ def test_complex_ai_message_chunks() -> None:
             content=[{"index": 0, "text": "I am"}, {"index": 1, "text": " indeed."}]
         )
     ), "Concatenating when both content arrays are dicts with separate indexes should not merge"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
+        + AIMessageChunk(
+            content=[{"index": 0, "text": " indeed.", "type": "text_block"}]
+        )
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
+        )
+    ), "Concatenating when both content arrays are dicts with the same index and type should merge"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
+        + AIMessageChunk(
+            content=[{"index": 0, "text": " indeed.", "type": "text_block_delta"}]
+        )
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am indeed.", "type": "text_block"}]
+        )
+    ), "Concatenating when both content arrays are dicts with the same index and different types should merge without updating type"  # noqa: E501
+
+    assert (
+        AIMessageChunk(content=[{"index": 0, "text": "I am", "type": "text_block"}])
+        + AIMessageChunk(content="", response_metadata={"extra": "value"})
+        == AIMessageChunk(
+            content=[{"index": 0, "text": "I am", "type": "text_block"}],
+            response_metadata={"extra": "value"},
+        )
+    ), "Concatenating when one content is an array and one is an empty string should not add a new item, but should concat other fields"  # noqa: E501
 
 
 def test_function_message_chunks() -> None:
@@ -620,6 +656,7 @@ def test_convert_to_messages() -> None:
                 ],
             },
             {"role": "tool", "tool_call_id": "tool_id", "content": "Hi!"},
+            {"role": "remove", "id": "message_to_remove", "content": ""},
         ]
     ) == [
         SystemMessage(content="You are a helpful assistant."),
@@ -639,6 +676,7 @@ def test_convert_to_messages() -> None:
             tool_calls=[ToolCall(name="greet", args={"name": "Jane"}, id="tool_id")],
         ),
         ToolMessage(tool_call_id="tool_id", content="Hi!"),
+        RemoveMessage(id="message_to_remove"),
     ]
 
     # tuples

@@ -343,6 +343,30 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        elif language == Language.ELIXIR:
+            return [
+                # Split along method function and module definiton
+                "\ndef ",
+                "\ndefp ",
+                "\ndefmodule ",
+                "\ndefprotocol ",
+                "\ndefmacro ",
+                "\ndefmacrop ",
+                # Split along control flow statements
+                "\nif ",
+                "\nunless ",
+                "\nwhile ",
+                "\ncase ",
+                "\ncond ",
+                "\nwith ",
+                "\nfor ",
+                "\ndo ",
+                # Split by the normal type of lines
+                "\n\n",
+                "\n",
+                " ",
+                "",
+            ]
         elif language == Language.RUST:
             return [
                 # Split along function definitions

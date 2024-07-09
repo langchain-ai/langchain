@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import os
-from typing import Any, List
+from time import monotonic, sleep
+from typing import Any, Dict, List, Optional
 
-import pytest
+import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.output_parsers import StrOutputParser
@@ -15,14 +16,22 @@ from langchain_core.runnables.base import RunnableLambda
 from langchain_openai import ChatOpenAI
 from pymongo import MongoClient
 from pymongo.collection import Collection
+from pymongo.errors import OperationFailure
 
+from langchain_mongodb import MongoDBAtlasVectorSearch
+from langchain_mongodb.index import drop_vector_search_index
 from tests.utils import ConsistentFakeEmbeddings, PatchedMongoDBAtlasVectorSearch
 
 INDEX_NAME = "langchain-test-index-vectorstores"
+INDEX_CREATION_NAME = "langchain-test-index-vectorstores-create-test"
 NAMESPACE = "langchain_test_db.langchain_test_vectorstores"
 CONNECTION_STRING = os.environ.get("MONGODB_ATLAS_URI")
 DB_NAME, COLLECTION_NAME = NAMESPACE.split(".")
+INDEX_COLLECTION_NAME = "langchain_test_vectorstores_index"
+INDEX_DB_NAME = "langchain_test_index_db"
 DIMENSIONS = 1536
+TIMEOUT = 10.0
+INTERVAL = 0.5
 
 
 @pytest.fixture
@@ -35,14 +44,67 @@ def example_documents():
     ]
 
 
-def get_collection() -> Collection:
+class PatchedMongoDBAtlasVectorSearch(MongoDBAtlasVectorSearch):
+    def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
+        """Patched insert_texts that waits for data to be indexed before returning"""
+        ids = super()._insert_texts(texts, metadatas)
+        start = monotonic()
+        while len(ids) != len(self.similarity_search("sandwich")) and (
+            monotonic() - start <= TIMEOUT
+        ):
+            sleep(INTERVAL)
+        return ids
+
+    def create_vector_search_index(
+        self,
+        dimensions: int,
+        filters: Optional[List[Dict[str, str]]] = None,
+        update: bool = False,
+    ) -> None:
+        result = super().create_vector_search_index(
+            dimensions=dimensions, filters=filters, update=update
+        )
+        start = monotonic()
+        while monotonic() - start <= TIMEOUT:
+            if indexes := list(
+                self._collection.list_search_indexes(name=self._index_name)
+            ):
+                if indexes[0].get("status") == "READY":
+                    return result
+            sleep(INTERVAL)
+
+        raise TimeoutError(f"{self._index_name} never reached 'status: READY'")
+
+
+def _await_index_deletion(coll: Collection, index_name: str) -> None:
+    start = monotonic()
+    try:
+        drop_vector_search_index(coll, index_name)
+    except OperationFailure:
+        # This most likely means an ongoing drop request was made so skip
+        pass
+
+    while list(coll.list_search_indexes(name=index_name)):
+        if monotonic() - start > TIMEOUT:
+            raise TimeoutError(f"Index Name: {index_name} never dropped")
+        sleep(INTERVAL)
+
+
+def get_collection(
+    database_name: str = DB_NAME, collection_name: str = COLLECTION_NAME
+) -> Collection:
     test_client: MongoClient = MongoClient(CONNECTION_STRING)
-    return test_client[DB_NAME][COLLECTION_NAME]
+    return test_client[database_name][collection_name]
 
 
 @pytest.fixture()
 def collection() -> Collection:
     return get_collection()
+
+
+@pytest.fixture()
+def index_collection() -> Collection:
+    return get_collection(INDEX_DB_NAME, INDEX_COLLECTION_NAME)
 
 
 class TestMongoDBAtlasVectorSearch:
@@ -64,6 +126,11 @@ class TestMongoDBAtlasVectorSearch:
         collection = get_collection()
         # delete all the documents in the collection
         collection.delete_many({})  # type: ignore[index]
+
+        # delete all indexes on index collection name
+        _await_index_deletion(
+            get_collection(INDEX_DB_NAME, INDEX_COLLECTION_NAME), INDEX_CREATION_NAME
+        )
 
     @pytest.fixture
     def embedding_openai(self) -> Embeddings:
@@ -556,3 +623,20 @@ class TestMongoDBAtlasVectorSearch:
         assert vectorstore._embedding_key in output_with[0].metadata
         output_without = vectorstore.similarity_search("Sandwich", k=1)
         assert vectorstore._embedding_key not in output_without[0].metadata
+
+    def test_index_creation(
+        self, embedding_openai: Embeddings, index_collection: Any
+    ) -> None:
+        vectorstore = PatchedMongoDBAtlasVectorSearch(
+            index_collection, embedding_openai, index_name=INDEX_CREATION_NAME
+        )
+        vectorstore.create_vector_search_index(dimensions=1536)
+
+    def test_index_update(
+        self, embedding_openai: Embeddings, index_collection: Any
+    ) -> None:
+        vectorstore = PatchedMongoDBAtlasVectorSearch(
+            index_collection, embedding_openai, index_name=INDEX_CREATION_NAME
+        )
+        vectorstore.create_vector_search_index(dimensions=1536)
+        vectorstore.create_vector_search_index(dimensions=1536, update=True)

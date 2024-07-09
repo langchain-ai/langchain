@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.11"
+          - "3.12"
     name: "check doc imports #${{ matrix.python-version }}"
     steps:
       - uses: actions/checkout@v4

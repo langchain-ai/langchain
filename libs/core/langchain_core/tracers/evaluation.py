@@ -1,4 +1,5 @@
 """A tracer that runs evaluators over completed runs."""
+
 from __future__ import annotations
 
 import logging
@@ -64,7 +65,7 @@ class EvaluatorCallbackHandler(BaseTracer):
         The LangSmith project name to be organize eval chain runs under.
     """
 
-    name = "evaluator_callback_handler"
+    name: str = "evaluator_callback_handler"
 
     def __init__(
         self,

@@ -23,7 +23,7 @@ class EdenAiTextToSpeechTool(EdenaiTool):
 
     """
 
-    name = "edenai_text_to_speech"
+    name: str = "edenai_text_to_speech"
     description = (
         "A wrapper around edenai Services text to speech."
         "Useful for when you need to convert text to speech."

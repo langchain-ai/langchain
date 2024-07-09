@@ -1,4 +1,5 @@
 """Toolkit for interacting with Spark SQL."""
+
 from typing import List
 
 from langchain_core.language_models import BaseLanguageModel
@@ -16,7 +17,12 @@ from langchain_community.utilities.spark_sql import SparkSQL
 
 
 class SparkSQLToolkit(BaseToolkit):
-    """Toolkit for interacting with Spark SQL."""
+    """Toolkit for interacting with Spark SQL.
+
+    Parameters:
+        db: SparkSQL. The Spark SQL database.
+        llm: BaseLanguageModel. The language model.
+    """
 
     db: SparkSQL = Field(exclude=True)
     llm: BaseLanguageModel = Field(exclude=True)

@@ -16,6 +16,7 @@ from typing import (
 )
 
 import numpy as np
+from bson import ObjectId
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
@@ -23,7 +24,12 @@ from langchain_core.vectorstores import VectorStore
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.driver_info import DriverInfo
+from pymongo.errors import CollectionInvalid
 
+from langchain_mongodb.index import (
+    create_vector_search_index,
+    update_vector_search_index,
+)
 from langchain_mongodb.pipelines import (
     combine_pipelines,
     final_hybrid_stage,
@@ -146,7 +152,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         texts: Iterable[str],
         metadatas: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
-    ) -> List:
+    ) -> List[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
@@ -176,7 +182,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
                     size = 0
         if texts_batch:
             result_ids.extend(self._insert_texts(texts_batch, metadatas_batch))  # type: ignore
-        return result_ids
+        return [str(id) for id in result_ids]
 
     def _insert_texts(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List:
         if not texts:
@@ -463,7 +469,7 @@ class MongoDBAtlasVectorSearch(VectorStore):
         """
         search_params: dict[str, Any] = {}
         if ids:
-            search_params[self._text_key]["$in"] = ids
+            search_params["_id"] = {"$in": [ObjectId(id) for id in ids]}
 
         return self._collection.delete_many({**search_params, **kwargs}).acknowledged
 
@@ -745,3 +751,42 @@ class MongoDBAtlasVectorSearch(VectorStore):
             make_serializable(res)
             docs.append((Document(page_content=text, metadata=res), score))
         return docs
+
+    def create_vector_search_index(
+        self,
+        dimensions: int,
+        filters: Optional[List[Dict[str, str]]] = None,
+        update: bool = False,
+    ) -> None:
+        """Creates a MongoDB Atlas vectorSearch index for the VectorStore
+
+        Note**: This method may fail as it requires a MongoDB Atlas with
+        these pre-requisites:
+            - M10 cluster or higher
+            - https://www.mongodb.com/docs/atlas/atlas-vector-search/create-index/#prerequisites
+
+        Args:
+            dimensions (int): Number of dimensions in embedding
+            filters (Optional[List[Dict[str, str]]], optional): additional filters
+            for index definition.
+                Defaults to None.
+            update (bool, optional): Updates existing vectorSearch index.
+                Defaults to False.
+        """
+        try:
+            self._collection.database.create_collection(self._collection.name)
+        except CollectionInvalid:
+            pass
+
+        index_operation = (
+            update_vector_search_index if update else create_vector_search_index
+        )
+
+        index_operation(
+            collection=self._collection,
+            index_name=self._index_name,
+            dimensions=dimensions,
+            path=self._embedding_key,
+            similarity=self._relevance_score_fn,
+            filters=filters or [],
+        )
