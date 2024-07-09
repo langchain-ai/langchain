@@ -103,12 +103,10 @@ class ChatGenerationChunk(ChatGeneration):
         elif isinstance(other, list) and all(
             isinstance(x, ChatGenerationChunk) for x in other
         ):
-            generation_info = self.generation_info or {}
-            for chunk in other:
-                generation_info = merge_dicts(
-                    generation_info,
-                    chunk.generation_info or {},
-                )
+            generation_info = merge_dicts(
+                self.generation_info or {},
+                *[chunk.generation_info for chunk in other if chunk.generation_info],
+            )
             return ChatGenerationChunk(
                 message=self.message + [chunk.message for chunk in other],
                 generation_info=generation_info or None,

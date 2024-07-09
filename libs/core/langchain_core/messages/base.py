@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
-from typing_extensions import TypeVar
-
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field
 from langchain_core.utils import get_bolded_text
@@ -152,9 +150,6 @@ def merge_content(
     return merged
 
 
-BMC = TypeVar("BMC", bound="BaseMessageChunk")
-
-
 class BaseMessageChunk(BaseMessage):
     """Message chunk, which can be concatenated with other Message chunks."""
 
@@ -165,7 +160,7 @@ class BaseMessageChunk(BaseMessage):
         """
         return ["langchain", "schema", "messages"]
 
-    def __add__(self: BMC, other: Any) -> BMC:
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         """Message chunks support concatenation with other message chunks.
 
         This functionality is useful to combine message chunks yielded from
@@ -204,10 +199,19 @@ class BaseMessageChunk(BaseMessage):
         elif isinstance(other, list) and all(
             isinstance(o, BaseMessageChunk) for o in other
         ):
-            base = self
-            for o in other:
-                base += o
-            return base
+            content = merge_content(self.content, *(o.content for o in other))
+            additional_kwargs = merge_dicts(
+                self.additional_kwargs, *(o.additional_kwargs for o in other)
+            )
+            response_metadata = merge_dicts(
+                self.response_metadata, *(o.response_metadata for o in other)
+            )
+            return self.__class__(  # type: ignore[call-arg]
+                id=self.id,
+                content=content,
+                additional_kwargs=additional_kwargs,
+                response_metadata=response_metadata,
+            )
         else:
             raise TypeError(
                 'unsupported operand type(s) for +: "'
