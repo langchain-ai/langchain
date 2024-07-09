@@ -377,23 +377,8 @@ class ChildTool(BaseTool):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
-        config = ensure_config(config)
-        if _is_tool_call(input):
-            tool_call_id: Optional[str] = cast(TypedToolCall, input)["id"]
-            input = cast(TypedToolCall, input)["args"]
-        else:
-            tool_call_id = None
-        return self.run(
-            cast(Union[str, dict], input),
-            callbacks=config.get("callbacks"),
-            tags=config.get("tags"),
-            metadata=config.get("metadata"),
-            run_name=config.get("run_name"),
-            run_id=config.pop("run_id", None),
-            config=config,
-            tool_call_id=tool_call_id,
-            **kwargs,
-        )
+        tool_input, kwargs = _prep_run_args(input, config, **kwargs)
+        return self.run(tool_input, **kwargs)
 
     async def ainvoke(
         self,
@@ -401,23 +386,8 @@ class ChildTool(BaseTool):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
-        config = ensure_config(config)
-        if _is_tool_call(input):
-            tool_call_id: Optional[str] = cast(TypedToolCall, input)["id"]
-            input = cast(TypedToolCall, input)["args"]
-        else:
-            tool_call_id = None
-        return await self.arun(
-            cast(Union[str, dict], input),
-            callbacks=config.get("callbacks"),
-            tags=config.get("tags"),
-            metadata=config.get("metadata"),
-            run_name=config.get("run_name"),
-            run_id=config.pop("run_id", None),
-            config=config,
-            tool_call_id=tool_call_id,
-            **kwargs,
-        )
+        tool_input, kwargs = _prep_run_args(input, config, **kwargs)
+        return await self.arun(tool_input, **kwargs)
 
     # --- Tool ---
 
@@ -437,7 +407,7 @@ class ChildTool(BaseTool):
                     for k, v in result.dict().items()
                     if k in tool_input
                 }
-        return cast(dict, tool_input)
+            return tool_input
 
     @root_validator(pre=True)
     def raise_deprecation(cls, values: Dict) -> Dict:
@@ -1244,3 +1214,30 @@ def _handle_tool_error(
             f"or callable. Received: {flag}"
         )
     return content
+
+
+def _prep_run_args(
+    input: Union[str, dict, TypedToolCall],
+    config: Optional[RunnableConfig],
+    **kwargs: Any,
+) -> Tuple[Union[str, Dict], Dict]:
+    config = ensure_config(config)
+    if _is_tool_call(input):
+        tool_call_id: Optional[str] = cast(TypedToolCall, input)["id"]
+        tool_input: Union[str, dict] = cast(TypedToolCall, input)["args"]
+    else:
+        tool_call_id = None
+        tool_input = cast(Union[str, dict], input)
+    return (
+        tool_input,
+        dict(
+            callbacks=config.get("callbacks"),
+            tags=config.get("tags"),
+            metadata=config.get("metadata"),
+            run_name=config.get("run_name"),
+            run_id=config.pop("run_id", None),
+            config=config,
+            tool_call_id=tool_call_id,
+            **kwargs,
+        ),
+    )
