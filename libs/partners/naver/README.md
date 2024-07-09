@@ -1,35 +1,40 @@
 # langchain-naver
 
-This package contains the LangChain integration with Naver
+All functionality related to CLOVA X, the AI technology ecosystem of Naver and Naver Cloud, especially via [CLOVA Studio](https://clovastudio.ncloud.com/).
 
-## Installation
+> [Naver](https://navercorp.com/) is a global technology company based in South Korea with cutting-edge technologies and a diverse business portfolio including search, commerce, fintech, content, cloud, and AI.
+
+> [Naver Cloud](https://www.navercloudcorp.com/lang/en/) is the cloud computing arm of Naver, a leading cloud service provider offering a comprehensive suite of cloud services to businesses through its Naver Cloud Platform (NCP).
+
+Please refer to [NCP User Guide](https://guide.ncloud-docs.com/docs/clovastudio-overview) for more detailed instructions (also in Korean).
+
+## Installation and Setup
+
+- Get both CLOVA Studio API Key and API Gateway Key by [creating your app](https://guide.ncloud-docs.com/docs/en/clovastudio-playground01#create-test-app) and set them as environment variables respectively (`NCP_CLOVASTUDIO_API_KEY`, `NCP_APIGW_API_KEY`).
+- Install the integration Python package with:
 
 ```bash
 pip install -U langchain-naver
 ```
 
-And you should configure credentials by setting the following environment variables:
-
-* TODO: fill this out
+Get both CLOVA Studio API Key and API Gateway Key by [creating your app](https://guide.ncloud-docs.com/docs/en/clovastudio-playground01#create-test-app) and set them as environment variables respectively (`NCP_CLOVASTUDIO_API_KEY`, `NCP_APIGW_API_KEY`).
 
 ## Chat Models
 
-`ChatNaver` class exposes chat models from Naver.
+### ChatClovaX
+
+See a [usage example](/docs/integrations/chat/naver).
 
 ```python
 from langchain_naver import ChatClovaX
-
-llm = ChatClovaX()
-llm.invoke("Sing a ballad of LangChain.")
 ```
 
-## Embeddings
+## Embedding Models
 
-`NaverEmbeddings` class exposes embeddings from Naver.
+### ClovaXEmbeddings
+
+See a [usage example](/docs/integrations/text_embedding/naver).
 
 ```python
-from langchain_naver import NaverEmbeddings
-
-embeddings = NaverEmbeddings()
-embeddings.embed_query("What is the meaning of life?")
+from langchain_naver import ClovaXEmbeddings
 ```
