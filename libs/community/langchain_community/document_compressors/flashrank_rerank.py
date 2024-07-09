@@ -26,6 +26,8 @@ class FlashrankRerank(BaseDocumentCompressor):
     """Flashrank client to use for compressing documents"""
     top_n: int = 3
     """Number of documents to return."""
+    score_threshold: float = 0.0
+    """Minimum relevance threshold to return."""
     model: Optional[str] = None
     """Model to use for reranking."""
 
@@ -69,11 +71,10 @@ class FlashrankRerank(BaseDocumentCompressor):
         final_results = []
 
         for r in rerank_response:
-            metadata = r["meta"]
-            metadata["relevance_score"] = r["score"]
-            doc = Document(
-                page_content=r["text"],
-                metadata=metadata,
-            )
-            final_results.append(doc)
+            if r["score"] > self.score_threshold:
+                doc = Document(
+                    page_content=r["text"],
+                    metadata={"flash_rerank": {"id": r["id"], "relevance_score": r["score"]}, **r["metadata"]},
+                )
+                final_results.append(doc)
         return final_results
