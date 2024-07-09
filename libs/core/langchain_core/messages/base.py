@@ -196,6 +196,22 @@ class BaseMessageChunk(BaseMessage):
                     self.response_metadata, other.response_metadata
                 ),
             )
+        elif isinstance(other, list) and all(
+            isinstance(o, BaseMessageChunk) for o in other
+        ):
+            content = merge_content(self.content, *(o.content for o in other))
+            additional_kwargs = merge_dicts(
+                self.additional_kwargs, *(o.additional_kwargs for o in other)
+            )
+            response_metadata = merge_dicts(
+                self.response_metadata, *(o.response_metadata for o in other)
+            )
+            return self.__class__(  # type: ignore[call-arg]
+                id=self.id,
+                content=content,
+                additional_kwargs=additional_kwargs,
+                response_metadata=response_metadata,
+            )
         else:
             raise TypeError(
                 'unsupported operand type(s) for +: "'
