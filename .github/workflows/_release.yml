@@ -122,7 +122,6 @@ jobs:
           fi
           {
             echo 'release-body<<EOF'
-            echo "# Release $TAG"
             echo $PREAMBLE
             echo
             git log --format="%s" "$PREV_TAG"..HEAD -- $WORKING_DIR
