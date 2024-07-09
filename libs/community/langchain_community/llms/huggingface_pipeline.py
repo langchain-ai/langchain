@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import importlib.util
 import logging
-from typing import Any, List, Mapping, Optional
+from typing import Any, Iterator, List, Mapping, Optional
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
-from langchain_core.outputs import Generation, LLMResult
+from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.pydantic_v1 import Extra
 
 DEFAULT_MODEL_ID = "gpt2"
@@ -303,3 +303,63 @@ class HuggingFacePipeline(BaseLLM):
         return LLMResult(
             generations=[[Generation(text=text)] for text in text_generations]
         )
+
+    def _stream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        from threading import Thread
+
+        import torch
+        from transformers import (
+            StoppingCriteria,
+            StoppingCriteriaList,
+            TextIteratorStreamer,
+        )
+
+        pipeline_kwargs = kwargs.get("pipeline_kwargs", {})
+        skip_prompt = kwargs.get("skip_prompt", True)
+
+        if stop is not None:
+            stop = self.pipeline.tokenizer.convert_tokens_to_ids(stop)
+        stopping_ids_list = stop or []
+
+        class StopOnTokens(StoppingCriteria):
+            def __call__(
+                self,
+                input_ids: torch.LongTensor,
+                scores: torch.FloatTensor,
+                **kwargs: Any,
+            ) -> bool:
+                for stop_id in stopping_ids_list:
+                    if input_ids[0][-1] == stop_id:
+                        return True
+                return False
+
+        stopping_criteria = StoppingCriteriaList([StopOnTokens()])
+
+        inputs = self.pipeline.tokenizer(prompt, return_tensors="pt")
+        streamer = TextIteratorStreamer(
+            self.pipeline.tokenizer,
+            timeout=60.0,
+            skip_prompt=skip_prompt,
+            skip_special_tokens=True,
+        )
+        generation_kwargs = dict(
+            inputs,
+            streamer=streamer,
+            stopping_criteria=stopping_criteria,
+            **pipeline_kwargs,
+        )
+        t1 = Thread(target=self.pipeline.model.generate, kwargs=generation_kwargs)
+        t1.start()
+
+        for char in streamer:
+            chunk = GenerationChunk(text=char)
+            if run_manager:
+                run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+
+            yield chunk
