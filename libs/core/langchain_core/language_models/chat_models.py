@@ -47,6 +47,7 @@ from langchain_core.messages import (
     convert_to_messages,
     message_chunk_to_message,
 )
+from langchain_core.messages.ai import AIMessageChunk, add_ai_message_chunks
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -59,6 +60,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
+from langchain_core.utils._merge import merge_dicts
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 if TYPE_CHECKING:
@@ -84,27 +86,46 @@ class LangSmithParams(TypedDict, total=False):
     """Stop words for generation."""
 
 
-def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
-    """Generate from a stream.
-
-    Args:
-        stream: Iterator of ChatGenerationChunk.
-
-    Returns:
-        ChatResult: Chat result.
-    """
-
-    generation = next(stream, None)
-    if generation:
-        generation += list(stream)
-    return ChatResult(
-        generations=[
-            ChatGeneration(
-                message=message_chunk_to_message(generation.message),
-                generation_info=generation.generation_info,
-            )
-        ]
+def _merge_chunks(chunks: List[ChatGenerationChunk]) -> ChatResult:
+    assert len(chunks) > 0
+    generation_infos = [
+        c.generation_info for c in chunks if c.generation_info is not None
+    ]
+    generation_info = (
+        merge_dicts(generation_infos[0], *generation_infos[1:])
+        if generation_infos
+        else None
     )
+    if all(isinstance(c.message, AIMessageChunk) for c in chunks):
+        return ChatResult(
+            generations=[
+                ChatGeneration(
+                    message=message_chunk_to_message(
+                        add_ai_message_chunks(
+                            chunks[0].message,  # type: ignore[arg-type]
+                            *(c.message for c in chunks[1:]),  # type: ignore[arg-type]
+                        )
+                    ),
+                    generation_info=generation_info,
+                )
+            ]
+        )
+    else:
+        return ChatResult(
+            generations=[
+                ChatGeneration(
+                    message=sum((c.message for c in chunks[1:]), chunks[0].message),
+                    generation_info=generation_info,
+                )
+            ]
+        )
+
+
+def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
+    """Generate from a stream."""
+
+    chunks = list(stream)
+    return _merge_chunks(chunks)
 
 
 async def agenerate_from_stream(
@@ -119,21 +140,8 @@ async def agenerate_from_stream(
         ChatResult: Chat result.
     """
 
-    generation: Optional[ChatGenerationChunk] = None
-    async for chunk in stream:
-        if generation is None:
-            generation = chunk
-        else:
-            generation += chunk
-    assert generation is not None
-    return ChatResult(
-        generations=[
-            ChatGeneration(
-                message=message_chunk_to_message(generation.message),
-                generation_info=generation.generation_info,
-            )
-        ]
-    )
+    chunks = [chunk async for chunk in stream]
+    return await run_in_executor(None, _merge_chunks, chunks)
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
