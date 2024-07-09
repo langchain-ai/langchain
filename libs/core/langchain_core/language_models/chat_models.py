@@ -47,7 +47,7 @@ from langchain_core.messages import (
     convert_to_messages,
     message_chunk_to_message,
 )
-from langchain_core.messages.ai import add_ai_message_chunks
+from langchain_core.messages.ai import AIMessageChunk, add_ai_message_chunks
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -88,20 +88,37 @@ class LangSmithParams(TypedDict, total=False):
 
 def _merge_chunks(chunks: List[ChatGenerationChunk]) -> ChatResult:
     assert len(chunks) > 0
-    return ChatResult(
-        generations=[
-            ChatGeneration(
-                message=message_chunk_to_message(
-                    add_ai_message_chunks(
-                        chunks[0].message, *(c.message for c in chunks[1:])
-                    )
-                ),
-                generation_info=merge_dicts(
-                    chunks[0].generation_info, *(c.generation_info for c in chunks[1:])
-                ),
-            )
-        ]
+    generation_infos = [
+        c.generation_info for c in chunks if c.generation_info is not None
+    ]
+    generation_info = (
+        merge_dicts(generation_infos[0], *generation_infos[1:])
+        if generation_infos
+        else None
     )
+    if all(isinstance(c.message, AIMessageChunk) for c in chunks):
+        return ChatResult(
+            generations=[
+                ChatGeneration(
+                    message=message_chunk_to_message(
+                        add_ai_message_chunks(
+                            chunks[0].message,  # type: ignore[arg-type]
+                            *(c.message for c in chunks[1:]),  # type: ignore[arg-type]
+                        )
+                    ),
+                    generation_info=generation_info,
+                )
+            ]
+        )
+    else:
+        return ChatResult(
+            generations=[
+                ChatGeneration(
+                    message=sum((c.message for c in chunks[1:]), chunks[0].message),
+                    generation_info=generation_info,
+                )
+            ]
+        )
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:

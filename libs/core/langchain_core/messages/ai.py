@@ -307,14 +307,17 @@ def add_ai_message_chunks(
 
     # Token usage
     if left.usage_metadata or any(o.usage_metadata is not None for o in others):
-        usage_metadata: UsageMetadata = left.usage_metadata or UsageMetadata(
+        usage_metadata_: UsageMetadata = left.usage_metadata or UsageMetadata(
             input_tokens=0, output_tokens=0, total_tokens=0
         )
         for other in others:
             if other.usage_metadata is not None:
-                left["input_tokens"] += other.usage_metadata["input_tokens"]
-                left["output_tokens"] += other.usage_metadata["output_tokens"]
-                left["total_tokens"] += other.usage_metadata["total_tokens"]
+                usage_metadata_["input_tokens"] += other.usage_metadata["input_tokens"]
+                usage_metadata_["output_tokens"] += other.usage_metadata[
+                    "output_tokens"
+                ]
+                usage_metadata_["total_tokens"] += other.usage_metadata["total_tokens"]
+        usage_metadata: Optional[UsageMetadata] = usage_metadata_
     else:
         usage_metadata = None
 

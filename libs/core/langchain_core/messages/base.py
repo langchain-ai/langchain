@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.pydantic_v1 import Extra, Field
@@ -125,16 +125,16 @@ def merge_content(
     merged = first_content
     for content in contents:
         # If current is a string
-        if isinstance(content, str):
+        if isinstance(merged, str):
             # If the next chunk is also a string, then merge them naively
             if isinstance(content, str):
-                merged += content
+                merged = cast(str, merged) + content
             # If the next chunk is a list, add the current to the start of the list
             else:
                 merged = [merged] + content
         elif isinstance(content, list):
             # If both are lists
-            merged = merge_lists(merged, content)
+            merged = merge_lists(cast(List, merged), content)  # type: ignore
         # If the first content is a list, and the second content is a string
         else:
             # If the last element of the first content is a string

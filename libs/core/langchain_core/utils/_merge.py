@@ -71,4 +71,4 @@ def merge_lists(left: Optional[List], *others: Optional[List]) -> Optional[List]
                         merged.append(e)
                 else:
                     merged.append(e)
-        return merged
+    return merged
