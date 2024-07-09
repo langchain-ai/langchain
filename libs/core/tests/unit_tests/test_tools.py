@@ -1034,9 +1034,11 @@ def test_convert_from_runnable_dict() -> None:
         assert config["configurable"]["foo"] == "not-bar"
         return str(x["a"] * max(x["b"]))
 
-    runnable = RunnableLambda(g)
+    runnable = RunnableLambda(h)
     as_tool = runnable.as_tool(arg_types={"a": int, "b": List[int]})
-    result = as_tool.invoke({"a": 3, "b": [1, 2]}, {"configurable": {"foo": "not-bar"}})
+    result = as_tool.invoke(
+        {"a": 3, "b": [1, 2]}, config={"configurable": {"foo": "not-bar"}}
+    )
     assert result == "6"
 
 
@@ -1067,5 +1069,5 @@ def test_convert_from_runnable_other() -> None:
 
     runnable = RunnableLambda(h)
     as_tool = runnable.as_tool()
-    result = as_tool.invoke("b", {"configurable": {"foo": "not-bar"}})
+    result = as_tool.invoke("b", config={"configurable": {"foo": "not-bar"}})
     assert result == "ba"
