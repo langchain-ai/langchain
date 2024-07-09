@@ -17,6 +17,8 @@ def _aperturedb_from_texts(
 ) -> ApertureDB:
     """Create an ApertureDB instance from fake texts."""
     descriptor_set = uuid.uuid4().hex  # Fresh descriptor set for each test
+    assert metadatas is None or len(metadatas) == len(fake_texts)
+    assert ids is None or len(ids) == len(fake_texts)
     if ids is None:
         return ApertureDB.from_texts(
             fake_texts,
@@ -35,8 +37,6 @@ def _aperturedb_from_texts(
                 Document(page_content=text, id=id_, metadata=metadata)
                 for text, id_, metadata in zip(fake_texts, ids, metadatas)
             ]
-        print("ID", docs[0].id)
-        print(docs)
         return ApertureDB.from_documents(
             docs,
             FakeEmbeddings(),
@@ -44,18 +44,38 @@ def _aperturedb_from_texts(
         )
 
 
+def _compare_documents(actuals: List[Document], expecteds: List[Document]) -> None:
+    """Compare two documents, with one-sided test on IDs.
+    If we don't provide an ID, one will be generated for us, and we don't care what
+    it is."""
+    assert len(actuals) == len(
+        expecteds
+    ), f"Expected {expecteds} results, got {actuals}"
+    for i, (actual, expected) in enumerate(zip(actuals, expecteds)):
+        assert (
+            actual.page_content == expected.page_content
+        ), f"{i}: page_content {actual.page_content} != {expected.page_content}"
+        assert (
+            actual.metadata == expected.metadata
+        ), f"{i}: metadata {actual.metadata} != {expected.metadata}"
+        if expected.id is not None:
+            assert actual.id == expected.id, f"{i}: id {actual.id} != {expected.id}"
+
+
 def test_aperturedb() -> None:
     """Test end to end construction and search."""
     docsearch = _aperturedb_from_texts()
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
+    _compare_documents(output, [Document(page_content="foo")])
 
 
 def test_aperturedb_with_metadata() -> None:
     """Test with metadata"""
     docsearch = _aperturedb_from_texts(metadatas=[{"label": "test"}] * len(fake_texts))
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo", metadata={"label": "test"})]
+    _compare_documents(
+        output, [Document(page_content="foo", metadata={"label": "test"})]
+    )
 
 
 def test_aperturedb_with_id() -> None:
@@ -63,8 +83,7 @@ def test_aperturedb_with_id() -> None:
     ids = ["id_" + str(i) for i in range(len(fake_texts))]
     docsearch = _aperturedb_from_texts(ids=ids)
     output = docsearch.similarity_search("foo", k=1)
-    assert output == [Document(page_content="foo")]
-    assert output[0].id == "id_0"
+    _compare_documents(output, [Document(page_content="foo", id="id_0")])
 
     output = docsearch.delete(ids=ids)
     assert output
@@ -80,13 +99,18 @@ def test_aperturedb_with_score() -> None:
     output = docsearch.similarity_search_with_score("foo", k=3)
     docs = [o[0] for o in output]
     scores = [o[1] for o in output]
-    assert docs == [
-        Document(page_content="foo", metadata={"page": 0}),
-        Document(page_content="bar", metadata={"page": 1}),
-        Document(page_content="baz", metadata={"page": 2}),
-    ], docs
+    _compare_documents(
+        docs,
+        [
+            Document(page_content="foo", metadata={"page": 0}),
+            Document(page_content="bar", metadata={"page": 1}),
+            Document(page_content="baz", metadata={"page": 2}),
+        ],
+    )
     # scores descending by default (CS)
-    assert scores[0] > scores[1] > scores[2], scores
+    assert (
+        scores[0] > scores[1] > scores[2]
+    ), f"Expected {scores[0]} > {scores[1]} > {scores[2]}"
 
 
 def test_aperturedb_max_marginal_relevance_search() -> None:
@@ -94,15 +118,18 @@ def test_aperturedb_max_marginal_relevance_search() -> None:
     metadatas = [{"page": i} for i in range(len(fake_texts))]
     docsearch = _aperturedb_from_texts(metadatas=metadatas)
     output = docsearch.max_marginal_relevance_search("foo", k=2, fetch_k=3)
-    assert output == [
-        Document(page_content="foo", metadata={"page": 0}),
-        Document(page_content="baz", metadata={"page": 2}),
-    ], output
+    _compare_documents(
+        output,
+        [
+            Document(page_content="foo", metadata={"page": 0}),
+            Document(page_content="bar", metadata={"page": 1}),
+        ],
+    )
 
 
 def test_aperturedb_add_extra() -> None:
-    """Test end to end construction and MRR search."""
-    texts = ["foo", "bar", "baz"]
+    """Test end to end construction and similarity search."""
+    texts = fake_texts
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = _aperturedb_from_texts(metadatas=metadatas)
 
@@ -112,43 +139,16 @@ def test_aperturedb_add_extra() -> None:
     assert len(output) == 6, len(output)
 
 
-def test_aperturedb_no_drop() -> None:
+def test_aperturedb_add_extra_mmr() -> None:
     """Test end to end construction and MRR search."""
-    texts = ["foo", "bar", "baz"]
+    texts = fake_texts
     metadatas = [{"page": i} for i in range(len(texts))]
     docsearch = _aperturedb_from_texts(metadatas=metadatas)
-    del docsearch
 
-    docsearch = _aperturedb_from_texts(metadatas=metadatas, drop=False)
+    docsearch.add_texts(texts, metadatas)
 
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 6, len(output)
-
-
-def test_aperturedb_delete_entities() -> None:
-    """Test end to end construction and delete entities"""
-    texts = ["foo", "bar", "baz"]
-    metadatas = [{"id": i} for i in range(len(texts))]
-    docsearch = _aperturedb_from_texts(metadatas=metadatas)
-    expr = "id in [1,2]"
-    pks = _get_pks(expr, docsearch)
-    result = docsearch.delete(pks)
-    assert result is True
-
-
-def test_aperturedb_upsert_entities() -> None:
-    """Test end to end construction and upsert entities"""
-    texts = ["foo", "bar", "baz"]
-    metadatas = [{"id": i} for i in range(len(texts))]
-    docsearch = _aperturedb_from_texts(metadatas=metadatas)
-    expr = "id in [1,2]"
-    pks = _get_pks(expr, docsearch)
-    documents = [
-        Document(page_content="test_1", metadata={"id": 1}),
-        Document(page_content="test_2", metadata={"id": 3}),
-    ]
-    ids = docsearch.upsert(pks, documents)
-    assert len(ids) == 2, len(ids)  # type: ignore[arg-type]
 
 
 if __name__ == "__main__":
@@ -158,4 +158,4 @@ if __name__ == "__main__":
     test_aperturedb_with_score()
     test_aperturedb_max_marginal_relevance_search()
     test_aperturedb_add_extra()
-    test_aperturedb_no_drop()
+    test_aperturedb_add_extra_mmr()

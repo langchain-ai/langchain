@@ -388,6 +388,18 @@ class ApertureDB(VectorStore):
         return store
 
     @classmethod
+    @override
+    def from_documents(
+        cls: Type[ApertureDB],
+        documents: List[Document],
+        embedding: Embeddings,
+        **kwargs: Any,
+    ) -> ApertureDB:
+        store = cls(embeddings=embedding, **kwargs)
+        store.add_documents(documents)
+        return store
+
+    @classmethod
     def delete_vectorstore(class_, descriptor_set: str) -> None:
         """Deletes a vectorstore and all its data from the database"""
         from aperturedb.Utils import Utils, create_connector
