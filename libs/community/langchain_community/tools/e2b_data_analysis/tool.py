@@ -234,8 +234,7 @@ class E2BDataAnalysisTool(BaseTool):
         ]
         self.description = self.description + "\n" + self.uploaded_files_description
 
-    @override
-    def as_tool(self) -> Tool:
+    def as_tool(self) -> Tool:  # type: ignore[override]
         return Tool.from_function(
             func=self._run,
             name=self.name,
