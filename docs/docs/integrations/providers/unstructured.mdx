@@ -13,7 +13,7 @@ dependencies running.
 
 - For the smallest installation footprint and to take advantage of features not available in the
   open-source `unstructured` package, install the Python SDK with `pip install unstructured-client`
-  and use the `UnstructuredAPIFileLoader` or `UnstructuredAPIFileIOLoader`.
+  and use the `UnstructuredSDKFileLoader` or `UnstructuredSDKFileIOLoader`.
     - Unstructured's documentation for the sdk can be found here:
       https://docs.unstructured.io/api-reference/api-services/sdk
 
@@ -43,20 +43,20 @@ Check out the instructions
 
 The primary usage of the `Unstructured` is in data loaders.
 
-### UnstructuredAPIFileIOLoader
+### UnstructuredSDKFileIOLoader
 
 See a [usage example](/docs/integrations/document_loaders/unstructured_file#unstructured-api).
 
 ```python
-from langchain_community.document_loaders import UnstructuredAPIFileIOLoader
+from langchain_community.document_loaders import UnstructuredSDKFileIOLoader
 ```
 
-### UnstructuredAPIFileLoader
+### UnstructuredSDKFileLoader
 
 See a [usage example](/docs/integrations/document_loaders/unstructured_file#unstructured-api).
 
 ```python
-from langchain_community.document_loaders import UnstructuredAPIFileLoader
+from langchain_community.document_loaders import UnstructuredSDKFileLoader
 ```
 
 ### UnstructuredCHMLoader

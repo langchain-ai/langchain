@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import IO, Any, Callable, Iterator, Optional, Sequence, Union
 
 from langchain_core.documents import Document
-
+from langchain_core._api.deprecation import deprecated
 from langchain_community.document_loaders.base import BaseLoader
 
 logger = logging.getLogger(__file__)
@@ -206,7 +206,11 @@ class UnstructuredFileLoader(UnstructuredBaseLoader):
                 element.apply(post_processor)
         return elements
 
-
+@deprecated(
+    since="0.2.8",
+    removal="0.4.0",  # TODO (jennings): determine when to set removal
+    alternative_import="langchain_unstructured.UnstructuredSDKFileLoader",
+)
 class UnstructuredAPIFileLoader(UnstructuredBaseLoader):
     """Load files using `Unstructured` API.
 
@@ -362,7 +366,11 @@ class UnstructuredFileIOLoader(UnstructuredBaseLoader):
                 element.apply(post_processor)
         return elements
 
-
+@deprecated(
+    since="0.2.8",
+    removal="0.4.0",  # TODO (jennings): determine when to set removal
+    alternative_import="langchain_unstructured.UnstructuredSDKFileIOLoader",
+)
 class UnstructuredAPIFileIOLoader(UnstructuredBaseLoader):
     """Send file-like objects with `unstructured-client` sdk to the Unstructured API.
 

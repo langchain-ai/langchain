@@ -178,15 +178,32 @@ class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
     Augmented Generation (RAG). You can pass in additional unstructured kwargs to
     configure different unstructured settings.
 
-    Examples
-    --------
-    from langchain_community.document_loaders import UnstructuredAPIFileLoader
+    Setup:
+        .. code-block:: bash
+            pip install -U langchain-unstructured
+            pip install -U unstructured-client
+            export UNSTRUCTURED_API_KEY="your-api-key"
 
-    with open("example.pdf", "rb") as f:
-        loader = UnstructuredFileAPILoader(
-            f, mode="elements", strategy="fast", api_key="MY_API_KEY",
-        )
-        docs = loader.load()
+    Instantiate:
+        .. code-block:: python
+            from langchain_community.document_loaders import UnstructuredSDKFileIOLoader
+
+            with open("example.pdf", "rb") as f:
+                loader = UnstructuredSDKFileIOLoader(
+                    # required params
+                    file_path=f,
+                    # other params
+                    mode="elements",
+                    strategy="fast",
+                    api_key=UNSTRUCTURED_API_KEY,
+                )
+
+    Load:
+        .. code-block:: python
+            docs = loader.load()
+
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
 
     References
     ----------
