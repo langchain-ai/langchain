@@ -64,7 +64,6 @@ module.exports = {
           href: "https://langchain-ai.github.io/langgraph/",
           label: "🦜🕸️ LangGraph"
         },
-        "langserve",
       ],
     },
     {

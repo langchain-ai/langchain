@@ -1,4 +1,5 @@
 """Loads rich text files."""
+
 from pathlib import Path
 from typing import Any, List, Union
 

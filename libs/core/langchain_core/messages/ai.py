@@ -73,17 +73,27 @@ class AIMessage(BaseMessage):
     """
 
     type: Literal["ai"] = "ai"
-    """The type of the message (used for deserialization)."""
+    """The type of the message (used for deserialization). Defaults to "ai"."""
 
     def __init__(
         self, content: Union[str, List[Union[str, Dict]]], **kwargs: Any
     ) -> None:
-        """Pass in content as positional arg."""
+        """Pass in content as positional arg.
+
+        Args:
+            content: The content of the message.
+            **kwargs: Additional arguments to pass to the parent class.
+        """
         super().__init__(content=content, **kwargs)
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            The namespace of the langchain object.
+            Defaults to ["langchain", "schema", "messages"].
+        """
         return ["langchain", "schema", "messages"]
 
     @property
@@ -117,7 +127,15 @@ class AIMessage(BaseMessage):
         return values
 
     def pretty_repr(self, html: bool = False) -> str:
-        """Return a pretty representation of the message."""
+        """Return a pretty representation of the message.
+
+        Args:
+            html: Whether to return an HTML-formatted string.
+                 Defaults to False.
+
+        Returns:
+            A pretty representation of the message.
+        """
         base = super().pretty_repr(html=html)
         lines = []
 
@@ -157,14 +175,21 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     # Ignoring mypy re-assignment here since we're overriding the value
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
-    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore[assignment]
+    type: Literal["AIMessageChunk"] = "AIMessageChunk"  # type: ignore
+    """The type of the message (used for deserialization). 
+    Defaults to "AIMessageChunk"."""
 
     tool_call_chunks: List[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            The namespace of the langchain object.
+            Defaults to ["langchain", "schema", "messages"].
+        """
         return ["langchain", "schema", "messages"]
 
     @property
@@ -177,6 +202,17 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     @root_validator(pre=False, skip_on_failure=True)
     def init_tool_calls(cls, values: dict) -> dict:
+        """Initialize tool calls from tool call chunks.
+
+        Args:
+            values: The values to validate.
+
+        Returns:
+            The values with tool calls initialized.
+
+        Raises:
+            ValueError: If the tool call chunks are malformed.
+        """
         if not values["tool_call_chunks"]:
             if values["tool_calls"]:
                 values["tool_call_chunks"] = [
@@ -205,7 +241,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         invalid_tool_calls = []
         for chunk in values["tool_call_chunks"]:
             try:
-                args_ = parse_partial_json(chunk["args"])
+                args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}
                 if isinstance(args_, dict):
                     tool_calls.append(
                         ToolCall(
@@ -231,64 +267,69 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
         if isinstance(other, AIMessageChunk):
-            if self.example != other.example:
-                raise ValueError(
-                    "Cannot concatenate AIMessageChunks with different example values."
-                )
-
-            content = merge_content(self.content, other.content)
-            additional_kwargs = merge_dicts(
-                self.additional_kwargs, other.additional_kwargs
-            )
-            response_metadata = merge_dicts(
-                self.response_metadata, other.response_metadata
-            )
-
-            # Merge tool call chunks
-            if self.tool_call_chunks or other.tool_call_chunks:
-                raw_tool_calls = merge_lists(
-                    self.tool_call_chunks,
-                    other.tool_call_chunks,
-                )
-                if raw_tool_calls:
-                    tool_call_chunks = [
-                        ToolCallChunk(
-                            name=rtc.get("name"),
-                            args=rtc.get("args"),
-                            index=rtc.get("index"),
-                            id=rtc.get("id"),
-                        )
-                        for rtc in raw_tool_calls
-                    ]
-                else:
-                    tool_call_chunks = []
-            else:
-                tool_call_chunks = []
-
-            # Token usage
-            if self.usage_metadata or other.usage_metadata:
-                left: UsageMetadata = self.usage_metadata or UsageMetadata(
-                    input_tokens=0, output_tokens=0, total_tokens=0
-                )
-                right: UsageMetadata = other.usage_metadata or UsageMetadata(
-                    input_tokens=0, output_tokens=0, total_tokens=0
-                )
-                usage_metadata: Optional[UsageMetadata] = {
-                    "input_tokens": left["input_tokens"] + right["input_tokens"],
-                    "output_tokens": left["output_tokens"] + right["output_tokens"],
-                    "total_tokens": left["total_tokens"] + right["total_tokens"],
-                }
-            else:
-                usage_metadata = None
-
-            return self.__class__(
-                example=self.example,
-                content=content,
-                additional_kwargs=additional_kwargs,
-                tool_call_chunks=tool_call_chunks,
-                response_metadata=response_metadata,
-                usage_metadata=usage_metadata,
-                id=self.id,
-            )
-
+            return add_ai_message_chunks(self, other)
+        elif isinstance(other, (list, tuple)) and all(
+            isinstance(o, AIMessageChunk) for o in other
+        ):
+            return add_ai_message_chunks(self, *other)
         return super().__add__(other)
+
+
+def add_ai_message_chunks(
+    left: AIMessageChunk, *others: AIMessageChunk
+) -> AIMessageChunk:
+    """Add multiple AIMessageChunks together."""
+    if any(left.example != o.example for o in others):
+        raise ValueError(
+            "Cannot concatenate AIMessageChunks with different example values."
+        )
+
+    content = merge_content(left.content, *(o.content for o in others))
+    additional_kwargs = merge_dicts(
+        left.additional_kwargs, *(o.additional_kwargs for o in others)
+    )
+    response_metadata = merge_dicts(
+        left.response_metadata, *(o.response_metadata for o in others)
+    )
+
+    # Merge tool call chunks
+    if raw_tool_calls := merge_lists(
+        left.tool_call_chunks, *(o.tool_call_chunks for o in others)
+    ):
+        tool_call_chunks = [
+            ToolCallChunk(
+                name=rtc.get("name"),
+                args=rtc.get("args"),
+                index=rtc.get("index"),
+                id=rtc.get("id"),
+            )
+            for rtc in raw_tool_calls
+        ]
+    else:
+        tool_call_chunks = []
+
+    # Token usage
+    if left.usage_metadata or any(o.usage_metadata is not None for o in others):
+        usage_metadata_: UsageMetadata = left.usage_metadata or UsageMetadata(
+            input_tokens=0, output_tokens=0, total_tokens=0
+        )
+        for other in others:
+            if other.usage_metadata is not None:
+                usage_metadata_["input_tokens"] += other.usage_metadata["input_tokens"]
+                usage_metadata_["output_tokens"] += other.usage_metadata[
+                    "output_tokens"
+                ]
+                usage_metadata_["total_tokens"] += other.usage_metadata["total_tokens"]
+        usage_metadata: Optional[UsageMetadata] = usage_metadata_
+    else:
+        usage_metadata = None
+
+    return left.__class__(
+        example=left.example,
+        content=content,
+        additional_kwargs=additional_kwargs,
+        tool_call_chunks=tool_call_chunks,
+        response_metadata=response_metadata,
+        usage_metadata=usage_metadata,
+        id=left.id,
+    )

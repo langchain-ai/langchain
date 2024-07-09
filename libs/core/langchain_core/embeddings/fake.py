@@ -1,4 +1,5 @@
 """Module contains a few fake embedding models for testing purposes."""
+
 # Please do not add additional fake embedding model implementations here.
 import hashlib
 from typing import List
