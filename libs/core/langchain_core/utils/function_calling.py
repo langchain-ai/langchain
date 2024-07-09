@@ -27,7 +27,6 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.pydantic_v1 import BaseModel
-from langchain_core.runnables import Runnable
 from langchain_core.utils.json_schema import dereference_refs
 
 if TYPE_CHECKING:
@@ -190,8 +189,7 @@ def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
 
 
 def convert_to_openai_function(
-    function: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool, Runnable],
-    description: Optional[str] = None,
+    function: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
 
@@ -200,14 +198,12 @@ def convert_to_openai_function(
             If a dictionary is passed in, it is assumed to already be a valid OpenAI
             function or a JSON schema with top-level 'title' and 'description' keys
             specified.
-        description: If provided, description to use for the function. Overrides
-            descriptions inferred from docstrings and class attributes.
 
     Returns:
         A dict version of the passed in function which is compatible with the
             OpenAI function-calling API.
     """
-    from langchain_core.tools import BaseTool, convert_runnable_to_tool
+    from langchain_core.tools import BaseTool
 
     # already in OpenAI function format
     if isinstance(function, dict) and all(
@@ -225,16 +221,11 @@ def convert_to_openai_function(
             "parameters": function,
         }
     elif isinstance(function, type) and issubclass(function, BaseModel):
-        function_schema = cast(Dict, convert_pydantic_to_openai_function(function))
+        return cast(Dict, convert_pydantic_to_openai_function(function))
     elif isinstance(function, BaseTool):
-        function_schema = cast(Dict, format_tool_to_openai_function(function))
-    elif isinstance(function, Runnable):
-        as_tool = convert_runnable_to_tool(function)
-        function_schema = cast(Dict, format_tool_to_openai_function(as_tool))
+        return cast(Dict, format_tool_to_openai_function(function))
     elif callable(function):
-        function_schema = cast(
-            Dict, convert_python_function_to_openai_function(function)
-        )
+        return cast(Dict, convert_python_function_to_openai_function(function))
     else:
         raise ValueError(
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
@@ -242,9 +233,6 @@ def convert_to_openai_function(
             " either be in OpenAI function format or valid JSON schema with top-level"
             " 'title' and 'description' keys."
         )
-    if description is not None:
-        function_schema["description"] = description
-    return function_schema
 
 
 def convert_to_openai_tool(

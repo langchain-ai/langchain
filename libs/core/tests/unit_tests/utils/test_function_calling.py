@@ -187,8 +187,8 @@ def test_convert_to_openai_function(
         actual = convert_to_openai_function(fn)  # type: ignore
         assert actual == expected
 
-    # Runnables don't support multiple args
-    actual = convert_to_openai_function(runnable, description="dummy function")
+    # Test runnables
+    actual = convert_to_openai_function(runnable.as_tool(description="dummy function"))
     parameters = {
         "type": "object",
         "properties": {
