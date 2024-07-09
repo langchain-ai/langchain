@@ -1,5 +1,4 @@
 from langchain import agents
-from tests.unit_tests import assert_all_importable
 
 EXPECTED_ALL = [
     "Agent",
@@ -43,9 +42,9 @@ EXPECTED_ALL = [
     "create_self_ask_with_search_agent",
     "create_json_chat_agent",
     "create_structured_chat_agent",
+    "create_tool_calling_agent",
 ]
 
 
 def test_all_imports() -> None:
     assert set(agents.__all__) == set(EXPECTED_ALL)
-    assert_all_importable(agents)

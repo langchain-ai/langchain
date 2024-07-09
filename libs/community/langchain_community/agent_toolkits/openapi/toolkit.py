@@ -1,12 +1,12 @@
 """Requests toolkit."""
+
 from __future__ import annotations
 
 from typing import Any, List
 
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.tools import Tool
+from langchain_core.tools import BaseToolkit, Tool
 
-from langchain_community.agent_toolkits.base import BaseToolkit
 from langchain_community.agent_toolkits.json.base import create_json_agent
 from langchain_community.agent_toolkits.json.toolkit import JsonToolkit
 from langchain_community.agent_toolkits.openapi.prompt import DESCRIPTION
@@ -41,6 +41,7 @@ class RequestsToolkit(BaseToolkit):
     """
 
     requests_wrapper: TextRequestsWrapper
+    """The requests wrapper."""
     allow_dangerous_requests: bool = False
     """Allow dangerous requests. See documentation for details."""
 
@@ -82,7 +83,9 @@ class OpenAPIToolkit(BaseToolkit):
     """
 
     json_agent: Any
+    """The JSON agent."""
     requests_wrapper: TextRequestsWrapper
+    """The requests wrapper."""
     allow_dangerous_requests: bool = False
     """Allow dangerous requests. See documentation for details."""
 

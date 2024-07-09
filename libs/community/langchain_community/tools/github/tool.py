@@ -7,6 +7,7 @@ To use this tool, you must first set as environment variables:
     GITHUB_REPOSITORY -> format: {owner}/{repo}
 
 """
+
 from typing import Optional, Type
 
 from langchain_core.callbacks import CallbackManagerForToolRun
@@ -19,7 +20,7 @@ from langchain_community.utilities.github import GitHubAPIWrapper
 class GitHubAction(BaseTool):
     """Tool for interacting with the GitHub API."""
 
-    api_wrapper: GitHubAPIWrapper = Field(default_factory=GitHubAPIWrapper)
+    api_wrapper: GitHubAPIWrapper = Field(default_factory=GitHubAPIWrapper)  # type: ignore[arg-type]
     mode: str
     name: str = ""
     description: str = ""

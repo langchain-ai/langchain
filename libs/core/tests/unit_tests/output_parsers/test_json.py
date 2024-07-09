@@ -5,11 +5,10 @@ import pytest
 
 from langchain_core.output_parsers.json import (
     SimpleJsonOutputParser,
-    parse_json_markdown,
-    parse_partial_json,
 )
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_core.utils.json import parse_json_markdown, parse_partial_json
 
 GOOD_JSON = """```json
 {
@@ -68,6 +67,10 @@ JSON_WITH_MARKDOWN_CODE_BLOCK = """```json
     "foo": "```bar```"
 }
 ```"""
+
+JSON_WITH_PART_MARKDOWN_CODE_BLOCK = """
+{\"valid_json\": "hey ```print(hello world!)``` hey"}
+"""
 
 JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES = """```json
 {
@@ -189,6 +192,11 @@ def test_parse_json(json_string: str) -> None:
 def test_parse_json_with_code_blocks() -> None:
     parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK)
     assert parsed == {"foo": "```bar```"}
+
+
+def test_parse_json_with_part_code_blocks() -> None:
+    parsed = parse_json_markdown(JSON_WITH_PART_MARKDOWN_CODE_BLOCK)
+    assert parsed == {"valid_json": "hey ```print(hello world!)``` hey"}
 
 
 def test_parse_json_with_code_blocks_and_newlines() -> None:

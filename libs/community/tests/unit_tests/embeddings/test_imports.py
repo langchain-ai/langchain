@@ -1,7 +1,9 @@
-from langchain_community.embeddings import __all__
+from langchain_community.embeddings import __all__, _module_lookup
 
 EXPECTED_ALL = [
+    "ClovaEmbeddings",
     "OpenAIEmbeddings",
+    "AnyscaleEmbeddings",
     "AzureOpenAIEmbeddings",
     "BaichuanTextEmbeddings",
     "ClarifaiEmbeddings",
@@ -48,13 +50,17 @@ EXPECTED_ALL = [
     "SpacyEmbeddings",
     "NLPCloudEmbeddings",
     "GPT4AllEmbeddings",
+    "GigaChatEmbeddings",
     "XinferenceEmbeddings",
     "LocalAIEmbeddings",
     "AwaEmbeddings",
     "HuggingFaceBgeEmbeddings",
+    "IpexLLMBgeEmbeddings",
     "ErnieEmbeddings",
     "JavelinAIGatewayEmbeddings",
     "OllamaEmbeddings",
+    "OracleEmbeddings",
+    "OVHCloudEmbeddings",
     "QianfanEmbeddingsEndpoint",
     "JohnSnowLabsEmbeddings",
     "VoyageEmbeddings",
@@ -64,8 +70,19 @@ EXPECTED_ALL = [
     "QuantizedBiEncoderEmbeddings",
     "NeMoEmbeddings",
     "SparkLLMTextEmbeddings",
+    "SambaStudioEmbeddings",
+    "TitanTakeoffEmbed",
+    "QuantizedBgeEmbeddings",
+    "PremAIEmbeddings",
+    "YandexGPTEmbeddings",
+    "OpenVINOEmbeddings",
+    "OpenVINOBgeEmbeddings",
+    "SolarEmbeddings",
+    "AscendEmbeddings",
+    "ZhipuAIEmbeddings",
 ]
 
 
 def test_all_imports() -> None:
     assert set(__all__) == set(EXPECTED_ALL)
+    assert set(__all__) == set(_module_lookup.keys())

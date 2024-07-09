@@ -5,10 +5,13 @@ MIT License
 """
 
 from collections import deque
+from contextlib import AbstractAsyncContextManager
+from types import TracebackType
 from typing import (
     Any,
     AsyncContextManager,
     AsyncGenerator,
+    AsyncIterable,
     AsyncIterator,
     Awaitable,
     Callable,
@@ -18,6 +21,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -120,7 +124,7 @@ async def tee_peer(
 
 class Tee(Generic[T]):
     """
-    Create ``n`` separate asynchronous iterators over ``iterable``
+    Create ``n`` separate asynchronous iterators over ``iterable``.
 
     This splits a single ``iterable`` into multiple iterators, each providing
     the same items in the same order.
@@ -179,12 +183,10 @@ class Tee(Generic[T]):
         return len(self._children)
 
     @overload
-    def __getitem__(self, item: int) -> AsyncIterator[T]:
-        ...
+    def __getitem__(self, item: int) -> AsyncIterator[T]: ...
 
     @overload
-    def __getitem__(self, item: slice) -> Tuple[AsyncIterator[T], ...]:
-        ...
+    def __getitem__(self, item: slice) -> Tuple[AsyncIterator[T], ...]: ...
 
     def __getitem__(
         self, item: Union[int, slice]
@@ -207,3 +209,65 @@ class Tee(Generic[T]):
 
 
 atee = Tee
+
+
+class aclosing(AbstractAsyncContextManager):
+    """Async context manager for safely finalizing an asynchronously cleaned-up
+    resource such as an async generator, calling its ``aclose()`` method.
+
+    Code like this:
+
+        async with aclosing(<module>.fetch(<arguments>)) as agen:
+            <block>
+
+    is equivalent to this:
+
+        agen = <module>.fetch(<arguments>)
+        try:
+            <block>
+        finally:
+            await agen.aclose()
+
+    """
+
+    def __init__(
+        self, thing: Union[AsyncGenerator[Any, Any], AsyncIterator[Any]]
+    ) -> None:
+        self.thing = thing
+
+    async def __aenter__(self) -> Union[AsyncGenerator[Any, Any], AsyncIterator[Any]]:
+        return self.thing
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
+        if hasattr(self.thing, "aclose"):
+            await self.thing.aclose()
+
+
+async def abatch_iterate(
+    size: int, iterable: AsyncIterable[T]
+) -> AsyncIterator[List[T]]:
+    """Utility batching function for async iterables.
+
+    Args:
+        size: The size of the batch.
+        iterable: The async iterable to batch.
+
+    Returns:
+        An async iterator over the batches
+    """
+    batch: List[T] = []
+    async for element in iterable:
+        if len(batch) < size:
+            batch.append(element)
+
+        if len(batch) >= size:
+            yield batch
+            batch = []
+
+    if batch:
+        yield batch

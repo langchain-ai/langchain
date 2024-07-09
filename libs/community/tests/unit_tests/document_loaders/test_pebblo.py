@@ -62,14 +62,15 @@ def test_csv_loader_load_valid_data(mocker: MockerFixture) -> None:
         post=MockResponse(json_data={"data": ""}, status_code=200),
     )
     file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "test_nominal.csv")
+    full_file_path = os.path.abspath(file_path)
     expected_docs = [
         Document(
             page_content="column1: value1\ncolumn2: value2\ncolumn3: value3",
-            metadata={"source": file_path, "row": 0},
+            metadata={"source": file_path, "row": 0, "full_path": full_file_path},
         ),
         Document(
             page_content="column1: value4\ncolumn2: value5\ncolumn3: value6",
-            metadata={"source": file_path, "row": 1},
+            metadata={"source": file_path, "row": 1, "full_path": full_file_path},
         ),
     ]
 
@@ -112,3 +113,23 @@ def test_pdf_lazy_load(mocker: MockerFixture) -> None:
 
     # Assert
     assert len(result) == 2
+
+
+def test_pebblo_safe_loader_api_key() -> None:
+    # Setup
+    from langchain_community.document_loaders import PebbloSafeLoader
+
+    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "test_empty.csv")
+    api_key = "dummy_api_key"
+
+    # Exercise
+    loader = PebbloSafeLoader(
+        CSVLoader(file_path=file_path),
+        "dummy_app_name",
+        "dummy_owner",
+        "dummy_description",
+        api_key=api_key,
+    )
+
+    # Assert
+    assert loader.api_key == api_key

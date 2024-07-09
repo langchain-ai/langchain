@@ -26,7 +26,7 @@ class Yuan2(LLM):
                 top_k=40,
             )
             print(yuan_llm)
-            print(yuan_llm("你是谁？"))
+            print(yuan_llm.invoke("你是谁？"))
     """
 
     infer_api: str = "http://127.0.0.1:8000/yuan"
@@ -41,7 +41,7 @@ class Yuan2(LLM):
     top_p: Optional[float] = 0.9
     """The top-p value to use for sampling."""
 
-    top_k: Optional[int] = 40
+    top_k: Optional[int] = 0
     """The top-k value to use for sampling."""
 
     do_sample: bool = False
@@ -70,6 +70,17 @@ class Yuan2(LLM):
     use_history: bool = False
     """Whether to use history or not"""
 
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize the Yuan2 class."""
+        super().__init__(**kwargs)
+
+        if (self.top_p or 0) > 0 and (self.top_k or 0) > 0:
+            logger.warning(
+                "top_p and top_k cannot be set simultaneously. "
+                "set top_k to 0 instead..."
+            )
+            self.top_k = 0
+
     @property
     def _llm_type(self) -> str:
         return "Yuan2.0"
@@ -86,12 +97,13 @@ class Yuan2(LLM):
 
     def _default_params(self) -> Dict[str, Any]:
         return {
+            "do_sample": self.do_sample,
             "infer_api": self.infer_api,
             "max_tokens": self.max_tokens,
+            "repeat_penalty": self.repeat_penalty,
             "temp": self.temp,
             "top_k": self.top_k,
             "top_p": self.top_p,
-            "do_sample": self.do_sample,
             "use_history": self.use_history,
         }
 
@@ -125,7 +137,7 @@ class Yuan2(LLM):
         Example:
             .. code-block:: python
 
-                response = yuan_llm("你能做什么?")
+                response = yuan_llm.invoke("你能做什么?")
         """
 
         if self.use_history:
@@ -135,6 +147,7 @@ class Yuan2(LLM):
             input = prompt
 
         headers = {"Content-Type": "application/json"}
+
         data = json.dumps(
             {
                 "ques_list": [{"id": "000", "ques": input}],
@@ -164,7 +177,7 @@ class Yuan2(LLM):
             if resp["errCode"] != "0":
                 raise ValueError(
                     f"Failed with error code [{resp['errCode']}], "
-                    f"error message: [{resp['errMessage']}]"
+                    f"error message: [{resp['exceptionMsg']}]"
                 )
 
             if "resData" in resp:

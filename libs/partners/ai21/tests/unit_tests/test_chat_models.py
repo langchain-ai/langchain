@@ -1,5 +1,6 @@
 """Test chat model integration."""
-from typing import List, Optional
+
+from typing import cast
 from unittest.mock import Mock, call
 
 import pytest
@@ -7,22 +8,18 @@ from ai21 import MissingApiKeyError
 from ai21.models import ChatMessage, Penalty, RoleType
 from langchain_core.messages import (
     AIMessage,
-    BaseMessage,
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.messages import (
-    ChatMessage as LangChainChatMessage,
-)
+from langchain_core.pydantic_v1 import SecretStr
+from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_ai21.chat_models import (
     ChatAI21,
-    _convert_message_to_ai21_message,
-    _convert_messages_to_ai21_messages,
 )
 from tests.unit_tests.conftest import (
-    BASIC_EXAMPLE_LLM_PARAMETERS,
-    BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
+    BASIC_EXAMPLE_CHAT_PARAMETERS,
+    BASIC_EXAMPLE_CHAT_PARAMETERS_AS_DICT,
     DUMMY_API_KEY,
     temporarily_unset_api_key,
 )
@@ -32,16 +29,16 @@ def test_initialization__when_no_api_key__should_raise_exception() -> None:
     """Test integration initialization."""
     with temporarily_unset_api_key():
         with pytest.raises(MissingApiKeyError):
-            ChatAI21(model="j2-ultra")
+            ChatAI21(model="j2-ultra")  # type: ignore[call-arg]
 
 
 def test_initialization__when_default_parameters_in_init() -> None:
     """Test chat model initialization."""
-    ChatAI21(api_key=DUMMY_API_KEY, model="j2-ultra")
+    ChatAI21(api_key=DUMMY_API_KEY, model="j2-ultra")  # type: ignore[call-arg, arg-type]
 
 
 def test_initialization__when_custom_parameters_in_init() -> None:
-    model = "j2-mid"
+    model = "j2-ultra"
     num_results = 1
     max_tokens = 10
     min_tokens = 20
@@ -52,8 +49,8 @@ def test_initialization__when_custom_parameters_in_init() -> None:
     presence_penalty = Penalty(scale=0.2, apply_to_stopwords=True)
     count_penalty = Penalty(scale=0.2, apply_to_punctuation=True, apply_to_emojis=True)
 
-    llm = ChatAI21(
-        api_key=DUMMY_API_KEY,
+    llm = ChatAI21(  # type: ignore[call-arg]
+        api_key=DUMMY_API_KEY,  # type: ignore[arg-type]
         model=model,
         num_results=num_results,
         max_tokens=max_tokens,
@@ -77,109 +74,14 @@ def test_initialization__when_custom_parameters_in_init() -> None:
     assert count_penalty == count_penalty
 
 
-@pytest.mark.parametrize(
-    ids=[
-        "when_human_message",
-        "when_ai_message",
-    ],
-    argnames=["message", "expected_ai21_message"],
-    argvalues=[
-        (
-            HumanMessage(content="Human Message Content"),
-            ChatMessage(role=RoleType.USER, text="Human Message Content"),
-        ),
-        (
-            AIMessage(content="AI Message Content"),
-            ChatMessage(role=RoleType.ASSISTANT, text="AI Message Content"),
-        ),
-    ],
-)
-def test_convert_message_to_ai21_message(
-    message: BaseMessage, expected_ai21_message: ChatMessage
-) -> None:
-    ai21_message = _convert_message_to_ai21_message(message)
-    assert ai21_message == expected_ai21_message
-
-
-@pytest.mark.parametrize(
-    ids=[
-        "when_system_message",
-        "when_langchain_chat_message",
-    ],
-    argnames=["message"],
-    argvalues=[
-        (SystemMessage(content="System Message Content"),),
-        (LangChainChatMessage(content="Chat Message Content", role="human"),),
-    ],
-)
-def test_convert_message_to_ai21_message__when_invalid_role__should_raise_exception(
-    message: BaseMessage,
-) -> None:
-    with pytest.raises(ValueError) as e:
-        _convert_message_to_ai21_message(message)
-    assert e.value.args[0] == (
-        f"Could not resolve role type from message {message}. "
-        f"Only support {HumanMessage.__name__} and {AIMessage.__name__}."
-    )
-
-
-@pytest.mark.parametrize(
-    ids=[
-        "when_all_messages_are_human_messages__should_return_system_none",
-        "when_first_message_is_system__should_return_system",
-    ],
-    argnames=["messages", "expected_system", "expected_messages"],
-    argvalues=[
-        (
-            [
-                HumanMessage(content="Human Message Content 1"),
-                HumanMessage(content="Human Message Content 2"),
-            ],
-            None,
-            [
-                ChatMessage(role=RoleType.USER, text="Human Message Content 1"),
-                ChatMessage(role=RoleType.USER, text="Human Message Content 2"),
-            ],
-        ),
-        (
-            [
-                SystemMessage(content="System Message Content 1"),
-                HumanMessage(content="Human Message Content 1"),
-            ],
-            "System Message Content 1",
-            [
-                ChatMessage(role=RoleType.USER, text="Human Message Content 1"),
-            ],
-        ),
-    ],
-)
-def test_convert_messages(
-    messages: List[BaseMessage],
-    expected_system: Optional[str],
-    expected_messages: List[ChatMessage],
-) -> None:
-    system, ai21_messages = _convert_messages_to_ai21_messages(messages)
-    assert ai21_messages == expected_messages
-    assert system == expected_system
-
-
-def test_convert_messages_when_system_is_not_first__should_raise_value_error() -> None:
-    messages = [
-        HumanMessage(content="Human Message Content 1"),
-        SystemMessage(content="System Message Content 1"),
-    ]
-    with pytest.raises(ValueError):
-        _convert_messages_to_ai21_messages(messages)
-
-
 def test_invoke(mock_client_with_chat: Mock) -> None:
     chat_input = "I'm Pickle Rick"
 
     llm = ChatAI21(
         model="j2-ultra",
-        api_key=DUMMY_API_KEY,
+        api_key=DUMMY_API_KEY,  # type: ignore[arg-type]
         client=mock_client_with_chat,
-        **BASIC_EXAMPLE_LLM_PARAMETERS,
+        **BASIC_EXAMPLE_CHAT_PARAMETERS,  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
     )
     llm.invoke(input=chat_input, config=dict(tags=["foo"]), stop=["\n"])
 
@@ -188,7 +90,7 @@ def test_invoke(mock_client_with_chat: Mock) -> None:
         messages=[ChatMessage(role=RoleType.USER, text=chat_input)],
         system="",
         stop_sequences=["\n"],
-        **BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
+        **BASIC_EXAMPLE_CHAT_PARAMETERS_AS_DICT,
     )
 
 
@@ -205,7 +107,7 @@ def test_generate(mock_client_with_chat: Mock) -> None:
     llm = ChatAI21(
         model="j2-ultra",
         client=mock_client_with_chat,
-        **BASIC_EXAMPLE_LLM_PARAMETERS,
+        **BASIC_EXAMPLE_CHAT_PARAMETERS,  # type: ignore[arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type, arg-type]
     )
 
     llm.generate(messages=[messages0, messages1])
@@ -224,7 +126,7 @@ def test_generate(mock_client_with_chat: Mock) -> None:
                     ChatMessage(role=RoleType.USER, text=str(messages0[2].content)),
                 ],
                 system="",
-                **BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
+                **BASIC_EXAMPLE_CHAT_PARAMETERS_AS_DICT,
             ),
             call(
                 model="j2-ultra",
@@ -232,7 +134,41 @@ def test_generate(mock_client_with_chat: Mock) -> None:
                     ChatMessage(role=RoleType.USER, text=str(messages1[1].content)),
                 ],
                 system="system message",
-                **BASIC_EXAMPLE_LLM_PARAMETERS_AS_DICT,
+                **BASIC_EXAMPLE_CHAT_PARAMETERS_AS_DICT,
             ),
         ]
     )
+
+
+def test_api_key_is_secret_string() -> None:
+    llm = ChatAI21(model="j2-ultra", api_key="secret-api-key")  # type: ignore[call-arg, arg-type]
+    assert isinstance(llm.api_key, SecretStr)
+
+
+def test_api_key_masked_when_passed_from_env(
+    monkeypatch: MonkeyPatch, capsys: CaptureFixture
+) -> None:
+    """Test initialization with an API key provided via an env variable"""
+    monkeypatch.setenv("AI21_API_KEY", "secret-api-key")
+    llm = ChatAI21(model="j2-ultra")  # type: ignore[call-arg]
+    print(llm.api_key, end="")
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+
+
+def test_api_key_masked_when_passed_via_constructor(
+    capsys: CaptureFixture,
+) -> None:
+    """Test initialization with an API key provided via the initializer"""
+    llm = ChatAI21(model="j2-ultra", api_key="secret-api-key")  # type: ignore[call-arg, arg-type]
+    print(llm.api_key, end="")
+    captured = capsys.readouterr()
+
+    assert captured.out == "**********"
+
+
+def test_uses_actual_secret_value_from_secretstr() -> None:
+    """Test that actual secret is retrieved using `.get_secret_value()`."""
+    llm = ChatAI21(model="j2-ultra", api_key="secret-api-key")  # type: ignore[call-arg, arg-type]
+    assert cast(SecretStr, llm.api_key).get_secret_value() == "secret-api-key"

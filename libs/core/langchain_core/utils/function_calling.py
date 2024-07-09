@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import inspect
+import logging
 import uuid
 from typing import (
     TYPE_CHECKING,
@@ -12,7 +12,6 @@ from typing import (
     List,
     Literal,
     Optional,
-    Tuple,
     Type,
     Union,
     cast,
@@ -32,7 +31,7 @@ from langchain_core.utils.json_schema import dereference_refs
 
 if TYPE_CHECKING:
     from langchain_core.tools import BaseTool
-
+logger = logging.getLogger(__name__)
 PYTHON_TO_JSON_TYPES = {
     "str": "string",
     "int": "integer",
@@ -77,7 +76,7 @@ def _rm_titles(kv: dict, prev_key: str = "") -> dict:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def convert_pydantic_to_openai_function(
     model: Type[BaseModel],
@@ -101,7 +100,7 @@ def convert_pydantic_to_openai_function(
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def convert_pydantic_to_openai_tool(
     model: Type[BaseModel],
@@ -121,121 +120,37 @@ def _get_python_function_name(function: Callable) -> str:
     return function.__name__
 
 
-def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
-    """Parse the function and argument descriptions from the docstring of a function.
-
-    Assumes the function docstring follows Google Python style guide.
-    """
-    docstring = inspect.getdoc(function)
-    if docstring:
-        docstring_blocks = docstring.split("\n\n")
-        descriptors = []
-        args_block = None
-        past_descriptors = False
-        for block in docstring_blocks:
-            if block.startswith("Args:"):
-                args_block = block
-                break
-            elif block.startswith("Returns:") or block.startswith("Example:"):
-                # Don't break in case Args come after
-                past_descriptors = True
-            elif not past_descriptors:
-                descriptors.append(block)
-            else:
-                continue
-        description = " ".join(descriptors)
-    else:
-        description = ""
-        args_block = None
-    arg_descriptions = {}
-    if args_block:
-        arg = None
-        for line in args_block.split("\n")[1:]:
-            if ":" in line:
-                arg, desc = line.split(":", maxsplit=1)
-                arg_descriptions[arg.strip()] = desc.strip()
-            elif arg:
-                arg_descriptions[arg.strip()] += " " + line.strip()
-    return description, arg_descriptions
-
-
-def _get_python_function_arguments(function: Callable, arg_descriptions: dict) -> dict:
-    """Get JsonSchema describing a Python functions arguments.
-
-    Assumes all function arguments are of primitive types (int, float, str, bool) or
-    are subclasses of pydantic.BaseModel.
-    """
-    properties = {}
-    annotations = inspect.getfullargspec(function).annotations
-    for arg, arg_type in annotations.items():
-        if arg == "return":
-            continue
-        if isinstance(arg_type, type) and issubclass(arg_type, BaseModel):
-            # Mypy error:
-            # "type" has no attribute "schema"
-            properties[arg] = arg_type.schema()  # type: ignore[attr-defined]
-        elif (
-            hasattr(arg_type, "__name__")
-            and getattr(arg_type, "__name__") in PYTHON_TO_JSON_TYPES
-        ):
-            properties[arg] = {"type": PYTHON_TO_JSON_TYPES[arg_type.__name__]}
-        elif (
-            hasattr(arg_type, "__dict__")
-            and getattr(arg_type, "__dict__").get("__origin__", None) == Literal
-        ):
-            properties[arg] = {
-                "enum": list(arg_type.__args__),  # type: ignore
-                "type": PYTHON_TO_JSON_TYPES[arg_type.__args__[0].__class__.__name__],  # type: ignore
-            }
-        if arg in arg_descriptions:
-            if arg not in properties:
-                properties[arg] = {}
-            properties[arg]["description"] = arg_descriptions[arg]
-    return properties
-
-
-def _get_python_function_required_args(function: Callable) -> List[str]:
-    """Get the required arguments for a Python function."""
-    spec = inspect.getfullargspec(function)
-    required = spec.args[: -len(spec.defaults)] if spec.defaults else spec.args
-    required += [k for k in spec.kwonlyargs if k not in (spec.kwonlydefaults or {})]
-
-    is_class = type(function) is type
-    if is_class and required[0] == "self":
-        required = required[1:]
-    return required
-
-
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def convert_python_function_to_openai_function(
     function: Callable,
-) -> Dict[str, Any]:
+) -> FunctionDescription:
     """Convert a Python function to an OpenAI function-calling API compatible dict.
 
     Assumes the Python function has type hints and a docstring with a description. If
         the docstring has Google Python style argument descriptions, these will be
         included as well.
     """
-    description, arg_descriptions = _parse_python_function_docstring(function)
-    return {
-        "name": _get_python_function_name(function),
-        "description": description,
-        "parameters": {
-            "type": "object",
-            "properties": _get_python_function_arguments(function, arg_descriptions),
-            "required": _get_python_function_required_args(function),
-        },
-    }
+    from langchain_core import tools
+
+    func_name = _get_python_function_name(function)
+    model = tools.create_schema_from_function(
+        func_name, function, filter_args=(), parse_docstring=True
+    )
+    return convert_pydantic_to_openai_function(
+        model,
+        name=func_name,
+        description=model.__doc__,
+    )
 
 
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_function()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     """Format tool into the OpenAI function API."""
@@ -265,7 +180,7 @@ def format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 @deprecated(
     "0.1.16",
     alternative="langchain_core.utils.function_calling.convert_to_openai_tool()",
-    removal="0.2.0",
+    removal="0.3.0",
 )
 def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
     """Format tool into the OpenAI function API."""
@@ -308,9 +223,9 @@ def convert_to_openai_function(
     elif isinstance(function, type) and issubclass(function, BaseModel):
         return cast(Dict, convert_pydantic_to_openai_function(function))
     elif isinstance(function, BaseTool):
-        return format_tool_to_openai_function(function)
+        return cast(Dict, format_tool_to_openai_function(function))
     elif callable(function):
-        return convert_python_function_to_openai_function(function)
+        return cast(Dict, convert_python_function_to_openai_function(function))
     else:
         raise ValueError(
             f"Unsupported function\n\n{function}\n\nFunctions must be passed in"
@@ -382,7 +297,7 @@ def tool_example_to_messages(
                 '''Information about a person.'''
                 name: Optional[str] = Field(..., description="The name of the person")
                 hair_color: Optional[str] = Field(
-                    ..., description="The color of the peron's eyes if known"
+                    ..., description="The color of the person's hair if known"
                 )
                 height_in_meters: Optional[str] = Field(
                     ..., description="Height in METERs"

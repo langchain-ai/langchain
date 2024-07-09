@@ -2,9 +2,21 @@
 
 The `LangChain` integrations related to [Amazon AWS](https://aws.amazon.com/) platform.
 
-## LLMs
+First-party AWS integrations are available in the `langchain_aws` package.
 
-### Bedrock
+```bash
+pip install langchain-aws
+```
+
+And there are also some community integrations available in the `langchain_community` package with the `boto3` optional dependency.
+
+```bash
+pip install langchain-community boto3
+```
+
+## Chat models
+
+### Bedrock Chat
 
 >[Amazon Bedrock](https://aws.amazon.com/bedrock/) is a fully managed service that offers a choice of 
 > high-performing foundation models (FMs) from leading AI companies like `AI21 Labs`, `Anthropic`, `Cohere`, 
@@ -16,11 +28,20 @@ The `LangChain` integrations related to [Amazon AWS](https://aws.amazon.com/) pl
 > serverless, you don't have to manage any infrastructure, and you can securely integrate and deploy 
 > generative AI capabilities into your applications using the AWS services you are already familiar with.
 
+See a [usage example](/docs/integrations/chat/bedrock).
+
+```python
+from langchain_aws import ChatBedrock
+```
+
+## LLMs
+
+### Bedrock
  
 See a [usage example](/docs/integrations/llms/bedrock).
 
 ```python
-from langchain_community.llms.bedrock import Bedrock
+from langchain_aws import BedrockLLM
 ```
 
 ### Amazon API Gateway
@@ -53,18 +74,7 @@ We use `SageMaker` to host our model and expose it as the `SageMaker Endpoint`.
 See a [usage example](/docs/integrations/llms/sagemaker).
 
 ```python
-from langchain_community.llms import SagemakerEndpoint
-from langchain_community.llms.sagemaker_endpoint import LLMContentHandler
-```
-
-## Chat models
-
-### Bedrock Chat
-
-See a [usage example](/docs/integrations/chat/bedrock).
-
-```python
-from langchain_community.chat_models import BedrockChat
+from langchain_aws import SagemakerEndpoint
 ```
 
 ## Embedding Models
@@ -110,6 +120,31 @@ See a [usage example](/docs/integrations/document_loaders/amazon_textract).
 
 ```python
 from langchain_community.document_loaders import AmazonTextractPDFLoader
+```
+
+### Amazon Athena
+
+>[Amazon Athena](https://aws.amazon.com/athena/) is a serverless, interactive analytics service built
+>on open-source frameworks, supporting open-table and file formats.
+
+See a [usage example](/docs/integrations/document_loaders/athena).
+
+```python
+from langchain_community.document_loaders.athena import AthenaLoader
+```
+
+### AWS Glue
+
+>The [AWS Glue Data Catalog](https://docs.aws.amazon.com/en_en/glue/latest/dg/catalog-and-crawler.html) is a centralized metadata 
+> repository that allows you to manage, access, and share metadata about 
+> your data stored in AWS. It acts as a metadata store for your data assets, 
+> enabling various AWS services and your applications to query and connect 
+> to the data they need efficiently.
+
+See a [usage example](/docs/integrations/document_loaders/glue_catalog).
+
+```python
+from langchain_community.document_loaders.glue_catalog import GlueCatalogLoader
 ```
 
 ## Vector stores
@@ -177,16 +212,16 @@ from langchain.vectorstores import DocumentDBVectorSearch
 > manuals, and websites. It supports multiple languages and can understand complex queries, synonyms, and 
 > contextual meanings to provide highly relevant search results.
 
-We need to install the `boto3` library.
+We need to install the `langchain-aws` library.
 
 ```bash
-pip install boto3
+pip install langchain-aws
 ```
 
 See a [usage example](/docs/integrations/retrievers/amazon_kendra_retriever).
 
 ```python
-from langchain.retrievers import AmazonKendraRetriever
+from langchain_aws import AmazonKendraRetriever
 ```
 
 ### Amazon Bedrock (Knowledge Bases)
@@ -195,16 +230,16 @@ from langchain.retrievers import AmazonKendraRetriever
 > `Amazon Web Services` (`AWS`) offering which lets you quickly build RAG applications by using your 
 > private data to customize foundation model response.
 
-We need to install the `boto3` library.
+We need to install the `langchain-aws` library.
 
 ```bash
-pip install boto3
+pip install langchain-aws
 ```
 
 See a [usage example](/docs/integrations/retrievers/bedrock).
 
 ```python
-from langchain.retrievers import AmazonKnowledgeBasesRetriever
+from langchain_aws import AmazonKnowledgeBasesRetriever
 ```
 
 ## Tools
@@ -246,6 +281,29 @@ See a [usage example](/docs/integrations/memory/aws_dynamodb).
 from langchain.memory import DynamoDBChatMessageHistory
 ```
 
+## Graphs
+
+### Amazon Neptune with Cypher
+
+See a [usage example](/docs/integrations/graphs/amazon_neptune_open_cypher).
+
+```python
+from langchain_community.graphs import NeptuneGraph
+from langchain_community.graphs import NeptuneAnalyticsGraph
+from langchain.chains import NeptuneOpenCypherQAChain
+```
+
+### Amazon Neptune with SPARQL
+
+See a [usage example](/docs/integrations/graphs/amazon_neptune_sparql).
+
+```python
+from langchain_community.graphs import NeptuneRdfGraph
+from langchain.chains.graph_qa.neptune_sparql import NeptuneSparqlQAChain
+```
+
+
+
 ## Callbacks
 
 ### SageMaker Tracking
@@ -283,7 +341,7 @@ We need to install the `boto3` and `nltk` libraries.
 pip install boto3 nltk
 ```
 
-See a [usage example](/docs/guides/safety/amazon_comprehend_chain).
+See a [usage example](https://python.langchain.com/v0.1/docs/guides/productionization/safety/amazon_comprehend_chain/).
 
 ```python
 from langchain_experimental.comprehend_moderation import AmazonComprehendModerationChain

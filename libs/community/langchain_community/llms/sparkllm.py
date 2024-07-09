@@ -17,14 +17,14 @@ from wsgiref.handlers import format_date_time
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 logger = logging.getLogger(__name__)
 
 
 class SparkLLM(LLM):
-    """Wrapper around iFlyTek's Spark large language model.
+    """iFlyTek Spark large language model.
 
     To use, you should pass `app_id`, `api_key`, `api_secret`
     as a named parameter to the constructor OR set environment
@@ -54,7 +54,7 @@ class SparkLLM(LLM):
     top_k: int = 4
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         values["spark_app_id"] = get_from_dict_or_env(
             values,
@@ -274,10 +274,10 @@ class _SparkLLMClient:
             on_close=self.on_close,
             on_open=self.on_open,
         )
-        ws.messages = messages
-        ws.user_id = user_id
-        ws.model_kwargs = self.model_kwargs if model_kwargs is None else model_kwargs
-        ws.streaming = streaming
+        ws.messages = messages  # type: ignore[attr-defined]
+        ws.user_id = user_id  # type: ignore[attr-defined]
+        ws.model_kwargs = self.model_kwargs if model_kwargs is None else model_kwargs  # type: ignore[attr-defined]
+        ws.streaming = streaming  # type: ignore[attr-defined]
         ws.run_forever()
 
     def arun(

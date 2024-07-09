@@ -1,9 +1,12 @@
 """Configuration for unit tests."""
+
 from importlib import util
 from typing import Dict, Sequence
+from uuid import UUID
 
 import pytest
 from pytest import Config, Function, Parser
+from pytest_mock import MockerFixture
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -85,3 +88,11 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
                 item.add_marker(
                     pytest.mark.skip(reason="Skipping not an extended test.")
                 )
+
+
+@pytest.fixture()
+def deterministic_uuids(mocker: MockerFixture) -> MockerFixture:
+    side_effect = (
+        UUID(f"00000000-0000-4000-8000-{i:012}", version=4) for i in range(10000)
+    )
+    return mocker.patch("uuid.uuid4", side_effect=side_effect)

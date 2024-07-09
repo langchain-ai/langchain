@@ -88,6 +88,8 @@ def extract_sub_links(
                 absolute_path = f"{parsed_url.scheme}:{link}"
             else:
                 absolute_path = urljoin(url, parsed_link.path)
+                if parsed_link.query:
+                    absolute_path += f"?{parsed_link.query}"
             absolute_paths.add(absolute_path)
         except Exception as e:
             if continue_on_failure:

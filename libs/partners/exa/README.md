@@ -21,7 +21,7 @@ exa_api_key = "YOUR API KEY"
 exa = ExaSearchRetriever(exa_api_key=exa_api_key)
 
 # Search for a query and save the results
-results  = exa.get_relevant_documents(query="What is the capital of France?")
+results  = exa.invoke("What is the capital of France?")
 
 # Print the results
 print(results)

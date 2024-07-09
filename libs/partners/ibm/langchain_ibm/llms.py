@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Union
 
+from ibm_watsonx_ai import Credentials  # type: ignore
 from ibm_watsonx_ai.foundation_models import Model, ModelInference  # type: ignore
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class WatsonxLLM(BaseLLM):
     """
-    IBM watsonx.ai large language models.
+    IBM WatsonX.ai large language models.
 
     To use, you should have ``langchain_ibm`` python package installed,
     and the environment variable ``WATSONX_APIKEY`` set with your API key, or pass
@@ -80,7 +81,7 @@ class WatsonxLLM(BaseLLM):
     params: Optional[dict] = None
     """Model parameters to use during generate requests."""
 
-    verify: Union[str, bool] = ""
+    verify: Union[str, bool, None] = None
     """User can pass as verify one of following:
         the path to a CA_BUNDLE file
         the path of directory with certificates of trusted CAs
@@ -189,40 +190,34 @@ class WatsonxLLM(BaseLLM):
                             values, "instance_id", "WATSONX_INSTANCE_ID"
                         )
                     )
-
-            credentials = {
-                "url": values["url"].get_secret_value() if values["url"] else None,
-                "apikey": values["apikey"].get_secret_value()
+            credentials = Credentials(
+                url=values["url"].get_secret_value() if values["url"] else None,
+                api_key=values["apikey"].get_secret_value()
                 if values["apikey"]
                 else None,
-                "token": values["token"].get_secret_value()
-                if values["token"]
-                else None,
-                "password": values["password"].get_secret_value()
+                token=values["token"].get_secret_value() if values["token"] else None,
+                password=values["password"].get_secret_value()
                 if values["password"]
                 else None,
-                "username": values["username"].get_secret_value()
+                username=values["username"].get_secret_value()
                 if values["username"]
                 else None,
-                "instance_id": values["instance_id"].get_secret_value()
+                instance_id=values["instance_id"].get_secret_value()
                 if values["instance_id"]
                 else None,
-                "version": values["version"].get_secret_value()
+                version=values["version"].get_secret_value()
                 if values["version"]
                 else None,
-            }
-            credentials_without_none_value = {
-                key: value for key, value in credentials.items() if value is not None
-            }
+                verify=values["verify"],
+            )
 
             watsonx_model = ModelInference(
                 model_id=values["model_id"],
                 deployment_id=values["deployment_id"],
-                credentials=credentials_without_none_value,
+                credentials=credentials,
                 params=values["params"],
                 project_id=values["project_id"],
                 space_id=values["space_id"],
-                verify=values["verify"],
             )
             values["watsonx_model"] = watsonx_model
 
@@ -271,10 +266,15 @@ class WatsonxLLM(BaseLLM):
         }
 
     def _get_chat_params(
-        self, stop: Optional[List[str]] = None
+        self, stop: Optional[List[str]] = None, **kwargs: Any
     ) -> Optional[Dict[str, Any]]:
-        params: Optional[Dict[str, Any]] = {**self.params} if self.params else None
+        params = {**self.params} if self.params else {}
+        params = params | {**kwargs.get("params", {})}
         if stop is not None:
+            if params and "stop_sequences" in params:
+                raise ValueError(
+                    "`stop_sequences` found in both the input and default params."
+                )
             params = (params or {}) | {"stop_sequences": stop}
         return params
 
@@ -333,7 +333,7 @@ class WatsonxLLM(BaseLLM):
         Example:
             .. code-block:: python
 
-                response = watsonx_llm("What is a molecule")
+                response = watsonx_llm.invoke("What is a molecule")
         """
         result = self._generate(
             prompts=[prompt], stop=stop, run_manager=run_manager, **kwargs
@@ -360,7 +360,7 @@ class WatsonxLLM(BaseLLM):
 
                 response = watsonx_llm.generate(["What is a molecule"])
         """
-        params = self._get_chat_params(stop=stop)
+        params = self._get_chat_params(stop=stop, **kwargs)
         should_stream = stream if stream is not None else self.streaming
         if should_stream:
             if len(prompts) > 1:
@@ -383,7 +383,7 @@ class WatsonxLLM(BaseLLM):
             return LLMResult(generations=[[generation]])
         else:
             response = self.watsonx_model.generate(
-                prompt=prompts, params=params, **kwargs
+                prompt=prompts, **(kwargs | {"params": params})
             )
             return self._create_llm_result(response)
 
@@ -408,9 +408,9 @@ class WatsonxLLM(BaseLLM):
                 for chunk in response:
                     print(chunk, end='')
         """
-        params = self._get_chat_params(stop=stop)
+        params = self._get_chat_params(stop=stop, **kwargs)
         for stream_resp in self.watsonx_model.generate_text_stream(
-            prompt=prompt, raw_response=True, params=params, **kwargs
+            prompt=prompt, raw_response=True, **(kwargs | {"params": params})
         ):
             if not isinstance(stream_resp, dict):
                 stream_resp = stream_resp.dict()

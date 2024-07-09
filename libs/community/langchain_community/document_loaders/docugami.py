@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 @deprecated(
     since="0.0.24",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="docugami_langchain.DocugamiLoader",
 )
 class DocugamiLoader(BaseLoader, BaseModel):

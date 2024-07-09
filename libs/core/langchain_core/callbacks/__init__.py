@@ -6,6 +6,7 @@
 
     BaseCallbackHandler --> <name>CallbackHandler  # Example: AimCallbackHandler
 """
+
 from langchain_core.callbacks.base import (
     AsyncCallbackHandler,
     BaseCallbackHandler,
@@ -18,6 +19,7 @@ from langchain_core.callbacks.base import (
     RunManagerMixin,
     ToolManagerMixin,
 )
+from langchain_core.callbacks.file import FileCallbackHandler
 from langchain_core.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainGroup,
@@ -70,4 +72,5 @@ __all__ = [
     "AsyncCallbackManagerForChainGroup",
     "StdOutCallbackHandler",
     "StreamingStdOutCallbackHandler",
+    "FileCallbackHandler",
 ]

@@ -64,7 +64,7 @@ def test_gradient_llm_sync(mocker: MockerFixture, setup: dict) -> None:
     assert llm.gradient_workspace_id == _GRADIENT_WORKSPACE_ID
     assert llm.model_id == _MODEL_ID
 
-    response = llm("Say foo:")
+    response = llm.invoke("Say foo:")
     want = "bar"
 
     assert response == want

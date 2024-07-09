@@ -1,15 +1,16 @@
 """DocumentFilter that uses an LLM chain to extract the relevant parts of documents."""
+
 from __future__ import annotations
 
 import asyncio
 from typing import Any, Callable, Dict, Optional, Sequence, cast
 
+from langchain_core.callbacks.manager import Callbacks
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import PromptTemplate
 
-from langchain.callbacks.manager import Callbacks
 from langchain.chains.llm import LLMChain
 from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
 from langchain.retrievers.document_compressors.chain_extract_prompt import (
@@ -64,7 +65,10 @@ class LLMChainExtractor(BaseDocumentCompressor):
         compressed_docs = []
         for doc in documents:
             _input = self.get_input(query, doc)
-            output = self.llm_chain.predict_and_parse(**_input, callbacks=callbacks)
+            output_dict = self.llm_chain.invoke(_input, config={"callbacks": callbacks})
+            output = output_dict[self.llm_chain.output_key]
+            if self.llm_chain.prompt.output_parser is not None:
+                output = self.llm_chain.prompt.output_parser.parse(output)
             if len(output) == 0:
                 continue
             compressed_docs.append(

@@ -16,8 +16,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field
+from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ class QianfanLLMEndpoint(LLM):
     In the case of other model, passing these params will not affect the result.
     """
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         values["qianfan_ak"] = convert_to_secret_str(
             get_from_dict_or_env(
@@ -172,7 +172,7 @@ class QianfanLLMEndpoint(LLM):
 
         Example:
             .. code-block:: python
-                response = qianfan_model("Tell me a joke.")
+                response = qianfan_model.invoke("Tell me a joke.")
         """
         if self.streaming:
             completion = ""
@@ -180,6 +180,7 @@ class QianfanLLMEndpoint(LLM):
                 completion += chunk.text
             return completion
         params = self._convert_prompt_msg_params(prompt, **kwargs)
+        params["stop"] = stop
         response_payload = self.client.do(**params)
 
         return response_payload["result"]
@@ -198,6 +199,7 @@ class QianfanLLMEndpoint(LLM):
             return completion
 
         params = self._convert_prompt_msg_params(prompt, **kwargs)
+        params["stop"] = stop
         response_payload = await self.client.ado(**params)
 
         return response_payload["result"]
@@ -210,6 +212,7 @@ class QianfanLLMEndpoint(LLM):
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
         params = self._convert_prompt_msg_params(prompt, **{**kwargs, "stream": True})
+        params["stop"] = stop
         for res in self.client.do(**params):
             if res:
                 chunk = GenerationChunk(text=res["result"])
@@ -225,6 +228,7 @@ class QianfanLLMEndpoint(LLM):
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
         params = self._convert_prompt_msg_params(prompt, **{**kwargs, "stream": True})
+        params["stop"] = stop
         async for res in await self.client.ado(**params):
             if res:
                 chunk = GenerationChunk(text=res["result"])

@@ -68,9 +68,9 @@ class FunctionCallbackHandler(BaseTracer):
     def get_breadcrumbs(self, run: Run) -> str:
         parents = self.get_parents(run)[::-1]
         string = " > ".join(
-            f"{parent.execution_order}:{parent.run_type}:{parent.name}"
+            f"{parent.run_type}:{parent.name}"
             if i != len(parents) - 1
-            else f"{parent.execution_order}:{parent.run_type}:{parent.name}"
+            else f"{parent.run_type}:{parent.name}"
             for i, parent in enumerate(parents + [run])
         )
         return string
@@ -156,7 +156,7 @@ class FunctionCallbackHandler(BaseTracer):
                 + get_bolded_text(
                     f"[{crumbs}] [{elapsed(run)}] Exiting Tool run with output:\n"
                 )
-                + f'"{run.outputs["output"].strip()}"'
+                + f'"{str(run.outputs["output"]).strip()}"'
             )
 
     def _on_tool_error(self, run: Run) -> None:

@@ -10,7 +10,7 @@ from langchain_community.llms.cohere import _create_retry_decorator
 
 @deprecated(
     since="0.0.30",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_cohere.CohereEmbeddings",
 )
 class CohereEmbeddings(BaseModel, Embeddings):
@@ -54,7 +54,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
 
         extra = Extra.forbid
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         cohere_api_key = get_from_dict_or_env(
@@ -77,7 +77,7 @@ class CohereEmbeddings(BaseModel, Embeddings):
                 client_name=client_name,
             )
         except ImportError:
-            raise ValueError(
+            raise ImportError(
                 "Could not import cohere python package. "
                 "Please install it with `pip install cohere`."
             )

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Optional, Tuple, Type
 
 from langchain_core.pydantic_v1 import root_validator
 from langchain_core.tools import BaseTool
+from langchain_core.utils import guard_import
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser as AsyncBrowser
@@ -25,15 +26,10 @@ def lazy_import_playwright_browsers() -> Tuple[Type[AsyncBrowser], Type[SyncBrow
         Tuple[Type[AsyncBrowser], Type[SyncBrowser]]:
             AsyncBrowser and SyncBrowser classes.
     """
-    try:
-        from playwright.async_api import Browser as AsyncBrowser  # noqa: F401
-        from playwright.sync_api import Browser as SyncBrowser  # noqa: F401
-    except ImportError:
-        raise ImportError(
-            "The 'playwright' package is required to use the playwright tools."
-            " Please install it with 'pip install playwright'."
-        )
-    return AsyncBrowser, SyncBrowser
+    return (
+        guard_import(module_name="playwright.async_api").Browser,
+        guard_import(module_name="playwright.sync_api").Browser,
+    )
 
 
 class BaseBrowserTool(BaseTool):
@@ -58,4 +54,4 @@ class BaseBrowserTool(BaseTool):
     ) -> BaseBrowserTool:
         """Instantiate the tool."""
         lazy_import_playwright_browsers()
-        return cls(sync_browser=sync_browser, async_browser=async_browser)
+        return cls(sync_browser=sync_browser, async_browser=async_browser)  # type: ignore[call-arg]

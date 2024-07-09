@@ -8,13 +8,14 @@ clicking on the 'sandbox' toggle.
 
 You'll then need to set EDENAI_API_KEY environment variable to your api key.
 """
+
 from langchain_community.llms import EdenAI
 
 
 def test_edenai_call() -> None:
     """Test simple call to edenai."""
     llm = EdenAI(provider="openai", temperature=0.2, max_tokens=250)
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
 
     assert llm._llm_type == "edenai"
     assert llm.feature == "text"
@@ -38,7 +39,7 @@ def test_edenai_call_with_old_params() -> None:
     to pass optional parameters to api
     """
     llm = EdenAI(provider="openai", params={"temperature": 0.2, "max_tokens": 250})
-    output = llm("Say foo:")
+    output = llm.invoke("Say foo:")
 
     assert llm._llm_type == "edenai"
     assert llm.feature == "text"

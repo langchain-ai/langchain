@@ -1,8 +1,8 @@
 from typing import Any, Dict
 
 import pytest
-from langchain.prompts.prompt import PromptTemplate
 from langchain_community.chat_models import FakeListChatModel
+from langchain_core.prompts.prompt import PromptTemplate
 from test_utils import MockEncoder, MockEncoderReturnsList
 
 import langchain_experimental.rl_chain.base as rl_chain
@@ -80,7 +80,7 @@ def test_update_with_delayed_score_with_auto_validator_throws() -> None:
     chain = pick_best_chain.PickBest.from_llm(
         llm=llm,
         prompt=PROMPT,
-        selection_scorer=rl_chain.AutoSelectionScorer(llm=auto_val_llm),
+        selection_scorer=rl_chain.AutoSelectionScorer(llm=auto_val_llm),  # type: ignore[call-arg]
         feature_embedder=pick_best_chain.PickBestFeatureEmbedder(
             auto_embed=False, model=MockEncoder()
         ),
@@ -108,7 +108,7 @@ def test_update_with_delayed_score_force() -> None:
     chain = pick_best_chain.PickBest.from_llm(
         llm=llm,
         prompt=PROMPT,
-        selection_scorer=rl_chain.AutoSelectionScorer(llm=auto_val_llm),
+        selection_scorer=rl_chain.AutoSelectionScorer(llm=auto_val_llm),  # type: ignore[call-arg]
         feature_embedder=pick_best_chain.PickBestFeatureEmbedder(
             auto_embed=False, model=MockEncoder()
         ),
@@ -383,7 +383,7 @@ def test_auto_scorer_with_user_defined_llm() -> None:
     chain = pick_best_chain.PickBest.from_llm(
         llm=llm,
         prompt=PROMPT,
-        selection_scorer=rl_chain.AutoSelectionScorer(llm=scorer_llm),
+        selection_scorer=rl_chain.AutoSelectionScorer(llm=scorer_llm),  # type: ignore[call-arg]
         feature_embedder=pick_best_chain.PickBestFeatureEmbedder(
             auto_embed=False, model=MockEncoder()
         ),
@@ -429,7 +429,7 @@ def test_activate_and_deactivate_scorer() -> None:
     chain = pick_best_chain.PickBest.from_llm(
         llm=llm,
         prompt=PROMPT,
-        selection_scorer=pick_best_chain.base.AutoSelectionScorer(llm=scorer_llm),
+        selection_scorer=pick_best_chain.base.AutoSelectionScorer(llm=scorer_llm),  # type: ignore[call-arg]
         feature_embedder=pick_best_chain.PickBestFeatureEmbedder(
             auto_embed=False, model=MockEncoder()
         ),

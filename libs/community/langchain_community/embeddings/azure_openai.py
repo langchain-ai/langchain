@@ -16,7 +16,7 @@ from langchain_community.utils.openai import is_openai_v1
 
 @deprecated(
     since="0.0.9",
-    removal="0.2.0",
+    removal="0.3.0",
     alternative_import="langchain_openai.AzureOpenAIEmbeddings",
 )
 class AzureOpenAIEmbeddings(OpenAIEmbeddings):
@@ -44,7 +44,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
 
         For more: 
         https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """  # noqa: E501
+    """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
@@ -54,7 +54,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
     validate_base_url: bool = True
 
-    @root_validator()
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         # Check OPENAI_KEY for backwards compatibility.
@@ -96,8 +96,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         # See: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings
         values["chunk_size"] = min(values["chunk_size"], 16)
         try:
-            import openai
-
+            import openai  # noqa: F401
         except ImportError:
             raise ImportError(
                 "Could not import openai python package. "
@@ -137,6 +136,14 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
                             "/deployments/" + values["deployment"]
                         )
                     values["deployment"] = None
+        return values
+
+    @root_validator(pre=False, skip_on_failure=True)
+    def post_init_validator(cls, values: Dict) -> Dict:
+        """Validate that the base url is set."""
+        import openai
+
+        if is_openai_v1():
             client_params = {
                 "api_version": values["openai_api_version"],
                 "azure_endpoint": values["azure_endpoint"],

@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Any, AsyncIterator, Dict, Iterator, List, Mapping, Optional
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -9,7 +10,11 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.pydantic_v1 import Extra, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env, get_pydantic_field_names
+from langchain_core.utils import (
+    get_from_dict_or_env,
+    get_pydantic_field_names,
+    pre_init,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +26,11 @@ VALID_TASKS = (
 )
 
 
+@deprecated(
+    since="0.0.37",
+    removal="0.3",
+    alternative_import="langchain_huggingface.HuggingFaceEndpoint",
+)
 class HuggingFaceEndpoint(LLM):
     """
     HuggingFace Endpoint.
@@ -43,7 +53,7 @@ class HuggingFaceEndpoint(LLM):
                 repetition_penalty=1.03,
                 huggingfacehub_api_token="my-api-key"
             )
-            print(llm("What is Deep Learning?"))
+            print(llm.invoke("What is Deep Learning?"))
 
             # Streaming response example
             from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -61,7 +71,7 @@ class HuggingFaceEndpoint(LLM):
                 streaming=True,
                 huggingfacehub_api_token="my-api-key"
             )
-            print(llm("What is Deep Learning?"))
+            print(llm.invoke("What is Deep Learning?"))
 
     """  # noqa: E501
 
@@ -156,7 +166,7 @@ class HuggingFaceEndpoint(LLM):
         values["model"] = values.get("endpoint_url") or values.get("repo_id")
         return values
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that package is installed and that the API token is valid."""
         try:
@@ -258,7 +268,10 @@ class HuggingFaceEndpoint(LLM):
                 stream=False,
                 task=self.task,
             )
-            response_text = json.loads(response.decode())[0]["generated_text"]
+            try:
+                response_text = json.loads(response.decode())[0]["generated_text"]
+            except KeyError:
+                response_text = json.loads(response.decode())["generated_text"]
 
             # Maybe the generation has stopped at one of the stop sequences:
             # then we remove this stop sequence from the end of the generated text
@@ -289,7 +302,10 @@ class HuggingFaceEndpoint(LLM):
                 stream=False,
                 task=self.task,
             )
-            response_text = json.loads(response.decode())[0]["generated_text"]
+            try:
+                response_text = json.loads(response.decode())[0]["generated_text"]
+            except KeyError:
+                response_text = json.loads(response.decode())["generated_text"]
 
             # Maybe the generation has stopped at one of the stop sequences:
             # then remove this stop sequence from the end of the generated text
@@ -326,9 +342,10 @@ class HuggingFaceEndpoint(LLM):
             # yield text, if any
             if text:
                 chunk = GenerationChunk(text=text)
-                yield chunk
+
                 if run_manager:
                     run_manager.on_llm_new_token(chunk.text)
+                yield chunk
 
             # break if stop sequence found
             if stop_seq_found:
@@ -361,9 +378,10 @@ class HuggingFaceEndpoint(LLM):
             # yield text, if any
             if text:
                 chunk = GenerationChunk(text=text)
-                yield chunk
+
                 if run_manager:
                     await run_manager.on_llm_new_token(chunk.text)
+                yield chunk
 
             # break if stop sequence found
             if stop_seq_found:

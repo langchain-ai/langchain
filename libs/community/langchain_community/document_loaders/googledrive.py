@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
+from langchain_core._api.deprecation import deprecated
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, root_validator, validator
 
@@ -19,6 +20,11 @@ from langchain_community.document_loaders.base import BaseLoader
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
 
+@deprecated(
+    since="0.0.32",
+    removal="0.3.0",
+    alternative_import="langchain_google_community.GoogleDriveLoader",
+)
 class GoogleDriveLoader(BaseLoader, BaseModel):
     """Load Google Docs from `Google Drive`."""
 

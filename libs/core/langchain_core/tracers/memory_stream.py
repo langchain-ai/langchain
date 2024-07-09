@@ -8,6 +8,7 @@ threads.
 This is useful in situations when there's a mix of synchronous and asynchronous
 used in the code.
 """
+
 import asyncio
 from asyncio import AbstractEventLoop, Queue
 from typing import AsyncIterator, Generic, TypeVar
@@ -37,7 +38,11 @@ class _SendStream(Generic[T]):
 
     def send_nowait(self, item: T) -> None:
         """Schedule the item to be written to the queue using the original loop."""
-        self._reader_loop.call_soon_threadsafe(self._queue.put_nowait, item)
+        try:
+            self._reader_loop.call_soon_threadsafe(self._queue.put_nowait, item)
+        except RuntimeError:
+            if not self._reader_loop.is_closed():
+                raise  # Raise the exception if the loop is not closed
 
     async def aclose(self) -> None:
         """Schedule the done object write the queue using the original loop."""
@@ -45,7 +50,11 @@ class _SendStream(Generic[T]):
 
     def close(self) -> None:
         """Schedule the done object write the queue using the original loop."""
-        self._reader_loop.call_soon_threadsafe(self._queue.put_nowait, self._done)
+        try:
+            self._reader_loop.call_soon_threadsafe(self._queue.put_nowait, self._done)
+        except RuntimeError:
+            if not self._reader_loop.is_closed():
+                raise  # Raise the exception if the loop is not closed
 
 
 class _ReceiveStream(Generic[T]):

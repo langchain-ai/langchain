@@ -17,6 +17,7 @@ def create_json_chat_agent(
     prompt: ChatPromptTemplate,
     stop_sequence: Union[bool, List[str]] = True,
     tools_renderer: ToolsRenderer = render_text_description,
+    template_tool_response: str = TEMPLATE_TOOL_RESPONSE,
 ) -> Runnable:
     """Create an agent that uses JSON to format its logic, build for Chat Models.
 
@@ -33,11 +34,19 @@ def create_json_chat_agent(
             does not support stop sequences.
         tools_renderer: This controls how the tools are converted into a string and
             then passed into the LLM. Default is `render_text_description`.
+        template_tool_response: Template prompt that uses the tool response (observation)
+            to make the LLM generate the next action to take.
+            Default is TEMPLATE_TOOL_RESPONSE.
 
     Returns:
         A Runnable sequence representing an agent. It takes as input all the same input
         variables as the prompt passed in does. It returns as output either an
         AgentAction or AgentFinish.
+        
+    Raises:
+        ValueError: If the prompt is missing required variables.
+        ValueError: If the template_tool_response is missing
+            the required variable 'observation'.
 
     Example:
 
@@ -119,8 +128,8 @@ def create_json_chat_agent(
 
             ```json
             {{
-                "action": string, \ The action to take. Must be one of {tool_names}
-                "action_input": string \ The input to the action
+                "action": string, \\ The action to take. Must be one of {tool_names}
+                "action_input": string \\ The input to the action
             }}
             ```
 
@@ -131,7 +140,7 @@ def create_json_chat_agent(
             ```json
             {{
                 "action": "Final Answer",
-                "action_input": string \ You should put what you want to return to use here
+                "action_input": string \\ You should put what you want to return to use here
             }}
             ```
 
@@ -152,10 +161,15 @@ def create_json_chat_agent(
             )
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
-        prompt.input_variables
+        prompt.input_variables + list(prompt.partial_variables)
     )
     if missing_vars:
         raise ValueError(f"Prompt missing required variables: {missing_vars}")
+
+    if "{observation}" not in template_tool_response:
+        raise ValueError(
+            "Template tool response missing required variable 'observation'"
+        )
 
     prompt = prompt.partial(
         tools=tools_renderer(list(tools)),
@@ -170,7 +184,7 @@ def create_json_chat_agent(
     agent = (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_log_to_messages(
-                x["intermediate_steps"], template_tool_response=TEMPLATE_TOOL_RESPONSE
+                x["intermediate_steps"], template_tool_response=template_tool_response
             )
         )
         | prompt

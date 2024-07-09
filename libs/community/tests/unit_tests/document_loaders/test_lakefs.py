@@ -74,7 +74,7 @@ class TestLakeFSLoader(unittest.TestCase):
         loader.set_repo(self.repo)
         loader.set_ref(self.ref)
         loader.set_path(self.path)
-        with pytest.raises(ValueError):
+        with pytest.raises(ImportError):
             loader.load()
 
     @requests_mock.Mocker()

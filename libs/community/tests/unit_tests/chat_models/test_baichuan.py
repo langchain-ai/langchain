@@ -21,6 +21,23 @@ from langchain_community.chat_models.baichuan import (
 )
 
 
+def test_initialization() -> None:
+    """Test chat model initialization."""
+
+    for model in [
+        ChatBaichuan(model="Baichuan2-Turbo-192K", api_key="test-api-key", timeout=40),  # type: ignore[arg-type, call-arg]
+        ChatBaichuan(  # type: ignore[call-arg]
+            model="Baichuan2-Turbo-192K",
+            baichuan_api_key="test-api-key",
+            request_timeout=40,
+        ),
+    ]:
+        assert model.model == "Baichuan2-Turbo-192K"
+        assert isinstance(model.baichuan_api_key, SecretStr)
+        assert model.request_timeout == 40
+        assert model.temperature == 0.3
+
+
 def test__convert_message_to_dict_human() -> None:
     message = HumanMessage(content="foo")
     result = _convert_message_to_dict(message)
@@ -90,7 +107,7 @@ def test_baichuan_key_masked_when_passed_from_env(
     """Test initialization with an API key provided via an env variable"""
     monkeypatch.setenv("BAICHUAN_API_KEY", "test-api-key")
 
-    chat = ChatBaichuan()
+    chat = ChatBaichuan()  # type: ignore[call-arg]
     print(chat.baichuan_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
@@ -100,7 +117,7 @@ def test_baichuan_key_masked_when_passed_via_constructor(
     capsys: CaptureFixture,
 ) -> None:
     """Test initialization with an API key provided via the initializer"""
-    chat = ChatBaichuan(baichuan_api_key="test-api-key")
+    chat = ChatBaichuan(baichuan_api_key="test-api-key")  # type: ignore[call-arg]
     print(chat.baichuan_api_key, end="")  # noqa: T201
     captured = capsys.readouterr()
     assert captured.out == "**********"
@@ -108,9 +125,9 @@ def test_baichuan_key_masked_when_passed_via_constructor(
 
 def test_uses_actual_secret_value_from_secret_str() -> None:
     """Test that actual secret is retrieved using `.get_secret_value()`."""
-    chat = ChatBaichuan(
+    chat = ChatBaichuan(  # type: ignore[call-arg]
         baichuan_api_key="test-api-key",
-        baichuan_secret_key="test-secret-key",  # For backward compatibility
+        baichuan_secret_key="test-secret-key",  # type: ignore[arg-type] # For backward compatibility
     )
     assert cast(SecretStr, chat.baichuan_api_key).get_secret_value() == "test-api-key"
     assert (
