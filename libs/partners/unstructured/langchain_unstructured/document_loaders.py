@@ -37,7 +37,7 @@ class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
 
     Instantiate:
         .. code-block:: python
-            from langchain_community.document_loaders import UnstructuredSDKFileLoader
+            from langchain_unstructured import UnstructuredSDKFileLoader
 
             loader = UnstructuredSDKFileLoader(
                 # required params
@@ -48,9 +48,9 @@ class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
                 api_key=UNSTRUCTURED_API_KEY,
             )
 
-    Lazy load:
+    Load:
         .. code-block:: python
-            docs = loader.lazy_load()
+            docs = loader.load()
 
             print(docs[0].page_content[:100])
             print(docs[0].metadata)
@@ -186,7 +186,7 @@ class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
 
     Instantiate:
         .. code-block:: python
-            from langchain_community.document_loaders import UnstructuredSDKFileIOLoader
+            from langchain_unstructured import UnstructuredSDKFileIOLoader
 
             with open("example.pdf", "rb") as f:
                 loader = UnstructuredSDKFileIOLoader(
