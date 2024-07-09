@@ -11,6 +11,8 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
+from langchain_core.utils import pre_init
+
 if TYPE_CHECKING:
     import gpudb
 
@@ -24,7 +26,7 @@ from langchain_core.messages import (
 )
 from langchain_core.output_parsers.transform import BaseOutputParser
 from langchain_core.outputs import ChatGeneration, ChatResult, Generation
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 LOG = logging.getLogger(__name__)
 
@@ -341,7 +343,7 @@ class ChatKinetica(BaseChatModel):
     kdbc: Any = Field(exclude=True)
     """ Kinetica DB connection. """
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Pydantic object validator."""
 

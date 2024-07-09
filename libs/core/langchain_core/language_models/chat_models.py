@@ -94,13 +94,11 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
         ChatResult: Chat result.
     """
 
-    generation: Optional[ChatGenerationChunk] = None
-    for chunk in stream:
-        if generation is None:
-            generation = chunk
-        else:
-            generation += chunk
-    assert generation is not None
+    generation = next(stream, None)
+    if generation:
+        generation += list(stream)
+    if generation is None:
+        raise ValueError("No generations found in stream.")
     return ChatResult(
         generations=[
             ChatGeneration(
@@ -123,21 +121,8 @@ async def agenerate_from_stream(
         ChatResult: Chat result.
     """
 
-    generation: Optional[ChatGenerationChunk] = None
-    async for chunk in stream:
-        if generation is None:
-            generation = chunk
-        else:
-            generation += chunk
-    assert generation is not None
-    return ChatResult(
-        generations=[
-            ChatGeneration(
-                message=message_chunk_to_message(generation.message),
-                generation_info=generation.generation_info,
-            )
-        ]
-    )
+    chunks = [chunk async for chunk in stream]
+    return await run_in_executor(None, generate_from_stream, iter(chunks))
 
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
@@ -1258,8 +1243,13 @@ def _cleanup_llm_representation(serialized: Any, depth: int) -> None:
     """Remove non-serializable objects from a serialized object."""
     if depth > 100:  # Don't cooperate for pathological cases
         return
-    if serialized["type"] == "not_implemented" and "repr" in serialized:
-        del serialized["repr"]
+
+    if not isinstance(serialized, dict):
+        return
+
+    if "type" in serialized and serialized["type"] == "not_implemented":
+        if "repr" in serialized:
+            del serialized["repr"]
 
     if "graph" in serialized:
         del serialized["graph"]

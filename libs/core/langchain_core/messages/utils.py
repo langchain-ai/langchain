@@ -32,6 +32,7 @@ from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
+from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolMessage, ToolMessageChunk
 
@@ -42,7 +43,12 @@ if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable
 
 AnyMessage = Union[
-    AIMessage, HumanMessage, ChatMessage, SystemMessage, FunctionMessage, ToolMessage
+    AIMessage,
+    HumanMessage,
+    ChatMessage,
+    SystemMessage,
+    FunctionMessage,
+    ToolMessage,
 ]
 
 
@@ -113,6 +119,8 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return FunctionMessage(**message["data"])
     elif _type == "tool":
         return ToolMessage(**message["data"])
+    elif _type == "remove":
+        return RemoveMessage(**message["data"])
     elif _type == "AIMessageChunk":
         return AIMessageChunk(**message["data"])
     elif _type == "HumanMessageChunk":
@@ -214,6 +222,8 @@ def _create_message_from_message_type(
         message = FunctionMessage(content=content, **kwargs)
     elif message_type == "tool":
         message = ToolMessage(content=content, **kwargs)
+    elif message_type == "remove":
+        message = RemoveMessage(**kwargs)
     else:
         raise ValueError(
             f"Unexpected message type: {message_type}. Use one of 'human',"
