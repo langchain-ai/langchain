@@ -1022,6 +1022,18 @@ def test_convert_from_runnable_dict() -> None:
     runnable = RunnableLambda(g)
     as_tool = runnable.as_tool(arg_types={"key": int})
     result = as_tool.invoke({"key": 3})
+    assert result == "6"
+
+    # Test with config
+    def h(x: Dict[str, Any]) -> str:
+        config = ensure_config()
+        assert config["configurable"]["foo"] == "not-bar"
+        return str(x["key"] * 2)
+
+    runnable = RunnableLambda(g)
+    as_tool = runnable.as_tool(arg_types={"key": int})
+    result = as_tool.invoke({"key": 3}, {"configurable": {"foo": "not-bar"}})
+    assert result == "6"
 
 
 def test_convert_from_runnable_other() -> None:
@@ -1042,3 +1054,14 @@ def test_convert_from_runnable_other() -> None:
 
     result = as_tool.invoke("b")
     assert result == "baz"
+
+    # Test with config
+    def h(x: str) -> str:
+        config = ensure_config()
+        assert config["configurable"]["foo"] == "not-bar"
+        return x + "a"
+
+    runnable = RunnableLambda(h)
+    as_tool = runnable.as_tool()
+    result = as_tool.invoke("b", {"configurable": {"foo": "not-bar"}})
+    assert result == "ba"
