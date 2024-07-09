@@ -8,7 +8,7 @@ class FastEmbedSparse(SparseEmbeddings):
 
     def __init__(
         self,
-        model_name: str = "Qdrant/bm42-all-minilm-l6-v2-attentions",
+        model_name: str = "Qdrant/bm25",
         batch_size: int = 256,
         cache_dir: Optional[str] = None,
         threads: Optional[int] = None,
@@ -21,23 +21,25 @@ class FastEmbedSparse(SparseEmbeddings):
         For a list of available models, see https://qdrant.github.io/fastembed/examples/Supported_Models/
 
         Args:
-            model_name (str): The name of the model to use. Defaults to `"Qdrant/bm42-all-minilm-l6-v2-attentions"`.
-            batch_size (int): Batch size for encoding. Higher values will use more memory, but will be faster.\
-                                        Defaults to 256.
+            model_name (str): The name of the model to use. Defaults to `"Qdrant/bm25"`.
+            batch_size (int): Batch size for encoding. Defaults to 256.
             cache_dir (str, optional): The path to the model cache directory.\
-                                       Can also be set using the `FASTEMBED_CACHE_PATH` env variable.
-            threads (int, optional): The number of threads single onnxruntime session can use.
-            providers (Sequence[Any], optional): A list of ONNX execution providers to use.\
-            parallel (int, optional): If `>1`, data-parallel encoding will be used, recommended for offline encoding of large datasets.\
+                                       Can also be set using the\
+                                       `FASTEMBED_CACHE_PATH` env variable.
+            threads (int, optional): The number of threads onnxruntime session can use.
+            providers (Sequence[Any], optional): List of ONNX execution providers.\
+            parallel (int, optional): If `>1`, data-parallel encoding will be used, r\
+                                      Recommended for encoding of large datasets.\
                                       If `0`, use all available cores.\
-                                      If `None`, don't use data-parallel processing, use default onnxruntime threading instead.\
+                                      If `None`, don't use data-parallel processing,\
+                                      use default onnxruntime threading instead.\
                                       Defaults to None.
             **kwargs: Additional options to pass to fastembed.SparseTextEmbedding
         Raises:
             ValueError: If the model_name is not supported in SparseTextEmbedding.
         """
         try:
-            from fastembed import SparseTextEmbedding
+            from fastembed import SparseTextEmbedding  # type: ignore
         except ImportError:
             raise ValueError(
                 "The 'fastembed' package is not installed. "
