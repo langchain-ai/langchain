@@ -237,7 +237,7 @@ class OpenAICallbackHandler(BaseCallbackHandler):
             token_usage = {"total_tokens": usage_metadata["total_tokens"]}
             completion_tokens = usage_metadata["output_tokens"]
             prompt_tokens = usage_metadata["input_tokens"]
-            if response_model_name := response_metadata.get("model_name"):
+            if response_model_name := (response_metadata or {}).get("model_name"):
                 model_name = standardize_model_name(response_model_name)
             elif response.llm_output is None:
                 model_name = ""
