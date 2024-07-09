@@ -2014,6 +2014,7 @@ class Runnable(Generic[Input, Output], ABC):
         description: Optional[str] = None,
         arg_types: Optional[Dict[str, Type]] = None,
     ) -> BaseTool:
+        # Avoid circular import
         from langchain_core.tools import convert_runnable_to_tool
 
         return convert_runnable_to_tool(
