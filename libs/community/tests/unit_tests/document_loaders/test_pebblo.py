@@ -70,7 +70,8 @@ def test_csv_loader_load_valid_data(mocker: MockerFixture) -> None:
                 "row": 0,
                 "full_path": full_file_path,
                 "pb_id": "0",
-                "content_checksum": None,  # For UT as here we are not calculating checksum
+                # For UT as here we are not calculating checksum
+                "content_checksum": None,
             },
             page_content="column1: value1\ncolumn2: value2\ncolumn3: value3",
         ),
@@ -80,7 +81,8 @@ def test_csv_loader_load_valid_data(mocker: MockerFixture) -> None:
                 "row": 1,
                 "full_path": full_file_path,
                 "pb_id": "1",
-                "content_checksum": None,  # For UT as here we are not calculating checksum
+                # For UT as here we are not calculating checksum
+                "content_checksum": None,
             },
             page_content="column1: value4\ncolumn2: value5\ncolumn3: value6",
         ),
