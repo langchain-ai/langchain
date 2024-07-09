@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional
 import requests
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class OCIModelDeploymentLLM(LLM):
     """Stop words to use when generating. Model output is cut off
     at the first occurrence of any of these substrings."""
 
-    @root_validator()
+    @pre_init
     def validate_environment(  # pylint: disable=no-self-argument
         cls, values: Dict
     ) -> Dict:
