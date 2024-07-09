@@ -318,7 +318,7 @@ chat = GigaChat(credentials='<авторизационные_данные>', ver
 - [Работа с хабом промптов, цепочками и парсером JSON](docs/docs/how_to/structured_output.ipynb)
 - [Работа с хабом промптов на примере задачи суммаризации книг](hub/prompts/summarize/map_reduce/summarize_examples.ipynb)
 - [Парсинг списков, содержащихся в ответе](docs/docs/cookbook/list.ipynb)
-- [Асинхронная работа с LLM](docs/docs/modules/model_io/llms/async_llm.ipynb)
+- [Асинхронная работа с LLM](docs/docs/how_to/callbacks_async.ipynb)
 - [Использование Elastic для поиска ответов по документам](docs/docs/integrations/retrievers/elastic_qna.ipynb)
 - [Использование разных эмбеддингов для Retrieval механизма](docs/docs/cookbook/chains/retrieve.ipynb)
 - [Генерация и выполнение кода с помощью PythonREPL](docs/docs/cookbook/code_writing.ipynb)
@@ -326,15 +326,15 @@ chat = GigaChat(credentials='<авторизационные_данные>', ver
 - [CAMEL агент для разработки программ](cookbook/camel_role_playing.ipynb)
 - [Автономный агент AutoGPT с использованием GigaChat](cookbook/autogpt/autogpt.ipynb)
 - [Генерация плейлистов с помощью GigaChain и Spotify](docs/docs/cookbook/playlists.ipynb)
-- Работа с LlamaIndex: [с помощью ретривера и QA цепочки](docs/docs/integrations/retrievers/llama_index_retriever.ipynb) / [с помощью тула и Conversational агента](docs/docs/cookbook/llama_index_tool.ipynb)
+- [Работа с LlamaIndex с помощью тула и Conversational агента](docs/docs/cookbook/llama_index_tool.ipynb)
 - [Агент-риелтор на GigaChat functions](cookbook/realestate/realestate.ipynb)
 - [Агент выполняющий код](cookbook/gigachat_code.ipynb)
 - [Получение сгенерированных изображений/видео](cookbook/images_and_videos/gigachat_with_images.ipynb)
 
 ### Развлекательные примеры
-- [Площадка для споров между GigaChat и YandexGPT с судьей GPT-4](docs/docs/use_cases/fun/debates.ipynb)
-- [Игра Blade Runner: GPT-4 и GigaChat выясняют, кто из них бот](docs/docs/use_cases/fun/blade_runner.ipynb)
-- [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/docs/use_cases/question_answering/agent_simulations/multi_llm_thre_player_dnd.ipynb)
+- [Площадка для споров между GigaChat и YandexGPT с судьей GPT-4](docs/docs/cookbook/fun/debates.ipynb)
+- [Игра Blade Runner: GPT-4 и GigaChat выясняют, кто из них бот](docs/docs/cookbook/fun/blade_runner.ipynb)
+- [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/docs/cookbook/multi_llm_thre_player_dnd.ipynb)
 
 ### Примеры работы с другими LLM
 
