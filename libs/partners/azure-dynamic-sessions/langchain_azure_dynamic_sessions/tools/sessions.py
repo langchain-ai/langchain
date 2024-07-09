@@ -18,6 +18,8 @@ from uuid import uuid4
 import requests
 from azure.core.credentials import AccessToken
 from azure.identity import DefaultAzureCredential
+
+from langchain_core.messages import ToolMessage
 from langchain_core.tools import BaseTool
 
 try:
@@ -164,7 +166,7 @@ class SessionsPythonREPLTool(BaseTool):
         properties = response_json.get("properties", {})
         return properties
 
-    def _run(self, python_code: str) -> Any:
+    def _run(self, python_code: str, *, tool_call_id: Optional[str] = None) -> Any:
         response = self.execute(python_code)
 
         # if the result is an image, remove the base64 data
@@ -173,7 +175,7 @@ class SessionsPythonREPLTool(BaseTool):
             if result.get("type") == "image" and "base64_data" in result:
                 result.pop("base64_data")
 
-        return json.dumps(
+        content = json.dumps(
             {
                 "result": result,
                 "stdout": response.get("stdout"),
@@ -181,6 +183,10 @@ class SessionsPythonREPLTool(BaseTool):
             },
             indent=2,
         )
+        if tool_call_id:
+            return ToolMessage(content, raw_output=response, tool_call_id=tool_call_id)
+        else:
+            return content
 
     def upload_file(
         self,

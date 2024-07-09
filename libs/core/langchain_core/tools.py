@@ -39,6 +39,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 from typing_extensions import Annotated, get_args, get_origin
@@ -55,6 +56,7 @@ from langchain_core.callbacks.manager import (
     Callbacks,
 )
 from langchain_core.load.serializable import Serializable
+from langchain_core.messages import ToolMessage
 from langchain_core.prompts import (
     BasePromptTemplate,
     PromptTemplate,
@@ -267,6 +269,10 @@ class ToolException(Exception):
     pass
 
 
+class ToolConfig(RunnableConfig):
+    tool_call_id: Optional[str]
+
+
 class BaseTool(RunnableSerializable[Union[str, Dict], Any]):
     """Interface LangChain tools must implement."""
 
@@ -372,7 +378,7 @@ class ChildTool(BaseTool):
     def invoke(
         self,
         input: Union[str, Dict],
-        config: Optional[RunnableConfig] = None,
+        config: Optional[Union[RunnableConfig, ToolConfig]] = None,
         **kwargs: Any,
     ) -> Any:
         config = ensure_config(config)
@@ -384,13 +390,14 @@ class ChildTool(BaseTool):
             run_name=config.get("run_name"),
             run_id=config.pop("run_id", None),
             config=config,
+            tool_call_id=cast(ToolConfig, config).get("tool_call_id"),
             **kwargs,
         )
 
     async def ainvoke(
         self,
         input: Union[str, Dict],
-        config: Optional[RunnableConfig] = None,
+        config: Optional[Union[RunnableConfig, ToolConfig]] = None,
         **kwargs: Any,
     ) -> Any:
         config = ensure_config(config)
@@ -402,6 +409,7 @@ class ChildTool(BaseTool):
             run_name=config.get("run_name"),
             run_id=config.pop("run_id", None),
             config=config,
+            tool_call_id=cast(ToolConfig, config).get("tool_call_id"),
             **kwargs,
         )
 
@@ -484,6 +492,7 @@ class ChildTool(BaseTool):
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
         config: Optional[RunnableConfig] = None,
+        tool_call_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
@@ -501,7 +510,7 @@ class ChildTool(BaseTool):
             self.metadata,
         )
         # TODO: maybe also pass through run_manager is _run supports kwargs
-        new_arg_supported = signature(self._run).parameters.get("run_manager")
+        run_manager_supported = signature(self._run).parameters.get("run_manager")
         run_manager = callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
@@ -515,6 +524,9 @@ class ChildTool(BaseTool):
             inputs=None if isinstance(tool_input, str) else tool_input,
             **kwargs,
         )
+        tool_call_id_supported = bool(
+            signature(self._run).parameters.get("tool_call_id")
+        )
         try:
             child_config = patch_config(
                 config,
@@ -524,13 +536,11 @@ class ChildTool(BaseTool):
             context.run(_set_config_context, child_config)
             parsed_input = self._parse_input(tool_input)
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
-            observation = (
-                context.run(
-                    self._run, *tool_args, run_manager=run_manager, **tool_kwargs
-                )
-                if new_arg_supported
-                else context.run(self._run, *tool_args, **tool_kwargs)
-            )
+            if run_manager_supported:
+                tool_kwargs["run_manager"] = run_manager
+            if tool_call_id_supported:
+                tool_kwargs["tool_call_id"] = tool_call_id
+            observation = context.run(self._run, *tool_args, **tool_kwargs)
         except ValidationError as e:
             if not self.handle_validation_error:
                 raise e
@@ -545,7 +555,6 @@ class ChildTool(BaseTool):
                     f"Got unexpected type of `handle_validation_error`. Expected bool, "
                     f"str or callable. Received: {self.handle_validation_error}"
                 )
-            return observation
         except ToolException as e:
             if not self.handle_tool_error:
                 run_manager.on_tool_error(e)
@@ -565,12 +574,14 @@ class ChildTool(BaseTool):
                     f"or callable. Received: {self.handle_tool_error}"
                 )
             run_manager.on_tool_end(observation, color="red", name=self.name, **kwargs)
-            return observation
         except (Exception, KeyboardInterrupt) as e:
             run_manager.on_tool_error(e)
             raise e
         else:
             run_manager.on_tool_end(observation, color=color, name=self.name, **kwargs)
+        if tool_call_id and not isinstance(observation, ToolMessage):
+            return ToolMessage(observation, tool_call_id=tool_call_id)
+        else:
             return observation
 
     async def arun(
@@ -586,6 +597,7 @@ class ChildTool(BaseTool):
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
         config: Optional[RunnableConfig] = None,
+        tool_call_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
@@ -602,7 +614,7 @@ class ChildTool(BaseTool):
             metadata,
             self.metadata,
         )
-        new_arg_supported = signature(self._arun).parameters.get("run_manager")
+        run_manager_supported = signature(self._arun).parameters.get("run_manager")
         run_manager = await callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
@@ -612,10 +624,18 @@ class ChildTool(BaseTool):
             run_id=run_id,
             **kwargs,
         )
+        run_manager_supported = signature(self._arun).parameters.get("run_manager")
+        tool_call_id_supported = bool(
+            signature(self._run).parameters.get("tool_call_id")
+        )
         try:
             parsed_input = self._parse_input(tool_input)
             # We then call the tool on the tool input to get an observation
             tool_args, tool_kwargs = self._to_args_and_kwargs(parsed_input)
+            if run_manager_supported:
+                tool_kwargs["run_manager"] = run_manager
+            if tool_call_id_supported:
+                tool_kwargs["tool_call_id"] = tool_call_id
             child_config = patch_config(
                 config,
                 callbacks=run_manager.get_child(),
@@ -626,7 +646,7 @@ class ChildTool(BaseTool):
                 context.run(
                     self._arun, *tool_args, run_manager=run_manager, **tool_kwargs
                 )
-                if new_arg_supported
+                if run_manager_supported
                 else context.run(self._arun, *tool_args, **tool_kwargs)
             )
             if accepts_context(asyncio.create_task):
@@ -648,7 +668,6 @@ class ChildTool(BaseTool):
                     f"Got unexpected type of `handle_validation_error`. Expected bool, "
                     f"str or callable. Received: {self.handle_validation_error}"
                 )
-            return observation
         except ToolException as e:
             if not self.handle_tool_error:
                 await run_manager.on_tool_error(e)
@@ -670,7 +689,6 @@ class ChildTool(BaseTool):
             await run_manager.on_tool_end(
                 observation, color="red", name=self.name, **kwargs
             )
-            return observation
         except (Exception, KeyboardInterrupt) as e:
             await run_manager.on_tool_error(e)
             raise e
@@ -678,6 +696,9 @@ class ChildTool(BaseTool):
             await run_manager.on_tool_end(
                 observation, color=color, name=self.name, **kwargs
             )
+        if tool_call_id and not isinstance(observation, ToolMessage):
+            return ToolMessage(observation, tool_call_id=tool_call_id)
+        else:
             return observation
 
     @deprecated("0.1.47", alternative="invoke", removal="0.3.0")
