@@ -97,6 +97,8 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
     generation = next(stream, None)
     if generation:
         generation += list(stream)
+    if generation is None:
+        raise ValueError("No generations found in stream.")
     return ChatResult(
         generations=[
             ChatGeneration(
