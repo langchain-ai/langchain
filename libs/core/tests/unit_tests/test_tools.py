@@ -992,23 +992,27 @@ def test_tool_annotated_descriptions() -> None:
 def test_convert_from_runnable_dict() -> None:
     # Test with typed dict input
     class Args(TypedDict):
-        key: int
+        a: int
+        b: List[int]
 
     def f(x: Args) -> str:
-        return str(x["key"] * 2)
+        return str(x["a"] * max(x["b"]))
 
     runnable: Runnable = RunnableLambda(f)
     as_tool = runnable.as_tool()
     args_schema = as_tool.args_schema
     assert args_schema is not None
     assert args_schema.schema() == {
-        "title": "fSchema",
+        "title": "f",
         "type": "object",
-        "properties": {"key": {"title": "Key", "type": "integer"}},
-        "required": ["key"],
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "array", "items": {"type": "integer"}},
+        },
+        "required": ["a", "b"],
     }
     assert as_tool.description
-    result = as_tool.invoke({"key": 3})
+    result = as_tool.invoke({"a": 3, "b": [1, 2]})
     assert result == "6"
 
     as_tool = runnable.as_tool(name="my tool", description="test description")
@@ -1017,22 +1021,22 @@ def test_convert_from_runnable_dict() -> None:
 
     # Dict without typed input-- must supply arg types
     def g(x: Dict[str, Any]) -> str:
-        return str(x["key"] * 2)
+        return str(x["a"] * max(x["b"]))
 
     runnable = RunnableLambda(g)
-    as_tool = runnable.as_tool(arg_types={"key": int})
-    result = as_tool.invoke({"key": 3})
+    as_tool = runnable.as_tool(arg_types={"a": int, "b": List[int]})
+    result = as_tool.invoke({"a": 3, "b": [1, 2]})
     assert result == "6"
 
     # Test with config
     def h(x: Dict[str, Any]) -> str:
         config = ensure_config()
         assert config["configurable"]["foo"] == "not-bar"
-        return str(x["key"] * 2)
+        return str(x["a"] * max(x["b"]))
 
     runnable = RunnableLambda(g)
-    as_tool = runnable.as_tool(arg_types={"key": int})
-    result = as_tool.invoke({"key": 3}, {"configurable": {"foo": "not-bar"}})
+    as_tool = runnable.as_tool(arg_types={"a": int, "b": List[int]})
+    result = as_tool.invoke({"a": 3, "b": [1, 2]}, {"configurable": {"foo": "not-bar"}})
     assert result == "6"
 
 

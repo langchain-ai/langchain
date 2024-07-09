@@ -1228,14 +1228,15 @@ def _get_description_from_runnable(runnable: Runnable) -> str:
 
 
 def _get_schema_from_runnable_and_arg_types(
-    runnable: Runnable, arg_types: Optional[Dict[str, Type]] = None
+    runnable: Runnable,
+    name: str,
+    arg_types: Optional[Dict[str, Type]] = None,
 ) -> Type[BaseModel]:
     """Infer args_schema for tool."""
-    schema_name = f"{runnable.get_name()}Schema"
     if arg_types is None:
         arg_types = get_type_hints(runnable.InputType)
     fields = {key: (key_type, Field(...)) for key, key_type in arg_types.items()}
-    return create_model(schema_name, **fields)  # type: ignore
+    return create_model(name, **fields)  # type: ignore
 
 
 def convert_runnable_to_tool(
@@ -1248,7 +1249,9 @@ def convert_runnable_to_tool(
     description = description or _get_description_from_runnable(runnable)
     name = name or runnable.get_name()
 
-    args_schema = _get_schema_from_runnable_and_arg_types(runnable, arg_types=arg_types)
+    args_schema = _get_schema_from_runnable_and_arg_types(
+        runnable, name, arg_types=arg_types
+    )
     schema = args_schema.schema()
 
     if schema.get("type") == "object" and schema.get("properties"):  # dict input
