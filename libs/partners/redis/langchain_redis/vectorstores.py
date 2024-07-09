@@ -123,9 +123,9 @@ class RedisVectorStore(VectorStore):
                     if field["type"] == "tag":
                         if "attrs" not in field or "separator" not in field["attrs"]:
                             modified_field = field.copy()
-                            modified_field.setdefault("attrs", {})["separator"] = (
-                                self.config.default_tag_separator
-                            )
+                            modified_field.setdefault("attrs", {})[
+                                "separator"
+                            ] = self.config.default_tag_separator
                             modified_metadata_schema.append(modified_field)
                         else:
                             modified_metadata_schema.append(field)
