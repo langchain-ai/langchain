@@ -373,45 +373,55 @@ class ChildTool(BaseTool):
 
     def invoke(
         self,
-        input: Union[str, Dict],
+        input: Union[str, Dict, TypedToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
         config = ensure_config(config)
+        if _is_tool_call(input):
+            tool_call_id: Optional[str] = cast(TypedToolCall, input)["id"]
+            input = cast(TypedToolCall, input)["args"]
+        else:
+            tool_call_id = None
         return self.run(
-            input,
+            cast(Union[str, dict], input),
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
             run_id=config.pop("run_id", None),
             config=config,
+            tool_call_id=tool_call_id,
             **kwargs,
         )
 
     async def ainvoke(
         self,
-        input: Union[str, Dict],
+        input: Union[str, Dict, TypedToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
         config = ensure_config(config)
+        if _is_tool_call(input):
+            tool_call_id: Optional[str] = cast(TypedToolCall, input)["id"]
+            input = cast(TypedToolCall, input)["args"]
+        else:
+            tool_call_id = None
         return await self.arun(
-            input,
+            cast(Union[str, dict], input),
             callbacks=config.get("callbacks"),
             tags=config.get("tags"),
             metadata=config.get("metadata"),
             run_name=config.get("run_name"),
             run_id=config.pop("run_id", None),
             config=config,
+            tool_call_id=tool_call_id,
             **kwargs,
         )
 
     # --- Tool ---
 
-    def _parse_input(
-        self, tool_input: Union[str, Dict, TypedToolCall]
-    ) -> Union[str, Dict[str, Any]]:
+    def _parse_input(self, tool_input: Union[str, Dict]) -> Union[str, Dict[str, Any]]:
         """Convert tool input to pydantic model."""
         input_args = self.args_schema
         if isinstance(tool_input, str):
@@ -420,8 +430,6 @@ class ChildTool(BaseTool):
                 input_args.validate({key_: tool_input})
             return tool_input
         else:
-            if _is_tool_call(tool_input):
-                tool_input = tool_input["args"]
             if input_args is not None:
                 result = input_args.parse_obj(tool_input)
                 return {
@@ -454,7 +462,7 @@ class ChildTool(BaseTool):
     def _run_foo(
         self, *args: Any, run_manager: CallbackManagerForToolRun, **kwargs: Any
     ) -> Tuple[Content, Any]:
-        """Return a repr of the result to pass to a model and the raw result."""
+        """Return a repr of the result to pass to a model and the raw_output result."""
         raise NotImplementedError()
 
     async def _arun(self, *args: Any, **kwargs: Any) -> Any:
@@ -468,7 +476,7 @@ class ChildTool(BaseTool):
     async def _arun_foo(
         self, *args: Any, run_manager: AsyncCallbackManagerForToolRun, **kwargs: Any
     ) -> Tuple[Content, Any]:
-        """Return a repr of the result to pass to a model and the raw result."""
+        """Return a repr of the result to pass to a model and the raw_output result."""
         return await run_in_executor(
             None, self._run_foo, *args, run_manager=run_manager.get_sync(), **kwargs
         )
@@ -484,7 +492,7 @@ class ChildTool(BaseTool):
 
     def run(
         self,
-        tool_input: Union[str, Dict[str, Any], TypedToolCall],
+        tool_input: Union[str, Dict[str, Any]],
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
@@ -495,6 +503,7 @@ class ChildTool(BaseTool):
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
         config: Optional[RunnableConfig] = None,
+        tool_call_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool."""
@@ -507,6 +516,7 @@ class ChildTool(BaseTool):
             metadata,
             self.metadata,
         )
+
         run_manager = callback_manager.on_tool_start(
             {"name": self.name, "description": self.description},
             tool_input if isinstance(tool_input, str) else str(tool_input),
@@ -516,18 +526,18 @@ class ChildTool(BaseTool):
             # Inputs by definition should always be dicts.
             # For now, it's unclear whether this assumption is ever violated,
             # but if it is we will send a `None` value to the callback instead
-            # And will need to address issue via a patch.
-            inputs=None if isinstance(tool_input, str) else tool_input,
+            # TODO: will need to address issue via a patch.
+            inputs=tool_input if isinstance(tool_input, dict) else None,
             **kwargs,
         )
-        raw = None
+        raw_output = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
             context.run(_set_config_context, child_config)
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
             if self._run_foo != BaseTool._run_foo:
-                content, raw = context.run(
+                content, raw_output = context.run(
                     self._run_foo, *tool_args, run_manager=run_manager, **tool_kwargs
                 )
             else:
@@ -548,14 +558,16 @@ class ChildTool(BaseTool):
         else:
             run_manager.on_tool_end(content, color=color, name=self.name, **kwargs)
 
-        if _is_tool_call(tool_input):
-            return ToolMessage(content, raw_output=raw, tool_call_id=tool_input["id"])
+        if tool_call_id:
+            return ToolMessage(
+                content, raw_output=raw_output, tool_call_id=tool_call_id
+            )
         else:
             return content
 
     async def arun(
         self,
-        tool_input: Union[str, Dict, TypedToolCall],
+        tool_input: Union[str, Dict],
         verbose: Optional[bool] = None,
         start_color: Optional[str] = "green",
         color: Optional[str] = "green",
@@ -566,6 +578,7 @@ class ChildTool(BaseTool):
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
         config: Optional[RunnableConfig] = None,
+        tool_call_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
         """Run the tool asynchronously."""
@@ -583,11 +596,15 @@ class ChildTool(BaseTool):
             tool_input if isinstance(tool_input, str) else str(tool_input),
             color=start_color,
             name=run_name,
-            inputs=tool_input,
             run_id=run_id,
+            # Inputs by definition should always be dicts.
+            # For now, it's unclear whether this assumption is ever violated,
+            # but if it is we will send a `None` value to the callback instead
+            # TODO: will need to address issue via a patch.
+            inputs=tool_input if isinstance(tool_input, dict) else None,
             **kwargs,
         )
-        raw = None
+        raw_output = None
         try:
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -612,7 +629,8 @@ class ChildTool(BaseTool):
                 output = await coro
 
             if use_run_foo:
-                content, raw = output
+                content: Any = output[0]
+                raw_output = output[1]
             else:
                 content = output
 
@@ -634,8 +652,10 @@ class ChildTool(BaseTool):
             await run_manager.on_tool_end(
                 content, color=color, name=self.name, **kwargs
             )
-        if _is_tool_call(tool_input):
-            return ToolMessage(content, raw_output=raw, tool_call_id=tool_input["id"])
+        if tool_call_id:
+            return ToolMessage(
+                content, raw_output=raw_output, tool_call_id=tool_call_id
+            )
         else:
             return content
 
@@ -658,7 +678,7 @@ class Tool(BaseTool):
 
     async def ainvoke(
         self,
-        input: Union[str, Dict],
+        input: Union[str, Dict, TypedToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
@@ -792,7 +812,7 @@ class StructuredTool(BaseTool):
 
     async def ainvoke(
         self,
-        input: Union[str, Dict],
+        input: Union[str, Dict, TypedToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
