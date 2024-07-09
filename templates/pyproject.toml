@@ -1,3 +1,6 @@
+[tool.setuptools]
+py-modules = []
+
 [tool.poetry]
 name = "templates"
 version = "0.0.0"
