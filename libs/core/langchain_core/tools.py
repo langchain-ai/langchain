@@ -1257,13 +1257,11 @@ def convert_runnable_to_tool(
     if schema.get("type") == "object" and schema.get("properties"):  # dict input
 
         async def ainvoke_wrapper(
-            callbacks: Optional[RunnableConfig] = None, **kwargs: Any
+            callbacks: Optional[Callbacks] = None, **kwargs: Any
         ) -> Any:
             return await runnable.ainvoke(kwargs, config={"callbacks": callbacks})
 
-        def invoke_wrapper(
-            callbacks: Optional[RunnableConfig] = None, **kwargs: Any
-        ) -> Any:
+        def invoke_wrapper(callbacks: Optional[Callbacks] = None, **kwargs: Any) -> Any:
             return runnable.invoke(kwargs, config={"callbacks": callbacks})
 
         return StructuredTool.from_function(
