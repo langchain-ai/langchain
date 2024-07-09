@@ -27,7 +27,7 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.utils import pre_init
 
 from langchain_community.llms.vertexai import (
     _VertexAICommon,
@@ -225,7 +225,7 @@ class ChatVertexAI(_VertexAICommon, BaseChatModel):
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "vertexai"]
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the python package exists in environment."""
         is_gemini = is_gemini_model(values["model_name"])

@@ -9,8 +9,8 @@ from typing import Any, Callable, Dict, List, Union
 
 from langchain_core._api.deprecation import deprecated
 from langchain_core.outputs import ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.chat_models.openai import ChatOpenAI
 from langchain_community.utils.openai import is_openai_v1
@@ -106,7 +106,7 @@ class AzureChatOpenAI(ChatOpenAI):
         """Get the namespace of the langchain object."""
         return ["langchain", "chat_models", "azure_openai"]
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         if values["n"] < 1:

@@ -24,8 +24,8 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import Field, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import Field
+from langchain_core.utils import get_from_dict_or_env, pre_init
 from requests.exceptions import HTTPError
 from tenacity import (
     before_sleep_log,
@@ -198,7 +198,7 @@ class Tongyi(BaseLLM):
         """Return type of llm."""
         return "tongyi"
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["dashscope_api_key"] = get_from_dict_or_env(
