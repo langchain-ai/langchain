@@ -239,7 +239,7 @@ class ApertureDB(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> List[str]:
         """Creates embeddings of texts, then adds each text object, its embedding and
         associated metadata to aperturedb
