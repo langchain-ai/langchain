@@ -1022,7 +1022,7 @@ See our [blog post overview](https://blog.langchain.dev/query-construction/) and
 
 #### Indexing
 
-Fouth, consider the design of your document index. A simple and powerful idea is to **decouple the documents that you index for retrieval from the documents that you pass to the LLM for generation.** Indexing frequently uses embedding models with vector stores, which [compress the semantic information in documents to fixed-size vectors](/docs/concepts/#embedding-models).
+Fourth, consider the design of your document index. A simple and powerful idea is to **decouple the documents that you index for retrieval from the documents that you pass to the LLM for generation.** Indexing frequently uses embedding models with vector stores, which [compress the semantic information in documents to fixed-size vectors](/docs/concepts/#embedding-models).
 
 Many RAG approaches focus on splitting documents into chunks and retrieving some number based on similarity to an input question for the LLM. But chunk size and chunk number can be difficult to set and affect results if they do not provide full context for the LLM to answer a question. Furthermore, LLMs are increasingly capable of processing millions of tokens. 
 

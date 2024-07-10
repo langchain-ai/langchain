@@ -23,6 +23,18 @@ The following table shows the feature support for all document loaders.
 
 """
 
+DEPRECATED = [
+    "AirbyteCDKLoader",
+    "AirbyteGongLoader",
+    "AirbyteHubspotLoader",
+    "AirbyteJSONLoader",
+    "AirbyteSalesforceLoader",
+    "AirbyteShopifyLoader",
+    "AirbyteStripeLoader",
+    "AirbyteTypeformLoader",
+    "AirbyteZendeskSupportLoader",
+]
+
 
 def get_document_loader_table() -> str:
     """Get the table of document loaders."""
@@ -55,7 +67,7 @@ def get_document_loader_table() -> str:
     title = ["Document Loader", "Description", "Lazy loading", "Native async support"]
     rows = [title, [":-"] * 2 + [":-:"] * (len(title) - 2)]
     for loader, feats in sorted(doc_loaders_feat_table.items()):
-        if not feats:
+        if not feats or loader in DEPRECATED:
             continue
         rows += [
             [loader, feats["description"]]
