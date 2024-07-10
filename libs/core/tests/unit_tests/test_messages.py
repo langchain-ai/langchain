@@ -828,7 +828,7 @@ def test_tool_message_ser_non_serializable() -> None:
     }
     assert dumpd(message) == ser_message
     with pytest.raises(NotImplementedError):
-        assert load(dumpd(ser_message)) == message
+        load(dumpd(ser_message))
 
 
 def test_tool_message_to_dict() -> None:
