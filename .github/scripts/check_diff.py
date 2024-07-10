@@ -53,6 +53,28 @@ def add_dependents(dirs_to_eval: Set[str], dependents: dict) -> List[str]:
     return list(updated)
 
 
+def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
+    min_python = "3.8"
+    max_python = "3.12"
+
+    # custom logic for specific directories
+    if dir_ == "libs/partners/milvus":
+        # milvus poetry doesn't allow 3.12 because they
+        # declare deps in funny way
+        max_python = "3.11"
+
+    return [
+        {"working-directory": dir_, "python-version": min_python},
+        {"working-directory": dir_, "python-version": max_python},
+    ]
+
+
+def _get_configs_for_multi_dirs(job: str, dirs: List[str]) -> List[Dict[str, str]]:
+    return [
+        config for dir_ in dirs for config in _get_configs_for_single_dir(job, dir_)
+    ]
+
+
 if __name__ == "__main__":
     files = sys.argv[1:]
 
@@ -126,17 +148,32 @@ if __name__ == "__main__":
 
     dependents = dependents_graph()
 
-    outputs = {
-        "dirs-to-lint": add_dependents(
-            dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"],
-            dependents,
-        ),
-        "dirs-to-test": add_dependents(
-            dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
-        ),
-        "dirs-to-extended-test": list(dirs_to_run["extended-test"]),
-        "docs-edited": "true" if docs_edited else "",
+    dirs_to_lint = add_dependents(
+        dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"],
+        dependents,
+    )
+    dirs_to_test = add_dependents(
+        dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
+    )
+    dirs_to_extended_test = list(dirs_to_run["extended-test"])
+
+    # we now have dirs_by_job
+    # todo: clean this up
+
+    map_job_to_configs = {
+        job: _get_configs_for_multi_dirs(job, dirs_to_lint)
+        for job in [
+            "lint",
+            "test",
+            "extended-tests",
+            "compile-integration-tests",
+            "dependencies",
+        ]
     }
-    for key, value in outputs.items():
+    map_job_to_configs["test-doc-imports"] = (
+        [{"python-version": "3.12"}] if docs_edited else []
+    )
+
+    for key, value in map_job_to_configs.items():
         json_output = json.dumps(value)
         print(f"{key}={json_output}")
