@@ -213,6 +213,7 @@ class PromptTemplate(StringPromptTemplate):
     def from_file(
         cls,
         template_file: Union[str, Path],
+        encoding: Optional[str] = "utf-8",
         input_variables: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> PromptTemplate:
@@ -220,6 +221,7 @@ class PromptTemplate(StringPromptTemplate):
 
         Args:
             template_file: The path to the file containing the prompt template.
+            encoding: The encoding system for opening the template file.
             input_variables: [DEPRECATED] A list of variable names the final prompt
                 template will expect. Defaults to None.
 
@@ -228,7 +230,7 @@ class PromptTemplate(StringPromptTemplate):
         Returns:
             The prompt loaded from the file.
         """
-        with open(str(template_file), "r") as f:
+        with open(str(template_file), "r", encoding=encoding) as f:
             template = f.read()
         if input_variables:
             warnings.warn(
