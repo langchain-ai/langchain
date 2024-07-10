@@ -124,6 +124,11 @@ class PebbloRetrievalQA(Chain):
                     ),
                     "doc": doc.page_content,
                     "vector_db": self.retriever.vectorstore.__class__.__name__,
+                    **(
+                        {"content_checksum": doc.metadata.get("content_checksum")}
+                        if doc.metadata.get("content_checksum")
+                        else {}
+                    ),
                 }
                 for doc in docs
                 if isinstance(doc, Document)
@@ -465,9 +470,14 @@ class PebbloRetrievalQA(Chain):
                         payload["prompt"].update(
                             resp.get("retrieval_data", {}).get("prompt", {})
                         )
+                        context = payload["context"]
+                        for context_data in context:
+                            context_data.pop("doc")
+                        payload["context"] = context
                 else:
                     payload["response"] = {}
                     payload["prompt"] = {}
+                    payload["context"] = []
             headers.update({"x-api-key": self.api_key})
             pebblo_cloud_url = f"{PEBBLO_CLOUD_URL}{PROMPT_URL}"
             try:
