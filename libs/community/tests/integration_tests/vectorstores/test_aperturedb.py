@@ -84,14 +84,14 @@ def test_aperturedb_with_id() -> None:
     """Test with ids"""
     ids = ["id_" + str(i) for i in range(len(fake_texts))]
     docsearch = _aperturedb_from_texts(ids=ids)
-    output = docsearch.similarity_search("foo", k=1)
+    output: List[Document] = docsearch.similarity_search("foo", k=1)
     _compare_documents(output, [Document(page_content="foo", id="id_0")])
 
-    output = docsearch.delete(ids=ids)
-    assert output
+    output2:bool = docsearch.delete(ids=ids)
+    assert output2
 
-    output = docsearch.similarity_search("foo", k=1)
-    assert output == []
+    output3: List[Document] = docsearch.similarity_search("foo", k=1)
+    assert output3 == []
 
     ApertureDB.delete_vectorstore(docsearch.descriptor_set)
 
@@ -182,11 +182,10 @@ def test_aperturedb_upsert_entities() -> None:
     assert response["succeeded"] == ["1", "100"], response["succeeded"]
     assert response["failed"] == [], response["failed"]
     docs = vectorstore.similarity_search("foo", k=10)
-    ids = set(ids)
-    ids.add("100")
-    ids2 = {doc.id for doc in docs}
-    assert ids == ids2, (ids, ids2)
+    ids.append("100")
     docs_by_id = {doc.id: doc for doc in docs}
+    ids2 = set(docs_by_id.keys())
+    assert set(ids) == ids2, (ids, ids2)
     assert docs_by_id["1"].page_content == "test1"
     assert docs_by_id["100"].page_content == "test2"
     ApertureDB.delete_vectorstore(vectorstore.descriptor_set)
