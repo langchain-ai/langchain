@@ -786,9 +786,9 @@ def test_merge_tool_calls() -> None:
     assert len(merged) == 2
 
 
-def test_tool_message_serialization() -> None:
+def test_tool_message_serdes() -> None:
     message = ToolMessage("foo", raw_output={"bar": {"baz": 123}}, tool_call_id="1")
-    expected = {
+    ser_message = {
         "lc": 1,
         "type": "constructor",
         "id": ["langchain", "schema", "messages", "ToolMessage"],
@@ -799,12 +799,18 @@ def test_tool_message_serialization() -> None:
             "raw_output": {"bar": {"baz": 123}},
         },
     }
-    actual = dumpd(message)
-    assert actual == expected
+    assert dumpd(message) == ser_message
+    assert load(dumpd(message)) == message
 
 
-def test_tool_message_deserialization() -> None:
-    message = {
+class BadObject:
+    """"""
+
+
+def test_tool_message_ser_non_serializable() -> None:
+    bad_obj = BadObject()
+    message = ToolMessage("foo", raw_output=bad_obj, tool_call_id="1")
+    ser_message = {
         "lc": 1,
         "type": "constructor",
         "id": ["langchain", "schema", "messages", "ToolMessage"],
@@ -812,13 +818,17 @@ def test_tool_message_deserialization() -> None:
             "content": "foo",
             "type": "tool",
             "tool_call_id": "1",
-            "raw_output": {"bar": {"baz": 123}},
+            "raw_output": {
+                "lc": 1,
+                "type": "not_implemented",
+                "id": ["tests", "unit_tests", "test_messages", "BadObject"],
+                "repr": repr(bad_obj),
+            },
         },
     }
-    expected = ToolMessage("foo", raw_output={"bar": {"baz": 123}}, tool_call_id="1")
-    actual = load(message)
-    assert actual == expected
-    assert actual.raw_output == expected.raw_output
+    assert dumpd(message) == ser_message
+    with pytest.raises(NotImplementedError):
+        assert load(dumpd(ser_message)) == message
 
 
 def test_tool_message_to_dict() -> None:
