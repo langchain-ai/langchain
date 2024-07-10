@@ -105,8 +105,9 @@ class ZapierNLARunAction(BaseTool):
     name: str = ""
     description: str = ""
 
-    @root_validator
+    @root_validator(pre=True)
     def set_name_description(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        # Logic here isn't super correct, but this tool is deprecated.
         zapier_description = values["zapier_description"]
         params_schema = values["params_schema"]
         if "instructions" in params_schema:
