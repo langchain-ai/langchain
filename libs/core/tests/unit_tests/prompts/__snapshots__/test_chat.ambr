@@ -317,6 +317,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'invalid_tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -417,6 +424,13 @@
           }),
           'name': dict({
             'title': 'Name',
+            'type': 'string',
+          }),
+          'type': dict({
+            'enum': list([
+              'tool_call',
+            ]),
+            'title': 'Type',
             'type': 'string',
           }),
         }),
@@ -908,6 +922,13 @@
             'title': 'Name',
             'type': 'string',
           }),
+          'type': dict({
+            'enum': list([
+              'invalid_tool_call',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
         }),
         'required': list([
           'name',
@@ -1008,6 +1029,13 @@
           }),
           'name': dict({
             'title': 'Name',
+            'type': 'string',
+          }),
+          'type': dict({
+            'enum': list([
+              'tool_call',
+            ]),
+            'title': 'Type',
             'type': 'string',
           }),
         }),
