@@ -1872,7 +1872,6 @@ class AsyncCallbackManager(BaseCallbackManager):
         name: str,
         data: Any,
         run_id: Optional[UUID] = None,
-        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Dispatch an adhoc event to the handlers (async version).
@@ -1885,7 +1884,6 @@ class AsyncCallbackManager(BaseCallbackManager):
             name: The name of the adhoc event.
             data: The data for the adhoc event.
             run_id: The ID of the run. Defaults to None.
-            parent_run_id: The ID of the parent run. Defaults to None.
         """
         if run_id is None:
             run_id = uuid.uuid4()
@@ -1897,12 +1895,6 @@ class AsyncCallbackManager(BaseCallbackManager):
             name,
             data,
             run_id=run_id,
-            # For adhoc event, we'll allow the parent id to be different then
-            # the current parent run id.
-            # This is done because usually an adhoc event will be dispatched from
-            # within the body of a runnable lambda or a tool, but the adhoc event
-            # is associated with the same run not a child run.
-            parent_run_id=parent_run_id or self.parent_run_id,
             tags=self.tags,
             metadata=self.metadata,
             **kwargs,
@@ -2249,7 +2241,7 @@ def _configure(
 # TODO(EUGENE): ADD IN CODE DOCUMENTATION
 async def adispatch_custom_event(
     name: str, data: Any, *, config: Optional[RunnableConfig] = None
-):
+) -> None:
     """Dispatch an adhoc event to the handlers."""
     from langchain_core.runnables.config import (
         ensure_config,
@@ -2271,22 +2263,17 @@ async def adispatch_custom_event(
             "passing the config parameter to this function."
         )
 
-    # Hack to get the callback manager for the parent
-    callback_manager.run_id = callback_manager.parent_run_id
     await callback_manager.on_custom_event(
         name,
         data,
         run_id=callback_manager.parent_run_id,
-        # Hack use an empty string here rather than a None to avoid the parent
-        # run id being set to the current run id inside the callback manager.
-        parent_run_id="",
     )
 
 
 # TODO(EUGENE): TEST THE SYNC PATH with a regular callback handler provided by the user.
 def dispatch_custom_event(
     name: str, data: Any, *, config: Optional[RunnableConfig] = None
-):
+) -> None:
     """Dispatch an adhoc event to the handlers."""
     from langchain_core.runnables.config import (
         ensure_config,

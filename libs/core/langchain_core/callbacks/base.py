@@ -379,7 +379,7 @@ class RunManagerMixin:
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> Any:
         """Override to define a handler for a custom event.
 
         Args:

@@ -2359,23 +2359,27 @@ async def test_custom_event() -> None:
     """Test adhoc event."""
     from langchain_core.callbacks.manager import adispatch_custom_event
 
-    @RunnableLambda
-    async def foo(x: int, config) -> int:
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
+    async def foo(x: int, config: RunnableConfig) -> int:
         """Simple function that emits some adhoc events."""
         await adispatch_custom_event("event1", {"x": x}, config=config)
         await adispatch_custom_event("event2", "foo")
         return x + 1
 
-    run_id = str(uuid.UUID(int=7))
+    uuid1 = uuid.UUID(int=7)
 
     events = await _collect_events(
         foo.astream_events(
             1,
             version="v2",
-            config={"run_id": run_id},
+            config={"run_id": uuid1},
         ),
         with_nulled_ids=False,
     )
+
+    run_id = str(uuid1)
     assert events == [
         {
             "data": {"input": 1},
@@ -2429,20 +2433,27 @@ async def test_custom_event_nested() -> None:
     """Test adhoc event in a nested chain."""
     from langchain_core.callbacks.manager import adispatch_custom_event
 
-    @RunnableLambda
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
     async def foo(x: int, config: RunnableConfig) -> int:
         """Simple function that emits some adhoc events."""
         await adispatch_custom_event("event1", {"x": x}, config=config)
         await adispatch_custom_event("event2", "foo")
         return x + 1
 
-    run_id = str(uuid.UUID(int=7))
-    child_run_id = str(uuid.UUID(int=8))
+    run_id = uuid.UUID(int=7)
+    child_run_id = uuid.UUID(int=8)
 
-    @RunnableLambda
+    # Ignoring type due to RunnableLamdba being dynamic when it comes to being
+    # applied as a decorator to async functions.
+    @RunnableLambda  # type: ignore[arg-type]
     async def bar(x: int, config: RunnableConfig) -> int:
         """Simple function that emits some adhoc events."""
-        return await foo.ainvoke(x, {"run_id": child_run_id, **config})
+        return await foo.ainvoke(
+            x,  # type: ignore[arg-type]
+            {"run_id": child_run_id, **config},
+        )
 
     events = await _collect_events(
         bar.astream_events(
@@ -2452,6 +2463,10 @@ async def test_custom_event_nested() -> None:
         ),
         with_nulled_ids=False,
     )
+
+    run_id = str(run_id)  # type: ignore[assignment]
+    child_run_id = str(child_run_id)  # type: ignore[assignment]
+
     assert events == [
         {
             "data": {"input": 1},
