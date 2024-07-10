@@ -37,7 +37,7 @@ class ApertureDB(VectorStore):
         metric: Optional[str] = None,
         log_level: int = logging.WARN,
         properties: Optional[Dict] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Create a vectorstore backed by ApertureDB
 
@@ -209,7 +209,7 @@ class ApertureDB(VectorStore):
             for doc in documents
         ]
         embeddings = self.embedding_function.embed_documents(texts)
-        ids = [
+        ids: List[str] = [
             doc.id if getattr(doc, "id", None) is not None else str(uuid.uuid4())
             for doc in documents
         ]
@@ -251,18 +251,18 @@ class ApertureDB(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
-        texts: List[str] = list(texts)
+        texts2: List[str] = list(texts)
         if metadatas is not None:
-            assert len(texts) == len(
+            assert len(texts2) == len(
                 metadatas
             ), "Length of texts and metadatas should be the same"
 
             docs = [
                 Document(page_content=text, metadata=metadata)
-                for text, metadata in zip(texts, metadatas)
+                for text, metadata in zip(texts2, metadatas)
             ]
         else:
-            docs = [Document(page_content=text) for text in texts]
+            docs = [Document(page_content=text) for text in texts2]
 
         return self.add_documents(docs)
 
@@ -438,7 +438,8 @@ class ApertureDB(VectorStore):
         # For now, simply delete and add
         # We could do something more efficient to update metadata,
         # but we don't support changing the embedding of a descriptor.
-        ids: List[str] = [item.id for item in items if hasattr(item, "id")]
+        ids: List[str] = [item.id for item in items 
+            if hasattr(item, "id") and item.id is not None]
         self.delete(ids)
-        ids = self.add_documents(items)
+        ids = self.add_documents(list(items))
         return UpsertResponse(succeeded=ids, failed=[])
