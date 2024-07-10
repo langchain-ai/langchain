@@ -431,14 +431,22 @@ class ChildTool(BaseTool):
         self, *args: Any, **kwargs: Any
     ) -> Tuple[Content, Any]:
         """Return a repr of the result to pass to a model and the raw_output result."""
-        if "run_manager" in kwargs:
-            kwargs["run_manager"] = kwargs["run_manager"].get_sync()
-        return await run_in_executor(
-            None,
-            self._run_include_raw_output,
-            *args,
-            **kwargs,
-        )
+        if (
+            self.__class__._run_include_raw_output
+            is not BaseTool._run_include_raw_output
+        ):
+            if "run_manager" in kwargs:
+                kwargs["run_manager"] = kwargs["run_manager"].get_sync()
+            return await run_in_executor(
+                None,
+                self._run_include_raw_output,
+                *args,
+                **kwargs,
+            )
+        else:
+            if not signature(self._arun).parameters.get("run_manager"):
+                kwargs.pop("run_manager")
+            return (await self._arun(*args, **kwargs)), None
 
     def _run(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool.
