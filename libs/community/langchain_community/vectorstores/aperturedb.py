@@ -4,8 +4,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from itertools import repeat
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Dict, Sequence, List, Optional, Tuple, Type
 
 # Third-party imports
 import numpy as np
@@ -13,9 +12,9 @@ import numpy as np
 # Local imports
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.indexing.base import UpsertResponse
 from langchain_core.vectorstores import VectorStore
 from typing_extensions import override
-from langchain_core.indexing.base import UpsertResponse
 
 # Configure some defaults
 ENGINE = "HNSW"

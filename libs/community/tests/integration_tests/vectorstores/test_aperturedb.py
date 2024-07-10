@@ -204,4 +204,3 @@ if __name__ == "__main__":
     test_aperturedb_add_extra_mmr()
     test_aperturedb_generate_ids()
     test_aperturedb_upsert_entities()
-    print("All tests passed")
