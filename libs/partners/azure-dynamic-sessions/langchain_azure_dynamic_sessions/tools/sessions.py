@@ -13,13 +13,12 @@ from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
-from typing import Any, BinaryIO, Callable, List, Optional, Tuple
+from typing import Any, BinaryIO, Callable, List, Literal, Optional, Tuple
 from uuid import uuid4
 
 import requests
 from azure.core.credentials import AccessToken
 from azure.identity import DefaultAzureCredential
-from langchain_core.messages.base import Content
 from langchain_core.tools import BaseTool
 
 try:
@@ -128,6 +127,8 @@ class SessionsPythonREPLTool(BaseTool):
     session_id: str = str(uuid4())
     """The session ID to use for the code interpreter. Defaults to a random UUID."""
 
+    response_format: Literal["content_and_raw_output"] = "content_and_raw_output"
+
     def _build_url(self, path: str) -> str:
         pool_management_endpoint = self.pool_management_endpoint
         if not pool_management_endpoint:
@@ -166,9 +167,7 @@ class SessionsPythonREPLTool(BaseTool):
         properties = response_json.get("properties", {})
         return properties
 
-    def _run_include_raw_output(
-        self, python_code: str, **kwargs: Any
-    ) -> Tuple[Content, Any]:
+    def _run(self, python_code: str, **kwargs: Any) -> Tuple[str, dict]:
         response = self.execute(python_code)
 
         # if the result is an image, remove the base64 data
