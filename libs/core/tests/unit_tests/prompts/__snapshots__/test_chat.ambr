@@ -1,0 +1,1184 @@
+# serializer version: 1
+# name: test_chat_input_schema[partial]
+  dict({
+    'definitions': dict({
+      'AIMessage': dict({
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'example': dict({
+            'default': False,
+            'title': 'Example',
+            'type': 'boolean',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+          'response_metadata': dict({
+            'title': 'Response Metadata',
+            'type': 'object',
+          }),
+          'tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
+          }),
+          'type': dict({
+            'default': 'ai',
+            'enum': list([
+              'ai',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
+          }),
+        }),
+        'required': list([
+          'content',
+        ]),
+        'title': 'AIMessage',
+        'type': 'object',
+      }),
+      'ChatMessage': dict({
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+          'response_metadata': dict({
+            'title': 'Response Metadata',
+            'type': 'object',
+          }),
+          'role': dict({
+            'title': 'Role',
+            'type': 'string',
+          }),
+          'type': dict({
+            'default': 'chat',
+            'enum': list([
+              'chat',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'role',
+        ]),
+        'title': 'ChatMessage',
+        'type': 'object',
+      }),
+      'FunctionMessage': dict({
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+          'response_metadata': dict({
+            'title': 'Response Metadata',
+            'type': 'object',
+          }),
+          'type': dict({
+            'default': 'function',
+            'enum': list([
+              'function',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'name',
+        ]),
+        'title': 'FunctionMessage',
+        'type': 'object',
+      }),
+      'HumanMessage': dict({
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'example': dict({
+            'default': False,
+            'title': 'Example',
+            'type': 'boolean',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+          'response_metadata': dict({
+            'title': 'Response Metadata',
+            'type': 'object',
+          }),
+          'type': dict({
+            'default': 'human',
+            'enum': list([
+              'human',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+        ]),
+        'title': 'HumanMessage',
+        'type': 'object',
+      }),
+      'InvalidToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
+      'SystemMessage': dict({
+        'description': '''
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
+          of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
+        ''',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+          'response_metadata': dict({
+            'title': 'Response Metadata',
+            'type': 'object',
+          }),
+          'type': dict({
+            'default': 'system',
+            'enum': list([
+              'system',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+        ]),
+        'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+        ]),
+        'title': 'ToolCall',
+        'type': 'object',
+      }),
+      'ToolMessage': dict({
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A ToolMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          Example: A ToolMessage where only part of the tool output is sent to the model
+              and the full output is passed in to raw_output.
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  tool_output = {
+                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stderr": None,
+                      "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+                  }
+          
+                  ToolMessage(
+                      content=tool_output["stdout"],
+                      raw_output=tool_output,
+                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                  )
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+          'raw_output': dict({
+            'title': 'Raw Output',
+          }),
+          'response_metadata': dict({
+            'title': 'Response Metadata',
+            'type': 'object',
+          }),
+          'tool_call_id': dict({
+            'title': 'Tool Call Id',
+            'type': 'string',
+          }),
+          'type': dict({
+            'default': 'tool',
+            'enum': list([
+              'tool',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'tool_call_id',
+        ]),
+        'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
+        'type': 'object',
+      }),
+    }),
+    'properties': dict({
+      'history': dict({
+        'items': dict({
+          'anyOf': list([
+            dict({
+              '$ref': '#/definitions/AIMessage',
+            }),
+            dict({
+              '$ref': '#/definitions/HumanMessage',
+            }),
+            dict({
+              '$ref': '#/definitions/ChatMessage',
+            }),
+            dict({
+              '$ref': '#/definitions/SystemMessage',
+            }),
+            dict({
+              '$ref': '#/definitions/FunctionMessage',
+            }),
+            dict({
+              '$ref': '#/definitions/ToolMessage',
+            }),
+          ]),
+        }),
+        'title': 'History',
+        'type': 'array',
+      }),
+      'input': dict({
+        'title': 'Input',
+        'type': 'string',
+      }),
+    }),
+    'required': list([
+      'input',
+    ]),
+    'title': 'PromptInput',
+    'type': 'object',
+  })
+# ---
+# name: test_chat_input_schema[required]
+  dict({
+    'definitions': dict({
+      'AIMessage': dict({
+        'description': '''
+          Message from an AI.
+          
+          AIMessage is returned from a chat model as a response to a prompt.
+          
+          This message represents the output of the model and consists of both
+          the raw output as returned by the model together standardized fields
+          (e.g., tool calls, usage metadata) added by the LangChain framework.
+        ''',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'example': dict({
+            'default': False,
+            'title': 'Example',
+            'type': 'boolean',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'invalid_tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/InvalidToolCall',
+            }),
+            'title': 'Invalid Tool Calls',
+            'type': 'array',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+          'response_metadata': dict({
+            'title': 'Response Metadata',
+            'type': 'object',
+          }),
+          'tool_calls': dict({
+            'default': list([
+            ]),
+            'items': dict({
+              '$ref': '#/definitions/ToolCall',
+            }),
+            'title': 'Tool Calls',
+            'type': 'array',
+          }),
+          'type': dict({
+            'default': 'ai',
+            'enum': list([
+              'ai',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+          'usage_metadata': dict({
+            '$ref': '#/definitions/UsageMetadata',
+          }),
+        }),
+        'required': list([
+          'content',
+        ]),
+        'title': 'AIMessage',
+        'type': 'object',
+      }),
+      'ChatMessage': dict({
+        'description': 'Message that can be assigned an arbitrary speaker (i.e. role).',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+          'response_metadata': dict({
+            'title': 'Response Metadata',
+            'type': 'object',
+          }),
+          'role': dict({
+            'title': 'Role',
+            'type': 'string',
+          }),
+          'type': dict({
+            'default': 'chat',
+            'enum': list([
+              'chat',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'role',
+        ]),
+        'title': 'ChatMessage',
+        'type': 'object',
+      }),
+      'FunctionMessage': dict({
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          FunctionMessage are an older version of the ToolMessage schema, and
+          do not contain the tool_call_id field.
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+          'response_metadata': dict({
+            'title': 'Response Metadata',
+            'type': 'object',
+          }),
+          'type': dict({
+            'default': 'function',
+            'enum': list([
+              'function',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'name',
+        ]),
+        'title': 'FunctionMessage',
+        'type': 'object',
+      }),
+      'HumanMessage': dict({
+        'description': '''
+          Message from a human.
+          
+          HumanMessages are messages that are passed in from a human to the model.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Instantiate a chat model and invoke it with the messages
+                  model = ...
+                  print(model.invoke(messages))
+        ''',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'example': dict({
+            'default': False,
+            'title': 'Example',
+            'type': 'boolean',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+          'response_metadata': dict({
+            'title': 'Response Metadata',
+            'type': 'object',
+          }),
+          'type': dict({
+            'default': 'human',
+            'enum': list([
+              'human',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+        ]),
+        'title': 'HumanMessage',
+        'type': 'object',
+      }),
+      'InvalidToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'string',
+          }),
+          'error': dict({
+            'title': 'Error',
+            'type': 'string',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+          'error',
+        ]),
+        'title': 'InvalidToolCall',
+        'type': 'object',
+      }),
+      'SystemMessage': dict({
+        'description': '''
+          Message for priming AI behavior.
+          
+          The system message is usually passed in as the first of a sequence
+          of input messages.
+          
+          Example:
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import HumanMessage, SystemMessage
+          
+                  messages = [
+                      SystemMessage(
+                          content="You are a helpful assistant! Your name is Bob."
+                      ),
+                      HumanMessage(
+                          content="What is your name?"
+                      )
+                  ]
+          
+                  # Define a chat model and invoke it with the messages
+                  print(model.invoke(messages))
+        ''',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+          'response_metadata': dict({
+            'title': 'Response Metadata',
+            'type': 'object',
+          }),
+          'type': dict({
+            'default': 'system',
+            'enum': list([
+              'system',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+        ]),
+        'title': 'SystemMessage',
+        'type': 'object',
+      }),
+      'ToolCall': dict({
+        'properties': dict({
+          'args': dict({
+            'title': 'Args',
+            'type': 'object',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'name',
+          'args',
+          'id',
+        ]),
+        'title': 'ToolCall',
+        'type': 'object',
+      }),
+      'ToolMessage': dict({
+        'description': '''
+          Message for passing the result of executing a tool back to a model.
+          
+          ToolMessages contain the result of a tool invocation. Typically, the result
+          is encoded inside the `content` field.
+          
+          Example: A ToolMessage representing a result of 42 from a tool call with id
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+          
+          Example: A ToolMessage where only part of the tool output is sent to the model
+              and the full output is passed in to raw_output.
+          
+              .. code-block:: python
+          
+                  from langchain_core.messages import ToolMessage
+          
+                  tool_output = {
+                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stderr": None,
+                      "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+                  }
+          
+                  ToolMessage(
+                      content=tool_output["stdout"],
+                      raw_output=tool_output,
+                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                  )
+          
+          The tool_call_id field is used to associate the tool call request with the
+          tool call response. This is useful in situations where a chat model is able
+          to request multiple tool calls in parallel.
+        ''',
+        'properties': dict({
+          'additional_kwargs': dict({
+            'title': 'Additional Kwargs',
+            'type': 'object',
+          }),
+          'content': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'items': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'object',
+                    }),
+                  ]),
+                }),
+                'type': 'array',
+              }),
+            ]),
+            'title': 'Content',
+          }),
+          'id': dict({
+            'title': 'Id',
+            'type': 'string',
+          }),
+          'name': dict({
+            'title': 'Name',
+            'type': 'string',
+          }),
+          'raw_output': dict({
+            'title': 'Raw Output',
+          }),
+          'response_metadata': dict({
+            'title': 'Response Metadata',
+            'type': 'object',
+          }),
+          'tool_call_id': dict({
+            'title': 'Tool Call Id',
+            'type': 'string',
+          }),
+          'type': dict({
+            'default': 'tool',
+            'enum': list([
+              'tool',
+            ]),
+            'title': 'Type',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'content',
+          'tool_call_id',
+        ]),
+        'title': 'ToolMessage',
+        'type': 'object',
+      }),
+      'UsageMetadata': dict({
+        'properties': dict({
+          'input_tokens': dict({
+            'title': 'Input Tokens',
+            'type': 'integer',
+          }),
+          'output_tokens': dict({
+            'title': 'Output Tokens',
+            'type': 'integer',
+          }),
+          'total_tokens': dict({
+            'title': 'Total Tokens',
+            'type': 'integer',
+          }),
+        }),
+        'required': list([
+          'input_tokens',
+          'output_tokens',
+          'total_tokens',
+        ]),
+        'title': 'UsageMetadata',
+        'type': 'object',
+      }),
+    }),
+    'properties': dict({
+      'history': dict({
+        'items': dict({
+          'anyOf': list([
+            dict({
+              '$ref': '#/definitions/AIMessage',
+            }),
+            dict({
+              '$ref': '#/definitions/HumanMessage',
+            }),
+            dict({
+              '$ref': '#/definitions/ChatMessage',
+            }),
+            dict({
+              '$ref': '#/definitions/SystemMessage',
+            }),
+            dict({
+              '$ref': '#/definitions/FunctionMessage',
+            }),
+            dict({
+              '$ref': '#/definitions/ToolMessage',
+            }),
+          ]),
+        }),
+        'title': 'History',
+        'type': 'array',
+      }),
+      'input': dict({
+        'title': 'Input',
+        'type': 'string',
+      }),
+    }),
+    'required': list([
+      'history',
+      'input',
+    ]),
+    'title': 'PromptInput',
+    'type': 'object',
+  })
+# ---
