@@ -265,7 +265,7 @@ class ApertureDB(VectorStore):
         return self.add_documents(docs)
 
     @override
-    def delete(self, ids: Optional[List[str]]=None) -> Optional[bool]:
+    def delete(self, ids: Optional[List[str]] = None) -> Optional[bool]:
         assert ids is not None, "ids must be provided"
         query = [
             {
@@ -431,7 +431,7 @@ class ApertureDB(VectorStore):
         return response[0]["FindDescriptorSet"]["entities"]
 
     @override
-    def upsert(self, items: Sequence[Document], **kwargs:Any) -> UpsertResponse:
+    def upsert(self, items: Sequence[Document], **kwargs: Any) -> UpsertResponse:
         """Insert or update items"""
         # For now, simply delete and add
         # We could do something more efficient to update metadata,
