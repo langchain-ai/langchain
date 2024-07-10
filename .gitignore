@@ -191,3 +191,4 @@ prof
 smart_merge.py
 file::memory*
 virtualenv/
+*.bac
