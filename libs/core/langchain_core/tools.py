@@ -35,6 +35,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Sequence,
     Tuple,
@@ -516,7 +517,10 @@ class ChildTool(BaseTool):
             inputs=tool_input if isinstance(tool_input, dict) else None,
             **kwargs,
         )
+
+        content = None
         raw_output = None
+        error_to_raise: Union[Exception, KeyboardInterrupt, None] = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
@@ -529,20 +533,24 @@ class ChildTool(BaseTool):
                 **tool_kwargs,
             )
         except ValidationError as e:
-            content = _handle_validation_error(e, flag=self.handle_validation_error)
+            if not self.handle_validation_error:
+                error_to_raise = e
+            else:
+                content = _handle_validation_error(e, flag=self.handle_validation_error)
         except ToolException as e:
             if not self.handle_tool_error:
-                run_manager.on_tool_error(e)
-                raise e
-            content = _handle_tool_error(e, flag=self.handle_tool_error)
-            run_manager.on_tool_end(content, color="red", name=self.name, **kwargs)
+                error_to_raise = e
+            else:
+                content = _handle_tool_error(e, flag=self.handle_tool_error)
         except (Exception, KeyboardInterrupt) as e:
-            run_manager.on_tool_error(e)
-            raise e
-        else:
-            run_manager.on_tool_end(content, color=color, name=self.name, **kwargs)
+            error_to_raise = e
 
-        return _format_output(content, raw_output, tool_call_id)
+        if error_to_raise:
+            run_manager.on_tool_error(error_to_raise)
+            raise error_to_raise
+        output = _format_output(content, raw_output, tool_call_id)
+        run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
+        return output
 
     async def arun(
         self,
@@ -583,7 +591,9 @@ class ChildTool(BaseTool):
             inputs=tool_input if isinstance(tool_input, dict) else None,
             **kwargs,
         )
+        content = None
         raw_output = None
+        error_to_raise: Optional[Union[Exception, KeyboardInterrupt]] = None
         try:
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -600,24 +610,25 @@ class ChildTool(BaseTool):
             else:
                 content, raw_output = await coro
         except ValidationError as e:
-            # TODO: Add async handler
-            content = _handle_validation_error(e, flag=self.handle_validation_error)
+            if not self.handle_validation_error:
+                error_to_raise = e
+            else:
+                content = _handle_validation_error(e, flag=self.handle_validation_error)
         except ToolException as e:
             if not self.handle_tool_error:
-                await run_manager.on_tool_error(e)
-                raise e
-            content = _handle_tool_error(e, flag=self.handle_tool_error)
-            await run_manager.on_tool_end(
-                content, color="red", name=self.name, **kwargs
-            )
+                error_to_raise = e
+            else:
+                content = _handle_tool_error(e, flag=self.handle_tool_error)
         except (Exception, KeyboardInterrupt) as e:
-            await run_manager.on_tool_error(e)
-            raise e
-        else:
-            await run_manager.on_tool_end(
-                content, color=color, name=self.name, **kwargs
-            )
-        return _format_output(content, raw_output, tool_call_id)
+            error_to_raise = e
+
+        if error_to_raise:
+            await run_manager.on_tool_error(error_to_raise)
+            raise error_to_raise
+
+        output = _format_output(content, raw_output, tool_call_id)
+        await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
+        return output
 
     @deprecated("0.1.47", alternative="invoke", removal="0.3.0")
     def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
@@ -1141,11 +1152,9 @@ def _is_tool_call(x: Any) -> bool:
 def _handle_validation_error(
     e: ValidationError,
     *,
-    flag: Optional[Union[bool, str, Callable[[ValidationError], str]]],
+    flag: Union[Literal[True], str, Callable[[ValidationError], str]],
 ) -> str:
-    if not flag:
-        raise e
-    elif isinstance(flag, bool):
+    if isinstance(flag, bool):
         content = "Tool input validation error"
     elif isinstance(flag, str):
         content = flag
@@ -1162,7 +1171,7 @@ def _handle_validation_error(
 def _handle_tool_error(
     e: ToolException,
     *,
-    flag: Optional[Union[bool, str, Callable[[ToolException], str]]],
+    flag: Optional[Union[Literal[True], str, Callable[[ToolException], str]]],
 ) -> str:
     if isinstance(flag, bool):
         if e.args:
