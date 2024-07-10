@@ -26,9 +26,6 @@ from typing import (
 )
 from uuid import UUID
 
-from langsmith.run_helpers import get_run_tree_context
-from tenacity import RetryCallState
-
 from langchain_core.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
@@ -43,6 +40,8 @@ from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils.env import env_var_is_set
+from langsmith.run_helpers import get_run_tree_context
+from tenacity import RetryCallState
 
 if TYPE_CHECKING:
     from langchain_core.agents import AgentAction, AgentFinish
@@ -2238,11 +2237,89 @@ def _configure(
     return callback_manager
 
 
-# TODO(EUGENE): ADD IN CODE DOCUMENTATION
 async def adispatch_custom_event(
     name: str, data: Any, *, config: Optional[RunnableConfig] = None
 ) -> None:
-    """Dispatch an adhoc event to the handlers."""
+    """Dispatch an adhoc event to the handlers.
+
+    Args:
+        name: The name of the adhoc event.
+        data: The data for the adhoc event. Free form data. Ideally should be
+              JSON serializable to avoid serialization issues downstream, but
+              this is not enforced.
+        config: Optional config object. Mirrors the async API but not strictly needed.
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain_core.callbacks import (
+                AsyncCallbackHandler,
+                adispatch_custom_event
+            )
+            from langchain_core.runnable import RunnableLambda
+
+            class CustomCallbackManager(AsyncCallbackHandler):
+                async def on_custom_event(
+                    self,
+                    name: str,
+                    data: Any,
+                    *,
+                    run_id: UUID,
+                    tags: Optional[List[str]] = None,
+                    metadata: Optional[Dict[str, Any]] = None,
+                    **kwargs: Any,
+                ) -> None:
+                    print(f"Received custom event: {name} with data: {data}")
+
+            callback = CustomCallbackManager()
+
+            async def foo(inputs):
+                await adispatch_custom_event("my_event", {"bar": "buzz})
+                return inputs
+
+            foo_ = RunnableLambda(foo)
+            await foo_.ainvoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
+
+    Example: Use with astream events
+
+        .. code-block:: python
+
+            from langchain_core.callbacks import (
+                AsyncCallbackHandler,
+                adispatch_custom_event
+            )
+            from langchain_core.runnable import RunnableLambda
+
+            class CustomCallbackManager(AsyncCallbackHandler):
+                async def on_custom_event(
+                    self,
+                    name: str,
+                    data: Any,
+                    *,
+                    run_id: UUID,
+                    tags: Optional[List[str]] = None,
+                    metadata: Optional[Dict[str, Any]] = None,
+                    **kwargs: Any,
+                ) -> None:
+                    print(f"Received custom event: {name} with data: {data}")
+
+            callback = CustomCallbackManager()
+
+            async def foo(inputs):
+                await adispatch_custom_event("event_type_1", {"bar": "buzz})
+                await adispatch_custom_event("event_type_2", 5)
+                return inputs
+
+            foo_ = RunnableLambda(foo)
+
+            async for event in foo_.ainvoke_stream(
+                {"a": "1"},
+                version="v2",
+                config={"callbacks": [CustomCallbackManager()]}
+            ):
+                print(event)
+    """
     from langchain_core.runnables.config import (
         ensure_config,
         get_async_callback_manager_for_config,
@@ -2270,11 +2347,46 @@ async def adispatch_custom_event(
     )
 
 
-# TODO(EUGENE): TEST THE SYNC PATH with a regular callback handler provided by the user.
 def dispatch_custom_event(
     name: str, data: Any, *, config: Optional[RunnableConfig] = None
 ) -> None:
-    """Dispatch an adhoc event to the handlers."""
+    """Dispatch an adhoc event.
+
+    Args:
+        name: The name of the adhoc event.
+        data: The data for the adhoc event. Free form data. Ideally should be
+              JSON serializable to avoid serialization issues downstream, but
+              this is not enforced.
+        config: Optional config object. Mirrors the async API but not strictly needed.
+
+    Example:
+
+        .. code-block:: python
+
+            from langchain_core.callbacks import BaseCallbackHandler
+            from langchain_core.callbacks import dispatch_custom_event
+            from langchain_core.runnable import RunnableLambda
+
+            class CustomCallbackManager(BaseCallbackHandler):
+                def on_custom_event(
+                    self,
+                    name: str,
+                    data: Any,
+                    *,
+                    run_id: UUID,
+                    tags: Optional[List[str]] = None,
+                    metadata: Optional[Dict[str, Any]] = None,
+                    **kwargs: Any,
+                ) -> None:
+                    print(f"Received custom event: {name} with data: {data}")
+
+            def foo(inputs):
+                dispatch_custom_event("my_event", {"bar": "buzz})
+                return inputs
+
+            foo_ = RunnableLambda(foo)
+            foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
+    """
     from langchain_core.runnables.config import (
         ensure_config,
         get_callback_manager_for_config,
