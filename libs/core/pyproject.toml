@@ -38,6 +38,11 @@ python = ">=3.12.4"
 [tool.ruff.lint]
 select = [ "E", "F", "I", "T201",]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/unit_tests/prompts/test_chat.py" = ["E501"]
+"tests/unit_tests/runnables/test_runnable.py" = ["E501"]
+"tests/unit_tests/runnables/test_graph.py" = ["E501"]
+
 [tool.coverage.run]
 omit = [ "tests/*",]
 

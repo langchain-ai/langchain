@@ -3,6 +3,7 @@ from typing import List, Type
 
 import pytest
 
+from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -20,6 +21,7 @@ from langchain_core.messages import (
     convert_to_messages,
     get_buffer_string,
     message_chunk_to_message,
+    message_to_dict,
     messages_from_dict,
     messages_to_dict,
 )
@@ -253,7 +255,7 @@ def test_function_message_chunks() -> None:
         )
 
 
-def test_ani_message_chunks() -> None:
+def test_ai_message_chunks() -> None:
     assert AIMessageChunk(example=True, content="I am") + AIMessageChunk(
         example=True, content=" indeed."
     ) == AIMessageChunk(
@@ -635,7 +637,7 @@ def test_tool_calls_merge() -> None:
 
 def test_convert_to_messages() -> None:
     # dicts
-    assert convert_to_messages(
+    actual = convert_to_messages(
         [
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": "Hello!"},
@@ -656,9 +658,16 @@ def test_convert_to_messages() -> None:
                 ],
             },
             {"role": "tool", "tool_call_id": "tool_id", "content": "Hi!"},
+            {
+                "role": "tool",
+                "tool_call_id": "tool_id2",
+                "content": "Bye!",
+                "raw_output": {"foo": 123},
+            },
             {"role": "remove", "id": "message_to_remove", "content": ""},
         ]
-    ) == [
+    )
+    expected = [
         SystemMessage(content="You are a helpful assistant."),
         HumanMessage(content="Hello!"),
         AIMessage(content="Hi!", id="ai1"),
@@ -676,8 +685,10 @@ def test_convert_to_messages() -> None:
             tool_calls=[ToolCall(name="greet", args={"name": "Jane"}, id="tool_id")],
         ),
         ToolMessage(tool_call_id="tool_id", content="Hi!"),
+        ToolMessage(tool_call_id="tool_id2", content="Bye!", raw_output={"foo": 123}),
         RemoveMessage(id="message_to_remove"),
     ]
+    assert expected == actual
 
     # tuples
     assert convert_to_messages(
@@ -773,3 +784,83 @@ def test_merge_tool_calls() -> None:
     merged = merge_lists([left], [right])
     assert merged is not None
     assert len(merged) == 2
+
+
+def test_tool_message_serdes() -> None:
+    message = ToolMessage("foo", raw_output={"bar": {"baz": 123}}, tool_call_id="1")
+    ser_message = {
+        "lc": 1,
+        "type": "constructor",
+        "id": ["langchain", "schema", "messages", "ToolMessage"],
+        "kwargs": {
+            "content": "foo",
+            "type": "tool",
+            "tool_call_id": "1",
+            "raw_output": {"bar": {"baz": 123}},
+        },
+    }
+    assert dumpd(message) == ser_message
+    assert load(dumpd(message)) == message
+
+
+class BadObject:
+    """"""
+
+
+def test_tool_message_ser_non_serializable() -> None:
+    bad_obj = BadObject()
+    message = ToolMessage("foo", raw_output=bad_obj, tool_call_id="1")
+    ser_message = {
+        "lc": 1,
+        "type": "constructor",
+        "id": ["langchain", "schema", "messages", "ToolMessage"],
+        "kwargs": {
+            "content": "foo",
+            "type": "tool",
+            "tool_call_id": "1",
+            "raw_output": {
+                "lc": 1,
+                "type": "not_implemented",
+                "id": ["tests", "unit_tests", "test_messages", "BadObject"],
+                "repr": repr(bad_obj),
+            },
+        },
+    }
+    assert dumpd(message) == ser_message
+    with pytest.raises(NotImplementedError):
+        load(dumpd(ser_message))
+
+
+def test_tool_message_to_dict() -> None:
+    message = ToolMessage("foo", raw_output={"bar": {"baz": 123}}, tool_call_id="1")
+    expected = {
+        "type": "tool",
+        "data": {
+            "content": "foo",
+            "additional_kwargs": {},
+            "response_metadata": {},
+            "raw_output": {"bar": {"baz": 123}},
+            "type": "tool",
+            "name": None,
+            "id": None,
+            "tool_call_id": "1",
+        },
+    }
+    actual = message_to_dict(message)
+    assert actual == expected
+
+
+def test_tool_message_repr() -> None:
+    message = ToolMessage("foo", raw_output={"bar": {"baz": 123}}, tool_call_id="1")
+    expected = (
+        "ToolMessage(content='foo', tool_call_id='1', raw_output={'bar': {'baz': 123}})"
+    )
+    actual = repr(message)
+    assert expected == actual
+
+
+def test_tool_message_str() -> None:
+    message = ToolMessage("foo", raw_output={"bar": {"baz": 123}}, tool_call_id="1")
+    expected = "content='foo' tool_call_id='1' raw_output={'bar': {'baz': 123}}"
+    actual = str(message)
+    assert expected == actual
