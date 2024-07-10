@@ -438,8 +438,9 @@ class ApertureDB(VectorStore):
         # For now, simply delete and add
         # We could do something more efficient to update metadata,
         # but we don't support changing the embedding of a descriptor.
-        ids: List[str] = [item.id for item in items 
-            if hasattr(item, "id") and item.id is not None]
+        ids: List[str] = [
+            item.id for item in items if hasattr(item, "id") and item.id is not None
+        ]
         self.delete(ids)
         ids = self.add_documents(list(items))
         return UpsertResponse(succeeded=ids, failed=[])
