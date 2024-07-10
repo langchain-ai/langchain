@@ -209,7 +209,7 @@ class ApertureDB(VectorStore):
             for doc in documents
         ]
         embeddings = self.embedding_function.embed_documents(texts)
-        ids: List[str] = [
+        ids = [
             doc.id if getattr(doc, "id", None) is not None else str(uuid.uuid4())
             for doc in documents
         ]
