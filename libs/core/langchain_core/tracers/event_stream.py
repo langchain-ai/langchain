@@ -344,18 +344,16 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         self,
         name: str,
         data: Any,
+        *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Run an ad-hoc event."""
-        if run_id is None:
-            run_id = uuid4()
         event = StreamEvent(
             event="on_adhoc_event",
-            run_id=run_id,
+            run_id=str(run_id),
             name=name,
             tags=tags or [],
             metadata=metadata or {},

@@ -1498,7 +1498,6 @@ class CallbackManager(BaseCallbackManager):
         name: str,
         data: Any,
         run_id: Optional[UUID] = None,
-        parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
         """Dispatch an adhoc event to the handlers.
@@ -1511,7 +1510,6 @@ class CallbackManager(BaseCallbackManager):
             name: The name of the adhoc event.
             data: The data for the adhoc event.
             run_id: The ID of the run. Defaults to None.
-            parent_run_id: The ID of the parent run. Defaults to None.
         """
         if run_id is None:
             run_id = uuid.uuid4()
@@ -1523,7 +1521,6 @@ class CallbackManager(BaseCallbackManager):
             event_name,
             event_data,
             run_id=run_id,
-            parent_run_id=self.parent_run_id,
             tags=self.tags,
             metadata=self.metadata,
             **kwargs,
@@ -1876,6 +1873,18 @@ class AsyncCallbackManager(BaseCallbackManager):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
+        """Dispatch an adhoc event to the handlers (async version).
+
+        This event should be used in any internal LangChain code. The event
+        is meant specifically for users of the library to dispatch custom
+        events that are tailored to their application.
+
+        Args:
+            name: The name of the adhoc event.
+            data: The data for the adhoc event.
+            run_id: The ID of the run. Defaults to None.
+            parent_run_id: The ID of the parent run. Defaults to None.
+        """
         if run_id is None:
             run_id = uuid.uuid4()
 
@@ -1886,7 +1895,12 @@ class AsyncCallbackManager(BaseCallbackManager):
             name,
             data,
             run_id=run_id,
-            parent_run_id=self.parent_run_id,
+            # For adhoc event, we'll allow the parent id to be different then
+            # the current parent run id.
+            # This is done because usually an adhoc event will be dispatched from
+            # within the body of a runnable lambda or a tool, but the adhoc event
+            # is associated with the same run not a child run.
+            parent_run_id=parent_run_id or self.parent_run_id,
             tags=self.tags,
             metadata=self.metadata,
             **kwargs,
@@ -2230,6 +2244,7 @@ def _configure(
     return callback_manager
 
 
+# TODO(EUGENE): ADD IN CODE DOCUMENTATION
 async def adispatch_adhoc_event(
     name: str, data: Any, *, config: Optional[RunnableConfig] = None
 ):
@@ -2241,9 +2256,32 @@ async def adispatch_adhoc_event(
 
     config = ensure_config(config)
     callback_manager = get_async_callback_manager_for_config(config)
-    await callback_manager.on_adhoc_event(name, data)
+    # We want to get the callback manager for the parent run.
+    # This is a work-around for now to be able to dispatch adhoc events from
+    # within a tool or a lambda and have the metadata events associated
+    # with the parent run rather than have a new run id generated for each.
+    if callback_manager.parent_run_id is None:
+        raise RuntimeError(
+            "Unable to dispatch an adhoc event without a parent run id."
+            "This function can only be called from within an existing run (e.g.,"
+            "inside a tool or a RunnableLambda or a RunnableGenerator.)"
+            "If you are doing that and still seeing this error, try explicitly"
+            "passing the config parameter to this function."
+        )
+
+    # Hack to get the callback manager for the parent
+    callback_manager.run_id = callback_manager.parent_run_id
+    await callback_manager.on_adhoc_event(
+        name,
+        data,
+        run_id=callback_manager.parent_run_id,
+        # Hack use an empty string here rather than a None to avoid the parent
+        # run id being set to the current run id inside the callback manager.
+        parent_run_id="",
+    )
 
 
+# TODO(EUGENE): TEST THE SYNC PATH with a regular callback handler provided by the user.
 def dispatch_adhoc_event(
     name: str, data: Any, *, config: Optional[RunnableConfig] = None
 ):
@@ -2255,4 +2293,20 @@ def dispatch_adhoc_event(
 
     config = ensure_config(config)
     callback_manager = get_callback_manager_for_config(config)
-    callback_manager.on_adhoc_event(name, data)
+    # We want to get the callback manager for the parent run.
+    # This is a work-around for now to be able to dispatch adhoc events from
+    # within a tool or a lambda and have the metadata events associated
+    # with the parent run rather than have a new run id generated for each.
+    if callback_manager.parent_run_id is None:
+        raise RuntimeError(
+            "Unable to dispatch an adhoc event without a parent run id."
+            "This function can only be called from within an existing run (e.g.,"
+            "inside a tool or a RunnableLambda or a RunnableGenerator.)"
+            "If you are doing that and still seeing this error, try explicitly"
+            "passing the config parameter to this function."
+        )
+    callback_manager.on_adhoc_event(
+        name,
+        data,
+        run_id=callback_manager.parent_run_id,
+    )

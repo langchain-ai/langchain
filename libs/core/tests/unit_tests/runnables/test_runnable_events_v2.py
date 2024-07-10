@@ -2359,15 +2359,173 @@ async def test_adhoc_event() -> None:
     from langchain_core.callbacks.manager import adispatch_adhoc_event
 
     @RunnableLambda
-    async def foo(x: int, config):
-        await adispatch_adhoc_event("my_event", {"x": x}, config=config)
+    async def foo(x: int, config) -> int:
+        """Simple function that emits some adhoc events."""
+        await adispatch_adhoc_event("event1", {"x": x}, config=config)
         await adispatch_adhoc_event("event2", "foo")
         return x + 1
 
-    events = await _collect_events(foo.astream_events(1, version="v2"))
+    run_id = str(uuid.UUID(int=7))
+
+    events = await _collect_events(
+        foo.astream_events(
+            1,
+            version="v2",
+            config={"run_id": run_id},
+        ),
+        with_nulled_ids=False,
+    )
     assert events == [
-        ]
+        {
+            "data": {"input": 1},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": {"x": 1},
+            "event": "on_adhoc_event",
+            "metadata": {},
+            "name": "event1",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": "foo",
+            "event": "on_adhoc_event",
+            "metadata": {},
+            "name": "event2",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": {"chunk": 2},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+        {
+            "data": {"output": 2},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": run_id,
+            "tags": [],
+        },
+    ]
 
 
+async def test_adhoc_event_nested() -> None:
+    """Test adhoc event in a nested chain."""
+    from langchain_core.callbacks.manager import adispatch_adhoc_event
+
+    @RunnableLambda
+    async def foo(x: int, config: RunnableConfig) -> int:
+        """Simple function that emits some adhoc events."""
+        await adispatch_adhoc_event("event1", {"x": x}, config=config)
+        await adispatch_adhoc_event("event2", "foo")
+        return x + 1
+
+    run_id = str(uuid.UUID(int=7))
+    child_run_id = str(uuid.UUID(int=8))
+
+    @RunnableLambda
+    async def bar(x: int, config: RunnableConfig) -> int:
+        """Simple function that emits some adhoc events."""
+        return await foo.ainvoke(x, {"run_id": child_run_id, **config})
+
+    events = await _collect_events(
+        bar.astream_events(
+            1,
+            version="v2",
+            config={"run_id": run_id},
+        ),
+        with_nulled_ids=False,
+    )
+    assert events == [
+        {
+            "data": {"input": 1},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "bar",
+            "parent_ids": [],
+            "run_id": "00000000-0000-0000-0000-000000000007",
+            "tags": [],
+        },
+        {
+            "data": {"input": 1},
+            "event": "on_chain_start",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": {"x": 1},
+            "event": "on_adhoc_event",
+            "metadata": {},
+            "name": "event1",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": "foo",
+            "event": "on_adhoc_event",
+            "metadata": {},
+            "name": "event2",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": {"input": 1, "output": 2},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": ["00000000-0000-0000-0000-000000000007"],
+            "run_id": "00000000-0000-0000-0000-000000000008",
+            "tags": [],
+        },
+        {
+            "data": {"chunk": 2},
+            "event": "on_chain_stream",
+            "metadata": {},
+            "name": "bar",
+            "parent_ids": [],
+            "run_id": "00000000-0000-0000-0000-000000000007",
+            "tags": [],
+        },
+        {
+            "data": {"output": 2},
+            "event": "on_chain_end",
+            "metadata": {},
+            "name": "bar",
+            "parent_ids": [],
+            "run_id": "00000000-0000-0000-0000-000000000007",
+            "tags": [],
+        },
+    ]
 
 
+async def test_adhoc_event_root_dispatch() -> None:
+    """Test adhoc event in a nested chain."""
+    # This just tests that nothing breaks on the path.
+    # It shouldn't do anything at the moment, since the tracer isn't configured
+    # to handle adhoc events.
+    from langchain_core.callbacks.manager import adispatch_adhoc_event
+
+    # Expected behavior is that the event cannot be dispatched
+    with pytest.raises(RuntimeError):
+
+        await adispatch_adhoc_event("event1", {"x": 1})

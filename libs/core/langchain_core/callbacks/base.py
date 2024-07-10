@@ -371,14 +371,14 @@ class RunManagerMixin:
         """
 
     def on_adhoc_event(
-            self,
-            name: str,
-            data: Any,
-            run_id: Optional[UUID] = None,
-            parent_run_id: Optional[UUID] = None,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
+        self,
+        name: str,
+        data: Any,
+        run_id: Optional[UUID] = None,
+        parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> None:
         """Override to define a handler for adhoc events.
 
@@ -388,6 +388,7 @@ class RunManagerMixin:
             run_id: The ID of the run. Defaults to None.
             parent_run_id: The ID of the parent run. Defaults to None.
         """
+
 
 class BaseCallbackHandler(
     LLMManagerMixin,
@@ -436,10 +437,9 @@ class BaseCallbackHandler(
         return False
 
     @property
-    def ignore_adhoc(self) -> bool:
+    def ignore_adhoc_event(self) -> bool:
         """Ignore adhoc event."""
         return False
-
 
 
 class AsyncCallbackHandler(BaseCallbackHandler):
@@ -828,7 +828,6 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         name: str,
         data: Any,
         run_id: Optional[UUID] = None,
-        parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
@@ -839,7 +838,6 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             name: The name of the adhoc event.
             data: The data for the adhoc event.
             run_id: The ID of the run. Defaults to None.
-            parent_run_id: The ID of the parent run. Defaults to None.
         """
 
 
