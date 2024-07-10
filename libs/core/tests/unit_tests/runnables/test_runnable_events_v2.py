@@ -2365,7 +2365,7 @@ async def test_custom_event() -> None:
     async def foo(x: int, config: RunnableConfig) -> int:
         """Simple function that emits some adhoc events."""
         await adispatch_custom_event("event1", {"x": x}, config=config)
-        await adispatch_custom_event("event2", "foo")
+        await adispatch_custom_event("event2", "foo", config=config)
         return x + 1
 
     uuid1 = uuid.UUID(int=7)
@@ -2439,7 +2439,7 @@ async def test_custom_event_nested() -> None:
     async def foo(x: int, config: RunnableConfig) -> int:
         """Simple function that emits some adhoc events."""
         await adispatch_custom_event("event1", {"x": x}, config=config)
-        await adispatch_custom_event("event2", "foo")
+        await adispatch_custom_event("event2", "foo", config=config)
         return x + 1
 
     run_id = uuid.UUID(int=7)
