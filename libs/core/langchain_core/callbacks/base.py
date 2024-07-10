@@ -370,7 +370,7 @@ class RunManagerMixin:
             kwargs (Any): Additional keyword arguments.
         """
 
-    def on_adhoc_event(
+    def on_custom_event(
         self,
         name: str,
         data: Any,
@@ -437,7 +437,7 @@ class BaseCallbackHandler(
         return False
 
     @property
-    def ignore_adhoc_event(self) -> bool:
+    def ignore_custom_event(self) -> bool:
         """Ignore adhoc event."""
         return False
 
@@ -823,7 +823,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             kwargs (Any): Additional keyword arguments.
         """
 
-    def on_adhoc_event(
+    def on_custom_event(
         self,
         name: str,
         data: Any,

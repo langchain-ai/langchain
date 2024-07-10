@@ -2354,15 +2354,15 @@ async def test_cancel_astream_events() -> None:
     assert anotherwhile.started is False
 
 
-async def test_adhoc_event() -> None:
+async def test_custom_event() -> None:
     """Test adhoc event."""
-    from langchain_core.callbacks.manager import adispatch_adhoc_event
+    from langchain_core.callbacks.manager import adispatch_custom_event
 
     @RunnableLambda
     async def foo(x: int, config) -> int:
         """Simple function that emits some adhoc events."""
-        await adispatch_adhoc_event("event1", {"x": x}, config=config)
-        await adispatch_adhoc_event("event2", "foo")
+        await adispatch_custom_event("event1", {"x": x}, config=config)
+        await adispatch_custom_event("event2", "foo")
         return x + 1
 
     run_id = str(uuid.UUID(int=7))
@@ -2387,7 +2387,7 @@ async def test_adhoc_event() -> None:
         },
         {
             "data": {"x": 1},
-            "event": "on_adhoc_event",
+            "event": "on_custom_event",
             "metadata": {},
             "name": "event1",
             "parent_ids": [],
@@ -2396,7 +2396,7 @@ async def test_adhoc_event() -> None:
         },
         {
             "data": "foo",
-            "event": "on_adhoc_event",
+            "event": "on_custom_event",
             "metadata": {},
             "name": "event2",
             "parent_ids": [],
@@ -2424,15 +2424,15 @@ async def test_adhoc_event() -> None:
     ]
 
 
-async def test_adhoc_event_nested() -> None:
+async def test_custom_event_nested() -> None:
     """Test adhoc event in a nested chain."""
-    from langchain_core.callbacks.manager import adispatch_adhoc_event
+    from langchain_core.callbacks.manager import adispatch_custom_event
 
     @RunnableLambda
     async def foo(x: int, config: RunnableConfig) -> int:
         """Simple function that emits some adhoc events."""
-        await adispatch_adhoc_event("event1", {"x": x}, config=config)
-        await adispatch_adhoc_event("event2", "foo")
+        await adispatch_custom_event("event1", {"x": x}, config=config)
+        await adispatch_custom_event("event2", "foo")
         return x + 1
 
     run_id = str(uuid.UUID(int=7))
@@ -2472,7 +2472,7 @@ async def test_adhoc_event_nested() -> None:
         },
         {
             "data": {"x": 1},
-            "event": "on_adhoc_event",
+            "event": "on_custom_event",
             "metadata": {},
             "name": "event1",
             "parent_ids": ["00000000-0000-0000-0000-000000000007"],
@@ -2481,7 +2481,7 @@ async def test_adhoc_event_nested() -> None:
         },
         {
             "data": "foo",
-            "event": "on_adhoc_event",
+            "event": "on_custom_event",
             "metadata": {},
             "name": "event2",
             "parent_ids": ["00000000-0000-0000-0000-000000000007"],
@@ -2518,14 +2518,14 @@ async def test_adhoc_event_nested() -> None:
     ]
 
 
-async def test_adhoc_event_root_dispatch() -> None:
+async def test_custom_event_root_dispatch() -> None:
     """Test adhoc event in a nested chain."""
     # This just tests that nothing breaks on the path.
     # It shouldn't do anything at the moment, since the tracer isn't configured
     # to handle adhoc events.
-    from langchain_core.callbacks.manager import adispatch_adhoc_event
+    from langchain_core.callbacks.manager import adispatch_custom_event
 
     # Expected behavior is that the event cannot be dispatched
     with pytest.raises(RuntimeError):
 
-        await adispatch_adhoc_event("event1", {"x": 1})
+        await adispatch_custom_event("event1", {"x": 1})

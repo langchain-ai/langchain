@@ -38,15 +38,15 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForToolRun,
     ParentRunManager,
     RunManager,
-    dispatch_adhoc_event,
-    adispatch_adhoc_event,
+    dispatch_custom_event,
+    adispatch_custom_event,
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 __all__ = [
-    "dispatch_adhoc_event",
-    "adispatch_adhoc_event",
+    "dispatch_custom_event",
+    "adispatch_custom_event",
     "RetrieverManagerMixin",
     "LLMManagerMixin",
     "ChainManagerMixin",

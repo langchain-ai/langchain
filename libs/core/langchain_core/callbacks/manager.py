@@ -1493,7 +1493,7 @@ class CallbackManager(BaseCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
         )
 
-    def on_adhoc_event(
+    def on_custom_event(
         self,
         name: str,
         data: Any,
@@ -1516,7 +1516,7 @@ class CallbackManager(BaseCallbackManager):
 
         handle_event(
             self.handlers,
-            "on_adhoc_event",
+            "on_custom_event",
             "ignore_adhoc",
             event_name,
             event_data,
@@ -1865,7 +1865,7 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
         )
 
-    async def on_adhoc_event(
+    async def on_custom_event(
         self,
         name: str,
         data: Any,
@@ -1890,8 +1890,8 @@ class AsyncCallbackManager(BaseCallbackManager):
 
         await ahandle_event(
             self.handlers,
-            "on_adhoc_event",
-            "ignore_adhoc_event",
+            "on_custom_event",
+            "ignore_custom_event",
             name,
             data,
             run_id=run_id,
@@ -2245,7 +2245,7 @@ def _configure(
 
 
 # TODO(EUGENE): ADD IN CODE DOCUMENTATION
-async def adispatch_adhoc_event(
+async def adispatch_custom_event(
     name: str, data: Any, *, config: Optional[RunnableConfig] = None
 ):
     """Dispatch an adhoc event to the handlers."""
@@ -2271,7 +2271,7 @@ async def adispatch_adhoc_event(
 
     # Hack to get the callback manager for the parent
     callback_manager.run_id = callback_manager.parent_run_id
-    await callback_manager.on_adhoc_event(
+    await callback_manager.on_custom_event(
         name,
         data,
         run_id=callback_manager.parent_run_id,
@@ -2282,7 +2282,7 @@ async def adispatch_adhoc_event(
 
 
 # TODO(EUGENE): TEST THE SYNC PATH with a regular callback handler provided by the user.
-def dispatch_adhoc_event(
+def dispatch_custom_event(
     name: str, data: Any, *, config: Optional[RunnableConfig] = None
 ):
     """Dispatch an adhoc event to the handlers."""
@@ -2305,7 +2305,7 @@ def dispatch_adhoc_event(
             "If you are doing that and still seeing this error, try explicitly"
             "passing the config parameter to this function."
         )
-    callback_manager.on_adhoc_event(
+    callback_manager.on_custom_event(
         name,
         data,
         run_id=callback_manager.parent_run_id,

@@ -340,7 +340,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_type,
         )
 
-    async def on_adhoc_event(
+    async def on_custom_event(
         self,
         name: str,
         data: Any,
@@ -352,7 +352,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     ) -> None:
         """Run an ad-hoc event."""
         event = StreamEvent(
-            event="on_adhoc_event",
+            event="on_custom_event",
             run_id=str(run_id),
             name=name,
             tags=tags or [],
