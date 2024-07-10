@@ -87,7 +87,7 @@ def test_aperturedb_with_id() -> None:
     output: List[Document] = docsearch.similarity_search("foo", k=1)
     _compare_documents(output, [Document(page_content="foo", id="id_0")])
 
-    output2:bool = docsearch.delete(ids=ids)
+    output2: bool = docsearch.delete(ids=ids)
     assert output2
 
     output3: List[Document] = docsearch.similarity_search("foo", k=1)
