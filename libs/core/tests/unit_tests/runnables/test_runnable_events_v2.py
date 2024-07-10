@@ -2557,13 +2557,15 @@ async def test_custom_event_root_dispatch_with_in_tool() -> None:
     from langchain_core.tools import tool
 
     @tool
-    async def foo(x: int):
+    async def foo(x: int) -> int:
         """Foo"""
         await adispatch_custom_event("event1", {"x": x})
         return x + 1
 
-    # Expected behavior is that the event cannot be dispatched
-    events = await _collect_events(foo.astream_events({"x": 2}, version="v2"))
+    # Ignoring type due to @tool not returning correct type annotations
+    events = await _collect_events(
+        foo.astream_events({"x": 2}, version="v2")  # type: ignore[attr-defined]
+    )
     assert events == [
         {
             "data": {"input": {"x": 2}},
