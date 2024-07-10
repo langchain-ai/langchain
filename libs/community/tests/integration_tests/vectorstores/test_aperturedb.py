@@ -72,8 +72,7 @@ def test_aperturedb() -> None:
 
 def test_aperturedb_with_metadata() -> None:
     """Test with metadata"""
-    docsearch = _aperturedb_from_texts(
-        metadatas=[{"label": "test"}] * len(fake_texts))
+    docsearch = _aperturedb_from_texts(metadatas=[{"label": "test"}] * len(fake_texts))
     output = docsearch.similarity_search("foo", k=1)
     _compare_documents(
         output, [Document(page_content="foo", metadata={"label": "test"})]
@@ -163,8 +162,7 @@ def test_aperturedb_add_extra_mmr() -> None:
 def test_aperturedb_generate_ids() -> None:
     """Test that the generated ids work correctly"""
     descriptor_set = uuid.uuid4().hex  # Fresh descriptor set for each test
-    vectorstore = ApertureDB(embeddings=FakeEmbeddings(),
-                             descriptor_set=descriptor_set)
+    vectorstore = ApertureDB(embeddings=FakeEmbeddings(), descriptor_set=descriptor_set)
     ids = vectorstore.add_texts(fake_texts)
     docs = vectorstore.similarity_search("foo", k=10)
     ids2 = [doc.id for doc in docs]
@@ -181,16 +179,16 @@ def test_aperturedb_upsert_entities() -> None:
         Document(page_content="test2", id=100),
     ]
     response = vectorstore.upsert(documents)
-    assert response['succeeded'] == ['1', '100'], response['succeeded']
-    assert response['failed'] == [], response['failed']
+    assert response["succeeded"] == ["1", "100"], response["succeeded"]
+    assert response["failed"] == [], response["failed"]
     docs = vectorstore.similarity_search("foo", k=10)
     ids = set(ids)
-    ids.add('100')
+    ids.add("100")
     ids2 = {doc.id for doc in docs}
     assert ids == ids2, (ids, ids2)
     docs_by_id = {doc.id: doc for doc in docs}
-    assert docs_by_id['1'].page_content == "test1"
-    assert docs_by_id['100'].page_content == "test2"
+    assert docs_by_id["1"].page_content == "test1"
+    assert docs_by_id["100"].page_content == "test2"
     ApertureDB.delete_vectorstore(vectorstore.descriptor_set)
 
 
