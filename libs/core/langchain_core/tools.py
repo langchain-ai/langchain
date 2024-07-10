@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import json
 import textwrap
 import uuid
 import warnings
@@ -269,7 +270,7 @@ class ToolException(Exception):
     pass
 
 
-class BaseTool(RunnableSerializable[Union[str, Dict], Any]):
+class BaseTool(RunnableSerializable[Union[str, Dict, TypedToolCall], Any]):
     """Interface LangChain tools must implement."""
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
@@ -542,12 +543,7 @@ class ChildTool(BaseTool):
         else:
             run_manager.on_tool_end(content, color=color, name=self.name, **kwargs)
 
-        if tool_call_id:
-            return ToolMessage(
-                content, raw_output=raw_output, tool_call_id=tool_call_id
-            )
-        else:
-            return content
+        return _format_output(content, raw_output, tool_call_id)
 
     async def arun(
         self,
@@ -641,12 +637,7 @@ class ChildTool(BaseTool):
             await run_manager.on_tool_end(
                 content, color=color, name=self.name, **kwargs
             )
-        if tool_call_id:
-            return ToolMessage(
-                content, raw_output=raw_output, tool_call_id=tool_call_id
-            )
-        else:
-            return content
+        return _format_output(content, raw_output, tool_call_id)
 
     @deprecated("0.1.47", alternative="invoke", removal="0.3.0")
     def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
@@ -1260,3 +1251,28 @@ def _prep_run_args(
             **kwargs,
         ),
     )
+
+
+def _format_output(
+    content: Any, raw_output: Any, tool_call_id: Optional[str]
+) -> Union[ToolMessage, Any]:
+    if tool_call_id:
+        # NOTE: This will fail to stringify lists which aren't actually content blocks
+        # but whose first element happens to be a string or dict. Tools should avoid
+        # returning such contents.
+        if not isinstance(content, str) and not (
+            isinstance(content, list)
+            and content
+            and isinstance(content[0], (str, dict))
+        ):
+            content = _stringify(content)
+        return ToolMessage(content, raw_output=raw_output, tool_call_id=tool_call_id)
+    else:
+        return content
+
+
+def _stringify(content: Any) -> str:
+    try:
+        return json.dumps(content)
+    except Exception:
+        return str(content)
