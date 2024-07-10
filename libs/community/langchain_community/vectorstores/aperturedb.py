@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type
 
 # Third-party imports
 import numpy as np
@@ -38,7 +38,7 @@ class ApertureDB(VectorStore):
         log_level: int = logging.WARN,
         properties: Optional[Dict] = None,
         **kwargs,
-    ):
+    ) -> None:
         """Create a vectorstore backed by ApertureDB
 
         A single ApertureDB instance can support many vectorstores,
@@ -192,7 +192,7 @@ class ApertureDB(VectorStore):
             self.utils.create_entity_index("_Descriptor", UNIQUEID_PROPERTY)
 
     @override
-    def add_documents(self, documents: List[Document], **kwargs: Any):
+    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
         """Adds documents to the vectorstore with embeddings
 
         Args:
@@ -237,7 +237,7 @@ class ApertureDB(VectorStore):
     @override
     def add_texts(
         self,
-        texts: List[str],
+        texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
     ) -> List[str]:
         """Creates embeddings of texts, then adds each text object, its embedding and
@@ -265,7 +265,8 @@ class ApertureDB(VectorStore):
         return self.add_documents(docs)
 
     @override
-    def delete(self, ids: List[str]) -> Optional[bool]:
+    def delete(self, ids: Optional[List[str]]=None) -> Optional[bool]:
+        assert ids is not None, "ids must be provided"
         query = [
             {
                 "DeleteDescriptor": {
@@ -430,11 +431,12 @@ class ApertureDB(VectorStore):
         return response[0]["FindDescriptorSet"]["entities"]
 
     @override
-    def upsert(self, items: Sequence[Document]) -> UpsertResponse:
+    def upsert(self, items: Sequence[Document], **kwargs:Any) -> UpsertResponse:
         """Insert or update items"""
         # For now, simply delete and add
         # We could do something more efficient to update metadata,
         # but we don't support changing the embedding of a descriptor.
-        self.delete([item.id for item in items])
+        ids: List[str] = [item.id for item in items if hasattr(item, "id")]
+        self.delete(ids)
         ids = self.add_documents(items)
         return UpsertResponse(succeeded=ids, failed=[])
