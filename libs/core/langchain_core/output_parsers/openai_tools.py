@@ -5,7 +5,12 @@ from typing import Any, Dict, List, Optional, Type
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, InvalidToolCall
-from langchain_core.messages.tool import invalid_tool_call, tool_call
+from langchain_core.messages.tool import (
+    invalid_tool_call,
+)
+from langchain_core.messages.tool import (
+    tool_call as create_tool_call,
+)
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
@@ -60,7 +65,7 @@ def parse_tool_call(
     }
     if return_id:
         parsed["id"] = raw_tool_call.get("id")
-        parsed = tool_call(**parsed)  # type: ignore
+        parsed = create_tool_call(**parsed)  # type: ignore
     return parsed
 
 
