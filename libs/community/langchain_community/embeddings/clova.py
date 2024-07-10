@@ -7,7 +7,6 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
 
-
 class ClovaEmbeddings(BaseModel, Embeddings):
     """
     Clova's embedding service.
@@ -21,6 +20,7 @@ class ClovaEmbeddings(BaseModel, Embeddings):
     - ``CLOVA_EMB_API_KEY``: API key for accessing Clova's embedding service.
     - ``CLOVA_EMB_APIGW_API_KEY``: API gateway key for enhanced security.
     - ``CLOVA_EMB_APP_ID``: Application ID for identifying your application.
+    - ``CLOVA_EMB_MODEL``: Model name to use (default: clir-emb-dolphin).
 
     Example:
         .. code-block:: python
@@ -29,7 +29,8 @@ class ClovaEmbeddings(BaseModel, Embeddings):
             embeddings = ClovaEmbeddings(
                 clova_emb_api_key='your_clova_emb_api_key',
                 clova_emb_apigw_api_key='your_clova_emb_apigw_api_key',
-                app_id='your_app_id'
+                app_id='your_app_id',
+                model='clir-emb-dolphin'  # Optional, default is 'clir-emb-dolphin'
             )
 
             query_text = "This is a test query."
@@ -44,21 +45,21 @@ class ClovaEmbeddings(BaseModel, Embeddings):
         "https://clovastudio.apigw.ntruss.com/testapp/v1/api-tools/embedding"
     )
     """Endpoint URL to use."""
-    model: str = "clir-emb-dolphin"
-    """Embedding model name to use."""
     clova_emb_api_key: Optional[SecretStr] = None
     """API key for accessing Clova's embedding service."""
     clova_emb_apigw_api_key: Optional[SecretStr] = None
     """API gateway key for enhanced security."""
     app_id: Optional[SecretStr] = None
     """Application ID for identifying your application."""
+    model: Optional[str] = None
+    """Embedding model name to use."""
 
     class Config:
         extra = Extra.forbid
 
     @root_validator(pre=True, allow_reuse=True)
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate api key exists in environment."""
+        """Validate api key and model exists in environment."""
         values["clova_emb_api_key"] = convert_to_secret_str(
             get_from_dict_or_env(values, "clova_emb_api_key", "CLOVA_EMB_API_KEY")
         )
@@ -70,6 +71,8 @@ class ClovaEmbeddings(BaseModel, Embeddings):
         values["app_id"] = convert_to_secret_str(
             get_from_dict_or_env(values, "app_id", "CLOVA_EMB_APP_ID")
         )
+        values["model"] = get_from_dict_or_env(values, "model", "CLOVA_EMB_MODEL", 
+                                               default="clir-emb-dolphin")
         return values
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -118,8 +121,10 @@ class ClovaEmbeddings(BaseModel, Embeddings):
 
         # send request
         app_id = cast(SecretStr, self.app_id).get_secret_value()
+        request_url = f"{self.endpoint_url}/{self.model}/{app_id}"
+
         response = requests.post(
-            f"{self.endpoint_url}/{self.model}/{app_id}",
+            request_url,
             headers=headers,
             json=payload,
         )
