@@ -239,6 +239,7 @@ class ApertureDB(VectorStore):
         self,
         texts: Iterable[str],
         metadatas: Optional[List[dict]] = None,
+        **kwargs: Any
     ) -> List[str]:
         """Creates embeddings of texts, then adds each text object, its embedding and
         associated metadata to aperturedb
@@ -250,6 +251,7 @@ class ApertureDB(VectorStore):
         Returns:
             List of ids from adding the texts into the vectorstore.
         """
+        texts: List[str] = list(texts)
         if metadatas is not None:
             assert len(texts) == len(
                 metadatas
@@ -265,7 +267,7 @@ class ApertureDB(VectorStore):
         return self.add_documents(docs)
 
     @override
-    def delete(self, ids: Optional[List[str]] = None) -> Optional[bool]:
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
         assert ids is not None, "ids must be provided"
         query = [
             {
@@ -431,7 +433,7 @@ class ApertureDB(VectorStore):
         return response[0]["FindDescriptorSet"]["entities"]
 
     @override
-    def upsert(self, items: Sequence[Document], **kwargs: Any) -> UpsertResponse:
+    def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
         """Insert or update items"""
         # For now, simply delete and add
         # We could do something more efficient to update metadata,
