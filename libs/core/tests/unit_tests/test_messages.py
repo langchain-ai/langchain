@@ -1,5 +1,5 @@
 import unittest
-from typing import List, Type, cast
+from typing import List, Type
 
 import pytest
 
@@ -689,10 +689,6 @@ def test_convert_to_messages() -> None:
         RemoveMessage(id="message_to_remove"),
     ]
     assert expected == actual
-    assert (
-        cast(ToolMessage, actual[8]).raw_output
-        == cast(ToolMessage, expected[8]).raw_output
-    )
 
     # tuples
     assert convert_to_messages(
@@ -796,7 +792,12 @@ def test_tool_message_serialization() -> None:
         "lc": 1,
         "type": "constructor",
         "id": ["langchain", "schema", "messages", "ToolMessage"],
-        "kwargs": {"content": "foo", "type": "tool", "tool_call_id": "1"},
+        "kwargs": {
+            "content": "foo",
+            "type": "tool",
+            "tool_call_id": "1",
+            "raw_output": {"bar": {"baz": 123}},
+        },
     }
     actual = dumpd(message)
     assert actual == expected
@@ -828,6 +829,7 @@ def test_tool_message_to_dict() -> None:
             "content": "foo",
             "additional_kwargs": {},
             "response_metadata": {},
+            "raw_output": {"bar": {"baz": 123}},
             "type": "tool",
             "name": None,
             "id": None,

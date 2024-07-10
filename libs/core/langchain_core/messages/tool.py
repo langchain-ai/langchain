@@ -4,8 +4,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 from typing_extensions import TypedDict
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
-from langchain_core.pydantic_v1 import Field
-from langchain_core.utils._merge import merge_dicts
+from langchain_core.utils._merge import merge_dicts, merge_obj
 
 
 class ToolMessage(BaseMessage):
@@ -55,14 +54,12 @@ class ToolMessage(BaseMessage):
     type: Literal["tool"] = "tool"
     """The type of the message (used for serialization). Defaults to "tool"."""
 
-    raw_output: Dict[str, Any] = Field(default_factory=dict, exclude=True)
+    raw_output: Any = None
     """The raw output of the tool.
     
     **Not part of the payload sent to the model.** Should only be specified if it is 
     different from the message content, i.e. if only a subset of the full tool output
     is being passed as message content.
-    
-    raw_output is excluded when serializing the tool message.
     """
 
     @classmethod
@@ -109,7 +106,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
             return self.__class__(
                 tool_call_id=self.tool_call_id,
                 content=merge_content(self.content, other.content),
-                raw_output=merge_dicts(self.raw_output, other.raw_output),
+                raw_output=merge_obj(self.raw_output, other.raw_output),
                 additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
                 ),
