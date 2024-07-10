@@ -1256,12 +1256,15 @@ def convert_runnable_to_tool(
     description = description or _get_description_from_runnable(runnable)
     name = name or runnable.get_name()
 
-    args_schema = _get_schema_from_runnable_and_arg_types(
-        runnable, name, arg_types=arg_types
-    )
-    schema = args_schema.schema()
-
-    if schema.get("type") == "object" and schema.get("properties"):  # dict input
+    schema = runnable.input_schema.schema()
+    if schema.get("type") == "string":
+        return Tool(
+            name=name,
+            func=runnable.invoke,
+            coroutine=runnable.ainvoke,
+            description=description,
+        )
+    else:
 
         async def ainvoke_wrapper(
             callbacks: Optional[Callbacks] = None, **kwargs: Any
@@ -1271,18 +1274,21 @@ def convert_runnable_to_tool(
         def invoke_wrapper(callbacks: Optional[Callbacks] = None, **kwargs: Any) -> Any:
             return runnable.invoke(kwargs, config={"callbacks": callbacks})
 
+        if (
+            arg_types is None
+            and schema.get("type") == "object"
+            and schema.get("properties")
+        ):
+            args_schema = runnable.input_schema
+        else:
+            args_schema = _get_schema_from_runnable_and_arg_types(
+                runnable, name, arg_types=arg_types
+            )
+
         return StructuredTool.from_function(
             name=name,
             func=invoke_wrapper,
             coroutine=ainvoke_wrapper,
             description=description,
             args_schema=args_schema,
-        )
-
-    else:  # string input
-        return Tool(
-            name=name,
-            func=runnable.invoke,
-            coroutine=runnable.ainvoke,
-            description=description,
         )
