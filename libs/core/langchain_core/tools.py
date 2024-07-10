@@ -420,19 +420,30 @@ class ChildTool(BaseTool):
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
+    # TODO: Come up with real name
+    def _run_include_raw_output(self, *args: Any, **kwargs: Any) -> Tuple[Content, Any]:
+        """Return a repr of the result to pass to a model and the raw_output result."""
+        raise NotImplementedError()
+
+    async def _arun_include_raw_output(
+        self, *args: Any, **kwargs: Any
+    ) -> Tuple[Content, Any]:
+        """Return a repr of the result to pass to a model and the raw_output result."""
+        if "run_manager" in kwargs:
+            kwargs["run_manager"] = kwargs["run_manager"].get_sync()
+        return await run_in_executor(
+            None,
+            self._run_include_raw_output,
+            *args,
+            **kwargs,
+        )
+
     def _run(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool.
 
         Add run_manager: Optional[CallbackManagerForToolRun] = None
         to child implementations to enable tracing,
         """
-        raise NotImplementedError()
-
-    # TODO: Come up with real name
-    def _run_foo(
-        self, *args: Any, run_manager: CallbackManagerForToolRun, **kwargs: Any
-    ) -> Tuple[Content, Any]:
-        """Return a repr of the result to pass to a model and the raw_output result."""
         raise NotImplementedError()
 
     async def _arun(self, *args: Any, **kwargs: Any) -> Any:
@@ -442,14 +453,6 @@ class ChildTool(BaseTool):
         to child implementations to enable tracing,
         """
         return await run_in_executor(None, self._run, *args, **kwargs)
-
-    async def _arun_foo(
-        self, *args: Any, run_manager: AsyncCallbackManagerForToolRun, **kwargs: Any
-    ) -> Tuple[Content, Any]:
-        """Return a repr of the result to pass to a model and the raw_output result."""
-        return await run_in_executor(
-            None, self._run_foo, *args, run_manager=run_manager.get_sync(), **kwargs
-        )
 
     def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
         tool_input = self._parse_input(tool_input)
@@ -506,9 +509,12 @@ class ChildTool(BaseTool):
             context = copy_context()
             context.run(_set_config_context, child_config)
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
-            if self._run_foo != BaseTool._run_foo:
+            if self._run_include_raw_output != BaseTool._run_include_raw_output:
                 content, raw_output = context.run(
-                    self._run_foo, *tool_args, run_manager=run_manager, **tool_kwargs
+                    self._run_include_raw_output,
+                    *tool_args,
+                    run_manager=run_manager,
+                    **tool_kwargs,
                 )
             else:
                 if signature(self._run).parameters.get("run_manager"):
@@ -580,13 +586,16 @@ class ChildTool(BaseTool):
             child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
             context.run(_set_config_context, child_config)
-            use_run_foo = (
-                self._run_foo != BaseTool._run_foo
-                or self._arun_foo != BaseTool._arun_foo
+            use_run_include_raw_output = (
+                self._run_include_raw_output != BaseTool._run_include_raw_output
+                or self._arun_include_raw_output != BaseTool._arun_include_raw_output
             )
-            if use_run_foo:
+            if use_run_include_raw_output:
                 coro = context.run(
-                    self._arun_foo, *tool_args, run_manager=run_manager, **tool_kwargs
+                    self._arun_include_raw_output,
+                    *tool_args,
+                    run_manager=run_manager,
+                    **tool_kwargs,
                 )
             else:
                 if signature(self._arun).parameters.get("run_manager"):
@@ -598,7 +607,7 @@ class ChildTool(BaseTool):
             else:
                 output = await coro
 
-            if use_run_foo:
+            if use_run_include_raw_output:
                 content: Any = output[0]
                 raw_output = output[1]
             else:

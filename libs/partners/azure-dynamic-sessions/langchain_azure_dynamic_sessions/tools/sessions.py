@@ -9,6 +9,7 @@ import json
 import os
 import re
 import urllib
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
@@ -18,7 +19,6 @@ from uuid import uuid4
 import requests
 from azure.core.credentials import AccessToken
 from azure.identity import DefaultAzureCredential
-from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.messages.base import Content
 from langchain_core.tools import BaseTool
 
@@ -166,13 +166,13 @@ class SessionsPythonREPLTool(BaseTool):
         properties = response_json.get("properties", {})
         return properties
 
-    def _run_foo(
-        self, python_code: str, run_manager: CallbackManagerForToolRun
+    def _run_include_raw_output(
+        self, python_code: str, **kwargs: Any
     ) -> Tuple[Content, Any]:
         response = self.execute(python_code)
 
         # if the result is an image, remove the base64 data
-        result = response.get("result")
+        result = deepcopy(response.get("result"))
         if isinstance(result, dict):
             if result.get("type") == "image" and "base64_data" in result:
                 result.pop("base64_data")
