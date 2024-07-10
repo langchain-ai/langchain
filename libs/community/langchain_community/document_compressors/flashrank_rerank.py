@@ -71,10 +71,10 @@ class FlashrankRerank(BaseDocumentCompressor):
         final_results = []
 
         for r in rerank_response:
-            if r["score"] > self.score_threshold:
+            if r["score"] >= self.score_threshold:
                 doc = Document(
                     page_content=r["text"],
-                    metadata={"flash_rerank": {"id": r["id"], "relevance_score": r["score"]}, **r["metadata"]},
+                    metadata={"flashrank_rerank": {"id": r["id"], "relevance_score": r["score"]}, **r["metadata"]},
                 )
                 final_results.append(doc)
         return final_results
