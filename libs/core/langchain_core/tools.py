@@ -1234,7 +1234,14 @@ def _get_schema_from_runnable_and_arg_types(
 ) -> Type[BaseModel]:
     """Infer args_schema for tool."""
     if arg_types is None:
-        arg_types = get_type_hints(runnable.InputType)
+        try:
+            arg_types = get_type_hints(runnable.InputType)
+        except TypeError as e:
+            raise TypeError(
+                "Tool input must be str or dict. If dict, dict arguments must be "
+                "typed. Either annotate types (e.g., with TypedDict) or pass "
+                f"arg_types into `.as_tool` to specify. {str(e)}"
+            )
     fields = {key: (key_type, Field(...)) for key, key_type in arg_types.items()}
     return create_model(name, **fields)  # type: ignore
 
