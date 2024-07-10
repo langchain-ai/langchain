@@ -2007,6 +2007,7 @@ class Runnable(Generic[Input, Output], ABC):
             if hasattr(iterator_, "aclose"):
                 await iterator_.aclose()
 
+    @beta_decorator.beta(message="This API is in beta and may change in the future.")
     def as_tool(
         self,
         *,
