@@ -26,6 +26,9 @@ from typing import (
 )
 from uuid import UUID
 
+from langsmith.run_helpers import get_run_tree_context
+from tenacity import RetryCallState
+
 from langchain_core.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
@@ -40,13 +43,12 @@ from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils.env import env_var_is_set
-from langsmith.run_helpers import get_run_tree_context
-from tenacity import RetryCallState
 
 if TYPE_CHECKING:
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk, LLMResult
+    from langchain_core.runnables.config import RunnableConfig
 
 logger = logging.getLogger(__name__)
 
@@ -1518,8 +1520,8 @@ class CallbackManager(BaseCallbackManager):
             self.handlers,
             "on_custom_event",
             "ignore_adhoc",
-            event_name,
-            event_data,
+            name,
+            data,
             run_id=run_id,
             tags=self.tags,
             metadata=self.metadata,

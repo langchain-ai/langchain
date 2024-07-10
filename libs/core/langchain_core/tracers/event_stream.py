@@ -19,6 +19,8 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+from typing_extensions import NotRequired, TypedDict
+
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
 from langchain_core.outputs import (
@@ -36,7 +38,6 @@ from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.log_stream import LogEntry
 from langchain_core.tracers.memory_stream import _MemoryStream
 from langchain_core.utils.aiter import aclosing, py_anext
-from typing_extensions import NotRequired, TypedDict
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document

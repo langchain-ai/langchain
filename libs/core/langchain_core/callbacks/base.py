@@ -374,19 +374,23 @@ class RunManagerMixin:
         self,
         name: str,
         data: Any,
-        run_id: Optional[UUID] = None,
-        parent_run_id: Optional[UUID] = None,
+        *,
+        run_id: UUID,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        """Override to define a handler for adhoc events.
+        """Override to define a handler for a custom event.
 
         Args:
-            name: The name of the adhoc event.
-            data: The data for the adhoc event.
-            run_id: The ID of the run. Defaults to None.
-            parent_run_id: The ID of the parent run. Defaults to None.
+            name: The name of the custom event.
+            data: The data for the custom event. Format will match
+                  the format specified by the user.
+            run_id: The ID of the run.
+            tags: The tags associated with the custom event
+                (includes inherited tags).
+            metadata: The metadata associated with the custom event
+                (includes inherited metadata).
         """
 
 
@@ -438,7 +442,7 @@ class BaseCallbackHandler(
 
     @property
     def ignore_custom_event(self) -> bool:
-        """Ignore adhoc event."""
+        """Ignore custom event."""
         return False
 
 
@@ -823,21 +827,27 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             kwargs (Any): Additional keyword arguments.
         """
 
-    def on_custom_event(
+    async def on_custom_event(
         self,
         name: str,
         data: Any,
-        run_id: Optional[UUID] = None,
+        *,
+        run_id: UUID,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        """Override to define a handler for adhoc events.
+        """Override to define a handler for a custom event.
 
         Args:
-            name: The name of the adhoc event.
-            data: The data for the adhoc event.
-            run_id: The ID of the run. Defaults to None.
+            name: The name of the custom event.
+            data: The data for the custom event. Format will match
+                  the format specified by the user.
+            run_id: The ID of the run.
+            tags: The tags associated with the custom event
+                (includes inherited tags).
+            metadata: The metadata associated with the custom event
+                (includes inherited metadata).
         """
 
 
