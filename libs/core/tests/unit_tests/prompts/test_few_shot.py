@@ -328,6 +328,7 @@ async def test_few_shot_chat_message_prompt_template() -> None:
     few_shot_prompt = FewShotChatMessagePromptTemplate(
         example_prompt=example_prompt,
         examples=examples,
+        input_variables=[],
     )
     final_prompt: ChatPromptTemplate = (
         SystemMessagePromptTemplate.from_template("You are a helpful AI Assistant")
@@ -402,6 +403,7 @@ def test_few_shot_chat_message_prompt_template_with_selector() -> None:
     few_shot_prompt = FewShotChatMessagePromptTemplate(
         example_prompt=example_prompt,
         example_selector=example_selector,
+        input_variables=[],
     )
     final_prompt: ChatPromptTemplate = (
         SystemMessagePromptTemplate.from_template("You are a helpful AI Assistant")
@@ -475,6 +477,7 @@ async def test_few_shot_chat_message_prompt_template_with_selector_async() -> No
     few_shot_prompt = FewShotChatMessagePromptTemplate(
         example_prompt=example_prompt,
         example_selector=example_selector,
+        input_variables=[],
     )
     final_prompt: ChatPromptTemplate = (
         SystemMessagePromptTemplate.from_template("You are a helpful AI Assistant")
