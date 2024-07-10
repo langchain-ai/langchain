@@ -4,8 +4,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from itertools import repeat
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type
 
 # Third-party imports
 import numpy as np
@@ -13,6 +12,7 @@ import numpy as np
 # Local imports
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
+from langchain_core.indexing.base import UpsertResponse
 from langchain_core.vectorstores import VectorStore
 from typing_extensions import override
 
@@ -37,8 +37,8 @@ class ApertureDB(VectorStore):
         metric: Optional[str] = None,
         log_level: int = logging.WARN,
         properties: Optional[Dict] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         """Create a vectorstore backed by ApertureDB
 
         A single ApertureDB instance can support many vectorstores,
@@ -59,7 +59,7 @@ class ApertureDB(VectorStore):
                 embeddings. Defaults to None.
             engine (str, optional): Engine to use. Defaults to "HNSW" for new
                 descriptorsets.
-            metric (str, optional): Metric to use. Defaults to "L2" for new
+            metric (str, optional): Metric to use. Defaults to "CS" for new
                 descriptorsets.
             log_level (int, optional): Logging level. Defaults to logging.WARN.
         """
@@ -192,31 +192,35 @@ class ApertureDB(VectorStore):
             self.utils.create_entity_index("_Descriptor", UNIQUEID_PROPERTY)
 
     @override
-    def add_texts(
-        self,
-        texts: List[str],
-        metadatas: Optional[List[dict]] = None,
-    ) -> List[str]:
+    def add_documents(self, documents: List[Document], **kwargs: Any) -> List[str]:
+        """Adds documents to the vectorstore with embeddings
+
+        Args:
+            documents: List of Document objects to add to the vectorstore.
+
+        Returns:
+            List of ids from adding the documents into the vectorstore.
+        """
         from aperturedb.ParallelLoader import ParallelLoader
 
-        if metadatas is not None:
-            assert len(texts) == len(
-                metadatas
-            ), "Length of texts and metadatas should be the same"
-
-        assert self.embedding_function is not None, "Embedding function is not set"
+        texts = [doc.page_content for doc in documents]
+        metadatas = [
+            doc.metadata if getattr(doc, "metadata", None) is not None else {}
+            for doc in documents
+        ]
         embeddings = self.embedding_function.embed_documents(texts)
-        metadatas: Iterable[dict] = metadatas if metadatas is not None else repeat({})
+        ids: List[str] = [
+            doc.id if hasattr(doc, "id") and doc.id is not None else str(uuid.uuid4())
+            for doc in documents
+        ]
 
-        unique_ids = []
         data = []
-        for text, embedding, metadata in zip(texts, embeddings, metadatas):
+        for text, embedding, metadata, unique_id in zip(
+            texts, embeddings, metadatas, ids
+        ):
             properties = {PROPERTY_PREFIX + k: v for k, v in metadata.items()}
             properties[TEXT_PROPERTY] = text
-            # Generate a unique id here
-            unique_id = str(uuid.uuid4())
             properties[UNIQUEID_PROPERTY] = unique_id
-            unique_ids.append(unique_id)
             command = {
                 "AddDescriptor": {
                     "set": self.descriptor_set,
@@ -228,10 +232,43 @@ class ApertureDB(VectorStore):
             data.append((query, blobs))
         loader = ParallelLoader(self.connection)
         loader.ingest(data, batchsize=BATCHSIZE)
-        return unique_ids
+        return ids
 
     @override
-    def delete(self, ids: List[str]) -> Optional[bool]:
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[List[dict]] = None,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Creates embeddings of texts, then adds each text object, its embedding and
+        associated metadata to aperturedb
+
+        Args:
+            texts: Iterable of strings to add to the vectorstore.
+            metadatas: Optional list of metadatas associated with the texts.
+
+        Returns:
+            List of ids from adding the texts into the vectorstore.
+        """
+        texts2: List[str] = list(texts)
+        if metadatas is not None:
+            assert len(texts2) == len(
+                metadatas
+            ), "Length of texts and metadatas should be the same"
+
+            docs = [
+                Document(page_content=text, metadata=metadata)
+                for text, metadata in zip(texts2, metadatas)
+            ]
+        else:
+            docs = [Document(page_content=text) for text in texts2]
+
+        return self.add_documents(docs)
+
+    @override
+    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        assert ids is not None, "ids must be provided"
         query = [
             {
                 "DeleteDescriptor": {
@@ -261,13 +298,12 @@ class ApertureDB(VectorStore):
 
     def _descriptor_to_document(self, d: dict) -> Document:
         metadata = {}
-        metadata["adb_uniqueid"] = d["_uniqueid"]
         for k, v in d.items():
             if k.startswith(PROPERTY_PREFIX):
                 metadata[k[len(PROPERTY_PREFIX) :]] = v
         text = d[TEXT_PROPERTY]
-        metadata["adb_uniqueid"] = d[UNIQUEID_PROPERTY]
-        doc = Document(page_content=text, metadata=metadata)
+        uniqueid = d[UNIQUEID_PROPERTY]
+        doc = Document(page_content=text, metadata=metadata, id=uniqueid)
         return doc
 
     def _similarity_search_with_score_by_vector(
@@ -355,6 +391,18 @@ class ApertureDB(VectorStore):
         return store
 
     @classmethod
+    @override
+    def from_documents(
+        cls: Type[ApertureDB],
+        documents: List[Document],
+        embedding: Embeddings,
+        **kwargs: Any,
+    ) -> ApertureDB:
+        store = cls(embeddings=embedding, **kwargs)
+        store.add_documents(documents)
+        return store
+
+    @classmethod
     def delete_vectorstore(class_, descriptor_set: str) -> None:
         """Deletes a vectorstore and all its data from the database"""
         from aperturedb.Utils import Utils, create_connector
@@ -383,3 +431,16 @@ class ApertureDB(VectorStore):
         response, _ = db.query(query)
         assert db.last_query_ok(), response
         return response[0]["FindDescriptorSet"]["entities"]
+
+    @override
+    def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
+        """Insert or update items"""
+        # For now, simply delete and add
+        # We could do something more efficient to update metadata,
+        # but we don't support changing the embedding of a descriptor.
+        ids: List[str] = [
+            item.id for item in items if hasattr(item, "id") and item.id is not None
+        ]
+        self.delete(ids)
+        ids = self.add_documents(list(items))
+        return UpsertResponse(succeeded=ids, failed=[])
