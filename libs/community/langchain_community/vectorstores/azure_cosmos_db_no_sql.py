@@ -166,7 +166,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
                 "id": str(uuid.uuid4()),
                 text_key: t,
                 self._embedding_key: embedding,
-                "metadata": m
+                "metadata": m,
             }
             for t, m, embedding in zip(texts, metadatas, embeddings)
         ]
@@ -273,20 +273,17 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         if pre_filter is None or pre_filter.get("limit_offset_clause") is None:
             query += "TOP {} ".format(k)
 
-        query += ("c.id, c.{}, c.text, c.metadata, "
-                  "VectorDistance(c.{}, {}) AS SimilarityScore FROM c").format(
-            self._embedding_key,
-            self._embedding_key,
-            embeddings
-        )
+        query += (
+            "c.id, c.{}, c.text, c.metadata, "
+            "VectorDistance(c.{}, {}) AS SimilarityScore FROM c"
+        ).format(self._embedding_key,self._embedding_key,embeddings)
 
         # Add where_clause if specified
         if pre_filter is not None and pre_filter.get("where_clause") is not None:
             query += " {}".format(pre_filter["where_clause"])
 
         query += " ORDER BY VectorDistance(c.{}, {})".format(
-            self._embedding_key,
-            embeddings
+            self._embedding_key,embeddings
         )
 
         # Add limit_offset_clause if specified

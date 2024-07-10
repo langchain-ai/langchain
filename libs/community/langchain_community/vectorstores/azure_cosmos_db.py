@@ -324,9 +324,7 @@ class AzureCosmosDBVectorSearch(VectorStore):
         current_database = self._collection.database
 
         # invoke the command from the database object
-        create_index_responses: dict[str, Any] = current_database.command(
-            command
-        )
+        create_index_responses: dict[str, Any] = current_database.command(command)
         return create_index_responses
 
     def add_texts(
@@ -449,8 +447,8 @@ class AzureCosmosDBVectorSearch(VectorStore):
         if kind == CosmosDBVectorSearchType.VECTOR_IVF:
             pipeline = self._get_pipeline_vector_ivf(embeddings, k, pre_filter)
         elif kind == CosmosDBVectorSearchType.VECTOR_HNSW:
-            pipeline = (
-                self._get_pipeline_vector_hnsw(embeddings, k, ef_search, pre_filter)
+            pipeline = self._get_pipeline_vector_hnsw(
+                embeddings, k, ef_search, pre_filter
             )
 
         cursor = self._collection.aggregate(pipeline)
@@ -464,17 +462,15 @@ class AzureCosmosDBVectorSearch(VectorStore):
             text = document_object_field.pop(self._text_key)
             metadata = document_object_field.pop("metadata")
             if with_embedding:
-                metadata[self._embedding_key] = (
-                    document_object_field.pop(self._embedding_key)
+                metadata[self._embedding_key] = document_object_field.pop(
+                    self._embedding_key
                 )
-            docs.append(
-                (Document(page_content=text, metadata=metadata), score)
-            )
+
+            docs.append((Document(page_content=text, metadata=metadata), score))
         return docs
 
     def _get_pipeline_vector_ivf(
-        self, embeddings: List[float], k: int = 4,
-            pre_filter: Optional[str] = None
+        self, embeddings: List[float], k: int = 4, pre_filter: Optional[str] = None
     ) -> List[dict[str, Any]]:
         params = {
             "vector": embeddings,
@@ -501,8 +497,11 @@ class AzureCosmosDBVectorSearch(VectorStore):
         return pipeline
 
     def _get_pipeline_vector_hnsw(
-        self, embeddings: List[float], k: int = 4, ef_search: int = 40,
-            pre_filter: Optional[str] = None
+        self,
+        embeddings: List[float],
+        k: int = 4,
+        ef_search: int = 40,
+        pre_filter: Optional[str] = None,
     ) -> List[dict[str, Any]]:
         params = {
             "vector": embeddings,
