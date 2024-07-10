@@ -35,6 +35,7 @@ DEPRECATED = [
     "AirbyteZendeskSupportLoader",
 ]
 
+
 def get_document_loader_table() -> str:
     """Get the table of document loaders."""
 
