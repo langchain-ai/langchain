@@ -138,14 +138,16 @@ class ApertureDB(VectorStore):
             if self.engine is None:
                 self.engine = engines[0]
             elif self.engine != engines[0]:
-                self.logger.error(f"Engine mismatch: {self.engine} != {engines[0]}")
+                self.logger.error(
+                    f"Engine mismatch: {self.engine} != {engines[0]}")
 
             metrics = e["_metrics"]
             assert len(metrics) == 1, "Only one metric is supported"
             if self.metric is None:
                 self.metric = metrics[0]
             elif self.metric != metrics[0]:
-                self.logger.error(f"Metric mismatch: {self.metric} != {metrics[0]}")
+                self.logger.error(
+                    f"Metric mismatch: {self.metric} != {metrics[0]}")
 
             dimensions = e["_dimensions"]
             if self.dimensions is None:
@@ -156,7 +158,7 @@ class ApertureDB(VectorStore):
                 )
 
             self.properties = {
-                k[len(PROPERTY_PREFIX) :]: v
+                k[len(PROPERTY_PREFIX):]: v
                 for k, v in e.items()
                 if k.startswith(PROPERTY_PREFIX)
             }
@@ -170,7 +172,8 @@ class ApertureDB(VectorStore):
             if self.metric is None:
                 self.metric = METRIC
             if self.dimensions is None:
-                self.dimensions = len(self.embedding_function.embed_query("test"))
+                self.dimensions = len(
+                    self.embedding_function.embed_query("test"))
 
             properties = (
                 {PROPERTY_PREFIX + k: v for k, v in self.properties.items()}
@@ -210,7 +213,8 @@ class ApertureDB(VectorStore):
         ]
         embeddings = self.embedding_function.embed_documents(texts)
         ids = [
-            doc.id if getattr(doc, "id", None) is not None else str(uuid.uuid4())
+            doc.id if getattr(
+                doc, "id", None) is not None else str(uuid.uuid4())
             for doc in documents
         ]
 
@@ -297,7 +301,7 @@ class ApertureDB(VectorStore):
         metadata = {}
         for k, v in d.items():
             if k.startswith(PROPERTY_PREFIX):
-                metadata[k[len(PROPERTY_PREFIX) :]] = v
+                metadata[k[len(PROPERTY_PREFIX):]] = v
         text = d[TEXT_PROPERTY]
         uniqueid = d[UNIQUEID_PROPERTY]
         doc = Document(page_content=text, metadata=metadata, id=uniqueid)
@@ -428,3 +432,13 @@ class ApertureDB(VectorStore):
         response, _ = db.query(query)
         assert db.last_query_ok(), response
         return response[0]["FindDescriptorSet"]["entities"]
+
+    @override
+    def upsert(self, items: Sequence[Document]) -> UpsertResponse:
+        """Insert or update items"""
+        # For now, simply delete and add
+        # We could do something more efficient to update metadata,
+        # but we don't support changing the embedding of a descriptor.
+        self.delete([item.id for item in items])
+        ids = self.add_documents(items)
+        return UpsertResponse(succeeded=ids, failed=[])

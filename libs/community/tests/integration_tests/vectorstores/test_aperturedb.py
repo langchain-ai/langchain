@@ -4,6 +4,7 @@ import uuid
 from typing import List, Optional
 
 from langchain_core.documents import Document
+from langchain_core.indexing.base import UpsertResponse
 
 from langchain_community.vectorstores import ApertureDB
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -67,15 +68,18 @@ def test_aperturedb() -> None:
     docsearch = _aperturedb_from_texts()
     output = docsearch.similarity_search("foo", k=1)
     _compare_documents(output, [Document(page_content="foo")])
+    ApertureDB.delete_vectorstore(docsearch.descriptor_set)
 
 
 def test_aperturedb_with_metadata() -> None:
     """Test with metadata"""
-    docsearch = _aperturedb_from_texts(metadatas=[{"label": "test"}] * len(fake_texts))
+    docsearch = _aperturedb_from_texts(
+        metadatas=[{"label": "test"}] * len(fake_texts))
     output = docsearch.similarity_search("foo", k=1)
     _compare_documents(
         output, [Document(page_content="foo", metadata={"label": "test"})]
     )
+    ApertureDB.delete_vectorstore(docsearch.descriptor_set)
 
 
 def test_aperturedb_with_id() -> None:
@@ -90,6 +94,8 @@ def test_aperturedb_with_id() -> None:
 
     output = docsearch.similarity_search("foo", k=1)
     assert output == []
+
+    ApertureDB.delete_vectorstore(docsearch.descriptor_set)
 
 
 def test_aperturedb_with_score() -> None:
@@ -111,6 +117,7 @@ def test_aperturedb_with_score() -> None:
     assert (
         scores[0] > scores[1] > scores[2]
     ), f"Expected {scores[0]} > {scores[1]} > {scores[2]}"
+    ApertureDB.delete_vectorstore(docsearch.descriptor_set)
 
 
 def test_aperturedb_max_marginal_relevance_search() -> None:
@@ -125,6 +132,7 @@ def test_aperturedb_max_marginal_relevance_search() -> None:
             Document(page_content="bar", metadata={"page": 1}),
         ],
     )
+    ApertureDB.delete_vectorstore(docsearch.descriptor_set)
 
 
 def test_aperturedb_add_extra() -> None:
@@ -137,6 +145,7 @@ def test_aperturedb_add_extra() -> None:
 
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 6, len(output)
+    ApertureDB.delete_vectorstore(docsearch.descriptor_set)
 
 
 def test_aperturedb_add_extra_mmr() -> None:
@@ -149,6 +158,39 @@ def test_aperturedb_add_extra_mmr() -> None:
 
     output = docsearch.similarity_search("foo", k=10)
     assert len(output) == 6, len(output)
+    ApertureDB.delete_vectorstore(docsearch.descriptor_set)
+
+
+def test_aperturedb_generate_ids() -> None:
+    """Test that the generated ids work correctly"""
+    descriptor_set = uuid.uuid4().hex  # Fresh descriptor set for each test
+    vectorstore = ApertureDB(embeddings=FakeEmbeddings(),
+                             descriptor_set=descriptor_set)
+    ids = vectorstore.add_texts(fake_texts)
+    docs = vectorstore.similarity_search("foo", k=10)
+    ids2 = [doc.id for doc in docs]
+    assert set(ids) == set(ids2), (ids, ids2)
+    ApertureDB.delete_vectorstore(vectorstore.descriptor_set)
+
+
+def test_aperturedb_upsert_entities() -> None:
+    """Test end to end construction and upsert entities"""
+    ids = range(len(fake_texts))
+    vectorstore = _aperturedb_from_texts(ids=ids)
+    documents = [
+        Document(page_content="test1", id=1),
+        Document(page_content="test2", id=100),
+    ]
+    response = vectorstore.upsert(documents)
+    assert response.succeeded == [1, 100], response.succeeded
+    assert response.failed == [], response.failed
+    docs = vectorstore.similarity_search("foo", k=10)
+    ids2 = [doc.id for doc in docs]
+    assert set(ids) == set(ids) + {100}, (ids, ids2)
+    docs_by_id = {doc.id: doc for doc in docs}
+    assert docs_by_id[1].page_content == "test1"
+    assert docs_by_id[100].page_content == "test2"
+    ApertureDB.delete_vectorstore(vectorstore.descriptor_set)
 
 
 if __name__ == "__main__":
@@ -159,3 +201,6 @@ if __name__ == "__main__":
     test_aperturedb_max_marginal_relevance_search()
     test_aperturedb_add_extra()
     test_aperturedb_add_extra_mmr()
+    test_aperturedb_generate_ids()
+    test_aperturedb_upsert_entities()
+    print("All tests passed")
