@@ -79,7 +79,7 @@ jobs:
   compile-integration-tests:
     name: cd ${{ matrix.job-configs.working-directory }}
     needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-test != '[]' }}
+    if: ${{ needs.build.outputs.compile-integration-tests != '[]' }}
     strategy:
       matrix:
         job-configs: ${{ fromJson(needs.build.outputs.compile-integration-tests) }}
