@@ -11,6 +11,7 @@ from typing import (
     Any,
     AsyncContextManager,
     AsyncGenerator,
+    AsyncIterable,
     AsyncIterator,
     Awaitable,
     Callable,
@@ -245,3 +246,28 @@ class aclosing(AbstractAsyncContextManager):
     ) -> None:
         if hasattr(self.thing, "aclose"):
             await self.thing.aclose()
+
+
+async def abatch_iterate(
+    size: int, iterable: AsyncIterable[T]
+) -> AsyncIterator[List[T]]:
+    """Utility batching function for async iterables.
+
+    Args:
+        size: The size of the batch.
+        iterable: The async iterable to batch.
+
+    Returns:
+        An async iterator over the batches
+    """
+    batch: List[T] = []
+    async for element in iterable:
+        if len(batch) < size:
+            batch.append(element)
+
+        if len(batch) >= size:
+            yield batch
+            batch = []
+
+    if batch:
+        yield batch
