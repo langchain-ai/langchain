@@ -26,9 +26,6 @@ from typing import (
 )
 from uuid import UUID
 
-from langsmith.run_helpers import get_run_tree_context
-from tenacity import RetryCallState
-
 from langchain_core.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
@@ -43,6 +40,8 @@ from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils.env import env_var_is_set
+from langsmith.run_helpers import get_run_tree_context
+from tenacity import RetryCallState
 
 if TYPE_CHECKING:
     from langchain_core.agents import AgentAction, AgentFinish
@@ -1494,6 +1493,42 @@ class CallbackManager(BaseCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
         )
 
+    def on_adhoc_event(
+        self,
+        name: str,
+        data: Any,
+        run_id: Optional[UUID] = None,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Dispatch an adhoc event to the handlers.
+
+        This event should be used in any internal LangChain code. The event
+        is meant specifically for users of the library to dispatch custom
+        events that are tailored to their application.
+
+        Args:
+            name: The name of the adhoc event.
+            data: The data for the adhoc event.
+            run_id: The ID of the run. Defaults to None.
+            parent_run_id: The ID of the parent run. Defaults to None.
+        """
+        if run_id is None:
+            run_id = uuid.uuid4()
+
+        handle_event(
+            self.handlers,
+            "on_adhoc_event",
+            "ignore_adhoc",
+            event_name,
+            event_data,
+            run_id=run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            metadata=self.metadata,
+            **kwargs,
+        )
+
     @classmethod
     def configure(
         cls,
@@ -1833,6 +1868,30 @@ class AsyncCallbackManager(BaseCallbackManager):
             inheritable_metadata=self.inheritable_metadata,
         )
 
+    async def on_adhoc_event(
+        self,
+        name: str,
+        data: Any,
+        run_id: Optional[UUID] = None,
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
+    ) -> None:
+        if run_id is None:
+            run_id = uuid.uuid4()
+
+        await ahandle_event(
+            self.handlers,
+            "on_adhoc_event",
+            "ignore_adhoc_event",
+            name,
+            data,
+            run_id=run_id,
+            parent_run_id=self.parent_run_id,
+            tags=self.tags,
+            metadata=self.metadata,
+            **kwargs,
+        )
+
     async def on_retriever_start(
         self,
         serialized: Dict[str, Any],
@@ -2169,3 +2228,31 @@ def _configure(
                 ):
                     callback_manager.add_handler(var_handler, inheritable)
     return callback_manager
+
+
+async def adispatch_adhoc_event(
+    name: str, data: Any, *, config: Optional[RunnableConfig] = None
+):
+    """Dispatch an adhoc event to the handlers."""
+    from langchain_core.runnables.config import (
+        ensure_config,
+        get_async_callback_manager_for_config,
+    )
+
+    config = ensure_config(config)
+    callback_manager = get_async_callback_manager_for_config(config)
+    await callback_manager.on_adhoc_event(name, data)
+
+
+def dispatch_adhoc_event(
+    name: str, data: Any, *, config: Optional[RunnableConfig] = None
+):
+    """Dispatch an adhoc event to the handlers."""
+    from langchain_core.runnables.config import (
+        ensure_config,
+        get_callback_manager_for_config,
+    )
+
+    config = ensure_config(config)
+    callback_manager = get_callback_manager_for_config(config)
+    callback_manager.on_adhoc_event(name, data)

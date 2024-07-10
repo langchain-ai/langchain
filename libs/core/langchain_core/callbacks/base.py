@@ -370,6 +370,24 @@ class RunManagerMixin:
             kwargs (Any): Additional keyword arguments.
         """
 
+    def on_adhoc_event(
+            self,
+            name: str,
+            data: Any,
+            run_id: Optional[UUID] = None,
+            parent_run_id: Optional[UUID] = None,
+            tags: Optional[List[str]] = None,
+            metadata: Optional[Dict[str, Any]] = None,
+            **kwargs: Any,
+    ) -> None:
+        """Override to define a handler for adhoc events.
+
+        Args:
+            name: The name of the adhoc event.
+            data: The data for the adhoc event.
+            run_id: The ID of the run. Defaults to None.
+            parent_run_id: The ID of the parent run. Defaults to None.
+        """
 
 class BaseCallbackHandler(
     LLMManagerMixin,
@@ -416,6 +434,12 @@ class BaseCallbackHandler(
     def ignore_chat_model(self) -> bool:
         """Whether to ignore chat model callbacks."""
         return False
+
+    @property
+    def ignore_adhoc(self) -> bool:
+        """Ignore adhoc event."""
+        return False
+
 
 
 class AsyncCallbackHandler(BaseCallbackHandler):
@@ -797,6 +821,25 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             parent_run_id (UUID): The parent run ID. This is the ID of the parent run.
             tags (Optional[List[str]]): The tags.
             kwargs (Any): Additional keyword arguments.
+        """
+
+    def on_adhoc_event(
+        self,
+        name: str,
+        data: Any,
+        run_id: Optional[UUID] = None,
+        parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Override to define a handler for adhoc events.
+
+        Args:
+            name: The name of the adhoc event.
+            data: The data for the adhoc event.
+            run_id: The ID of the run. Defaults to None.
+            parent_run_id: The ID of the parent run. Defaults to None.
         """
 
 

@@ -18,7 +18,6 @@ from typing import (
 )
 
 import pytest
-
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import Document
@@ -2353,3 +2352,22 @@ async def test_cancel_astream_events() -> None:
 
     # node "anotherwhile" should never start
     assert anotherwhile.started is False
+
+
+async def test_adhoc_event() -> None:
+    """Test adhoc event."""
+    from langchain_core.callbacks.manager import adispatch_adhoc_event
+
+    @RunnableLambda
+    async def foo(x: int, config):
+        await adispatch_adhoc_event("my_event", {"x": x}, config=config)
+        await adispatch_adhoc_event("event2", "foo")
+        return x + 1
+
+    events = await _collect_events(foo.astream_events(1, version="v2"))
+    assert events == [
+        ]
+
+
+
+
