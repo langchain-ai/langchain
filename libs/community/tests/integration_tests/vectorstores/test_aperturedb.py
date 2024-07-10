@@ -4,7 +4,6 @@ import uuid
 from typing import List, Optional
 
 from langchain_core.documents import Document
-from langchain_core.indexing.base import UpsertResponse
 
 from langchain_community.vectorstores import ApertureDB
 from tests.integration_tests.vectorstores.fake_embeddings import (
@@ -175,21 +174,23 @@ def test_aperturedb_generate_ids() -> None:
 
 def test_aperturedb_upsert_entities() -> None:
     """Test end to end construction and upsert entities"""
-    ids = range(len(fake_texts))
+    ids = [str(i) for i in range(len(fake_texts))]
     vectorstore = _aperturedb_from_texts(ids=ids)
     documents = [
         Document(page_content="test1", id=1),
         Document(page_content="test2", id=100),
     ]
     response = vectorstore.upsert(documents)
-    assert response.succeeded == [1, 100], response.succeeded
-    assert response.failed == [], response.failed
+    assert response['succeeded'] == ['1', '100'], response['succeeded']
+    assert response['failed'] == [], response['failed']
     docs = vectorstore.similarity_search("foo", k=10)
-    ids2 = [doc.id for doc in docs]
-    assert set(ids) == set(ids) + {100}, (ids, ids2)
+    ids = set(ids)
+    ids.add('100')
+    ids2 = {doc.id for doc in docs}
+    assert ids == ids2, (ids, ids2)
     docs_by_id = {doc.id: doc for doc in docs}
-    assert docs_by_id[1].page_content == "test1"
-    assert docs_by_id[100].page_content == "test2"
+    assert docs_by_id['1'].page_content == "test1"
+    assert docs_by_id['100'].page_content == "test2"
     ApertureDB.delete_vectorstore(vectorstore.descriptor_set)
 
 

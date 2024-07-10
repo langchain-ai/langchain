@@ -15,6 +15,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from typing_extensions import override
+from langchain_core.indexing.base import UpsertResponse
 
 # Configure some defaults
 ENGINE = "HNSW"
