@@ -1,7 +1,9 @@
 """Module that contains tests for runnable.astream_events API."""
+
 import asyncio
 import sys
 import uuid
+from functools import partial
 from itertools import cycle
 from typing import (
     Any,
@@ -344,6 +346,22 @@ async def test_event_stream_with_triple_lambda() -> None:
             "tags": [],
         },
     ]
+
+
+async def test_event_stream_exception() -> None:
+    def step(name: str, err: Optional[str], val: str) -> str:
+        if err:
+            raise ValueError(err)
+        return val + name[-1]
+
+    chain = (
+        RunnableLambda(partial(step, "step1", None))
+        | RunnableLambda(partial(step, "step2", "ERR"))
+        | RunnableLambda(partial(step, "step3", None))
+    )
+
+    with pytest.raises(ValueError, match="ERR"):
+        await _collect_events(chain.astream_events("X", version="v2"))
 
 
 async def test_event_stream_with_triple_lambda_test_filtering() -> None:

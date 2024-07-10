@@ -48,6 +48,9 @@ print(llm.invoke("Come up with a pet name"))
 Usage of the Cohere (legacy) [LLM model](/docs/integrations/llms/cohere) 
 ### ReAct Agent
 
+The agent is based on the paper
+[ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/abs/2210.03629).
+
 ```python
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_cohere import ChatCohere, create_cohere_react_agent

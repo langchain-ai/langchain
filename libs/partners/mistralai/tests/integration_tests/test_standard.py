@@ -2,21 +2,19 @@
 
 from typing import Type
 
-import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
+from langchain_standard_tests.integration_tests import (  # type: ignore[import-not-found]
+    ChatModelIntegrationTests,  # type: ignore[import-not-found]
+)
 
 from langchain_mistralai import ChatMistralAI
 
 
 class TestMistralStandard(ChatModelIntegrationTests):
-    @pytest.fixture
+    @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatMistralAI
 
-    @pytest.fixture
+    @property
     def chat_model_params(self) -> dict:
-        return {
-            "model": "mistral-large-latest",
-            "temperature": 0,
-        }
+        return {"model": "mistral-large-latest", "temperature": 0}

@@ -1,4 +1,5 @@
 """Chain that combines documents by stuffing into context."""
+
 from typing import Any, Dict, List, Optional, Tuple
 
 from langchain_core.callbacks import Callbacks

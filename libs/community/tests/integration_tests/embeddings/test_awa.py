@@ -1,4 +1,5 @@
 """Test Awa Embedding"""
+
 from langchain_community.embeddings.awa import AwaEmbeddings
 
 

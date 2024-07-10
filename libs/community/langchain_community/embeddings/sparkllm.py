@@ -30,6 +30,8 @@ logger = logging.getLogger(__name__)
 
 
 class Url:
+    """URL class for parsing the URL."""
+
     def __init__(self, host: str, path: str, schema: str) -> None:
         self.host = host
         self.path = path

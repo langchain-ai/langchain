@@ -2,19 +2,20 @@
 
 from typing import Type
 
-import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.unit_tests import ChatModelUnitTests
+from langchain_standard_tests.unit_tests import (  # type: ignore[import-not-found]
+    ChatModelUnitTests,  # type: ignore[import-not-found]
+)
 
 from langchain_ai21 import ChatAI21
 
 
 class TestAI21J2(ChatModelUnitTests):
-    @pytest.fixture
+    @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatAI21
 
-    @pytest.fixture
+    @property
     def chat_model_params(self) -> dict:
         return {
             "model": "j2-ultra",
@@ -23,11 +24,11 @@ class TestAI21J2(ChatModelUnitTests):
 
 
 class TestAI21Jamba(ChatModelUnitTests):
-    @pytest.fixture
+    @property
     def chat_model_class(self) -> Type[BaseChatModel]:
         return ChatAI21
 
-    @pytest.fixture
+    @property
     def chat_model_params(self) -> dict:
         return {
             "model": "jamba-instruct",

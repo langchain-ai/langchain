@@ -8,12 +8,76 @@ from langchain_community.document_loaders.base import BaseLoader
 
 
 class JSONLoader(BaseLoader):
-    """Load a `JSON` file using a `jq` schema.
+    """
+    Load a `JSON` file using a `jq` schema.
 
-    Example:
-        [{"text": ...}, {"text": ...}, {"text": ...}] -> schema = .[].text
-        {"key": [{"text": ...}, {"text": ...}, {"text": ...}]} -> schema = .key[].text
-        ["", "", ""] -> schema = .[]
+    Setup:
+        .. code-block:: bash
+
+            pip install -U jq
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_community.document_loaders import JSONLoader
+            import json
+            from pathlib import Path
+
+            file_path='./sample_quiz.json'
+            data = json.loads(Path(file_path).read_text())
+            loader = JSONLoader(
+                     file_path=file_path,
+                     jq_schema='.quiz',
+                     text_content=False)
+
+    Load:
+        .. code-block:: python
+
+            docs = loader.load()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            {"sport": {"q1": {"question": "Which one is correct team name in
+            NBA?", "options": ["New York Bulls"
+            {'source': '/sample_quiz
+            .json', 'seq_num': 1}
+
+    Async load:
+        .. code-block:: python
+
+            docs = await loader.aload()
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            {"sport": {"q1": {"question": "Which one is correct team name in
+            NBA?", "options": ["New York Bulls"
+            {'source': '/sample_quizg
+            .json', 'seq_num': 1}
+
+    Lazy load:
+        .. code-block:: python
+
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            # async variant:
+            # docs_lazy = await loader.alazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
+            print(docs[0].page_content[:100])
+            print(docs[0].metadata)
+
+        .. code-block:: python
+
+            {"sport": {"q1": {"question": "Which one is correct team name in
+            NBA?", "options": ["New York Bulls"
+            {'source': '/sample_quiz
+            .json', 'seq_num': 1}
     """
 
     def __init__(

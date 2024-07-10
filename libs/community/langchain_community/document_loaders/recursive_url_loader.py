@@ -110,14 +110,17 @@ class RecursiveUrlLoader(BaseLoader):
                 # ...
             )
 
-    Load:
-        Use ``.load()`` to synchronously load into memory all Documents, with one
-        Document per visited URL. Starting from the initial URL, we recurse through
-        all linked URLs up to the specified max_depth.
-
+    Lazy load:
         .. code-block:: python
 
-            docs = loader.load()
+            docs = []
+            docs_lazy = loader.lazy_load()
+
+            # async variant:
+            # docs_lazy = await loader.alazy_load()
+
+            for doc in docs_lazy:
+                docs.append(doc)
             print(docs[0].page_content[:100])
             print(docs[0].metadata)
 
@@ -134,29 +137,6 @@ class RecursiveUrlLoader(BaseLoader):
         .. code-block:: python
 
             docs = await loader.aload()
-            print(docs[0].page_content[:100])
-            print(docs[0].metadata)
-
-        .. code-block:: python
-
-            <!DOCTYPE html>
-
-            <html xmlns="http://www.w3.org/1999/xhtml">
-            <head>
-                <meta charset="utf-8" /><
-            {'source': 'https://docs.python.org/3.9/', 'content_type': 'text/html', 'title': '3.9.19 Documentation', 'language': None}
-
-    Lazy load:
-        .. code-block:: python
-
-            docs = []
-            docs_lazy = loader.lazy_load()
-
-            # async variant:
-            # docs_lazy = await loader.alazy_load()
-
-            for doc in docs_lazy:
-                docs.append(doc)
             print(docs[0].page_content[:100])
             print(docs[0].metadata)
 
