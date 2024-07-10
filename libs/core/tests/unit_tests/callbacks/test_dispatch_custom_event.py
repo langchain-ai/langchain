@@ -1,3 +1,4 @@
+import sys
 import uuid
 from typing import Any, Dict, List, Optional
 from uuid import UUID
@@ -11,6 +12,32 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.config import RunnableConfig
+
+
+class AsyncCustomCallbackHandler(AsyncCallbackHandler):
+    def __init__(self) -> None:
+        self.events: List[Any] = []
+
+    async def on_custom_event(
+        self,
+        name: str,
+        data: Any,
+        *,
+        run_id: UUID,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        assert kwargs == {}
+        self.events.append(
+            (
+                name,
+                data,
+                run_id,
+                tags,
+                metadata,
+            )
+        )
 
 
 def test_custom_event_root_dispatch() -> None:
@@ -33,35 +60,13 @@ async def test_async_custom_event_root_dispatch() -> None:
         await adispatch_custom_event("event1", {"x": 1})
 
 
-async def test_async_callback_manager() -> None:
-    """Test async callback manager."""
+IS_GTE_3_11 = sys.version_info >= (3, 11)
 
-    class CustomCallbackManager(AsyncCallbackHandler):
-        def __init__(self) -> None:
-            self.events: List[Any] = []
 
-        async def on_custom_event(
-            self,
-            name: str,
-            data: Any,
-            *,
-            run_id: UUID,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
-            **kwargs: Any,
-        ) -> None:
-            assert kwargs == {}
-            self.events.append(
-                (
-                    name,
-                    data,
-                    run_id,
-                    tags,
-                    metadata,
-                )
-            )
-
-    callback = CustomCallbackManager()
+@pytest.mark.skipif(not IS_GTE_3_11, reason="Requires Python >=3.11")
+async def test_custom_event_root_dispatch() -> None:
+    """Test dispatch without passing config explicitly."""
+    callback = AsyncCustomCallbackHandler()
 
     run_id = uuid.UUID(int=7)
 
@@ -70,6 +75,32 @@ async def test_async_callback_manager() -> None:
     @RunnableLambda  # type: ignore[arg-type]
     async def foo(x: int, config: RunnableConfig) -> int:
         await adispatch_custom_event("event1", {"x": x})
+        await adispatch_custom_event("event2", {"x": x})
+        return x
+
+    await foo.ainvoke(
+        1,  # type: ignore[arg-type]
+        {"callbacks": [callback], "run_id": run_id},
+    )
+
+    assert callback.events == [
+        ("event1", {"x": 1}, UUID("00000000-0000-0000-0000-000000000007"), [], {}),
+        ("event2", {"x": 1}, UUID("00000000-0000-0000-0000-000000000007"), [], {}),
+    ]
+
+
+async def test_async_callback_manager() -> None:
+    """Test async callback manager."""
+
+    callback = AsyncCustomCallbackHandler()
+
+    run_id = uuid.UUID(int=7)
+
+    # Typing not working well with RunnableLambda when used as
+    # a decorator for async functions
+    @RunnableLambda  # type: ignore[arg-type]
+    async def foo(x: int, config: RunnableConfig) -> int:
+        await adispatch_custom_event("event1", {"x": x}, config=config)
         await adispatch_custom_event("event2", {"x": x}, config=config)
         return x
 
