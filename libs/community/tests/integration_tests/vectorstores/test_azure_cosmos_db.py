@@ -904,6 +904,111 @@ class TestAzureCosmosDBVectorSearch:
 
         vectorstore.delete_index()
 
+    def test_from_documents_cosine_distance_with_filtering(
+            self, azure_openai_embeddings: OpenAIEmbeddings, collection: Any
+    ) -> None: """Test end to end construction and search."""
+
+    documents = [
+        Document(page_content="Dogs are tough.", metadata={"a": 1}),
+        Document(page_content="Cats have fluff.", metadata={"b": 1}),
+        Document(page_content="What is a sandwich?", metadata={"c": 1}),
+        Document(page_content="That fence is purple.", metadata={"d": 1, "e": 2}),
+    ]
+
+    vectorstore = AzureCosmosDBVectorSearch.from_documents(
+        documents,
+        embedding=azure_openai_embeddings,
+        collection=collection,
+        index_name=INDEX_NAME,
+        application_name=application_name,
+    )
+    sleep(1)  # waits for Cosmos DB to save contents to the collection
+
+    # Create the IVF index that will be leveraged later for vector search
+    vectorstore.create_index(
+        num_lists, dimensions, similarity_algorithm, kind, m, ef_construction
+    )
+    sleep(2)  # waits for the index to be set up
+
+    vectorstore.create_filter_index(
+        property_to_filter="metadata.a",
+        index_name="idx_meta.a"
+    )
+
+    output = vectorstore.similarity_search(
+        "Dogs",
+        k=4,
+        kind=kind,
+        ef_search=ef_search,
+        score_threshold=score_threshold,
+        pre_filter={
+            "metadata.a": {
+                "$eq": 5
+            }
+        },
+        with_embedding=True,
+    )
+
+    assert len(output) == 1
+    assert output[0].page_content == "Dogs are tough."
+    assert output[0].metadata["a"] == 5
+
+    output = vectorstore.similarity_search(
+        "Dogs",
+        k=4,
+        kind=kind,
+        ef_search=ef_search,
+        score_threshold=score_threshold,
+        pre_filter={
+            "metadata.a": {
+                "$lte": 6
+            }
+        },
+    )
+
+    assert len(output) == 1
+    assert output[0].page_content == "Dogs are tough."
+    assert output[0].metadata["a"] == 5
+
+    output = vectorstore.similarity_search(
+        "Dogs",
+        k=4,
+        kind=kind,
+        ef_search=ef_search,
+        score_threshold=score_threshold,
+        pre_filter={
+            "metadata.a": {
+                "$gte": 4
+            }
+        },
+    )
+
+    assert len(output) == 1
+    assert output[0].page_content == "Dogs are tough."
+    assert output[0].metadata["a"] == 5
+
+    output = vectorstore.similarity_search(
+        "Dogs",
+        k=4,
+        kind=kind,
+        ef_search=ef_search,
+        score_threshold=score_threshold,
+        pre_filter={
+            "metadata.a": {
+                "$in": [
+                    4,
+                    5
+                ]
+            }
+        },
+    )
+
+    assert len(output) == 1
+    assert output[0].page_content == "Dogs are tough."
+    assert output[0].metadata["a"] == 5
+
+    vectorstore.delete_index()
+
     @staticmethod
     def invoke_delete_with_no_args(
         azure_openai_embeddings: OpenAIEmbeddings, collection: Any
