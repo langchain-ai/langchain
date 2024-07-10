@@ -162,7 +162,12 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         text_key = "text"
 
         to_insert = [
-            {"id": str(uuid.uuid4()), text_key: t, self._embedding_key: embedding, "metadata": m}
+            {
+                "id": str(uuid.uuid4()),
+                text_key: t,
+                self._embedding_key: embedding,
+                "metadata": m
+            }
             for t, m, embedding in zip(texts, metadatas, embeddings)
         ]
         # insert the documents in CosmosDB No Sql
@@ -268,7 +273,8 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         if pre_filter is None or pre_filter.get("limit_offset_clause") is None:
             query += "TOP {} ".format(k)
 
-        query += "c.id, c.{}, c.text, c.metadata, VectorDistance(c.{}, {}) AS SimilarityScore FROM c".format(
+        query += ("c.id, c.{}, c.text, c.metadata, "
+                  "VectorDistance(c.{}, {}) AS SimilarityScore FROM c").format(
             self._embedding_key,
             self._embedding_key,
             embeddings
@@ -297,7 +303,9 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
             score = item["SimilarityScore"]
             if with_embedding:
                 metadata[self._embedding_key] = item[self._embedding_key]
-            docs_and_scores.append((Document(page_content=text, metadata=metadata), score))
+            docs_and_scores.append(
+                (Document(page_content=text, metadata=metadata), score)
+            )
         return docs_and_scores
 
     def similarity_search_with_score(
