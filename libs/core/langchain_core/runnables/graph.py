@@ -246,7 +246,7 @@ class Graph:
         return node
 
     def remove_node(self, node: Node) -> None:
-        """Remove a node from the graphm and all edges connected to it."""
+        """Remove a node from the graph and all edges connected to it."""
         self.nodes.pop(node.id)
         self.edges = [
             edge
