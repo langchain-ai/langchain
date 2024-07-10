@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Union
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.outputs.generation import Generation
@@ -88,7 +88,9 @@ class ChatGenerationChunk(ChatGeneration):
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "output"]
 
-    def __add__(self, other: ChatGenerationChunk) -> ChatGenerationChunk:
+    def __add__(
+        self, other: Union[ChatGenerationChunk, List[ChatGenerationChunk]]
+    ) -> ChatGenerationChunk:
         if isinstance(other, ChatGenerationChunk):
             generation_info = merge_dicts(
                 self.generation_info or {},
@@ -96,6 +98,17 @@ class ChatGenerationChunk(ChatGeneration):
             )
             return ChatGenerationChunk(
                 message=self.message + other.message,
+                generation_info=generation_info or None,
+            )
+        elif isinstance(other, list) and all(
+            isinstance(x, ChatGenerationChunk) for x in other
+        ):
+            generation_info = merge_dicts(
+                self.generation_info or {},
+                *[chunk.generation_info for chunk in other if chunk.generation_info],
+            )
+            return ChatGenerationChunk(
+                message=self.message + [chunk.message for chunk in other],
                 generation_info=generation_info or None,
             )
         else:
