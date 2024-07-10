@@ -2137,7 +2137,7 @@ def _configure(
                     logger.warning(
                         "Unable to load requested LangChainTracer."
                         " To disable this warning,"
-                        " unset the LANGCHAIN_TRACING_V2 environment variables.",
+                        " unset the LANGCHAIN_TRACING_V2 environment variables.\n"
                         f"{repr(e)}",
                     )
         if run_tree is not None:
