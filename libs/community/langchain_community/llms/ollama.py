@@ -130,7 +130,7 @@ class _OllamaCommon(BaseLanguageModel):
     tokens for authentication.
     """
 
-    auth: Optional[Union[Callable, Tuple]] = None
+    auth: Callable | tuple | None = None
     """Additional auth tuple or callable to enable Basic/Digest/Custom HTTP Auth.
     Expects the same format, type and values as requests.request auth parameter."""
 
