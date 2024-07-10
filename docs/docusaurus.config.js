@@ -276,10 +276,6 @@ const config = {
             title: "Community",
             items: [
               {
-                label: "Discord",
-                href: "https://discord.gg/cU2adEyC7w",
-              },
-              {
                 label: "Twitter",
                 href: "https://twitter.com/LangChainAI",
               },

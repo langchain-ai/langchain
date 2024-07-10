@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import root_validator
 from langchain_core.retrievers import BaseRetriever
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.utilities.vertexai import get_client_info
 
@@ -48,7 +47,7 @@ class GoogleDocumentAIWarehouseRetriever(BaseRetriever):
     """The limit on the number of documents returned."""
     client: "DocumentServiceClient" = None  #: :meta private:
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validates the environment."""
         try:
