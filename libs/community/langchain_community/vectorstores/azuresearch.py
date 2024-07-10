@@ -1049,7 +1049,7 @@ class AzureSearch(VectorStore):
         *,
         filters: Optional[str] = None,
         **kwargs: Any,
-    ) -> Tuple[List[Document], List[float], List[List[float]]]:
+    ) -> Tuple[List[Document], List[float], Optional[List[List[float]]]]:
         """Perform vector or hybrid search in the Azure search index.
 
         Args:
@@ -1081,7 +1081,7 @@ class AzureSearch(VectorStore):
                 (
                     _result_to_document(result),
                     float(result["@search.score"]),
-                    result[FIELDS_CONTENT_VECTOR],
+                    result.get(FIELDS_CONTENT_VECTOR),
                 )
                 async for result in results
             ]
