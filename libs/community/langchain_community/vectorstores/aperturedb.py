@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from typing import Any, Dict, Sequence, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
 # Third-party imports
 import numpy as np
