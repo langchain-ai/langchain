@@ -3,7 +3,6 @@
 import json
 from pathlib import Path
 from typing import IO, Any, Iterator, Sequence, Union
-from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 
 from langchain_community.document_loaders import UnstructuredBaseLoader
@@ -19,15 +18,10 @@ class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
     an API key. See the links below to learn more about our API offerings and get an
     API key.
 
-    You can run the loader in different modes: "single", "elements", and "paged". The
-    default "single" mode will return a single langchain Document object. If you use
-    "elements" mode, the unstructured library will split the document into elements such
-    as Title and NarrativeText and return those as individual langchain Document
-    objects. In addition to these post-processing modes (which are specific to the
-    LangChain Loaders), Unstructured has its own "chunking" parameters for
-    post-processing elements into more useful chunks for uses cases such as Retrieval
-    Augmented Generation (RAG). You can pass in additional unstructured kwargs to
-    configure different unstructured settings.
+    In addition to document specific partition parameters, Unstructured has a rich set
+    of "chunking" parameters for post-processing elements into more useful text segments
+    for uses cases such as Retrieval Augmented Generation (RAG). You can pass additional
+    Unstructured kwargs to the loader to configure different unstructured settings.
 
     Setup:
         .. code-block:: bash
@@ -42,10 +36,10 @@ class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
             loader = UnstructuredSDKFileLoader(
                 # required params
                 file_path = "example.pdf",
-                # other params
-                mode="elements",
-                strategy="fast",
                 api_key=UNSTRUCTURED_API_KEY,
+                # other params
+                chunking_strategy="by_page",
+                strategy="fast",
             )
 
     Load:
@@ -66,10 +60,9 @@ class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
     def __init__(
         self,
         file_path: Union[str, list[str]],
+        api_key: str,
         *,
-        mode: str = "single",
         url: str = "https://api.unstructuredapp.io/general/v0/general",
-        api_key: str = "",
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
@@ -78,7 +71,7 @@ class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
         self.url = url
         self.api_key = api_key
 
-        super().__init__(mode=mode, **unstructured_kwargs)
+        super().__init__(**unstructured_kwargs)
 
     def lazy_load(self) -> Iterator[Document]:
         """Load file."""
@@ -87,41 +80,12 @@ class UnstructuredSDKFileLoader(UnstructuredBaseLoader):
         elements_json = self._get_elements()
         self._post_process_elements(elements_json)
 
-        if self.mode == "elements":
-            for element in elements_json:
-                metadata = self._get_metadata()
-                metadata.update(element.get("metadata"))
-                metadata.update({"category": element.get("category") or element.get("type")})
-                metadata.update({"element_id": element.get("element_id")})
-                yield Document(page_content=element.get("text"), metadata=metadata)
-        elif self.mode == "paged":
-            text_dict: dict[int, str] = {}
-            meta_dict: dict[int, dict] = {}
-
-            for element in elements_json:
-                metadata = self._get_metadata()
-                metadata.update({"category": element.get("category")})
-                page_number = metadata.get("page_number", 1)
-
-                # Check if this page_number already exists in text_dict
-                if page_number not in text_dict:
-                    # If not, create new entry with initial text and metadata
-                    text_dict[page_number] = str(element.get("text")) + "\n\n"
-                    meta_dict[page_number] = metadata
-                else:
-                    # If exists, append to text and update the metadata
-                    text_dict[page_number] += str(element.get("text")) + "\n\n"
-                    meta_dict[page_number].update(metadata)
-
-            # Convert the dict to a list of Document objects
-            for key in text_dict.keys():
-                yield Document(page_content=text_dict[key], metadata=meta_dict[key])
-        elif self.mode == "single":
+        for element in elements_json:
             metadata = self._get_metadata()
-            text = "\n\n".join([el.get("text") for el in elements_json])
-            yield Document(page_content=text, metadata=metadata)
-        else:
-            raise ValueError(f"mode of {self.mode} not supported.")
+            metadata.update(element.get("metadata"))
+            metadata.update({"category": element.get("category") or element.get("type")})
+            metadata.update({"element_id": element.get("element_id")})
+            yield Document(page_content=element.get("text"), metadata=metadata)
 
     def _get_elements(self) -> list:
         if isinstance(self.file_path, list):
@@ -168,15 +132,10 @@ class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
     an API key. See the links below to learn more about our API offerings and get an
     API key.
 
-    You can run the loader in different modes: "single", "elements", and "paged". The
-    default "single" mode will return a single langchain Document object. If you use
-    "elements" mode, the unstructured library will split the document into elements
-    such as Title and NarrativeText and return those as individual langchain Document
-    objects. In addition to these post-processing modes (which are specific to the
-    LangChain Loaders), Unstructured has its own "chunking" parameters for
-    post-processing elements into more useful chunks for uses cases such as Retrieval
-    Augmented Generation (RAG). You can pass in additional unstructured kwargs to
-    configure different unstructured settings.
+    In addition to document specific partition parameters, Unstructured has a rich set
+    of "chunking" parameters for post-processing elements into more useful text segments
+    for uses cases such as Retrieval Augmented Generation (RAG). You can pass additional
+    Unstructured kwargs to the loader to configure different unstructured settings.
 
     Setup:
         .. code-block:: bash
@@ -192,10 +151,10 @@ class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
                 loader = UnstructuredSDKFileIOLoader(
                     # required params
                     file_path=f,
-                    # other params
-                    mode="elements",
-                    strategy="fast",
                     api_key=UNSTRUCTURED_API_KEY,
+                    # other params
+                    chunking_strategy="by_page",
+                    strategy="fast",
                 )
 
     Load:
@@ -216,10 +175,9 @@ class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
     def __init__(
         self,
         file: Union[IO, Sequence[IO]],
+        api_key: str,
         *,
-        mode: str = "single",
         url: str = "https://api.unstructuredapp.io/general/v0/general",
-        api_key: str = "",
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
@@ -228,7 +186,7 @@ class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
         self.url = url
         self.api_key = api_key
 
-        super().__init__(mode=mode, **unstructured_kwargs)
+        super().__init__(**unstructured_kwargs)
 
     def lazy_load(self) -> Iterator[Document]:
         """Load file."""
@@ -237,41 +195,12 @@ class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
         elements_json = self._get_elements()
         self._post_process_elements(elements_json)
 
-        if self.mode == "elements":
-            for element in elements_json:
-                metadata = self._get_metadata()
-                metadata.update(element.get("metadata"))
-                metadata.update({"category": element.get("category") or element.get("type")})
-                metadata.update({"element_id": element.get("element_id")})
-                yield Document(page_content=element.get("text"), metadata=metadata)
-        elif self.mode == "paged":
-            text_dict: dict[int, str] = {}
-            meta_dict: dict[int, dict] = {}
-
-            for element in elements_json:
-                metadata = self._get_metadata()
-                metadata.update({"category": element.get("category")})
-                page_number = metadata.get("page_number", 1)
-
-                # Check if this page_number already exists in text_dict
-                if page_number not in text_dict:
-                    # If not, create new entry with initial text and metadata
-                    text_dict[page_number] = str(element.get("text")) + "\n\n"
-                    meta_dict[page_number] = metadata
-                else:
-                    # If exists, append to text and update the metadata
-                    text_dict[page_number] += str(element.get("text")) + "\n\n"
-                    meta_dict[page_number].update(metadata)
-
-            # Convert the dict to a list of Document objects
-            for key in text_dict.keys():
-                yield Document(page_content=text_dict[key], metadata=meta_dict[key])
-        elif self.mode == "single":
+        for element in elements_json:
             metadata = self._get_metadata()
-            text = "\n\n".join([el.get("text") for el in elements_json])
-            yield Document(page_content=text, metadata=metadata)
-        else:
-            raise ValueError(f"mode of {self.mode} not supported.")
+            metadata.update(element.get("metadata"))
+            metadata.update({"category": element.get("category") or element.get("type")})
+            metadata.update({"element_id": element.get("element_id")})
+            yield Document(page_content=element.get("text"), metadata=metadata)
 
     def _get_elements(self) -> list:
         if isinstance(self.file, Sequence):
@@ -319,10 +248,10 @@ class UnstructuredSDKFileIOLoader(UnstructuredBaseLoader):
 
 def _get_elements_from_api(
     file_path: Union[str, Path],
+    api_key: str,
     *,
     file: Union[IO[bytes], None] = None,
     api_url: str = "https://api.unstructuredapp.io/general/v0/general",
-    api_key: str = "",
     **unstructured_kwargs: Any,
 ) -> list[dict[str, Any]]:
     """Retrieve a list of elements from the `Unstructured API` using the SDK client."""

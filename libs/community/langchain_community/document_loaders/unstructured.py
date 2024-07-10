@@ -19,32 +19,23 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
 
     def __init__(
         self,
-        mode: str = "single",
+        mode: str = "single",  # deprecated
         post_processors: Optional[list[Callable]] = None,
         **unstructured_kwargs: Any,
     ):
         """Initialize with file path."""
-
+                
         # `single` - elements are combined into one (default)
         # `elements` - maintain individual elements
         # `paged` - elements are combined by page
         _valid_modes = {"single", "elements", "paged"}
-
         if mode not in _valid_modes:
             raise ValueError(
                 f"Got {mode} for `mode`, but should be one of `{_valid_modes}`"
             )
-        if mode == "paged":
-            logger.warning(
-                "`mode='paged'` is deprecated in favor of the 'by_page' chunking strategy. Learn"
-                " more about chunking here:"
-                " https://docs.unstructured.io/open-source/core-functionality/chunking"
-            )
-
         self._check_if_both_mode_and_chunking_strategy_are_by_page(
             mode, unstructured_kwargs
         )
-
         self.mode = mode
         self.unstructured_kwargs = unstructured_kwargs
         self.post_processors = post_processors or []
@@ -68,7 +59,7 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
     def lazy_load(self) -> Iterator[Document]:
         """Load file."""
         elements = self._get_elements()
-        self._post_process_elements(elements)
+        self._post_process_elements(elements)            
         if self.mode == "elements":
             for element in elements:
                 metadata = self._get_metadata()
@@ -82,6 +73,11 @@ class UnstructuredBaseLoader(BaseLoader, ABC):
                     metadata["element_id"] = element.to_dict().get("element_id")
                 yield Document(page_content=str(element), metadata=metadata)
         elif self.mode == "paged":
+            logger.warning(
+                "`mode='paged'` is deprecated in favor of the 'by_page' chunking strategy. Learn"
+                " more about chunking here:"
+                " https://docs.unstructured.io/open-source/core-functionality/chunking"
+            )
             text_dict: dict[int, str] = {}
             meta_dict: dict[int, dict] = {}
 
