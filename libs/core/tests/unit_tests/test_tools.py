@@ -8,7 +8,7 @@ import textwrap
 from datetime import datetime
 from enum import Enum
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 import pytest
 from typing_extensions import Annotated
@@ -1011,14 +1011,15 @@ class _MockStructuredToolWithRawOutput(BaseTool):
     name: str = "structured_api"
     args_schema: Type[BaseModel] = _MockSchema
     description: str = "A Structured Tool"
+    response_format: Literal["content_and_raw_output"] = "content_and_raw_output"
 
-    def _run_include_raw_output(
-        self, arg1: int, arg2: bool, arg3: Optional[dict] = None, **kwargs: Any
+    def _run(
+        self, arg1: int, arg2: bool, arg3: Optional[dict] = None
     ) -> Tuple[str, dict]:
         return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
 
 
-@tool("structured_api", returns_raw_output=True)
+@tool("structured_api", response_format="content_and_raw_output")
 def _mock_structured_tool_with_raw_output(
     arg1: int, arg2: bool, arg3: Optional[dict] = None
 ) -> Tuple[str, dict]:

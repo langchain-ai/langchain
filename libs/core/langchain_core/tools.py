@@ -343,6 +343,14 @@ class ChildTool(BaseTool):
     ] = False
     """Handle the content of the ValidationError thrown."""
 
+    response_format: Literal["content", "content_and_raw_output"] = "content"
+    """The tool response format. 
+
+    If "content" then the output of the tool is interpreted as the contents of a 
+    ToolMessage. If "content_and_raw_output" then the output is expected to be a 
+    two-tuple corresponding to the (content, raw_output) of a ToolMessage.
+    """
+
     class Config(Serializable.Config):
         """Configuration for this pydantic object."""
 
@@ -422,50 +430,24 @@ class ChildTool(BaseTool):
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
-    def _run_include_raw_output(self, *args: Any, **kwargs: Any) -> Tuple[Content, Any]:
-        """Return a repr of the result to pass to a model and the raw_output result."""
-        if not signature(self._run).parameters.get("run_manager"):
-            kwargs.pop("run_manager")
-        return self._run(*args, **kwargs), None
-
-    async def _arun_include_raw_output(
-        self, *args: Any, **kwargs: Any
-    ) -> Tuple[Content, Any]:
-        """Return a repr of the result to pass to a model and the raw_output result."""
-        if (
-            self.__class__._run_include_raw_output
-            is not BaseTool._run_include_raw_output
-        ):
-            if "run_manager" in kwargs:
-                kwargs["run_manager"] = kwargs["run_manager"].get_sync()
-            return await run_in_executor(
-                None,
-                self._run_include_raw_output,
-                *args,
-                **kwargs,
-            )
-        else:
-            if not signature(self._arun).parameters.get("run_manager"):
-                kwargs.pop("run_manager")
-            return (await self._arun(*args, **kwargs)), None
-
+    @abstractmethod
     def _run(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool.
 
         Add run_manager: Optional[CallbackManagerForToolRun] = None
-        to child implementations to enable tracing,
+        to child implementations to enable tracing.
         """
-        raise NotImplementedError(
-            "Tool not implemented. Please implement "
-            "BaseTool._run_include_raw_output()."
-        )
 
     async def _arun(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool asynchronously.
 
         Add run_manager: Optional[AsyncCallbackManagerForToolRun] = None
-        to child implementations to enable tracing,
+        to child implementations to enable tracing.
         """
+        if kwargs.get("run_manager") and signature(self._run).parameters.get(
+            "run_manager"
+        ):
+            kwargs["run_manager"] = kwargs["run_manager"].get_sync()
         return await run_in_executor(None, self._run, *args, **kwargs)
 
     def _to_args_and_kwargs(self, tool_input: Union[str, Dict]) -> Tuple[Tuple, Dict]:
@@ -526,12 +508,20 @@ class ChildTool(BaseTool):
             context = copy_context()
             context.run(_set_config_context, child_config)
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
-            content, raw_output = context.run(
-                self._run_include_raw_output,
-                *tool_args,
-                run_manager=run_manager,
-                **tool_kwargs,
-            )
+            if signature(self._run).parameters.get("run_manager"):
+                tool_kwargs["run_manager"] = run_manager
+            response = context.run(self._run, *tool_args, **tool_kwargs)
+            if self.response_format == "content_and_raw_output":
+                if not isinstance(response, tuple) or len(response) != 2:
+                    raise ValueError(
+                        "Since response_format='content_and_raw_output' "
+                        "a two-tuple of the message content and raw tool output is "
+                        f"expected. Instead generated response of type: "
+                        f"{type(response)}."
+                    )
+                content, raw_output = response
+            else:
+                content = response
         except ValidationError as e:
             if not self.handle_validation_error:
                 error_to_raise = e
@@ -599,16 +589,26 @@ class ChildTool(BaseTool):
             child_config = patch_config(config, callbacks=run_manager.get_child())
             context = copy_context()
             context.run(_set_config_context, child_config)
-            coro = context.run(
-                self._arun_include_raw_output,
-                *tool_args,
-                run_manager=run_manager,
-                **tool_kwargs,
-            )
+            if self.__class__._arun is BaseTool._arun or signature(
+                self._arun
+            ).parameters.get("run_manager"):
+                tool_kwargs["run_manager"] = run_manager
+            coro = context.run(self._arun, *tool_args, **tool_kwargs)
             if accepts_context(asyncio.create_task):
-                content, raw_output = await asyncio.create_task(coro, context=context)  # type: ignore
+                response = await asyncio.create_task(coro, context=context)  # type: ignore
             else:
-                content, raw_output = await coro
+                response = await coro
+            if self.response_format == "content_and_raw_output":
+                if not isinstance(response, tuple) or len(response) != 2:
+                    raise ValueError(
+                        "Since response_format='content_and_raw_output' "
+                        "a two-tuple of the message content and raw tool output is "
+                        f"expected. Instead generated response of type: "
+                        f"{type(response)}."
+                    )
+                content, raw_output = response
+            else:
+                content = response
         except ValidationError as e:
             if not self.handle_validation_error:
                 error_to_raise = e
@@ -644,8 +644,6 @@ class Tool(BaseTool):
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[str]]] = None
     """The asynchronous version of the function."""
-    returns_raw_output: bool = False
-    """Whether the func and coroutine return both message content and raw output."""
 
     # --- Runnable ---
 
@@ -685,34 +683,34 @@ class Tool(BaseTool):
             )
         return tuple(all_args), {}
 
-    def _run_include_raw_output(
+    def _run(
         self,
         *args: Any,
-        run_manager: CallbackManagerForToolRun,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
         **kwargs: Any,
-    ) -> Tuple[Content, Any]:
+    ) -> Any:
         """Use the tool."""
         if self.func:
-            return _run_func(
-                self.func, run_manager, self.returns_raw_output, args, kwargs
-            )
-        raise NotImplementedError("Tool does not support sync")
+            if run_manager and signature(self.func).parameters.get("callbacks"):
+                kwargs["callbacks"] = run_manager.get_child()
+            return self.func(*args, **kwargs)
+        raise NotImplementedError("Tool does not support sync invocation.")
 
-    async def _arun_include_raw_output(
+    async def _arun(
         self,
         *args: Any,
-        run_manager: AsyncCallbackManagerForToolRun,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
         **kwargs: Any,
-    ) -> Tuple[Content, Any]:
+    ) -> Any:
         """Use the tool asynchronously."""
         if self.coroutine:
-            return await _run_coro(
-                self.coroutine, run_manager, self.returns_raw_output, args, kwargs
-            )
-        kwargs["run_manager"] = run_manager.get_sync()
-        return await run_in_executor(
-            None, self._run_include_raw_output, *args, **kwargs
-        )
+            if run_manager and signature(self.coroutine).parameters.get("callbacks"):
+                kwargs["callbacks"] = run_manager.get_child()
+            return await self.coroutine(*args, **kwargs)
+
+        # NOTE: this code is unreachable since _arun is only called if coroutine is not
+        # None.
+        return await super()._arun(*args, run_manager=run_manager, **kwargs)
 
     # TODO: this is for backwards compatibility, remove in future
     def __init__(
@@ -760,11 +758,10 @@ class StructuredTool(BaseTool):
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[Any]]] = None
     """The asynchronous version of the function."""
-    returns_raw_output: bool = False
-    """Whether the func and coroutine return both message content and raw output."""
 
     # --- Runnable ---
 
+    # TODO: Is this needed?
     async def ainvoke(
         self,
         input: Union[str, Dict, ToolCall],
@@ -784,34 +781,34 @@ class StructuredTool(BaseTool):
         """The tool's input arguments."""
         return self.args_schema.schema()["properties"]
 
-    def _run_include_raw_output(
+    def _run(
         self,
         *args: Any,
-        run_manager: CallbackManagerForToolRun,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
         **kwargs: Any,
-    ) -> Tuple[Content, Any]:
+    ) -> Any:
         """Use the tool."""
         if self.func:
-            return _run_func(
-                self.func, run_manager, self.returns_raw_output, args, kwargs
-            )
-        raise NotImplementedError("Tool does not support sync")
+            if run_manager and signature(self.func).parameters.get("callbacks"):
+                kwargs["callbacks"] = run_manager.get_child()
+            return self.func(*args, **kwargs)
+        raise NotImplementedError("StructuredTool does not support sync invocation.")
 
-    async def _arun_include_raw_output(
+    async def _arun(
         self,
         *args: Any,
-        run_manager: AsyncCallbackManagerForToolRun,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
         **kwargs: Any,
     ) -> Tuple[Content, Any]:
         """Use the tool asynchronously."""
         if self.coroutine:
-            return await _run_coro(
-                self.coroutine, run_manager, self.returns_raw_output, args, kwargs
-            )
-        kwargs["run_manager"] = run_manager.get_sync()
-        return await run_in_executor(
-            None, self._run_include_raw_output, *args, **kwargs
-        )
+            if run_manager and signature(self.coroutine).parameters.get("callbacks"):
+                kwargs["callbacks"] = run_manager.get_child()
+            return await self.coroutine(*args, **kwargs)
+
+        # NOTE: this code is unreachable since _arun is only called if coroutine is not
+        # None.
+        return await super()._arun(*args, run_manager=run_manager, **kwargs)
 
     @classmethod
     def from_function(
@@ -824,7 +821,7 @@ class StructuredTool(BaseTool):
         args_schema: Optional[Type[BaseModel]] = None,
         infer_schema: bool = True,
         *,
-        returns_raw_output: bool = False,
+        response_format: Literal["content", "content_and_raw_output"] = "content",
         **kwargs: Any,
     ) -> StructuredTool:
         """Create tool from a given function.
@@ -839,8 +836,10 @@ class StructuredTool(BaseTool):
             return_direct: Whether to return the result directly or as a callback
             args_schema: The schema of the tool's input arguments
             infer_schema: Whether to infer the schema from the function's signature
-            returns_raw_output: Whether the func and coroutine return a two-tuple of the
-                content meant for the ToolMessage and the raw tool output.
+            response_format: The tool response format. If "content" then the output of
+                the tool is interpreted as the contents of a ToolMessage. If
+                "content_and_raw_output" then the output is expected to be a two-tuple
+                corresponding to the (content, raw_output) of a ToolMessage.
             **kwargs: Additional arguments to pass to the tool
 
         Returns:
@@ -889,7 +888,7 @@ class StructuredTool(BaseTool):
             args_schema=_args_schema,  # type: ignore[arg-type]
             description=description_,
             return_direct=return_direct,
-            returns_raw_output=returns_raw_output,
+            response_format=response_format,
             **kwargs,
         )
 
@@ -899,7 +898,7 @@ def tool(
     return_direct: bool = False,
     args_schema: Optional[Type[BaseModel]] = None,
     infer_schema: bool = True,
-    returns_raw_output: bool = False,
+    response_format: Literal["content", "content_and_raw_output"] = "content",
 ) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -911,8 +910,10 @@ def tool(
         infer_schema: Whether to infer the schema of the arguments from
             the function's signature. This also makes the resultant tool
             accept a dictionary input to its `run()` function.
-        returns_raw_output: Whether the method returns a two-tuple of the
-            content meant for the ToolMessage and the raw tool output.
+        response_format: The tool response format. If "content" then the output of
+            the tool is interpreted as the contents of a ToolMessage. If
+            "content_and_raw_output" then the output is expected to be a two-tuple
+            corresponding to the (content, raw_output) of a ToolMessage.
 
     Requires:
         - Function must be of type (str) -> str
@@ -931,7 +932,7 @@ def tool(
                 # Searches the API for the query.
                 return
 
-            @tool(returns_raw_output=True)
+            @tool(response_format="content_and_raw_output")
             def search_api(query: str) -> Tuple[str, dict]:
                 return "partial json of results", {"full": "object of results"}
     """
@@ -978,7 +979,7 @@ def tool(
                     return_direct=return_direct,
                     args_schema=schema,
                     infer_schema=infer_schema,
-                    returns_raw_output=returns_raw_output,
+                    response_format=response_format,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -993,7 +994,7 @@ def tool(
                 description=f"{tool_name} tool",
                 return_direct=return_direct,
                 coroutine=coroutine,
-                returns_raw_output=returns_raw_output,
+                response_format=response_format,
             )
 
         return _make_tool
@@ -1244,45 +1245,3 @@ def _stringify(content: Any) -> str:
         return json.dumps(content)
     except Exception:
         return str(content)
-
-
-def _run_func(
-    func: Callable[..., Any],
-    run_manager: CallbackManagerForToolRun,
-    returns_raw_output: bool,
-    args: Sequence,
-    kwargs: dict,
-) -> Tuple[Content, Any]:
-    if signature(func).parameters.get("callbacks"):
-        kwargs["callbacks"] = run_manager.get_child()
-    output = func(*args, **kwargs)
-    if returns_raw_output:
-        if not isinstance(output, tuple) or len(output) != 2:
-            raise ValueError(
-                "Since returns_raw_output is True, Tool function is expected to return "
-                "a two-tuple of the message content and raw tool output."
-            )
-        return output
-    else:
-        return output, None
-
-
-async def _run_coro(
-    coro: Callable[..., Awaitable[Any]],
-    run_manager: AsyncCallbackManagerForToolRun,
-    returns_raw_output: bool,
-    args: Sequence,
-    kwargs: Dict,
-) -> Tuple[Content, Any]:
-    if signature(coro).parameters.get("callbacks"):
-        kwargs["callbacks"] = run_manager.get_child()
-    output = await coro(*args, **kwargs)
-    if returns_raw_output:
-        if not isinstance(output, tuple) or len(output) != 2:
-            raise ValueError(
-                "Since returns_raw_output is True, Tool function is expected to return "
-                "a two-tuple of the message content and raw tool output."
-            )
-        return output
-    else:
-        return output, None
