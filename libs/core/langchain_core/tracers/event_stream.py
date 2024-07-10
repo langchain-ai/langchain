@@ -28,7 +28,12 @@ from langchain_core.outputs import (
     GenerationChunk,
     LLMResult,
 )
-from langchain_core.runnables.schema import EventData, StandardStreamEvent
+from langchain_core.runnables.schema import (
+    CustomStreamEvent,
+    EventData,
+    StandardStreamEvent,
+    StreamEvent,
+)
 from langchain_core.runnables.utils import (
     Input,
     Output,
@@ -111,7 +116,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         )
 
         loop = asyncio.get_event_loop()
-        memory_stream = _MemoryStream[StandardStreamEvent](loop)
+        memory_stream = _MemoryStream[StreamEvent](loop)
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
 
@@ -133,7 +138,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         # parent ID is the root and the last ID is the immediate parent.
         return parent_ids[::-1]
 
-    def _send(self, event: StandardStreamEvent, event_type: str) -> None:
+    def _send(self, event: StreamEvent, event_type: str) -> None:
         """Send an event to the stream."""
         if self.root_event_filter.include_event(event, event_type):
             self.send_stream.send_nowait(event)
@@ -351,8 +356,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run an ad-hoc event."""
-        event = StandardStreamEvent(
+        """Generate a custom astream event."""
+        event = CustomStreamEvent(
             event="on_custom_event",
             run_id=str(run_id),
             name=name,
