@@ -420,10 +420,12 @@ class ChildTool(BaseTool):
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
-    # TODO: Come up with real name
     def _run_include_raw_output(self, *args: Any, **kwargs: Any) -> Tuple[Content, Any]:
         """Return a repr of the result to pass to a model and the raw_output result."""
-        raise NotImplementedError()
+        raise NotImplementedError(
+            "Tool not fully implemented. Please implement "
+            "BaseTool._run_include_raw_output()."
+        )
 
     async def _arun_include_raw_output(
         self, *args: Any, **kwargs: Any
@@ -444,7 +446,10 @@ class ChildTool(BaseTool):
         Add run_manager: Optional[CallbackManagerForToolRun] = None
         to child implementations to enable tracing,
         """
-        raise NotImplementedError()
+        raise NotImplementedError(
+            "Tool not fully implemented. Please implement "
+            "BaseTool._run_include_raw_output()."
+        )
 
     async def _arun(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool asynchronously.
@@ -509,7 +514,10 @@ class ChildTool(BaseTool):
             context = copy_context()
             context.run(_set_config_context, child_config)
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input)
-            if self._run_include_raw_output != BaseTool._run_include_raw_output:
+            if (
+                self.__class__._run_include_raw_output
+                is not BaseTool._run_include_raw_output
+            ):
                 content, raw_output = context.run(
                     self._run_include_raw_output,
                     *tool_args,
@@ -587,8 +595,10 @@ class ChildTool(BaseTool):
             context = copy_context()
             context.run(_set_config_context, child_config)
             use_run_include_raw_output = (
-                self._run_include_raw_output != BaseTool._run_include_raw_output
-                or self._arun_include_raw_output != BaseTool._arun_include_raw_output
+                self.__class___run_include_raw_output
+                is not BaseTool._run_include_raw_output
+                or self.__class__._arun_include_raw_output
+                is not BaseTool._arun_include_raw_output
             )
             if use_run_include_raw_output:
                 coro = context.run(
