@@ -626,6 +626,7 @@ class Tool(BaseTool):
     coroutine: Optional[Callable[..., Awaitable[str]]] = None
     """The asynchronous version of the function."""
     has_raw_output: bool = False
+    """Whether the func and coroutine return both message content and raw output."""
 
     # --- Runnable ---
 
@@ -815,6 +816,8 @@ class StructuredTool(BaseTool):
             return_direct: Whether to return the result directly or as a callback
             args_schema: The schema of the tool's input arguments
             infer_schema: Whether to infer the schema from the function's signature
+            has_raw_output: Whether the func and coroutine return a two-tuple of the
+                content meant for the ToolMessage and the raw tool output.
             **kwargs: Additional arguments to pass to the tool
 
         Returns:
@@ -885,6 +888,8 @@ def tool(
         infer_schema: Whether to infer the schema of the arguments from
             the function's signature. This also makes the resultant tool
             accept a dictionary input to its `run()` function.
+        has_raw_output: Whether the method returns a two-tuple of the
+            content meant for the ToolMessage and the raw tool output.
 
     Requires:
         - Function must be of type (str) -> str
