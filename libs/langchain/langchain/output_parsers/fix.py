@@ -1,16 +1,23 @@
 from __future__ import annotations
 
-from typing import Any, TypeVar, Union
+from typing import Any, TypedDict, TypeVar, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import RunnableSerializable
+from typing_extensions import NotRequired
 
 from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
 
 T = TypeVar("T")
+
+
+class OutputFixingParserRetryChainInput(TypedDict):
+    instructions: NotRequired[str]
+    completion: str
+    error: str
 
 
 class OutputFixingParser(BaseOutputParser[T]):
@@ -22,13 +29,11 @@ class OutputFixingParser(BaseOutputParser[T]):
 
     parser: BaseOutputParser[T]
     """The parser to use to parse the output."""
-    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
-    retry_chain: Union[RunnableSerializable, Any]
-    f"""The RunnableSerializable to use to retry the completion (Legacy: LLMChain).
-    InputType should be dict[str, Any] with 'prompt', 'completion' and 'error' keys,
-    and OutputType should be str. The details of the input schema are as follows:
-    {NAIVE_FIX_PROMPT.get_input_schema().schema()}
-    """
+    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains  # noqa: E501
+    retry_chain: Union[
+        RunnableSerializable[OutputFixingParserRetryChainInput, str], Any
+    ]
+    """The RunnableSerializable to use to retry the completion (Legacy: LLMChain)."""
     max_retries: int = 1
     """The maximum number of times to retry the parse."""
     legacy: bool = True

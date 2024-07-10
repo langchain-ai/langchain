@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, TypeVar, Union
+from typing import Any, TypedDict, TypeVar, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
@@ -34,6 +34,17 @@ NAIVE_RETRY_WITH_ERROR_PROMPT = PromptTemplate.from_template(
 T = TypeVar("T")
 
 
+class RetryOutputParserRetryChainInput(TypedDict):
+    prompt: str
+    completion: str
+
+
+class RetryWithErrorOutputParserRetryChainInput(TypedDict):
+    prompt: str
+    completion: str
+    error: str
+
+
 class RetryOutputParser(BaseOutputParser[T]):
     """Wrap a parser and try to fix parsing errors.
 
@@ -43,13 +54,9 @@ class RetryOutputParser(BaseOutputParser[T]):
 
     parser: BaseOutputParser[T]
     """The parser to use to parse the output."""
-    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains
-    retry_chain: Union[RunnableSerializable, Any]
-    f"""The RunnableSerializable to use to retry the completion (Legacy: LLMChain).
-    InputType should be dict[str, Any] with 'prompt' and 'completion keys,'
-    and OutputType should be str. The details of the input schema are as follows:
-    {NAIVE_RETRY_PROMPT.get_input_schema().schema()}
-    """
+    # Should be an LLMChain but we want to avoid top-level imports from langchain.chains  # noqa: E501
+    retry_chain: Union[RunnableSerializable[RetryOutputParserRetryChainInput, str], Any]  # noqa: E501
+    """The RunnableSerializable to use to retry the completion (Legacy: LLMChain)."""
     max_retries: int = 1
     """The maximum number of times to retry the parse."""
     legacy: bool = True
@@ -178,12 +185,10 @@ class RetryWithErrorOutputParser(BaseOutputParser[T]):
     parser: BaseOutputParser[T]
     """The parser to use to parse the output."""
     # Should be an LLMChain but we want to avoid top-level imports from langchain.chains  # noqa: E501
-    retry_chain: Union[RunnableSerializable, Any]
-    f"""The RunnableSerializable to use to retry the completion (Legacy: LLMChain).
-    InputType should be dict[str, Any] with 'prompt', 'completion' and 'error' keys,
-    and OutputType should be str. The details of the input schema are as follows:
-    {NAIVE_RETRY_WITH_ERROR_PROMPT.get_input_schema().schema()}
-    """
+    retry_chain: Union[
+        RunnableSerializable[RetryWithErrorOutputParserRetryChainInput, str], Any
+    ]
+    """The RunnableSerializable to use to retry the completion (Legacy: LLMChain)."""
     max_retries: int = 1
     """The maximum number of times to retry the parse."""
     legacy: bool = True

@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, Optional, TypeVar
 
 import pytest
 from langchain_core.exceptions import OutputParserException
+from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 from pytest_mock import MockerFixture
 
@@ -137,7 +138,15 @@ def test_output_fixing_parser_output_type(base_parser: BaseOutputParser) -> None
             DatetimeOutputParser(),
             NAIVE_FIX_PROMPT | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),  # noqa
             dt(2024, 7, 8),
-        )
+        ),
+        (
+            # Case: retry_chain.InputType does not have 'instructions' key
+            "2024/07/08",
+            DatetimeOutputParser(),
+            PromptTemplate.from_template("{completion}\n{error}")
+            | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
+            dt(2024, 7, 8),
+        ),
     ],
 )
 def test_output_fixing_parser_parse_with_retry_chain(
@@ -179,7 +188,15 @@ def test_output_fixing_parser_parse_with_retry_chain(
             DatetimeOutputParser(),
             NAIVE_FIX_PROMPT | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),  # noqa
             dt(2024, 7, 8),
-        )
+        ),
+        (
+            # Case: retry_chain.InputType does not have 'instructions' key
+            "2024/07/08",
+            DatetimeOutputParser(),
+            PromptTemplate.from_template("{completion}\n{error}")
+            | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
+            dt(2024, 7, 8),
+        ),
     ],
 )
 async def test_output_fixing_parser_aparse_with_retry_chain(
