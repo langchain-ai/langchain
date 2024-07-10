@@ -326,7 +326,6 @@ async def test_few_shot_chat_message_prompt_template() -> None:
     )
 
     few_shot_prompt = FewShotChatMessagePromptTemplate(
-        input_variables=["input"],
         example_prompt=example_prompt,
         examples=examples,
     )
@@ -401,7 +400,6 @@ def test_few_shot_chat_message_prompt_template_with_selector() -> None:
     )
 
     few_shot_prompt = FewShotChatMessagePromptTemplate(
-        input_variables=["input"],
         example_prompt=example_prompt,
         example_selector=example_selector,
     )
@@ -475,7 +473,6 @@ async def test_few_shot_chat_message_prompt_template_with_selector_async() -> No
     )
 
     few_shot_prompt = FewShotChatMessagePromptTemplate(
-        input_variables=["input"],
         example_prompt=example_prompt,
         example_selector=example_selector,
     )
