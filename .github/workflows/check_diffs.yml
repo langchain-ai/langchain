@@ -40,7 +40,7 @@ jobs:
       dependencies: ${{ steps.set-matrix.outputs.dependencies }}
       test-doc-imports: ${{ steps.set-matrix.outputs.test-doc-imports }}
   lint:
-    name: cd ${{ matrix.job-configs.working }}
+    name: cd ${{ matrix.job-configs.working-directory }}
     needs: [ build ]
     if: ${{ needs.build.outputs.lint != '[]' }}
     strategy:
@@ -99,7 +99,7 @@ jobs:
     uses: ./.github/workflows/_dependencies.yml
     with:
       working-directory: ${{ matrix.job-configs.working-directory }}
-      python-version: ${{ matrix.job-configspython-version }}
+      python-version: ${{ matrix.job-configs.python-version }}
     secrets: inherit
 
   extended-tests:

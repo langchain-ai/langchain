@@ -69,7 +69,23 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     ]
 
 
-def _get_configs_for_multi_dirs(job: str, dirs: List[str]) -> List[Dict[str, str]]:
+def _get_configs_for_multi_dirs(
+    job: str, dirs_to_run: List[str], dependents: dict
+) -> List[Dict[str, str]]:
+    if job == "lint":
+        dirs = add_dependents(
+            dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"],
+            dependents,
+        )
+    elif job in ["test", "compile-integration-tests", "dependencies"]:
+        dirs = add_dependents(
+            dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
+        )
+    elif job == "extended-tests":
+        dirs = list(dirs_to_run["extended-test"])
+    else:
+        raise ValueError(f"Unknown job: {job}")
+
     return [
         config for dir_ in dirs for config in _get_configs_for_single_dir(job, dir_)
     ]
@@ -148,20 +164,11 @@ if __name__ == "__main__":
 
     dependents = dependents_graph()
 
-    dirs_to_lint = add_dependents(
-        dirs_to_run["lint"] | dirs_to_run["test"] | dirs_to_run["extended-test"],
-        dependents,
-    )
-    dirs_to_test = add_dependents(
-        dirs_to_run["test"] | dirs_to_run["extended-test"], dependents
-    )
-    dirs_to_extended_test = list(dirs_to_run["extended-test"])
-
     # we now have dirs_by_job
     # todo: clean this up
 
     map_job_to_configs = {
-        job: _get_configs_for_multi_dirs(job, dirs_to_lint)
+        job: _get_configs_for_multi_dirs(job, dirs_to_run, dependents)
         for job in [
             "lint",
             "test",
