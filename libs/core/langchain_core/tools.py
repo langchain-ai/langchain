@@ -57,7 +57,7 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages.base import Content
-from langchain_core.messages.tool import ToolMessage, TypedToolCall
+from langchain_core.messages.tool import ToolCall, ToolMessage
 from langchain_core.prompts import (
     BasePromptTemplate,
     PromptTemplate,
@@ -270,7 +270,7 @@ class ToolException(Exception):
     pass
 
 
-class BaseTool(RunnableSerializable[Union[str, Dict, TypedToolCall], Any]):
+class BaseTool(RunnableSerializable[Union[str, Dict, ToolCall], Any]):
     """Interface LangChain tools must implement."""
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
@@ -374,7 +374,7 @@ class ChildTool(BaseTool):
 
     def invoke(
         self,
-        input: Union[str, Dict, TypedToolCall],
+        input: Union[str, Dict, ToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
@@ -383,7 +383,7 @@ class ChildTool(BaseTool):
 
     async def ainvoke(
         self,
-        input: Union[str, Dict, TypedToolCall],
+        input: Union[str, Dict, ToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
@@ -640,7 +640,7 @@ class Tool(BaseTool):
 
     async def ainvoke(
         self,
-        input: Union[str, Dict, TypedToolCall],
+        input: Union[str, Dict, ToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
@@ -754,7 +754,7 @@ class StructuredTool(BaseTool):
 
     async def ainvoke(
         self,
-        input: Union[str, Dict, TypedToolCall],
+        input: Union[str, Dict, ToolCall],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Any:
@@ -1182,14 +1182,14 @@ def _handle_tool_error(
 
 
 def _prep_run_args(
-    input: Union[str, dict, TypedToolCall],
+    input: Union[str, dict, ToolCall],
     config: Optional[RunnableConfig],
     **kwargs: Any,
 ) -> Tuple[Union[str, Dict], Dict]:
     config = ensure_config(config)
     if _is_tool_call(input):
-        tool_call_id: Optional[str] = cast(TypedToolCall, input)["id"]
-        tool_input: Union[str, dict] = cast(TypedToolCall, input)["args"]
+        tool_call_id: Optional[str] = cast(ToolCall, input)["id"]
+        tool_input: Union[str, dict] = cast(ToolCall, input)["args"]
     else:
         tool_call_id = None
         tool_input = cast(Union[str, dict], input)

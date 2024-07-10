@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -122,10 +122,11 @@ class ToolCall(TypedDict):
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
     """
+    type: NotRequired[Literal["tool_call"]]
 
 
-class TypedToolCall(ToolCall):
-    type: Literal["tool_call"]
+def tool_call(*, name: str, args: Dict[str, Any], id: Optional[str]) -> ToolCall:
+    return ToolCall(name=name, args=args, id=id, type="tool_call")
 
 
 class ToolCallChunk(TypedDict):
@@ -156,6 +157,19 @@ class ToolCallChunk(TypedDict):
     """An identifier associated with the tool call."""
     index: Optional[int]
     """The index of the tool call in a sequence."""
+    type: NotRequired[Literal["tool_call_chunk"]]
+
+
+def tool_call_chunk(
+    *,
+    name: Optional[str] = None,
+    args: Optional[str] = None,
+    id: Optional[str] = None,
+    index: Optional[int] = None,
+) -> ToolCallChunk:
+    return ToolCallChunk(
+        name=name, args=args, id=id, index=index, type="tool_call_chunk"
+    )
 
 
 class InvalidToolCall(TypedDict):
@@ -173,6 +187,19 @@ class InvalidToolCall(TypedDict):
     """An identifier associated with the tool call."""
     error: Optional[str]
     """An error message associated with the tool call."""
+    type: NotRequired[Literal["invalid_tool_call"]]
+
+
+def invalid_tool_call(
+    *,
+    name: Optional[str] = None,
+    args: Optional[str] = None,
+    id: Optional[str] = None,
+    error: Optional[str] = None,
+) -> InvalidToolCall:
+    return InvalidToolCall(
+        name=name, args=args, id=id, error=error, type="invalid_tool_call"
+    )
 
 
 def default_tool_parser(
