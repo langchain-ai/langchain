@@ -276,7 +276,7 @@ class AzureCosmosDBNoSqlVectorSearch(VectorStore):
         query += (
             "c.id, c.{}, c.text, c.metadata, "
             "VectorDistance(c.{}, {}) AS SimilarityScore FROM c"
-        ).format(self._embedding_key,self._embedding_key, embeddings)
+        ).format(self._embedding_key, self._embedding_key, embeddings)
 
         # Add where_clause if specified
         if pre_filter is not None and pre_filter.get("where_clause") is not None:
