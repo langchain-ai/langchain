@@ -1,8 +1,9 @@
 import uuid
-from typing import Any, Optional, List, Dict
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 import pytest
+
 from langchain_core.callbacks import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.callbacks.manager import (
     adispatch_custom_event,
@@ -36,8 +37,8 @@ async def test_async_callback_manager() -> None:
     """Test async callback manager."""
 
     class CustomCallbackManager(AsyncCallbackHandler):
-        def __init__(self):
-            self.events = []
+        def __init__(self) -> None:
+            self.events: List[Any] = []
 
         async def on_custom_event(
             self,
@@ -64,13 +65,18 @@ async def test_async_callback_manager() -> None:
 
     run_id = uuid.UUID(int=7)
 
-    @RunnableLambda
-    async def foo(x: int, config: RunnableConfig) -> None:
+    # Typing not working well with RunnableLambda when used as
+    # a decorator for async functions
+    @RunnableLambda  # type: ignore[arg-type]
+    async def foo(x: int, config: RunnableConfig) -> int:
         await adispatch_custom_event("event1", {"x": x})
         await adispatch_custom_event("event2", {"x": x}, config=config)
         return x
 
-    await foo.ainvoke(1, {"callbacks": [callback], "run_id": run_id})
+    await foo.ainvoke(
+        1,  # type: ignore[arg-type]
+        {"callbacks": [callback], "run_id": run_id},
+    )
 
     assert callback.events == [
         ("event1", {"x": 1}, UUID("00000000-0000-0000-0000-000000000007"), [], {}),
@@ -82,8 +88,8 @@ def test_sync_callback_manager() -> None:
     """Test async callback manager."""
 
     class CustomCallbackManager(BaseCallbackHandler):
-        def __init__(self):
-            self.events = []
+        def __init__(self) -> None:
+            self.events: List[Any] = []
 
         def on_custom_event(
             self,
@@ -111,11 +117,14 @@ def test_sync_callback_manager() -> None:
     run_id = uuid.UUID(int=7)
 
     @RunnableLambda
-    def foo(x: int, config: RunnableConfig) -> None:
+    def foo(x: int, config: RunnableConfig) -> int:
         dispatch_custom_event("event1", {"x": x})
         dispatch_custom_event("event2", {"x": x}, config=config)
         return x
 
     foo.invoke(1, {"callbacks": [callback], "run_id": run_id})
 
-    assert callback.events == []
+    assert callback.events == [
+        ("event1", {"x": 1}, UUID("00000000-0000-0000-0000-000000000007"), [], {}),
+        ("event2", {"x": 1}, UUID("00000000-0000-0000-0000-000000000007"), [], {}),
+    ]

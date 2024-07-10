@@ -26,6 +26,9 @@ from typing import (
 )
 from uuid import UUID
 
+from langsmith.run_helpers import get_run_tree_context
+from tenacity import RetryCallState
+
 from langchain_core.callbacks.base import (
     BaseCallbackHandler,
     BaseCallbackManager,
@@ -40,8 +43,6 @@ from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils.env import env_var_is_set
-from langsmith.run_helpers import get_run_tree_context
-from tenacity import RetryCallState
 
 if TYPE_CHECKING:
     from langchain_core.agents import AgentAction, AgentFinish
@@ -1501,7 +1502,7 @@ class CallbackManager(BaseCallbackManager):
         run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
-        """Dispatch an adhoc event to the handlers.
+        """Dispatch an adhoc event to the handlers (async version).
 
         This event should be used in any internal LangChain code. The event
         is meant specifically for users of the library to dispatch custom
@@ -1512,19 +1513,24 @@ class CallbackManager(BaseCallbackManager):
             data: The data for the adhoc event.
             run_id: The ID of the run. Defaults to None.
         """
+        if kwargs:
+            raise ValueError(
+                "The dispatcher API does not accept additional keyword arguments."
+                "Please do not pass any additional keyword arguments, instead "
+                "include them in the data field."
+            )
         if run_id is None:
             run_id = uuid.uuid4()
 
         handle_event(
             self.handlers,
             "on_custom_event",
-            "ignore_adhoc",
+            "ignore_custom_event",
             name,
             data,
             run_id=run_id,
             tags=self.tags,
             metadata=self.metadata,
-            **kwargs,
         )
 
     @classmethod
@@ -1887,6 +1893,12 @@ class AsyncCallbackManager(BaseCallbackManager):
         if run_id is None:
             run_id = uuid.uuid4()
 
+        if kwargs:
+            raise ValueError(
+                "The dispatcher API does not accept additional keyword arguments."
+                "Please do not pass any additional keyword arguments, instead "
+                "include them in the data field."
+            )
         await ahandle_event(
             self.handlers,
             "on_custom_event",
@@ -1896,7 +1908,6 @@ class AsyncCallbackManager(BaseCallbackManager):
             run_id=run_id,
             tags=self.tags,
             metadata=self.metadata,
-            **kwargs,
         )
 
     async def on_retriever_start(
