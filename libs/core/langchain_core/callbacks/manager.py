@@ -1504,7 +1504,7 @@ class CallbackManager(BaseCallbackManager):
     ) -> None:
         """Dispatch an adhoc event to the handlers (async version).
 
-        This event should be used in any internal LangChain code. The event
+        This event should NOT be used in any internal LangChain code. The event
         is meant specifically for users of the library to dispatch custom
         events that are tailored to their application.
 
@@ -1881,7 +1881,7 @@ class AsyncCallbackManager(BaseCallbackManager):
     ) -> None:
         """Dispatch an adhoc event to the handlers (async version).
 
-        This event should be used in any internal LangChain code. The event
+        This event should NOT be used in any internal LangChain code. The event
         is meant specifically for users of the library to dispatch custom
         events that are tailored to their application.
 
