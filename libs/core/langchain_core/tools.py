@@ -595,7 +595,7 @@ class ChildTool(BaseTool):
             context = copy_context()
             context.run(_set_config_context, child_config)
             use_run_include_raw_output = (
-                self.__class___run_include_raw_output
+                self.__class__._run_include_raw_output
                 is not BaseTool._run_include_raw_output
                 or self.__class__._arun_include_raw_output
                 is not BaseTool._arun_include_raw_output
