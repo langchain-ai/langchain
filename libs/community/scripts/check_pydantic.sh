@@ -14,7 +14,7 @@ fi
 repository_path="$1"
 
 # Search for lines matching the pattern within the specified repository
-result=$(git -C "$repository_path" grep -E '^import pydantic|^from pydantic')
+result=$(git -C "$repository_path" grep -En '^import pydantic|^from pydantic')
 
 # Check if any matching lines were found
 if [ -n "$result" ]; then
@@ -29,15 +29,16 @@ fi
 # Forbid vanilla usage of @root_validator
 # This prevents the code from using either @root_validator or @root_validator()
 # Search for lines matching the pattern within the specified repository
-result=$(git -C "$repository_path" grep -E '(@root_validator\s*$)|(@root_validator\(\))')
+result=$(git -C "$repository_path" grep -En '(@root_validator\s*$)|(@root_validator\(\))' -- '*.py')
 
 # Check if any matching lines were found
 if [ -n "$result" ]; then
   echo "ERROR: The following lines need to be updated:"
+  echo
   echo "$result"
+  echo
   echo "Please replace @root_validator or @root_validator() with either:"
-  echo "@root_validator(pre=True)"
-  echo "or"
-  echo "@root_validator(pre=False, skip_on_failure=True)"
+  echo
+  echo "@root_validator(pre=True) or @root_validator(pre=False, skip_on_failure=True)"
   exit 1
 fi
