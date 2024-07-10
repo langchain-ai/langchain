@@ -74,6 +74,7 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     convert_to_secret_str,
@@ -147,7 +148,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             id=id_,
         )
     else:
-        return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)
+        return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
 
 
 def _format_message_content(content: Any) -> Any:
@@ -261,7 +262,7 @@ def _convert_delta_to_message_chunk(
             content=content,
             additional_kwargs=additional_kwargs,
             id=id_,
-            tool_call_chunks=tool_call_chunks,
+            tool_call_chunks=tool_call_chunks,  # type: ignore[arg-type]
         )
     elif role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content, id=id_)
@@ -481,11 +482,10 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
-
+        kwargs["stream"] = True
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
-        with self.client.create(messages=message_dicts, **params) as response:
+        with self.client.create(**payload) as response:
             for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
@@ -497,7 +497,7 @@ class BaseChatOpenAI(BaseChatModel):
                             total_tokens=token_usage.get("total_tokens", 0),
                         )
                         generation_chunk = ChatGenerationChunk(
-                            message=default_chunk_class(
+                            message=default_chunk_class(  # type: ignore[call-arg]
                                 content="", usage_metadata=usage_metadata
                             )
                         )
@@ -544,19 +544,25 @@ class BaseChatOpenAI(BaseChatModel):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return generate_from_stream(stream_iter)
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
-        response = self.client.create(messages=message_dicts, **params)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        response = self.client.create(**payload)
         return self._create_chat_result(response)
 
-    def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]]
-    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        params = self._default_params
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        messages = self._convert_input(input_).to_messages()
         if stop is not None:
-            params["stop"] = stop
-        message_dicts = [_convert_message_to_dict(m) for m in messages]
-        return message_dicts, params
+            kwargs["stop"] = stop
+        return {
+            "messages": [_convert_message_to_dict(m) for m in messages],
+            **self._default_params,
+            **kwargs,
+        }
 
     def _create_chat_result(
         self, response: Union[dict, openai.BaseModel]
@@ -600,11 +606,10 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs, "stream": True}
-
+        kwargs["stream"] = True
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
-        response = await self.async_client.create(messages=message_dicts, **params)
+        response = await self.async_client.create(**payload)
         async with response:
             async for chunk in response:
                 if not isinstance(chunk, dict):
@@ -617,7 +622,7 @@ class BaseChatOpenAI(BaseChatModel):
                             total_tokens=token_usage.get("total_tokens", 0),
                         )
                         generation_chunk = ChatGenerationChunk(
-                            message=default_chunk_class(
+                            message=default_chunk_class(  # type: ignore[call-arg]
                                 content="", usage_metadata=usage_metadata
                             )
                         )
@@ -628,8 +633,11 @@ class BaseChatOpenAI(BaseChatModel):
                     choice = chunk["choices"][0]
                     if choice["delta"] is None:
                         continue
-                    message_chunk = _convert_delta_to_message_chunk(
-                        choice["delta"], default_chunk_class
+                    message_chunk = await run_in_executor(
+                        None,
+                        _convert_delta_to_message_chunk,
+                        choice["delta"],
+                        default_chunk_class,
                     )
                     generation_info = {}
                     if finish_reason := choice.get("finish_reason"):
@@ -666,11 +674,9 @@ class BaseChatOpenAI(BaseChatModel):
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
             return await agenerate_from_stream(stream_iter)
-
-        message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {**params, **kwargs}
-        response = await self.async_client.create(messages=message_dicts, **params)
-        return self._create_chat_result(response)
+        payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        response = await self.async_client.create(**payload)
+        return await run_in_executor(None, self._create_chat_result, response)
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
@@ -940,8 +946,7 @@ class BaseChatOpenAI(BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[True] = True,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _AllReturnType]:
-        ...
+    ) -> Runnable[LanguageModelInput, _AllReturnType]: ...
 
     @overload
     def with_structured_output(
@@ -951,8 +956,7 @@ class BaseChatOpenAI(BaseChatModel):
         method: Literal["function_calling", "json_mode"] = "function_calling",
         include_raw: Literal[False] = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        ...
+    ) -> Runnable[LanguageModelInput, _DictOrPydantic]: ...
 
     def with_structured_output(
         self,
@@ -1146,7 +1150,8 @@ class BaseChatOpenAI(BaseChatModel):
             )
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
-                    tools=[schema], first_tool_only=True
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,  # type: ignore[list-item]
                 )
             else:
                 output_parser = JsonOutputKeyToolsParser(
@@ -1155,7 +1160,7 @@ class BaseChatOpenAI(BaseChatModel):
         elif method == "json_mode":
             llm = self.bind(response_format={"type": "json_object"})
             output_parser = (
-                PydanticOutputParser(pydantic_object=schema)
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )

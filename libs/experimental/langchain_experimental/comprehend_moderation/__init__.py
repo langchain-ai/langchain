@@ -14,10 +14,11 @@ See more at https://aws.amazon.com/comprehend/
   `AWS Comprehend service` and take actions based on the configuration
 - **ComprehendPromptSafety** class is used to validate the safety of given prompt
   text, raising an error if unsafe content is detected based on the specified threshold
-- **ComprehendPII** class is designed to handle 
+- **ComprehendPII** class is designed to handle
   `Personally Identifiable Information (PII)` moderation tasks,
   detecting and managing PII entities in text inputs
 """  # noqa: E501
+
 from langchain_experimental.comprehend_moderation.amazon_comprehend_moderation import (
     AmazonComprehendModerationChain,
 )

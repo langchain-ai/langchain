@@ -65,10 +65,10 @@ codespell = "^2.2.0"
 [tool.poetry.group.test_integration.dependencies]
 
 [tool.poetry.group.lint.dependencies]
-ruff = "^0.2.2"
+ruff = "^0.5"
 
 [tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
+mypy = "^1.10"
 types-requests = "^2"
 
 [tool.poetry.group.test.dependencies.langchain-core]
@@ -79,10 +79,10 @@ develop = true
 path = "../../standard-tests"
 develop = true
 
-[tool.poetry.group.typing.dependencies.langchain-core]
+[tool.poetry.group.dev.dependencies.langchain-core]
 path = "../../core"
 develop = true
 
-[tool.poetry.group.dev.dependencies.langchain-core]
+[tool.poetry.group.typing.dependencies.langchain-core]
 path = "../../core"
 develop = true

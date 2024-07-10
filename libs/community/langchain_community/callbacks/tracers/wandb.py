@@ -1,4 +1,5 @@
 """A Tracer Implementation that records activity to Weights & Biases."""
+
 from __future__ import annotations
 
 import json

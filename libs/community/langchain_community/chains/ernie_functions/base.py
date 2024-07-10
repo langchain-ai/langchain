@@ -1,4 +1,5 @@
 """Methods for creating chains that use Ernie function-calling APIs."""
+
 import inspect
 from typing import (
     Any,

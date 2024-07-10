@@ -5,11 +5,11 @@ from typing import List
 
 import numpy as np
 import pinecone  # type: ignore
-import pytest
+import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
-from langchain_openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings  # type: ignore[import-not-found]
 from pinecone import PodSpec
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture  # type: ignore[import-not-found]
 
 from langchain_pinecone import PineconeVectorStore
 

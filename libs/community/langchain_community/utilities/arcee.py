@@ -51,7 +51,7 @@ class DALMFilter(BaseModel):
     value: str
     _is_metadata: bool = False
 
-    @root_validator()
+    @root_validator(pre=True)
     def set_meta(cls, values: Dict) -> Dict:
         """document and name are reserved arcee keys. Anything else is metadata"""
         values["_is_meta"] = values.get("field_name") not in ["document", "name"]

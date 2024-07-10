@@ -1,4 +1,5 @@
 """Migrate LangChain to the most recent version."""
+
 # Adapted from bump-pydantic
 # https://github.com/pydantic/bump-pydantic
 import difflib
