@@ -2015,6 +2015,63 @@ class Runnable(Generic[Input, Output], ABC):
         description: Optional[str] = None,
         arg_types: Optional[Dict[str, Type]] = None,
     ) -> BaseTool:
+        """Create a BaseTool from a Runnable.
+
+        ``as_tool`` will instantiate a BaseTool with a name, description, and
+        ``args_schema`` from a runnable. Where possible, schemas are inferred
+        from ``runnable.get_input_schema``. Alternatively (e.g., if the
+        runnable takes a dict as input and the specific dict keys are not typed),
+        pass ``arg_types`` to specify the required arguments.
+
+        Typed dict input:
+
+        .. code-block:: python
+
+            from typing import List
+            from typing_extensions import TypedDict
+            from langchain_core.runnables import RunnableLambda
+
+            class Args(TypedDict):
+                a: int
+                b: List[int]
+
+            def f(x: Args) -> str:
+                return str(x["a"] * max(x["b"]))
+
+            runnable = RunnableLambda(f)
+            as_tool = runnable.as_tool()
+            as_tool.invoke({"a": 3, "b": [1, 2]})
+
+        ``dict`` input, specifying schema:
+
+        .. code-block:: python
+
+            from typing import Any, Dict, List
+            from langchain_core.runnables import RunnableLambda
+
+            def f(x: Dict[str, Any]) -> str:
+                return str(x["a"] * max(x["b"]))
+
+            runnable = RunnableLambda(f)
+            as_tool = runnable.as_tool(arg_types={"a": int, "b": List[int]})
+            as_tool.invoke({"a": 3, "b": [1, 2]})
+
+        String input:
+
+        .. code-block:: python
+
+            from langchain_core.runnables import RunnableLambda
+
+            def f(x: str) -> str:
+                return x + "a"
+
+            def g(x: str) -> str:
+                return x + "z"
+
+            runnable = RunnableLambda(f) | g
+            as_tool = runnable.as_tool()
+            as_tool.invoke("b")
+        """
         # Avoid circular import
         from langchain_core.tools import convert_runnable_to_tool
 
