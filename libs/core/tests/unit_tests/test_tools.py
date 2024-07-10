@@ -1045,11 +1045,9 @@ def test_convert_from_runnable_dict() -> None:
 def test_convert_from_runnable_other() -> None:
     # String input
     def f(x: str) -> str:
-        """Do thing."""
         return x + "a"
 
     def g(x: str) -> str:
-        """Do thing."""
         return x + "z"
 
     runnable: Runnable = RunnableLambda(f) | g
