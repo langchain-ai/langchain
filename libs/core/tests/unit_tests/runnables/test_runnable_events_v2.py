@@ -2544,3 +2544,47 @@ async def test_custom_event_root_dispatch() -> None:
     # Expected behavior is that the event cannot be dispatched
     with pytest.raises(RuntimeError):
         await adispatch_custom_event("event1", {"x": 1})
+
+
+async def test_custom_event_root_dispatch_with_in_tool() -> None:
+    """Test adhoc event in a nested chain."""
+    from langchain_core.callbacks.manager import adispatch_custom_event
+    from langchain_core.tools import tool
+
+    @tool
+    async def foo(x: int):
+        """Foo"""
+        await adispatch_custom_event("event1", {"x": x})
+        return x + 1
+
+    # Expected behavior is that the event cannot be dispatched
+    events = await _collect_events(foo.astream_events({"x": 2}, version="v2"))
+    assert events == [
+        {
+            "data": {"input": {"x": 2}},
+            "event": "on_tool_start",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"x": 2},
+            "event": "on_custom_event",
+            "metadata": {},
+            "name": "event1",
+            "parent_ids": [],
+            "run_id": "",
+            "tags": [],
+        },
+        {
+            "data": {"output": 3},
+            "event": "on_tool_end",
+            "metadata": {},
+            "name": "foo",
+            "parent_ids": [],
+            "run_id": "",
+            "tags": [],
+        },
+    ]

@@ -2330,6 +2330,12 @@ async def adispatch_custom_event(
                 config={"callbacks": [CustomCallbackManager()]}
             ):
                 print(event)
+
+    .. caution: If using python <= 3.10 and async, you MUST
+        specify the `config` parameter or the function will raise an error.
+        This is due to a limitation in asyncio for python <= 3.10 that prevents
+        LangChain from automatically propagating the config object on the user's
+        behalf.
     """
     from langchain_core.runnables.config import (
         ensure_config,
