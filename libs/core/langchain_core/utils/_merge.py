@@ -92,6 +92,6 @@ def merge_obj(left: Any, right: Any) -> Any:
         return left
     else:
         raise ValueError(
-            f"Unable to merge {left=} and {right=}. Both must be of typ str, dict, or "
+            f"Unable to merge {left=} and {right=}. Both must be of type str, dict, or "
             f"list, or else be two equal objects."
         )
