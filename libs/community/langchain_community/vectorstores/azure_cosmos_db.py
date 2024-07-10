@@ -449,7 +449,9 @@ class AzureCosmosDBVectorSearch(VectorStore):
         if kind == CosmosDBVectorSearchType.VECTOR_IVF:
             pipeline = self._get_pipeline_vector_ivf(embeddings, k, pre_filter)
         elif kind == CosmosDBVectorSearchType.VECTOR_HNSW:
-            pipeline = self._get_pipeline_vector_hnsw(embeddings, k, ef_search, pre_filter)
+            pipeline = (
+                self._get_pipeline_vector_hnsw(embeddings, k, ef_search, pre_filter)
+            )
 
         cursor = self._collection.aggregate(pipeline)
 
