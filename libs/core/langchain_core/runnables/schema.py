@@ -154,7 +154,10 @@ class StandardStreamEvent(BaseStreamEvent):
 
 
 class CustomStreamEvent(BaseStreamEvent):
-    """A custom stream event created by the user."""
+    """A custom stream event created by the user.
+
+    .. versionadded:: 0.2.13
+    """
 
     # Overwrite the event field to be more specific.
     event: Literal["on_custom_event"]  # type: ignore[misc]

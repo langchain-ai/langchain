@@ -391,6 +391,8 @@ class RunManagerMixin:
                 (includes inherited tags).
             metadata: The metadata associated with the custom event
                 (includes inherited metadata).
+
+        .. versionadded:: 0.2.13
         """
 
 
@@ -848,6 +850,8 @@ class AsyncCallbackHandler(BaseCallbackHandler):
                 (includes inherited tags).
             metadata: The metadata associated with the custom event
                 (includes inherited metadata).
+
+        .. versionadded:: 0.2.13
         """
 
 

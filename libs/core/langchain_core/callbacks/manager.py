@@ -1512,6 +1512,8 @@ class CallbackManager(BaseCallbackManager):
             name: The name of the adhoc event.
             data: The data for the adhoc event.
             run_id: The ID of the run. Defaults to None.
+
+        .. versionadded:: 0.2.13
         """
         if kwargs:
             raise ValueError(
@@ -1889,6 +1891,8 @@ class AsyncCallbackManager(BaseCallbackManager):
             name: The name of the adhoc event.
             data: The data for the adhoc event.
             run_id: The ID of the run. Defaults to None.
+
+        .. versionadded:: 0.2.13
         """
         if run_id is None:
             run_id = uuid.uuid4()
@@ -2331,11 +2335,13 @@ async def adispatch_custom_event(
             ):
                 print(event)
 
-    .. caution: If using python <= 3.10 and async, you MUST
+    .. warning: If using python <= 3.10 and async, you MUST
         specify the `config` parameter or the function will raise an error.
         This is due to a limitation in asyncio for python <= 3.10 that prevents
         LangChain from automatically propagating the config object on the user's
         behalf.
+
+    .. versionadded:: 0.2.13
     """
     from langchain_core.runnables.config import (
         ensure_config,
@@ -2403,6 +2409,8 @@ def dispatch_custom_event(
 
             foo_ = RunnableLambda(foo)
             foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
+
+    .. versionadded:: 0.2.13
     """
     from langchain_core.runnables.config import (
         ensure_config,
