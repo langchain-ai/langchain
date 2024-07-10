@@ -644,7 +644,7 @@ class Tool(BaseTool):
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[str]]] = None
     """The asynchronous version of the function."""
-    has_raw_output: bool = False
+    returns_raw_output: bool = False
     """Whether the func and coroutine return both message content and raw output."""
 
     # --- Runnable ---
@@ -693,7 +693,9 @@ class Tool(BaseTool):
     ) -> Tuple[Content, Any]:
         """Use the tool."""
         if self.func:
-            return _run_func(self.func, run_manager, self.has_raw_output, args, kwargs)
+            return _run_func(
+                self.func, run_manager, self.returns_raw_output, args, kwargs
+            )
         raise NotImplementedError("Tool does not support sync")
 
     async def _arun_include_raw_output(
@@ -705,7 +707,7 @@ class Tool(BaseTool):
         """Use the tool asynchronously."""
         if self.coroutine:
             return await _run_coro(
-                self.coroutine, run_manager, self.has_raw_output, args, kwargs
+                self.coroutine, run_manager, self.returns_raw_output, args, kwargs
             )
         kwargs["run_manager"] = run_manager.get_sync()
         return await run_in_executor(
@@ -758,7 +760,7 @@ class StructuredTool(BaseTool):
     """The function to run when the tool is called."""
     coroutine: Optional[Callable[..., Awaitable[Any]]] = None
     """The asynchronous version of the function."""
-    has_raw_output: bool = False
+    returns_raw_output: bool = False
     """Whether the func and coroutine return both message content and raw output."""
 
     # --- Runnable ---
@@ -790,7 +792,9 @@ class StructuredTool(BaseTool):
     ) -> Tuple[Content, Any]:
         """Use the tool."""
         if self.func:
-            return _run_func(self.func, run_manager, self.has_raw_output, args, kwargs)
+            return _run_func(
+                self.func, run_manager, self.returns_raw_output, args, kwargs
+            )
         raise NotImplementedError("Tool does not support sync")
 
     async def _arun_include_raw_output(
@@ -802,7 +806,7 @@ class StructuredTool(BaseTool):
         """Use the tool asynchronously."""
         if self.coroutine:
             return await _run_coro(
-                self.coroutine, run_manager, self.has_raw_output, args, kwargs
+                self.coroutine, run_manager, self.returns_raw_output, args, kwargs
             )
         kwargs["run_manager"] = run_manager.get_sync()
         return await run_in_executor(
@@ -820,7 +824,7 @@ class StructuredTool(BaseTool):
         args_schema: Optional[Type[BaseModel]] = None,
         infer_schema: bool = True,
         *,
-        has_raw_output: bool = False,
+        returns_raw_output: bool = False,
         **kwargs: Any,
     ) -> StructuredTool:
         """Create tool from a given function.
@@ -835,7 +839,7 @@ class StructuredTool(BaseTool):
             return_direct: Whether to return the result directly or as a callback
             args_schema: The schema of the tool's input arguments
             infer_schema: Whether to infer the schema from the function's signature
-            has_raw_output: Whether the func and coroutine return a two-tuple of the
+            returns_raw_output: Whether the func and coroutine return a two-tuple of the
                 content meant for the ToolMessage and the raw tool output.
             **kwargs: Additional arguments to pass to the tool
 
@@ -885,7 +889,7 @@ class StructuredTool(BaseTool):
             args_schema=_args_schema,  # type: ignore[arg-type]
             description=description_,
             return_direct=return_direct,
-            has_raw_output=has_raw_output,
+            returns_raw_output=returns_raw_output,
             **kwargs,
         )
 
@@ -895,7 +899,7 @@ def tool(
     return_direct: bool = False,
     args_schema: Optional[Type[BaseModel]] = None,
     infer_schema: bool = True,
-    has_raw_output: bool = False,
+    returns_raw_output: bool = False,
 ) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -907,7 +911,7 @@ def tool(
         infer_schema: Whether to infer the schema of the arguments from
             the function's signature. This also makes the resultant tool
             accept a dictionary input to its `run()` function.
-        has_raw_output: Whether the method returns a two-tuple of the
+        returns_raw_output: Whether the method returns a two-tuple of the
             content meant for the ToolMessage and the raw tool output.
 
     Requires:
@@ -927,7 +931,7 @@ def tool(
                 # Searches the API for the query.
                 return
 
-            @tool(has_raw_output=True)
+            @tool(returns_raw_output=True)
             def search_api(query: str) -> Tuple[str, dict]:
                 return "partial json of results", {"full": "object of results"}
     """
@@ -974,7 +978,7 @@ def tool(
                     return_direct=return_direct,
                     args_schema=schema,
                     infer_schema=infer_schema,
-                    has_raw_output=has_raw_output,
+                    returns_raw_output=returns_raw_output,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -989,7 +993,7 @@ def tool(
                 description=f"{tool_name} tool",
                 return_direct=return_direct,
                 coroutine=coroutine,
-                has_raw_output=has_raw_output,
+                returns_raw_output=returns_raw_output,
             )
 
         return _make_tool
@@ -1245,18 +1249,18 @@ def _stringify(content: Any) -> str:
 def _run_func(
     func: Callable[..., Any],
     run_manager: CallbackManagerForToolRun,
-    has_raw_output: bool,
+    returns_raw_output: bool,
     args: Sequence,
     kwargs: dict,
 ) -> Tuple[Content, Any]:
     if signature(func).parameters.get("callbacks"):
         kwargs["callbacks"] = run_manager.get_child()
     output = func(*args, **kwargs)
-    if has_raw_output:
+    if returns_raw_output:
         if not isinstance(output, tuple) or len(output) != 2:
             raise ValueError(
-                "Since has_raw_output is True, Tool function is expected to return a "
-                "two-tuple of the message content and raw tool output."
+                "Since returns_raw_output is True, Tool function is expected to return "
+                "a two-tuple of the message content and raw tool output."
             )
         return output
     else:
@@ -1266,18 +1270,18 @@ def _run_func(
 async def _run_coro(
     coro: Callable[..., Awaitable[Any]],
     run_manager: AsyncCallbackManagerForToolRun,
-    has_raw_output: bool,
+    returns_raw_output: bool,
     args: Sequence,
     kwargs: Dict,
 ) -> Tuple[Content, Any]:
     if signature(coro).parameters.get("callbacks"):
         kwargs["callbacks"] = run_manager.get_child()
     output = await coro(*args, **kwargs)
-    if has_raw_output:
+    if returns_raw_output:
         if not isinstance(output, tuple) or len(output) != 2:
             raise ValueError(
-                "Since has_raw_output is True, Tool function is expected to return a "
-                "two-tuple of the message content and raw tool output."
+                "Since returns_raw_output is True, Tool function is expected to return "
+                "a two-tuple of the message content and raw tool output."
             )
         return output
     else:
