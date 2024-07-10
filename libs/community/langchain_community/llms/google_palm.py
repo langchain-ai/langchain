@@ -6,8 +6,8 @@ from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
-from langchain_core.pydantic_v1 import BaseModel, SecretStr, root_validator
-from langchain_core.utils import get_from_dict_or_env
+from langchain_core.pydantic_v1 import BaseModel, SecretStr
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.llms import BaseLLM
 from langchain_community.utilities.vertexai import create_retry_decorator
@@ -107,7 +107,7 @@ class GooglePalm(BaseLLM, BaseModel):
         """Get the namespace of the langchain object."""
         return ["langchain", "llms", "google_palm"]
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate api key, python package exists."""
         google_api_key = get_from_dict_or_env(
