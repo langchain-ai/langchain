@@ -13,6 +13,9 @@ from typing import (
     Sequence,
     TypedDict,
     TypeVar,
+    Optional,
+    Union,
+    Dict,
 )
 
 from langchain_core._api import beta
@@ -32,7 +35,19 @@ class Sort(TypedDict):
 T = TypeVar("T", bound=BaseMedia)
 
 
-class BaseIndex(Generic[T]):
+class Query(TypedDict, total=False):
+    """Standard query"""
+
+    filter: Optional[Union[List[Dict[str, Any], Dict[str, Any]]]]
+    limit: Optional[int]
+    offset: Optional[int]
+    sort: Optional[Union[Sort, List[Sort]]]
+
+
+Q = TypeVar("Q", bound=Query)
+
+
+class BaseIndex(Generic[T, Q]):
     """An index represent a collection of items that can be queried.
 
     This indexing interface is designed to be a generic abstraction for storing and
@@ -176,3 +191,25 @@ class BaseIndex(Generic[T]):
         /,
     ) -> DeleteResponse:
         """Delete items by id."""
+
+    # Delete and get are part of the READ/WRITE interface.
+    # They do not take advantage of indexes on the content.
+    # However, all the indexers ARE assumed to have the capability to index
+    # on metadata if they implement the delete_by_query and get_by_query methods.
+    @abc.abstractmethod
+    def get_by_query(
+        self,
+        query: Q,
+        /,
+        **kwargs: Any,
+    ) -> Iterable[T]:
+        """Get items by query."""
+
+    @abc.abstractmethod
+    def delete_by_query(
+        self,
+        query: Q,
+        /,
+        **kwargs: Any,
+    ) -> Iterable[DeleteResponse]:
+        """Delete items by query."""
