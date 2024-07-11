@@ -36,7 +36,7 @@
 Фреймворк включает:
 
 - **Библиотеку GigaChain**. Библиотека на Python содержит интерфейсы и интеграции для множества компонентов, базовую среду выполнения для объединения этих компонентов в цепочки и агенты, а также готовые реализации цепочек и агентов.
-- **[Хаб промптов](hub)**. Набор типовых отлаженных промптов для решения различных задач.
+- **[Хаб промптов](hub/prompts)**. Набор типовых отлаженных промптов для решения различных задач.
 - **[GigaChain Templates](templates)**. Коллекция легко развертываемых шаблонных решений для широкого спектра задач.
 - **[GigaServe](https://github.com/ai-forever/gigaserve)**. Библиотека, позволяющая публиковать цепочки GigaChain в форме REST API.
 - **[GigaGraph](https://github.com/ai-forever/gigagraph)**. Библиотека, дающая возможность работать с LLM (большими языковыми моделями), для создания приложений, которые используют множество взаимодействующих цепочек (акторов) и сохраняют данные о состоянии. Так как в основе GigaGraph лежит GigaChain, предполагается совместное использование обоих библиотек.
@@ -45,12 +45,12 @@
 
 Репозиторий содержит следующие компоненты:
 
-* [`gigachain`](libs/langchain);
-* [`gigachain-core`](libs/core);
-* [`gigachain-community`](libs/community);
-* [`gigachain-experimental`](libs/experimental);
-* [`gigachain-cli`](libs/cli);
-* [`GigaChain Templates`](templates) и пакеты Python.
+- [`gigachain`](libs/langchain);
+- [`gigachain-core`](libs/core);
+- [`gigachain-community`](libs/community);
+- [`gigachain-experimental`](libs/experimental);
+- [`gigachain-cli`](libs/cli);
+- [`GigaChain Templates`](templates) и пакеты Python.
 
 ![Стэк технологий GigaChain](docs/static/img/gigachain-stack.png)
 
@@ -65,7 +65,7 @@
 
   Включая управление промптами и их оптимизацию. GigaChain предоставляет универсальный интерфейс для всех LLM, а также стандартные инструменты для работы с ними.
 
-  Пример - [Работа с хабом промптов на примере задачи суммаризации книг](hub/prompts/summarize/map_reduce/summarize_examples.ipynb)
+  Пример — [Работа с хабом промптов на примере задачи суммаризации книг](hub/prompts/summarize/map_reduce/summarize_examples.ipynb)
 
 - Создание цепочек (*Chains*).
 
@@ -75,7 +75,7 @@
 
   Генерация с дополнением данными включает в себя специфические типы цепочек, которые сначала получают данные от внешнего источника, а затем используют их в генерации. Примеры включают в себя суммирование больших текстов и ответы на вопросы по заданным источникам данных.
 
-  Пример - [Ответы на вопросы по документу на примере "разговор с книгой" (RAG)](docs/docs/how_to/gigachat_qa.ipynb)
+  Пример — [Ответы на вопросы по документу на примере "разговор с книгой" (RAG)](docs/docs/cookbook/gigachat_qa.ipynb)
   
   Пример — [Ответы на вопросы по статьям из Wikipedia](docs/docs/integrations/retrievers/wikipedia.ipynb)
 
@@ -206,7 +206,7 @@ chat = GigaChat(credentials=<авторизационные_данные>, verif
 chat.get_models() 
 ```
 
-Метод выполняет запрос [`GET /models`](https://developers.sber.ru/docs/ru/gigachat/api/reference#get-models) к GigaChat API и возвращает список с описанием доступных моделей.
+Метод выполняет запрос [`GET /models`](https://developers.sber.ru/docs/ru/gigachat/api/reference/rest/get-models) к GigaChat API и возвращает список с описанием доступных моделей.
 
 
 > [!WARNING]
@@ -221,14 +221,14 @@ chat = GigaChat(credentials=<авторизационные_данные>, verif
 chat.get_num_tokens("Сколько токенов в этой строке")
 ```
 
-Метод выполняет запрос [`POST /tokens/count`](https://developers.sber.ru/docs/ru/gigachat/api/reference#post-tokens-count) к GigaChat API и возвращает информацию о количестве токенов в строке.
+Метод выполняет запрос [`POST /tokens/count`](https://developers.sber.ru/docs/ru/gigachat/api/reference/rest/post-tokens-count) к GigaChat API и возвращает информацию о количестве токенов в строке.
 
 ## Описание модуля gigachat
 
 Модуль [`gigachat`](libs/langchain/langchain/chat_models/gigachat.py) позволяет авторизовать запросы от вашего приложения в GigaChat с помощью GigaChat API. Модуль поддерживает работу как в синхронном, так и в асинхронном режиме. Кроме этого модуль поддерживает обработку [потоковой передачи токенов](https://developers.sber.ru/docs/ru/gigachat/api/response-token-streaming)[^1].
 
 > [!NOTE]
-> Как подключить GigaChat API читайте в [официальной документации](https://developers.sber.ru/docs/ru/gigachat/api/integration).
+> Как подключить GigaChat API читайте в [официальной документации](https://developers.sber.ru/docs/ru/gigachat/individuals-quickstart).
 
 Модуль поддерживает не только GigaChat. Поэтому, если ваше приложение уже использует другие нейросетевые модели, интеграция с GigaChat не составит труда.
 
@@ -252,7 +252,7 @@ embeddings = GigaChatEmbeddings(
 
 Для работы с `GigaChatEmbeddings` используются те же авторизационные данные, что и при [работе с модулем GigaChat](#авторизация-запросов-к-gigachat).
 
-Подробнее о работе с эмбеддингами и использовании их при реализации RAG-методики — в разделе [Ответы на вопросы с помощью RAG](/docs/docs/use_cases/question_answering/index.ipynb).
+Подробнее о работе с эмбеддингами и использовании их при реализации RAG-методики — в [соответствующем обучающем материале](docs/docs/tutorials/rag.ipynb).
 
 ## Устранение проблем
 
@@ -301,7 +301,7 @@ pip install -U gigachain
 Обработка больших текстов может занимать у модели продолжительное время — 10 минут и более.
 Это может привести к возникновению проблем, связанных с превышением времени ожидания.
 
-Чтобы избежать таких проблем, используйте [потоковую передачу токенов](/ru/gigachat/api/response-token-streaming) (параметр `streaming=True`):
+Чтобы избежать таких проблем, используйте [потоковую передачу токенов](https://developers.sber.ru/docs/ru/gigachat/api/response-token-streaming) (параметр `streaming=True`):
 
 ```py
 chat = GigaChat(credentials='<авторизационные_данные>', verify_ssl_certs=False, streaming=True)
@@ -309,32 +309,32 @@ chat = GigaChat(credentials='<авторизационные_данные>', ver
 
 ## Коллекция примеров
 
-Ниже представлен список примеров использования GigaChain.
+Ниже представлен список примеров использования GigaChain.sdf
 
 ### Базовые примеры работы с GigaChat
 
-- [Ответы на вопросы по документу на примере "разговор с книгой" (RAG)](docs/docs/how_to/gigachat_qa.ipynb)
+- [Ответы на вопросы по документу на примере "разговор с книгой" (RAG)](docs/docs/cookbook/gigachat_qa.ipynb)
 - [Суммаризация по алгоритму MapReduce](docs/extras/use_cases/summarization.ipynb) (см. раздел map/reduce)
-- [Работа с хабом промптов, цепочками и парсером JSON](docs/docs/modules/model_io/output_parsers/json.ipynb)
+- [Работа с хабом промптов, цепочками и парсером JSON](docs/docs/how_to/structured_output.ipynb)
 - [Работа с хабом промптов на примере задачи суммаризации книг](hub/prompts/summarize/map_reduce/summarize_examples.ipynb)
-- [Парсинг списков, содержащихся в ответе](docs/docs/modules/model_io/output_parsers/list.ipynb)
-- [Асинхронная работа с LLM](docs/docs/modules/model_io/llms/async_llm.ipynb)
+- [Парсинг списков, содержащихся в ответе](docs/docs/cookbook/list.ipynb)
+- [Асинхронная работа с LLM](docs/docs/how_to/callbacks_async.ipynb)
 - [Использование Elastic для поиска ответов по документам](docs/docs/integrations/retrievers/elastic_qna.ipynb)
-- [Использование разных эмбеддингов для Retrieval механизма](docs/docs/modules/chains/how_to/retrieve.ipynb)
-- [Генерация и выполнение кода с помощью PythonREPL](docs/docs/expression_language/cookbook/code_writing.ipynb)
+- [Использование разных эмбеддингов для Retrieval механизма](docs/docs/cookbook/chains/retrieve.ipynb)
+- [Генерация и выполнение кода с помощью PythonREPL](docs/docs/cookbook/code_writing.ipynb)
 - [Работа с кэшем в GigaChain](docs/docs/integrations/llms/gigachain_caching.ipynb)
 - [CAMEL агент для разработки программ](cookbook/camel_role_playing.ipynb)
 - [Автономный агент AutoGPT с использованием GigaChat](cookbook/autogpt/autogpt.ipynb)
-- [Генерация плейлистов с помощью GigaChain и Spotify](docs/docs/modules/agents/how_to/playlists.ipynb)
-- Работа с LlamaIndex: [с помощью ретривера и QA цепочки](docs/docs/integrations/retrievers/llama_index_retriever.ipynb) / [с помощью тула и Conversational агента](docs/docs/modules/agents/tools/llama_index_tool.ipynb)
+- [Генерация плейлистов с помощью GigaChain и Spotify](docs/docs/cookbook/playlists.ipynb)
+- [Работа с LlamaIndex с помощью тула и Conversational агента](docs/docs/cookbook/llama_index_tool.ipynb)
 - [Агент-риелтор на GigaChat functions](cookbook/realestate/realestate.ipynb)
 - [Агент выполняющий код](cookbook/gigachat_code.ipynb)
 - [Получение сгенерированных изображений/видео](cookbook/images_and_videos/gigachat_with_images.ipynb)
 
 ### Развлекательные примеры
-- [Площадка для споров между GigaChat и YandexGPT с судьей GPT-4](docs/docs/use_cases/fun/debates.ipynb)
-- [Игра Blade Runner: GPT-4 и GigaChat выясняют, кто из них бот](docs/docs/use_cases/fun/blade_runner.ipynb)
-- [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/docs/use_cases/question_answering/agent_simulations/multi_llm_thre_player_dnd.ipynb)
+- [Площадка для споров между GigaChat и YandexGPT с судьей GPT-4](docs/docs/cookbook/fun/debates.ipynb)
+- [Игра Blade Runner: GPT-4 и GigaChat выясняют, кто из них бот](docs/docs/cookbook/fun/blade_runner.ipynb)
+- [Игра в стиле DnD с GPT-3.5 и GigaChat](docs/docs/cookbook/multi_llm_thre_player_dnd.ipynb)
 
 ### Примеры работы с другими LLM
 
