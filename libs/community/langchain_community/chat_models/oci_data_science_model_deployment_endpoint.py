@@ -11,6 +11,7 @@ from langchain_community.adapters.openai import (
     convert_dict_to_message,
     convert_message_to_dict,
 )
+from operator import itemgetter
 from langchain_core.tools import BaseTool
 from typing import (
     Any,
@@ -41,10 +42,26 @@ from langchain_core.language_models.chat_models import (
 from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
+from langchain_core.output_parsers import (
+    JsonOutputParser,
+    PydanticOutputParser,
+)
+from langchain_core.output_parsers.base import OutputParserLike
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.tools import BaseTool
+from langchain_core.utils import (
+    get_from_dict_or_env,
+)
 
 DEFAULT_TIME_OUT = 300
 DEFAULT_CONTENT_TYPE_JSON = "application/json"
 DEFAULT_MODEL_NAME = "odsc-llm"
+
+
+def _is_pydantic_class(obj: Any) -> bool:
+    return isinstance(obj, type) and issubclass(obj, BaseModel)
 
 
 class TokenExpiredError(Exception):
@@ -115,23 +132,13 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
     model: str = DEFAULT_MODEL_NAME
     """The name of the model."""
 
+    max_retries: int = 3
     # TODO: discuss if needed
     max_tokens: int = 256
     """Denotes the number of tokens to predict per generation."""
 
     temperature: float = 0.2
     """A non-negative float that tunes the degree of randomness in generation."""
-
-    k: int = -1
-    """Number of most likely tokens to consider at each step."""
-
-    p: float = 0.75
-    """Total probability mass of tokens to consider at each step."""
-
-    best_of: int = 1
-    """Generates best_of completions server-side and returns the "best"
-    (the one with the highest log probability per token).
-    """
 
     stop: Optional[List[str]] = None
     """Stop words to use when generating. Model output is cut off
@@ -195,8 +202,8 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
             # "max_tokens": self.max_tokens,
             "stop": self.stop,
             "temperature": self.temperature,
-            "top_k": self.k,
-            "top_p": self.p,
+            # "top_k": self.k,
+            # "top_p": self.p,
             "stream": self.streaming,
             # "whole_output_stream": self.streaming,
             **self.model_kwargs,  # will overwrite value
@@ -343,7 +350,6 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
                 request = Requests(
                     headers=self._headers(), auth=self.auth.get("signer")
                 )
-                print(data)
                 response = request.post(
                     url=self.endpoint,
                     data=data,
@@ -592,42 +598,41 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
         """
-        pass
-        # formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
-        # if tool_choice:
-        #     if isinstance(tool_choice, str):
-        #         # tool_choice is a tool/function name
-        #         if tool_choice not in ("auto", "none", "any", "required"):
-        #             tool_choice = {
-        #                 "type": "function",
-        #                 "function": {"name": tool_choice},
-        #             }
-        #         # 'any' is not natively supported by OpenAI API.
-        #         # We support 'any' since other models use this instead of 'required'.
-        #         if tool_choice == "any":
-        #             tool_choice = "required"
-        #     elif isinstance(tool_choice, bool):
-        #         tool_choice = "required"
-        #     elif isinstance(tool_choice, dict):
-        #         tool_names = [
-        #             formatted_tool["function"]["name"]
-        #             for formatted_tool in formatted_tools
-        #         ]
-        #         if not any(
-        #             tool_name == tool_choice["function"]["name"]
-        #             for tool_name in tool_names
-        #         ):
-        #             raise ValueError(
-        #                 f"Tool choice {tool_choice} was specified, but the only "
-        #                 f"provided tools were {tool_names}."
-        #             )
-        #     else:
-        #         raise ValueError(
-        #             f"Unrecognized tool_choice type. Expected str, bool or dict. "
-        #             f"Received: {tool_choice}"
-        #         )
-        #     kwargs["tool_choice"] = tool_choice
-        # return super().bind(tools=formatted_tools, **kwargs)
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if tool_choice:
+            if isinstance(tool_choice, str):
+                # tool_choice is a tool/function name
+                if tool_choice not in ("auto", "none", "any", "required"):
+                    tool_choice = {
+                        "type": "function",
+                        "function": {"name": tool_choice},
+                    }
+                # 'any' is not natively supported by OpenAI API.
+                # We support 'any' since other models use this instead of 'required'.
+                if tool_choice == "any":
+                    tool_choice = "required"
+            elif isinstance(tool_choice, bool):
+                tool_choice = "required"
+            elif isinstance(tool_choice, dict):
+                tool_names = [
+                    formatted_tool["function"]["name"]
+                    for formatted_tool in formatted_tools
+                ]
+                if not any(
+                    tool_name == tool_choice["function"]["name"]
+                    for tool_name in tool_names
+                ):
+                    raise ValueError(
+                        f"Tool choice {tool_choice} was specified, but the only "
+                        f"provided tools were {tool_names}."
+                    )
+            else:
+                raise ValueError(
+                    f"Unrecognized tool_choice type. Expected str, bool or dict. "
+                    f"Received: {tool_choice}"
+                )
+            kwargs["tool_choice"] = tool_choice
+        return super().bind(tools=formatted_tools, **kwargs)
 
     def _parse_stream(self, lines: Iterator[bytes]) -> Iterator[str]:
         for line in lines:
@@ -682,3 +687,80 @@ class ChatOCIModelDeploymentEndpoint(BaseChatModel):
             self.auth["signer"].refresh_security_token()
             return True
         return False
+
+    def with_structured_output(
+        self,
+        schema: Optional[Union[Dict, Type[BaseModel]]] = None,
+        *,
+        method: Literal["function_calling", "json_mode"] = "function_calling",
+        include_raw: bool = False,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+        """Model wrapper that returns outputs formatted to match the given schema.
+
+        Args:
+            schema: The output schema as a dict or a Pydantic class. If a Pydantic class
+                then the model output will be an object of that class. If a dict then
+                the model output will be a dict. With a Pydantic class the returned
+                attributes will be validated, whereas with a dict they will not be. If
+                `method` is "function_calling" and `schema` is a dict, then the dict
+                must match the OpenAI function-calling spec.
+            method: The method for steering model generation, either "function_calling"
+                or "json_mode". If "function_calling" then the schema will be converted
+                to a OpenAI function and the returned model will make use of the
+                function-calling API. If "json_mode" then Groq's JSON mode will be
+                used. Note that if using "json_mode" then you must include instructions
+                for formatting the output into the desired schema into the model call.
+            include_raw: If False then only the parsed structured output is returned. If
+                an error occurs during model output parsing it will be raised. If True
+                then both the raw model response (a BaseMessage) and the parsed model
+                response will be returned. If an error occurs during output parsing it
+                will be caught and returned as well. The final output is always a dict
+                with keys "raw", "parsed", and "parsing_error".
+
+        Returns:
+            A Runnable that takes any ChatModel input and returns as output:
+
+                If include_raw is True then a dict with keys:
+                    raw: BaseMessage
+                    parsed: Optional[_DictOrPydantic]
+                    parsing_error: Optional[BaseException]
+
+                If include_raw is False then just _DictOrPydantic is returned,
+                where _DictOrPydantic depends on the schema:
+
+                If schema is a Pydantic class then _DictOrPydantic is the Pydantic
+                    class.
+
+                If schema is a dict then _DictOrPydantic is a dict.
+
+        """  # noqa: E501
+        if kwargs:
+            raise ValueError(f"Received unsupported arguments {kwargs}")
+        is_pydantic_schema = _is_pydantic_class(schema)
+        if method == "function_calling":
+            raise NotImplementedError()
+        elif method == "json_mode":
+            llm = self.bind(response_format={"type": "json_object"})
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+        else:
+            raise ValueError(
+                f"Unrecognized method argument. Expected one of 'function_calling' or "
+                f"'json_mode'. Received: '{method}'"
+            )
+
+        if include_raw:
+            parser_assign = RunnablePassthrough.assign(
+                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+            )
+            parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
+            parser_with_fallback = parser_assign.with_fallbacks(
+                [parser_none], exception_key="parsing_error"
+            )
+            return RunnableMap(raw=llm) | parser_with_fallback
+        else:
+            return llm | output_parser
