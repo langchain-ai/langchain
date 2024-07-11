@@ -60,7 +60,7 @@ def draw_mermaid(
             label = node.name.split(":")[-1]
             if node.metadata:
                 label = (
-                    f"{label}<hr/>\n<small><em>"
+                    f"{label}<hr/><small><em>"
                     + "\n".join(
                         f"{key} = {value}" for key, value in node.metadata.items()
                     )

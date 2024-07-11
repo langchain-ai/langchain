@@ -36,8 +36,7 @@
   graph TD;
   	PromptInput([PromptInput]):::first
   	PromptTemplate(PromptTemplate)
-  	FakeListLLM(FakeListLLM<hr/>
-  <small><em>key = 2</em></small>)
+  	FakeListLLM(FakeListLLM<hr/><small><em>key = 2</em></small>)
   	CommaSeparatedListOutputParser(CommaSeparatedListOutputParser)
   	CommaSeparatedListOutputParserOutput([CommaSeparatedListOutputParserOutput]):::last
   	PromptInput --> PromptTemplate;
