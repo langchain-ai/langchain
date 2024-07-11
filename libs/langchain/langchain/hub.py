@@ -11,6 +11,7 @@ from langchain_core.prompts import BasePromptTemplate
 
 if TYPE_CHECKING:
     from langsmith import Client
+    from langchainhub import Client
 
 
 def _get_client(api_url: Optional[str] = None, api_key: Optional[str] = None) -> Client:
@@ -57,6 +58,7 @@ def push(
     """
     client = _get_client(api_url=api_url, api_key=api_key)
 
+    # Then it's langsmith
     if hasattr(client, "push_prompt"):
         return client.push_prompt(
             repo_full_name,
@@ -66,6 +68,7 @@ def push(
             new_repo_description,
         )
 
+    # Then it's langchainhub
     manifest_json = dumps(object)
     message = client.push(
         repo_full_name,
@@ -94,12 +97,12 @@ def pull(
     """
     client = _get_client(api_url=api_url, api_key=api_key)
 
-    # then its langsmith
+    # Then it's langsmith
     if hasattr(client, "pull_prompt"):
         response = client.pull_prompt(owner_repo_commit)  # add format = 'langchain'
         return response
 
-    # then its langchainhub
+    # Then it's langchainhub
     if hasattr(client, "pull_repo"):
         # >= 0.1.15
         res_dict = client.pull_repo(owner_repo_commit)
