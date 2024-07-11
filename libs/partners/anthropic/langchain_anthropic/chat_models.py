@@ -774,7 +774,9 @@ class ChatAnthropic(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[
+            Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool, Runnable]
+        ],
         *,
         tool_choice: Optional[
             Union[Dict[str, str], Literal["any", "auto"], str]
@@ -785,9 +787,9 @@ class ChatAnthropic(BaseChatModel):
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
-                Can be  a dictionary, pydantic model, callable, or BaseTool. Pydantic
-                models, callables, and BaseTools will be automatically converted to
-                their schema dictionary representation.
+                Can be  a dictionary, pydantic model, callable, BaseTool, or Runnable.
+                Pydantic models, callables, BaseTools, and Runnables will be
+                automatically converted to their schema dictionary representation.
             tool_choice: Which tool to require the model to call.
                 Options are:
                     name of the tool (str): calls corresponding tool;
@@ -1024,7 +1026,7 @@ class AnthropicTool(TypedDict):
 
 
 def convert_to_anthropic_tool(
-    tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+    tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool, Runnable],
 ) -> AnthropicTool:
     """Convert a tool-like object to an Anthropic tool definition."""
     # already in Anthropic tool format
