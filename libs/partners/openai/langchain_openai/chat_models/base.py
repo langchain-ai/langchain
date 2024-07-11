@@ -545,7 +545,9 @@ class BaseChatOpenAI(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        response = self.client.create(**payload)
+        raw_response = self.client.with_raw_response.with_raw_response.create(**payload)
+        response = raw_response.parse()
+        headers = raw_response.headers
         return self._create_chat_result(response)
 
     def _get_request_payload(
@@ -675,7 +677,9 @@ class BaseChatOpenAI(BaseChatModel):
             )
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
-        response = await self.async_client.create(**payload)
+        raw_response = await self.async_client.with_raw_response.create(**payload)
+        response = raw_response.parse()
+        headers = raw_response.headers
         return await run_in_executor(None, self._create_chat_result, response)
 
     @property
