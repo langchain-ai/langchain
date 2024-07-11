@@ -8,7 +8,7 @@ from langchain_core.runnables.graph import (
     Edge,
     MermaidDrawMethod,
     Node,
-    NodeColors,
+    NodeStyles,
 )
 
 
@@ -20,7 +20,7 @@ def draw_mermaid(
     last_node: Optional[str] = None,
     with_styles: bool = True,
     curve_style: CurveStyle = CurveStyle.LINEAR,
-    node_colors: NodeColors = NodeColors(),
+    node_styles: NodeStyles = NodeStyles(),
     wrap_label_n_words: int = 9,
 ) -> str:
     """Draws a Mermaid graph using the provided graph data
@@ -49,23 +49,27 @@ def draw_mermaid(
     if with_styles:
         # Node formatting templates
         default_class_label = "default"
-        format_dict = {default_class_label: "{0}([{1}]):::otherclass"}
+        format_dict = {default_class_label: "{0}({1})"}
         if first_node is not None:
-            format_dict[first_node] = "{0}[{0}]:::startclass"
+            format_dict[first_node] = "{0}([{0}]):::first"
         if last_node is not None:
-            format_dict[last_node] = "{0}[{0}]:::endclass"
+            format_dict[last_node] = "{0}([{0}]):::last"
 
         # Add nodes to the graph
         for key, node in nodes.items():
             label = node.name.split(":")[-1]
             if node.metadata:
-                label = f"<strong>{label}</strong>\n" + "\n".join(
-                    f"{key} = {value}" for key, value in node.metadata.items()
+                label = (
+                    f"{label}<hr/>\n<small><em>"
+                    + "\n".join(
+                        f"{key} = {value}" for key, value in node.metadata.items()
+                    )
+                    + "</em></small>"
                 )
             node_label = format_dict.get(key, format_dict[default_class_label]).format(
                 _escape_node_label(key), label
             )
-            mermaid_graph += f"\t{node_label};\n"
+            mermaid_graph += f"\t{node_label}\n"
 
     subgraph = ""
     # Add edges to the graph
@@ -89,16 +93,14 @@ def draw_mermaid(
             words = str(edge_data).split()  # Split the string into words
             # Group words into chunks of wrap_label_n_words size
             if len(words) > wrap_label_n_words:
-                edge_data = "<br>".join(
-                    [
-                        " ".join(words[i : i + wrap_label_n_words])
-                        for i in range(0, len(words), wrap_label_n_words)
-                    ]
+                edge_data = "&nbsp<br>&nbsp".join(
+                    " ".join(words[i : i + wrap_label_n_words])
+                    for i in range(0, len(words), wrap_label_n_words)
                 )
             if edge.conditional:
-                edge_label = f" -. {edge_data} .-> "
+                edge_label = f" -. &nbsp{edge_data}&nbsp .-> "
             else:
-                edge_label = f" -- {edge_data} --> "
+                edge_label = f" -- &nbsp{edge_data}&nbsp --> "
         else:
             if edge.conditional:
                 edge_label = " -.-> "
@@ -113,7 +115,7 @@ def draw_mermaid(
 
     # Add custom styles for nodes
     if with_styles:
-        mermaid_graph += _generate_mermaid_graph_styles(node_colors)
+        mermaid_graph += _generate_mermaid_graph_styles(node_styles)
     return mermaid_graph
 
 
@@ -122,11 +124,11 @@ def _escape_node_label(node_label: str) -> str:
     return re.sub(r"[^a-zA-Z-_0-9]", "_", node_label)
 
 
-def _generate_mermaid_graph_styles(node_colors: NodeColors) -> str:
+def _generate_mermaid_graph_styles(node_colors: NodeStyles) -> str:
     """Generates Mermaid graph styles for different node types."""
     styles = ""
-    for class_name, color in asdict(node_colors).items():
-        styles += f"\tclassDef {class_name}class fill:{color};\n"
+    for class_name, style in asdict(node_colors).items():
+        styles += f"\tclassDef {class_name} {style}\n"
     return styles
 
 

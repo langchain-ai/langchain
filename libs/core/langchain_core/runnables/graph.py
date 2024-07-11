@@ -117,12 +117,12 @@ class CurveStyle(Enum):
 
 
 @dataclass
-class NodeColors:
+class NodeStyles:
     """Schema for Hexadecimal color codes for different node types"""
 
-    start: str = "#ffdfba"
-    end: str = "#baffc9"
-    other: str = "#fad7de"
+    default: str = "fill:#f2f0ff,line-height:1.2"
+    first: str = "fill-opacity:0"
+    last: str = "fill:#bfb6fc"
 
 
 class MermaidDrawMethod(Enum):
@@ -447,9 +447,7 @@ class Graph:
         *,
         with_styles: bool = True,
         curve_style: CurveStyle = CurveStyle.LINEAR,
-        node_colors: NodeColors = NodeColors(
-            start="#ffdfba", end="#baffc9", other="#fad7de"
-        ),
+        node_colors: NodeStyles = NodeStyles(),
         wrap_label_n_words: int = 9,
     ) -> str:
         from langchain_core.runnables.graph_mermaid import draw_mermaid
@@ -465,7 +463,7 @@ class Graph:
             last_node=last_node.id if last_node else None,
             with_styles=with_styles,
             curve_style=curve_style,
-            node_colors=node_colors,
+            node_styles=node_colors,
             wrap_label_n_words=wrap_label_n_words,
         )
 
@@ -473,9 +471,7 @@ class Graph:
         self,
         *,
         curve_style: CurveStyle = CurveStyle.LINEAR,
-        node_colors: NodeColors = NodeColors(
-            start="#ffdfba", end="#baffc9", other="#fad7de"
-        ),
+        node_colors: NodeStyles = NodeStyles(),
         wrap_label_n_words: int = 9,
         output_file_path: Optional[str] = None,
         draw_method: MermaidDrawMethod = MermaidDrawMethod.API,
