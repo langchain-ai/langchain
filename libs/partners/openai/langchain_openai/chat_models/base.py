@@ -886,8 +886,8 @@ class BaseChatOpenAI(BaseChatModel):
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Can be  a dictionary, pydantic model, callable, BaseTool, or Runnable.
-                Pydantic models, callables, and BaseTools will be automatically
-                converted to their schema dictionary representation.
+                Pydantic models, callables, BaseTools, and Runnables will be
+                automatically converted to their schema dictionary representation.
             tool_choice: Which tool to require the model to call.
                 Options are:
                 name of the tool (str): calls corresponding tool;
