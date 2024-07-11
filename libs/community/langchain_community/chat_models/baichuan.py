@@ -129,7 +129,7 @@ class ChatBaichuan(BaseChatModel):
     """[DEPRECATED, keeping it for for backward compatibility] Baichuan Secret Key"""
     streaming: bool = False
     """Whether to stream the results or not."""
-    max_tokens: int = 2048
+    max_tokens: Optional[int] = None
     """Maximum number of tokens to generate."""
     request_timeout: int = Field(default=60, alias="timeout")
     """request timeout for chat http requests"""
