@@ -7,12 +7,13 @@ from langchain_core.runnables.graph import (
     CurveStyle,
     Edge,
     MermaidDrawMethod,
+    Node,
     NodeColors,
 )
 
 
 def draw_mermaid(
-    nodes: Dict[str, str],
+    nodes: Dict[str, Node],
     edges: List[Edge],
     *,
     first_node: Optional[str] = None,
@@ -55,9 +56,14 @@ def draw_mermaid(
             format_dict[last_node] = "{0}[{0}]:::endclass"
 
         # Add nodes to the graph
-        for key, value in nodes.items():
+        for key, node in nodes.items():
+            label = node.name.split(":")[-1]
+            if node.metadata:
+                label = f"<strong>{label}</strong>\n" + "\n".join(
+                    f"{key} = {value}" for key, value in node.metadata.items()
+                )
             node_label = format_dict.get(key, format_dict[default_class_label]).format(
-                _escape_node_label(key), value.split(":", 1)[-1]
+                _escape_node_label(key), label
             )
             mermaid_graph += f"\t{node_label};\n"
 
