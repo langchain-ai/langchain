@@ -1,6 +1,5 @@
 """Test the base tool implementation."""
 
-import asyncio
 import inspect
 import json
 import sys
@@ -919,7 +918,6 @@ async def test_async_tool_pass_context() -> None:
     @tool
     async def foo(bar: str) -> str:
         """The foo."""
-        await asyncio.sleep(0.0001)
         config = ensure_config()
         assert config["configurable"]["foo"] == "not-bar"
         assert bar == "baz"
@@ -941,7 +939,6 @@ def foo(bar: Any, bar_config: RunnableConfig) -> Any:
 @tool
 async def afoo(bar: Any, bar_config: RunnableConfig) -> Any:
     """The foo."""
-    await asyncio.sleep(0.0001)
     assert bar_config["configurable"]["foo"] == "not-bar"
     assert bar == "baz"
     return bar
@@ -958,7 +955,6 @@ def simple_foo(bar: Any, bar_config: RunnableConfig) -> Any:
 @tool(infer_schema=False)
 async def asimple_foo(bar: Any, bar_config: RunnableConfig) -> Any:
     """The foo."""
-    await asyncio.sleep(0.0001)
     assert bar_config["configurable"]["foo"] == "not-bar"
     assert bar == "baz"
     return bar
@@ -974,17 +970,8 @@ class FooBase(BaseTool):
         return bar
 
 
-class AFooBase(BaseTool):
-    name: str = "Foo"
-    description: str = "Foo"
-
-    def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
-        assert bar_config["configurable"]["foo"] == "not-bar"
-        assert bar == "baz"
-        return bar
-
+class AFooBase(FooBase):
     async def _arun(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
-        await asyncio.sleep(0.0001)
         assert bar_config["configurable"]["foo"] == "not-bar"
         assert bar == "baz"
         return bar
