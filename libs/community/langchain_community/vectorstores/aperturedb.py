@@ -268,6 +268,14 @@ class ApertureDB(VectorStore):
 
     @override
     def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+        """Delete documents from the vectorstore by id.
+
+        Args:
+            ids: List of ids to delete from the vectorstore.
+
+        Returns:
+            True if the deletion was successful, False otherwise
+        """
         assert ids is not None, "ids must be provided"
         query = [
             {
@@ -285,6 +293,15 @@ class ApertureDB(VectorStore):
     def similarity_search(
         self, query: str, k: int = 4, *args: Any, **kwargs: Any
     ) -> List[Document]:
+        """Search for documents similar to the query using the vectorstore
+
+        Args:
+            query: Query string to search for.
+            k: Number of results to return.
+
+        Returns:
+            List of Document objects ordered by decreasing similarity to the query.
+        """
         assert self.embedding_function is not None, "Embedding function is not set"
         embedding = self.embedding_function.embed_query(query)
         return self.similarity_search_by_vector(embedding, k, *args, **kwargs)
@@ -325,6 +342,15 @@ class ApertureDB(VectorStore):
     def similarity_search_by_vector(
         self, embedding: List[float], k: int = 4, **kwargs: Any
     ) -> List[Document]:
+        """Returns the k most similar documents to the given embedding vector
+
+        Args:
+            embedding: The embedding vector to search for
+            k: The number of similar documents to return
+
+        Returns:
+            List of Document objects ordered by decreasing similarity to the query.
+        """
         from aperturedb.Descriptors import Descriptors
 
         descriptors = Descriptors(self.connection)
@@ -346,6 +372,19 @@ class ApertureDB(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
+        """Returns similar documents to the query that also have diversity
+
+        This algorithm balances relevance and diversity in the search results.
+
+        Args:
+            query: Query string to search for.
+            k: Number of results to return.
+            fetch_k: Number of results to fetch.
+            lambda_mult: Lambda multiplier for MMR.
+
+        Returns:
+            List of Document objects ordered by decreasing similarity/diversty.
+        """
         self.logger.info(f"Max Marginal Relevance search for query: {query}")
         embedding = self.embedding_function.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
@@ -361,6 +400,19 @@ class ApertureDB(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> List[Document]:
+        """Returns similar documents to the vector that also have diversity
+
+        This algorithm balances relevance and diversity in the search results.
+
+        Args:
+            embedding: Embedding vector to search for.
+            k: Number of results to return.
+            fetch_k: Number of results to fetch.
+            lambda_mult: Lambda multiplier for MMR.
+
+        Returns:
+            List of Document objects ordered by decreasing similarity/diversty.
+        """
         from aperturedb.Descriptors import Descriptors
 
         descriptors = Descriptors(self.connection)
@@ -386,6 +438,14 @@ class ApertureDB(VectorStore):
         metadatas: Optional[List[dict]] = None,
         **kwargs: Any,
     ) -> ApertureDB:
+        """Creates a new vectorstore from a list of texts
+
+        Args:
+            texts: List of text strings
+            embedding: Embeddings object as for constructing the vectorstore
+            metadatas: Optional list of metadatas associated with the texts.
+            **kwargs: Additional arguments to pass to the constructor
+        """
         store = cls(embeddings=embedding, **kwargs)
         store.add_texts(texts, metadatas)
         return store
@@ -398,13 +458,25 @@ class ApertureDB(VectorStore):
         embedding: Embeddings,
         **kwargs: Any,
     ) -> ApertureDB:
+        """Creates a new vectorstore from a list of documents
+
+        Args:
+            documents: List of Document objects
+            embedding: Embeddings object as for constructing the vectorstore
+            metadatas: Optional list of metadatas associated with the texts.
+            **kwargs: Additional arguments to pass to the constructor
+        """
         store = cls(embeddings=embedding, **kwargs)
         store.add_documents(documents)
         return store
 
     @classmethod
     def delete_vectorstore(class_, descriptor_set: str) -> None:
-        """Deletes a vectorstore and all its data from the database"""
+        """Deletes a vectorstore and all its data from the database
+        
+        Args:
+            descriptor_set: The name of the descriptor set to delete
+        """
         from aperturedb.Utils import Utils, create_connector
 
         db = create_connector()
@@ -413,7 +485,11 @@ class ApertureDB(VectorStore):
 
     @classmethod
     def list_vectorstores(class_) -> None:
-        """Returns a list of all vectorstores in the database"""
+        """Returns a list of all vectorstores in the database
+        
+        Returns:
+            List of descriptor sets with properties
+        """
         from aperturedb.Utils import create_connector
 
         db = create_connector()
@@ -434,7 +510,16 @@ class ApertureDB(VectorStore):
 
     @override
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
-        """Insert or update items"""
+        """Insert or update items
+
+        Updating documents is dependent on the documents' `id` attribute.
+        
+        Args:
+            items: List of Document objects to upsert
+
+        Returns:
+            UpsertResponse object with succeeded and failed
+        """
         # For now, simply delete and add
         # We could do something more efficient to update metadata,
         # but we don't support changing the embedding of a descriptor.
