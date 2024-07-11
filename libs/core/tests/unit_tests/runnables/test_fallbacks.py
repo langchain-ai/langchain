@@ -326,7 +326,9 @@ class FakeStructuredOutputModel(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[
+            Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool, Runnable]
+        ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.bind(tools=tools)
@@ -356,7 +358,9 @@ class FakeModel(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[
+            Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool, Runnable]
+        ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         return self.bind(tools=tools)
