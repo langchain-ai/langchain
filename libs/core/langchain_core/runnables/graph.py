@@ -136,8 +136,8 @@ def node_data_str(id: str, data: Union[Type[BaseModel], RunnableType]) -> str:
     """Convert the data of a node to a string.
 
     Args:
-        node: The node to convert.
-        html: Whether to format the data as HTML rich text.
+        id: The node id.
+        data: The node data.
 
     Returns:
         A string representation of the data.
