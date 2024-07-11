@@ -19,7 +19,12 @@ from langchain_core.callbacks import (
 )
 from langchain_core.messages import ToolMessage
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
-from langchain_core.runnables import Runnable, RunnableLambda, ensure_config
+from langchain_core.runnables import (
+    Runnable,
+    RunnableConfig,
+    RunnableLambda,
+    ensure_config,
+)
 from langchain_core.tools import (
     BaseTool,
     SchemaAnnotationError,
@@ -922,6 +927,81 @@ async def test_async_tool_pass_context() -> None:
 
     assert (
         await foo.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"  # type: ignore
+    )
+
+
+@tool
+def foo(bar: Any, bar_config: RunnableConfig) -> Any:
+    """The foo."""
+    assert bar_config["configurable"]["foo"] == "not-bar"
+    assert bar == "baz"
+    return bar
+
+
+@tool
+async def afoo(bar: Any, bar_config: RunnableConfig) -> Any:
+    """The foo."""
+    await asyncio.sleep(0.0001)
+    assert bar_config["configurable"]["foo"] == "not-bar"
+    assert bar == "baz"
+    return bar
+
+
+@tool(infer_schema=False)
+def simple_foo(bar: Any, bar_config: RunnableConfig) -> Any:
+    """The foo."""
+    assert bar_config["configurable"]["foo"] == "not-bar"
+    assert bar == "baz"
+    return bar
+
+
+@tool(infer_schema=False)
+async def asimple_foo(bar: Any, bar_config: RunnableConfig) -> Any:
+    """The foo."""
+    await asyncio.sleep(0.0001)
+    assert bar_config["configurable"]["foo"] == "not-bar"
+    assert bar == "baz"
+    return bar
+
+
+class FooBase(BaseTool):
+    name: str = "Foo"
+    description: str = "Foo"
+
+    def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
+        assert bar_config["configurable"]["foo"] == "not-bar"
+        assert bar == "baz"
+        return bar
+
+
+class AFooBase(BaseTool):
+    name: str = "Foo"
+    description: str = "Foo"
+
+    def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
+        assert bar_config["configurable"]["foo"] == "not-bar"
+        assert bar == "baz"
+        return bar
+
+    async def _arun(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
+        await asyncio.sleep(0.0001)
+        assert bar_config["configurable"]["foo"] == "not-bar"
+        assert bar == "baz"
+        return bar
+
+
+@pytest.mark.parametrize("tool", [foo, simple_foo, FooBase(), AFooBase()])
+def test_tool_pass_config(tool: BaseTool) -> None:
+    assert tool.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
+
+
+@pytest.mark.parametrize(
+    "tool", [foo, afoo, simple_foo, asimple_foo, FooBase(), AFooBase()]
+)
+async def test_async_tool_pass_config(tool: BaseTool) -> None:
+    assert (
+        await tool.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}})
+        == "baz"
     )
 
 
