@@ -467,9 +467,11 @@ class PebbloRetrievalQA(Chain):
                         payload["response"].update(
                             resp.get("retrieval_data", {}).get("response", {})
                         )
+                        payload["response"].pop("data")
                         payload["prompt"].update(
                             resp.get("retrieval_data", {}).get("prompt", {})
                         )
+                        payload["prompt"].pop("data")
                         context = payload["context"]
                         for context_data in context:
                             context_data.pop("doc")
