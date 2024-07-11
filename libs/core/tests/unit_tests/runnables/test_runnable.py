@@ -311,6 +311,10 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "properties": {
                     "page_content": {"title": "Page Content", "type": "string"},
                     "metadata": {"title": "Metadata", "type": "object"},
+                    "id": {
+                        "title": "Id",
+                        "type": "string",
+                    },
                     "type": {
                         "title": "Type",
                         "enum": ["Document"],
@@ -343,301 +347,12 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         ]
     )
 
-    assert chat_prompt.input_schema.schema() == {
-        "title": "PromptInput",
-        "type": "object",
-        "properties": {
-            "history": {
-                "title": "History",
-                "type": "array",
-                "items": {
-                    "anyOf": [
-                        {"$ref": "#/definitions/AIMessage"},
-                        {"$ref": "#/definitions/HumanMessage"},
-                        {"$ref": "#/definitions/ChatMessage"},
-                        {"$ref": "#/definitions/SystemMessage"},
-                        {"$ref": "#/definitions/FunctionMessage"},
-                        {"$ref": "#/definitions/ToolMessage"},
-                    ]
-                },
-            }
-        },
-        "definitions": {
-            "ToolCall": {
-                "title": "ToolCall",
-                "type": "object",
-                "properties": {
-                    "name": {"title": "Name", "type": "string"},
-                    "args": {"title": "Args", "type": "object"},
-                    "id": {"title": "Id", "type": "string"},
-                },
-                "required": ["name", "args", "id"],
-            },
-            "InvalidToolCall": {
-                "title": "InvalidToolCall",
-                "type": "object",
-                "properties": {
-                    "name": {"title": "Name", "type": "string"},
-                    "args": {"title": "Args", "type": "string"},
-                    "id": {"title": "Id", "type": "string"},
-                    "error": {"title": "Error", "type": "string"},
-                },
-                "required": ["name", "args", "id", "error"],
-            },
-            "UsageMetadata": {
-                "title": "UsageMetadata",
-                "type": "object",
-                "properties": {
-                    "input_tokens": {"title": "Input Tokens", "type": "integer"},
-                    "output_tokens": {"title": "Output Tokens", "type": "integer"},
-                    "total_tokens": {"title": "Total Tokens", "type": "integer"},
-                },
-                "required": ["input_tokens", "output_tokens", "total_tokens"],
-            },
-            "AIMessage": {
-                "title": "AIMessage",
-                "description": AnyStr(),
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "title": "Content",
-                        "anyOf": [
-                            {"type": "string"},
-                            {
-                                "type": "array",
-                                "items": {
-                                    "anyOf": [{"type": "string"}, {"type": "object"}]
-                                },
-                            },
-                        ],
-                    },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object",
-                    },
-                    "response_metadata": {
-                        "title": "Response Metadata",
-                        "type": "object",
-                    },
-                    "type": {
-                        "title": "Type",
-                        "default": "ai",
-                        "enum": ["ai"],
-                        "type": "string",
-                    },
-                    "name": {"title": "Name", "type": "string"},
-                    "id": {"title": "Id", "type": "string"},
-                    "example": {
-                        "title": "Example",
-                        "default": False,
-                        "type": "boolean",
-                    },
-                    "tool_calls": {
-                        "title": "Tool Calls",
-                        "default": [],
-                        "type": "array",
-                        "items": {"$ref": "#/definitions/ToolCall"},
-                    },
-                    "invalid_tool_calls": {
-                        "title": "Invalid Tool Calls",
-                        "default": [],
-                        "type": "array",
-                        "items": {"$ref": "#/definitions/InvalidToolCall"},
-                    },
-                    "usage_metadata": {"$ref": "#/definitions/UsageMetadata"},
-                },
-                "required": ["content"],
-            },
-            "HumanMessage": {
-                "title": "HumanMessage",
-                "description": AnyStr(),
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "title": "Content",
-                        "anyOf": [
-                            {"type": "string"},
-                            {
-                                "type": "array",
-                                "items": {
-                                    "anyOf": [{"type": "string"}, {"type": "object"}]
-                                },
-                            },
-                        ],
-                    },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object",
-                    },
-                    "response_metadata": {
-                        "title": "Response Metadata",
-                        "type": "object",
-                    },
-                    "type": {
-                        "title": "Type",
-                        "default": "human",
-                        "enum": ["human"],
-                        "type": "string",
-                    },
-                    "name": {"title": "Name", "type": "string"},
-                    "id": {"title": "Id", "type": "string"},
-                    "example": {
-                        "title": "Example",
-                        "default": False,
-                        "type": "boolean",
-                    },
-                },
-                "required": ["content"],
-            },
-            "ChatMessage": {
-                "title": "ChatMessage",
-                "description": AnyStr(),
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "title": "Content",
-                        "anyOf": [
-                            {"type": "string"},
-                            {
-                                "type": "array",
-                                "items": {
-                                    "anyOf": [{"type": "string"}, {"type": "object"}]
-                                },
-                            },
-                        ],
-                    },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object",
-                    },
-                    "response_metadata": {
-                        "title": "Response Metadata",
-                        "type": "object",
-                    },
-                    "type": {
-                        "title": "Type",
-                        "default": "chat",
-                        "enum": ["chat"],
-                        "type": "string",
-                    },
-                    "name": {"title": "Name", "type": "string"},
-                    "id": {"title": "Id", "type": "string"},
-                    "role": {"title": "Role", "type": "string"},
-                },
-                "required": ["content", "role"],
-            },
-            "SystemMessage": {
-                "title": "SystemMessage",
-                "description": AnyStr(),
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "title": "Content",
-                        "anyOf": [
-                            {"type": "string"},
-                            {
-                                "type": "array",
-                                "items": {
-                                    "anyOf": [{"type": "string"}, {"type": "object"}]
-                                },
-                            },
-                        ],
-                    },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object",
-                    },
-                    "response_metadata": {
-                        "title": "Response Metadata",
-                        "type": "object",
-                    },
-                    "type": {
-                        "title": "Type",
-                        "default": "system",
-                        "enum": ["system"],
-                        "type": "string",
-                    },
-                    "name": {"title": "Name", "type": "string"},
-                    "id": {"title": "Id", "type": "string"},
-                },
-                "required": ["content"],
-            },
-            "FunctionMessage": {
-                "title": "FunctionMessage",
-                "description": AnyStr(),
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "title": "Content",
-                        "anyOf": [
-                            {"type": "string"},
-                            {
-                                "type": "array",
-                                "items": {
-                                    "anyOf": [{"type": "string"}, {"type": "object"}]
-                                },
-                            },
-                        ],
-                    },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object",
-                    },
-                    "response_metadata": {
-                        "title": "Response Metadata",
-                        "type": "object",
-                    },
-                    "type": {
-                        "title": "Type",
-                        "default": "function",
-                        "enum": ["function"],
-                        "type": "string",
-                    },
-                    "name": {"title": "Name", "type": "string"},
-                    "id": {"title": "Id", "type": "string"},
-                },
-                "required": ["content", "name"],
-            },
-            "ToolMessage": {
-                "title": "ToolMessage",
-                "description": AnyStr(),
-                "type": "object",
-                "properties": {
-                    "content": {
-                        "title": "Content",
-                        "anyOf": [
-                            {"type": "string"},
-                            {
-                                "type": "array",
-                                "items": {
-                                    "anyOf": [{"type": "string"}, {"type": "object"}]
-                                },
-                            },
-                        ],
-                    },
-                    "additional_kwargs": {
-                        "title": "Additional Kwargs",
-                        "type": "object",
-                    },
-                    "response_metadata": {
-                        "title": "Response Metadata",
-                        "type": "object",
-                    },
-                    "type": {
-                        "title": "Type",
-                        "default": "tool",
-                        "enum": ["tool"],
-                        "type": "string",
-                    },
-                    "name": {"title": "Name", "type": "string"},
-                    "id": {"title": "Id", "type": "string"},
-                    "tool_call_id": {"title": "Tool Call Id", "type": "string"},
-                },
-                "required": ["content", "tool_call_id"],
-            },
-        },
-    }
-    assert chat_prompt.output_schema.schema() == snapshot
+    assert chat_prompt.input_schema.schema() == snapshot(
+        name="chat_prompt_input_schema"
+    )
+    assert chat_prompt.output_schema.schema() == snapshot(
+        name="chat_prompt_output_schema"
+    )
 
     prompt = PromptTemplate.from_template("Hello, {name}!")
 
@@ -645,6 +360,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"name": {"title": "Name", "type": "string"}},
+        "required": ["name"],
     }
     assert prompt.output_schema.schema() == snapshot
 
@@ -654,6 +370,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "definitions": {
             "PromptInput": {
                 "properties": {"name": {"title": "Name", "type": "string"}},
+                "required": ["name"],
                 "title": "PromptInput",
                 "type": "object",
             }
@@ -679,6 +396,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"name": {"title": "Name", "type": "string"}},
+        "required": ["name"],
     }
     assert seq.output_schema.schema() == {
         "type": "array",
@@ -719,6 +437,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"name": {"title": "Name", "type": "string"}},
+        "required": ["name"],
     }
     assert seq_w_map.output_schema.schema() == {
         "title": "RunnableParallel<original,as_list,length>Output",
@@ -1052,6 +771,7 @@ def test_configurable_fields() -> None:
             "lang": {"title": "Lang", "type": "string"},
             "name": {"title": "Name", "type": "string"},
         },
+        "required": ["lang", "name"],
     }
 
     chain_configurable = prompt_configurable | fake_llm_configurable | StrOutputParser()
@@ -1107,6 +827,7 @@ def test_configurable_fields() -> None:
             "lang": {"title": "Lang", "type": "string"},
             "name": {"title": "Name", "type": "string"},
         },
+        "required": ["lang", "name"],
     }
 
     chain_with_map_configurable: Runnable = prompt_configurable | {
@@ -3790,6 +3511,7 @@ def test_deep_stream_assign() -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
+        "required": ["question"],
     }
     assert chain_with_assign.output_schema.schema() == {
         "title": "RunnableSequenceOutput",
@@ -3840,6 +3562,7 @@ def test_deep_stream_assign() -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
+        "required": ["question"],
     }
     assert chain_with_assign_shadow.output_schema.schema() == {
         "title": "RunnableSequenceOutput",
@@ -3914,6 +3637,7 @@ async def test_deep_astream_assign() -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
+        "required": ["question"],
     }
     assert chain_with_assign.output_schema.schema() == {
         "title": "RunnableSequenceOutput",
@@ -3964,6 +3688,7 @@ async def test_deep_astream_assign() -> None:
         "title": "PromptInput",
         "type": "object",
         "properties": {"question": {"title": "Question", "type": "string"}},
+        "required": ["question"],
     }
     assert chain_with_assign_shadow.output_schema.schema() == {
         "title": "RunnableSequenceOutput",
@@ -4965,6 +4690,7 @@ async def test_tool_from_runnable() -> None:
         "properties": {"question": {"title": "Question", "type": "string"}},
         "title": "PromptInput",
         "type": "object",
+        "required": ["question"],
     }
 
 
@@ -5702,3 +5428,39 @@ async def test_listeners_async() -> None:
     assert len(shared_state) == 2
     assert value1 in shared_state.values(), "Value not found in the dictionary."
     assert value2 in shared_state.values(), "Value not found in the dictionary."
+
+
+async def test_closing_iterator_doesnt_raise_error() -> None:
+    """Test that closing an iterator calls on_chain_end rather than on_chain_error."""
+    import time
+
+    from langchain_core.callbacks import BaseCallbackHandler
+    from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+    from langchain_core.output_parsers import StrOutputParser
+
+    on_chain_error_triggered = False
+
+    class MyHandler(BaseCallbackHandler):
+        async def on_chain_error(
+            self,
+            error: BaseException,
+            *,
+            run_id: UUID,
+            parent_run_id: Optional[UUID] = None,
+            tags: Optional[List[str]] = None,
+            **kwargs: Any,
+        ) -> None:
+            """Run when chain errors."""
+            nonlocal on_chain_error_triggered
+            on_chain_error_triggered = True
+
+    llm = GenericFakeChatModel(messages=iter(["hi there"]))
+    chain = llm | StrOutputParser()
+    chain_ = chain.with_config({"callbacks": [MyHandler()]})
+    st = chain_.stream("hello")
+    next(st)
+    # This is a generator so close is defined on it.
+    st.close()  # type: ignore
+    # Wait for a bit to make sure that the callback is called.
+    time.sleep(0.05)
+    assert on_chain_error_triggered is False

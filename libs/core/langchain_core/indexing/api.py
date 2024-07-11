@@ -1,4 +1,5 @@
 """Module contains logic for indexing documents into vector stores."""
+
 from __future__ import annotations
 
 import hashlib
@@ -232,8 +233,8 @@ def index(
         record_manager: Timestamped set to keep track of which documents were
                          updated.
         vector_store: Vector store to index the documents into.
-        batch_size: Batch size to use when indexing.
-        cleanup: How to handle clean up of documents.
+        batch_size: Batch size to use when indexing. Default is 100.
+        cleanup: How to handle clean up of documents. Default is None.
             - Incremental: Cleans up all documents that haven't been updated AND
                            that are associated with source ids that were seen
                            during indexing.
@@ -246,14 +247,23 @@ def index(
                     This means that users may see duplicated content during indexing.
             - None: Do not delete any documents.
         source_id_key: Optional key that helps identify the original source
-            of the document.
+            of the document. Default is None.
         cleanup_batch_size: Batch size to use when cleaning up documents.
+            Default is 1_000.
         force_update: Force update documents even if they are present in the
             record manager. Useful if you are re-indexing with updated embeddings.
+            Default is False.
 
     Returns:
         Indexing result which contains information about how many documents
         were added, updated, deleted, or skipped.
+
+    Raises:
+        ValueError: If cleanup mode is not one of 'incremental', 'full' or None
+        ValueError: If cleanup mode is incremental and source_id_key is None.
+        ValueError: If vectorstore does not have
+            "delete" and "add_documents" required methods.
+        ValueError: If source_id_key is not None, but is not a string or callable.
     """
     if cleanup not in {"incremental", "full", None}:
         raise ValueError(
@@ -415,7 +425,7 @@ async def aindex(
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
 ) -> IndexingResult:
-    """Index data from the loader into the vector store.
+    """Async index data from the loader into the vector store.
 
     Indexing functionality uses a manager to keep track of which documents
     are in the vector store.
@@ -437,8 +447,8 @@ async def aindex(
         record_manager: Timestamped set to keep track of which documents were
                          updated.
         vector_store: Vector store to index the documents into.
-        batch_size: Batch size to use when indexing.
-        cleanup: How to handle clean up of documents.
+        batch_size: Batch size to use when indexing. Default is 100.
+        cleanup: How to handle clean up of documents. Default is None.
             - Incremental: Cleans up all documents that haven't been updated AND
                            that are associated with source ids that were seen
                            during indexing.
@@ -450,14 +460,23 @@ async def aindex(
                     This means that users may see duplicated content during indexing.
             - None: Do not delete any documents.
         source_id_key: Optional key that helps identify the original source
-            of the document.
+            of the document. Default is None.
         cleanup_batch_size: Batch size to use when cleaning up documents.
+            Default is 1_000.
         force_update: Force update documents even if they are present in the
             record manager. Useful if you are re-indexing with updated embeddings.
+            Default is False.
 
     Returns:
         Indexing result which contains information about how many documents
         were added, updated, deleted, or skipped.
+
+    Raises:
+        ValueError: If cleanup mode is not one of 'incremental', 'full' or None
+        ValueError: If cleanup mode is incremental and source_id_key is None.
+        ValueError: If vectorstore does not have
+            "adelete" and "aadd_documents" required methods.
+        ValueError: If source_id_key is not None, but is not a string or callable.
     """
 
     if cleanup not in {"incremental", "full", None}:

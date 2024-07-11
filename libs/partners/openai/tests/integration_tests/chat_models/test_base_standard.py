@@ -30,11 +30,8 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         message = HumanMessage(
             content=[
                 {"type": "text", "text": "describe the weather in this image"},
-                {
-                    "type": "image_url",
-                    "image_url": {"url": image_url},
-                },
-            ],
+                {"type": "image_url", "image_url": {"url": image_url}},
+            ]
         )
         expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
             "input_tokens"
@@ -50,7 +47,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
                     "type": "image_url",
                     "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
                 },
-            ],
+            ]
         )
         expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
             "input_tokens"
@@ -63,11 +60,8 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         message = HumanMessage(
             content=[
                 {"type": "text", "text": "how many dice are in this image"},
-                {
-                    "type": "image_url",
-                    "image_url": {"url": image_url},
-                },
-            ],
+                {"type": "image_url", "image_url": {"url": image_url}},
+            ]
         )
         expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
             "input_tokens"
@@ -83,7 +77,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
                     "type": "image_url",
                     "image_url": {"url": f"data:image/png;base64,{image_data}"},
                 },
-            ],
+            ]
         )
         expected = cast(AIMessage, model.invoke([message])).usage_metadata[  # type: ignore[index]
             "input_tokens"

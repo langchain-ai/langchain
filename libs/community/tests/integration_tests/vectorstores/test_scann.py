@@ -1,4 +1,5 @@
 """Test ScaNN functionality."""
+
 import datetime
 import tempfile
 

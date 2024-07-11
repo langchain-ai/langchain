@@ -1,4 +1,5 @@
 """Methods for creating chains that use Ernie function-calling APIs."""
+
 import inspect
 from typing import (
     Any,
@@ -191,9 +192,9 @@ def get_ernie_output_parser(
             }
         else:
             pydantic_schema = functions[0]
-        output_parser: Union[
-            BaseOutputParser, BaseGenerationOutputParser
-        ] = PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
+        output_parser: Union[BaseOutputParser, BaseGenerationOutputParser] = (
+            PydanticOutputFunctionsParser(pydantic_schema=pydantic_schema)
+        )
     else:
         output_parser = JsonOutputFunctionsParser(args_only=len(functions) <= 1)
     return output_parser
