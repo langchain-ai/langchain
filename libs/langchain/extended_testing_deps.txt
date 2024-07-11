@@ -4,7 +4,6 @@
 -e ../partners/together
 -e ../partners/mistralai
 -e ../partners/groq
--e ../partners/core
 jsonschema>=4.22.0,<5
 numexpr>=2.8.6,<3
 rapidfuzz>=3.1.1,<4
