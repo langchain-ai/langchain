@@ -1,34 +1,38 @@
 import pytest
-
 from langchain_core.documents import Document
-from langchain_core.graph_vectorstores.base import (
-    Node,
+
+from langchain_community.graph_vectorstores.base import (
+    GraphStoreNode,
     _documents_to_nodes,
     _texts_to_nodes,
 )
-from langchain_core.graph_vectorstores.links import Link
+from langchain_community.graph_vectorstores.links import GraphStoreLink
 
 
 def test_texts_to_nodes() -> None:
     assert list(_texts_to_nodes(["a", "b"], [{"a": "b"}, {"c": "d"}], ["a", "b"])) == [
-        Node(id="a", metadata={"a": "b"}, text="a"),
-        Node(id="b", metadata={"c": "d"}, text="b"),
+        GraphStoreNode(id="a", metadata={"a": "b"}, text="a"),
+        GraphStoreNode(id="b", metadata={"c": "d"}, text="b"),
     ]
     assert list(_texts_to_nodes(["a", "b"], None, ["a", "b"])) == [
-        Node(id="a", metadata={}, text="a"),
-        Node(id="b", metadata={}, text="b"),
+        GraphStoreNode(id="a", metadata={}, text="a"),
+        GraphStoreNode(id="b", metadata={}, text="b"),
     ]
     assert list(_texts_to_nodes(["a", "b"], [{"a": "b"}, {"c": "d"}], None)) == [
-        Node(metadata={"a": "b"}, text="a"),
-        Node(metadata={"c": "d"}, text="b"),
+        GraphStoreNode(metadata={"a": "b"}, text="a"),
+        GraphStoreNode(metadata={"c": "d"}, text="b"),
     ]
     assert list(
         _texts_to_nodes(
             ["a"],
-            [{"links": {Link.incoming(kind="hyperlink", tag="http://b")}}],
+            [{"links": {GraphStoreLink.incoming(kind="hyperlink", tag="http://b")}}],
             None,
         )
-    ) == [Node(links=[Link.incoming(kind="hyperlink", tag="http://b")], text="a")]
+    ) == [
+        GraphStoreNode(
+            links=[GraphStoreLink.incoming(kind="hyperlink", tag="http://b")], text="a"
+        )
+    ]
     with pytest.raises(ValueError):
         list(_texts_to_nodes(["a", "b"], None, ["a"]))
     with pytest.raises(ValueError):
@@ -44,16 +48,18 @@ def test_documents_to_nodes() -> None:
         Document(
             id="a",
             page_content="some text a",
-            metadata={"links": [Link.incoming(kind="hyperlink", tag="http://b")]},
+            metadata={
+                "links": [GraphStoreLink.incoming(kind="hyperlink", tag="http://b")]
+            },
         ),
         Document(id="b", page_content="some text b", metadata={"c": "d"}),
     ]
     assert list(_documents_to_nodes(documents)) == [
-        Node(
+        GraphStoreNode(
             id="a",
             metadata={},
-            links=[Link.incoming(kind="hyperlink", tag="http://b")],
+            links=[GraphStoreLink.incoming(kind="hyperlink", tag="http://b")],
             text="some text a",
         ),
-        Node(id="b", metadata={"c": "d"}, text="some text b"),
+        GraphStoreNode(id="b", metadata={"c": "d"}, text="some text b"),
     ]

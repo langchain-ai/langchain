@@ -17,11 +17,15 @@ from langchain_core.callbacks import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.graph_vectorstores.links import METADATA_LINKS_KEY, Link
 from langchain_core.load import Serializable
 from langchain_core.pydantic_v1 import Field
 from langchain_core.runnables import run_in_executor
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+
+from langchain_community.graph_vectorstores.links import (
+    METADATA_LINKS_KEY,
+    GraphStoreLink,
+)
 
 
 def _has_next(iterator: Iterator) -> bool:
@@ -31,7 +35,7 @@ def _has_next(iterator: Iterator) -> bool:
     return next(iterator, sentinel) is not sentinel
 
 
-class Node(Serializable):
+class GraphStoreNode(Serializable):
     """Node in the GraphVectorStore.
 
     Edges exist from nodes with an outgoing link to nodes with a matching incoming link.
@@ -41,18 +45,22 @@ class Node(Serializable):
 
     .. code-block:: python
         [
-            Node(
+            GraphStoreNode(
                 id="a",
                 text="some text a",
                 links= [
-                    Link(kind="hyperlink", tag="https://some-url", direction="incoming")
+                    GraphStoreLink(
+                        kind="hyperlink", tag="https://some-url", direction="incoming"
+                    )
                 ],
             ),
-            Node(
+            GraphStoreNode(
                 id="b",
                 text="some text b",
                 links= [
-                    Link(kind="hyperlink", tag="https://some-url", direction="outgoing")
+                    GraphStoreLink(
+                        kind="hyperlink", tag="https://some-url", direction="outgoing"
+                    )
                 ],
             )
         ]
@@ -64,7 +72,7 @@ class Node(Serializable):
     """Text contained by the node."""
     metadata: dict = Field(default_factory=dict)
     """Metadata for the node."""
-    links: List[Link] = Field(default_factory=list)
+    links: List[GraphStoreLink] = Field(default_factory=list)
     """Links associated with the node."""
 
 
@@ -72,7 +80,7 @@ def _texts_to_nodes(
     texts: Iterable[str],
     metadatas: Optional[Iterable[dict]],
     ids: Optional[Iterable[str]],
-) -> Iterator[Node]:
+) -> Iterator[GraphStoreNode]:
     metadatas_it = iter(metadatas) if metadatas else None
     ids_it = iter(ids) if ids else None
     for text in texts:
@@ -88,7 +96,7 @@ def _texts_to_nodes(
         links = _metadata.pop(METADATA_LINKS_KEY, [])
         if not isinstance(links, list):
             links = list(links)
-        yield Node(
+        yield GraphStoreNode(
             id=_id,
             metadata=_metadata,
             text=text,
@@ -100,13 +108,13 @@ def _texts_to_nodes(
         raise ValueError("metadatas iterable longer than texts")
 
 
-def _documents_to_nodes(documents: Iterable[Document]) -> Iterator[Node]:
+def _documents_to_nodes(documents: Iterable[Document]) -> Iterator[GraphStoreNode]:
     for doc in documents:
         metadata = doc.metadata.copy()
         links = metadata.pop(METADATA_LINKS_KEY, [])
         if not isinstance(links, list):
             links = list(links)
-        yield Node(
+        yield GraphStoreNode(
             id=doc.id,
             metadata=metadata,
             text=doc.page_content,
@@ -114,12 +122,12 @@ def _documents_to_nodes(documents: Iterable[Document]) -> Iterator[Node]:
         )
 
 
-def nodes_to_documents(nodes: Iterable[Node]) -> Iterator[Document]:
+def nodes_to_documents(nodes: Iterable[GraphStoreNode]) -> Iterator[Document]:
     for node in nodes:
         metadata = node.metadata.copy()
         metadata[METADATA_LINKS_KEY] = [
             # Convert the core `Link` (from the node) back to the local `Link`.
-            Link(kind=link.kind, direction=link.direction, tag=link.tag)
+            GraphStoreLink(kind=link.kind, direction=link.direction, tag=link.tag)
             for link in node.links
         ]
 
@@ -140,7 +148,7 @@ class GraphVectorStore(VectorStore):
     @abstractmethod
     def add_nodes(
         self,
-        nodes: Iterable[Node],
+        nodes: Iterable[GraphStoreNode],
         **kwargs: Any,
     ) -> Iterable[str]:
         """Add nodes to the graph store.
@@ -151,7 +159,7 @@ class GraphVectorStore(VectorStore):
 
     async def aadd_nodes(
         self,
-        nodes: Iterable[Node],
+        nodes: Iterable[GraphStoreNode],
         **kwargs: Any,
     ) -> AsyncIterable[str]:
         """Add nodes to the graph store.
@@ -206,7 +214,7 @@ class GraphVectorStore(VectorStore):
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
                 The metadata key `links` shall be an iterable of
-                :py:class:`~langchain_core.graph_vectorstores.links.Link`.
+                :py:class:`~langchain_community.graph_vectorstores.links.GraphStoreLink`.
             **kwargs: vectorstore specific parameters.
 
         Returns:
@@ -254,7 +262,7 @@ class GraphVectorStore(VectorStore):
             texts: Iterable of strings to add to the vectorstore.
             metadatas: Optional list of metadatas associated with the texts.
                 The metadata key `links` shall be an iterable of
-                :py:class:`~langchain_core.graph_vectorstores.links.Link`.
+                :py:class:`~langchain_community.graph_vectorstores.links.GraphStoreLink`.
             **kwargs: vectorstore specific parameters.
 
         Returns:
@@ -305,7 +313,7 @@ class GraphVectorStore(VectorStore):
         Args:
             documents: Documents to add to the vectorstore.
                 The document's metadata key `links` shall be an iterable of
-                :py:class:`~langchain_core.graph_vectorstores.links.Link`.
+                :py:class:`~langchain_community.graph_vectorstores.links.GraphStoreLink`.
 
         Returns:
             List of IDs of the added texts.
@@ -355,7 +363,7 @@ class GraphVectorStore(VectorStore):
         Args:
             documents: Documents to add to the vectorstore.
                 The document's metadata key `links` shall be an iterable of
-                :py:class:`~langchain_core.graph_vectorstores.links.Link`.
+                :py:class:`~langchain_community.graph_vectorstores.links.GraphStoreLink`.
 
         Returns:
             List of IDs of the added texts.

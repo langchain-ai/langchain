@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 
 
 @dataclass(frozen=True)
-class Link:
+class GraphStoreLink:
     """A link to/from a tag of a given tag.
 
     Edges exist from nodes with an outgoing link to nodes with a matching incoming link.
@@ -20,28 +20,30 @@ class Link:
     """The tag of the link."""
 
     @staticmethod
-    def incoming(kind: str, tag: str) -> "Link":
+    def incoming(kind: str, tag: str) -> "GraphStoreLink":
         """Create an incoming link."""
-        return Link(kind=kind, direction="in", tag=tag)
+        return GraphStoreLink(kind=kind, direction="in", tag=tag)
 
     @staticmethod
-    def outgoing(kind: str, tag: str) -> "Link":
+    def outgoing(kind: str, tag: str) -> "GraphStoreLink":
         """Create an outgoing link."""
-        return Link(kind=kind, direction="out", tag=tag)
+        return GraphStoreLink(kind=kind, direction="out", tag=tag)
 
     @staticmethod
-    def bidir(kind: str, tag: str) -> "Link":
+    def bidir(kind: str, tag: str) -> "GraphStoreLink":
         """Create a bidirectional link."""
-        return Link(kind=kind, direction="bidir", tag=tag)
+        return GraphStoreLink(kind=kind, direction="bidir", tag=tag)
 
 
 METADATA_LINKS_KEY = "links"
 
 
-def get_links(doc: Document) -> List[Link]:
+def get_links(doc: Document) -> List[GraphStoreLink]:
     """Get the links from a document.
+
     Args:
         doc: The document to get the link tags from.
+
     Returns:
         The set of link tags from the document.
     """
@@ -54,8 +56,11 @@ def get_links(doc: Document) -> List[Link]:
     return links
 
 
-def add_links(doc: Document, *links: Union[Link, Iterable[Link]]) -> None:
+def add_links(
+    doc: Document, *links: Union[GraphStoreLink, Iterable[GraphStoreLink]]
+) -> None:
     """Add links to the given metadata.
+
     Args:
         doc: The document to add the links to.
         *links: The links to add to the document.

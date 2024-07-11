@@ -1,7 +1,6 @@
 from typing import Callable, Iterable, Set, TypeVar
 
-from langchain_core.graph_vectorstores import Link
-
+from langchain_community.graph_vectorstores import GraphStoreLink
 from langchain_community.graph_vectorstores.extractors.link_extractor import (
     LinkExtractor,
 )
@@ -19,9 +18,9 @@ class LinkExtractorAdapter(LinkExtractor[InputT]):
         self._underlying = underlying
         self._transform = transform
 
-    def extract_one(self, input: InputT) -> Set[Link]:  # noqa: A002
+    def extract_one(self, input: InputT) -> Set[GraphStoreLink]:  # noqa: A002
         return self._underlying.extract_one(self._transform(input))
 
-    def extract_many(self, inputs: Iterable[InputT]) -> Iterable[Set[Link]]:
+    def extract_many(self, inputs: Iterable[InputT]) -> Iterable[Set[GraphStoreLink]]:
         underlying_inputs = map(self._transform, inputs)
         return self._underlying.extract_many(underlying_inputs)

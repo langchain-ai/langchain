@@ -1,6 +1,6 @@
 import pytest
-from langchain_core.graph_vectorstores import Link
 
+from langchain_community.graph_vectorstores import GraphStoreLink
 from langchain_community.graph_vectorstores.extractors import (
     HtmlInput,
     HtmlLinkExtractor,
@@ -33,20 +33,20 @@ def test_one_from_str() -> None:
 
     results = extractor.extract_one(HtmlInput(PAGE_1, base_url="https://foo.com/bar/"))
     assert results == {
-        Link.incoming(kind="hyperlink", tag="https://foo.com/bar/"),
-        Link.outgoing(kind="hyperlink", tag="https://foo.com/bar/relative"),
-        Link.outgoing(kind="hyperlink", tag="https://foo.com/relative-base"),
-        Link.outgoing(kind="hyperlink", tag="http://cnn.com"),
-        Link.outgoing(kind="hyperlink", tag="https://same.foo"),
+        GraphStoreLink.incoming(kind="hyperlink", tag="https://foo.com/bar/"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="https://foo.com/bar/relative"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="https://foo.com/relative-base"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="http://cnn.com"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="https://same.foo"),
     }
 
     results = extractor.extract_one(HtmlInput(PAGE_1, base_url="http://foo.com/bar/"))
     assert results == {
-        Link.incoming(kind="hyperlink", tag="http://foo.com/bar/"),
-        Link.outgoing(kind="hyperlink", tag="http://foo.com/bar/relative"),
-        Link.outgoing(kind="hyperlink", tag="http://foo.com/relative-base"),
-        Link.outgoing(kind="hyperlink", tag="http://cnn.com"),
-        Link.outgoing(kind="hyperlink", tag="http://same.foo"),
+        GraphStoreLink.incoming(kind="hyperlink", tag="http://foo.com/bar/"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="http://foo.com/bar/relative"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="http://foo.com/relative-base"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="http://cnn.com"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="http://same.foo"),
     }
 
 
@@ -58,11 +58,11 @@ def test_one_from_beautiful_soup() -> None:
     soup = BeautifulSoup(PAGE_1, "html.parser")
     results = extractor.extract_one(HtmlInput(soup, base_url="https://foo.com/bar/"))
     assert results == {
-        Link.incoming(kind="hyperlink", tag="https://foo.com/bar/"),
-        Link.outgoing(kind="hyperlink", tag="https://foo.com/bar/relative"),
-        Link.outgoing(kind="hyperlink", tag="https://foo.com/relative-base"),
-        Link.outgoing(kind="hyperlink", tag="http://cnn.com"),
-        Link.outgoing(kind="hyperlink", tag="https://same.foo"),
+        GraphStoreLink.incoming(kind="hyperlink", tag="https://foo.com/bar/"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="https://foo.com/bar/relative"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="https://foo.com/relative-base"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="http://cnn.com"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="https://same.foo"),
     }
 
 
@@ -74,8 +74,8 @@ def test_drop_fragments() -> None:
     )
 
     assert results == {
-        Link.incoming(kind="hyperlink", tag="https://foo.com/baz/"),
-        Link.outgoing(kind="hyperlink", tag="https://foo.com/bar/"),
+        GraphStoreLink.incoming(kind="hyperlink", tag="https://foo.com/baz/"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="https://foo.com/bar/"),
     }
 
 
@@ -87,8 +87,8 @@ def test_include_fragments() -> None:
     )
 
     assert results == {
-        Link.incoming(kind="hyperlink", tag="https://foo.com/baz/#fragment"),
-        Link.outgoing(kind="hyperlink", tag="https://foo.com/bar/#fragment"),
+        GraphStoreLink.incoming(kind="hyperlink", tag="https://foo.com/baz/#fragment"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="https://foo.com/bar/#fragment"),
     }
 
 
@@ -105,13 +105,13 @@ def test_batch_from_str() -> None:
     )
 
     assert results[0] == {
-        Link.incoming(kind="hyperlink", tag="https://foo.com/bar/"),
-        Link.outgoing(kind="hyperlink", tag="https://foo.com/bar/relative"),
-        Link.outgoing(kind="hyperlink", tag="https://foo.com/relative-base"),
-        Link.outgoing(kind="hyperlink", tag="http://cnn.com"),
-        Link.outgoing(kind="hyperlink", tag="https://same.foo"),
+        GraphStoreLink.incoming(kind="hyperlink", tag="https://foo.com/bar/"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="https://foo.com/bar/relative"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="https://foo.com/relative-base"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="http://cnn.com"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="https://same.foo"),
     }
     assert results[1] == {
-        Link.incoming(kind="hyperlink", tag="https://foo.com/baz/"),
-        Link.outgoing(kind="hyperlink", tag="https://foo.com/bar/"),
+        GraphStoreLink.incoming(kind="hyperlink", tag="https://foo.com/baz/"),
+        GraphStoreLink.outgoing(kind="hyperlink", tag="https://foo.com/bar/"),
     }

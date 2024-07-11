@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, List, Optional, Set, Union
 from urllib.parse import urldefrag, urljoin, urlparse
 
 from langchain_core.documents import Document
-from langchain_core.graph_vectorstores import Link
 
+from langchain_community.graph_vectorstores import GraphStoreLink
 from langchain_community.graph_vectorstores.extractors.link_extractor import (
     LinkExtractor,
 )
@@ -106,7 +106,7 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
     def extract_one(
         self,
         input: HtmlInput,  # noqa: A002
-    ) -> Set[Link]:
+    ) -> Set[GraphStoreLink]:
         content = input.content
         if isinstance(content, str):
             from bs4 import BeautifulSoup
@@ -119,6 +119,6 @@ class HtmlLinkExtractor(LinkExtractor[HtmlInput]):
 
         hrefs = _parse_hrefs(content, base_url, self.drop_fragments)
 
-        links = {Link.outgoing(kind=self._kind, tag=url) for url in hrefs}
-        links.add(Link.incoming(kind=self._kind, tag=base_url))
+        links = {GraphStoreLink.outgoing(kind=self._kind, tag=url) for url in hrefs}
+        links.add(GraphStoreLink.incoming(kind=self._kind, tag=base_url))
         return links
