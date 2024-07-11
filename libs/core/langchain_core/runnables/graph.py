@@ -170,7 +170,7 @@ def node_data_json(
     from langchain_core.runnables.base import Runnable, RunnableSerializable
 
     if isinstance(node.data, RunnableSerializable):
-        json = {
+        json: Dict[str, Any] = {
             "type": "runnable",
             "data": {
                 "id": node.data.lc_id(),
