@@ -973,8 +973,20 @@ def test_tool_arg_descriptions() -> None:
         "required": ["bar", "baz"],
     }
 
-    # Test invalid docstring
+    # Test invalid docstrings
     def foo3(bar: str, baz: int) -> str:
+        """The foo."""
+        return bar
+
+    def foo4(bar: str, baz: int) -> str:
+        """The foo.
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    def foo5(bar: str, baz: int) -> str:
         """The foo.
 
         Args:
@@ -983,8 +995,9 @@ def test_tool_arg_descriptions() -> None:
         """
         return bar
 
-    with pytest.raises(ValueError):
-        _ = tool(foo3, parse_docstring=True)
+    for func in [foo3, foo4, foo5]:
+        with pytest.raises(ValueError):
+            _ = tool(func, parse_docstring=True)
 
 
 def test_tool_annotated_descriptions() -> None:

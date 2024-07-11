@@ -138,7 +138,11 @@ def convert_python_function_to_openai_function(
 
     func_name = _get_python_function_name(function)
     model = tools.create_schema_from_function(
-        func_name, function, filter_args=(), parse_docstring=True
+        func_name,
+        function,
+        filter_args=(),
+        parse_docstring=True,
+        error_on_invalid_docstring=False,
     )
     return convert_pydantic_to_openai_function(
         model,

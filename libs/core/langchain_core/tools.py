@@ -149,14 +149,22 @@ def _get_filtered_args(
     }
 
 
-def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
+def _parse_python_function_docstring(
+    function: Callable, error_on_invalid_docstring: bool = False
+) -> Tuple[str, dict]:
     """Parse the function and argument descriptions from the docstring of a function.
 
     Assumes the function docstring follows Google Python style guide.
     """
+    invalid_docstring_error = ValueError(
+        f"Found invalid Google-Style docstring for {function}."
+    )
     docstring = inspect.getdoc(function)
     if docstring:
         docstring_blocks = docstring.split("\n\n")
+        if error_on_invalid_docstring:
+            if len(docstring_blocks) < 2 or not docstring_blocks[1].startswith("Args:"):
+                raise (invalid_docstring_error)
         descriptors = []
         args_block = None
         past_descriptors = False
@@ -173,6 +181,8 @@ def _parse_python_function_docstring(function: Callable) -> Tuple[str, dict]:
                 continue
         description = " ".join(descriptors)
     else:
+        if error_on_invalid_docstring:
+            raise (invalid_docstring_error)
         description = ""
         args_block = None
     arg_descriptions = {}
@@ -199,11 +209,16 @@ def _validate_docstring_args_against_annotations(
 
 
 def _infer_arg_descriptions(
-    fn: Callable, *, parse_docstring: bool = False
+    fn: Callable,
+    *,
+    parse_docstring: bool = False,
+    error_on_invalid_docstring: bool = False,
 ) -> Tuple[str, dict]:
     """Infer argument descriptions from a function's docstring."""
     if parse_docstring:
-        description, arg_descriptions = _parse_python_function_docstring(fn)
+        description, arg_descriptions = _parse_python_function_docstring(
+            fn, error_on_invalid_docstring=error_on_invalid_docstring
+        )
     else:
         description = inspect.getdoc(fn) or ""
         arg_descriptions = {}
@@ -235,6 +250,7 @@ def create_schema_from_function(
     *,
     filter_args: Optional[Sequence[str]] = None,
     parse_docstring: bool = False,
+    error_on_invalid_docstring: bool = False,
 ) -> Type[BaseModel]:
     """Create a pydantic schema from a function's signature.
     Args:
@@ -242,7 +258,9 @@ def create_schema_from_function(
         func: Function to generate the schema from
         filter_args: Optional list of arguments to exclude from the schema
         parse_docstring: Whether to parse the function's docstring for descriptions
-             for each argument.
+            for each argument.
+        error_on_invalid_docstring: if ``parse_docstring`` is provided, configures
+            whether to raise ValueError on invalid Google Style docstrings.
     Returns:
         A pydantic model with the same arguments as the function
     """
@@ -256,7 +274,9 @@ def create_schema_from_function(
         if arg in inferred_model.__fields__:
             del inferred_model.__fields__[arg]
     description, arg_descriptions = _infer_arg_descriptions(
-        func, parse_docstring=parse_docstring
+        func,
+        parse_docstring=parse_docstring,
+        error_on_invalid_docstring=error_on_invalid_docstring,
     )
     # Pydantic adds placeholder virtual fields we need to strip
     valid_properties = _get_filtered_args(inferred_model, func, filter_args=filter_args)
@@ -923,6 +943,7 @@ class StructuredTool(BaseTool):
         args_schema: Optional[Type[BaseModel]] = None,
         infer_schema: bool = True,
         parse_docstring: bool = False,
+        error_on_invalid_docstring: bool = False,
         **kwargs: Any,
     ) -> StructuredTool:
         """Create tool from a given function.
@@ -939,6 +960,8 @@ class StructuredTool(BaseTool):
             infer_schema: Whether to infer the schema from the function's signature
             parse_docstring: if ``infer_schema`` and ``parse_docstring``, will attempt
                 to parse parameter descriptions from Google Style function docstrings.
+            error_on_invalid_docstring: if ``parse_docstring`` is provided, configures
+                whether to raise ValueError on invalid Google Style docstrings.
             **kwargs: Additional arguments to pass to the tool
 
         Returns:
@@ -980,7 +1003,10 @@ class StructuredTool(BaseTool):
         if _args_schema is None and infer_schema:
             # schema name is appended within function
             _args_schema = create_schema_from_function(
-                name, source_function, parse_docstring=parse_docstring
+                name,
+                source_function,
+                parse_docstring=parse_docstring,
+                error_on_invalid_docstring=error_on_invalid_docstring,
             )
         return cls(
             name=name,
@@ -999,6 +1025,7 @@ def tool(
     args_schema: Optional[Type[BaseModel]] = None,
     infer_schema: bool = True,
     parse_docstring: bool = False,
+    error_on_invalid_docstring: bool = True,
 ) -> Callable:
     """Make tools out of functions, can be used with or without arguments.
 
@@ -1012,6 +1039,8 @@ def tool(
             accept a dictionary input to its `run()` function.
         parse_docstring: if ``infer_schema`` and ``parse_docstring``, will attempt to
             parse parameter descriptions from Google Style function docstrings.
+        error_on_invalid_docstring: if ``parse_docstring`` is provided, configures
+            whether to raise ValueError on invalid Google Style docstrings.
 
     Requires:
         - Function must be of type (str) -> str
@@ -1074,6 +1103,7 @@ def tool(
                     args_schema=schema,
                     infer_schema=infer_schema,
                     parse_docstring=parse_docstring,
+                    error_on_invalid_docstring=error_on_invalid_docstring,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
