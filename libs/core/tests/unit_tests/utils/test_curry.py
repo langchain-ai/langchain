@@ -1,7 +1,5 @@
 from typing import Any
 
-import pytest
-
 from langchain_core.utils.curry import curry
 
 
@@ -37,7 +35,7 @@ async def test_async_curry() -> None:
     assert await curried(b=" you") == "hey you"
 
 
-async def test_curry_with_kwargs_values() -> None:
+async def test_async_curry_with_kwargs_values() -> None:
     async def test_fn(a: str, b: str, **kwargs: Any):
         return a + b + kwargs["c"]
 
