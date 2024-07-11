@@ -107,7 +107,7 @@ def _results_to_docs_and_scores(results: Any) -> List[Tuple[Document, float]]:
                     (Document(page_content=txt_contents, metadata=props), distance)
                 )
     except Exception as e:
-        print(f"Error while parsing results: {e}")  # noqa: T201
+        logger.warn(f"No results returned. Error while parsing results: {e}")
     return final_res
 
 
