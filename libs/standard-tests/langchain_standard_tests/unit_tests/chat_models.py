@@ -70,6 +70,10 @@ class ChatModelTests(ABC):
     def returns_usage_metadata(self) -> bool:
         return True
 
+    @property
+    def supports_anthropic_inputs(self) -> bool:
+        return False
+
 
 class ChatModelUnitTests(ChatModelTests):
     @property

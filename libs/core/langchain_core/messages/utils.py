@@ -6,6 +6,7 @@ Some examples of what you can do with these functions include:
 * Convert messages from dicts to Message objects (deserialization)
 * Filter messages from a list of messages based on name, type or id etc.
 """
+
 from __future__ import annotations
 
 import inspect
@@ -31,6 +32,7 @@ from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
+from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolMessage, ToolMessageChunk
 
@@ -41,7 +43,12 @@ if TYPE_CHECKING:
     from langchain_core.runnables.base import Runnable
 
 AnyMessage = Union[
-    AIMessage, HumanMessage, ChatMessage, SystemMessage, FunctionMessage, ToolMessage
+    AIMessage,
+    HumanMessage,
+    ChatMessage,
+    SystemMessage,
+    FunctionMessage,
+    ToolMessage,
 ]
 
 
@@ -53,10 +60,14 @@ def get_buffer_string(
     Args:
         messages: Messages to be converted to strings.
         human_prefix: The prefix to prepend to contents of HumanMessages.
-        ai_prefix: THe prefix to prepend to contents of AIMessages.
+            Default is "Human".
+        ai_prefix: THe prefix to prepend to contents of AIMessages. Default is "AI".
 
     Returns:
         A single string concatenation of all input messages.
+
+    Raises:
+        ValueError: If an unsupported message type is encountered.
 
     Example:
         .. code-block:: python
@@ -108,6 +119,8 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return FunctionMessage(**message["data"])
     elif _type == "tool":
         return ToolMessage(**message["data"])
+    elif _type == "remove":
+        return RemoveMessage(**message["data"])
     elif _type == "AIMessageChunk":
         return AIMessageChunk(**message["data"])
     elif _type == "HumanMessageChunk":
@@ -173,11 +186,20 @@ def _create_message_from_message_type(
     """Create a message from a message type and content string.
 
     Args:
-        message_type: str the type of the message (e.g., "human", "ai", etc.)
-        content: str the content string.
+        message_type: (str) the type of the message (e.g., "human", "ai", etc.).
+        content: (str) the content string.
+        name: (str) the name of the message. Default is None.
+        tool_call_id: (str) the tool call id. Default is None.
+        tool_calls: (List[Dict[str, Any]]) the tool calls. Default is None.
+        id: (str) the id of the message. Default is None.
+        **additional_kwargs: (Dict[str, Any]) additional keyword arguments.
 
     Returns:
         a message of the appropriate type.
+
+    Raises:
+        ValueError: if the message type is not one of "human", "user", "ai",
+            "assistant", "system", "function", or "tool".
     """
     kwargs: Dict[str, Any] = {}
     if name is not None:
@@ -199,11 +221,14 @@ def _create_message_from_message_type(
     elif message_type == "function":
         message = FunctionMessage(content=content, **kwargs)
     elif message_type == "tool":
-        message = ToolMessage(content=content, **kwargs)
+        raw_output = kwargs.get("additional_kwargs", {}).pop("raw_output", None)
+        message = ToolMessage(content=content, raw_output=raw_output, **kwargs)
+    elif message_type == "remove":
+        message = RemoveMessage(**kwargs)
     else:
         raise ValueError(
             f"Unexpected message type: {message_type}. Use one of 'human',"
-            f" 'user', 'ai', 'assistant', or 'system'."
+            f" 'user', 'ai', 'assistant', 'function', 'tool', or 'system'."
         )
     return message
 
@@ -220,10 +245,14 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     - string: shorthand for ("human", template); e.g., "{user_input}"
 
     Args:
-        message: a representation of a message in one of the supported formats
+        message: a representation of a message in one of the supported formats.
 
     Returns:
-        an instance of a message or a message template
+        an instance of a message or a message template.
+
+    Raises:
+        NotImplementedError: if the message type is not supported.
+        ValueError: if the message dict does not contain the required keys.
     """
     if isinstance(message, BaseMessage):
         _message = message
@@ -272,14 +301,12 @@ def _runnable_support(func: Callable) -> Callable:
     @overload
     def wrapped(
         messages: Literal[None] = None, **kwargs: Any
-    ) -> Runnable[Sequence[MessageLikeRepresentation], List[BaseMessage]]:
-        ...
+    ) -> Runnable[Sequence[MessageLikeRepresentation], List[BaseMessage]]: ...
 
     @overload
     def wrapped(
         messages: Sequence[MessageLikeRepresentation], **kwargs: Any
-    ) -> List[BaseMessage]:
-        ...
+    ) -> List[BaseMessage]: ...
 
     def wrapped(
         messages: Optional[Sequence[MessageLikeRepresentation]] = None, **kwargs: Any
@@ -315,16 +342,16 @@ def filter_messages(
 
     Args:
         messages: Sequence Message-like objects to filter.
-        include_names: Message names to include.
-        exclude_names: Messages names to exclude.
+        include_names: Message names to include. Default is None.
+        exclude_names: Messages names to exclude. Default is None.
         include_types: Message types to include. Can be specified as string names (e.g.
             "system", "human", "ai", ...) or as BaseMessage classes (e.g.
-            SystemMessage, HumanMessage, AIMessage, ...).
+            SystemMessage, HumanMessage, AIMessage, ...). Default is None.
         exclude_types: Message types to exclude. Can be specified as string names (e.g.
             "system", "human", "ai", ...) or as BaseMessage classes (e.g.
-            SystemMessage, HumanMessage, AIMessage, ...).
-        include_ids: Message IDs to include.
-        exclude_ids: Message IDs to exclude.
+            SystemMessage, HumanMessage, AIMessage, ...). Default is None.
+        include_ids: Message IDs to include. Default is None.
+        exclude_ids: Message IDs to exclude. Default is None.
 
     Returns:
         A list of Messages that meets at least one of the incl_* conditions and none
@@ -509,10 +536,12 @@ def trim_messages(
         strategy: Strategy for trimming.
             - "first": Keep the first <= n_count tokens of the messages.
             - "last": Keep the last <= n_count tokens of the messages.
+            Default is "last".
         allow_partial: Whether to split a message if only part of the message can be
             included. If ``strategy="last"`` then the last partial contents of a message
             are included. If ``strategy="first"`` then the first partial contents of a
             message are included.
+            Default is False.
         end_on: The message type to end on. If specified then every message after the
             last occurrence of this type is ignored. If ``strategy=="last"`` then this
             is done before we attempt to get the last ``max_tokens``. If
@@ -520,6 +549,7 @@ def trim_messages(
             ``max_tokens``. Can be specified as string names (e.g. "system", "human",
             "ai", ...) or as BaseMessage classes (e.g. SystemMessage, HumanMessage,
             AIMessage, ...). Can be a single type or a list of types.
+            Default is None.
         start_on: The message type to start on. Should only be specified if
             ``strategy="last"``. If specified then every message before
             the first occurrence of this type is ignored. This is done after we trim
@@ -528,8 +558,10 @@ def trim_messages(
             specified as string names (e.g. "system", "human", "ai", ...) or as
             BaseMessage classes (e.g. SystemMessage, HumanMessage, AIMessage, ...). Can
             be a single type or a list of types.
+            Default is None.
         include_system: Whether to keep the SystemMessage if there is one at index 0.
             Should only be specified if ``strategy="last"``.
+            Default is False.
         text_splitter: Function or ``langchain_text_splitters.TextSplitter`` for
             splitting the string contents of a message. Only used if
             ``allow_partial=True``. If ``strategy="last"`` then the last split tokens

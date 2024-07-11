@@ -1,4 +1,5 @@
 """Unit tests for the Logical Fallacy chain, same format as CAI"""
+
 from langchain_experimental.fallacy_removal.base import FallacyChain
 
 TEXT_ONE = """ This text is bad.\

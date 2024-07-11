@@ -1,6 +1,7 @@
 """Test the base tool implementation."""
 
 import asyncio
+import inspect
 import json
 import sys
 import textwrap
@@ -10,13 +11,14 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import pytest
+from typing_extensions import Annotated, TypedDict
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain_core.pydantic_v1 import BaseModel, ValidationError
-from langchain_core.runnables import ensure_config
+from langchain_core.runnables import Runnable, RunnableLambda, ensure_config
 from langchain_core.tools import (
     BaseTool,
     SchemaAnnotationError,
@@ -310,9 +312,10 @@ def test_structured_tool_from_function_docstring() -> None:
 
     def foo(bar: int, baz: str) -> str:
         """Docstring
+
         Args:
-            bar: int
-            baz: str
+            bar: the bar value
+            baz: the baz value
         """
         raise NotImplementedError()
 
@@ -328,6 +331,7 @@ def test_structured_tool_from_function_docstring() -> None:
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "string"},
         },
+        "description": inspect.getdoc(foo),
         "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
@@ -342,6 +346,7 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
 
     def foo(bar: int, baz: List[str]) -> str:
         """Docstring
+
         Args:
             bar: int
             baz: List[str]
@@ -352,14 +357,23 @@ def test_structured_tool_from_function_docstring_complex_args() -> None:
     assert structured_tool.name == "foo"
     assert structured_tool.args == {
         "bar": {"title": "Bar", "type": "integer"},
-        "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
+        "baz": {
+            "title": "Baz",
+            "type": "array",
+            "items": {"type": "string"},
+        },
     }
 
     assert structured_tool.args_schema.schema() == {
         "properties": {
             "bar": {"title": "Bar", "type": "integer"},
-            "baz": {"title": "Baz", "type": "array", "items": {"type": "string"}},
+            "baz": {
+                "title": "Baz",
+                "type": "array",
+                "items": {"type": "string"},
+            },
         },
+        "description": inspect.getdoc(foo),
         "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
@@ -439,6 +453,7 @@ def test_structured_tool_from_function_with_run_manager() -> None:
         bar: int, baz: str, callbacks: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Docstring
+
         Args:
             bar: int
             baz: str
@@ -459,6 +474,7 @@ def test_structured_tool_from_function_with_run_manager() -> None:
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "string"},
         },
+        "description": inspect.getdoc(foo),
         "title": "fooSchema",
         "type": "object",
         "required": ["bar", "baz"],
@@ -675,10 +691,11 @@ def test_structured_tool_from_function() -> None:
     """Test that structured tools can be created from functions."""
 
     def foo(bar: int, baz: str) -> str:
-        """Docstring
+        """Docstring thing.
+
         Args:
-            bar: int
-            baz: str
+            bar: the bar value
+            baz: the baz value
         """
         raise NotImplementedError()
 
@@ -692,6 +709,7 @@ def test_structured_tool_from_function() -> None:
     assert structured_tool.args_schema.schema() == {
         "title": "fooSchema",
         "type": "object",
+        "description": inspect.getdoc(foo),
         "properties": {
             "bar": {"title": "Bar", "type": "integer"},
             "baz": {"title": "Baz", "type": "string"},
@@ -916,3 +934,138 @@ def test_tool_description() -> None:
 
     foo2 = StructuredTool.from_function(foo)
     assert foo2.description == "The foo."
+
+
+def test_tool_arg_descriptions() -> None:
+    def foo(bar: str, baz: int) -> str:
+        """The foo.
+
+        Args:
+            bar: The bar.
+            baz: The baz.
+        """
+        return bar
+
+    foo1 = tool(foo)
+    args_schema = foo1.args_schema.schema()  # type: ignore
+    assert args_schema == {
+        "title": "fooSchema",
+        "type": "object",
+        "description": inspect.getdoc(foo),
+        "properties": {
+            "bar": {"title": "Bar", "type": "string"},
+            "baz": {"title": "Baz", "type": "integer"},
+        },
+        "required": ["bar", "baz"],
+    }
+
+
+def test_tool_annotated_descriptions() -> None:
+    def foo(
+        bar: Annotated[str, "this is the bar"], baz: Annotated[int, "this is the baz"]
+    ) -> str:
+        """The foo.
+
+        Returns:
+            The bar only.
+        """
+        return bar
+
+    foo1 = tool(foo)
+    args_schema = foo1.args_schema.schema()  # type: ignore
+    assert args_schema == {
+        "title": "fooSchema",
+        "type": "object",
+        "description": inspect.getdoc(foo),
+        "properties": {
+            "bar": {"title": "Bar", "type": "string", "description": "this is the bar"},
+            "baz": {
+                "title": "Baz",
+                "type": "integer",
+                "description": "this is the baz",
+            },
+        },
+        "required": ["bar", "baz"],
+    }
+
+
+def test_convert_from_runnable_dict() -> None:
+    # Test with typed dict input
+    class Args(TypedDict):
+        a: int
+        b: List[int]
+
+    def f(x: Args) -> str:
+        return str(x["a"] * max(x["b"]))
+
+    runnable: Runnable = RunnableLambda(f)
+    as_tool = runnable.as_tool()
+    args_schema = as_tool.args_schema
+    assert args_schema is not None
+    assert args_schema.schema() == {
+        "title": "f",
+        "type": "object",
+        "properties": {
+            "a": {"title": "A", "type": "integer"},
+            "b": {"title": "B", "type": "array", "items": {"type": "integer"}},
+        },
+        "required": ["a", "b"],
+    }
+    assert as_tool.description
+    result = as_tool.invoke({"a": 3, "b": [1, 2]})
+    assert result == "6"
+
+    as_tool = runnable.as_tool(name="my tool", description="test description")
+    assert as_tool.name == "my tool"
+    assert as_tool.description == "test description"
+
+    # Dict without typed input-- must supply arg types
+    def g(x: Dict[str, Any]) -> str:
+        return str(x["a"] * max(x["b"]))
+
+    runnable = RunnableLambda(g)
+    as_tool = runnable.as_tool(arg_types={"a": int, "b": List[int]})
+    result = as_tool.invoke({"a": 3, "b": [1, 2]})
+    assert result == "6"
+
+    # Test with config
+    def h(x: Dict[str, Any]) -> str:
+        config = ensure_config()
+        assert config["configurable"]["foo"] == "not-bar"
+        return str(x["a"] * max(x["b"]))
+
+    runnable = RunnableLambda(h)
+    as_tool = runnable.as_tool(arg_types={"a": int, "b": List[int]})
+    result = as_tool.invoke(
+        {"a": 3, "b": [1, 2]}, config={"configurable": {"foo": "not-bar"}}
+    )
+    assert result == "6"
+
+
+def test_convert_from_runnable_other() -> None:
+    # String input
+    def f(x: str) -> str:
+        return x + "a"
+
+    def g(x: str) -> str:
+        return x + "z"
+
+    runnable: Runnable = RunnableLambda(f) | g
+    as_tool = runnable.as_tool()
+    args_schema = as_tool.args_schema
+    assert args_schema is None
+    assert as_tool.description
+
+    result = as_tool.invoke("b")
+    assert result == "baz"
+
+    # Test with config
+    def h(x: str) -> str:
+        config = ensure_config()
+        assert config["configurable"]["foo"] == "not-bar"
+        return x + "a"
+
+    runnable = RunnableLambda(h)
+    as_tool = runnable.as_tool()
+    result = as_tool.invoke("b", config={"configurable": {"foo": "not-bar"}})
+    assert result == "ba"

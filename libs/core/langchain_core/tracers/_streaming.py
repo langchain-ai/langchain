@@ -1,4 +1,5 @@
 """Internal tracers used for stream_log and astream events implementations."""
+
 import abc
 from typing import AsyncIterator, Iterator, TypeVar
 from uuid import UUID
