@@ -485,7 +485,8 @@ class BaseChatOpenAI(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
-        with self.client.create(**payload) as response:
+        with self.client.with_raw_response.create(**payload) as raw_response:
+            response = raw_response.parse()
             for chunk in response:
                 if not isinstance(chunk, dict):
                     chunk = chunk.model_dump()
@@ -611,7 +612,8 @@ class BaseChatOpenAI(BaseChatModel):
         kwargs["stream"] = True
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
-        response = await self.async_client.create(**payload)
+        raw_response = await self.async_client.with_raw_response.create(**payload)
+        response = raw_response.parse()
         async with response:
             async for chunk in response:
                 if not isinstance(chunk, dict):
