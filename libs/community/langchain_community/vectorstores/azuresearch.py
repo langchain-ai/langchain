@@ -1623,6 +1623,7 @@ def _results_to_documents(
     ]
     return docs
 
+
 async def _areorder_results_with_maximal_marginal_relevance(
     results: SearchItemPaged[Dict],
     query_embedding: np.ndarray,
@@ -1654,6 +1655,7 @@ async def _areorder_results_with_maximal_marginal_relevance(
         ret.append((documents[x], scores[x]))  # type: ignore
 
     return ret
+
 
 def _reorder_results_with_maximal_marginal_relevance(
     results: SearchItemPaged[Dict],
