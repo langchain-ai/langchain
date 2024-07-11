@@ -9,14 +9,15 @@ from typing import (
     Type,
 )
 
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
+
 from langchain_community.graph_vectorstores.base import (
     GraphVectorStore,
     Node,
     nodes_to_documents,
 )
 from langchain_community.utilities.cassandra import SetupMode
-from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
 
 if TYPE_CHECKING:
     from cassandra.cluster import Session
