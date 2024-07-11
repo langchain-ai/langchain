@@ -1,9 +1,22 @@
 import json
+import re
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union, Type, Callable
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
     generate_from_stream,
@@ -15,24 +28,69 @@ from langchain_core.messages import (
     ChatMessage,
     HumanMessage,
     SystemMessage,
+    ToolCall,
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import Extra, BaseModel
+from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_function
 
 from langchain_community.llms.oci_generative_ai import OCIGenAIBase
 from langchain_community.llms.utils import enforce_stop_tokens
 
-from langchain_core.runnables import Runnable
-from langchain_core.tools import BaseTool
-from langchain_core.language_models import LanguageModelInput
-from langchain_cohere.cohere_agent import (
-    _convert_to_cohere_tool,
-    _format_to_cohere_tools,
-)
-from langchain_cohere.chat_models import _format_cohere_tool_calls, _convert_cohere_tool_call_to_langchain, get_cohere_chat_request
-
 CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
+
+JSON_TO_PYTHON_TYPES = {
+    "string": "str",
+    "number": "float",
+    "boolean": "bool",
+    "integer": "int",
+    "array": "List",
+    "object": "Dict",
+}
+
+
+def _remove_signature_from_tool_description(name: str, description: str) -> str:
+    """
+    Removes the `{name}{signature} - ` prefix and Args: section from tool description.
+    The signature is usually present for tools created with the @tool decorator,
+    whereas the Args: section may be present in function doc blocks.
+    """
+    description = re.sub(rf"^{name}\(.*?\) -(?:> \w+? -)? ", "", description)
+    description = re.sub(r"(?s)(?:\n?\n\s*?)?Args:.*$", "", description)
+    return description
+
+
+def _format_oci_tool_calls(
+    tool_calls: Optional[List[Any]] = None,
+) -> List[Dict]:
+    """
+    Formats a OCI GenAI API response into the tool call format used elsewhere in Langchain.
+    """
+    if not tool_calls:
+        return []
+
+    formatted_tool_calls = []
+    for tool_call in tool_calls:
+        formatted_tool_calls.append(
+            {
+                "id": uuid.uuid4().hex[:],
+                "function": {
+                    "name": tool_call.name,
+                    "arguments": json.dumps(tool_call.parameters),
+                },
+                "type": "function",
+            }
+        )
+    return formatted_tool_calls
+
+
+def _convert_oci_tool_call_to_langchain(tool_call: Any) -> ToolCall:
+    """Convert a Cohere tool call into langchain_core.messages.ToolCall"""
+    _id = uuid.uuid4().hex[:]
+    return ToolCall(name=tool_call.name, args=tool_call.parameters, id=_id)
 
 
 class Provider(ABC):
@@ -57,12 +115,12 @@ class Provider(ABC):
         ...
 
     @abstractmethod
-    def tools_to_oci_params(self, tools: Sequence[Dict]) -> Dict[str, Any]:
+    def convert_to_oci_tool(
+        self,
+        tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+    ) -> Dict[str, Any]:
         ...
 
-    @abstractmethod
-    def get_oci_params(self, messages: Sequence[ChatMessage], stop: Optional[List[str]], kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        ...
 
 class CohereProvider(Provider):
     stop_sequence_key = "stop_sequences"
@@ -103,7 +161,9 @@ class CohereProvider(Provider):
         if response.data.chat_response.tool_calls:
             # Only populate tool_calls when 1) present on the response and
             #  2) has one or more calls.
-            generation_info["tool_calls"] = _format_cohere_tool_calls(response.data.chat_response.tool_calls)
+            generation_info["tool_calls"] = _format_oci_tool_calls(
+                response.data.chat_response.tool_calls
+            )
 
         return generation_info
 
@@ -119,27 +179,36 @@ class CohereProvider(Provider):
         else:
             raise ValueError(f"Got unknown type {message}")
 
-    def get_oci_params(self, messages: Sequence[ChatMessage], stop: Optional[List[str]], kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        cohere_params = get_cohere_chat_request(messages, stop_sequences=stop, **kwargs)
-        return cohere_params
-    
-    def messages_to_oci_params(self, messages: Sequence[ChatMessage], **kwargs: Any) -> Dict[str, Any]:
-
-        
-        is_force_single_step = kwargs.get('is_force_single_step') or False
+    def messages_to_oci_params(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> Dict[str, Any]:
+        is_force_single_step = kwargs.get("is_force_single_step") or False
 
         oci_chat_history = []
-        
+
         for msg in messages[:-1]:
             if self.get_role(msg) == "USER" or self.get_role(msg) == "SYSTEM":
-                oci_chat_history.append(self.oci_chat_message[self.get_role(msg)](message=msg.content))
+                oci_chat_history.append(
+                    self.oci_chat_message[self.get_role(msg)](message=msg.content)
+                )
             elif self.get_role(msg) == "CHATBOT":
                 if msg.tool_calls and is_force_single_step:
                     continue
-                tool_calls = [self.oci_tool_call(name=tc["name"], parameters=tc["args"]) for tc in msg.tool_calls] if msg.tool_calls else None
-                msg_content = msg.content if msg.content else ""
-                oci_chat_history.append(self.oci_chat_message[self.get_role(msg)](message=msg_content, tool_calls=tool_calls))
-           
+                tool_calls = (
+                    [
+                        self.oci_tool_call(name=tc["name"], parameters=tc["args"])
+                        for tc in msg.tool_calls
+                    ]
+                    if msg.tool_calls
+                    else None
+                )
+                # TODO: report bug when message content is empty
+                msg_content = msg.content if msg.content else " "
+                oci_chat_history.append(
+                    self.oci_chat_message[self.get_role(msg)](
+                        message=msg_content, tool_calls=tool_calls
+                    )
+                )
 
         # Get the messages for the current chat turn
         current_chat_turn_messages = []
@@ -163,15 +232,20 @@ class CohereProvider(Provider):
                     for lc_tool_call in previous_ai_msg.tool_calls:
                         if lc_tool_call["id"] == tool_message.tool_call_id:
                             tool_result = self.oci_tool_result()
-                            tool_result.call = self.oci_tool_call(name=lc_tool_call["name"], parameters=lc_tool_call["args"])
-                            tool_result.outputs = [{"output": tool_message.content}] # use function convert_to_documents
+                            tool_result.call = self.oci_tool_call(
+                                name=lc_tool_call["name"],
+                                parameters=lc_tool_call["args"],
+                            )
+                            tool_result.outputs = [
+                                {"output": tool_message.content}
+                            ]  # use function convert_to_documents
                             oci_tool_results.append(tool_result)
-                    
-        if not oci_tool_results:
-            oci_tool_results = None    
 
-        message_str = "" if oci_tool_results else messages[-1].content    
-        
+        if not oci_tool_results:
+            oci_tool_results = None
+
+        message_str = "" if oci_tool_results else messages[-1].content
+
         oci_params = {
             "message": message_str,
             "chat_history": oci_chat_history,
@@ -181,24 +255,76 @@ class CohereProvider(Provider):
 
         return {k: v for k, v in oci_params.items() if v is not None}
 
-    def tools_to_oci_params(self, tools: Sequence[Dict]) -> Dict[str, Any]:
-        oci_tools = []
-        for tool in tools:
-            oci_tool = self.oci_tool()
-            oci_tool.name = tool['name']
-            oci_tool.description = tool['description']
-            oci_tool.parameter_definitions = {}
-            for p_name, p_def in tool['parameter_definitions'].items():
-                oci_tool.parameter_definitions[p_name] = self.oci_tool_param(**{
-                    'description': p_def['description'],
-                    'type': p_def['type'],
-                    'is_required': p_def['required'],
-                })
-            
-            oci_tools.append(oci_tool)
-            
-        return oci_tools
-        
+    def convert_to_oci_tool(
+        self,
+        tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+    ) -> Dict[str, Any]:
+        """
+        Convert a BaseTool instance, JSON schema dict, or BaseModel type to a OCI tool.
+        """
+        if isinstance(tool, BaseTool):
+            return self.oci_tool(
+                name=tool.name,
+                description=_remove_signature_from_tool_description(
+                    tool.name, tool.description
+                ),
+                parameter_definitions={
+                    p_name: self.oci_tool_param(
+                        description=p_def.get("description")
+                        if "description" in p_def
+                        else "",
+                        type=JSON_TO_PYTHON_TYPES.get(
+                            p_def.get("type"), p_def.get("type")
+                        ),
+                        is_required="default" not in p_def,
+                    )
+                    for p_name, p_def in tool.args.items()
+                },
+            )
+        elif isinstance(tool, dict):
+            if not all(k in tool for k in ("title", "description", "properties")):
+                raise ValueError(
+                    "Unsupported dict type. Tool must be passed in as a BaseTool instance, JSON schema dict, or BaseModel type."  # noqa: E501
+                )
+            return self.oci_tool(
+                name=tool.get("title"),
+                description=tool.get("description"),
+                parameter_definitions={
+                    p_name: self.oci_tool_param(
+                        description=p_def.get("description"),
+                        type=JSON_TO_PYTHON_TYPES.get(
+                            p_def.get("type"), p_def.get("type")
+                        ),
+                        is_required="default" not in p_def,
+                    )
+                    for p_name, p_def in tool.get("properties", {}).items()
+                },
+            )
+        elif (isinstance(tool, type) and issubclass(tool, BaseModel)) or callable(tool):
+            as_json_schema_function = convert_to_openai_function(tool)
+            parameters = as_json_schema_function.get("parameters", {})
+            properties = parameters.get("properties", {})
+            return self.oci_tool(
+                name=as_json_schema_function.get("name"),
+                description=as_json_schema_function.get(
+                    "description",
+                    as_json_schema_function.get("name"),
+                ),
+                parameter_definitions={
+                    p_name: self.oci_tool_param(
+                        description=p_def.get("description"),
+                        type=JSON_TO_PYTHON_TYPES.get(
+                            p_def.get("type"), p_def.get("type")
+                        ),
+                        is_required=p_name in parameters.get("required", []),
+                    )
+                    for p_name, p_def in properties.items()
+                },
+            )
+        else:
+            raise ValueError(
+                f"Unsupported tool type {type(tool)}. Tool must be passed in as a BaseTool instance, JSON schema dict, or BaseModel type."  # noqa: E501
+            )
 
 
 class MetaProvider(Provider):
@@ -242,7 +368,9 @@ class MetaProvider(Provider):
         else:
             raise ValueError(f"Got unknown type {message}")
 
-    def messages_to_oci_params(self, messages: List[BaseMessage], **kwargs: Any) -> Dict[str, Any]:
+    def messages_to_oci_params(
+        self, messages: List[BaseMessage], **kwargs: Any
+    ) -> Dict[str, Any]:
         oci_messages = [
             self.oci_chat_message[self.get_role(msg)](
                 content=[self.oci_chat_message_content(text=msg.content)]
@@ -257,10 +385,10 @@ class MetaProvider(Provider):
 
         return oci_params
 
-    def tools_to_oci_params(self, tools: Sequence[Dict]) -> Dict[str, Any]:
-        raise NotImplementedError("Tools not supported for Meta models")
-
-    def get_oci_params(self, messages: Sequence[ChatMessage], stop: Optional[List[str]], kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    def convert_to_oci_tool(
+        self,
+        tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+    ) -> Dict[str, Any]:
         raise NotImplementedError("Tools not supported for Meta models")
 
 
@@ -369,15 +497,10 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
                 "Please make sure you have the oci package installed."
             ) from ex
 
-        #cohere_params = self._provider.get_oci_params(messages=messages, stop=stop, kwargs=kwargs)
         oci_params = self._provider.messages_to_oci_params(messages, **kwargs)
-        
-        if "tools" in kwargs:
-            oci_params['tools'] = self._provider.tools_to_oci_params(kwargs['tools'])
-            kwargs.pop("tools")
 
-        oci_params['is_force_single_step'] = kwargs.get('is_force_single_step') or False
-                
+        oci_params["is_force_single_step"] = kwargs.get("is_force_single_step") or False
+
         oci_params["is_stream"] = stream  # self.is_stream
         _model_kwargs = self.model_kwargs or {}
 
@@ -404,9 +527,9 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
-        formatted_tools = _format_to_cohere_tools(tools)
+        formatted_tools = [self._provider.convert_to_oci_tool(tool) for tool in tools]
         return super().bind(tools=formatted_tools, **kwargs)
-        
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -459,7 +582,7 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
 
         if "tool_calls" in generation_info:
             tool_calls = [
-                _convert_cohere_tool_call_to_langchain(tool_call)
+                _convert_oci_tool_call_to_langchain(tool_call)
                 for tool_call in response.data.chat_response.tool_calls
             ]
         else:
@@ -476,7 +599,6 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             ],
             llm_output=llm_output,
         )
-        
 
     def _stream(
         self,
@@ -494,4 +616,3 @@ class ChatOCIGenAI(BaseChatModel, OCIGenAIBase):
             if run_manager:
                 run_manager.on_llm_new_token(delta, chunk=chunk)
             yield chunk
-
