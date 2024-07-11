@@ -1,6 +1,8 @@
 import uuid
 from typing import Any, List, Optional, Sequence
 
+from langchain.pydantic_v1 import BaseModel
+from langchain.retrievers import MultiVectorRetriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_core.indexing import UpsertResponse
@@ -9,9 +11,6 @@ from langchain_core.indexing.base_index import BaseIndex
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
 from langchain_text_splitters import TextSplitter
-
-from langchain.pydantic_v1 import BaseModel
-from langchain.retrievers import MultiVectorRetriever
 
 
 class ParentDocumentRetriever(MultiVectorRetriever, BaseIndex[Document]):
@@ -168,7 +167,7 @@ class ParentRetrieverV2(BaseRetriever):
 class FullDocumentIndex(BaseIndex[Document], BaseModel):
     """A specialized index that stores small chunks of data and their embeddings."""
 
-    vectorstore: VectorStore  # <-- Over engineered, a queryable index
+    vectorstore: VectorStore  # <-- Unnecessarily strict. We should just create a QueryableIndex here
     """A specialized index that stores small chunks of data and their embeddings."""
     store: BaseIndex[Document]
     """The storage interface for the parent documents"""
@@ -251,7 +250,7 @@ class FullDocumentIndex(BaseIndex[Document], BaseModel):
         """Get documents by their ids."""
         return self.vectorstore.get_by_ids(ids)
 
-    def get_retriever(self, **kwargs) -> ParentRetrieverV2:  # <-- Seems over engineered
+    def get_retriever(self, **kwargs) -> ParentRetrieverV2:  # <-- Unnecessary -- should just use a queryable index
         """Get documents by their ids."""
         # We do this to maintain the order of the ids that are returned
         return ParentRetrieverV2(
