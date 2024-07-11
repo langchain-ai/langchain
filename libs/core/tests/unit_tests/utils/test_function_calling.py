@@ -188,7 +188,6 @@ def test_convert_to_openai_function(
         assert actual == expected
 
     # Test runnables
-    actual = convert_to_openai_function(runnable.as_tool(description="dummy function"))
     parameters = {
         "type": "object",
         "properties": {
@@ -202,7 +201,11 @@ def test_convert_to_openai_function(
     }
     runnable_expected = expected.copy()
     runnable_expected["parameters"] = parameters
-    assert actual == runnable_expected
+    for actual in [
+        convert_to_openai_function(runnable.as_tool(description="dummy function")),
+        convert_to_openai_function(runnable, description="dummy function"),
+    ]:
+        assert actual == runnable_expected
 
 
 def test_convert_to_openai_function_nested() -> None:

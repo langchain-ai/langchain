@@ -27,6 +27,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import Runnable
 from langchain_core.utils.json_schema import dereference_refs
 
 if TYPE_CHECKING:
@@ -189,15 +190,16 @@ def format_tool_to_openai_tool(tool: BaseTool) -> ToolDescription:
 
 
 def convert_to_openai_function(
-    function: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+    function: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool, Runnable],
+    **kwargs: Any,
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an OpenAI function.
 
     Args:
-        function: Either a dictionary, a pydantic.BaseModel class, or a Python function.
-            If a dictionary is passed in, it is assumed to already be a valid OpenAI
-            function or a JSON schema with top-level 'title' and 'description' keys
-            specified.
+        function: Either a dictionary, a pydantic.BaseModel class, a Python function,
+            or a Runnable. If a dictionary is passed in, it is assumed to already be
+            a valid OpenAI function or a JSON schema with top-level 'title' and
+            'description' keys specified.
 
     Returns:
         A dict version of the passed in function which is compatible with the
@@ -224,6 +226,13 @@ def convert_to_openai_function(
         return cast(Dict, convert_pydantic_to_openai_function(function))
     elif isinstance(function, BaseTool):
         return cast(Dict, format_tool_to_openai_function(function))
+    elif isinstance(function, Runnable):
+        as_tool_kwargs = {
+            k: v for k, v in kwargs.items() if k in ("name", "description", "arg_types")
+        }
+        return cast(
+            Dict, format_tool_to_openai_function(function.as_tool(**as_tool_kwargs))
+        )
     elif callable(function):
         return cast(Dict, convert_python_function_to_openai_function(function))
     else:
@@ -236,15 +245,15 @@ def convert_to_openai_function(
 
 
 def convert_to_openai_tool(
-    tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool],
+    tool: Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool, Runnable],
 ) -> Dict[str, Any]:
     """Convert a raw function/class to an OpenAI tool.
 
     Args:
-        tool: Either a dictionary, a pydantic.BaseModel class, Python function, or
-            BaseTool. If a dictionary is passed in, it is assumed to already be a valid
-            OpenAI tool, OpenAI function, or a JSON schema with top-level 'title' and
-            'description' keys specified.
+        tool: Either a dictionary, a pydantic.BaseModel class, Python function,
+            BaseTool, or Runnable. If a dictionary is passed in, it is assumed
+            to already be a valid OpenAI tool, OpenAI function, or a JSON schema
+            with top-level 'title' and 'description' keys specified.
 
     Returns:
         A dict version of the passed in tool which is compatible with the
