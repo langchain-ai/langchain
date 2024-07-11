@@ -3,12 +3,8 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from typing_extensions import TypedDict
 
-from langchain_core.messages.base import (
-    BaseMessage,
-    BaseMessageChunk,
-    merge_content,
-)
-from langchain_core.utils._merge import merge_dicts
+from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
+from langchain_core.utils._merge import merge_dicts, merge_obj
 
 
 class ToolMessage(BaseMessage):
@@ -17,7 +13,7 @@ class ToolMessage(BaseMessage):
     ToolMessages contain the result of a tool invocation. Typically, the result
     is encoded inside the `content` field.
 
-    Example: A TooMessage representing a result of 42 from a tool call with id
+    Example: A ToolMessage representing a result of 42 from a tool call with id
 
         .. code-block:: python
 
@@ -25,10 +21,29 @@ class ToolMessage(BaseMessage):
 
             ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
 
+    Example: A ToolMessage where only part of the tool output is sent to the model
+        and the full output is passed in to raw_output.
+
+        .. code-block:: python
+
+            from langchain_core.messages import ToolMessage
+
+            tool_output = {
+                "stdout": "From the graph we can see that the correlation between x and y is ...",
+                "stderr": None,
+                "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
+            }
+
+            ToolMessage(
+                content=tool_output["stdout"],
+                raw_output=tool_output,
+                tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+            )
+
     The tool_call_id field is used to associate the tool call request with the
     tool call response. This is useful in situations where a chat model is able
     to request multiple tool calls in parallel.
-    """
+    """  # noqa: E501
 
     tool_call_id: str
     """Tool call that this message is responding to."""
@@ -38,6 +53,14 @@ class ToolMessage(BaseMessage):
 
     type: Literal["tool"] = "tool"
     """The type of the message (used for serialization). Defaults to "tool"."""
+
+    raw_output: Any = None
+    """The raw output of the tool.
+    
+    **Not part of the payload sent to the model.** Should only be specified if it is 
+    different from the message content, i.e. if only a subset of the full tool output
+    is being passed as message content.
+    """
 
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
@@ -83,6 +106,7 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
             return self.__class__(
                 tool_call_id=self.tool_call_id,
                 content=merge_content(self.content, other.content),
+                raw_output=merge_obj(self.raw_output, other.raw_output),
                 additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
                 ),
