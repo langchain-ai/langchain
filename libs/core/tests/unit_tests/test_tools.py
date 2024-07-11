@@ -928,36 +928,34 @@ async def test_async_tool_pass_context() -> None:
     )
 
 
-@tool
-def foo(bar: Any, bar_config: RunnableConfig) -> Any:
-    """The foo."""
+def assert_bar(bar: Any, bar_config: RunnableConfig) -> Any:
     assert bar_config["configurable"]["foo"] == "not-bar"
     assert bar == "baz"
     return bar
+
+
+@tool
+def foo(bar: Any, bar_config: RunnableConfig) -> Any:
+    """The foo."""
+    return assert_bar(bar, bar_config)
 
 
 @tool
 async def afoo(bar: Any, bar_config: RunnableConfig) -> Any:
     """The foo."""
-    assert bar_config["configurable"]["foo"] == "not-bar"
-    assert bar == "baz"
-    return bar
+    return assert_bar(bar, bar_config)
 
 
 @tool(infer_schema=False)
 def simple_foo(bar: Any, bar_config: RunnableConfig) -> Any:
     """The foo."""
-    assert bar_config["configurable"]["foo"] == "not-bar"
-    assert bar == "baz"
-    return bar
+    return assert_bar(bar, bar_config)
 
 
 @tool(infer_schema=False)
 async def asimple_foo(bar: Any, bar_config: RunnableConfig) -> Any:
     """The foo."""
-    assert bar_config["configurable"]["foo"] == "not-bar"
-    assert bar == "baz"
-    return bar
+    return assert_bar(bar, bar_config)
 
 
 class FooBase(BaseTool):
@@ -965,16 +963,12 @@ class FooBase(BaseTool):
     description: str = "Foo"
 
     def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
-        assert bar_config["configurable"]["foo"] == "not-bar"
-        assert bar == "baz"
-        return bar
+        return assert_bar(bar, bar_config)
 
 
 class AFooBase(FooBase):
     async def _arun(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
-        assert bar_config["configurable"]["foo"] == "not-bar"
-        assert bar == "baz"
-        return bar
+        return assert_bar(bar, bar_config)
 
 
 @pytest.mark.parametrize("tool", [foo, simple_foo, FooBase(), AFooBase()])
