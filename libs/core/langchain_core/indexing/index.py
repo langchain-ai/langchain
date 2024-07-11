@@ -1,4 +1,4 @@
-"""Proposal for a new schema for the indexing and retrieval interfaces.
+"""A generic indexing interface for storing and querying content.
 
 This proposal has the following goals:
 
@@ -43,23 +43,22 @@ Discussion points:
 import abc
 from typing import (
     Any,
-    Dict,
+    AsyncIterable,
+    AsyncIterator,
     Generic,
     Iterable,
+    Iterator,
     List,
     NotRequired,
-    Optional,
     Sequence,
     TypedDict,
     TypeVar,
-    Union,
 )
 
+from langchain_core._api import beta
 from langchain_core.documents.base import BaseMedia
-from langchain_core.indexing.base import UpsertResponse
-from langchain_core.runnables import RunnableConfig
-
-T = TypeVar("T", bound=BaseMedia)
+from langchain_core.indexing.base import DeleteResponse, UpsertResponse
+from langchain_core.utils import abatch_iterate, batch_iterate
 
 
 class Sort(TypedDict):
@@ -69,22 +68,31 @@ class Sort(TypedDict):
     ascending: NotRequired[bool]  # Assume asc=True
 
 
-C = TypeVar("C")
+T = TypeVar("T", bound=BaseMedia)
 
 
 class BaseIndex(Generic[T]):
     """An index represent a collection of items that can be queried.
 
-    An implementation of a BaseIndex should support the following operations:
+    This indexing interface is designed to be a generic abstraction for storing and
+    querying content that has an ID and metadata associated with it.
 
-    1. Storing the content
-    2. Allowing retrieval of the content by id
-    3. Supporting queries against the metadata associated with the content
+    The interface is designed to be agnostic to the underlying implementation of the
+    indexing system.
 
-    The implementation is **NOT** responsible for supporting
-    search queries against the content itself!
+    The interface is designed to support the following operations:
 
-    This responsibility is left for more specialized interfaces like VectorStore.
+    1. Storing content in the index.
+    2. Retrieving content by ID.
+    3. Querying the content based on the metadata associated with the content.
+
+    The implementation is **NOT** responsible for supporting search queries
+    against the content itself! Such a responsibility is left for more specialized
+    interfaces like the VectorStore.
+
+    While strongly encouraged, implementations are not required to support
+    querying based on metadata. Such implementations override the `get_by_query`
+    and `delete_by_query` methods to raise a NotImplementedError.
     """
 
     # Developer guidelines:
@@ -95,16 +103,16 @@ class BaseIndex(Generic[T]):
     def streaming_upsert(
         self, items: Iterable[T], /, batch_size: int, **kwargs: Any
     ) -> Iterator[UpsertResponse]:
-        """Upsert documents in a streaming fashion.
+        """Upsert items in a streaming fashion.
 
         Args:
-            items: Iterable of Documents to add to the vectorstore.
+            items: Iterable of content to add to the vectorstore.
             batch_size: The size of each batch to upsert.
             **kwargs: Additional keyword arguments.
                 kwargs should only include parameters that are common to all
-                documents. (e.g., timeout for indexing, retry policy, etc.)
+                items. (e.g., timeout for indexing, retry policy, etc.)
                 kwargs should not include ids to avoid ambiguous semantics.
-                Instead the ID should be provided as part of the Document object.
+                Instead the ID should be provided as part of the item.
 
         .. versionadded:: 0.2.11
         """
@@ -117,19 +125,19 @@ class BaseIndex(Generic[T]):
 
     # TODO(Eugene) Update documentation
     @abc.abstractmethod
-    def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
+    def upsert(self, items: Sequence[T], /, **kwargs: Any) -> UpsertResponse:
         """Upsert items into the index.
 
-        The upsert functionality should utilize the ID field of the Document object
+        The upsert functionality should utilize the ID field of the content object
         if it is provided. If the ID is not provided, the upsert method is free
-        to generate an ID for the document.
+        to generate an ID for the content.
 
-        When an ID is specified and the document already exists in the vectorstore,
-        the upsert method should update the document with the new data. If the document
-        does not exist, the upsert method should add the document to the vectorstore.
+        When an ID is specified and the content already exists in the vectorstore,
+        the upsert method should update the content with the new data. If the content
+        does not exist, the upsert method should add the item to the vectorstore.
 
         Args:
-            items: Sequence of Documents to add to the vectorstore.
+            items: Sequence of items to add to the vectorstore.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -141,21 +149,21 @@ class BaseIndex(Generic[T]):
     @beta(message="Added in 0.2.11. The API is subject to change.")
     async def astreaming_upsert(
         self,
-        items: AsyncIterable[Document],
+        items: AsyncIterable[T],
         /,
         batch_size: int,
         **kwargs: Any,
     ) -> AsyncIterator[UpsertResponse]:
-        """Upsert documents in a streaming fashion. Async version of streaming_upsert.
+        """Upsert items in a streaming fashion. Async version of streaming_upsert.
 
         Args:
-            items: Iterable of Documents to add to the vectorstore.
+            items: Iterable of items to add to the vectorstore.
             batch_size: The size of each batch to upsert.
             **kwargs: Additional keyword arguments.
                 kwargs should only include parameters that are common to all
-                documents. (e.g., timeout for indexing, retry policy, etc.)
+                items. (e.g., timeout for indexing, retry policy, etc.)
                 kwargs should not include ids to avoid ambiguous semantics.
-                Instead the ID should be provided as part of the Document object.
+                Instead the ID should be provided as part of the item object.
 
         .. versionadded:: 0.2.11
         """
@@ -164,18 +172,18 @@ class BaseIndex(Generic[T]):
 
     @beta(message="Added in 0.2.11. The API is subject to change.")
     async def aupsert(self, items: Sequence[T], /, **kwargs: Any) -> UpsertResponse:
-        """Add or update documents in the vectorstore. Async version of upsert.
+        """Add or update items in the vectorstore. Async version of upsert.
 
-        The upsert functionality should utilize the ID field of the Document object
+        The upsert functionality should utilize the ID field of the item
         if it is provided. If the ID is not provided, the upsert method is free
-        to generate an ID for the document.
+        to generate an ID for the item.
 
-        When an ID is specified and the document already exists in the vectorstore,
-        the upsert method should update the document with the new data. If the document
-        does not exist, the upsert method should add the document to the vectorstore.
+        When an ID is specified and the item already exists in the vectorstore,
+        the upsert method should update the item with the new data. If the item
+        does not exist, the upsert method should add the item to the vectorstore.
 
         Args:
-            items: Sequence of Documents to add to the vectorstore.
+            items: Sequence of items to add to the vectorstore.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -185,9 +193,6 @@ class BaseIndex(Generic[T]):
 
         .. versionadded:: 0.2.11
         """
-        #  Developer guidelines: See guidelines for the `upsert` method.
-        # The implementation does not delegate to the `add_texts` method or
-        # the `add_documents` method by default since those implementations
 
     @abc.abstractmethod
     def get_by_ids(
@@ -203,33 +208,32 @@ class BaseIndex(Generic[T]):
         ids: Sequence[str],
         /,
     ) -> DeleteResponse:
-        """Delete an item by id."""
+        """Delete items by id."""
 
     # Delete and get are part of the READ/WRITE interface.
     # They do not take advantage of indexes on the content.
     # However, all the indexers ARE assumed to have the capability to index
     # on metadata if they implement the delete_by_query and get_by_query methods.
-    @abc.abstractmethod
-    def get_by_query(
-        self,
-        *,
-        filter: Optional[Union[List[Dict[str, Any], Dict[str, Any]]]] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
-        sort: Optional[Union[Sort, List[Sort]]] = None,
-        **kwargs: Any,
-    ) -> Iterable[T]:
-        """Get items by query."""
-
-    @abc.abstractmethod
-    def delete_by_query(
-        self,
-        *,
-        filter: Optional[Union[List[Dict[str, Any], Dict[str, Any]]]] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
-        sort: Optional[Union[Sort, List[Sort]]] = None,
-        **kwargs: Any,
-    ) -> Iterable[DeleteResponse]:
-        """Delete items by query."""
-        # Careful with halloween problem
+    # @abc.abstractmethod
+    # def get_by_query(
+    #     self,
+    #     *,
+    #     filter: Optional[Union[List[Dict[str, Any], Dict[str, Any]]]] = None,
+    #     limit: Optional[int] = None,
+    #     offset: Optional[int] = None,
+    #     sort: Optional[Union[Sort, List[Sort]]] = None,
+    #     **kwargs: Any,
+    # ) -> Iterable[T]:
+    #     """Get items by query."""
+    #
+    # @abc.abstractmethod
+    # def delete_by_query(
+    #     self,
+    #     *,
+    #     filter: Optional[Union[List[Dict[str, Any], Dict[str, Any]]]] = None,
+    #     limit: Optional[int] = None,
+    #     offset: Optional[int] = None,
+    #     sort: Optional[Union[Sort, List[Sort]]] = None,
+    #     **kwargs: Any,
+    # ) -> Iterable[DeleteResponse]:
+    #     """Delete items by query."""

@@ -448,6 +448,7 @@ class UpsertResponse(TypedDict):
     failed: List[str]
     """The IDs that failed to index."""
 
+
 class DeleteResponse(TypedDict):
     """A response to a delete request."""
 

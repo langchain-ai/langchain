@@ -7,6 +7,7 @@ import json
 import uuid
 from itertools import islice
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterable,
     AsyncIterator,
@@ -29,7 +30,9 @@ from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from langchain_core.indexing.base import RecordManager
 from langchain_core.pydantic_v1 import root_validator
-from langchain_core.vectorstores import VectorStore
+
+if TYPE_CHECKING:
+    from langchain_core.vectorstores import VectorStore
 
 # Magic UUID to use as a namespace for hashing.
 # Used to try and generate a unique UUID for each document
@@ -265,6 +268,9 @@ def index(
             "delete" and "add_documents" required methods.
         ValueError: If source_id_key is not None, but is not a string or callable.
     """
+    # Local scope to avoid circular imports
+    from langchain_core.vectorstores import VectorStore
+
     if cleanup not in {"incremental", "full", None}:
         raise ValueError(
             f"cleanup should be one of 'incremental', 'full' or None. "
@@ -478,6 +484,8 @@ async def aindex(
             "adelete" and "aadd_documents" required methods.
         ValueError: If source_id_key is not None, but is not a string or callable.
     """
+    # Local scope to avoid circular imports
+    from langchain_core.vectorstores import VectorStore
 
     if cleanup not in {"incremental", "full", None}:
         raise ValueError(

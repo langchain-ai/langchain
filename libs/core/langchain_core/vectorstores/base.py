@@ -24,19 +24,16 @@ from __future__ import annotations
 import logging
 import math
 import warnings
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from itertools import cycle
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterable,
-    AsyncIterator,
     Callable,
     ClassVar,
     Collection,
     Dict,
     Iterable,
-    Iterator,
     List,
     Optional,
     Sequence,
@@ -51,17 +48,16 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables.config import run_in_executor
-from langchain_core.utils.aiter import abatch_iterate
-from langchain_core.utils.iter import batch_iterate
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
         AsyncCallbackManagerForRetrieverRun,
         CallbackManagerForRetrieverRun,
     )
-    from langchain_core.documents import Document
     from langchain_core.indexing.base import UpsertResponse
-    from langchain_core.indexing.index import BaseIndex
+
+from langchain_core.documents.base import Document
+from langchain_core.indexing.index import BaseIndex
 
 logger = logging.getLogger(__name__)
 
