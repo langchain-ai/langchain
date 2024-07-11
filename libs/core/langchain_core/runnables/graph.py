@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
@@ -27,7 +28,8 @@ if TYPE_CHECKING:
 
 
 class Stringifiable(Protocol):
-    def __str__(self) -> str: ...
+    def __str__(self) -> str:
+        ...
 
 
 class LabelsDict(TypedDict):
@@ -111,7 +113,7 @@ class MermaidDrawMethod(Enum):
     API = "api"  # Uses Mermaid.INK API to render the graph
 
 
-def node_data_str(node: Node) -> str:
+def node_data_str(node: Node, *, html: bool = False) -> str:
     """Convert the data of a node to a string.
 
     Args:
@@ -120,10 +122,16 @@ def node_data_str(node: Node) -> str:
     Returns:
         A string representation of the data.
     """
-    from langchain_core.runnables.base import Runnable
+    from langchain_core.runnables.base import Runnable, RunnableBinding
 
     if not is_uuid(node.id):
         return node.id
+    elif (
+        html and isinstance(node.data, RunnableBinding) and node.data.config["metadata"]
+    ):
+        return f"<strong>{node_data_str(node)}</strong>\n" + "\n".join(
+            f"{key} = {value}" for key, value in node.data.config["metadata"].items()
+        )
     elif isinstance(node.data, Runnable):
         try:
             data = str(node.data)
@@ -370,7 +378,8 @@ class Graph:
         output_file_path: str,
         fontname: Optional[str] = None,
         labels: Optional[LabelsDict] = None,
-    ) -> None: ...
+    ) -> None:
+        ...
 
     @overload
     def draw_png(
@@ -378,7 +387,8 @@ class Graph:
         output_file_path: None,
         fontname: Optional[str] = None,
         labels: Optional[LabelsDict] = None,
-    ) -> bytes: ...
+    ) -> bytes:
+        ...
 
     def draw_png(
         self,
@@ -415,19 +425,34 @@ class Graph:
     ) -> str:
         from langchain_core.runnables.graph_mermaid import draw_mermaid
 
-        nodes = {node.id: node_data_str(node) for node in self.nodes.values()}
+        node_labels = {
+            node.id: node_data_str(node, html=True) for node in self.nodes.values()
+        }
+        node_label_counts = Counter(node_labels.values())
+
+        def _get_node_id(node_id: str) -> str:
+            label = node_labels[node_id]
+            if is_uuid(node_id) and node_label_counts[label] == 1:
+                return label
+            else:
+                return node_id
 
         first_node = self.first_node()
-        first_label = node_data_str(first_node) if first_node is not None else None
-
         last_node = self.last_node()
-        last_label = node_data_str(last_node) if last_node is not None else None
 
         return draw_mermaid(
-            nodes=nodes,
-            edges=self.edges,
-            first_node_label=first_label,
-            last_node_label=last_label,
+            nodes={_get_node_id(id): label for id, label in node_labels.items()},
+            edges=[
+                Edge(
+                    source=_get_node_id(edge.source),
+                    target=_get_node_id(edge.target),
+                    data=edge.data,
+                    conditional=edge.conditional,
+                )
+                for edge in self.edges
+            ],
+            first_node=_get_node_id(first_node.id) if first_node else None,
+            last_node=_get_node_id(last_node.id) if last_node else None,
             with_styles=with_styles,
             curve_style=curve_style,
             node_colors=node_colors,
