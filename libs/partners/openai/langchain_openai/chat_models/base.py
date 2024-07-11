@@ -74,6 +74,7 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     convert_to_secret_str,
@@ -632,8 +633,11 @@ class BaseChatOpenAI(BaseChatModel):
                     choice = chunk["choices"][0]
                     if choice["delta"] is None:
                         continue
-                    message_chunk = _convert_delta_to_message_chunk(
-                        choice["delta"], default_chunk_class
+                    message_chunk = await run_in_executor(
+                        None,
+                        _convert_delta_to_message_chunk,
+                        choice["delta"],
+                        default_chunk_class,
                     )
                     generation_info = {}
                     if finish_reason := choice.get("finish_reason"):
@@ -672,7 +676,7 @@ class BaseChatOpenAI(BaseChatModel):
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         response = await self.async_client.create(**payload)
-        return self._create_chat_result(response)
+        return await run_in_executor(None, self._create_chat_result, response)
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:

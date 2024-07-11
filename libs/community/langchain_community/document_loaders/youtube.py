@@ -48,7 +48,7 @@ class GoogleApiClient:
     def __post_init__(self) -> None:
         self.creds = self._load_credentials()
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_channel_or_videoIds_is_set(
         cls, values: Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -389,7 +389,7 @@ class GoogleApiYoutubeLoader(BaseLoader):
 
         return build("youtube", "v3", credentials=creds)
 
-    @root_validator
+    @root_validator(pre=True)
     def validate_channel_or_videoIds_is_set(
         cls, values: Dict[str, Any]
     ) -> Dict[str, Any]:
