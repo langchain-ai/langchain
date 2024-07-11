@@ -7,15 +7,15 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import RunnableSerializable
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
 from langchain.output_parsers.prompts import NAIVE_FIX_PROMPT
 
 T = TypeVar("T")
 
 
-class OutputFixingParserRetryChainInput(TypedDict):
-    instructions: NotRequired[str]
+class OutputFixingParserRetryChainInput(TypedDict, total=False):
+    instructions: str
     completion: str
     error: str
 

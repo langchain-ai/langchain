@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, TypedDict, TypeVar, Union
+from typing import Any, TypeVar, Union
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
@@ -8,6 +8,7 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
 from langchain_core.runnables import RunnableSerializable
+from typing_extensions import TypedDict
 
 NAIVE_COMPLETION_RETRY = """Prompt:
 {prompt}
