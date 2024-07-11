@@ -1058,6 +1058,77 @@ def tool(
             def search_api(query: str) -> str:
                 # Searches the API for the query.
                 return
+
+        Parse Google-style docstrings:
+
+        .. code-block:: python
+
+            @tool(parse_docstring=True)
+            def foo(bar: str, baz: int) -> str:
+                \"\"\"The foo.
+
+                Args:
+                    bar: The bar.
+                    baz: The baz.
+                \"\"\"
+                return bar
+
+            foo.args_schema.schema()
+
+        .. code-block:: python
+
+            {
+                "title": "fooSchema",
+                "description": "The foo.",
+                "type": "object",
+                "properties": {
+                    "bar": {
+                        "title": "Bar",
+                        "description": "The bar.",
+                        "type": "string"
+                    },
+                    "baz": {
+                        "title": "Baz",
+                        "description": "The baz.",
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "bar",
+                    "baz"
+                ]
+            }
+
+        Note that parsing by default will raise ``ValueError`` if the docstring
+        is considered invalid. A docstring is considered invalid if it contains
+        arguments not in the function signature, or is unable to be parsed into
+        a summary and "Args:" blocks. Examples below:
+
+        .. code-block:: python
+
+            # No args section
+            def invalid_docstring_1(bar: str, baz: int) -> str:
+                \"\"\"The foo.\"\"\"
+                return bar
+
+            # Improper whitespace between summary and args section
+            def invalid_docstring_2(bar: str, baz: int) -> str:
+                \"\"\"The foo.
+                Args:
+                    bar: The bar.
+                    baz: The baz.
+                \"\"\"
+                return bar
+
+            # Documented args absent from function signature
+            def invalid_docstring_3(bar: str, baz: int) -> str:
+                \"\"\"The foo.
+
+                Args:
+                    banana: The bar.
+                    monkey: The baz.
+                \"\"\"
+                return bar
     """
 
     def _make_with_name(tool_name: str) -> Callable:
