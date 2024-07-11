@@ -16,7 +16,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
-from langchain_core.pydantic_v1 import Field
+from langchain_core.pydantic_v1 import Field, SecretStr
 from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env, pre_init
 
 logger = logging.getLogger(__name__)
@@ -49,8 +49,8 @@ class QianfanLLMEndpoint(LLM):
 
     client: Any
 
-    qianfan_ak: Optional[str] = None
-    qianfan_sk: Optional[str] = None
+    qianfan_ak: Optional[SecretStr] = None
+    qianfan_sk: Optional[SecretStr] = None
 
     streaming: Optional[bool] = False
     """Whether to stream the results or not."""
