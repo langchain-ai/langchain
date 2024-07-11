@@ -7,6 +7,10 @@ on:
         required: true
         type: string
         description: "From which folder this pipeline executes"
+      python-version:
+        required: true
+        type: string
+        description: "Python version to use"
 
 env:
   POETRY_VERSION: "1.7.1"
@@ -25,14 +29,14 @@ jobs:
           - "3.10"
           - "3.11"
           - "3.12"
-    name: "poetry run pytest -m compile tests/integration_tests #${{ matrix.python-version }}"
+    name: "poetry run pytest -m compile tests/integration_tests #${{ inputs.python-version }}"
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
+      - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
         uses: "./.github/actions/poetry_setup"
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ inputs.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: ${{ inputs.working-directory }}
           cache-key: compile-integration
