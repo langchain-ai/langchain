@@ -14,10 +14,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version:
-          - "3.12"
     name: "check doc imports #${{ inputs.python-version }}"
     steps:
       - uses: actions/checkout@v4
