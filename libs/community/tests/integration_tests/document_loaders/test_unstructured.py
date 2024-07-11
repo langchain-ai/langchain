@@ -54,6 +54,32 @@ def test_FileLoader_with_post_processor(get_post_processor) -> None:
     assert len(docs) > 1
     assert docs[0].page_content.endswith("THE END!")
 
+# -- The lazy_load method responsible for handling 'mode' is shared through
+# inheritance from the UnstructuredBaseLoader class, so these tests only have to
+# be done for one of the classes. --
+def test_FileLoader_paged_mode() -> None:
+    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
+    loader = UnstructuredFileLoader(
+        file_path=file_path,
+        strategy="fast",
+        mode="paged",
+    )
+    docs = loader.load()
+
+    assert len(docs) == 16
+
+
+def test_FileLoader_single_mode() -> None:
+    file_path = os.path.join(EXAMPLE_DOCS_DIRECTORY, "layout-parser-paper.pdf")
+    loader = UnstructuredFileLoader(
+        file_path=file_path,
+        strategy="fast",
+        mode="single",
+    )
+    docs = loader.load()
+
+    assert len(docs) == 1
+
 
 # -- UnstructuredAPIFileLoader -------------------------------
 
